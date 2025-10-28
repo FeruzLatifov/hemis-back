@@ -1,0 +1,107 @@
+# =====================================================
+# HEMIS Development Profile
+# =====================================================
+
+spring:
+  # =====================================================
+  # Development DataSource
+  # =====================================================
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/hemis4
+    username: postgres
+    password: postgres
+
+    hikari:
+      maximum-pool-size: 10  # Lower for dev
+
+  # =====================================================
+  # Development JPA Configuration
+  # =====================================================
+
+  jpa:
+    show-sql: true  # Log SQL statements
+
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+
+  # =====================================================
+  # Development Flyway
+  # =====================================================
+
+  flyway:
+    enabled: true
+    clean-disabled: false  # Allow clean in dev (BE CAREFUL!)
+
+  # =====================================================
+  # DevTools
+  # =====================================================
+
+  devtools:
+    restart:
+      enabled: true
+      additional-paths:
+        - src/main/java
+
+    livereload:
+      enabled: true
+
+# =====================================================
+# Server Configuration (Development)
+# =====================================================
+
+server:
+  port: 8080
+
+  error:
+    include-stacktrace: always  # Full stack traces in dev
+
+# =====================================================
+# Logging (Development - Verbose)
+# =====================================================
+
+logging:
+  level:
+    root: INFO
+    uz.hemis: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.flywaydb: DEBUG
+
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+
+# =====================================================
+# HEMIS Development Configuration
+# =====================================================
+
+hemis:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:5173
+      - http://127.0.0.1:3000
+      - http://127.0.0.1:5173
+
+  security:
+    jwt:
+      # Development JWT configuration
+      # For dev, you can use a test JWK Set URI or public key
+      jwk-set-uri: ${JWT_JWK_SET_URI:}
+
+  database:
+    enforce-no-delete: true  # Still enforce in dev
+
+# =====================================================
+# Development Notes
+# =====================================================
+# - Database: localhost:5432/hemis4
+# - Run with: ./gradlew :app:bootRun
+# - Hot reload enabled (DevTools)
+# - SQL logging enabled
+# - Full stack traces on errors
+# =====================================================

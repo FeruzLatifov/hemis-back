@@ -1,0 +1,75 @@
+# =====================================================
+# Redis Cache Configuration Profile
+# =====================================================
+# Enable with: --spring.profiles.active=redis
+# Or: --spring.profiles.active=prod,redis
+# =====================================================
+
+spring:
+  # Cache Configuration
+  cache:
+    type: redis  # Enable Redis cache
+    redis:
+      time-to-live: 1800000  # Default TTL: 30 minutes (in milliseconds)
+      cache-null-values: false  # Don't cache null values
+      key-prefix: "hemis:"  # Prefix for all cache keys
+      use-key-prefix: true  # Enable prefix
+
+  # Redis Connection
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 10000  # Connection timeout: 10 seconds
+
+      # Lettuce Client (Default)
+      lettuce:
+        pool:
+          max-active: 50  # Max connections (200+ universities)
+          max-idle: 20    # Max idle connections
+          min-idle: 5     # Min idle connections
+          max-wait: 30000  # Max wait time for connection (30 seconds)
+
+        # Cluster configuration (if using Redis Cluster)
+        # cluster:
+        #   nodes:
+        #     - redis-node1:6379
+        #     - redis-node2:6379
+        #     - redis-node3:6379
+
+        # Sentinel configuration (if using Redis Sentinel)
+        # sentinel:
+        #   master: hemis-master
+        #   nodes:
+        #     - sentinel1:26379
+        #     - sentinel2:26379
+        #     - sentinel3:26379
+
+# Logging for Redis
+logging:
+  level:
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: DEBUG
+    uz.hemis.common.config.RedisConfig: INFO
+
+# =====================================================
+# Cache Strategy Summary
+# =====================================================
+# Entity          | TTL      | Update Strategy
+# --------------- | -------- | ---------------------------
+# Student         | 15 min   | Evict on create/update/delete
+# Teacher         | 30 min   | Evict on create/update/delete
+# Course          | 60 min   | Rarely changes
+# Schedule        | 30 min   | Evict on create/update
+# Exam            | 60 min   | Evict on publish
+# Attendance      | 10 min   | Frequently updated
+# Grade           | 15 min   | Evict on create/update
+# Group           | 60 min   | Rarely changes
+# University      | 24 hours | Almost never changes
+# Faculty         | 12 hours | Rarely changes
+# Specialty       | 12 hours | Rarely changes
+# Curriculum      | 24 hours | Rarely changes
+# Enrollment      | 30 min   | Evict on create/update
+# =====================================================

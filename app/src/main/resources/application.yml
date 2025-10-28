@@ -1,0 +1,267 @@
+# =====================================================
+# HEMIS Application Configuration
+# =====================================================
+# Stack: Spring Boot 3.5.7 + JDK 25 + PostgreSQL 17
+# Mode: NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
+# =====================================================
+
+spring:
+  application:
+    name: hemis
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  # =====================================================
+  # DataSource Configuration
+  # =====================================================
+  # CRITICAL: Connects to existing ministry.sql database
+  # NO schema generation - Flyway baseline only
+  # =====================================================
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:hemis4}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: HikariPool-HEMIS
+      auto-commit: false
+
+      # Connection properties
+      data-source-properties:
+        ApplicationName: HEMIS-Refactor
+
+  # =====================================================
+  # Redis Configuration (OAuth2 Token Storage)
+  # =====================================================
+  # CRITICAL: OLD-HEMIS uses Redis for token storage
+  # Same Redis structure for backward compatibility
+  # =====================================================
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 60000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: -1
+
+  # =====================================================
+  # JPA/Hibernate Configuration
+  # =====================================================
+  # CRITICAL: ddl-auto=none - NO schema generation
+  # Entities mapped via @Table/@Column to existing tables
+  # =====================================================
+
+  jpa:
+    hibernate:
+      ddl-auto: none  # NEVER generate schema
+
+    show-sql: false
+    open-in-view: false
+
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: false
+        default_schema: public
+
+        # Query optimization
+        query:
+          plan_cache_max_size: 2048
+
+        # Batch processing
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  # =====================================================
+  # Flyway Configuration
+  # =====================================================
+  # CRITICAL: baseline-on-migrate=true for existing DB
+  # V1__baseline.sql contains NO DDL changes (documentation only)
+  # =====================================================
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
+    sql-migration-prefix: V
+    sql-migration-separator: __
+    sql-migration-suffixes: .sql
+    validate-on-migrate: true
+    clean-disabled: true  # NEVER clean database
+
+  # =====================================================
+  # Jackson Configuration
+  # =====================================================
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+      indent-output: true
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: Asia/Tashkent
+
+# =====================================================
+# Server Configuration
+# =====================================================
+# CRITICAL: Port 8080 for legacy API compatibility
+# =====================================================
+
+server:
+  port: ${SERVER_PORT:8080}
+
+  servlet:
+    context-path: /
+
+  compression:
+    enabled: true
+    mime-types:
+      - text/html
+      - text/xml
+      - text/plain
+      - text/css
+      - application/javascript
+      - application/json
+
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
+    include-exception: false
+
+# =====================================================
+# Actuator Configuration
+# =====================================================
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,mappings
+
+  endpoint:
+    health:
+      show-details: when-authorized
+
+  health:
+    db:
+      enabled: true
+
+# =====================================================
+# Logging Configuration
+# =====================================================
+
+logging:
+  level:
+    root: INFO
+    uz.hemis: INFO
+    org.springframework: INFO
+    org.hibernate: INFO
+    org.flywaydb: INFO
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =====================================================
+# Application-Specific Configuration
+# =====================================================
+
+hemis:
+  # API Configuration
+  api:
+    # Legacy CUBA REST API base path
+    base-path: /app/rest/v2
+
+  # External API Configuration (Government Services)
+  external:
+    # Personal Data Service (MVD Integration)
+    personal-data:
+      url: ${PERSONAL_DATA_URL:https://talaba.edu.uz/api/my_edu_uz/student_mvd_hemis.php}
+      token: ${PERSONAL_DATA_TOKEN:12345}
+
+    # Passport Data Service (Government Passport API)
+    passport-data:
+      url: ${PASSPORT_DATA_URL:https://api.gov.uz/passport}
+      token: ${PASSPORT_DATA_TOKEN:}
+
+    # BIMM Service (Beneficiary Information Management System)
+    bimm:
+      url: ${BIMM_URL:https://api.gov.uz/bimm}
+      token: ${BIMM_TOKEN:}
+
+    # Social Service (Social Registries and Support Programs)
+    social:
+      url: ${SOCIAL_URL:https://api.gov.uz/social}
+      token: ${SOCIAL_TOKEN:}
+
+  # CORS Configuration (for frontend)
+  cors:
+    allowed-origins:
+      - ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    exposed-headers:
+      - Authorization
+      - X-Total-Count
+    allow-credentials: true
+    max-age: 3600
+
+  # Security Configuration
+  security:
+    jwt:
+      # Public key or JWK Set URI for JWT validation
+      jwk-set-uri: ${JWT_JWK_SET_URI:}
+      issuer-uri: ${JWT_ISSUER_URI:}
+
+# =====================================================
+# Spring Security OAuth2 Resource Server
+# =====================================================
+# JWT validation configuration
+# Set one of the following:
+#   - jwk-set-uri: URL to JWK Set (e.g., https://auth-server/.well-known/jwks.json)
+#   - issuer-uri: Issuer URL (auto-discovers JWK Set URI)
+# =====================================================
+
+spring.security.oauth2.resourceserver:
+  jwt:
+    # JWK Set URI for token validation
+    jwk-set-uri: ${JWT_JWK_SET_URI:}
+
+    # OR Issuer URI (auto-discovers JWK Set URI)
+    issuer-uri: ${JWT_ISSUER_URI:}
+
+    # JWT validation settings
+    # audiences: ${JWT_AUDIENCES:hemis-api}
+    # principle-claim-name: sub
+
+  # Database Configuration
+  database:
+    # Read-only mode enforcement (NO DELETE/TRUNCATE)
+    read-only: false  # Set to true for read-only replicas
+    enforce-no-delete: true  # Block DELETE operations at app level

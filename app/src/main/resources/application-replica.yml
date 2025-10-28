@@ -1,0 +1,147 @@
+# =====================================================
+# Master-Replica Database Configuration Profile
+# =====================================================
+# Enable with: --spring.profiles.active=replica
+# Or: --spring.profiles.active=prod,redis,replica
+# =====================================================
+
+spring:
+  # Enable DataSource Routing
+  datasource:
+    routing:
+      enabled: true  # Enable master-replica routing
+
+    # =====================================================
+    # MASTER Database (Write Operations)
+    # =====================================================
+    # - INSERT, UPDATE operations
+    # - Soft DELETE (updates delete_ts)
+    # - @Transactional (readOnly=false or default)
+    # =====================================================
+    master:
+      jdbc-url: ${DB_MASTER_URL:jdbc:postgresql://localhost:5432/hemis4}
+      username: ${DB_MASTER_USERNAME:hemis_app}
+      password: ${DB_MASTER_PASSWORD:}
+      driver-class-name: org.postgresql.Driver
+
+      hikari:
+        pool-name: HEMIS-Master-Pool
+        maximum-pool-size: 20  # Master handles writes only
+        minimum-idle: 5
+        connection-timeout: 30000  # 30 seconds
+        idle-timeout: 600000  # 10 minutes
+        max-lifetime: 1800000  # 30 minutes
+        auto-commit: false  # Required for transactions
+        read-only: false  # Master is read-write
+
+        # Performance tuning
+        leak-detection-threshold: 60000  # 60 seconds
+        validation-timeout: 5000
+
+    # =====================================================
+    # REPLICA Database (Read Operations)
+    # =====================================================
+    # - SELECT operations
+    # - @Transactional(readOnly=true)
+    # - Reduces master database load
+    # - High availability for reads
+    # =====================================================
+    replica:
+      jdbc-url: ${DB_REPLICA_URL:jdbc:postgresql://localhost:5433/hemis4}
+      username: ${DB_REPLICA_USERNAME:hemis_app}
+      password: ${DB_REPLICA_PASSWORD:}
+      driver-class-name: org.postgresql.Driver
+
+      hikari:
+        pool-name: HEMIS-Replica-Pool
+        maximum-pool-size: 50  # Replica handles most reads (200+ universities)
+        minimum-idle: 10
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        auto-commit: true  # Auto-commit for read-only
+        read-only: true  # Enforce read-only at connection level
+
+        # Performance tuning
+        leak-detection-threshold: 60000
+        validation-timeout: 5000
+
+  # JPA Configuration (applies to both master and replica)
+  jpa:
+    open-in-view: false  # Avoid lazy loading issues
+    properties:
+      hibernate:
+        # Query performance
+        jdbc:
+          batch_size: 20
+          fetch_size: 50
+        # Statement caching
+        query:
+          plan_cache_max_size: 2048
+        # Second-level cache (Redis)
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+          region:
+            factory_class: org.hibernate.cache.jcache.JCacheRegionFactory
+
+# Logging for Database Routing
+logging:
+  level:
+    uz.hemis.domain.config.DatabaseRoutingConfig: INFO
+    uz.hemis.domain.config.ReplicationRoutingDataSource: DEBUG
+    com.zaxxer.hikari: INFO
+    org.springframework.jdbc.datasource: DEBUG
+    org.springframework.transaction: DEBUG
+
+# =====================================================
+# CRITICAL NOTES
+# =====================================================
+# 1. REPLICATION LAG AWARENESS:
+#    - Replica may be 1-2 seconds behind master
+#    - For strong consistency, use master (readOnly=false)
+#    - Example: After CREATE, immediate READ might miss data
+#
+# 2. FAILOVER STRATEGY:
+#    - If replica fails, routing falls back to master
+#    - Monitor replica lag: SELECT pg_last_wal_receive_lsn()
+#
+# 3. DATABASE USER PERMISSIONS:
+#    - Master user: SELECT, INSERT, UPDATE (NO DELETE)
+#    - Replica user: SELECT only
+#
+# 4. TRANSACTION BOUNDARIES:
+#    - Service methods with @Transactional(readOnly=true) → REPLICA
+#    - Service methods with @Transactional → MASTER
+#    - No @Transactional → MASTER (safe default)
+#
+# 5. CONNECTION POOLS:
+#    - Master pool: 20 connections (writes are less frequent)
+#    - Replica pool: 50 connections (reads from 200+ universities)
+# =====================================================
+
+# =====================================================
+# PostgreSQL Replication Setup (DBA Reference)
+# =====================================================
+# MASTER (Primary) Database:
+# 1. Enable WAL archiving in postgresql.conf:
+#    wal_level = replica
+#    max_wal_senders = 10
+#    wal_keep_size = 1GB
+#
+# 2. Create replication user:
+#    CREATE USER replicator REPLICATION LOGIN PASSWORD 'password';
+#
+# 3. Configure pg_hba.conf:
+#    host replication replicator replica_ip/32 md5
+#
+# REPLICA (Standby) Database:
+# 1. Stop PostgreSQL
+# 2. Remove data directory
+# 3. Run pg_basebackup:
+#    pg_basebackup -h master_ip -D /var/lib/postgresql/data -U replicator -P -v -R
+# 4. Start PostgreSQL
+# 5. Verify streaming replication:
+#    SELECT * FROM pg_stat_replication;  -- On master
+#    SELECT pg_is_in_recovery();  -- On replica (should return true)
+# =====================================================

@@ -1,0 +1,394 @@
+-- =====================================================
+-- V1 BASELINE MIGRATION - HEMIS Database
+-- =====================================================
+-- Purpose: Document existing database schema from ministry.sql
+-- Mode: NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
+--
+-- CRITICAL: This migration performs ZERO (0) DDL changes.
+-- It serves ONLY as documentation and Flyway baseline marker.
+--
+-- Database: PostgreSQL 17
+-- Source: ministry.sql (CUBA Platform 7.2.20 legacy schema)
+-- Owner: Ministry of Higher Education, Uzbekistan
+-- Replication: Active - ANY schema change would break replication
+-- Applications: 200+ universities depend on this schema
+-- =====================================================
+
+-- =====================================================
+-- IMMUTABILITY GUARANTEES
+-- =====================================================
+--
+-- This database schema is FROZEN. The following operations are PROHIBITED:
+--
+-- ❌ DROP TABLE / DROP COLUMN / DROP INDEX / DROP CONSTRAINT
+-- ❌ ALTER TABLE ... RENAME TO ...
+-- ❌ ALTER TABLE ... RENAME COLUMN ... TO ...
+-- ❌ TRUNCATE TABLE
+-- ❌ DELETE FROM ... (mass delete)
+-- ❌ UPDATE ... SET ... (mass update)
+--
+-- Allowed operations (if absolutely necessary in future migrations):
+--
+-- ✅ CREATE INDEX CONCURRENTLY (non-blocking)
+-- ✅ CREATE VIEW (read-only alias)
+-- ✅ COMMENT ON (documentation)
+-- ✅ GRANT / REVOKE (permissions)
+--
+-- =====================================================
+
+-- =====================================================
+-- SCHEMA OVERVIEW
+-- =====================================================
+--
+-- This database contains:
+--
+-- 1. Entity Tables (hemishe_e_*)
+--    - hemishe_e_student         (~300K+ rows)
+--    - hemishe_e_teacher
+--    - hemishe_e_university
+--    - hemishe_e_student_diploma
+--    - hemishe_e_student_scholarship_full
+--    - hemishe_e_employee_job
+--    - hemishe_e_university_department
+--    - And 50+ more entity tables
+--
+-- 2. Classifier Tables (hemishe_h_*)
+--    - hemishe_h_academic_degree
+--    - hemishe_h_academic_rank
+--    - hemishe_h_country
+--    - hemishe_h_gender
+--    - hemishe_h_language
+--    - And 50+ more reference tables
+--
+-- 3. Report Tables (hemishe_r_*)
+--    - Various reporting and aggregation tables
+--
+-- 4. System Tables (CUBA Platform)
+--    - sec_user, sec_role, sec_group (Security)
+--    - sys_config, sys_file (System)
+--    - dashboard_*, ddcdi_* (UI components)
+--
+-- =====================================================
+
+-- =====================================================
+-- CUBA PLATFORM AUDIT PATTERN
+-- =====================================================
+--
+-- All entity tables follow CUBA Platform audit pattern:
+--
+-- Primary Key:
+--   id          UUID NOT NULL
+--
+-- Optimistic Locking:
+--   version     INTEGER NOT NULL
+--
+-- Creation Tracking:
+--   create_ts   TIMESTAMP(6) WITHOUT TIME ZONE
+--   created_by  VARCHAR(50)
+--
+-- Update Tracking:
+--   update_ts   TIMESTAMP(6) WITHOUT TIME ZONE
+--   updated_by  VARCHAR(50)
+--
+-- Soft Delete Pattern:
+--   delete_ts   TIMESTAMP(6) WITHOUT TIME ZONE
+--   deleted_by  VARCHAR(50)
+--
+-- Active records: WHERE delete_ts IS NULL
+-- Deleted records: WHERE delete_ts IS NOT NULL
+--
+-- =====================================================
+
+-- =====================================================
+-- KEY TABLE: hemishe_e_student
+-- =====================================================
+--
+-- Student master table
+-- Primary Key: id (UUID)
+-- Business Keys: code (VARCHAR 255), pinfl (VARCHAR 255)
+--
+-- Structure (51 columns):
+--   - Audit columns (7): id, version, create_ts, created_by, update_ts, updated_by, delete_ts, deleted_by
+--   - Personal info (7): firstname, lastname, fathername, pinfl, birthday, _gender, _citizenship
+--   - Location (4): address, _soato, current_address, _current_soato
+--   - University refs (3): _university, _faculty, _speciality
+--   - Education (9): _education_type, _education_form, _payment_form, _course, _education_year, _student_status, etc.
+--   - Other fields (21): active, phone, responsible_person_phone, etc.
+--
+-- Foreign Keys (logical - VARCHAR references):
+--   _university       → hemishe_e_university.code
+--   _faculty          → hemishe_e_university_department.code
+--   _speciality       → hemishe_e_speciality.code
+--   _student_status   → hemishe_h_student_status.code
+--   _payment_form     → hemishe_h_payment_form.code
+--   ... and more classifier references
+--
+-- =====================================================
+
+-- =====================================================
+-- KEY TABLE: hemishe_e_university
+-- =====================================================
+--
+-- University master table
+-- Primary Key: code (VARCHAR 255) ← NOT UUID!
+-- Business Key: tin (VARCHAR 255)
+--
+-- Structure:
+--   - Audit columns (same pattern as above)
+--   - Basic info: name (VARCHAR 1024), address, cadastre
+--   - Classification: _university_type, _ownership, _university_version
+--   - Location: _soato, _soato_region
+--   - Features: gpa_edit, accreditation_edit, add_student, allow_grouping, etc.
+--   - Hierarchy: _parent_university (self-reference)
+--
+-- CRITICAL: Primary key is VARCHAR, not UUID!
+-- All references to university use VARCHAR code.
+--
+-- =====================================================
+
+-- =====================================================
+-- KEY TABLE: hemishe_e_teacher
+-- =====================================================
+--
+-- Teacher master table
+-- Primary Key: id (UUID)
+--
+-- Structure:
+--   - Audit columns
+--   - Personal info: firstname, lastname, fathername, _gender, birthday
+--   - Academic: _academic_degree, _academic_rank
+--   - References: _university (VARCHAR)
+--
+-- =====================================================
+
+-- =====================================================
+-- SOFT DELETE PATTERN
+-- =====================================================
+--
+-- All entity tables use soft delete:
+--
+-- Active record:
+--   SELECT * FROM hemishe_e_student WHERE delete_ts IS NULL
+--
+-- Logically deleted:
+--   SELECT * FROM hemishe_e_student WHERE delete_ts IS NOT NULL
+--
+-- Application-level filtering:
+--   @Where(clause = "delete_ts IS NULL")
+--
+-- CRITICAL: Physical DELETE is PROHIBITED
+-- Database role should have NO DELETE permission
+-- Application enforces NDG (Non-Deletion Guarantee)
+--
+-- =====================================================
+
+-- =====================================================
+-- REPLICATION SAFETY
+-- =====================================================
+--
+-- This schema is replicated to multiple nodes:
+--   - Master database (writes)
+--   - Replica databases (reads)
+--
+-- ANY structural change would break replication:
+--   - Table/column rename → replication stops
+--   - Table/column drop → data loss
+--   - Type change → incompatibility
+--
+-- Therefore, schema is FROZEN permanently.
+-- Only additive, non-breaking changes allowed.
+--
+-- =====================================================
+
+-- =====================================================
+-- POSTGRESQL FUNCTIONS
+-- =====================================================
+--
+-- Key database functions (preserved as-is):
+--
+-- 1. get_student_fullname_by_pinfl(text)
+--    Returns: TEXT
+--    Purpose: Get student full name by PINFL
+--
+-- 2. stipend_check(text, text)
+--    Returns: BOOLEAN
+--    Purpose: Validate student stipend eligibility
+--
+-- 3. stipend_check2(text, text, double precision, text)
+--    Returns: INTEGER
+--    Purpose: Advanced stipend validation
+--
+-- 4. verify_student_points()
+--    Returns: TRIGGER
+--    Purpose: Verify student against verification table
+--
+-- 5. student_diploma_before_insert()
+--    Returns: TRIGGER
+--    Purpose: Generate diploma hash
+--
+-- 6. newid()
+--    Returns: UUID
+--    Purpose: Generate UUID (md5-based)
+--
+-- =====================================================
+
+-- =====================================================
+-- INDEXES
+-- =====================================================
+--
+-- Existing indexes from ministry.sql are preserved.
+-- Future migrations MAY add additional indexes:
+--   - CREATE INDEX CONCURRENTLY (non-blocking)
+--   - Only on existing columns (NO new columns)
+--   - For query performance optimization
+--
+-- =====================================================
+
+-- =====================================================
+-- CONSTRAINTS
+-- =====================================================
+--
+-- Existing constraints are preserved:
+--   - Primary keys (id or code)
+--   - NOT NULL constraints
+--   - CHECK constraints
+--   - DEFAULT values
+--
+-- CRITICAL: Foreign key constraints are MINIMAL in CUBA schema
+-- CUBA uses "soft references" (VARCHAR codes) instead of FKs
+-- This is BY DESIGN - do not add FKs unless absolutely necessary
+--
+-- =====================================================
+
+-- =====================================================
+-- DATA TYPES
+-- =====================================================
+--
+-- Common data types used:
+--   - UUID: Primary keys for entities
+--   - VARCHAR(n): Strings (codes, names, etc.)
+--   - INTEGER: Numbers, version
+--   - TIMESTAMP(6): Date/time (without timezone)
+--   - DATE: Dates only
+--   - BOOLEAN: Flags
+--   - DOUBLE PRECISION: Decimal numbers
+--   - TEXT: Long text
+--
+-- PostgreSQL Specifics:
+--   - Unquoted identifiers are lowercase
+--   - Max identifier length: 63 characters
+--   - UUID stored as native type
+--
+-- =====================================================
+
+-- =====================================================
+-- EXTENSIONS
+-- =====================================================
+--
+-- Required PostgreSQL extensions:
+--
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+--   Purpose: UUID generation functions
+--
+-- CREATE EXTENSION IF NOT EXISTS tablefunc;
+--   Purpose: Crosstab and other table functions
+--
+-- Note: Extensions should already be installed.
+-- This migration does NOT create extensions.
+--
+-- =====================================================
+
+-- =====================================================
+-- APPLICATION LAYER MAPPING
+-- =====================================================
+--
+-- Spring Boot application maps to this schema via:
+--
+-- JPA Entities:
+--   @Entity
+--   @Table(name = "hemishe_e_student")
+--   @Where(clause = "delete_ts IS NULL")
+--   public class Student {
+--       @Id
+--       @Column(name = "id")
+--       private UUID id;
+--
+--       @Version
+--       @Column(name = "version")
+--       private Integer version;
+--
+--       @Column(name = "firstname")
+--       private String firstname;
+--
+--       // ... all other columns
+--   }
+--
+-- CRITICAL: Table/column names MUST match exactly.
+-- NO schema generation (hibernate.ddl-auto=none).
+--
+-- =====================================================
+
+-- =====================================================
+-- VERIFICATION QUERIES
+-- =====================================================
+--
+-- After applying this migration, verify with:
+--
+-- 1. Check Flyway history:
+--    SELECT * FROM flyway_schema_history;
+--    → Should show V1 with success=true
+--
+-- 2. Verify table count:
+--    SELECT COUNT(*) FROM information_schema.tables
+--    WHERE table_schema = 'public'
+--      AND table_type = 'BASE TABLE';
+--    → Should match ministry.sql table count
+--
+-- 3. Verify student table:
+--    SELECT COUNT(*) FROM hemishe_e_student WHERE delete_ts IS NULL;
+--    → Should show active student count
+--
+-- 4. Verify no DDL changes:
+--    SELECT installed_rank, version, description, type, script, checksum, success
+--    FROM flyway_schema_history
+--    WHERE version = '1';
+--    → Should show this migration succeeded with calculated checksum
+--
+-- =====================================================
+
+-- =====================================================
+-- BASELINE COMPLETE
+-- =====================================================
+--
+-- This migration contains ZERO (0) SQL statements.
+-- It is purely documentation.
+--
+-- The database schema exists as-is from ministry.sql.
+-- Flyway will mark this version as applied.
+--
+-- Next steps:
+--   - Optional: Future migrations for indexes (V2, V3, etc.)
+--   - Optional: R__compat_views.sql for updatable views
+--   - Mandatory: Application code mapping via JPA
+--
+-- CI Linter will verify:
+--   ✓ No DROP statements
+--   ✓ No RENAME statements
+--   ✓ No DELETE statements
+--   ✓ No TRUNCATE statements
+--
+-- API Contract Tests will verify:
+--   ✓ All legacy endpoints preserved
+--   ✓ JSON field names unchanged
+--   ✓ HTTP status codes unchanged
+--
+-- =====================================================
+
+-- =====================================================
+-- END OF BASELINE MIGRATION
+-- =====================================================
+-- NO SQL STATEMENTS EXECUTED
+-- SCHEMA PRESERVED AS-IS
+-- REPLICATION SAFE
+-- API COMPATIBLE
+-- =====================================================
