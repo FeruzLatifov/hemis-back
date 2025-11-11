@@ -1,5 +1,13 @@
 package uz.hemis.security.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,7 +19,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.TokenResponse;
-import uz.hemis.security.service.CustomUserDetailsService;
 import uz.hemis.security.service.TokenService;
 
 import java.util.Base64;
@@ -35,11 +42,11 @@ import java.util.Map;
 @RequestMapping("/app/rest/v2/oauth")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Authentication", description = "OAuth2 authentication: login (password grant), refresh token, logout")
 public class OAuth2TokenController {
 
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
-    private final CustomUserDetailsService userDetailsService;
 
     // Client credentials (OLD-HEMIS: client:secret)
     private static final String CLIENT_ID = "client";
@@ -86,12 +93,59 @@ public class OAuth2TokenController {
      * @param refreshToken refresh_token (for refresh_token grant)
      * @return TokenResponse or error
      */
-    @PostMapping("/token")
+    @Operation(
+        summary = "OAuth2 Token Endpoint",
+        description = """
+            Get access token using OAuth2 password grant or refresh token grant.
+
+            **Password Grant:**
+            - grant_type=password
+            - username=your_username
+            - password=your_password
+
+            **Refresh Token Grant:**
+            - grant_type=refresh_token
+            - refresh_token=your_refresh_token
+
+            **Authorization Header:**
+            - Basic Y2xpZW50OnNlY3JldA== (client:secret)
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token generated successfully",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = TokenResponse.class),
+                examples = @ExampleObject(value = """
+                    {
+                      "access_token": "eyJhbGciOiJIUzI1NiJ9...",
+                      "refresh_token": "eyJhbGciOiJIUzI1NiJ9...",
+                      "token_type": "Bearer",
+                      "expires_in": 86400
+                    }
+                    """)
+            )
+        ),
+        @ApiResponse(responseCode = "400", description = "Bad Request - Invalid grant type or missing parameters"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid credentials or client authentication failed")
+    })
+    @PostMapping(value = "/token", consumes = "application/x-www-form-urlencoded")
     public ResponseEntity<?> token(
+            @Parameter(description = "Basic authentication (Base64: client:secret)", example = "Basic Y2xpZW50OnNlY3JldA==")
             @RequestHeader(value = "Authorization", required = false) String authorization,
+
+            @Parameter(description = "Grant type", example = "password", required = true)
             @RequestParam("grant_type") String grantType,
+
+            @Parameter(description = "Username (for password grant)", example = "admin")
             @RequestParam(value = "username", required = false) String username,
+
+            @Parameter(description = "Password (for password grant)", example = "admin")
             @RequestParam(value = "password", required = false) String password,
+
+            @Parameter(description = "Refresh token (for refresh_token grant)")
             @RequestParam(value = "refresh_token", required = false) String refreshToken
     ) {
         log.info("Token request - grant_type: {}, username: {}", grantType, username);
@@ -163,7 +217,7 @@ public class OAuth2TokenController {
     /**
      * Handle refresh token grant type
      *
-     * @param refreshToken refresh token UUID
+     * @param refreshToken refresh token JWT
      * @return TokenResponse
      */
     private ResponseEntity<?> handleRefreshTokenGrant(String refreshToken) {
@@ -174,17 +228,23 @@ public class OAuth2TokenController {
         }
 
         try {
-            // Get username from refresh token (would need to store in Redis)
-            // For now, we'll require re-authentication
-            // In production, store username in refresh token data
+            // Validate and refresh token using TokenService
+            TokenResponse newToken = tokenService.refreshToken(refreshToken);
 
-            throw new UnsupportedOperationException("Refresh token not fully implemented yet");
+            log.info("Token refreshed successfully");
+
+            return ResponseEntity.ok(newToken);
 
         } catch (IllegalArgumentException e) {
-            log.warn("Invalid refresh token: {}", refreshToken);
+            log.warn("Invalid or expired refresh token");
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
-                    .body(errorResponse("invalid_grant", "Invalid refresh token"));
+                    .body(errorResponse("invalid_grant", "Invalid or expired refresh token"));
+        } catch (Exception e) {
+            log.error("Refresh token error", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(errorResponse("server_error", "Internal server error during token refresh"));
         }
     }
 

@@ -1,26 +1,43 @@
 package uz.hemis.security.config;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.OctetSequenceKey;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import uz.hemis.security.service.UserPermissionCacheService;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -55,13 +72,19 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final UserPermissionCacheService permissionCacheService;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri:}")
     private String jwkSetUri;
 
     @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:}")
     private String issuerUri;
+
+    @Value("${hemis.security.jwt.secret}")
+    private String jwtSecret;
 
     /**
      * Security Filter Chain Configuration
@@ -77,11 +100,15 @@ public class SecurityConfig {
      * </ul>
      *
      * @param http HttpSecurity configuration
+     * @param jwtAuthConverter JWT authentication converter (injected bean)
      * @return SecurityFilterChain
      * @throws Exception if configuration fails
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            JwtAuthenticationConverter jwtAuthConverter
+    ) throws Exception {
         http
                 // CORS configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -94,9 +121,31 @@ public class SecurityConfig {
                         // Public endpoints (health checks)
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
+                        // Swagger/OpenAPI endpoints (PUBLIC - for API documentation)
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-resources/**").permitAll()
+                        .requestMatchers("/webjars/**").permitAll()
+                        .requestMatchers("/docs/**").permitAll() // Alohida Swagger URLs
+                        .requestMatchers("/openapi/**").permitAll() // Static OpenAPI specs
+                        .requestMatchers("/swagger-ui-dark.css").permitAll() // Dark theme CSS
+
                         // OAuth2 Token endpoint (PUBLIC - for login)
                         // CRITICAL: Must be public for universities to get tokens
                         .requestMatchers("/app/rest/v2/oauth/token").permitAll()
+
+                        // Admin Auth endpoints (PUBLIC - for admin login - DEPRECATED)
+                        .requestMatchers("/app/rest/v2/auth/**").permitAll()
+                        .requestMatchers("/api/admin/login", "/api/admin/logout").permitAll()
+
+                        // Web Auth endpoints (PUBLIC - for web frontend login)
+                        .requestMatchers("/api/v1/web/auth/**").permitAll()
+
+                        // I18n endpoints (PUBLIC - for translations)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/web/i18n/**").permitAll()
+
+                        // Language Management endpoints (PUBLIC GET, Admin POST)
+                        .requestMatchers(HttpMethod.GET, "/api/v1/web/languages/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/web/system/configuration").permitAll()
 
                         // Admin endpoints (requires ROLE_ADMIN)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -113,7 +162,7 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .decoder(jwtDecoder())
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                                .jwtAuthenticationConverter(jwtAuthConverter)
                         )
                 )
 
@@ -128,12 +177,13 @@ public class SecurityConfig {
     /**
      * JWT Decoder Configuration
      *
-     * <p>Validates JWT tokens using JWK Set URI or issuer URI.</p>
+     * <p>Validates JWT tokens using JWK Set URI, issuer URI, or secret key.</p>
      *
      * <p><strong>Configuration Options:</strong></p>
      * <ul>
      *   <li>JWK Set URI: spring.security.oauth2.resourceserver.jwt.jwk-set-uri</li>
      *   <li>Issuer URI: spring.security.oauth2.resourceserver.jwt.issuer-uri</li>
+     *   <li>Secret Key: hemis.security.jwt.secret (development/simple mode)</li>
      * </ul>
      *
      * @return JwtDecoder
@@ -147,14 +197,66 @@ public class SecurityConfig {
             // Use Issuer URI (auto-discovers JWK Set URI)
             return NimbusJwtDecoder.withIssuerLocation(issuerUri).build();
         } else {
-            // Development fallback (no validation)
-            // TODO: Remove in production - must configure JWK Set URI or Issuer URI
-            throw new IllegalStateException(
-                    "JWT decoder not configured. " +
-                    "Set spring.security.oauth2.resourceserver.jwt.jwk-set-uri or " +
-                    "spring.security.oauth2.resourceserver.jwt.issuer-uri"
-            );
+            // Development: Use secret key for token validation
+            byte[] keyBytes;
+            try {
+                // Try to decode from base64
+                keyBytes = java.util.Base64.getDecoder().decode(jwtSecret);
+            } catch (IllegalArgumentException e) {
+                // If not base64, use as is
+                keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+            }
+            SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
+            return NimbusJwtDecoder.withSecretKey(secretKey).build();
         }
+    }
+
+    /**
+     * JWT Encoder
+     *
+     * <p>Encodes JWT tokens for OAuth 2.0 token endpoint.</p>
+     *
+     * <p><strong>Used by:</strong> /app/rest/v2/oauth/token endpoint</p>
+     *
+     * <p><strong>Development mode:</strong> Uses HMAC-SHA256 with secret key</p>
+     *
+     * @return JwtEncoder
+     */
+    @Bean
+    public JwtEncoder jwtEncoder() {
+        // Development: Use secret key for token generation
+        byte[] keyBytes;
+        try {
+            // Try to decode from base64
+            keyBytes = java.util.Base64.getDecoder().decode(jwtSecret);
+        } catch (IllegalArgumentException e) {
+            // If not base64, use as is
+            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        }
+
+        SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
+
+        // Create JWK from secret key with explicit algorithm and keyId
+        JWK jwk = new OctetSequenceKey.Builder(secretKey)
+                .keyID("hemis-jwt-key")  // CRITICAL: keyId required for JWK selection
+                .algorithm(com.nimbusds.jose.JWSAlgorithm.HS256)
+                .build();
+        JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(jwk));
+
+        return new NimbusJwtEncoder(jwkSource);
+    }
+
+    /**
+     * JWT Granted Authorities Converter Bean
+     *
+     * <p><strong>Purpose:</strong> Load permissions from Redis cache or DB</p>
+     * <p><strong>Injected:</strong> UserPermissionCacheService for Redis/DB access</p>
+     *
+     * @return JwtGrantedAuthoritiesConverter with injected dependencies
+     */
+    @Bean
+    public JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter() {
+        return new JwtGrantedAuthoritiesConverter(permissionCacheService);
     }
 
     /**
@@ -164,19 +266,22 @@ public class SecurityConfig {
      *
      * <p><strong>Claims Mapping:</strong></p>
      * <ul>
-     *   <li>Principal name: 'sub' or 'preferred_username' claim</li>
-     *   <li>Authorities: extracted from 'roles' or 'authorities' claim</li>
-     *   <li>Role prefix: ROLE_ (Spring Security convention)</li>
+     *   <li>Principal name: 'sub' claim (username)</li>
+     *   <li>Authorities: loaded from Redis cache or database (NOT from JWT claims)</li>
+     *   <li>Role prefix: NOT added (permissions are plain strings like 'student:read')</li>
      * </ul>
      *
+     * @param grantedAuthoritiesConverter Injected converter with Redis/DB access
      * @return JwtAuthenticationConverter
      */
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    public JwtAuthenticationConverter jwtAuthenticationConverter(
+            JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter
+    ) {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 
-        // Use custom JWT granted authorities converter
-        converter.setJwtGrantedAuthoritiesConverter(new JwtGrantedAuthoritiesConverter());
+        // Use custom JWT granted authorities converter (with injected dependencies)
+        converter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
 
         // Principal name extraction (from 'sub' claim)
         converter.setPrincipalClaimName("sub");
@@ -261,6 +366,25 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Authentication Provider (DAO-based)
+     *
+     * <p><strong>CRITICAL FIX:</strong> This bean is required for AuthenticationManager to work properly.</p>
+     * <p>Without this, AuthenticationManager has no provider and causes StackOverflowError.</p>
+     *
+     * <p>Uses hybridUserDetailsService which supports both new User and legacy sec_user tables.</p>
+     */
+    @Bean
+    public AuthenticationProvider authenticationProvider(
+            @Qualifier("hybridUserDetailsService") UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder
+    ) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
     }
 
     /**

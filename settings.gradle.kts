@@ -11,10 +11,9 @@ include(
     "common",                   // Shared utilities, DTOs (legacy JSON field names)
     "security",                 // JWT OAuth2 Resource Server
     "domain",                   // JPA entities (@Table/@Column legacy mapping)
-    "api",                      // Public REST API endpoints (/app/rest/v2/*)
-    "admin-api",                // Admin endpoints (optional)
-    "university-api",           // 🆕 CUBA Services (OLD-HEMIS API - 90 endpoints)
-    "government-integration",   // 🆕 External government APIs (6 services)
+    "service",                  // Service layer
+    "external",                 // 🆕 External S2S APIs (government, education, financial)
+    "web",                      // 🆕 Web APIs (Admin Panel + UI CRUD operations)
     "app"                       // Main Spring Boot application
 )
 
@@ -38,15 +37,15 @@ dependencyResolutionManagement {
 }
 
 // =====================================================
-// Module Structure (UPDATED - Modular Monolith)
+// Module Structure (UPDATED - Modular Monolith v2.0.0)
 // =====================================================
 // hemis/
 // ├── common/                  → Shared code (NO internal dependencies)
 // ├── security/                → JWT + OAuth2 (depends on: common, domain)
 // ├── domain/                  → JPA entities + repositories (depends on: common)
-// ├── api/                     → Public REST API (depends on: common, domain, security)
-// ├── admin-api/               → Admin REST API (depends on: common, domain, security)
-// ├── university-api/          → 🆕 CUBA Services (90 endpoints, OLD-HEMIS compatible)
-// ├── government-integration/  → 🆕 Government APIs (PINFL, Passport, BIMM, etc)
+// ├── service/                 → Business logic layer
+// ├── external/                → 🆕 S2S APIs (government, education, financial integrations)
+// ├── web/                     → 🆕 Web APIs (UI CRUD operations - 140 endpoints)
+// ├── admin/                   → 🆕 Admin APIs (system management)
 // └── app/                     → Main Boot app (depends on: ALL)
 // =====================================================

@@ -11,6 +11,9 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
+// Ensure Netty version is pinned (protect against external gradle.properties overrides)
+extra["netty.version"] = "4.1.115.Final"
+
 // =====================================================
 // Project Metadata
 // =====================================================
@@ -18,10 +21,6 @@ plugins {
 allprojects {
     group = "uz.hemis"
     version = "1.0.0"
-
-    repositories {
-        mavenCentral()
-    }
 }
 
 // =====================================================
@@ -29,8 +28,26 @@ allprojects {
 // =====================================================
 
 subprojects {
-    apply(plugin = "java")
+    apply(plugin = "java-library")
     apply(plugin = "io.spring.dependency-management")
+
+    // Import for dependency management extension
+    configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
+        imports {
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.7")
+            mavenBom("io.netty:netty-bom:4.1.115.Final")
+        }
+    }
+    
+    // Fix JAXB dependencies globally
+    configurations.all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "org.glassfish.jaxb") {
+                useVersion("4.0.5")
+                because("Fix Hibernate 6.6 JAXB version conflict")
+            }
+        }
+    }
 
     // =====================================================
     // JDK 25 LTS Toolchain
@@ -41,20 +58,7 @@ subprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(25))
-        }
-    }
-
-    // =====================================================
-    // Spring Boot BOM (Bill of Materials)
-    // =====================================================
-    // CRITICAL: DO NOT pin individual dependency versions
-    // Let Spring Boot BOM manage versions for consistency
-    // =====================================================
-
-    dependencyManagement {
-        imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.7")
+            languageVersion.set(JavaLanguageVersion.of(21))
         }
     }
 

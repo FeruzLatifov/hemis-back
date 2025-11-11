@@ -22,21 +22,25 @@ dependencies {
     // Hibernate (version from BOM via spring-boot-starter-data-jpa)
     // No need to declare explicitly
 
+    // Lombok (MUST be before MapStruct)
+    compileOnly("org.projectlombok:lombok")
+    annotationProcessor("org.projectlombok:lombok")
+
     // MapStruct for Entity ↔ DTO mapping
     // CRITICAL: Version not in BOM, must be explicit
     val mapstructVersion = "1.6.3"
     implementation("org.mapstruct:mapstruct:${mapstructVersion}")
     annotationProcessor("org.mapstruct:mapstruct-processor:${mapstructVersion}")
 
-    // Lombok + MapStruct integration
+    // Lombok + MapStruct integration (MUST be after both)
     annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 
     // Spring Boot Validation
     api("org.springframework.boot:spring-boot-starter-validation")
 
-    // Redis for caching (optional - enabled via profile)
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")
-    implementation("org.springframework.boot:spring-boot-starter-cache")
+    // Redis moved to app module (domain layer doesn't need caching)
+    // implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    // implementation("org.springframework.boot:spring-boot-starter-cache")
 }
 
 // =====================================================

@@ -1,0 +1,32 @@
+# Build outputs
+**/build/
+**/target/
+**/out/
+**/.gradle/
+
+# IDE files
+.idea/
+*.iml
+*.iws
+.vscode/
+.eclipse/
+
+# Git
+.git/
+.gitignore
+
+# Docs
+*.md
+docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Tests
+**/src/test/
+
+# Logs
+*.log
+logs/

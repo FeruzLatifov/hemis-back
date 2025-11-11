@@ -26,8 +26,15 @@ dependencies {
     // Spring Data JPA (for user repository)
     api("org.springframework.boot:spring-boot-starter-data-jpa")
 
-    // Redis for token storage (OLD-HEMIS uses UUID tokens in Redis)
-    api("org.springframework.boot:spring-boot-starter-data-redis")
+    // SpringDoc OpenAPI for Swagger annotations
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+
+    // Redis for permission caching (re-enabled with Jedis, excluding Lettuce to avoid netty conflicts)
+    api("org.springframework.boot:spring-boot-starter-data-redis") {
+        exclude(group = "io.lettuce", module = "lettuce-core")
+    }
+    api("redis.clients:jedis:5.1.0")
+    api("org.springframework.boot:spring-boot-starter-cache")
 
     // Testing
     testImplementation("org.springframework.security:spring-security-test")

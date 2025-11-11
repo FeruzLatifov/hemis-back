@@ -1,0 +1,423 @@
+package uz.hemis.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.dto.MenuItemDto;
+import uz.hemis.domain.entity.I18nTranslation;
+import uz.hemis.domain.entity.MenuItem;
+import uz.hemis.domain.repository.I18nTranslationRepository;
+import uz.hemis.domain.repository.MenuItemRepository;
+import uz.hemis.service.mapper.MenuItemMapper;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * StaticExportService - Export to Static JSON Files
+ *
+ * <p><strong>Purpose:</strong></p>
+ * <ul>
+ *   <li>Export menu items to /mnt/hemis-static/menu/menu.json</li>
+ *   <li>Export translations to /mnt/hemis-static/locales/{lang}.json</li>
+ *   <li>Zero backend load - Nginx serves static files</li>
+ *   <li>Kubernetes-ready with shared PersistentVolume</li>
+ * </ul>
+ *
+ * <p><strong>Kubernetes Architecture:</strong></p>
+ * <pre>{@code
+ * Pod 1 (Backend) ─┐
+ *                  ├─> PersistentVolume (NFS/EFS)
+ * Pod 2 (Backend) ─┤   /mnt/hemis-static/
+ *                  │   ├── menu/menu.json
+ * Pod 3 (Backend) ─┘   └── locales/{lang}.json
+ *                           ↓
+ *                    Nginx Pods (serve static)
+ * }</pre>
+ *
+ * <p><strong>Triggered By:</strong></p>
+ * <ul>
+ *   <li>MenuChangeEvent → exportMenu()</li>
+ *   <li>TranslationChangeEvent → exportTranslations()</li>
+ *   <li>Admin manual trigger → exportAll()</li>
+ * </ul>
+ *
+ * @since 2.0.0
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class StaticExportService {
+
+    private final MenuItemRepository menuItemRepository;
+    private final I18nTranslationRepository translationRepository;
+    private final ObjectMapper objectMapper;
+
+    /**
+     * Base path for static file export
+     * Default: /mnt/hemis-static (Kubernetes PersistentVolume)
+     * Can be overridden via application.yml: hemis.static.export.path
+     */
+    @Value("${hemis.static.export.path:/mnt/hemis-static}")
+    private String exportBasePath;
+
+    // =====================================================
+    // Menu Export
+    // =====================================================
+
+    /**
+     * Export menu to static JSON file
+     *
+     * <p><strong>Output:</strong></p>
+     * <ul>
+     *   <li>File: /mnt/hemis-static/menu/menu.json</li>
+     *   <li>Format: Hierarchical tree structure</li>
+     *   <li>Includes: All visible menu items with multilingual labels</li>
+     * </ul>
+     *
+     * <p><strong>Process:</strong></p>
+     * <ol>
+     *   <li>Load all active menu items from database</li>
+     *   <li>Build hierarchical tree structure</li>
+     *   <li>Write to static JSON file</li>
+     *   <li>Log completion</li>
+     * </ol>
+     *
+     * @throws RuntimeException if export fails
+     */
+    @Transactional(readOnly = true)
+    public void exportMenu() {
+        log.info("Starting menu export to static file...");
+
+        try {
+            // 1. Load all active menu items from database (ordered by orderNum)
+            List<MenuItem> allItems = menuItemRepository.findAllForExport();
+
+            log.debug("Loaded {} menu items from database", allItems.size());
+
+            // 2. Build hierarchical tree structure
+            List<MenuItemDto> menuTree = buildMenuTree(allItems);
+
+            log.debug("Built menu tree with {} root items", menuTree.size());
+
+            // 3. Prepare export path
+            Path menuPath = Paths.get(exportBasePath, "menu", "menu.json");
+            Files.createDirectories(menuPath.getParent());
+
+            // 4. Convert to JSON with pretty printing
+            String json = objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(menuTree);
+
+            // 5. Write to file (atomic operation)
+            writeFileAtomic(menuPath, json);
+
+            log.info("✅ Menu exported successfully to: {} ({} items, {} bytes)",
+                    menuPath, allItems.size(), json.length());
+
+        } catch (Exception e) {
+            log.error("❌ Menu export FAILED", e);
+            throw new RuntimeException("Menu export failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Build hierarchical menu tree from flat list
+     *
+     * @param allItems Flat list of all menu items
+     * @return Hierarchical tree (root items with nested children)
+     */
+    private List<MenuItemDto> buildMenuTree(List<MenuItem> allItems) {
+        // Map: ID → DTO
+        Map<UUID, MenuItemDto> itemMap = new HashMap<>();
+        List<MenuItemDto> rootItems = new ArrayList<>();
+
+        // First pass: Convert all entities to DTOs
+        for (MenuItem item : allItems) {
+            MenuItemDto dto = MenuItemMapper.toDto(item);
+            itemMap.put(item.getId(), dto);
+        }
+
+        // Second pass: Build tree structure
+        for (MenuItem item : allItems) {
+            MenuItemDto dto = itemMap.get(item.getId());
+
+            if (item.getParent() == null) {
+                // Root item
+                rootItems.add(dto);
+            } else {
+                // Child item - add to parent's children
+                MenuItemDto parent = itemMap.get(item.getParent().getId());
+                if (parent != null) {
+                    if (parent.getChildren() == null) {
+                        parent.setChildren(new ArrayList<>());
+                    }
+                    parent.getChildren().add(dto);
+                }
+            }
+        }
+
+        // Sort root items by orderNum
+        rootItems.sort(Comparator.comparing(MenuItemDto::getOrderNum));
+
+        // Sort children recursively
+        sortChildren(rootItems);
+
+        return rootItems;
+    }
+
+    /**
+     * Recursively sort children by orderNum
+     */
+    private void sortChildren(List<MenuItemDto> items) {
+        for (MenuItemDto item : items) {
+            if (item.getChildren() != null && !item.getChildren().isEmpty()) {
+                item.getChildren().sort(Comparator.comparing(MenuItemDto::getOrderNum));
+                sortChildren(item.getChildren());
+            }
+        }
+    }
+
+    // =====================================================
+    // Translation Export
+    // =====================================================
+
+    /**
+     * Export translations to static JSON files (uz.json, ru.json, en.json)
+     *
+     * <p><strong>Output:</strong></p>
+     * <ul>
+     *   <li>File: /mnt/hemis-static/locales/uz.json (Uzbek)</li>
+     *   <li>File: /mnt/hemis-static/locales/ru.json (Russian)</li>
+     *   <li>File: /mnt/hemis-static/locales/en.json (English)</li>
+     * </ul>
+     *
+     * <p><strong>Format:</strong></p>
+     * <pre>{@code
+     * {
+     *   "button.save": "Saqlash",
+     *   "button.cancel": "Bekor qilish",
+     *   "menu.students": "Talabalar",
+     *   ...
+     * }
+     * }</pre>
+     *
+     * <p><strong>Frontend Usage:</strong></p>
+     * <pre>{@code
+     * // i18next loads from static file
+     * fetch('/static/locales/uz.json')
+     * const { t } = useTranslation();
+     * <Button>{t('button.save')}</Button>  // "Saqlash"
+     * }</pre>
+     *
+     * @throws RuntimeException if export fails
+     */
+    @Transactional(readOnly = true)
+    public void exportTranslations() {
+        log.info("Starting translation export to static files...");
+
+        try {
+            // 1. Load all active translations from database
+            List<I18nTranslation> allTranslations = translationRepository.findAllForExport();
+
+            log.debug("Loaded {} translations from database", allTranslations.size());
+
+            // 2. Group by language
+            Map<String, String> uzMap = new LinkedHashMap<>();  // LinkedHashMap preserves order
+            Map<String, String> ruMap = new LinkedHashMap<>();
+            Map<String, String> enMap = new LinkedHashMap<>();
+
+            for (I18nTranslation t : allTranslations) {
+                // Uzbek (required)
+                uzMap.put(t.getKey(), t.getValueUz());
+
+                // Russian (optional, fallback to Uzbek)
+                ruMap.put(t.getKey(), t.getValueRu() != null ? t.getValueRu() : t.getValueUz());
+
+                // English (optional, fallback to Uzbek)
+                enMap.put(t.getKey(), t.getValueEn() != null ? t.getValueEn() : t.getValueUz());
+            }
+
+            log.debug("Grouped translations: uz={}, ru={}, en={}",
+                    uzMap.size(), ruMap.size(), enMap.size());
+
+            // 3. Prepare export path
+            Path localesPath = Paths.get(exportBasePath, "locales");
+            Files.createDirectories(localesPath);
+
+            // 4. Write language files
+            writeTranslationFile(localesPath.resolve("uz.json"), uzMap);
+            writeTranslationFile(localesPath.resolve("ru.json"), ruMap);
+            writeTranslationFile(localesPath.resolve("en.json"), enMap);
+
+            log.info("✅ Translations exported successfully to: {} ({} translations)",
+                    localesPath, allTranslations.size());
+
+        } catch (Exception e) {
+            log.error("❌ Translation export FAILED", e);
+            throw new RuntimeException("Translation export failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Write translation map to JSON file
+     *
+     * @param path Output file path
+     * @param translations Map of key → value
+     * @throws IOException if write fails
+     */
+    private void writeTranslationFile(Path path, Map<String, String> translations) throws IOException {
+        String json = objectMapper.writerWithDefaultPrettyPrinter()
+                .writeValueAsString(translations);
+
+        writeFileAtomic(path, json);
+
+        log.debug("  ✓ Exported: {} ({} bytes)", path.getFileName(), json.length());
+    }
+
+    // =====================================================
+    // Combined Export
+    // =====================================================
+
+    /**
+     * Export both menu and translations
+     *
+     * <p>Used for:</p>
+     * <ul>
+     *   <li>Initial setup / deployment</li>
+     *   <li>Manual trigger via admin panel</li>
+     *   <li>Database restore / migration</li>
+     * </ul>
+     */
+    public void exportAll() {
+        log.info("Starting FULL export (menu + translations)...");
+
+        exportMenu();
+        exportTranslations();
+
+        log.info("✅ Full export completed successfully");
+    }
+
+    // =====================================================
+    // File I/O Utilities
+    // =====================================================
+
+    /**
+     * Write file atomically (create temp → rename)
+     *
+     * <p><strong>Atomic Write Pattern:</strong></p>
+     * <ol>
+     *   <li>Write to temporary file (menu.json.tmp)</li>
+     *   <li>Rename temp file to target (atomic operation)</li>
+     *   <li>Ensures file is never corrupted (all-or-nothing)</li>
+     * </ol>
+     *
+     * <p><strong>Kubernetes Safety:</strong></p>
+     * <ul>
+     *   <li>Multiple pods can write concurrently (last write wins)</li>
+     *   <li>Readers never see partially written files</li>
+     *   <li>NFS/EFS provides file locking</li>
+     * </ul>
+     *
+     * @param path Target file path
+     * @param content File content (JSON string)
+     * @throws IOException if write fails
+     */
+    private void writeFileAtomic(Path path, String content) throws IOException {
+        // 1. Write to temporary file
+        Path tempPath = Paths.get(path.toString() + ".tmp");
+
+        Files.writeString(
+                tempPath,
+                content,
+                StandardCharsets.UTF_8,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING
+        );
+
+        // 2. Atomic rename (overwrite target)
+        Files.move(tempPath, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+        log.debug("  ✓ Atomic write: {}", path);
+    }
+
+    // =====================================================
+    // Health Check & Statistics
+    // =====================================================
+
+    /**
+     * Check if export directory is writable
+     *
+     * @return true if writable, false otherwise
+     */
+    public boolean isExportPathWritable() {
+        try {
+            Path testPath = Paths.get(exportBasePath, ".write-test");
+            Files.createDirectories(testPath.getParent());
+            Files.writeString(testPath, "test", StandardCharsets.UTF_8);
+            Files.deleteIfExists(testPath);
+            return true;
+        } catch (IOException e) {
+            log.error("Export path is NOT writable: {}", exportBasePath, e);
+            return false;
+        }
+    }
+
+    /**
+     * Get export statistics
+     *
+     * @return Map of filename → file size (bytes)
+     */
+    public Map<String, Long> getExportStatistics() {
+        Map<String, Long> stats = new LinkedHashMap<>();
+
+        try {
+            // Menu file
+            Path menuPath = Paths.get(exportBasePath, "menu", "menu.json");
+            if (Files.exists(menuPath)) {
+                stats.put("menu.json", Files.size(menuPath));
+            }
+
+            // Translation files
+            Path localesPath = Paths.get(exportBasePath, "locales");
+            if (Files.exists(localesPath)) {
+                for (String lang : List.of("uz", "ru", "en")) {
+                    Path langPath = localesPath.resolve(lang + ".json");
+                    if (Files.exists(langPath)) {
+                        stats.put(lang + ".json", Files.size(langPath));
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            log.error("Failed to get export statistics", e);
+        }
+
+        return stats;
+    }
+
+    /**
+     * Get last export time
+     *
+     * @return Last modified time of menu.json (as proxy for last export)
+     */
+    public Optional<java.time.Instant> getLastExportTime() {
+        try {
+            Path menuPath = Paths.get(exportBasePath, "menu", "menu.json");
+            if (Files.exists(menuPath)) {
+                return Optional.of(Files.getLastModifiedTime(menuPath).toInstant());
+            }
+        } catch (IOException e) {
+            log.error("Failed to get last export time", e);
+        }
+        return Optional.empty();
+    }
+}

@@ -11,32 +11,52 @@ spring:
 
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+    # include: redis  # Disabled - using JWT (stateless), not Redis sessions
 
   # =====================================================
-  # DataSource Configuration
+  # DataSource Configuration (Master/Replica)
   # =====================================================
   # CRITICAL: Connects to existing ministry.sql database
   # NO schema generation - Flyway baseline only
+  # Master: Write operations (CREATE, UPDATE, DELETE)
+  # Replica: Read operations (SELECT)
   # =====================================================
 
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:hemis4}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+    # Master Database (Write Operations)
+    master:
+      jdbc-url: jdbc:postgresql://${DB_MASTER_HOST:localhost}:${DB_MASTER_PORT:5432}/${DB_MASTER_NAME:test_hemis}
+      username: ${DB_MASTER_USERNAME:postgres}
+      password: ${DB_MASTER_PASSWORD:postgres}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 10
+        minimum-idle: 2
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: HikariPool-Master
+        auto-commit: false
+        data-source-properties:
+          ApplicationName: HEMIS-Master
 
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      pool-name: HikariPool-HEMIS
-      auto-commit: false
-
-      # Connection properties
-      data-source-properties:
-        ApplicationName: HEMIS-Refactor
+    # Replica Database (Read Operations)
+    replica:
+      jdbc-url: jdbc:postgresql://${DB_REPLICA_HOST:localhost}:${DB_REPLICA_PORT:5432}/${DB_REPLICA_NAME:test_hemis}
+      username: ${DB_REPLICA_USERNAME:postgres}
+      password: ${DB_REPLICA_PASSWORD:postgres}
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+        pool-name: HikariPool-Replica
+        read-only: true
+        auto-commit: false
+        data-source-properties:
+          ApplicationName: HEMIS-Replica
 
   # =====================================================
   # Redis Configuration (OAuth2 Token Storage)
@@ -121,13 +141,61 @@ spring:
     time-zone: Asia/Tashkent
 
 # =====================================================
+# SpringDoc OpenAPI (Swagger) Configuration
+# =====================================================
+# Multi-Group Configuration for Audience-Based Separation
+# =====================================================
+
+springdoc:
+  # Global API Docs Settings
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+  # Swagger UI Settings
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    disable-swagger-default-url: true
+    display-request-duration: true
+    filter: false # Dropdown'ni o'chirish
+    tags-sorter: alpha
+    operations-sorter: alpha
+    doc-expansion: none
+    default-models-expand-depth: 1
+    default-model-expand-depth: 1
+    try-it-out-enabled: true
+    # Dark Theme CSS
+    custom-css-path: /swagger-ui/swagger-ui-dark.css
+
+    # Alohida URLs - har biri faqat o'z API'sini ko'radi
+    # /docs/web → Web Frontend API
+    # /docs/university → Universitet API
+
+  # Show actuator endpoints in Swagger
+  show-actuator: false
+
+  # Disable default ResponseEntity wrapping
+  override-with-generic-response: false
+
+  # =====================================================
+  # Multi-Group API Documentation
+  # =====================================================
+  # Note: Groups configured in OpenApiConfig.java
+  # - 🌐 web: Web Frontend API v1 (/api/v1/web/**)
+  # - 🎓 external: Universities & Organizations (/app/rest/v2/**)
+  # - 📦 legacy: Old-HEMIS compatible (entities/services)
+  # - 🎯 all: Complete documentation (internal)
+  # =====================================================
+
+# =====================================================
 # Server Configuration
 # =====================================================
 # CRITICAL: Port 8080 for legacy API compatibility
 # =====================================================
 
 server:
-  port: ${SERVER_PORT:8080}
+  port: ${SERVER_PORT:8081}
 
   servlet:
     context-path: /
@@ -235,7 +303,15 @@ hemis:
   # Security Configuration
   security:
     jwt:
-      # Public key or JWK Set URI for JWT validation
+      # JWT Secret Key (for HMAC-SHA256 signing)
+      secret: ${JWT_SECRET:aGVtaXMtc2VjcmV0LWtleS0yMDI1LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLWhlbWlzLXNlY3JldC1rZXk=}
+      # Token expiration (seconds) - default: 12 hours
+      expiration: ${JWT_EXPIRATION:43200}
+      # Refresh token expiration (seconds) - default: 7 days
+      refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800}
+      # Issuer
+      issuer: ${JWT_ISSUER:hemis-backend}
+      # Public key or JWK Set URI for JWT validation (optional)
       jwk-set-uri: ${JWT_JWK_SET_URI:}
       issuer-uri: ${JWT_ISSUER_URI:}
 
@@ -255,6 +331,13 @@ spring.security.oauth2.resourceserver:
 
     # OR Issuer URI (auto-discovers JWK Set URI)
     issuer-uri: ${JWT_ISSUER_URI:}
+
+# =====================================================
+# Legacy Fallback (old-HEMIS)
+# =====================================================
+legacy:
+  old-hemis:
+    base-url: ${OLD_HEMIS_BASE_URL:http://localhost:8081}
 
     # JWT validation settings
     # audiences: ${JWT_AUDIENCES:hemis-api}

@@ -1,0 +1,74 @@
+# =====================================================
+# HEMIS Test Configuration
+# =====================================================
+# CRITICAL: This configuration uses H2 in-memory database
+# Real PostgreSQL database is NEVER touched during tests
+# =====================================================
+
+spring:
+  # =====================================================
+  # H2 In-Memory Database (Test Only)
+  # =====================================================
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # =====================================================
+  # JPA Configuration (Test)
+  # =====================================================
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop  # Auto-create schema, drop after tests
+    show-sql: false  # Set to true for debugging
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+
+  # =====================================================
+  # Flyway (Disabled for Tests)
+  # =====================================================
+  flyway:
+    enabled: false  # Don't run migrations in tests
+
+  # =====================================================
+  # H2 Console (Debugging Only)
+  # =====================================================
+  h2:
+    console:
+      enabled: false  # Set to true for debugging
+
+# =====================================================
+# Logging (Test)
+# =====================================================
+logging:
+  level:
+    root: WARN
+    uz.hemis: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+
+# =====================================================
+# JWT Configuration (Test)
+# =====================================================
+hemis:
+  security:
+    jwt:
+      secret: test-secret-key-minimum-256-bits-required-for-hmac-sha256-algorithm
+      expiration: 3600  # 1 hour
+      refresh-expiration: 7200  # 2 hours
+      issuer: hemis-test
+
+# =====================================================
+# IMPORTANT NOTES
+# =====================================================
+# 1. H2 in-memory database is created fresh for each test
+# 2. All data is lost after test completion
+# 3. Real PostgreSQL database is NEVER accessed
+# 4. Flyway migrations are DISABLED in tests
+# 5. DDL auto-create ensures clean test environment
+# =====================================================

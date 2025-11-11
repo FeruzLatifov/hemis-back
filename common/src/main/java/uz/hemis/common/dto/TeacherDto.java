@@ -97,6 +97,14 @@ public class TeacherDto implements Serializable {
     @JsonProperty("_gender")
     private String gender;
 
+    /**
+     * PINFL (Personal Identification Number)
+     * JSON: "pinfl"
+     * 14 digits unique identifier
+     */
+    @JsonProperty("pinfl")
+    private String pinfl;
+
     // =====================================================
     // University Reference (LEGACY FIELD NAME WITH _)
     // =====================================================

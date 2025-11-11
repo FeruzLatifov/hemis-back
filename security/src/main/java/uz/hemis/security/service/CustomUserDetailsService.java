@@ -42,7 +42,7 @@ import java.util.List;
  *
  * @since 1.0.0
  */
-@Service
+@Service("customUserDetailsService")
 @RequiredArgsConstructor
 @Slf4j
 public class CustomUserDetailsService implements UserDetailsService {
@@ -99,8 +99,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                 user.getEnabled(),
                 !user.getAccountNonLocked());
 
-        // Parse roles
-        Collection<? extends GrantedAuthority> authorities = parseAuthorities(user.getRoles());
+        // Parse roles from new permission system (Set<Role>) or fallback to old (String roles)
+        Collection<? extends GrantedAuthority> authorities = parseAuthoritiesFromUser(user);
 
         log.debug("User {} has {} authorities: {}", username, authorities.size(), authorities);
 
@@ -117,7 +117,49 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     /**
-     * Parse authorities from comma-separated roles string
+     * Parse authorities from User (handles both new Set<Role> and old String roles)
+     *
+     * <p>HYBRID APPROACH - Checks new permission system first, falls back to old</p>
+     *
+     * @param user User entity
+     * @return collection of GrantedAuthority
+     */
+    private Collection<? extends GrantedAuthority> parseAuthoritiesFromUser(User user) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+
+        // OPTION 1: New permission system (Set<Role>)
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            log.debug("Loading authorities from new permission system (Set<Role>)");
+
+            user.getRoles().forEach(role -> {
+                // Add role as authority (e.g., "ROLE_SUPER_ADMIN")
+                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()));
+
+                // Add all permissions from this role
+                if (role.getPermissions() != null) {
+                    role.getPermissions().forEach(permission -> {
+                        authorities.add(new SimpleGrantedAuthority(permission.getCode()));
+                    });
+                }
+            });
+
+            return authorities;
+        }
+
+        // OPTION 2: Fallback to old String roles field (deprecated)
+        // Note: Cannot use user.getRoles() here as it returns Set<Role>
+        // Would need user.roles direct field access (not available via getter)
+        log.debug("No roles found in new permission system");
+
+        // For now, return empty if no new roles
+        // Later: Add hybrid service to check sec_user table
+
+        log.warn("User {} has no roles assigned", user.getUsername());
+        return List.of();
+    }
+
+    /**
+     * Parse authorities from comma-separated roles string (DEPRECATED - for backward compatibility)
      *
      * <p><strong>Examples:</strong></p>
      * <ul>
@@ -129,9 +171,8 @@ public class CustomUserDetailsService implements UserDetailsService {
      * @param roles comma-separated roles string
      * @return collection of GrantedAuthority
      */
-    private Collection<? extends GrantedAuthority> parseAuthorities(String roles) {
+    private Collection<? extends GrantedAuthority> parseAuthoritiesFromString(String roles) {
         if (roles == null || roles.trim().isEmpty()) {
-            log.warn("User has no roles assigned");
             return List.of();
         }
 

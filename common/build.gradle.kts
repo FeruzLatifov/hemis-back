@@ -9,6 +9,12 @@ dependencies {
     // Spring Context (for @Component, @Service annotations)
     api("org.springframework:spring-context")
 
+    // Spring Boot Autoconfigure (for @ConditionalOnProperty)
+    api("org.springframework.boot:spring-boot-autoconfigure")
+
+    // Spring Data Commons (for Page interface)
+    api("org.springframework.data:spring-data-commons")
+
     // Jackson for JSON (DTO serialization with @JsonProperty)
     api("com.fasterxml.jackson.core:jackson-databind")
     api("com.fasterxml.jackson.core:jackson-annotations")

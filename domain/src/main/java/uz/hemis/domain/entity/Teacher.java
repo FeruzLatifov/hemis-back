@@ -32,6 +32,17 @@ import java.time.LocalDate;
 public class Teacher extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
+    
+    public String getPinfl() { return pinfl; }
+    public void setPinfl(String pinfl) { this.pinfl = pinfl; }
+    public String getFirstName() { return firstname; }
+    public String getSecondName() { return lastname; }
+    public String getThirdName() { return fathername; }
+    public String getFirstNameLatin() { return firstname_latin; }
+    public String getSecondNameLatin() { return lastname_latin; }
+    public String getThirdNameLatin() { return fathername_latin; }
+    public LocalDate getBirthDate() { return birthday; }
+    public String getCitizenship() { return citizenship; }
 
     // =====================================================
     // Personal Information
@@ -64,6 +75,41 @@ public class Teacher extends BaseEntity {
      */
     @Column(name = "birthday")
     private LocalDate birthday;
+
+    /**
+     * PINFL - Personal Identification Number
+     * Column: pinfl VARCHAR(255)
+     */
+    @Column(name = "pinfl", length = 255)
+    private String pinfl;
+
+    /**
+     * First name (Latin)
+     * Column: firstname_latin VARCHAR(255)
+     */
+    @Column(name = "firstname_latin", length = 255)
+    private String firstname_latin;
+
+    /**
+     * Last name (Latin)
+     * Column: lastname_latin VARCHAR(255)
+     */
+    @Column(name = "lastname_latin", length = 255)
+    private String lastname_latin;
+
+    /**
+     * Father's name (Latin)
+     * Column: fathername_latin VARCHAR(255)
+     */
+    @Column(name = "fathername_latin", length = 255)
+    private String fathername_latin;
+
+    /**
+     * Citizenship
+     * Column: citizenship VARCHAR(255)
+     */
+    @Column(name = "citizenship", length = 255)
+    private String citizenship;
 
     /**
      * Gender code

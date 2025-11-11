@@ -1,80 +1,68 @@
 package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Translation Entity
+ * Stores multi-language translations for the application
  *
- * <p><strong>Purpose:</strong></p>
- * <ul>
- *   <li>Multi-language translations for UI labels</li>
- *   <li>System messages and notifications</li>
- *   <li>Dynamic content localization</li>
- * </ul>
- *
- * <p><strong>Examples:</strong></p>
- * <ul>
- *   <li>login.title → "Tizimga kirish" (uz), "Вход в систему" (ru), "Login" (en)</li>
- *   <li>student.status.active → "Faol" (uz), "Активный" (ru), "Active" (en)</li>
- *   <li>error.not_found → "Topilmadi" (uz), "Не найдено" (ru), "Not found" (en)</li>
- * </ul>
- *
- * @since 1.0.0
+ * @author System Architect
  */
 @Entity
-@Table(name = "h_translation", indexes = {
-    @Index(name = "idx_translation_key", columnList = "translation_key"),
-    @Index(name = "idx_translation_module", columnList = "module")
-})
-@Getter
-@Setter
+@Table(
+    name = "translations",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_translations_key_locale",
+            columnNames = {"translation_key", "locale"}
+        )
+    },
+    indexes = {
+        @Index(name = "idx_translations_key", columnList = "translation_key"),
+        @Index(name = "idx_translations_locale", columnList = "locale"),
+        @Index(name = "idx_translations_category", columnList = "category")
+    }
+)
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Translation extends BaseEntity {
+public class Translation {
 
-    /**
-     * Translation key (unique identifier)
-     * Examples: "login.title", "student.status.active", "error.not_found"
-     */
-    @Column(name = "translation_key", nullable = false, unique = true, length = 255)
-    private String translationKey;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    /**
-     * Module/category
-     * Examples: "auth", "student", "teacher", "common"
-     */
-    @Column(name = "module", length = 50)
-    private String module;
+    @Column(name = "translation_key", nullable = false, length = 255)
+    private String key;
 
-    /**
-     * Translation in Uzbek
-     */
-    @Column(name = "text_uz", nullable = false, length = 1000)
-    private String textUz;
+    @Column(name = "locale", nullable = false, length = 10)
+    private String locale;
 
-    /**
-     * Translation in Russian
-     */
-    @Column(name = "text_ru", length = 1000)
-    private String textRu;
+    @Column(name = "translation_value", nullable = false, columnDefinition = "TEXT")
+    private String value;
 
-    /**
-     * Translation in English
-     */
-    @Column(name = "text_en", length = 1000)
-    private String textEn;
+    @Column(name = "category", length = 50)
+    @Builder.Default
+    private String category = "GENERAL";
 
-    /**
-     * Description/notes
-     */
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    /**
-     * Active flag
-     */
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = true;
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 }

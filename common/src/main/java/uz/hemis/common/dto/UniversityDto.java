@@ -240,4 +240,39 @@ public class UniversityDto implements Serializable {
      */
     @JsonProperty("allow_transfer_outside")
     private Boolean allowTransferOutside;
+
+    /**
+     * Version type code
+     * JSON: "_version_type"
+     */
+    @JsonProperty("_version_type")
+    private String versionType;
+
+    /**
+     * Terrain code (mahalla)
+     * JSON: "_terrain"
+     */
+    @JsonProperty("_terrain")
+    private String terrain;
+
+    /**
+     * Mail address
+     * JSON: "mail_address"
+     */
+    @JsonProperty("mail_address")
+    private String mailAddress;
+
+    /**
+     * Bank information
+     * JSON: "bank_info"
+     */
+    @JsonProperty("bank_info")
+    private String bankInfo;
+
+    /**
+     * Accreditation information
+     * JSON: "accreditation_info"
+     */
+    @JsonProperty("accreditation_info")
+    private String accreditationInfo;
 }

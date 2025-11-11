@@ -36,6 +36,14 @@ import java.util.UUID;
 public class Student extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
+    
+    public String getFirstName() { return firstname; }
+    public String getSecondName() { return lastname; }
+    public String getThirdName() { return fathername; }
+    public String getFirstNameLatin() { return firstname_latin; }
+    public String getSecondNameLatin() { return lastname_latin; }
+    public String getThirdNameLatin() { return fathername_latin; }
+    public LocalDate getBirthDate() { return birth_date; }
 
     // =====================================================
     // Business Key
@@ -106,6 +114,34 @@ public class Student extends BaseEntity {
      */
     @Column(name = "birthday")
     private LocalDate birthday;
+
+    /**
+     * Birth date (alias for birthday)
+     * Column: birthday DATE
+     */
+    @Column(name = "birthday", insertable = false, updatable = false)
+    private LocalDate birth_date;
+
+    /**
+     * First name (Latin)
+     * Column: firstname_latin VARCHAR(255)
+     */
+    @Column(name = "firstname_latin", length = 255)
+    private String firstname_latin;
+
+    /**
+     * Last name (Latin)
+     * Column: lastname_latin VARCHAR(255)
+     */
+    @Column(name = "lastname_latin", length = 255)
+    private String lastname_latin;
+
+    /**
+     * Father's name (Latin)
+     * Column: fathername_latin VARCHAR(255)
+     */
+    @Column(name = "fathername_latin", length = 255)
+    private String fathername_latin;
 
     /**
      * Serial number (passport/ID)

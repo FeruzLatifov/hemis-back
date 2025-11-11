@@ -1,0 +1,544 @@
+package uz.hemis.app.config;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.tags.Tag;
+import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
+import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+
+import uz.hemis.common.dto.ErrorResponse;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.Collections;
+
+/**
+ * OpenAPI (Swagger) Configuration
+ *
+ * <p>Configures Swagger UI documentation with old-hemis compatible structure</p>
+ *
+ * <p><strong>Tag Order:</strong> Matches old-hemis Postman collection structure</p>
+ */
+@Configuration
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI hemisOpenAPI() {
+        return new OpenAPI()
+                .info(new Info()
+                        .title("HEMIS Backend API")
+                        .description("""
+                                # HEMIS - Oliy Ta'lim Axborot Tizimi
+
+                                HEMIS tizimi API hujjatlari - Spring Boot 3.5.7 versiyasi
+
+                                ## Authentication
+
+                                Oldindan yaratilgan login, parol yordamida **OAuth 2.0** protokoli yordamida token olib autentifikasiyadan o'tiladi.
+
+                                **Token olish:**
+                                ```
+                                POST /app/rest/v2/oauth/token
+                                Content-Type: application/x-www-form-urlencoded
+
+                                grant_type=password&username=your_login&password=your_password
+                                ```
+
+                                **Token ishlatish:**
+                                ```
+                                Authorization: Bearer {token}
+                                ```
+
+                                ## Legacy Compatibility
+
+                                Bu API old-hemis (CUBA Platform) bilan **100% backward compatible**:
+                                - URL'lar o'zgartirilmagan: `/app/rest/v2/**`
+                                - JSON field nomlari saqlanadi
+                                - Response format bir xil
+                                - 200+ OTM foydalanmoqda
+                                """)
+                        .version("3.0.0")
+                        .contact(new Contact()
+                                .name("HEMIS Support")
+                                .email("support@hemis.uz")
+                                .url("https://hemis.uz"))
+                        .license(new License()
+                                .name("Proprietary")
+                                .url("https://hemis.uz/license")))
+                .components(new Components()
+                        .addSecuritySchemes("Bearer Authentication",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                                        .description("JWT token olingandan keyin shu yerga qo'ying")))
+                .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
+                // Servers (local/dev/prod)
+                .servers(List.of(
+                        new Server().url("http://localhost:8080").description("Local"),
+                        new Server().url("https://dev.hemis.uz").description("Dev"),
+                        new Server().url("https://api.hemis.uz").description("Prod")
+                ));
+    }
+
+    /**
+     * Get tags in old-hemis order
+     *
+     * <p><strong>IMPORTANT:</strong> This order matches the Postman collection structure (44 groups)</p>
+     *
+     * @return ordered list of tags
+     */
+    private List<Tag> getOrderedTags() {
+        return Arrays.asList(
+                // RAQAMLANGAN TARTIB - old-hemis Postman collection'dagi kabi
+
+                // 1. Token - BIRINCHI (✅ real endpoint bor)
+                new Tag().name("01. Token").description("Autentifikatsiya - token olish va yangilash"),
+
+                // 2. Passport ma'lumotlari (🔜 kelajakda qo'shiladi)
+                new Tag().name("02. Passport ma'lumotlari").description("Passport va shaxsiy ma'lumotlar"),
+
+                // 3. Talaba (✅ real endpoint bor - 5 ta)
+                new Tag().name("03. Talaba").description("Talabalar ma'lumotlari va amaliyotlari"),
+
+                // 4. Talaba Copy (🔜 kelajakda qo'shiladi)
+                new Tag().name("04. Talaba Copy").description("Talaba ma'lumotlari (nusxasi)"),
+
+                // 5. O'qituvchi (✅ real endpoint bor - 14 ta)
+                new Tag().name("05. O'qituvchi").description("O'qituvchilar ma'lumotlari"),
+
+                // 6. Xodim lavozimlari (🔜 kelajakda qo'shiladi)
+                new Tag().name("06. Xodim lavozimlari").description("Xodimlar lavozim ma'lumotlari"),
+
+                // 7. OTM bo'linmalari (✅ real endpoint bor - 7 ta)
+                new Tag().name("07. OTM bo'linmalari").description("Kafedra va bo'linmalar"),
+
+                // 8. OTM bo'linma turlari (🔜 kelajakda qo'shiladi)
+                new Tag().name("08. OTM bo'linma turlari").description("Bo'linma turlari klassifikatori"),
+
+                // 9. OTM xodimlari kategoriyasi (🔜 kelajakda qo'shiladi)
+                new Tag().name("09. OTM xodimlari kategoriyasi").description("Xodimlar kategoriyalari"),
+
+                // 10. Talaba holati (🔜 kelajakda qo'shiladi)
+                new Tag().name("10. Talaba holati").description("Talaba holat klassifikatori"),
+
+                // 11. Fuqarolik holatlari (🔜 kelajakda qo'shiladi)
+                new Tag().name("11. Fuqarolik holatlari").description("Fuqarolik klassifikatori"),
+
+                // 12. Diplomlar (✅ real endpoint bor - 6 ta)
+                new Tag().name("12. Diplomlar").description("Diplom ma'lumotlari"),
+
+                // 13. Klassifikatorlar (🔜 kelajakda qo'shiladi)
+                new Tag().name("13. Klassifikatorlar").description("Umumiy klassifikatorlar"),
+
+                // 14. Tarjima (🔜 kelajakda qo'shiladi)
+                new Tag().name("14. Tarjima").description("Tarjima xizmatlari"),
+
+                // 15. OTM (✅ real endpoint bor - 13 ta)
+                new Tag().name("15. OTM").description("Oliy ta'lim muassasalari"),
+
+                // 16. Ilmiy (✅ real endpoint bor - 7 ta)
+                new Tag().name("16. Ilmiy").description("Doktorantura va ilmiy faoliyat"),
+
+                // 17. Akademik hisobotlar (🔜 kelajakda qo'shiladi)
+                new Tag().name("17. Akademik hisobotlar").description("Akademik hisobotlar va statistika"),
+
+                // 18. Shartnoma statistikasi (✅ real endpoint bor - 5 ta)
+                new Tag().name("18. Shartnoma statistikasi").description("Shartnoma ma'lumotlari"),
+
+                // 19. Bandlik statistikasi (✅ real endpoint bor - 6 ta)
+                new Tag().name("19. Bandlik statistikasi").description("Bitiruvchilar bandligi"),
+
+                // 20. Inspeksiya (🔜 kelajakda qo'shiladi)
+                new Tag().name("20. Inspeksiya").description("Inspeksiya va nazorat"),
+
+                // 21. Mehnat (🔜 kelajakda qo'shiladi)
+                new Tag().name("21. Mehnat").description("Mehnat statistikasi"),
+
+                // 22. Fakultetlar (🔜 kelajakda qo'shiladi)
+                new Tag().name("22. Fakultetlar").description("Fakultet ma'lumotlari"),
+
+                // 23. Mutaxassisliklar (🔜 kelajakda qo'shiladi)
+                new Tag().name("23. Mutaxassisliklar").description("Ta'lim yo'nalishlari"),
+
+                // 24. Guruhlar (🔜 kelajakda qo'shiladi)
+                new Tag().name("24. Guruhlar").description("Talaba guruhlari"),
+
+                // 25. Mail (🔜 kelajakda qo'shiladi)
+                new Tag().name("25. Mail").description("Elektron pochta xizmatlari"),
+
+                // 26. Healthcheck (🔜 kelajakda qo'shiladi)
+                new Tag().name("26. Healthcheck").description("Tizim holati tekshiruvi"),
+
+                // 27. Transkript (🔜 kelajakda qo'shiladi)
+                new Tag().name("27. Transkript").description("Transkript va akademik справка"),
+
+                // 28. DTM (🔜 kelajakda qo'shiladi)
+                new Tag().name("28. DTM").description("DTM integratsiyasi"),
+
+                // 29. OAK (🔜 kelajakda qo'shiladi)
+                new Tag().name("29. OAK").description("OAK integratsiyasi"),
+
+                // 30. Contract (🔜 kelajakda qo'shiladi)
+                new Tag().name("30. Contract").description("Shartnoma tizimi"),
+
+                // 31. UzASBO (🔜 kelajakda qo'shiladi)
+                new Tag().name("31. UzASBO").description("UzASBO integratsiyasi"),
+
+                // 32. test (🔜 kelajakda qo'shiladi)
+                new Tag().name("32. test").description("Test endpoint'lar"),
+
+                // 33. Soliq (🔜 kelajakda qo'shiladi)
+                new Tag().name("33. Soliq").description("Soliq ma'lumotlari"),
+
+                // 34. Ijtimoiy himoya (🔜 kelajakda qo'shiladi)
+                new Tag().name("34. Ijtimoiy himoya").description("Ijtimoiy himoya dasturlari"),
+
+                // 35. Stipendiya (✅ real endpoint bor - 6 ta)
+                new Tag().name("35. Stipendiya").description("Stipendiya to'lovlari"),
+
+                // 36. Billing (🔜 kelajakda qo'shiladi)
+                new Tag().name("36. Billing").description("To'lov tizimi"),
+
+                // 37. OTM sozlamalar (🔜 kelajakda qo'shiladi)
+                new Tag().name("37. OTM (sozlamalar)").description("OTM sozlamalari va konfiguratsiya"),
+
+                // 38. Captcha (🔜 kelajakda qo'shiladi)
+                new Tag().name("38. Captcha").description("Captcha xavfsizlik tizimi"),
+
+                // 39. Xo'jalik hisobot (🔜 kelajakda qo'shiladi)
+                new Tag().name("39. Xo'jalik hisobot").description("Xo'jalik hisobotlari"),
+
+                // 40. BIMM (🔜 kelajakda qo'shiladi)
+                new Tag().name("40. BIMM").description("BIMM integratsiyasi"),
+
+                // 41. OTM qo'shimcha (🔜 kelajakda qo'shiladi)
+                new Tag().name("41. OTM (qo'shimcha)").description("OTM qo'shimcha ma'lumotlar"),
+
+                // 42. Talaba sertifikati (🔜 kelajakda qo'shiladi)
+                new Tag().name("42. Talaba sertifikati").description("Talaba sertifikatlari"),
+
+                // 43. Klassifikatorlar Copy (🔜 kelajakda qo'shiladi)
+                new Tag().name("43. Klassifikatorlar Copy").description("Klassifikatorlar nusxasi"),
+
+                // 44. QR Diplom Copy (🔜 kelajakda qo'shiladi)
+                new Tag().name("44. QR Diplom Copy").description("QR Diplom nusxasi"),
+
+                // 45. Diplom blankalari (✅ real endpoint bor - 9 ta)
+                new Tag().name("45. Diplom blankalari").description("Diplom blankalari bilan ishlash"),
+
+                // 46. Xizmatlar (✅ real endpoint bor - 86 ta)
+                new Tag().name("46. Xizmatlar").description("Yordamchi xizmatlar va klassifikatorlar")
+        );
+    }
+
+    /**
+     * OpenAPI Customizer - Sort tags numerically
+     *
+     * <p><strong>CRITICAL:</strong> SpringDoc shows tags in controller discovery order by default.</p>
+     * <p>This customizer forces numerical ordering: 01, 02, 03, ..., 46</p>
+     *
+     * @return OpenApiCustomizer that sorts tags by name
+     */
+    @Bean
+    @Order(Ordered.LOWEST_PRECEDENCE)
+    public OpenApiCustomizer sortTagsAlphabetically() {
+        return openApi -> {
+            if (openApi.getPaths() == null) return;
+
+            // 1) Collect used tags from operations in this OpenAPI document
+            Set<String> usedTagNames = new LinkedHashSet<>();
+            openApi.getPaths().values().forEach(pi -> pi.readOperations().forEach(op -> {
+                if (op.getTags() == null) return;
+                usedTagNames.addAll(op.getTags());
+            }));
+
+            // 2) Build normalized -> baseName mapping and keep descriptions if available
+            Map<String, String> normalizedToBase = new LinkedHashMap<>();
+            Map<String, String> baseToDescription = new HashMap<>();
+
+            // Tag descriptions source: existing declared tags (if any)
+            Map<String, String> tagDescByNormalized = new HashMap<>();
+            if (openApi.getTags() != null) {
+                for (Tag t : openApi.getTags()) {
+                    tagDescByNormalized.put(normalizeNumberedTag(t.getName()), t.getDescription());
+                }
+            }
+
+            // Normalize and strip numeric prefixes for used tags only
+            for (String tagName : usedTagNames) {
+                String norm = normalizeNumberedTag(tagName);
+                String base = stripNumericPrefix(norm);
+                normalizedToBase.put(norm, base);
+                if (!baseToDescription.containsKey(base)) {
+                    baseToDescription.put(base, tagDescByNormalized.getOrDefault(norm, null));
+                }
+            }
+
+            // 3) Renumber sequentially (01., 02., ...) in alphabetical order of base name
+            List<String> bases = new ArrayList<>(new LinkedHashSet<>(normalizedToBase.values()));
+            Collections.sort(bases, String.CASE_INSENSITIVE_ORDER);
+            Map<String, String> normToRenamed = new HashMap<>();
+            List<Tag> finalTags = new ArrayList<>();
+            int idx = 1;
+            for (String base : bases) {
+                String newName = String.format("%02d. %s", idx++, base);
+                // Any normalized that maps to this base should be renamed to newName
+                for (Map.Entry<String, String> e : normalizedToBase.entrySet()) {
+                    if (e.getValue().equals(base)) {
+                        normToRenamed.put(e.getKey(), newName);
+                    }
+                }
+                Tag t = new Tag();
+                t.setName(newName);
+                t.setDescription(baseToDescription.get(base));
+                finalTags.add(t);
+            }
+
+            // 4) Apply renaming to operations and prune to used-only tags
+            openApi.getPaths().values().forEach(pi -> pi.readOperations().forEach(op -> {
+                if (op.getTags() == null) return;
+                List<String> renamed = op.getTags().stream()
+                        .map(name -> normToRenamed.getOrDefault(normalizeNumberedTag(name), normalizeNumberedTag(name)))
+                        .distinct()
+                        .collect(Collectors.toList());
+                op.setTags(renamed);
+            }));
+
+            openApi.setTags(finalTags);
+        };
+    }
+
+    private String normalizeNumberedTag(String name) {
+        if (name == null) return null;
+        String s = name.trim();
+
+        // Pattern A: "d.d Title" → combine as two-digit
+        Matcher a = Pattern.compile("^(\\d)\\.(\\d)\\s*(.*)$").matcher(s);
+        if (a.find()) {
+            int n = Integer.parseInt(a.group(1)) * 10 + Integer.parseInt(a.group(2));
+            String rest = a.group(3).trim();
+            return String.format("%02d. %s", n, rest);
+        }
+
+        // Pattern B: "dd. Title" or "d. Title"
+        Matcher b = Pattern.compile("^(\\d{1,2})\\.\\s*(.*)$").matcher(s);
+        if (b.find()) {
+            int n = Integer.parseInt(b.group(1));
+            String rest = b.group(2).trim();
+            return String.format("%02d. %s", n, rest);
+        }
+
+        return s; // unchanged
+    }
+
+    private String stripNumericPrefix(String name) {
+        if (name == null) return null;
+        String s = name.trim();
+        Matcher a = Pattern.compile("^(\\d)\\.(\\d)\\s*(.*)$").matcher(s);
+        if (a.find()) return a.group(3).trim();
+        Matcher b = Pattern.compile("^(\\d{1,2})\\.\\s*(.*)$").matcher(s);
+        if (b.find()) return b.group(2).trim();
+        return s;
+    }
+
+    /**
+     * Global responses and schemas (best practice):
+     * - Adds ErrorResponse schema
+     * - Adds standard 400/401/403/404/500 responses to all operations if missing
+     */
+    @Bean
+    public OpenApiCustomizer globalResponsesCustomizer() {
+        return openApi -> {
+            // Ensure ErrorResponse schema is present
+            ModelConverters.getInstance().readAllAsResolvedSchema(ErrorResponse.class);
+            ModelConverters.getInstance().read(ErrorResponse.class)
+                    .forEach((name, schema) -> openApi.getComponents().addSchemas(name, schema));
+
+            ApiResponse resp400 = new ApiResponse().description("Bad Request")
+                    .content(new Content().addMediaType("application/json",
+                            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            ApiResponse resp401 = new ApiResponse().description("Unauthorized")
+                    .content(new Content().addMediaType("application/json",
+                            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            ApiResponse resp403 = new ApiResponse().description("Forbidden")
+                    .content(new Content().addMediaType("application/json",
+                            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            ApiResponse resp404 = new ApiResponse().description("Not Found")
+                    .content(new Content().addMediaType("application/json",
+                            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+            ApiResponse resp500 = new ApiResponse().description("Internal Server Error")
+                    .content(new Content().addMediaType("application/json",
+                            new MediaType().schema(new Schema<>().$ref("#/components/schemas/ErrorResponse"))));
+
+            openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(op -> {
+                ApiResponses responses = op.getResponses();
+                if (responses.get("400") == null) responses.addApiResponse("400", resp400);
+                if (responses.get("401") == null) responses.addApiResponse("401", resp401);
+                if (responses.get("403") == null) responses.addApiResponse("403", resp403);
+                if (responses.get("404") == null) responses.addApiResponse("404", resp404);
+                if (responses.get("500") == null) responses.addApiResponse("500", resp500);
+            }));
+        };
+    }
+
+    /**
+     * Mark endpoints used by the Univer (Yii2) frontend with a dedicated tag
+     * so they can be filtered in a single Swagger document.
+     */
+    @Bean
+    public OpenApiCustomizer univerMarkerCustomizer() {
+        return openApi -> {
+            final String univerTag = "00. Univer (used)";
+
+            // Ensure tag appears in list
+            List<Tag> tags = openApi.getTags() != null ? new ArrayList<>(openApi.getTags()) : new ArrayList<>();
+            if (tags.stream().noneMatch(t -> univerTag.equals(t.getName()))) {
+                Tag t = new Tag();
+                t.setName(univerTag);
+                t.setDescription("Endpoints actively used by Univer frontend");
+                tags.add(t);
+                openApi.setTags(tags);
+            }
+
+            List<String> prefixes = univerPrefixes();
+
+            if (openApi.getPaths() == null) return;
+            openApi.getPaths().forEach((path, item) -> {
+                boolean match = prefixes.stream().anyMatch(path::startsWith);
+                if (!match) return;
+                item.readOperations().forEach(op -> {
+                    List<String> opTags = op.getTags() != null ? new ArrayList<>(op.getTags()) : new ArrayList<>();
+                    if (opTags.stream().noneMatch(univerTag::equals)) {
+                        opTags.add(0, univerTag);
+                        op.setTags(opTags);
+                    }
+                });
+            });
+        };
+    }
+
+    private List<String> univerPrefixes() {
+        return List.of(
+                "/app/rest/v2/oauth/", // Token endpoints used by Univer
+                "/app/rest/v2/entities/hemishe_EStudent/",
+                "/app/rest/v2/entities/hemishe_ETeacher/",
+                "/app/rest/v2/entities/hemishe_EUniversity/",
+                "/app/rest/v2/entities/hemishe_EUniversityDepartment/",
+                "/app/rest/v2/entities/hemishe_EUniversityGroup/",
+                "/app/rest/v2/entities/hemishe_EUniversitySpeciality/",
+                "/app/rest/v2/entities/hemishe_EDoctorateStudent/",
+                "/app/rest/v2/entities/hemishe_EDissertationDefense/",
+                "/app/rest/v2/entities/hemishe_EProject/",
+                "/app/rest/v2/entities/hemishe_EProjectExecutor/",
+                "/app/rest/v2/entities/hemishe_EProjectMeta/",
+                "/app/rest/v2/entities/hemishe_EResearchActivity/",
+                "/app/rest/v2/entities/hemishe_EPublicationScientific/",
+                "/app/rest/v2/entities/hemishe_EPublicationMethodical/",
+                "/app/rest/v2/entities/hemishe_EPublicationProperty/",
+                "/app/rest/v2/entities/hemishe_EPublicationAuthorMeta/",
+                "/app/rest/v2/entities/hemishe_EEmployeeJobs/",
+                "/app/rest/v2/entities/hemishe_EEmpoyeeCertificate/",
+                "/app/rest/v2/entities/hemishe_EStudentDiploma/",
+                "/app/rest/v2/entities/hemishe_EStudentCertificate/",
+                "/app/rest/v2/entities/hemishe_RIAdministrativeStudent2/",
+                "/app/rest/v2/entities/hemishe_RIAdministrativeStudent3/",
+                "/app/rest/v2/entities/hemishe_RIAdministrativeStudent4/",
+                "/app/rest/v2/entities/hemishe_RIAdministrativeStudentSport/",
+                "/app/rest/v2/entities/hemishe_RIAdministrativeEmployee1/",
+                "/app/rest/v2/entities/hemishe_RIAdministrativeEmployee2/",
+                "/app/rest/v2/entities/hemishe_RIAdministrativeEmployee3/",
+                "/app/rest/v2/entities/hemishe_REducationMaterials/",
+                "/app/rest/v2/entities/hemishe_RIctEquipment/",
+                "/app/rest/v2/entities/hemishe_RLaboratories/",
+                "/app/rest/v2/services/classifiers/",
+                "/app/rest/v2/services/bimm/",
+                "/app/rest/v2/services/social/",
+                "/app/rest/v2/services/billing/",
+                "/app/rest/v2/services/uzasbo/",
+                "/app/rest/v2/services/captcha/",
+                "/app/rest/v2/services/doctoral/",
+                "/app/rest/v2/services/group/",
+                "/app/rest/v2/services/speciality/",
+                "/app/rest/v2/services/university/",
+                "/app/rest/v2/services/send/",
+                // RESTful controllers (plural forms used in current codebase)
+                "/app/rest/v2/students",
+                "/app/rest/v2/teachers",
+                "/app/rest/v2/universities",
+                "/app/rest/v2/diplomas",
+                "/app/rest/v2/diploma-blanks",
+                "/app/rest/v2/employments",
+                "/app/rest/v2/groups",
+                "/app/rest/v2/specialties",
+                "/app/rest/v2/courses",
+                "/app/rest/v2/enrollments",
+                "/app/rest/v2/faculties",
+                "/app/rest/v2/doctoral-students",
+                "/app/rest/v2/departments",
+                "/app/rest/v2/scholarships",
+                "/app/rest/v2/student-certificates",
+                "/app/rest/v2/university-settings",
+                "/app/rest/v2/university-additional",
+                "/app/rest/v2/transcripts",
+                "/app/rest/v2/labor-statistics",
+                "/app/rest/v2/inspections",
+                "/app/rest/v2/academic-reports",
+                "/app/rest/v2/qr-diploma",
+                "/app/rest/v2/contracts"
+        );
+    }
+
+    /** All endpoints group to keep the previous main doc available as default */
+    @Bean
+    public GroupedOpenApi allApi() {
+        return GroupedOpenApi.builder()
+                .group("all")
+                .displayName("📚 All APIs (Complete)")
+                .pathsToMatch("/**")
+                .build();
+    }
+
+    /**
+     * Separate selectable group in Swagger UI for Univer-used APIs only
+     */
+    @Bean
+    public GroupedOpenApi univerUsedGroup() {
+        String[] patterns = univerPrefixes().stream()
+                .map(p -> p.endsWith("**") ? p : (p.endsWith("/") ? p + "**" : p + "/**"))
+                .toArray(String[]::new);
+        return GroupedOpenApi.builder()
+                .group("univer-used")
+                .displayName("🎓 Univer Used APIs")
+                .pathsToMatch(patterns)
+                .build();
+    }
+
+    // GroupedOpenApi beans removed — single unified Swagger document (no selector)
+}

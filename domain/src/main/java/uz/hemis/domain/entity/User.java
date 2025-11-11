@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Where;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * User Entity - Authentication and Authorization
  *
@@ -34,11 +37,11 @@ import org.hibernate.annotations.Where;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "hemishe_user")
-@Where(clause = "delete_ts IS NULL")
+@Table(name = "users")
+@Where(clause = "deleted_at IS NULL")
 @Getter
 @Setter
-public class User extends BaseEntity {
+public class User extends ModernBaseEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -72,21 +75,30 @@ public class User extends BaseEntity {
     // =====================================================
 
     /**
-     * Roles (comma-separated)
-     * Column: roles VARCHAR(500)
+     * Roles (comma-separated) - DEPRECATED
      *
-     * <p>Example: "ROLE_ADMIN,ROLE_UNIVERSITY_ADMIN"</p>
-     * <p>Note: Spring Security requires ROLE_ prefix</p>
-     *
-     * <p><strong>Standard Roles:</strong></p>
-     * <ul>
-     *   <li>ROLE_ADMIN - Full system access</li>
-     *   <li>ROLE_UNIVERSITY_ADMIN - University-specific admin</li>
-     *   <li>ROLE_USER - Read-only access</li>
-     * </ul>
+     * <p><strong>DEPRECATED:</strong> Use roleSet instead for proper many-to-many relationship</p>
+     * <p>Kept for backward compatibility with existing code that references this field</p>
+     * <p>This field is @Transient - not persisted to database</p>
+     * <p>Use getRoles() which returns Set<Role> from roleSet</p>
      */
-    @Column(name = "roles", length = 500)
+    @Transient
     private String roles;
+
+    /**
+     * Roles (many-to-many relationship)
+     * Join Table: hemishe_user_role
+     *
+     * <p>Modern role management using proper entity relationships</p>
+     * <p>Each user can have multiple roles (e.g., SUPER_ADMIN, MINISTRY_ADMIN)</p>
+     */
+    @ManyToMany
+    @JoinTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    private Set<Role> roleSet = new HashSet<>();
 
     /**
      * Enabled flag
@@ -215,6 +227,112 @@ public class User extends BaseEntity {
      */
     public boolean isUniversityAdmin() {
         return hasRole("ROLE_UNIVERSITY_ADMIN");
+    }
+
+    // =====================================================
+    // Role Management Methods (New Permission System)
+    // =====================================================
+
+    /**
+     * Get all roles assigned to this user
+     *
+     * @return Set of roles
+     */
+    public Set<Role> getRoles() {
+        if (roleSet == null) {
+            roleSet = new HashSet<>();
+        }
+        return roleSet;
+    }
+
+    /**
+     * Add role to user
+     *
+     * @param role Role to add
+     */
+    public void addRole(Role role) {
+        if (roleSet == null) {
+            roleSet = new HashSet<>();
+        }
+        roleSet.add(role);
+        role.getUsers().add(this);
+    }
+
+    /**
+     * Remove role from user
+     *
+     * @param role Role to remove
+     */
+    public void removeRole(Role role) {
+        if (roleSet != null) {
+            roleSet.remove(role);
+            role.getUsers().remove(this);
+        }
+    }
+
+    /**
+     * Check if user has specific role (by code)
+     *
+     * @param roleCode Role code (e.g., "SUPER_ADMIN", "MINISTRY_ADMIN")
+     * @return true if user has the role
+     */
+    public boolean hasRoleByCode(String roleCode) {
+        if (roleSet == null || roleSet.isEmpty()) {
+            return false;
+        }
+        return roleSet.stream()
+                .anyMatch(role -> roleCode.equals(role.getCode()));
+    }
+
+    /**
+     * Get all permissions from all roles
+     *
+     * @return Set of all permissions (merged from all roles)
+     */
+    public Set<Permission> getAllPermissions() {
+        if (roleSet == null || roleSet.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        Set<Permission> allPermissions = new HashSet<>();
+        for (Role role : roleSet) {
+            if (role.isActive() && role.getPermissions() != null) {
+                allPermissions.addAll(role.getPermissions());
+            }
+        }
+        return allPermissions;
+    }
+
+    /**
+     * Check if user has specific permission
+     *
+     * @param permissionCode Permission code (e.g., "students.view", "reports.create")
+     * @return true if user has the permission through any role
+     */
+    public boolean hasPermission(String permissionCode) {
+        return getAllPermissions().stream()
+                .anyMatch(permission -> permissionCode.equals(permission.getCode()));
+    }
+
+    /**
+     * Get all permission codes as string array
+     *
+     * @return Array of permission codes
+     */
+    public String[] getPermissionCodes() {
+        return getAllPermissions().stream()
+                .map(Permission::getCode)
+                .sorted()
+                .toArray(String[]::new);
+    }
+
+    /**
+     * Check if user has super admin role
+     *
+     * @return true if has SUPER_ADMIN role
+     */
+    public boolean isSuperAdmin() {
+        return hasRoleByCode("SUPER_ADMIN");
     }
 
     // =====================================================

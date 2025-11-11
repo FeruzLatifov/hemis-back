@@ -289,6 +289,41 @@ public class University implements Serializable {
     @Column(name = "allow_transfer_outside")
     private Boolean allowTransferOutside;
 
+    /**
+     * Version type code
+     * Column: _version_type VARCHAR(32)
+     */
+    @Column(name = "_version_type", length = 32)
+    private String versionType;
+
+    /**
+     * Terrain code (mahalla)
+     * Column: _terrain VARCHAR(32)
+     */
+    @Column(name = "_terrain", length = 32)
+    private String terrain;
+
+    /**
+     * Mail address
+     * Column: mail_address TEXT
+     */
+    @Column(name = "mail_address", columnDefinition = "TEXT")
+    private String mailAddress;
+
+    /**
+     * Bank information
+     * Column: bank_info TEXT
+     */
+    @Column(name = "bank_info", columnDefinition = "TEXT")
+    private String bankInfo;
+
+    /**
+     * Accreditation information
+     * Column: accreditation_info TEXT
+     */
+    @Column(name = "accreditation_info", columnDefinition = "TEXT")
+    private String accreditationInfo;
+
     // =====================================================
     // Business Methods
     // =====================================================

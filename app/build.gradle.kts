@@ -11,15 +11,22 @@ plugins {
 }
 
 dependencies {
-    // Internal dependencies - include ALL modules
+    // Internal dependencies - include ALL modules (v2.0.0 Multi-Module Monolith)
     implementation(project(":common"))
     implementation(project(":domain"))
     implementation(project(":security"))
-    implementation(project(":admin-api"))
+    implementation(project(":service"))
+    implementation(project(":web"))
+    implementation(project(":external"))
 
     // Spring Boot Starters (versions from BOM)
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis") {
+        exclude(group = "io.lettuce", module = "lettuce-core")
+    }
+    implementation("redis.clients:jedis")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -31,6 +38,9 @@ dependencies {
     // Flyway
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
+
+    // SpringDoc OpenAPI (Swagger)
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 
     // HikariCP (connection pooling - included in spring-boot-starter-data-jpa)
     // No need to declare explicitly
@@ -67,6 +77,17 @@ tasks.bootRun {
         "-Xmx1024m",
         "-XX:+UseG1GC"
     )
+    
+    // Load environment variables from .env file
+    val envFile = rootProject.file(".env")
+    if (envFile.exists()) {
+        envFile.readLines()
+            .filter { it.isNotBlank() && !it.startsWith("#") && it.contains("=") }
+            .forEach { line ->
+                val (key, value) = line.split("=", limit = 2)
+                environment(key.trim(), value.trim())
+            }
+    }
 }
 
 // =====================================================

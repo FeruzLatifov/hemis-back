@@ -32,6 +32,12 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Department extends BaseEntity {
 
+    public String getCode() { return departmentCode; }
+    public String getName() { return departmentName; }
+    public String getShortName() { return departmentName; }
+    public Boolean getActive() { return isActive; }
+    public boolean isActive() { return Boolean.TRUE.equals(isActive); }
+
     @Column(name = "department_code", length = 64, unique = true)
     private String departmentCode;
 

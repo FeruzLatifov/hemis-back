@@ -72,6 +72,18 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
     );
 
     /**
+     * Find first teacher by PINFL (for backward compatibility)
+     *
+     * <p><strong>WARNING:</strong> May return ANY of multiple teachers with same PINFL!</p>
+     * <p>Prefer {@link #findByPinflAndUniversity(String, String)} for precise lookup.</p>
+     *
+     * @param pinfl personal identification number
+     * @return first teacher found (arbitrary if multiple exist)
+     */
+    @Query("SELECT t FROM Teacher t WHERE t.pinfl = :pinfl ORDER BY t.createTs DESC")
+    java.util.Optional<Teacher> findByPinfl(@Param("pinfl") String pinfl);
+
+    /**
      * Find ALL teachers with same PINFL (across all universities)
      *
      * <p><strong>Use case:</strong> Finding teaching history across universities</p>

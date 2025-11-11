@@ -21,32 +21,32 @@ public interface ClassifierRepository extends JpaRepository<Classifier, UUID> {
      * Find classifier by type and code
      * Example: type="STUDENT_STATUS", code="11" → Active student
      */
-    @Query("SELECT c FROM Classifier c WHERE c.classifierType = :type AND c.code = :code AND c.isActive = true AND c.deletedDate IS NULL")
+    @Query("SELECT c FROM Classifier c WHERE c.classifierType = :type AND c.code = :code AND c.isActive = true AND c.deleteTs IS NULL")
     Optional<Classifier> findByTypeAndCode(@Param("type") String type, @Param("code") String code);
 
     /**
      * Find all classifiers by type
      * Example: type="PAYMENT_FORM" → [Grant, Contract, Self-funded]
      */
-    @Query("SELECT c FROM Classifier c WHERE c.classifierType = :type AND c.isActive = true AND c.deletedDate IS NULL ORDER BY c.sortOrder, c.nameUz")
+    @Query("SELECT c FROM Classifier c WHERE c.classifierType = :type AND c.isActive = true AND c.deleteTs IS NULL ORDER BY c.sortOrder, c.nameUz")
     List<Classifier> findAllByType(@Param("type") String type);
 
     /**
      * Find all active classifiers
      */
-    @Query("SELECT c FROM Classifier c WHERE c.isActive = true AND c.deletedDate IS NULL ORDER BY c.classifierType, c.sortOrder")
+    @Query("SELECT c FROM Classifier c WHERE c.isActive = true AND c.deleteTs IS NULL ORDER BY c.classifierType, c.sortOrder")
     List<Classifier> findAllActive();
 
     /**
      * Get all classifier types
      */
-    @Query("SELECT DISTINCT c.classifierType FROM Classifier c WHERE c.isActive = true AND c.deletedDate IS NULL ORDER BY c.classifierType")
+    @Query("SELECT DISTINCT c.classifierType FROM Classifier c WHERE c.isActive = true AND c.deleteTs IS NULL ORDER BY c.classifierType")
     List<String> findAllTypes();
 
     /**
      * Search classifiers by name (all languages)
      */
-    @Query("SELECT c FROM Classifier c WHERE c.isActive = true AND c.deletedDate IS NULL AND " +
+    @Query("SELECT c FROM Classifier c WHERE c.isActive = true AND c.deleteTs IS NULL AND " +
            "(LOWER(c.nameUz) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
            "LOWER(c.nameRu) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
            "LOWER(c.nameEn) LIKE LOWER(CONCAT('%', :searchTerm, '%'))) " +
@@ -56,6 +56,6 @@ public interface ClassifierRepository extends JpaRepository<Classifier, UUID> {
     /**
      * Count classifiers by type
      */
-    @Query("SELECT COUNT(c) FROM Classifier c WHERE c.classifierType = :type AND c.isActive = true AND c.deletedDate IS NULL")
+    @Query("SELECT COUNT(c) FROM Classifier c WHERE c.classifierType = :type AND c.isActive = true AND c.deleteTs IS NULL")
     long countByType(@Param("type") String type);
 }

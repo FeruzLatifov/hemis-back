@@ -3,12 +3,13 @@ package uz.hemis.app;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
- * HEMIS Main Application
+ * HEMIS Main Application v2.0.0
  *
- * <p>Spring Boot 3.5.7 + JDK 25 LTS refactoring of HEMIS backend.</p>
+ * <p>Spring Boot 3.5.7 + JDK 21 LTS - Multi-Module Monolith Architecture</p>
  *
  * <p><strong>CRITICAL CONSTRAINTS:</strong></p>
  * <ul>
@@ -18,19 +19,28 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  *   <li>NDG (Non-Deletion Guarantee) - no physical DELETE queries</li>
  * </ul>
  *
- * <p><strong>Module Scanning:</strong></p>
+ * <p><strong>Module Architecture:</strong></p>
  * <ul>
- *   <li>Components: uz.hemis (all modules)</li>
- *   <li>Entities: uz.hemis.domain.entity</li>
- *   <li>Repositories: uz.hemis.domain.repository</li>
+ *   <li>common/ - Shared utilities, DTOs</li>
+ *   <li>security/ - JWT OAuth2 Resource Server</li>
+ *   <li>domain/ - JPA entities + repositories</li>
+ *   <li>service/ - Business logic layer</li>
+ *   <li>web/ - Public Web APIs (140 endpoints)</li>
+ *   <li>external/ - External S2S APIs (government, education, financial)</li>
+ *   <li>admin/ - Admin APIs (system management)</li>
+ *   <li>app/ - Main Spring Boot application (AuthController only)</li>
  * </ul>
  *
- * @since 1.0.0
+ * @since 2.0.0
  */
+@EnableCaching
 @SpringBootApplication(scanBasePackages = {
     "uz.hemis.common",
     "uz.hemis.security",
     "uz.hemis.domain",
+    "uz.hemis.service",
+    "uz.hemis.web",
+    "uz.hemis.external",
     "uz.hemis.admin",
     "uz.hemis.app"
 })

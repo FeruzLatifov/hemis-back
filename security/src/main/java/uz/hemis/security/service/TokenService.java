@@ -2,25 +2,39 @@ package uz.hemis.security.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.stereotype.Service;
 import uz.hemis.common.dto.TokenResponse;
 
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.time.Instant;
 import java.util.stream.Collectors;
 
 /**
- * Token Service - OAuth2 Token Management with Redis Storage
+ * Token Service - JWT Token Generation (Stateless)
  *
- * <p><strong>OLD-HEMIS Compatibility:</strong></p>
+ * <p><strong>CRITICAL - sec_user Compatibility:</strong></p>
  * <ul>
- *   <li>Token format: UUID (same as OLD-HEMIS)</li>
- *   <li>Storage: Redis (same as OLD-HEMIS)</li>
- *   <li>Expiration: 43199 seconds / 12 hours (same as OLD-HEMIS)</li>
+ *   <li>Generates JWT tokens (stateless - no Redis/database needed)</li>
+ *   <li>Compatible with old-hemis user structure (sec_user)</li>
+ *   <li>Token contains: username, roles, university, expiration</li>
+ *   <li>Response format matches OAuth2 standard</li>
  * </ul>
+ *
+ * <p><strong>Token Claims:</strong></p>
+ * <pre>
+ * {
+ *   "sub": "admin",                    // Subject (username)
+ *   "iss": "hemis-backend",            // Issuer
+ *   "iat": 1234567890,                 // Issued at
+ *   "exp": 1234567890,                 // Expiration
+ *   "roles": ["ROLE_ADMIN"],           // User roles
+ *   "username": "admin"                // Username (redundant but useful)
+ * }
+ * </pre>
  *
  * @since 1.0.0
  */
@@ -29,180 +43,237 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TokenService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final JwtEncoder jwtEncoder;
+    private final JwtDecoder jwtDecoder;
 
-    // Token validity (OLD-HEMIS: 43199 seconds = 12 hours - 1 second)
-    private static final long ACCESS_TOKEN_VALIDITY_SECONDS = 43199;
-    private static final long REFRESH_TOKEN_VALIDITY_SECONDS = 2592000; // 30 days
+    @Value("${hemis.security.jwt.expiration:43200}")  // 12 hours (43200 seconds)
+    private long accessTokenValiditySeconds;
 
-    // Redis key prefixes
-    private static final String ACCESS_TOKEN_PREFIX = "access_token:";
-    private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
+    @Value("${hemis.security.jwt.refresh-expiration:604800}")  // 7 days
+    private long refreshTokenValiditySeconds;
+
+    @Value("${hemis.security.jwt.issuer:hemis-backend}")
+    private String issuer;
 
     /**
-     * Generate OAuth2 token pair (access + refresh)
+     * Generate OAuth2 JWT token
      *
-     * @param userDetails authenticated user details
-     * @return TokenResponse (OLD-HEMIS format)
+     * <p><strong>Process:</strong></p>
+     * <ol>
+     *   <li>Extract username and roles from UserDetails</li>
+     *   <li>Build JWT claims set</li>
+     *   <li>Encode JWT using JwtEncoder (HMAC-SHA256)</li>
+     *   <li>Return TokenResponse (OAuth2 format)</li>
+     * </ol>
+     *
+     * <p><strong>Response Format (OAuth2):</strong></p>
+     * <pre>
+     * {
+     *   "access_token": "eyJhbGciOiJIUzI1NiIs...",
+     *   "token_type": "Bearer",
+     *   "expires_in": 43200,
+     *   "scope": "rest-api"
+     * }
+     * </pre>
+     *
+     * @param userDetails authenticated user (from sec_user)
+     * @return TokenResponse containing JWT access token
      */
     public TokenResponse generateToken(UserDetails userDetails) {
-        log.info("Generating token for user: {}", userDetails.getUsername());
+        log.info("Generating JWT token for user: {}", userDetails.getUsername());
 
-        // Generate UUIDs
-        String accessToken = UUID.randomUUID().toString();
-        String refreshToken = UUID.randomUUID().toString();
+        // Current time
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(accessTokenValiditySeconds);
 
-        // Store access token in Redis
-        Map<String, Object> accessTokenData = new HashMap<>();
-        accessTokenData.put("username", userDetails.getUsername());
-        accessTokenData.put("roles", extractRoles(userDetails));
-        accessTokenData.put("scope", "rest-api");
-        accessTokenData.put("token_type", "bearer");
+        // Extract roles from authorities
+        String roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
 
-        String accessKey = ACCESS_TOKEN_PREFIX + accessToken;
-        redisTemplate.opsForHash().putAll(accessKey, accessTokenData);
-        redisTemplate.expire(accessKey, ACCESS_TOKEN_VALIDITY_SECONDS, TimeUnit.SECONDS);
+        log.debug("User {} has roles: {}", userDetails.getUsername(), roles);
 
-        log.debug("Access token stored in Redis: {} (expires in {} seconds)",
-                  accessKey, ACCESS_TOKEN_VALIDITY_SECONDS);
+        // Build JWS Header with explicit HS256 algorithm
+        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
 
-        // Store refresh token in Redis
-        Map<String, Object> refreshTokenData = new HashMap<>();
-        refreshTokenData.put("username", userDetails.getUsername());
-        refreshTokenData.put("access_token", accessToken);
+        // Build JWT claims
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(issuer)                          // Issuer: hemis-backend
+                .issuedAt(now)                            // Issued at: now
+                .expiresAt(expiry)                        // Expires at: now + 12h
+                .subject(userDetails.getUsername())      // Subject: username
+                .claim("username", userDetails.getUsername())  // Username claim
+                .claim("roles", roles)                    // Roles claim (comma-separated)
+                .claim("scope", "rest-api")              // Scope claim (OAuth2)
+                .build();
 
-        String refreshKey = REFRESH_TOKEN_PREFIX + refreshToken;
-        redisTemplate.opsForHash().putAll(refreshKey, refreshTokenData);
-        redisTemplate.expire(refreshKey, REFRESH_TOKEN_VALIDITY_SECONDS, TimeUnit.SECONDS);
+        // Encode JWT with explicit headers (algorithm must match JWK)
+        String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
 
-        log.debug("Refresh token stored in Redis: {} (expires in {} days)",
-                  refreshKey, REFRESH_TOKEN_VALIDITY_SECONDS / 86400);
+        log.info("JWT token generated for user: {} (expires in {} seconds)",
+                userDetails.getUsername(), accessTokenValiditySeconds);
 
-        // Build response (OLD-HEMIS format)
+        // Build OAuth2 token response
         return TokenResponse.builder()
                 .accessToken(accessToken)
-                .tokenType("bearer")
-                .refreshToken(refreshToken)
-                .expiresIn((int) ACCESS_TOKEN_VALIDITY_SECONDS)
+                .tokenType("Bearer")  // OAuth2 standard: "Bearer" (capital B)
+                .expiresIn((int) accessTokenValiditySeconds)
                 .scope("rest-api")
                 .build();
     }
 
     /**
-     * Validate access token
+     * Generate refresh token (future implementation)
      *
-     * @param token access token UUID
-     * @return true if valid and not expired
-     */
-    public boolean validateToken(String token) {
-        String key = ACCESS_TOKEN_PREFIX + token;
-        Boolean exists = redisTemplate.hasKey(key);
-
-        if (Boolean.TRUE.equals(exists)) {
-            log.debug("Token valid: {}", token);
-            return true;
-        }
-
-        log.warn("Token invalid or expired: {}", token);
-        return false;
-    }
-
-    /**
-     * Get token details from Redis
+     * <p><strong>NOT IMPLEMENTED YET:</strong></p>
+     * <ul>
+     *   <li>JWT refresh tokens require different expiration</li>
+     *   <li>Should be stored separately or have different signature</li>
+     *   <li>For now, clients must re-authenticate after access token expires</li>
+     * </ul>
      *
-     * @param token access token UUID
-     * @return token data map (username, roles, etc.)
+     * @param userDetails user details
+     * @return refresh token (same structure as access token for now)
      */
-    public Map<Object, Object> getTokenData(String token) {
-        String key = ACCESS_TOKEN_PREFIX + token;
-        Map<Object, Object> data = redisTemplate.opsForHash().entries(key);
+    public String generateRefreshToken(UserDetails userDetails) {
+        log.info("Generating refresh token for user: {}", userDetails.getUsername());
 
-        if (data.isEmpty()) {
-            log.warn("Token not found: {}", token);
-            return Collections.emptyMap();
-        }
+        Instant now = Instant.now();
+        Instant expiry = now.plusSeconds(refreshTokenValiditySeconds);
 
-        return data;
+        String roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
+
+        // Build JWS Header with explicit HS256 algorithm
+        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .issuedAt(now)
+                .expiresAt(expiry)
+                .subject(userDetails.getUsername())
+                .claim("username", userDetails.getUsername())
+                .claim("roles", roles)
+                .claim("type", "refresh")  // Mark as refresh token
+                .build();
+
+        String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+
+        log.info("Refresh token generated for user: {} (expires in {} days)",
+                userDetails.getUsername(), refreshTokenValiditySeconds / 86400);
+
+        return refreshToken;
     }
 
     /**
      * Refresh access token using refresh token
      *
-     * @param refreshToken refresh token UUID
-     * @param userDetails user details for new token
-     * @return new TokenResponse
-     */
-    public TokenResponse refreshToken(String refreshToken, UserDetails userDetails) {
-        log.info("Refreshing token for user: {}", userDetails.getUsername());
-
-        String refreshKey = REFRESH_TOKEN_PREFIX + refreshToken;
-
-        // Check if refresh token exists
-        Boolean exists = redisTemplate.hasKey(refreshKey);
-        if (!Boolean.TRUE.equals(exists)) {
-            log.warn("Refresh token invalid or expired: {}", refreshToken);
-            throw new IllegalArgumentException("Invalid refresh token");
-        }
-
-        // Get old access token and revoke it
-        Map<Object, Object> refreshData = redisTemplate.opsForHash().entries(refreshKey);
-        String oldAccessToken = (String) refreshData.get("access_token");
-        if (oldAccessToken != null) {
-            revokeToken(oldAccessToken);
-        }
-
-        // Generate new token pair
-        return generateToken(userDetails);
-    }
-
-    /**
-     * Revoke token (delete from Redis)
+     * <p><strong>IMPORTANT:</strong> This implementation generates tokens from JWT claims directly
+     * without database lookup, making it stateless and avoiding circular dependencies.</p>
      *
-     * @param token access token UUID
+     * @param refreshToken refresh token JWT
+     * @return new TokenResponse with access and refresh tokens
+     * @throws IllegalArgumentException if refresh token is invalid or expired
      */
-    public void revokeToken(String token) {
-        String key = ACCESS_TOKEN_PREFIX + token;
-        Boolean deleted = redisTemplate.delete(key);
+    public TokenResponse refreshToken(String refreshToken) {
+        log.info("Refreshing access token");
 
-        if (Boolean.TRUE.equals(deleted)) {
-            log.info("Token revoked: {}", token);
-        } else {
-            log.warn("Token not found for revocation: {}", token);
+        try {
+            // Decode and validate refresh token
+            Jwt jwt = jwtDecoder.decode(refreshToken);
+
+            // Check if it's a refresh token
+            String tokenType = jwt.getClaimAsString("type");
+            if (!"refresh".equals(tokenType)) {
+                throw new IllegalArgumentException("Invalid token type: not a refresh token");
+            }
+
+            // Extract user information from JWT claims
+            String username = jwt.getClaimAsString("username");
+            String roles = jwt.getClaimAsString("roles");
+
+            if (username == null || username.isEmpty()) {
+                throw new IllegalArgumentException("Username not found in refresh token");
+            }
+
+            log.debug("Refreshing token for user: {} with roles: {}", username, roles);
+
+            // Generate new tokens directly from claims (stateless approach)
+            Instant now = Instant.now();
+            Instant accessExpiry = now.plusSeconds(accessTokenValiditySeconds);
+            Instant refreshExpiry = now.plusSeconds(refreshTokenValiditySeconds);
+
+            // Build JWS Header with explicit HS256 algorithm
+            JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
+
+            // Build new access token
+            JwtClaimsSet accessClaims = JwtClaimsSet.builder()
+                    .issuer(issuer)
+                    .issuedAt(now)
+                    .expiresAt(accessExpiry)
+                    .subject(username)
+                    .claim("username", username)
+                    .claim("roles", roles)
+                    .claim("scope", "rest-api")
+                    .build();
+
+            String newAccessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, accessClaims)).getTokenValue();
+
+            // Build new refresh token
+            JwtClaimsSet refreshClaims = JwtClaimsSet.builder()
+                    .issuer(issuer)
+                    .issuedAt(now)
+                    .expiresAt(refreshExpiry)
+                    .subject(username)
+                    .claim("username", username)
+                    .claim("roles", roles)
+                    .claim("type", "refresh")
+                    .build();
+
+            String newRefreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, refreshClaims)).getTokenValue();
+
+            // Build response
+            TokenResponse tokenResponse = TokenResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(newRefreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn((int) accessTokenValiditySeconds)
+                    .scope("rest-api")
+                    .build();
+
+            log.info("Access token refreshed successfully for user: {}", username);
+
+            return tokenResponse;
+
+        } catch (JwtException e) {
+            log.warn("Invalid or expired refresh token: {}", e.getMessage());
+            throw new IllegalArgumentException("Invalid or expired refresh token", e);
         }
     }
 
-    /**
-     * Revoke all tokens for a user (logout from all devices)
-     *
-     * @param username username
-     */
-    public void revokeAllUserTokens(String username) {
-        log.info("Revoking all tokens for user: {}", username);
-
-        // Note: This requires scanning Redis keys
-        // In production, consider maintaining a user→tokens mapping
-        Set<String> keys = redisTemplate.keys(ACCESS_TOKEN_PREFIX + "*");
-
-        if (keys != null) {
-            keys.forEach(key -> {
-                Map<Object, Object> data = redisTemplate.opsForHash().entries(key);
-                if (username.equals(data.get("username"))) {
-                    redisTemplate.delete(key);
-                    log.debug("Revoked token: {}", key);
-                }
-            });
-        }
-    }
-
-    /**
-     * Extract roles from UserDetails authorities
-     *
-     * @param userDetails user details
-     * @return comma-separated roles string
-     */
-    private String extractRoles(UserDetails userDetails) {
-        return userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
-    }
+    // =====================================================
+    // NOTE: JWT Tokens are Stateless
+    // =====================================================
+    // Unlike old-hemis (Redis/database sessions), JWT tokens are:
+    // - Self-contained (all data in token)
+    // - Stateless (no server-side storage needed)
+    // - Verified by signature (HMAC-SHA256)
+    //
+    // Benefits:
+    // ✅ No Redis/database dependency
+    // ✅ Horizontally scalable (any server can verify)
+    // ✅ Fast verification (no database lookup)
+    //
+    // Tradeoffs:
+    // ⚠️  Cannot revoke before expiration (unless blacklist added)
+    // ⚠️  Larger token size (vs UUID)
+    // ⚠️  Payload visible (base64, not encrypted)
+    //
+    // Revocation Strategy (if needed):
+    // 1. Short expiration time (12 hours)
+    // 2. Refresh tokens (7 days)
+    // 3. Token blacklist in Redis (optional)
+    // 4. User logout invalidates refresh token
+    // =====================================================
 }
