@@ -13,7 +13,7 @@ import uz.hemis.common.dto.DepartmentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Department;
-import uz.hemis.domain.mapper.DepartmentMapper;
+import uz.hemis.service.mapper.DepartmentMapper;
 import uz.hemis.domain.repository.DepartmentRepository;
 
 import java.time.LocalDateTime;
@@ -367,4 +367,19 @@ public class DepartmentService {
     // Physical DELETE is not allowed (NDG).
     // Use softDelete() instead.
     // =====================================================
+
+    // =====================================================
+    // CUBA REST API Compatible Methods
+    // =====================================================
+
+    /**
+     * Get departments (cathedras) by university (CUBA compatible)
+     *
+     * @param university university code
+     * @return list of department DTOs
+     */
+    public Object getByUniversity(String university) {
+        log.debug("CUBA API: get departments by university: {}", university);
+        return findByUniversity(university);
+    }
 }

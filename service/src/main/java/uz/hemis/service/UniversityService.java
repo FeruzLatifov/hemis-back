@@ -10,7 +10,7 @@ import uz.hemis.common.dto.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.University;
-import uz.hemis.domain.mapper.UniversityMapper;
+import uz.hemis.service.mapper.UniversityMapper;
 import uz.hemis.domain.repository.UniversityRepository;
 
 import java.time.LocalDateTime;
@@ -391,5 +391,51 @@ public class UniversityService {
         universityRepository.save(university);
 
         log.info("University restored successfully: {}", code);
+    }
+
+    // =====================================================
+    // CUBA REST API Compatible Methods
+    // =====================================================
+
+    /**
+     * Get university configuration (CUBA compatible)
+     *
+     * <p>Returns system configuration including:</p>
+     * <ul>
+     *   <li>List of all active universities</li>
+     *   <li>System settings</li>
+     *   <li>Feature flags</li>
+     * </ul>
+     *
+     * @return configuration map
+     */
+    public Object getConfig() {
+        log.debug("CUBA API: getting university configuration");
+        
+        Page<UniversityDto> page = findAll(Pageable.unpaged());
+        List<UniversityDto> universities = page.getContent();
+        
+        Map<String, Object> config = new HashMap<>();
+        config.put("universities", universities);
+        config.put("totalCount", universities.size());
+        config.put("timestamp", LocalDateTime.now());
+        
+        return config;
+    }
+
+    /**
+     * Get university by code (CUBA compatible)
+     *
+     * @param code university code
+     * @return university DTO or null
+     */
+    public Object getByCode(String code) {
+        log.debug("CUBA API: get university by code: {}", code);
+        try {
+            return findByCode(code);
+        } catch (ResourceNotFoundException e) {
+            log.warn("University not found: {}", code);
+            return null;
+        }
     }
 }

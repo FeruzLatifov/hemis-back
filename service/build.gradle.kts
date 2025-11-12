@@ -25,9 +25,17 @@ dependencies {
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
-    // Lombok
+    // Lombok (MUST be before MapStruct)
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
+
+    // MapStruct for Entity ↔ DTO mapping
+    val mapstructVersion = "1.6.3"
+    implementation("org.mapstruct:mapstruct:${mapstructVersion}")
+    annotationProcessor("org.mapstruct:mapstruct-processor:${mapstructVersion}")
+
+    // Lombok + MapStruct integration (MUST be after both)
+    annotationProcessor("org.projectlombok:lombok-mapstruct-binding:0.2.0")
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -35,4 +43,16 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// =====================================================
+// Annotation Processor Configuration for MapStruct
+// =====================================================
+tasks.withType<JavaCompile> {
+    options.compilerArgs.addAll(
+        listOf(
+            "-Amapstruct.defaultComponentModel=spring",  // Generate @Component
+            "-Amapstruct.unmappedTargetPolicy=WARN"     // Warn on unmapped fields
+        )
+    )
 }

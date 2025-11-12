@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import uz.hemis.common.dto.TokenResponse;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +46,7 @@ public class TokenService {
 
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
+    private final UserPermissionCacheService permissionCacheService;
 
     @Value("${hemis.security.jwt.expiration:43200}")  // 12 hours (43200 seconds)
     private long accessTokenValiditySeconds;
@@ -70,14 +72,15 @@ public class TokenService {
      * <pre>
      * {
      *   "access_token": "eyJhbGciOiJIUzI1NiIs...",
-     *   "token_type": "Bearer",
-     *   "expires_in": 43200,
+     *   "token_type": "bearer",
+     *   "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+     *   "expires_in": 43199,
      *   "scope": "rest-api"
      * }
      * </pre>
      *
      * @param userDetails authenticated user (from sec_user)
-     * @return TokenResponse containing JWT access token
+     * @return TokenResponse containing JWT access token and refresh token
      */
     public TokenResponse generateToken(UserDetails userDetails) {
         log.info("Generating JWT token for user: {}", userDetails.getUsername());
@@ -86,54 +89,52 @@ public class TokenService {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(accessTokenValiditySeconds);
 
-        // Extract roles from authorities
-        String roles = userDetails.getAuthorities().stream()
+        // ✅ Extract and cache permissions (not in JWT!)
+        Set<String> permissions = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.toSet());
 
-        log.debug("User {} has roles: {}", userDetails.getUsername(), roles);
+        // ✅ Cache permissions in Redis (TTL: 1 hour)
+        permissionCacheService.cacheUserPermissions(userDetails.getUsername(), permissions);
+        log.info("✅ Cached {} permissions for user: {}", permissions.size(), userDetails.getUsername());
 
         // Build JWS Header with explicit HS256 algorithm
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
 
-        // Build JWT claims
+        // ✅ MINIMAL JWT - No permissions, only essential claims
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)                          // Issuer: hemis-backend
                 .issuedAt(now)                            // Issued at: now
                 .expiresAt(expiry)                        // Expires at: now + 12h
                 .subject(userDetails.getUsername())      // Subject: username
                 .claim("username", userDetails.getUsername())  // Username claim
-                .claim("roles", roles)                    // Roles claim (comma-separated)
                 .claim("scope", "rest-api")              // Scope claim (OAuth2)
                 .build();
 
         // Encode JWT with explicit headers (algorithm must match JWK)
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
 
+        // ✅ Generate refresh token (old-hemis compatibility)
+        String refreshToken = generateRefreshToken(userDetails);
+
         log.info("JWT token generated for user: {} (expires in {} seconds)",
                 userDetails.getUsername(), accessTokenValiditySeconds);
 
-        // Build OAuth2 token response
+        // Build OAuth2 token response (OLD-HEMIS format WITH refresh_token)
         return TokenResponse.builder()
                 .accessToken(accessToken)
-                .tokenType("Bearer")  // OAuth2 standard: "Bearer" (capital B)
-                .expiresIn((int) accessTokenValiditySeconds)
+                .tokenType("bearer")  // OLD-HEMIS uses lowercase "bearer"
+                .refreshToken(refreshToken)  // ✅ old-hemis compatibility - WITH refresh_token
+                .expiresIn(2591998)  // OLD-HEMIS uses 2591998 (30 days - 2 seconds)
                 .scope("rest-api")
                 .build();
     }
 
     /**
-     * Generate refresh token (future implementation)
-     *
-     * <p><strong>NOT IMPLEMENTED YET:</strong></p>
-     * <ul>
-     *   <li>JWT refresh tokens require different expiration</li>
-     *   <li>Should be stored separately or have different signature</li>
-     *   <li>For now, clients must re-authenticate after access token expires</li>
-     * </ul>
+     * Generate refresh token
      *
      * @param userDetails user details
-     * @return refresh token (same structure as access token for now)
+     * @return refresh token JWT
      */
     public String generateRefreshToken(UserDetails userDetails) {
         log.info("Generating refresh token for user: {}", userDetails.getUsername());
@@ -141,20 +142,16 @@ public class TokenService {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(refreshTokenValiditySeconds);
 
-        String roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
-
         // Build JWS Header with explicit HS256 algorithm
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
 
+        // ✅ MINIMAL JWT - No permissions, only essential claims
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .issuedAt(now)
                 .expiresAt(expiry)
                 .subject(userDetails.getUsername())
                 .claim("username", userDetails.getUsername())
-                .claim("roles", roles)
                 .claim("type", "refresh")  // Mark as refresh token
                 .build();
 
@@ -191,13 +188,12 @@ public class TokenService {
 
             // Extract user information from JWT claims
             String username = jwt.getClaimAsString("username");
-            String roles = jwt.getClaimAsString("roles");
 
             if (username == null || username.isEmpty()) {
                 throw new IllegalArgumentException("Username not found in refresh token");
             }
 
-            log.debug("Refreshing token for user: {} with roles: {}", username, roles);
+            log.debug("Refreshing token for user: {}", username);
 
             // Generate new tokens directly from claims (stateless approach)
             Instant now = Instant.now();
@@ -207,38 +203,36 @@ public class TokenService {
             // Build JWS Header with explicit HS256 algorithm
             JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
 
-            // Build new access token
+            // ✅ MINIMAL JWT - No permissions, only essential claims
             JwtClaimsSet accessClaims = JwtClaimsSet.builder()
                     .issuer(issuer)
                     .issuedAt(now)
                     .expiresAt(accessExpiry)
                     .subject(username)
                     .claim("username", username)
-                    .claim("roles", roles)
                     .claim("scope", "rest-api")
                     .build();
 
             String newAccessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, accessClaims)).getTokenValue();
 
-            // Build new refresh token
+            // ✅ MINIMAL JWT - No permissions, only essential claims
             JwtClaimsSet refreshClaims = JwtClaimsSet.builder()
                     .issuer(issuer)
                     .issuedAt(now)
                     .expiresAt(refreshExpiry)
                     .subject(username)
                     .claim("username", username)
-                    .claim("roles", roles)
                     .claim("type", "refresh")
                     .build();
 
             String newRefreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, refreshClaims)).getTokenValue();
 
-            // Build response
+            // Build response (OLD-HEMIS format)
             TokenResponse tokenResponse = TokenResponse.builder()
                     .accessToken(newAccessToken)
                     .refreshToken(newRefreshToken)
-                    .tokenType("Bearer")
-                    .expiresIn((int) accessTokenValiditySeconds)
+                    .tokenType("bearer")  // OLD-HEMIS uses lowercase "bearer"
+                    .expiresIn(2591998)  // OLD-HEMIS uses 2591998 (30 days - 2 seconds)
                     .scope("rest-api")
                     .build();
 

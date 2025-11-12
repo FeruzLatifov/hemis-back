@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,6 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.TokenResponse;
+import uz.hemis.security.config.LegacyOAuthClientProperties;
 import uz.hemis.security.service.TokenService;
 
 import java.util.Base64;
@@ -47,10 +49,7 @@ public class OAuth2TokenController {
 
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
-
-    // Client credentials (OLD-HEMIS: client:secret)
-    private static final String CLIENT_ID = "client";
-    private static final String CLIENT_SECRET = "secret";
+    private final LegacyOAuthClientProperties oauthClientProperties;
 
     /**
      * OAuth2 Token Endpoint
@@ -131,7 +130,10 @@ public class OAuth2TokenController {
         @ApiResponse(responseCode = "400", description = "Bad Request - Invalid grant type or missing parameters"),
         @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid credentials or client authentication failed")
     })
-    @PostMapping(value = "/token", consumes = "application/x-www-form-urlencoded")
+    @PostMapping(
+            value = "/token",
+            consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE}
+    )
     public ResponseEntity<?> token(
             @Parameter(description = "Basic authentication (Base64: client:secret)", example = "Basic Y2xpZW50OnNlY3JldA==")
             @RequestHeader(value = "Authorization", required = false) String authorization,
@@ -271,7 +273,8 @@ public class OAuth2TokenController {
             String clientId = parts[0];
             String clientSecret = parts[1];
 
-            return CLIENT_ID.equals(clientId) && CLIENT_SECRET.equals(clientSecret);
+            return oauthClientProperties.getClientId().equals(clientId)
+                    && oauthClientProperties.getClientSecret().equals(clientSecret);
 
         } catch (Exception e) {
             log.warn("Failed to parse Basic auth header", e);

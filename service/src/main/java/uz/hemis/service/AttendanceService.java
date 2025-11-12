@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.AttendanceDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Attendance;
-import uz.hemis.domain.mapper.AttendanceMapper;
+import uz.hemis.service.mapper.AttendanceMapper;
 import uz.hemis.domain.repository.AttendanceRepository;
 
 import java.time.LocalDate;

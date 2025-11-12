@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.ScheduleDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Schedule;
-import uz.hemis.domain.mapper.ScheduleMapper;
+import uz.hemis.service.mapper.ScheduleMapper;
 import uz.hemis.domain.repository.ScheduleRepository;
 
 import java.time.LocalDate;

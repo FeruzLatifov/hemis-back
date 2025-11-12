@@ -10,7 +10,7 @@ import uz.hemis.common.dto.GradeDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Grade;
-import uz.hemis.domain.mapper.GradeMapper;
+import uz.hemis.service.mapper.GradeMapper;
 import uz.hemis.domain.repository.*;
 
 import java.time.LocalDateTime;

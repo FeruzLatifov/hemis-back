@@ -17,7 +17,7 @@ spring:
   # DataSource Configuration (Master/Replica)
   # =====================================================
   # CRITICAL: Connects to existing ministry.sql database
-  # NO schema generation - Flyway baseline only
+  # NO schema generation - Liquibase migrations only
   # Master: Write operations (CREATE, UPDATE, DELETE)
   # Replica: Read operations (SELECT)
   # =====================================================
@@ -108,24 +108,6 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
-
-  # =====================================================
-  # Flyway Configuration
-  # =====================================================
-  # CRITICAL: baseline-on-migrate=true for existing DB
-  # V1__baseline.sql contains NO DDL changes (documentation only)
-  # =====================================================
-
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
-    locations: classpath:db/migration
-    sql-migration-prefix: V
-    sql-migration-separator: __
-    sql-migration-suffixes: .sql
-    validate-on-migrate: true
-    clean-disabled: true  # NEVER clean database
 
   # =====================================================
   # Jackson Configuration
@@ -244,7 +226,6 @@ logging:
     uz.hemis: INFO
     org.springframework: INFO
     org.hibernate: INFO
-    org.flywaydb: INFO
 
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
@@ -314,6 +295,12 @@ hemis:
       # Public key or JWK Set URI for JWT validation (optional)
       jwk-set-uri: ${JWT_JWK_SET_URI:}
       issuer-uri: ${JWT_ISSUER_URI:}
+    oauth:
+      # Legacy client credentials (Basic auth)
+      client-id: ${OAUTH_CLIENT_ID:client}
+      client-secret: ${OAUTH_CLIENT_SECRET:secret}
+      # Scope returned in token responses
+      scope: ${OAUTH_SCOPE:rest-api}
 
 # =====================================================
 # Spring Security OAuth2 Resource Server

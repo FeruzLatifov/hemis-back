@@ -10,7 +10,7 @@ import uz.hemis.common.dto.EnrollmentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Enrollment;
-import uz.hemis.domain.mapper.EnrollmentMapper;
+import uz.hemis.service.mapper.EnrollmentMapper;
 import uz.hemis.domain.repository.*;
 
 import java.time.LocalDateTime;

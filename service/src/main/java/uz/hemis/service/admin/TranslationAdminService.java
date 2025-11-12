@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.dto.TranslationDto;
 import uz.hemis.domain.entity.SystemMessage;
 import uz.hemis.domain.entity.SystemMessageTranslation;
 import uz.hemis.domain.entity.SystemMessageTranslationId;
@@ -14,6 +15,7 @@ import uz.hemis.domain.repository.SystemMessageRepository;
 import uz.hemis.domain.repository.SystemMessageTranslationRepository;
 import uz.hemis.service.I18nService;
 import uz.hemis.service.event.TranslationCacheEventPublisher;
+import uz.hemis.service.mapper.SystemMessageMapper;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -63,6 +65,7 @@ public class TranslationAdminService {
     private final SystemMessageTranslationRepository translationRepository;
     private final I18nService i18nService;
     private final TranslationCacheEventPublisher eventPublisher;
+    private final SystemMessageMapper messageMapper;
 
     // =====================================================
     // View & Update Operations (No Create/Delete)
@@ -71,10 +74,10 @@ public class TranslationAdminService {
     /**
      * Get all translations with pagination and filtering
      *
-     * <p><strong>IMPORTANT:</strong> Eagerly fetch translations to avoid LazyInitializationException</p>
+     * <p><strong>IMPORTANT:</strong> Returns DTOs to decouple API from entities</p>
      */
     @Transactional(readOnly = true)
-    public Page<SystemMessage> getAllTranslations(
+    public Page<TranslationDto> getAllTranslations(
         String category,
         String searchKey,
         Boolean active,
@@ -105,33 +108,42 @@ public class TranslationAdminService {
 
         Page<SystemMessage> page = systemMessageRepository.findAll(spec, pageable);
 
-        // ✅ Force-fetch translations to avoid LazyInitializationException during JSON serialization
+        // Force-fetch translations to avoid LazyInitializationException
         page.getContent().forEach(msg -> {
             if (msg.getTranslations() != null) {
                 msg.getTranslations().size(); // Trigger Hibernate initialization
             }
         });
 
-        return page;
+        // Convert to DTOs
+        return page.map(messageMapper::toDto);
     }
 
     /**
      * Get single translation by ID with all languages
      */
     @Transactional(readOnly = true)
-    public Optional<SystemMessage> getTranslationById(UUID id) {
+    public Optional<TranslationDto> getTranslationById(UUID id) {
         log.info("Getting translation by ID: {}", id);
-        // Eagerly load translations to avoid LazyInitializationException in controller DTO mapping
-        return systemMessageRepository.findByIdWithTranslations(id);
+        // Eagerly load translations to avoid LazyInitializationException
+        return systemMessageRepository.findByIdWithTranslations(id)
+            .map(messageMapper::toDto);
     }
 
     /**
      * Get translations by message key
      */
     @Transactional(readOnly = true)
-    public Optional<SystemMessage> getTranslationByKey(String messageKey) {
+    public Optional<TranslationDto> getTranslationByKey(String messageKey) {
         log.info("Getting translation by key: {}", messageKey);
-        return systemMessageRepository.findByMessageKey(messageKey);
+        return systemMessageRepository.findByMessageKey(messageKey)
+            .map(entity -> {
+                // Force-fetch translations
+                if (entity.getTranslations() != null) {
+                    entity.getTranslations().size();
+                }
+                return messageMapper.toDto(entity);
+            });
     }
 
 
@@ -187,7 +199,7 @@ public class TranslationAdminService {
      * Toggle translation active status
      */
     @Transactional
-    public SystemMessage toggleActive(UUID id) {
+    public TranslationDto toggleActive(UUID id) {
         log.info("Toggling translation active status: id={}", id);
 
         SystemMessage message = systemMessageRepository.findById(id)
@@ -197,6 +209,11 @@ public class TranslationAdminService {
         message.setUpdatedAt(LocalDateTime.now());
         message = systemMessageRepository.save(message);
 
+        // Force-fetch translations
+        if (message.getTranslations() != null) {
+            message.getTranslations().size();
+        }
+
         // Clear cache
         i18nService.clearCache();
 
@@ -204,7 +221,7 @@ public class TranslationAdminService {
         eventPublisher.publishTranslationUpdated(message.getMessageKey());
 
         log.info("✅ Translation active toggled: id={}, active={}", id, message.getIsActive());
-        return message;
+        return messageMapper.toDto(message);
     }
 
     // =====================================================

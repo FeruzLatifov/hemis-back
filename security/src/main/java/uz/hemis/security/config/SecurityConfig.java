@@ -207,7 +207,9 @@ public class SecurityConfig {
                 keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
             }
             SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
-            return NimbusJwtDecoder.withSecretKey(secretKey).build();
+            return NimbusJwtDecoder.withSecretKey(secretKey)
+                    .macAlgorithm(org.springframework.security.oauth2.jose.jws.MacAlgorithm.HS256)
+                    .build();
         }
     }
 
@@ -234,10 +236,17 @@ public class SecurityConfig {
             keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         }
 
+        // Ensure key is at least 256 bits (32 bytes) for HS256
+        if (keyBytes.length < 32) {
+            byte[] paddedKey = new byte[32];
+            System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 32));
+            keyBytes = paddedKey;
+        }
+
         SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
 
         // Create JWK from secret key with explicit algorithm and keyId
-        JWK jwk = new OctetSequenceKey.Builder(secretKey)
+        JWK jwk = new OctetSequenceKey.Builder(keyBytes)
                 .keyID("hemis-jwt-key")  // CRITICAL: keyId required for JWK selection
                 .algorithm(com.nimbusds.jose.JWSAlgorithm.HS256)
                 .build();

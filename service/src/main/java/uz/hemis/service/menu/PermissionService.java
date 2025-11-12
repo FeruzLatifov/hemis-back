@@ -25,6 +25,19 @@ public class PermissionService {
     private final UserRepository userRepository;
 
     /**
+     * Check if user (by username) can access specific path
+     * (Convenience method for controllers)
+     */
+    public boolean canAccessPath(String username, String path) {
+        log.debug("Checking path access for username: {}, path: {}", username, path);
+        
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        return canAccessPath(user.getId(), path);
+    }
+
+    /**
      * Get all permissions for a user (from all roles)
      */
     public List<String> getUserPermissions(UUID userId) {

@@ -166,9 +166,14 @@ public class I18nService {
             try {
                 ClassPathResource resource = new ClassPathResource(filePath);
                 if (resource.exists()) {
-                    Properties props = PropertiesLoaderUtils.loadProperties(resource);
+                    // ✅ Load properties with UTF-8 encoding (for Cyrillic support)
+                    Properties props = new Properties();
+                    try (java.io.InputStreamReader reader = new java.io.InputStreamReader(
+                            resource.getInputStream(), java.nio.charset.StandardCharsets.UTF_8)) {
+                        props.load(reader);
+                    }
                     propertiesCache.put(language, props);
-                    log.info("✅ Loaded {} properties for language: {} from {}",
+                    log.info("✅ Loaded {} properties for language: {} from {} (UTF-8)",
                         props.size(), language, filePath);
                 } else {
                     log.warn("⚠️  Properties file not found: {}", filePath);

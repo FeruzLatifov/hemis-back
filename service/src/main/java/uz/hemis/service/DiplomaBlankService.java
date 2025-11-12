@@ -13,7 +13,7 @@ import uz.hemis.common.dto.DiplomaBlankDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.DiplomaBlank;
-import uz.hemis.domain.mapper.DiplomaBlankMapper;
+import uz.hemis.service.mapper.DiplomaBlankMapper;
 import uz.hemis.domain.repository.DiplomaBlankRepository;
 
 import java.time.LocalDateTime;

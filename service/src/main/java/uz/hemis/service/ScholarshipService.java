@@ -13,7 +13,7 @@ import uz.hemis.common.dto.ScholarshipDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Scholarship;
-import uz.hemis.domain.mapper.ScholarshipMapper;
+import uz.hemis.service.mapper.ScholarshipMapper;
 import uz.hemis.domain.repository.ScholarshipRepository;
 
 import java.math.BigDecimal;

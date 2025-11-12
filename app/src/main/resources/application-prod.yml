@@ -69,12 +69,13 @@ spring:
           batch_size: 50  # Higher for production
 
   # =====================================================
-  # Production Flyway
+  # Database Migrations - Liquibase ONLY
   # =====================================================
 
-  flyway:
+  # Liquibase Configuration
+  liquibase:
     enabled: true
-    clean-disabled: true  # NEVER clean in production
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
 
 # =====================================================
 # Server Configuration (Production)
@@ -122,7 +123,7 @@ logging:
     uz.hemis: INFO
     org.springframework: WARN
     org.hibernate: WARN
-    org.flywaydb: INFO
+    liquibase: INFO
 
   file:
     name: ${LOG_FILE:/var/log/hemis/application.log}

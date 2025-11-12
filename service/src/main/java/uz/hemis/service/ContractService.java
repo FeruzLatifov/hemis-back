@@ -13,7 +13,7 @@ import uz.hemis.common.dto.ContractDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Contract;
-import uz.hemis.domain.mapper.ContractMapper;
+import uz.hemis.service.mapper.ContractMapper;
 import uz.hemis.domain.repository.ContractRepository;
 
 import java.math.BigDecimal;

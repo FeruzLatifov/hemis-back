@@ -10,11 +10,12 @@ import uz.hemis.common.dto.GroupDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Group;
-import uz.hemis.domain.mapper.GroupMapper;
+import uz.hemis.service.mapper.GroupMapper;
 import uz.hemis.domain.repository.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -92,5 +93,25 @@ public class GroupService {
 
     public long countByUniversity(String universityCode) {
         return groupRepository.countByUniversity(universityCode);
+    }
+
+    // =====================================================
+    // CUBA REST API Compatible Methods
+    // =====================================================
+
+    /**
+     * Get groups by university (CUBA compatible)
+     *
+     * @param university university code
+     * @param type group type (optional)
+     * @param year academic year (optional)
+     * @return list of group DTOs
+     */
+    public Object getByUniversity(String university, String type, Integer year) {
+        log.debug("CUBA API: get groups by university: {}, type: {}, year: {}", university, type, year);
+        Page<GroupDto> page = findByUniversity(university, Pageable.unpaged());
+        List<GroupDto> groups = page.getContent();
+        // TODO: Filter by type and year if provided
+        return groups;
     }
 }

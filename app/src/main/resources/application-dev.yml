@@ -11,7 +11,7 @@ spring:
   # =====================================================
 
   datasource:
-    url: jdbc:postgresql://${DB_MASTER_HOST:localhost}:${DB_MASTER_PORT:5432}/${DB_MASTER_NAME:hemis4}
+    url: jdbc:postgresql://${DB_MASTER_HOST:localhost}:${DB_MASTER_PORT:5432}/${DB_MASTER_NAME:test_hemis}
     username: ${DB_MASTER_USERNAME:postgres}
     password: ${DB_MASTER_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -35,30 +35,26 @@ spring:
         use_sql_comments: true
 
   # =====================================================
-  # Development Flyway Configuration
+  # Development Liquibase Configuration
   # =====================================================
-  # BEST PRACTICE: Configured to work with existing database
-  # Currently DISABLED - enable when needed for new migrations
+  # BEST PRACTICE: Native rollback support with changesets
   # =====================================================
 
-  flyway:
-    # TOGGLE: Set to true when you need to run migrations
-    enabled: true  # Enabled to run V5 I18n migration
+  liquibase:
+    # Enable Liquibase migrations
+    enabled: true  # ✅ Liquibase yoqildi (native rollback support)
 
-    # Baseline configuration (for existing databases)
-    baseline-on-migrate: true  # Mavjud bazani baseline sifatida qabul qiladi
-    baseline-version: 0  # Barcha migration'lar baseline'dan keyin ishga tushadi
+    # Changelog location
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+
+    # Default schema
+    default-schema: public
 
     # Safety settings
-    clean-disabled: true  # NEVER allow flyway clean in any environment
-    validate-on-migrate: true  # Migration'larni validatsiya qiladi
+    drop-first: false  # NEVER drop database in any environment
 
-    # Flexibility for development
-    out-of-order: true  # Tartibsiz migration'larni qabul qiladi
-    mixed: true  # Transactional va non-transactional SQL'ni aralash ishlatish
-
-    # PostgreSQL specific
-    # CREATE INDEX CONCURRENTLY requires non-transactional execution
+    # Context and labels (optional, for environment-specific changes)
+    contexts: dev
 
   # =====================================================
   # Redis Configuration - ENABLED for Permission Caching
@@ -120,7 +116,8 @@ logging:
     org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.flywaydb: DEBUG
+    liquibase: INFO
+    liquibase.changelog: INFO
 
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
@@ -139,10 +136,10 @@ hemis:
 
   security:
     jwt:
-      # Development JWT configuration
+      # Development JWT configuration (OLD-HEMIS compatible)
       secret: ${JWT_SECRET:dev-secret-key-change-in-production-this-is-only-for-development-min-64-chars}
-      expiration: ${JWT_EXPIRATION:86400000}
-      refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+      expiration: ${JWT_EXPIRATION:43200}  # 12 hours in seconds (OLD-HEMIS: 43199)
+      refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800}  # 7 days in seconds
       jwk-set-uri: ${JWT_JWK_SET_URI:}
 
   database:

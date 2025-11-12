@@ -96,6 +96,8 @@ class TokenServiceTest {
         assertThat(response.getTokenType()).isEqualTo("Bearer");
         assertThat(response.getExpiresIn()).isEqualTo(3600); // From test properties
         assertThat(response.getScope()).isEqualTo("rest-api");
+        assertThat(response.getRefreshToken()).isNotNull();
+        assertThat(response.getRefreshToken()).startsWith("eyJ");
     }
 
     @Test
@@ -458,7 +460,8 @@ class TokenServiceTest {
         assertThat(response.getExpiresIn()).isGreaterThan(0);
         assertThat(response.getScope()).isNotNull();
 
-        // Optional fields in our implementation
-        assertThat(response.getRefreshToken()).isNull();  // Only in refreshToken() method
+        // Refresh token must be present for legacy refresh flow
+        assertThat(response.getRefreshToken()).isNotNull();
+        assertThat(response.getRefreshToken()).startsWith("eyJ");
     }
 }

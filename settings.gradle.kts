@@ -12,8 +12,9 @@ include(
     "security",                 // JWT OAuth2 Resource Server
     "domain",                   // JPA entities (@Table/@Column legacy mapping)
     "service",                  // Service layer
-    "external",                 // 🆕 External S2S APIs (government, education, financial)
-    "web",                      // 🆕 Web APIs (Admin Panel + UI CRUD operations)
+    "api-legacy",               // 🎯 Legacy CUBA-compatible APIs (/app/rest/*)
+    "api-web",                  // 🎯 Modern Web/UI APIs (/api/v1/web/*)
+    "api-external",             // 🎯 S2S integrations (gov, education, finance)
     "app"                       // Main Spring Boot application
 )
 
@@ -37,15 +38,15 @@ dependencyResolutionManagement {
 }
 
 // =====================================================
-// Module Structure (UPDATED - Modular Monolith v2.0.0)
+// Module Structure (Clean Architecture v2.0.0)
 // =====================================================
 // hemis/
 // ├── common/                  → Shared code (NO internal dependencies)
 // ├── security/                → JWT + OAuth2 (depends on: common, domain)
 // ├── domain/                  → JPA entities + repositories (depends on: common)
-// ├── service/                 → Business logic layer
-// ├── external/                → 🆕 S2S APIs (government, education, financial integrations)
-// ├── web/                     → 🆕 Web APIs (UI CRUD operations - 140 endpoints)
-// ├── admin/                   → 🆕 Admin APIs (system management)
-// └── app/                     → Main Boot app (depends on: ALL)
+// ├── service/                 → Business logic layer (depends on: domain, common)
+// ├── api-legacy/              → 🎯 CUBA entity APIs /app/rest/* (56 controllers)
+// ├── api-web/                 → 🎯 Modern Web APIs /api/v1/web/* (30 controllers)
+// ├── api-external/            → 🎯 S2S integrations (6 controllers)
+// └── app/                     → Main Boot app (5 auth/public controllers only)
 // =====================================================

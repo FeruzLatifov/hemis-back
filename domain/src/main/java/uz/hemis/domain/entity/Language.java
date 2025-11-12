@@ -50,11 +50,11 @@ import org.hibernate.annotations.Where;
  */
 @Entity
 @Table(
-    name = "h_language",
+    name = "languages",
     indexes = {
-        @Index(name = "idx_language_code", columnList = "code", unique = true),
-        @Index(name = "idx_language_active", columnList = "is_active"),
-        @Index(name = "idx_language_position", columnList = "position")
+        @Index(name = "idx_languages_code", columnList = "code", unique = true),
+        @Index(name = "idx_languages_active", columnList = "is_active"),
+        @Index(name = "idx_languages_position", columnList = "position")
     }
 )
 @Where(clause = "deleted_at IS NULL")

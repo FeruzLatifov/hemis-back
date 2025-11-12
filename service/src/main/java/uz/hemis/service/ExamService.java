@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.ExamDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Exam;
-import uz.hemis.domain.mapper.ExamMapper;
+import uz.hemis.service.mapper.ExamMapper;
 import uz.hemis.domain.repository.ExamRepository;
 
 import java.time.LocalDate;

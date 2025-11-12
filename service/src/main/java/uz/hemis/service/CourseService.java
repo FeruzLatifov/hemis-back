@@ -10,7 +10,7 @@ import uz.hemis.common.dto.CourseDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Course;
-import uz.hemis.domain.mapper.CourseMapper;
+import uz.hemis.service.mapper.CourseMapper;
 import uz.hemis.domain.repository.CourseRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 

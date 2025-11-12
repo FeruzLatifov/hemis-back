@@ -1,0 +1,163 @@
+# =====================================================
+# HEMIS Backend - Liquibase Master Changelog
+# =====================================================
+# Senior Architect: Clean, Consolidated Migrations
+# Migrated from: hemis-back-main Flyway migrations
+# Date: 2025-01-12
+#
+# Strategy:
+# ✅ No duplication - all migrations consolidated
+# ✅ Logical grouping - schema, data, migration, translations
+# ✅ Complete rollback support
+# ✅ Best practice naming and structure
+#
+# Original source: 15 Flyway files (3774 lines)
+# Consolidated to: 4 Liquibase changesets (2883 lines)
+# =====================================================
+
+databaseChangeLog:
+  # =====================================================
+  # V1: Complete Database Schema
+  # =====================================================
+  # Creates all required tables:
+  # - Authentication: users, roles, permissions
+  # - RBAC: user_roles, role_permissions
+  # - I18n: h_system_message, h_system_message_translation
+  #
+  # Total: 7 tables with indexes and constraints
+  # Source: V1 + V5 from main (consolidated)
+  # =====================================================
+
+  - changeSet:
+      id: v1-complete-schema
+      author: hemis-team
+      comment: Create complete database schema (auth + i18n tables)
+      context: "!test"
+      labels: "schema,ddl"
+      runOnChange: false
+
+      sqlFile:
+        path: classpath:/db/changelog/changesets/01-complete-schema.sql
+        stripComments: false
+        splitStatements: false
+
+      rollback:
+        sqlFile:
+          path: classpath:/db/changelog/changesets/01-complete-schema-rollback.sql
+
+  # =====================================================
+  # V2: Complete Seed Data
+  # =====================================================
+  # Seeds all required data:
+  # - 1 admin user (username: admin, password: admin)
+  # - 5 roles (SUPER_ADMIN, ADMINISTRATORS, etc.)
+  # - 90 permissions (30 basic CRUD + 60 menu permissions)
+  # - Role-permission assignments (all to ADMINISTRATORS)
+  # - User-role assignments
+  #
+  # Menu permissions structure:
+  # - Dashboard (1)
+  # - Registry (4)
+  # - Rating (14)
+  # - Data Management (10)
+  # - Reports (25)
+  # - System (6)
+  #
+  # Source: V2 + V9 from main (consolidated)
+  # =====================================================
+
+  - changeSet:
+      id: v2-complete-seed-data
+      author: hemis-team
+      comment: Seed complete data (admin + roles + 90 permissions including 60 menu)
+      context: "!test"
+      labels: "data,seed"
+      runOnChange: false
+
+      sqlFile:
+        path: classpath:/db/changelog/changesets/02-complete-seed-data.sql
+        stripComments: false
+        splitStatements: false
+
+      rollback:
+        sqlFile:
+          path: classpath:/db/changelog/changesets/02-complete-seed-data-rollback.sql
+
+  # =====================================================
+  # V3: Migrate Old-Hemis Users
+  # =====================================================
+  # Migrates existing data from old-hemis CUBA:
+  # - Roles: sec_role → roles
+  # - Users: sec_user → users (357 users)
+  # - Mappings: sec_user_role → user_roles
+  #
+  # Strategy: Hybrid approach
+  # - Preserves original UUIDs for integrity
+  # - Keeps BCrypt passwords as-is
+  # - Only migrates active records (delete_ts IS NULL)
+  # - Skips duplicates (ON CONFLICT DO NOTHING)
+  #
+  # Source: V3 from main
+  # =====================================================
+
+  - changeSet:
+      id: v3-migrate-old-hemis-users
+      author: hemis-team
+      comment: Migrate users from old-hemis (sec_* tables → new tables)
+      context: "!test"
+      labels: "data,migration"
+      runOnChange: false
+
+      sqlFile:
+        path: classpath:/db/changelog/changesets/03-migrate-old-users.sql
+        stripComments: false
+        splitStatements: false
+
+      rollback:
+        sqlFile:
+          path: classpath:/db/changelog/changesets/03-migrate-old-users-rollback.sql
+
+  # =====================================================
+  # V4: Complete Menu Translations
+  # =====================================================
+  # Complete translation system for menu:
+  # - 127 menu items with full nested structure
+  # - 4 languages: uz-UZ, oz-UZ (Cyrillic), ru-RU, en-US
+  # - Total: 508 translation records (127 × 4)
+  #
+  # Menu structure (6 main sections):
+  # 1. Dashboard
+  # 2. Registry (Reestlar) - 19 nested items
+  # 3. Rating (Reyting) - 14 nested items
+  # 4. Data Management - 44 nested items
+  # 5. Reports (Hisobotlar) - 43 nested items
+  # 6. System (Tizim) - 6 items
+  #
+  # Source: V10 + V12 + V13 + V14 + V15 from main (consolidated)
+  # =====================================================
+
+  - changeSet:
+      id: v4-complete-menu-translations
+      author: hemis-team
+      comment: Complete menu translations (127 items × 4 languages = 508 records)
+      context: "!test"
+      labels: "i18n,menu,translations"
+      runOnChange: false
+
+      sqlFile:
+        path: classpath:/db/changelog/changesets/04-complete-translations.sql
+        stripComments: false
+        splitStatements: false
+
+      rollback:
+        sqlFile:
+          path: classpath:/db/changelog/changesets/04-complete-translations-rollback.sql
+
+# =====================================================
+# Liquibase Commands
+# =====================================================
+# Apply all:      ./gradlew bootRun
+# Rollback all:   liquibase rollback-count 4
+# Rollback to V2: liquibase rollback-count 2
+# Status:         liquibase status
+# =====================================================

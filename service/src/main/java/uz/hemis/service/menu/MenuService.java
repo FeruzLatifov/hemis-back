@@ -3,6 +3,8 @@ package uz.hemis.service.menu;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uz.hemis.domain.entity.User;
+import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.service.I18nService;
 import uz.hemis.service.menu.dto.MenuItem;
 import uz.hemis.service.menu.dto.MenuResponse;
@@ -25,6 +27,20 @@ public class MenuService {
     private final MenuConfig menuConfig;
     private final PermissionService permissionService;
     private final I18nService i18nService;
+    private final UserRepository userRepository;
+
+    /**
+     * Get filtered menu for user by username
+     * (Convenience method for controllers)
+     */
+    public MenuResponse getMenuForUsername(String username, String locale) {
+        log.info("Getting menu for username: {}, locale: {}", username, locale);
+        
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
+        
+        return getMenuForUser(user.getId(), locale);
+    }
 
     /**
      * Get filtered menu for user

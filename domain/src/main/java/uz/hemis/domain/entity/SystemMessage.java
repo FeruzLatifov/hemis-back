@@ -40,11 +40,11 @@ import java.util.Set;
  */
 @Entity
 @Table(
-    name = "h_system_message",
+    name = "system_messages",
     indexes = {
-        @Index(name = "idx_system_message_category", columnList = "category"),
-        @Index(name = "idx_system_message_key", columnList = "message_key", unique = true),
-        @Index(name = "idx_system_message_active", columnList = "is_active")
+        @Index(name = "idx_system_messages_category", columnList = "category"),
+        @Index(name = "idx_system_messages_key", columnList = "message_key", unique = true),
+        @Index(name = "idx_system_messages_active", columnList = "is_active")
     }
 )
 @Where(clause = "deleted_at IS NULL")

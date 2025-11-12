@@ -13,7 +13,7 @@ import uz.hemis.common.dto.EmploymentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Employment;
-import uz.hemis.domain.mapper.EmploymentMapper;
+import uz.hemis.service.mapper.EmploymentMapper;
 import uz.hemis.domain.repository.EmploymentRepository;
 
 import java.time.LocalDateTime;

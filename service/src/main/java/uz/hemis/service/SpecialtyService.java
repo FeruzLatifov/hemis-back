@@ -10,7 +10,7 @@ import uz.hemis.common.dto.SpecialtyDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Specialty;
-import uz.hemis.domain.mapper.SpecialtyMapper;
+import uz.hemis.service.mapper.SpecialtyMapper;
 import uz.hemis.domain.repository.FacultyRepository;
 import uz.hemis.domain.repository.SpecialtyRepository;
 import uz.hemis.domain.repository.UniversityRepository;
@@ -442,5 +442,24 @@ public class SpecialtyService {
      */
     public boolean existsByCode(String code) {
         return specialtyRepository.existsByCode(code);
+    }
+
+    // =====================================================
+    // CUBA REST API Compatible Methods
+    // =====================================================
+
+    /**
+     * Get specialties by university (CUBA compatible)
+     *
+     * @param university university code
+     * @param type specialty type (optional)
+     * @return list of specialty DTOs
+     */
+    public Object getByUniversity(String university, String type) {
+        log.debug("CUBA API: get specialties by university: {}, type: {}", university, type);
+        Page<SpecialtyDto> page = findByUniversity(university, Pageable.unpaged());
+        List<SpecialtyDto> specialties = page.getContent();
+        // TODO: Filter by type if provided
+        return specialties;
     }
 }

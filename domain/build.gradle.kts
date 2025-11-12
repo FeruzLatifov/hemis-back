@@ -15,9 +15,9 @@ dependencies {
     // PostgreSQL Driver (version from BOM)
     runtimeOnly("org.postgresql:postgresql")
 
-    // Flyway for migrations (version from BOM)
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-database-postgresql")
+    // Liquibase for migrations with native rollback support (version from BOM)
+    implementation("org.liquibase:liquibase-core")
+    // PostgreSQL driver already included via runtimeOnly above
 
     // Hibernate (version from BOM via spring-boot-starter-data-jpa)
     // No need to declare explicitly
@@ -69,5 +69,5 @@ tasks.withType<JavaCompile> {
 // - Table/column names MUST match ministry.sql exactly
 // - NO schema generation (ddl-auto=none)
 // - NO DELETE operations (repository methods prohibited)
-// - Flyway migrations: V1__baseline.sql ONLY (no DDL changes)
+// - Liquibase migrations ONLY (Flyway disabled)
 // =====================================================

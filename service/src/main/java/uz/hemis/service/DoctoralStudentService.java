@@ -13,7 +13,7 @@ import uz.hemis.common.dto.DoctoralStudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.DoctoralStudent;
-import uz.hemis.domain.mapper.DoctoralStudentMapper;
+import uz.hemis.service.mapper.DoctoralStudentMapper;
 import uz.hemis.domain.repository.DoctoralStudentRepository;
 
 import java.time.LocalDateTime;

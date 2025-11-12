@@ -116,21 +116,21 @@ public class User extends ModernBaseEntity {
     // =====================================================
 
     /**
-     * University code (nullable for system admins)
-     * Column: _university VARCHAR(255)
+     * Entity code (university/organization/ministry code, nullable for system admins)
+     * Column: entity_code VARCHAR(255)
      *
      * <p>Maps to UniversityUser.university in OLD-HEMIS</p>
      * <p>NULL for system administrators</p>
-     * <p>Required for ROLE_UNIVERSITY_ADMIN users</p>
+     * <p>Required for non-SYSTEM user types</p>
      *
      * <p><strong>Example:</strong></p>
      * <ul>
-     *   <li>admin user: university = NULL (system-wide access)</li>
-     *   <li>tatu_admin: university = "TATU" (only TATU data)</li>
+     *   <li>admin user: entityCode = NULL (system-wide access)</li>
+     *   <li>tatu_admin: entityCode = "TATU" (only TATU data)</li>
      * </ul>
      */
-    @Column(name = "_university", length = 255)
-    private String university;
+    @Column(name = "entity_code", length = 255)
+    private String entityCode;
 
     // =====================================================
     // Personal Information (Optional)

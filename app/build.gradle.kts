@@ -11,13 +11,15 @@ plugins {
 }
 
 dependencies {
-    // Internal dependencies - include ALL modules (v2.0.0 Multi-Module Monolith)
+    // Internal dependencies - Clean Architecture (v2.0.0 Modular Monolith)
     implementation(project(":common"))
     implementation(project(":domain"))
     implementation(project(":security"))
     implementation(project(":service"))
-    implementation(project(":web"))
-    implementation(project(":external"))
+    // Controllers moved to api-* modules (Clean Architecture separation)
+    implementation(project(":api-legacy"))      // CUBA-compatible entity APIs
+    implementation(project(":api-web"))         // Modern Web/UI APIs
+    implementation(project(":api-external"))    // S2S integration APIs
 
     // Spring Boot Starters (versions from BOM)
     implementation("org.springframework.boot:spring-boot-starter-web")
@@ -34,10 +36,6 @@ dependencies {
 
     // PostgreSQL Driver
     runtimeOnly("org.postgresql:postgresql")
-
-    // Flyway
-    implementation("org.flywaydb:flyway-core")
-    implementation("org.flywaydb:flyway-database-postgresql")
 
     // SpringDoc OpenAPI (Swagger)
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")

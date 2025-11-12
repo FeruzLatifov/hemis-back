@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.UniversityDto;
 import uz.hemis.domain.entity.University;
-import uz.hemis.domain.mapper.UniversityMapper;
+import uz.hemis.service.mapper.UniversityMapper;
 import uz.hemis.domain.repository.UniversityRepository;
 
 import jakarta.persistence.criteria.Predicate;

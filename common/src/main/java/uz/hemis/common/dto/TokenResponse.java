@@ -1,5 +1,6 @@
 package uz.hemis.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,10 +23,10 @@ import java.io.Serializable;
  * <p><strong>Example Response:</strong></p>
  * <pre>
  * {
- *   "access_token": "f1041fac-58cd-491a-a37d-212393a838f3",
+ *   "access_token": "Qj4ndwMJ76yu6xxFPYwyxzdUN6c",
  *   "token_type": "bearer",
- *   "refresh_token": "34583dda-9410-4410-95ff-cc0824656766",
- *   "expires_in": 43199,
+ *   "refresh_token": "dAOjVT_EEsfr34RALHakaADX0k0",
+ *   "expires_in": 2591998,
  *   "scope": "rest-api"
  * }
  * </pre>
@@ -36,6 +37,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)  // ✅ Don't include null fields (old-hemis compatibility)
 public class TokenResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -72,12 +74,12 @@ public class TokenResponse implements Serializable {
      * Token expiration in seconds
      * JSON field: "expires_in"
      *
-     * <p>OLD-HEMIS default: 43199 seconds (12 hours - 1 second)</p>
-     * <p>12 hours = 43200 seconds, but OLD-HEMIS uses 43199</p>
+     * <p>OLD-HEMIS default: 2591998 seconds (30 days - 2 seconds)</p>
+     * <p>30 days = 2592000 seconds, but OLD-HEMIS uses 2591998</p>
      */
     @JsonProperty("expires_in")
     @Builder.Default
-    private Integer expiresIn = 43199;  // 12 hours (OLD-HEMIS compatibility)
+    private Integer expiresIn = 2591998;  // 30 days (OLD-HEMIS compatibility)
 
     /**
      * Token scope (always "rest-api")

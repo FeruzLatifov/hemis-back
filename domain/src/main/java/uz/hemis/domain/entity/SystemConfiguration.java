@@ -44,10 +44,10 @@ import org.hibernate.annotations.Where;
  */
 @Entity
 @Table(
-    name = "h_system_configuration",
+    name = "configurations",
     indexes = {
-        @Index(name = "idx_sys_config_path", columnList = "path", unique = true),
-        @Index(name = "idx_sys_config_category", columnList = "category")
+        @Index(name = "idx_configurations_path", columnList = "path", unique = true),
+        @Index(name = "idx_configurations_category", columnList = "category")
     }
 )
 @Where(clause = "deleted_at IS NULL")

@@ -49,6 +49,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsername(String username);
 
     /**
+     * Find user by username with roles eagerly fetched
+     *
+     * <p>Used by UserInfo endpoint to avoid lazy loading issues</p>
+     *
+     * @param username login username
+     * @return user with roles if found
+     */
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roleSet WHERE u.username = :username")
+    Optional<User> findByUsernameWithRoles(@Param("username") String username);
+
+    /**
      * Find active user by username
      *
      * <p><strong>Active means:</strong></p>
@@ -80,32 +91,32 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     // =====================================================
 
     /**
-     * Find user by username and university
+     * Find user by username and entity code
      *
-     * <p>Used when checking university-specific user access</p>
+     * <p>Used when checking entity-specific user access</p>
      *
      * @param username login username
-     * @param universityCode university code
+     * @param entityCode entity code (university/organization)
      * @return user if found
      */
-    @Query("SELECT u FROM User u WHERE u.username = :username AND u.university = :university")
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.entityCode = :entityCode")
     Optional<User> findByUsernameAndUniversity(
             @Param("username") String username,
-            @Param("university") String universityCode
+            @Param("entityCode") String entityCode
     );
 
     /**
-     * Check if user exists at specific university
+     * Check if user exists at specific entity
      *
      * @param username login username
-     * @param universityCode university code
-     * @return true if user exists at this university
+     * @param entityCode entity code (university/organization)
+     * @return true if user exists at this entity
      */
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END " +
-           "FROM User u WHERE u.username = :username AND u.university = :university")
+           "FROM User u WHERE u.username = :username AND u.entityCode = :entityCode")
     boolean existsByUsernameAndUniversity(
             @Param("username") String username,
-            @Param("university") String universityCode
+            @Param("entityCode") String entityCode
     );
 
     // =====================================================
@@ -131,13 +142,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countActiveUsers();
 
     /**
-     * Count users by university
+     * Count users by entity code
      *
-     * @param universityCode university code
+     * @param entityCode entity code (university/organization)
      * @return count of users
      */
-    @Query("SELECT COUNT(u) FROM User u WHERE u.university = :university")
-    long countByUniversity(@Param("university") String universityCode);
+    @Query("SELECT COUNT(u) FROM User u WHERE u.entityCode = :entityCode")
+    long countByUniversity(@Param("entityCode") String entityCode);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

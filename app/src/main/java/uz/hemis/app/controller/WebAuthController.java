@@ -69,24 +69,23 @@ public class WebAuthController {
      * }
      * </pre>
      *
-     * <p><strong>Response:</strong></p>
+     * <p><strong>Response (OAuth2 Standard):</strong></p>
      * <pre>
      * {
-     *   "token": "eyJhbGciOiJIUzI1NiIs...",
+     *   "accessToken": "eyJhbGciOiJIUzI1NiIs...",
      *   "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
-     *   "user": {
-     *     "id": "admin",
-     *     "username": "admin",
-     *     "email": "admin@hemis.uz",
-     *     "name": "admin",
-     *     "locale": "uz",
-     *     "active": true,
-     *     "createdAt": "2025-01-07T..."
-     *   },
-     *   "university": null,
-     *   "permissions": []
+     *   "tokenType": "Bearer",
+     *   "expiresIn": 900
      * }
      * </pre>
+     *
+     * <p><strong>Best Practice:</strong></p>
+     * <ul>
+     *   <li>✅ NO user data (decode JWT on frontend)</li>
+     *   <li>✅ NO permissions (backend checks on each request)</li>
+     *   <li>✅ Clean OAuth2 format</li>
+     *   <li>✅ expiresIn for token refresh timing</li>
+     * </ul>
      */
     @Operation(
             summary = "Web login",
@@ -153,27 +152,15 @@ public class WebAuthController {
 
             // ✅ Cache permissions in Redis (TTL: 1 hour)
             permissionCacheService.cacheUserPermissions(username, permissions);
-            log.info("✅ Cached {} permissions for user: {}", permissions.size(), username);
 
-            // Build user object
-            Map<String, Object> user = new HashMap<>();
-            user.put("id", username); // For now, use username as ID
-            user.put("username", username);
-            user.put("email", username + "@hemis.uz"); // Default email
-            user.put("name", username);
-            user.put("locale", "uz");
-            user.put("active", true);
-            user.put("createdAt", now.toString());
-
-            // Build response (Frontend compatible format)
+            // Build response (OAuth2 Standard - Clean & Minimal)
             Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", accessToken); // Frontend expects 'accessToken'
+            response.put("accessToken", accessToken);
             response.put("refreshToken", refreshToken);
-            response.put("user", user);
-            response.put("university", null); // System admin has no university
-            response.put("permissions", permissions.toArray(new String[0])); // ✅ Return permissions
+            response.put("tokenType", "Bearer");
+            response.put("expiresIn", expiresIn); // Token expiration in seconds
 
-            log.info("Web login successful - username: {}, permissions: {}", username, permissions.size());
+            log.info("✅ Login successful - user: {}, cached {} permissions", username, permissions.size());
 
             return ResponseEntity.ok(response);
 

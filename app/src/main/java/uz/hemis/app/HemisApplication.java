@@ -7,9 +7,9 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
- * HEMIS Main Application v2.0.0
+ * HEMIS Main Application v2.0.0 - Clean Architecture
  *
- * <p>Spring Boot 3.5.7 + JDK 21 LTS - Multi-Module Monolith Architecture</p>
+ * <p>Spring Boot 3.5.7 + JDK 21 LTS - Modular Monolith Architecture</p>
  *
  * <p><strong>CRITICAL CONSTRAINTS:</strong></p>
  * <ul>
@@ -19,16 +19,16 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  *   <li>NDG (Non-Deletion Guarantee) - no physical DELETE queries</li>
  * </ul>
  *
- * <p><strong>Module Architecture:</strong></p>
+ * <p><strong>Clean Architecture - Module Layers:</strong></p>
  * <ul>
- *   <li>common/ - Shared utilities, DTOs</li>
- *   <li>security/ - JWT OAuth2 Resource Server</li>
- *   <li>domain/ - JPA entities + repositories</li>
- *   <li>service/ - Business logic layer</li>
- *   <li>web/ - Public Web APIs (140 endpoints)</li>
- *   <li>external/ - External S2S APIs (government, education, financial)</li>
- *   <li>admin/ - Admin APIs (system management)</li>
- *   <li>app/ - Main Spring Boot application (AuthController only)</li>
+ *   <li>common/ - Shared utilities, DTOs (no dependencies)</li>
+ *   <li>domain/ - JPA entities + repositories (depends on: common)</li>
+ *   <li>security/ - JWT OAuth2 Resource Server (depends on: common, domain)</li>
+ *   <li>service/ - Business logic layer (depends on: domain, common)</li>
+ *   <li>api-legacy/ - CUBA-compatible entity APIs (depends on: service, security)</li>
+ *   <li>api-web/ - Modern Web/UI APIs (depends on: service, security)</li>
+ *   <li>api-external/ - S2S integration APIs (depends on: service, security)</li>
+ *   <li>app/ - Main Spring Boot application (depends on: all api-* modules)</li>
  * </ul>
  *
  * @since 2.0.0
@@ -39,9 +39,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     "uz.hemis.security",
     "uz.hemis.domain",
     "uz.hemis.service",
-    "uz.hemis.web",
-    "uz.hemis.external",
-    "uz.hemis.admin",
+    "uz.hemis.api.legacy",     // CUBA entity APIs (/app/rest/v2/entities/*)
+    "uz.hemis.api.web",        // Modern UI APIs (/app/rest/v2/*, /api/v1/web/*)
+    "uz.hemis.api.external",   // S2S integrations
     "uz.hemis.app"
 })
 @EntityScan(basePackages = "uz.hemis.domain.entity")
