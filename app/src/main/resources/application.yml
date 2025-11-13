@@ -79,6 +79,16 @@ spring:
           max-wait: -1
 
   # =====================================================
+  # Spring Cache Configuration
+  # =====================================================
+  # Managed by DashboardCacheConfig.java (@Primary CacheManager bean)
+  # - Supports: menu, i18n, userPermissions, stats
+  # - TTL: 60 minutes (default), 30 minutes (dashboard)
+  # - Backend: Redis with JSON serialization
+  # - Prefix: cache:
+  # =====================================================
+
+  # =====================================================
   # JPA/Hibernate Configuration
   # =====================================================
   # CRITICAL: ddl-auto=none - NO schema generation

@@ -12,6 +12,9 @@ import uz.hemis.common.dto.UniversityDto;
 import uz.hemis.domain.entity.University;
 import uz.hemis.service.mapper.UniversityMapper;
 import uz.hemis.domain.repository.UniversityRepository;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
@@ -38,6 +41,11 @@ public class UniversityRegistryService {
     private final UniversityRepository universityRepository;
     private final UniversityMapper universityMapper;
 
+    @Cacheable(
+            value = "universitiesSearch",
+            key = "#q + ':' + #regionId + ':' + #ownershipId + ':' + #typeId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
+            unless = "#result == null || #pageable.pageNumber > 10" // Limit caching of very deep pages
+    )
     public Page<UniversityDto> searchUniversities(
             String q,
             String regionId,
@@ -78,6 +86,7 @@ public class UniversityRegistryService {
         return universities.map(universityMapper::toDto);
     }
 
+    @Cacheable(value = "universitiesSearch", key = "'detail:' + #id", unless = "#result == null")
     public UniversityDto getUniversityById(String id) {
         log.debug("Getting university by id: {}", id);
         return universityRepository.findById(id)
@@ -85,6 +94,7 @@ public class UniversityRegistryService {
                 .orElse(null);
     }
 
+    @Cacheable(value = "universityDictionaries", key = "'all'", unless = "#result == null")
     public Map<String, Object> getDictionaries() {
         log.debug("Getting dictionaries for university filters");
         Map<String, Object> dictionaries = new HashMap<>();
@@ -164,6 +174,7 @@ public class UniversityRegistryService {
      * Create new university (WRITES TO MASTER)
      */
     @Transactional
+    @CacheEvict(value = {"universitiesSearch","universityDictionaries"}, allEntries = true)
     public UniversityDto createUniversity(uz.hemis.service.registry.dto.UniversityRequestDto request) {
         log.info("Creating university: code={}, name={}", request.getCode(), request.getName());
         
@@ -187,6 +198,11 @@ public class UniversityRegistryService {
      * Update existing university (WRITES TO MASTER)
      */
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value="universitiesSearch", allEntries=true),
+        @CacheEvict(value="universityDictionaries", allEntries=true),
+        @CacheEvict(value="universitiesSearch", key="'detail:' + #code")
+    })
     public UniversityDto updateUniversity(String code, uz.hemis.service.registry.dto.UniversityRequestDto request) {
         log.info("Updating university: {}", code);
         
@@ -207,6 +223,11 @@ public class UniversityRegistryService {
      * Delete university (soft delete - WRITES TO MASTER)
      */
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value="universitiesSearch", allEntries=true),
+        @CacheEvict(value="universityDictionaries", allEntries=true),
+        @CacheEvict(value="universitiesSearch", key="'detail:' + #code")
+    })
     public void deleteUniversity(String code) {
         log.info("Deleting university: {}", code);
         

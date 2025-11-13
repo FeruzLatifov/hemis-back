@@ -46,7 +46,8 @@ public class MenuConfig {
     private MenuItem createDashboard() {
         return MenuItem.builder()
             .id("dashboard")
-            .label("menu.dashboard")  // Translation key for i18n
+            .i18nKey("menu.dashboard")  // Translation key for i18n
+            .label("menu.dashboard")     // Fallback (will be replaced by MenuService)
             .url("/dashboard")
             .icon("home")
             .permission("dashboard.view")
@@ -61,7 +62,8 @@ public class MenuConfig {
     private MenuItem createRegistry() {
         return MenuItem.builder()
             .id("registry")
-            .label("menu.registry")  // Translation key for i18n
+            .i18nKey("menu.registry")  // Translation key for i18n
+            .label("menu.registry")     // Fallback (will be replaced by MenuService)
             .url("/registry")
             .icon("database")
             .permission("registry.view")
@@ -70,6 +72,7 @@ public class MenuConfig {
             .items(Arrays.asList(
                 MenuItem.builder()
                     .id("registry-e-reestr")
+                    .i18nKey("menu.registry.e_reestr")
                     .label("menu.registry.e_reestr")
                     .url("/registry/e-reestr")
                     .icon("database")
@@ -79,6 +82,7 @@ public class MenuConfig {
                     .items(Arrays.asList(
                         MenuItem.builder()
                             .id("registry-e-reestr-university")
+                            .i18nKey("menu.registry.e_reestr.university")
                             .label("menu.registry.e_reestr.university")
                             .url("/registry/e-reestr/university")
                             .icon("building")
@@ -88,6 +92,7 @@ public class MenuConfig {
                             .build(),
                         MenuItem.builder()
                             .id("registry-e-reestr-faculty")
+                            .i18nKey("menu.registry.e_reestr.faculty")
                             .label("menu.registry.e_reestr.faculty")
                             .url("/registry/e-reestr/faculty")
                             .icon("school")
@@ -97,6 +102,7 @@ public class MenuConfig {
                             .build(),
                         MenuItem.builder()
                             .id("registry-e-reestr-cathedra")
+                            .i18nKey("menu.registry.e_reestr.cathedra")
                             .label("menu.registry.e_reestr.cathedra")
                             .url("/registry/e-reestr/cathedra")
                             .icon("users")

@@ -41,8 +41,8 @@ public class DashboardService {
      */
     @Cacheable(
         value = "stats",
-        key = "'all'",
-        cacheManager = "dashboardCacheManager"
+        key = "'all'"
+        // Uses @Primary CacheManager (TwoLevelCacheManager)
     )
     public DashboardResponse getDashboardStats() {
         log.info("📊 Fetching dashboard statistics from REPLICA database (cache miss)");
@@ -86,7 +86,13 @@ public class DashboardService {
               
               -- Gender (only for active students)
               COUNT(CASE WHEN status_code = '11' AND gender_code = '11' THEN 1 END) as male_count,
-              COUNT(CASE WHEN status_code = '11' AND gender_code = '12' THEN 1 END) as female_count
+              COUNT(CASE WHEN status_code = '11' AND gender_code = '12' THEN 1 END) as female_count,
+              
+              -- Single-roundtrip additional totals (subselects)
+              (SELECT COUNT(*) FROM hemishe_e_employee_job WHERE delete_ts IS NULL) as total_teachers,
+              (SELECT COUNT(*) FROM hemishe_e_student_diploma WHERE delete_ts IS NULL) as total_diplomas,
+              (SELECT COUNT(*) FROM hemishe_e_project) as total_projects,
+              (SELECT COUNT(*) FROM hemishe_e_publication_scientific) as total_publications
             FROM hemishe_r_student_full 
             WHERE (is_expel IS NULL OR is_expel = false)
             """;

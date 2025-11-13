@@ -456,7 +456,7 @@ public class OpenApiConfig {
     @Bean
     public GroupedOpenApi webFrontendApi() {
         return GroupedOpenApi.builder()
-            .group("web")
+            .group("Web Frontend API v1")
             .displayName("Web Frontend API v1")
             .pathsToMatch("/api/v1/web/**")
             .pathsToExclude("/actuator/**", "/error")

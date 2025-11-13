@@ -29,12 +29,17 @@ dependencies {
     // SpringDoc OpenAPI for Swagger annotations
     compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 
-    // Redis for permission caching (re-enabled with Jedis, excluding Lettuce to avoid netty conflicts)
+    // Redis for distributed cache (L2 - shared across pods)
     api("org.springframework.boot:spring-boot-starter-data-redis") {
         exclude(group = "io.lettuce", module = "lettuce-core")
     }
     api("redis.clients:jedis:5.1.0")
+
+    // Spring Cache Abstraction
     api("org.springframework.boot:spring-boot-starter-cache")
+
+    // Caffeine for L1 JVM cache (per-pod, ultra-fast)
+    api("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     // Testing
     testImplementation("org.springframework.security:spring-security-test")

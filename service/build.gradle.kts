@@ -16,11 +16,14 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.boot:spring-boot-starter-web")
 
-    // Redis for I18n caching (exclude Lettuce to avoid netty conflicts)
+    // Redis for distributed cache (L2 - shared across pods)
     implementation("org.springframework.boot:spring-boot-starter-data-redis") {
         exclude(group = "io.lettuce", module = "lettuce-core")
     }
     implementation("redis.clients:jedis:5.1.0")
+
+    // Caffeine for L1 JVM cache (per-pod, ultra-fast)
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")

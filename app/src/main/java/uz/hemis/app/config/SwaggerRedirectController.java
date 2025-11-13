@@ -14,6 +14,10 @@ public class SwaggerRedirectController {
     public String redirectToUi() {
         return "redirect:/swagger-ui.html";
     }
+
+    // Ensure /swagger-ui/index.html works (preserve query via forward)
+    @GetMapping("/swagger-ui/index.html")
+    public String forwardIndex() {
+        return "forward:/swagger-ui.html";
+    }
 }
-
-

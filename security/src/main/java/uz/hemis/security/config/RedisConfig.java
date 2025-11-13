@@ -8,11 +8,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -148,5 +150,96 @@ public class RedisConfig {
         log.info("✅ RedisTemplate configured with JSON serialization");
 
         return template;
+    }
+
+    /**
+     * Redis Template for Pub/Sub Messages
+     *
+     * <p>Separate template for String → String messages (cache invalidation signals)</p>
+     *
+     * <p><strong>Use Case:</strong></p>
+     * <ul>
+     *   <li>Admin triggers cache refresh → Publishes "refresh" signal</li>
+     *   <li>All 10 pods subscribe → Receive signal → Clear L1 cache</li>
+     *   <li>Channel: cache:invalidate:all</li>
+     * </ul>
+     */
+    @Bean
+    public RedisTemplate<String, String> redisMessageTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        // String serializer for both keys and values
+        StringRedisSerializer stringSerializer = new StringRedisSerializer();
+        template.setKeySerializer(stringSerializer);
+        template.setValueSerializer(stringSerializer);
+        template.setHashKeySerializer(stringSerializer);
+        template.setHashValueSerializer(stringSerializer);
+
+        template.afterPropertiesSet();
+
+        log.info("✅ RedisMessageTemplate configured for Pub/Sub");
+
+        return template;
+    }
+
+    /**
+     * Redis Message Listener Container (Pub/Sub)
+     *
+     * <p><strong>Enterprise Distributed Cache Invalidation</strong></p>
+     *
+     * <p>10 pods scenario:</p>
+     * <pre>
+     * POD-1 ─┐
+     * POD-2 ─┤
+     * POD-3 ─┤
+     * POD-4 ─┤                  ┌─────────────┐
+     * POD-5 ─┼─ Subscribe to ──→│ Redis       │
+     * POD-6 ─┤    Channel        │ Pub/Sub     │
+     * POD-7 ─┤                   └─────────────┘
+     * POD-8 ─┤                         ↑
+     * POD-9 ─┤                         │
+     * POD-10─┘                   Admin publishes
+     *                            "cache:invalidate:all"
+     * </pre>
+     *
+     * <p><strong>Channels:</strong></p>
+     * <ul>
+     *   <li>cache:invalidate:all - Barcha cache tozalash</li>
+     *   <li>cache:invalidate:i18n - Faqat tarjimalar</li>
+     *   <li>cache:invalidate:menu - Faqat menular</li>
+     *   <li>cache:invalidate:permissions - Faqat permissionlar</li>
+     * </ul>
+     *
+     * <p><strong>Flow:</strong></p>
+     * <pre>
+     * 1. Admin POST /api/v1/admin/cache/refresh
+     * 2. Backend publishes Redis message: "refresh-{timestamp}"
+     * 3. All 10 pods receive message (MessageListener)
+     * 4. Each pod clears L1 cache (JVM Caffeine)
+     * 5. Leader pod loads from DB → Redis (L2)
+     * 6. Other 9 pods load from Redis → L1
+     * 7. All pods synchronized ✅
+     * </pre>
+     *
+     * <p><strong>@Primary Annotation:</strong></p>
+     * <ul>
+     *   <li>Primary bean for distributed cache management</li>
+     *   <li>Resolves conflict with legacy translationCacheListenerContainer</li>
+     *   <li>Used by CacheInvalidationListener for enterprise cache</li>
+     * </ul>
+     */
+    @Bean
+    @Primary
+    public RedisMessageListenerContainer redisMessageListenerContainer(
+            RedisConnectionFactory connectionFactory
+    ) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(connectionFactory);
+
+        log.info("✅ RedisMessageListenerContainer configured for distributed cache invalidation");
+        log.info("📡 Waiting for CacheInvalidationListener to register channels...");
+
+        return container;
     }
 }
