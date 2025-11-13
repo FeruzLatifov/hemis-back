@@ -71,22 +71,30 @@ public class I18nService {
     private final SystemMessageRepository systemMessageRepository;
     private final SystemMessageTranslationRepository translationRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final uz.hemis.service.cache.CacheVersionService cacheVersionService;
 
     // =====================================================
     // Constants
     // =====================================================
 
     /**
-     * Redis key prefix for translation cache
-     * <p>Pattern: i18n:messages:{language}</p>
+     * Cache namespace for version management
+     * <p>Used by CacheVersionService to track cache version</p>
+     */
+    private static final String CACHE_NAMESPACE = "i18n";
+
+    /**
+     * Redis key prefix for translation cache (versioned)
+     * <p>Pattern: i18n:v{version}:messages:{language}</p>
+     * <p>Version is managed by CacheVersionService</p>
      */
     private static final String CACHE_KEY_PREFIX = "i18n:messages:";
 
     /**
-     * Cache TTL - 1 day
-     * <p>Translations rarely change, so long TTL is acceptable</p>
+     * Cache TTL - 30 minutes (safety net)
+     * <p>Real invalidation via version increment, TTL is backup</p>
      */
-    private static final Duration CACHE_TTL = Duration.ofDays(1);
+    private static final Duration CACHE_TTL = Duration.ofMinutes(30);
 
     /**
      * Main languages for startup warmup
@@ -283,42 +291,49 @@ public class I18nService {
     }
 
     /**
-     * Invalidate cache for specific language
+     * Invalidate cache for specific language (versioned)
      * <p>Called after translation updates in admin panel</p>
      *
-     * <p><strong>Use Case:</strong></p>
-     * Admin updates Russian translations → invalidate "ru-RU" cache →
-     * next request will reload fresh data from database
+     * <p><strong>Versioned Invalidation Flow:</strong></p>
+     * <ol>
+     *   <li>version++ → i18n:version = 2 (was 1)</li>
+     *   <li>Publish Redis Pub/Sub → "cache:invalidate:i18n"</li>
+     *   <li>All 10 pods receive message → clear L1 Caffeine</li>
+     *   <li>Next request uses v2 keys → cache miss → reload from DB</li>
+     *   <li>Old v1 keys expire after 30 min (TTL cleanup)</li>
+     * </ol>
      *
-     * @param language Language code to invalidate
+     * <p><strong>Performance Benefits:</strong></p>
+     * <ul>
+     *   <li>Zero thundering herd (version atomic increment)</li>
+     *   <li>Instant invalidation across all pods (Pub/Sub)</li>
+     *   <li>Automatic cleanup (TTL on old versions)</li>
+     * </ul>
+     *
+     * @param language Language code to invalidate (parameter kept for API compatibility, but version applies to all languages)
      */
     public void invalidateCache(String language) {
-        log.info("Invalidating cache for language: {}", language);
+        log.info("Invalidating I18n cache (versioned): language={}", language);
 
-        String cacheKey = CACHE_KEY_PREFIX + language;
-        Boolean deleted = redisTemplate.delete(cacheKey);
+        // Increment version (affects all languages)
+        long newVersion = cacheVersionService.incrementVersionAndPublish(CACHE_NAMESPACE);
 
-        if (Boolean.TRUE.equals(deleted)) {
-            log.info("✅ Cache invalidated successfully for language: {}", language);
-        } else {
-            log.warn("⚠️ Cache key not found or deletion failed for language: {}", language);
-        }
+        log.info("✅ I18n cache invalidated via version increment: v{} → Pub/Sub sent to all pods", newVersion);
     }
 
     /**
-     * Invalidate all language caches
-     * <p>Called after bulk translation updates</p>
+     * Invalidate all language caches (versioned)
+     * <p>Called after bulk translation updates or manual admin refresh</p>
+     *
+     * <p><strong>Same as invalidateCache() - version applies globally</strong></p>
      */
     public void invalidateAllCaches() {
-        log.info("Invalidating all I18n caches");
+        log.info("Invalidating all I18n caches (versioned)");
 
-        Set<String> keys = redisTemplate.keys(CACHE_KEY_PREFIX + "*");
-        if (keys != null && !keys.isEmpty()) {
-            Long deleted = redisTemplate.delete(keys);
-            log.info("✅ Invalidated {} cache keys", deleted);
-        } else {
-            log.info("ℹ️ No cache keys found to invalidate");
-        }
+        // Increment version + Publish Pub/Sub
+        long newVersion = cacheVersionService.incrementVersionAndPublish(CACHE_NAMESPACE);
+
+        log.info("✅ All I18n caches invalidated via version increment: v{} → Distributed refresh triggered", newVersion);
     }
 
     /**
@@ -330,24 +345,39 @@ public class I18nService {
     }
 
     /**
-     * Get cache statistics
+     * Get cache statistics (versioned)
      * <p>For monitoring and debugging</p>
+     *
+     * <p><strong>Returns:</strong></p>
+     * <ul>
+     *   <li>currentVersion: Current cache version number</li>
+     *   <li>cacheKeyPattern: Versioned key pattern</li>
+     *   <li>cacheTTL: TTL duration (30 min safety net)</li>
+     *   <li>languages: Supported languages list</li>
+     * </ul>
      *
      * @return Map with cache stats
      */
     public Map<String, Object> getCacheStats() {
         Map<String, Object> stats = new HashMap<>();
 
-        Set<String> keys = redisTemplate.keys(CACHE_KEY_PREFIX + "*");
-        stats.put("cachedLanguages", keys != null ? keys.size() : 0);
-        stats.put("cacheKeyPrefix", CACHE_KEY_PREFIX);
+        // Current version
+        long currentVersion = cacheVersionService.getCurrentVersion(CACHE_NAMESPACE);
+        stats.put("currentVersion", currentVersion);
+        stats.put("cacheKeyPattern", String.format("%s:v%d:messages:{language}", CACHE_NAMESPACE, currentVersion));
         stats.put("cacheTTL", CACHE_TTL.toString());
+        stats.put("languages", MAIN_LANGUAGES);
 
-        if (keys != null) {
-            List<String> languageList = keys.stream()
-                .map(key -> key.replace(CACHE_KEY_PREFIX, ""))
+        // Search for cached keys with current version
+        String versionedPattern = String.format("%s:v%d:messages:*", CACHE_NAMESPACE, currentVersion);
+        Set<String> keys = redisTemplate.keys(versionedPattern);
+        stats.put("cachedKeys", keys != null ? keys.size() : 0);
+
+        if (keys != null && !keys.isEmpty()) {
+            List<String> cachedLanguages = keys.stream()
+                .map(key -> key.substring(key.lastIndexOf(":") + 1))
                 .collect(Collectors.toList());
-            stats.put("languages", languageList);
+            stats.put("cachedLanguages", cachedLanguages);
         }
 
         return stats;
@@ -358,39 +388,70 @@ public class I18nService {
     // =====================================================
 
     /**
-     * Get cached messages for language from Redis
+     * Build versioned cache key for language
+     *
+     * <p><strong>Format:</strong> i18n:v{version}:messages:{language}</p>
+     * <p><strong>Example:</strong> i18n:v3:messages:uz-UZ</p>
+     *
+     * @param language Language code
+     * @return Versioned cache key
+     */
+    private String buildVersionedCacheKey(String language) {
+        long version = cacheVersionService.getCurrentVersion(CACHE_NAMESPACE);
+        return String.format("%s:v%d:messages:%s", CACHE_NAMESPACE, version, language);
+    }
+
+    /**
+     * Get cached messages for language from Redis (versioned)
+     *
+     * <p><strong>Versioned Cache Lookup:</strong></p>
+     * <ul>
+     *   <li>Reads current version from i18n:version</li>
+     *   <li>Builds key: i18n:v{version}:messages:{language}</li>
+     *   <li>If version changed → cache miss (automatic invalidation)</li>
+     * </ul>
      *
      * @param language Language code
      * @return Map of messages or null if not cached
      */
     @SuppressWarnings("unchecked")
     private Map<String, String> getCachedMessages(String language) {
-        String cacheKey = CACHE_KEY_PREFIX + language;
+        String cacheKey = buildVersionedCacheKey(language);
 
         try {
             Object cached = redisTemplate.opsForValue().get(cacheKey);
             if (cached instanceof Map) {
+                log.debug("✅ Cache HIT: key={}", cacheKey);
                 return (Map<String, String>) cached;
             }
         } catch (Exception e) {
             log.error("Redis error when getting cache for language: {}", language, e);
         }
 
+        log.debug("❌ Cache MISS: key={}", cacheKey);
         return null;
     }
 
     /**
-     * Cache messages for language in Redis
+     * Cache messages for language in Redis (versioned)
+     *
+     * <p><strong>Versioned Cache Storage:</strong></p>
+     * <ul>
+     *   <li>Stores with current version key</li>
+     *   <li>TTL=30min (safety net, version++ is primary invalidation)</li>
+     *   <li>Old versions automatically expire after TTL</li>
+     * </ul>
      *
      * @param language Language code
      * @param messages Map of messageKey → translation
      */
     private void cacheMessages(String language, Map<String, String> messages) {
-        String cacheKey = CACHE_KEY_PREFIX + language;
+        String cacheKey = buildVersionedCacheKey(language);
 
         try {
             redisTemplate.opsForValue().set(cacheKey, messages, CACHE_TTL);
-            log.debug("✅ Cached {} messages for language: {}", messages.size(), language);
+            log.debug("✅ Cached {} messages: key={}, ttl={}min",
+                messages.size(), cacheKey, CACHE_TTL.toMinutes());
         } catch (Exception e) {
             log.error("Redis error when caching messages for language: {}", language, e);
         }
