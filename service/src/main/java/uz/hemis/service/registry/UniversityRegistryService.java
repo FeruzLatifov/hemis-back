@@ -159,5 +159,100 @@ public class UniversityRegistryService {
         List<University> universities = universityRepository.findAll(spec);
         return universityMapper.toDtoList(universities);
     }
+    
+    /**
+     * Create new university (WRITES TO MASTER)
+     */
+    @Transactional
+    public UniversityDto createUniversity(uz.hemis.service.registry.dto.UniversityRequestDto request) {
+        log.info("Creating university: code={}, name={}", request.getCode(), request.getName());
+        
+        // Check if code already exists
+        if (universityRepository.existsById(request.getCode())) {
+            throw new IllegalArgumentException("University with code " + request.getCode() + " already exists");
+        }
+        
+        University university = new University();
+        mapRequestToEntity(request, university);
+        university.setVersion(1);
+        university.setCreateTs(java.time.LocalDateTime.now());
+        
+        University saved = universityRepository.save(university);
+        log.info("University created: {}", saved.getCode());
+        
+        return universityMapper.toDto(saved);
+    }
+    
+    /**
+     * Update existing university (WRITES TO MASTER)
+     */
+    @Transactional
+    public UniversityDto updateUniversity(String code, uz.hemis.service.registry.dto.UniversityRequestDto request) {
+        log.info("Updating university: {}", code);
+        
+        University university = universityRepository.findById(code)
+                .orElseThrow(() -> new IllegalArgumentException("University not found: " + code));
+        
+        mapRequestToEntity(request, university);
+        university.setVersion(university.getVersion() + 1);
+        university.setUpdateTs(java.time.LocalDateTime.now());
+        
+        University saved = universityRepository.save(university);
+        log.info("University updated: {}", saved.getCode());
+        
+        return universityMapper.toDto(saved);
+    }
+    
+    /**
+     * Delete university (soft delete - WRITES TO MASTER)
+     */
+    @Transactional
+    public void deleteUniversity(String code) {
+        log.info("Deleting university: {}", code);
+        
+        University university = universityRepository.findById(code)
+                .orElseThrow(() -> new IllegalArgumentException("University not found: " + code));
+        
+        university.setDeleteTs(java.time.LocalDateTime.now());
+        university.setVersion(university.getVersion() + 1);
+        universityRepository.save(university);
+        
+        log.info("University deleted (soft): {}", code);
+    }
+    
+    /**
+     * Map request DTO to entity
+     */
+    private void mapRequestToEntity(uz.hemis.service.registry.dto.UniversityRequestDto request, University entity) {
+        entity.setCode(request.getCode());
+        entity.setTin(request.getTin());
+        entity.setName(request.getName());
+        entity.setOwnership(request.getOwnership());
+        entity.setSoato(request.getSoato());
+        entity.setSoatoRegion(request.getSoatoRegion());
+        entity.setUniversityType(request.getUniversityType());
+        entity.setUniversityVersion(request.getUniversityVersion());
+        entity.setUniversityActivityStatus(request.getActivityStatus());  // Fixed
+        entity.setUniversityBelongsTo(request.getBelongsTo());            // Fixed
+        entity.setUniversityContractCategory(request.getContractCategory()); // Fixed
+        entity.setParentUniversity(request.getParentUniversity());
+        entity.setTerrain(request.getTerrain());
+        entity.setVersionType(request.getVersionType());
+        entity.setAddress(request.getAddress());
+        entity.setCadastre(request.getCadastre());
+        entity.setUniversityUrl(request.getUniversityUrl());
+        entity.setStudentUrl(request.getStudentUrl());
+        entity.setTeacherUrl(request.getTeacherUrl());
+        entity.setUzbmbUrl(request.getUzbmbUrl());
+        entity.setMailAddress(request.getMailAddress());
+        entity.setAccreditationInfo(request.getAccreditationInfo());
+        entity.setBankInfo(request.getBankInfo());
+        entity.setActive(request.getActive());
+        entity.setGpaEdit(request.getGpaEdit());
+        entity.setAccreditationEdit(request.getAccreditationEdit());
+        entity.setAddStudent(request.getAddStudent());
+        entity.setAllowGrouping(request.getAllowGrouping());
+        entity.setAllowTransferOutside(request.getAllowTransferOutside());
+    }
 }
 

@@ -314,6 +314,93 @@ public class RegistryUniversityController {
         Map<String, Object> dictionaries = universityRegistryService.getDictionaries();
         return ResponseEntity.ok(ResponseWrapper.success(dictionaries));
     }
+    
+    // =====================================================
+    // CRUD Operations (CREATE, UPDATE, DELETE)
+    // =====================================================
+    
+    @PostMapping
+    @PreAuthorize("hasAuthority('registry.e-reestr.edit')")
+    @Operation(
+        summary = "Create new university",
+        description = """
+            Create a new university in the system.
+            
+            **🔒 Data Target:** MASTER Database (write operation)
+            
+            **Required Fields:**
+            - code (unique university code)
+            - name (university name)
+            
+            **Permissions:** registry.e-reestr.edit
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "University created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input or code already exists"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
+    })
+    public ResponseEntity<ResponseWrapper<UniversityDto>> createUniversity(
+            @RequestBody uz.hemis.service.registry.dto.UniversityRequestDto request
+    ) {
+        log.info("POST /api/v1/web/registry/universities - Creating: {}", request.getName());
+        
+        UniversityDto created = universityRegistryService.createUniversity(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ResponseWrapper.success(created));
+    }
+    
+    @PutMapping("/{code}")
+    @PreAuthorize("hasAuthority('registry.e-reestr.edit')")
+    @Operation(
+        summary = "Update existing university",
+        description = """
+            Update an existing university by code.
+            
+            **🔒 Data Target:** MASTER Database (write operation)
+            
+            **Permissions:** registry.e-reestr.edit
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "University updated successfully"),
+        @ApiResponse(responseCode = "404", description = "University not found"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
+    })
+    public ResponseEntity<ResponseWrapper<UniversityDto>> updateUniversity(
+            @PathVariable String code,
+            @RequestBody uz.hemis.service.registry.dto.UniversityRequestDto request
+    ) {
+        log.info("PUT /api/v1/web/registry/universities/{} - Updating", code);
+        
+        UniversityDto updated = universityRegistryService.updateUniversity(code, request);
+        return ResponseEntity.ok(ResponseWrapper.success(updated));
+    }
+    
+    @DeleteMapping("/{code}")
+    @PreAuthorize("hasAuthority('registry.e-reestr.delete')")
+    @Operation(
+        summary = "Delete university (soft delete)",
+        description = """
+            Soft delete a university by code.
+            Sets delete_ts timestamp instead of physical deletion.
+            
+            **🔒 Data Target:** MASTER Database (write operation)
+            
+            **Permissions:** registry.e-reestr.delete
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "University deleted successfully"),
+        @ApiResponse(responseCode = "404", description = "University not found"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
+    })
+    public ResponseEntity<Void> deleteUniversity(@PathVariable String code) {
+        log.info("DELETE /api/v1/web/registry/universities/{}", code);
+        
+        universityRegistryService.deleteUniversity(code);
+        return ResponseEntity.noContent().build();
+    }
 
     private String escapeCsv(String value) {
         if (value == null) {
