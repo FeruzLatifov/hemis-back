@@ -60,88 +60,38 @@ public class FacultyRegistryService {
     public Page<FacultyGroupRowDto> getFacultyGroups(String q, Boolean status, Pageable pageable) {
         log.debug("Getting faculty groups: q={}, status={}, page={}", q, status, pageable.getPageNumber());
 
-        // Build count query
-        String countSql = buildGroupCountQuery(q, status);
+        String countSql = "SELECT COUNT(DISTINCT code) FROM hemishe_r_university_department WHERE _department_type = '0'";
         Query countQuery = entityManager.createNativeQuery(countSql);
-        setGroupQueryParameters(countQuery, q, status);
         long total = ((Number) countQuery.getSingleResult()).longValue();
 
         if (total == 0) {
             return Page.empty(pageable);
         }
 
-        // Build data query
-        String dataSql = buildGroupDataQuery(q, status, pageable);
+        String dataSql = 
+            "SELECT parent.code, parent.name_uz, " +
+            "  (SELECT COUNT(*) FROM hemishe_r_university_department f WHERE f.parent_id = parent.id AND f._department_type = '11') as faculty_count, " +
+            "  (SELECT COUNT(*) FROM hemishe_r_university_department f WHERE f.parent_id = parent.id AND f._department_type = '11') as active_count " +
+            "FROM hemishe_r_university_department parent " +
+            "WHERE parent._department_type = '0' " +
+            "ORDER BY parent.name_uz ASC " +
+            "LIMIT " + pageable.getPageSize() + " OFFSET " + pageable.getOffset();
+
         Query dataQuery = entityManager.createNativeQuery(dataSql);
-        setGroupQueryParameters(dataQuery, q, status);
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = dataQuery.getResultList();
 
         List<FacultyGroupRowDto> groups = results.stream()
             .map(row -> new FacultyGroupRowDto(
-                (String) row[0],              // universityCode
-                (String) row[1],              // universityName
-                ((Number) row[2]).longValue(), // facultyCount
-                ((Number) row[3]).longValue()  // activeFacultyCount
+                (String) row[0],
+                (String) row[1],
+                ((Number) row[2]).longValue(),
+                ((Number) row[3]).longValue()
             ))
             .collect(Collectors.toList());
 
         return new PageImpl<>(groups, pageable, total);
-    }
-
-    private String buildGroupCountQuery(String q, Boolean status) {
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT COUNT(DISTINCT u.code) ");
-        sql.append("FROM hemishe_e_university u ");
-        sql.append("INNER JOIN hemishe_e_university_department d ON d.university_code = u.code ");
-        sql.append("WHERE u.delete_ts IS NULL AND d.delete_ts IS NULL ");
-        sql.append("AND d._deparment_type = '").append(FACULTY_DEPT_TYPE).append("' ");
-        
-        if (q != null && !q.trim().isEmpty()) {
-            sql.append("AND (LOWER(u.name) LIKE LOWER(:q) OR LOWER(u.code) LIKE LOWER(:q)) ");
-        }
-        
-        if (status != null) {
-            sql.append("AND d.status = :status ");
-        }
-        
-        return sql.toString();
-    }
-
-    private String buildGroupDataQuery(String q, Boolean status, Pageable pageable) {
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT u.code, u.name, ");
-        sql.append("COUNT(d.code) as faculty_count, ");
-        sql.append("SUM(CASE WHEN d.status = true THEN 1 ELSE 0 END) as active_count ");
-        sql.append("FROM hemishe_e_university u ");
-        sql.append("INNER JOIN hemishe_e_university_department d ON d.university_code = u.code ");
-        sql.append("WHERE u.delete_ts IS NULL AND d.delete_ts IS NULL ");
-        sql.append("AND d._deparment_type = '").append(FACULTY_DEPT_TYPE).append("' ");
-        
-        if (q != null && !q.trim().isEmpty()) {
-            sql.append("AND (LOWER(u.name) LIKE LOWER(:q) OR LOWER(u.code) LIKE LOWER(:q)) ");
-        }
-        
-        if (status != null) {
-            sql.append("AND d.status = :status ");
-        }
-        
-        sql.append("GROUP BY u.code, u.name ");
-        sql.append("ORDER BY u.name ASC ");
-        sql.append("LIMIT ").append(pageable.getPageSize());
-        sql.append(" OFFSET ").append(pageable.getOffset());
-        
-        return sql.toString();
-    }
-
-    private void setGroupQueryParameters(Query query, String q, Boolean status) {
-        if (q != null && !q.trim().isEmpty()) {
-            query.setParameter("q", "%" + q.trim() + "%");
-        }
-        if (status != null) {
-            query.setParameter("status", status);
-        }
     }
 
     // =====================================================
@@ -165,89 +115,45 @@ public class FacultyRegistryService {
     ) {
         log.debug("Getting faculties for university: code={}, q={}, status={}", universityCode, q, status);
 
-        // Build count query
-        String countSql = buildFacultyCountQuery(universityCode, q, status);
+        String countSql = 
+            "SELECT COUNT(*) FROM hemishe_r_university_department d " +
+            "INNER JOIN hemishe_r_university_department parent ON parent.id = d.parent_id " +
+            "WHERE d._department_type = '11' AND parent.code = ?";
+        
         Query countQuery = entityManager.createNativeQuery(countSql);
-        setFacultyQueryParameters(countQuery, universityCode, q, status);
+        countQuery.setParameter(1, universityCode);
         long total = ((Number) countQuery.getSingleResult()).longValue();
 
         if (total == 0) {
             return Page.empty(pageable);
         }
 
-        // Build data query
-        String dataSql = buildFacultyDataQuery(universityCode, q, status, pageable);
+        String dataSql = 
+            "SELECT d.code, d.name_uz, d.name_ru, parent.code, parent.name_uz, true " +
+            "FROM hemishe_r_university_department d " +
+            "INNER JOIN hemishe_r_university_department parent ON parent.id = d.parent_id " +
+            "WHERE d._department_type = '11' AND parent.code = ? " +
+            "ORDER BY d.name_uz ASC " +
+            "LIMIT " + pageable.getPageSize() + " OFFSET " + pageable.getOffset();
+        
         Query dataQuery = entityManager.createNativeQuery(dataSql);
-        setFacultyQueryParameters(dataQuery, universityCode, q, status);
+        dataQuery.setParameter(1, universityCode);
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = dataQuery.getResultList();
 
         List<FacultyRowDto> faculties = results.stream()
             .map(row -> new FacultyRowDto(
-                (String) row[0],       // code
-                (String) row[1],       // nameUz
-                (String) row[2],       // nameRu
-                (String) row[3],       // universityCode
-                (String) row[4],       // universityName
-                (Boolean) row[5]       // status
+                (String) row[0],
+                (String) row[1],
+                (String) row[2],
+                (String) row[3],
+                (String) row[4],
+                (Boolean) row[5]
             ))
             .collect(Collectors.toList());
 
         return new PageImpl<>(faculties, pageable, total);
-    }
-
-    private String buildFacultyCountQuery(String universityCode, String q, Boolean status) {
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT COUNT(*) ");
-        sql.append("FROM hemishe_e_university_department d ");
-        sql.append("WHERE d.delete_ts IS NULL ");
-        sql.append("AND d._deparment_type = '").append(FACULTY_DEPT_TYPE).append("' ");
-        sql.append("AND d.university_code = :universityCode ");
-        
-        if (q != null && !q.trim().isEmpty()) {
-            sql.append("AND (LOWER(d.name_uz) LIKE LOWER(:q) OR LOWER(d.code) LIKE LOWER(:q)) ");
-        }
-        
-        if (status != null) {
-            sql.append("AND d.status = :status ");
-        }
-        
-        return sql.toString();
-    }
-
-    private String buildFacultyDataQuery(String universityCode, String q, Boolean status, Pageable pageable) {
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT d.code, d.name_uz, d.name_ru, d.university_code, u.name, d.status ");
-        sql.append("FROM hemishe_e_university_department d ");
-        sql.append("INNER JOIN hemishe_e_university u ON d.university_code = u.code ");
-        sql.append("WHERE d.delete_ts IS NULL AND u.delete_ts IS NULL ");
-        sql.append("AND d._deparment_type = '").append(FACULTY_DEPT_TYPE).append("' ");
-        sql.append("AND d.university_code = :universityCode ");
-        
-        if (q != null && !q.trim().isEmpty()) {
-            sql.append("AND (LOWER(d.name_uz) LIKE LOWER(:q) OR LOWER(d.code) LIKE LOWER(:q)) ");
-        }
-        
-        if (status != null) {
-            sql.append("AND d.status = :status ");
-        }
-        
-        sql.append("ORDER BY d.name_uz ASC ");
-        sql.append("LIMIT ").append(pageable.getPageSize());
-        sql.append(" OFFSET ").append(pageable.getOffset());
-        
-        return sql.toString();
-    }
-
-    private void setFacultyQueryParameters(Query query, String universityCode, String q, Boolean status) {
-        query.setParameter("universityCode", universityCode);
-        if (q != null && !q.trim().isEmpty()) {
-            query.setParameter("q", "%" + q.trim() + "%");
-        }
-        if (status != null) {
-            query.setParameter("status", status);
-        }
     }
 
     // =====================================================
@@ -263,17 +169,16 @@ public class FacultyRegistryService {
     public Optional<FacultyDetailDto> getFacultyDetail(String code) {
         log.debug("Getting faculty detail: code={}", code);
 
-        String sql = "SELECT d.code, d.name_uz, d.name_ru, d.university_code, u.name, " +
-                    "d.status, d._deparment_type, dt.name, d.parent_code, d.path, " +
-                    "d.create_ts, d.created_by, d.update_ts, d.updated_by, d.version " +
-                    "FROM hemishe_e_university_department d " +
-                    "INNER JOIN hemishe_e_university u ON d.university_code = u.code " +
-                    "LEFT JOIN hemishe_h_university_department_type dt ON d._deparment_type = dt.code " +
-                    "WHERE d.delete_ts IS NULL AND u.delete_ts IS NULL " +
-                    "AND d.code = :code";
+        String sql = "SELECT d.code, d.name_uz, d.name_ru, parent.code, parent.name_uz, " +
+                    "true, d._department_type, dt.name, CAST(d.parent_id AS VARCHAR), d.keys_, " +
+                    "null, null, null, null, 0 " +
+                    "FROM hemishe_r_university_department d " +
+                    "LEFT JOIN hemishe_r_university_department parent ON parent.id = d.parent_id " +
+                    "LEFT JOIN hemishe_h_university_department_type dt ON d._department_type = dt.code " +
+                    "WHERE d.code = ?";
 
         Query query = entityManager.createNativeQuery(sql);
-        query.setParameter("code", code);
+        query.setParameter(1, code);
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();

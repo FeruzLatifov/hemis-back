@@ -1,6 +1,12 @@
 package uz.hemis.api.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -61,12 +67,37 @@ import java.util.UUID;
  *   <li>Pagination for large datasets</li>
  * </ul>
  */
-@Tag(name = "Translation Admin (View & Edit)", description = "View and edit system translations. No create/delete - keys managed by developers.")
+@Tag(
+    name = "Translation Admin",
+    description = """
+        Translation Management API (View & Edit Only)
+        
+        **Purpose:** Admin panel for managing i18n translations
+        
+        **Features:**
+        - View all translation keys (paginated)
+        - Edit translations for 4 languages (uz-UZ, oz-UZ, ru-RU, en-US)
+        - Toggle active/inactive status
+        - Export to properties files
+        - Cache management (clear/refresh)
+        
+        **Important:**
+        - ❌ NO CREATE - Keys added by developers via migration
+        - ❌ NO DELETE - Keys are permanent
+        - ✅ EDIT ONLY - Translate existing keys
+        
+        **Menu Location:** Tizim → Tarjimalar
+        
+        **Permissions:**
+        - system.translation.view - View translations
+        - system.translation.manage - Edit translations
+        """
+)
 @RestController
 @RequestMapping("/api/v1/web/system/translation")
 @RequiredArgsConstructor
 @Slf4j
-@SecurityRequirement(name = "Bearer Authentication")
+@SecurityRequirement(name = "bearerAuth")
 public class TranslationAdminController {
 
     private final TranslationAdminService translationService;
@@ -80,19 +111,82 @@ public class TranslationAdminController {
      * GET /api/v1/admin/translations
      * List all translations with pagination and filtering
      */
-    @Operation(
-        summary = "List translations",
-        description = "Get paginated list of translations with optional filtering by category, search key, and active status"
-    )
     @GetMapping
     @PreAuthorize("hasAuthority('system.translation.view')")
+    @Operation(
+        summary = "List translations (paginated)",
+        description = """
+            Get paginated list of all translation keys with filtering.
+            
+            **Filters:**
+            - `category` - Filter by category (menu, table, filters, actions, etc.)
+            - `search` - Search in message_key or message text
+            - `active` - Filter by active status (true/false)
+            
+            **Example Request:**
+            ```
+            GET /api/v1/web/system/translation?category=menu&active=true&size=50
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "content": [
+                {
+                  "id": "uuid-123",
+                  "category": "menu",
+                  "messageKey": "menu.registry.faculty",
+                  "message": "Fakultet",
+                  "translationUz": "Fakultet",
+                  "translationOz": "Факультет",
+                  "translationRu": "Факультет",
+                  "translationEn": "Faculty",
+                  "isActive": true,
+                  "createdAt": "2023-09-01T10:00:00",
+                  "updatedAt": "2024-01-15T14:30:00"
+                }
+              ],
+              "totalElements": 245,
+              "totalPages": 5,
+              "currentPage": 0,
+              "pageSize": 50
+            }
+            ```
+            """,
+        tags = {"Translation Admin"}
+    )
     public ResponseEntity<Map<String, Object>> listTranslations(
+        @Parameter(
+            description = "Filter by category (menu, table, filters, actions, etc.)",
+            example = "menu",
+            required = false
+        )
         @RequestParam(required = false) String category,
+        
+        @Parameter(
+            description = "Search in message_key or message text",
+            example = "fakultet",
+            required = false
+        )
         @RequestParam(required = false) String search,
+        
+        @Parameter(
+            description = "Filter by active status",
+            example = "true",
+            required = false
+        )
         @RequestParam(required = false) Boolean active,
+        
+        @Parameter(description = "Page number", example = "0")
         @RequestParam(defaultValue = "0") int page,
+        
+        @Parameter(description = "Page size", example = "50")
         @RequestParam(defaultValue = "20") int size,
+        
+        @Parameter(description = "Sort field", example = "category")
         @RequestParam(defaultValue = "category") String sortBy,
+        
+        @Parameter(description = "Sort direction", example = "ASC", schema = @Schema(allowableValues = {"ASC", "DESC"}))
         @RequestParam(defaultValue = "ASC") String sortDir
     ) {
         log.info("GET /api/v1/admin/translations - category={}, search={}, active={}, page={}, size={}",
@@ -115,14 +209,45 @@ public class TranslationAdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * GET /api/v1/web/system/translation/{id}
-     * Get single translation by ID
-     */
-    @Operation(summary = "Get translation by ID", description = "Get single translation with all language variants")
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('system.translation.view')")
-    public ResponseEntity<TranslationDto> getTranslation(@PathVariable UUID id) {
+    @Operation(
+        summary = "Get translation by ID",
+        description = """
+            Get single translation with all 4 language variants.
+            
+            **Example Request:**
+            ```
+            GET /api/v1/web/system/translation/uuid-123
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "id": "uuid-123",
+              "category": "menu",
+              "messageKey": "menu.registry.faculty",
+              "message": "Fakultet",
+              "translationUz": "Fakultet",
+              "translationOz": "Факультет",
+              "translationRu": "Факультет",
+              "translationEn": "Faculty",
+              "isActive": true,
+              "createdAt": "2023-09-01T10:00:00",
+              "updatedAt": "2024-01-15T14:30:00"
+            }
+            ```
+            """,
+        tags = {"Translation Admin"}
+    )
+    public ResponseEntity<TranslationDto> getTranslation(
+        @Parameter(
+            description = "Translation UUID",
+            example = "550e8400-e29b-41d4-a716-446655440000",
+            required = true
+        )
+        @PathVariable UUID id
+    ) {
         log.info("GET /api/v1/web/system/translation/{}", id);
 
         return translationService.getTranslationById(id)
@@ -131,15 +256,76 @@ public class TranslationAdminController {
     }
 
 
-    /**
-     * PUT /api/v1/admin/translations/{id}
-     * Update existing translation
-     */
-    @Operation(summary = "Update translation", description = "Update existing translation - all 4 languages")
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('system.translation.manage')")
+    @Operation(
+        summary = "Update translation (Edit mode)",
+        description = """
+            Update existing translation for all 4 languages.
+            
+            **Important:**
+            - Cannot change messageKey (readonly)
+            - Cannot change category (readonly)
+            - Can only update translation texts
+            - Cache is automatically cleared after update
+            
+            **Example Request:**
+            ```json
+            {
+              "category": "menu",
+              "messageKey": "menu.registry.faculty",
+              "message": "Fakultet",
+              "translationOz": "Факультет",
+              "translationRu": "Факультет",
+              "translationEn": "Faculty",
+              "isActive": true
+            }
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "id": "uuid-123",
+              "category": "menu",
+              "messageKey": "menu.registry.faculty",
+              "message": "Fakultet",
+              "translationUz": "Fakultet",
+              "translationOz": "Факультет",
+              "translationRu": "Факультет",
+              "translationEn": "Faculty",
+              "isActive": true,
+              "updatedAt": "2025-01-12T15:30:00"
+            }
+            ```
+            """,
+        tags = {"Translation Admin"}
+    )
     public ResponseEntity<TranslationDto> updateTranslation(
+        @Parameter(
+            description = "Translation UUID",
+            example = "550e8400-e29b-41d4-a716-446655440000",
+            required = true
+        )
         @PathVariable UUID id,
+        
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Translation update data",
+            content = @Content(
+                examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                    value = """
+                        {
+                          "category": "menu",
+                          "messageKey": "menu.registry.faculty",
+                          "message": "Fakultet",
+                          "translationOz": "Факультет",
+                          "translationRu": "Факультет",
+                          "translationEn": "Faculty",
+                          "isActive": true
+                        }
+                        """
+                )
+            )
+        )
         @RequestBody Map<String, Object> request
     ) {
         log.info("PUT /api/v1/admin/translations/{} - key={}", id, request.get("messageKey"));

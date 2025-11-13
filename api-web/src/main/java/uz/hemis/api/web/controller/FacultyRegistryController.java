@@ -50,8 +50,24 @@ import java.time.format.DateTimeFormatter;
  */
 @RestController
 @RequestMapping("/api/v1/web/registry/faculties")
-@Tag(name = "Faculties", description = "Faculty Registry API for Frontend UI")
-@SecurityRequirement(name = "Bearer Authentication")
+@Tag(
+    name = "Registry - Faculties", 
+    description = """
+        Faculty Registry API (Fakultetlar Reestri)
+        
+        **Features:**
+        - Tree structure with lazy loading (OTM → Fakultetlar)
+        - Server-side pagination and sorting
+        - Search and filtering
+        - Excel/CSV export with UTF-8 BOM
+        - Multilingual support (uz-UZ, oz-UZ, ru-RU, en-US)
+        
+        **Use Case:** Frontend /registry/faculty page
+        
+        **Performance:** N+1 prevention with native queries + JOINs
+        """
+)
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class FacultyRegistryController {
@@ -65,35 +81,100 @@ public class FacultyRegistryController {
     @GetMapping("/groups")
     @PreAuthorize("hasAuthority('data.structure.view')")
     @Operation(
-        summary = "Get university groups",
+        summary = "Get university groups (Tree root level)",
         description = """
-            Get paginated list of universities with faculty counts (Lazy loading - Level 1).
+            Get paginated list of universities with faculty counts.
             
-            **Features:**
-            - Search by university name or code
-            - Filter by faculty status
-            - Server-side pagination and sorting
+            **Lazy Loading Strategy - Level 1 (Root):**
+            Returns universities as group rows with aggregated faculty counts.
+            Frontend expands each group to load faculties via `/by-university/{code}`.
             
-            **Use Case:** Display root rows in tree table
-            """
+            **Query Parameters:**
+            - `q` - Search by university name or code (case-insensitive, partial match)
+            - `status` - Filter faculties by active status (true/false, optional)
+            - `page` - Page number (default: 0)
+            - `size` - Page size (default: 20, max: 100)
+            - `sort` - Sort field (default: name,asc)
+            
+            **Response:**
+            Each group contains:
+            - University code and name
+            - Total faculty count
+            - Active/Inactive faculty counts
+            - hasChildren flag (always true for groups)
+            
+            **Example Request:**
+            ```
+            GET /api/v1/web/registry/faculties/groups?q=tatu&size=10&page=0
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "success": true,
+              "data": {
+                "content": [
+                  {
+                    "universityCode": "00001",
+                    "universityName": "Toshkent Axborot Texnologiyalari Universiteti",
+                    "facultyCount": 12,
+                    "activeFacultyCount": 10,
+                    "inactiveFacultyCount": 2,
+                    "hasChildren": true
+                  }
+                ],
+                "totalElements": 1,
+                "totalPages": 1,
+                "size": 10,
+                "number": 0
+              }
+            }
+            ```
+            """,
+        tags = {"Registry - Faculties"}
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Successfully retrieved university groups"
+            description = "Successfully retrieved university groups",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = FacultyGroupResponseWrapper.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request - Invalid parameters"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Token missing or invalid"
         ),
         @ApiResponse(
             responseCode = "403",
-            description = "Forbidden - Insufficient permissions"
+            description = "Forbidden - User lacks 'data.structure.view' permission"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal Server Error"
         )
     })
     public ResponseEntity<ResponseWrapper<Page<FacultyGroupRowDto>>> getGroups(
-            @Parameter(description = "Search query (university name/code)")
+            @Parameter(
+                description = "Search query (university name or code)",
+                example = "tatu",
+                required = false
+            )
             @RequestParam(required = false) String q,
             
-            @Parameter(description = "Filter by faculty status (true=active, false=inactive)")
+            @Parameter(
+                description = "Filter by faculty status (true=active, false=inactive, null=all)",
+                example = "true",
+                required = false
+            )
             @RequestParam(required = false) Boolean status,
             
+            @Parameter(hidden = true)
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC)
             Pageable pageable
     ) {
@@ -103,6 +184,9 @@ public class FacultyRegistryController {
         Page<FacultyGroupRowDto> groups = facultyRegistryService.getFacultyGroups(q, status, pageable);
         return ResponseEntity.ok(ResponseWrapper.success(groups));
     }
+    
+    @Schema(name = "FacultyGroupResponse")
+    static class FacultyGroupResponseWrapper extends ResponseWrapper<Page<FacultyGroupRowDto>> {}
 
     // =====================================================
     // Children API (Faculties by university)
@@ -111,22 +195,75 @@ public class FacultyRegistryController {
     @GetMapping("/by-university/{universityCode}")
     @PreAuthorize("hasAuthority('data.structure.view')")
     @Operation(
-        summary = "Get faculties by university",
+        summary = "Get faculties by university (Tree child level)",
         description = """
-            Get paginated list of faculties for a specific university (Lazy loading - Level 2).
+            Get paginated list of faculties for specific university.
             
-            **Features:**
-            - Search by faculty name or code
-            - Filter by status
-            - Server-side pagination and sorting
+            **Lazy Loading Strategy - Level 2 (Children):**
+            Called when user expands a university row in frontend tree table.
+            Returns only faculties belonging to the specified university.
             
-            **Use Case:** Display child rows when university is expanded
-            """
+            **Query Parameters:**
+            - `universityCode` (path) - University code (e.g., "00001")
+            - `q` - Search by faculty name or code (optional)
+            - `status` - Filter by active status (true/false, optional)
+            - `page` - Page number (default: 0)
+            - `size` - Page size (default: 50, recommended for children)
+            
+            **Example Request:**
+            ```
+            GET /api/v1/web/registry/faculties/by-university/00001?size=50
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "success": true,
+              "data": {
+                "content": [
+                  {
+                    "code": "00001-01",
+                    "nameUz": "Axborot texnologiyalari fakulteti",
+                    "nameRu": "Факультет информационных технологий",
+                    "universityCode": "00001",
+                    "universityName": "TATU",
+                    "status": true
+                  },
+                  {
+                    "code": "00001-02",
+                    "nameUz": "Telekommunikatsiya fakulteti",
+                    "nameRu": "Факультет телекоммуникаций",
+                    "universityCode": "00001",
+                    "universityName": "TATU",
+                    "status": true
+                  }
+                ],
+                "totalElements": 12,
+                "totalPages": 1,
+                "size": 50,
+                "number": 0
+              }
+            }
+            ```
+            """,
+        tags = {"Registry - Faculties"}
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Successfully retrieved faculties"
+            description = "Successfully retrieved faculties",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = FacultyRowResponseWrapper.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request - Invalid university code format"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Token missing or invalid"
         ),
         @ApiResponse(
             responseCode = "403",
@@ -138,15 +275,28 @@ public class FacultyRegistryController {
         )
     })
     public ResponseEntity<ResponseWrapper<Page<FacultyRowDto>>> getFacultiesByUniversity(
-            @Parameter(description = "University code", required = true)
+            @Parameter(
+                description = "University code (Primary key)",
+                example = "00001",
+                required = true
+            )
             @PathVariable String universityCode,
             
-            @Parameter(description = "Search query (faculty name/code)")
+            @Parameter(
+                description = "Search query (faculty name or code)",
+                example = "axborot",
+                required = false
+            )
             @RequestParam(required = false) String q,
             
-            @Parameter(description = "Filter by status (true=active, false=inactive)")
+            @Parameter(
+                description = "Filter by status (true=active only, false=inactive only, null=all)",
+                example = "true",
+                required = false
+            )
             @RequestParam(required = false) Boolean status,
             
+            @Parameter(hidden = true)
             @PageableDefault(size = 50, sort = "nameUz", direction = Sort.Direction.ASC)
             Pageable pageable
     ) {
@@ -158,6 +308,9 @@ public class FacultyRegistryController {
         );
         return ResponseEntity.ok(ResponseWrapper.success(faculties));
     }
+    
+    @Schema(name = "FacultyRowResponse")
+    static class FacultyRowResponseWrapper extends ResponseWrapper<Page<FacultyRowDto>> {}
 
     // =====================================================
     // Detail API (Single faculty)
@@ -166,17 +319,61 @@ public class FacultyRegistryController {
     @GetMapping("/{code}")
     @PreAuthorize("hasAuthority('data.structure.view')")
     @Operation(
-        summary = "Get faculty detail",
+        summary = "Get faculty detail by code",
         description = """
-            Get detailed information for a specific faculty.
+            Get complete faculty information including audit fields.
             
-            **Use Case:** Display in detail drawer/modal
-            """
+            **Use Case:** 
+            - Detail drawer/modal in frontend
+            - Faculty profile page
+            
+            **Response Fields:**
+            - Basic info: code, name (uz/ru), university
+            - Classification: department type, parent
+            - Audit: created/updated timestamps and users
+            
+            **Example Request:**
+            ```
+            GET /api/v1/web/registry/faculties/00001-01
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "success": true,
+              "data": {
+                "code": "00001-01",
+                "nameUz": "Axborot texnologiyalari fakulteti",
+                "nameRu": "Факультет информационных технологий",
+                "universityCode": "00001",
+                "universityName": "TATU",
+                "status": true,
+                "departmentType": "11",
+                "departmentTypeName": "Fakultet",
+                "parentCode": null,
+                "path": "00001/00001-01",
+                "createdAt": "2023-09-01T10:00:00",
+                "createdBy": "admin",
+                "updatedAt": "2024-01-15T14:30:00",
+                "updatedBy": "rector"
+              }
+            }
+            ```
+            """,
+        tags = {"Registry - Faculties"}
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Successfully retrieved faculty detail"
+            description = "Successfully retrieved faculty detail",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = FacultyDetailResponseWrapper.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Token missing or invalid"
         ),
         @ApiResponse(
             responseCode = "403",
@@ -184,11 +381,15 @@ public class FacultyRegistryController {
         ),
         @ApiResponse(
             responseCode = "404",
-            description = "Faculty not found"
+            description = "Faculty not found - Invalid code or deleted"
         )
     })
     public ResponseEntity<ResponseWrapper<FacultyDetailDto>> getFacultyDetail(
-            @Parameter(description = "Faculty code", required = true)
+            @Parameter(
+                description = "Faculty code (Primary key)",
+                example = "00001-01",
+                required = true
+            )
             @PathVariable String code
     ) {
         log.info("GET /api/v1/web/registry/faculties/{}", code);
@@ -197,6 +398,9 @@ public class FacultyRegistryController {
             .map(detail -> ResponseEntity.ok(ResponseWrapper.success(detail)))
             .orElse(ResponseEntity.notFound().build());
     }
+    
+    @Schema(name = "FacultyDetailResponse")
+    static class FacultyDetailResponseWrapper extends ResponseWrapper<FacultyDetailDto> {}
 
     // =====================================================
     // Export API (Excel/CSV)
@@ -205,36 +409,80 @@ public class FacultyRegistryController {
     @PostMapping("/export")
     @PreAuthorize("hasAuthority('data.structure.view')")
     @Operation(
-        summary = "Export faculties to CSV",
+        summary = "Export faculties to CSV file",
         description = """
-            Export faculties to CSV file with current filter/sort parameters.
+            Export all faculties matching current filters to CSV file.
             
-            **Features:**
-            - Respects current filters (q, status)
-            - UTF-8 encoding for Cyrillic
+            **Export Strategy:**
+            - If `universityCode` provided: exports faculties for that university only
+            - If no `universityCode`: exports up to 1000 faculties (limitation)
+            - Respects search query and status filters
+            - UTF-8 BOM for Excel compatibility
             
-            **Use Case:** Export button in frontend
-            """
+            **CSV Format:**
+            ```
+            Kod,OTM nomi,Fakultet nomi (o'zbekcha),Fakultet nomi (ruscha),Holati
+            00001-01,TATU,Axborot texnologiyalari,Информационные технологии,Faol
+            00001-02,TATU,Telekommunikatsiya,Телекоммуникации,Faol
+            ```
+            
+            **File Naming:**
+            ```
+            faculties_20250112_153045.csv
+            ```
+            
+            **Example Request:**
+            ```
+            POST /api/v1/web/registry/faculties/export?universityCode=00001&status=true
+            ```
+            
+            **Example Response:**
+            Binary CSV file with Content-Disposition header for download.
+            """,
+        tags = {"Registry - Faculties"}
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
             description = "Successfully generated CSV file",
-            content = @Content(mediaType = "text/csv")
+            content = @Content(
+                mediaType = "text/csv",
+                schema = @Schema(type = "string", format = "binary")
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Token missing or invalid"
         ),
         @ApiResponse(
             responseCode = "403",
             description = "Forbidden - Insufficient permissions"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal Server Error - Failed to generate CSV"
         )
     })
     public ResponseEntity<byte[]> exportFaculties(
-            @Parameter(description = "Search query")
+            @Parameter(
+                description = "Search query (faculty or university name/code)",
+                example = "axborot",
+                required = false
+            )
             @RequestParam(required = false) String q,
             
-            @Parameter(description = "Filter by status")
+            @Parameter(
+                description = "Filter by status (true=active, false=inactive, null=all)",
+                example = "true",
+                required = false
+            )
             @RequestParam(required = false) Boolean status,
             
-            @Parameter(description = "University code (optional)")
+            @Parameter(
+                description = "Export faculties for specific university only",
+                example = "00001",
+                required = false
+            )
             @RequestParam(required = false) String universityCode
     ) {
         log.info("POST /api/v1/web/registry/faculties/export - q={}, status={}, universityCode={}", 
@@ -323,21 +571,74 @@ public class FacultyRegistryController {
     @GetMapping("/dictionaries")
     @PreAuthorize("hasAuthority('data.structure.view')")
     @Operation(
-        summary = "Get dictionaries",
+        summary = "Get filter dictionaries (Cached)",
         description = """
-            Get reference data for faculty filters (cached).
+            Get reference data for populating filter dropdown options.
+            
+            **Caching:**
+            - Cache name: `facultyDictionaries`
+            - TTL: 1 hour
+            - Reduces database load for frequently accessed reference data
             
             **Returns:**
-            - Status options (Active/Inactive)
-            - Department types
+            - `statuses` - Active/Inactive options for status filter
+            - `departmentTypes` - All department types from database
             
-            **Use Case:** Populate filter dropdowns
-            """
+            **Use Case:**
+            - Populate filter dropdowns in frontend
+            - Status select: Active / Inactive / All
+            - Department type select (if needed for future filtering)
+            
+            **Example Request:**
+            ```
+            GET /api/v1/web/registry/faculties/dictionaries
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "success": true,
+              "data": {
+                "statuses": [
+                  {
+                    "code": "true",
+                    "label": "Active",
+                    "description": "Active faculties"
+                  },
+                  {
+                    "code": "false",
+                    "label": "Inactive",
+                    "description": "Inactive faculties"
+                  }
+                ],
+                "departmentTypes": [
+                  {
+                    "code": "11",
+                    "label": "Fakultet"
+                  },
+                  {
+                    "code": "12",
+                    "label": "Kafedra"
+                  }
+                ]
+              }
+            }
+            ```
+            """,
+        tags = {"Registry - Faculties"}
     )
     @ApiResponses({
         @ApiResponse(
             responseCode = "200",
-            description = "Successfully retrieved dictionaries"
+            description = "Successfully retrieved dictionaries",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = FacultyDictionariesResponseWrapper.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Token missing or invalid"
         ),
         @ApiResponse(
             responseCode = "403",
@@ -350,4 +651,7 @@ public class FacultyRegistryController {
         FacultyDictionariesDto dictionaries = facultyRegistryService.getDictionaries();
         return ResponseEntity.ok(ResponseWrapper.success(dictionaries));
     }
+    
+    @Schema(name = "FacultyDictionariesResponse")
+    static class FacultyDictionariesResponseWrapper extends ResponseWrapper<FacultyDictionariesDto> {}
 }

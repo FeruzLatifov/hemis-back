@@ -19,6 +19,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * University Registry Service
+ * 
+ * READS FROM: READ REPLICA Database
+ * - @Transactional(readOnly=true) ensures REPLICA routing
+ * - All queries optimized for read-only operations
+ * - Zero load on MASTER database
+ * 
+ * @since 2.0.0
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j

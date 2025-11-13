@@ -25,6 +25,9 @@ dependencies {
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    // Swagger/OpenAPI annotations for DTOs
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:2.2.0")
+
     // Lombok (MUST be before MapStruct)
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

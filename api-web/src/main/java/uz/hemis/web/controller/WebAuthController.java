@@ -1,7 +1,12 @@
 package uz.hemis.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,6 +21,8 @@ import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.web.dto.LoginRequest;
+import uz.hemis.api.web.dto.LoginResponse;
 import uz.hemis.security.service.UserPermissionCacheService;
 
 import java.time.Instant;
@@ -103,19 +110,66 @@ public class WebAuthController {
      */
     @Operation(
             summary = "Web login",
-            description = "hemis-front (yangi old-hemis) uchun login endpoint. " +
-                    "JWT token qaytaradi va localStorage'ga saqlanadi."
+            description = """
+                hemis-front (yangi old-hemis) uchun login endpoint.
+                
+                **Authentication Flow:**
+                1. User enters username + password
+                2. Backend validates credentials
+                3. Returns JWT access token + refresh token
+                4. Frontend stores tokens in localStorage
+                
+                **Token Types:**
+                - Access Token: 15 minutes (for API calls)
+                - Refresh Token: 7 days (for renewing access token)
+                
+                **Example Request:**
+                ```json
+                {
+                  "username": "admin",
+                  "password": "admin"
+                }
+                ```
+                
+                **Example Response:**
+                ```json
+                {
+                  "accessToken": "eyJhbGci...",
+                  "refreshToken": "eyJhbGci...",
+                  "tokenType": "Bearer",
+                  "expiresIn": 900
+                }
+                ```
+                """
     )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Login successful",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = LoginResponse.class)
+            )
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Bad Request - Missing username or password"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - Invalid credentials"
+        )
+    })
     @PostMapping(
             value = "/login",
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<Map<String, Object>> login(
-            @RequestBody Map<String, String> credentials
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request
     ) {
-        String username = credentials.get("username");
-        String password = credentials.get("password");
+        String username = request.getUsername();
+        String password = request.getPassword();
 
         log.info("Web login attempt - username: {}", username);
 
@@ -126,17 +180,13 @@ public class WebAuthController {
             // Verify password using BCrypt
             if (!passwordEncoder.matches(password, userDetails.getPassword())) {
                 log.error("Invalid password for user: {}", username);
-                return ResponseEntity.status(401).body(Map.of(
-                        "error", "invalid_credentials",
-                        "message", "Login yoki parol noto'g'ri"
-                ));
+                throw new UsernameNotFoundException("Invalid credentials");
             }
 
             // Generate JWT token
             Instant now = Instant.now();
-            long expiresIn = 900L; // 15 minutes (best practice for access token)
+            long expiresIn = 900L;
 
-            // ✅ MINIMAL JWT - No permissions, only essential claims
             JwtClaimsSet accessTokenClaims = JwtClaimsSet.builder()
                     .issuer("hemis")
                     .issuedAt(now)
@@ -147,7 +197,6 @@ public class WebAuthController {
             JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
             String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, accessTokenClaims)).getTokenValue();
 
-            // Refresh token
             long refreshExpiresIn = 604800L; // 7 days
             JwtClaimsSet refreshTokenClaims = JwtClaimsSet.builder()
                     .issuer("hemis")
@@ -164,15 +213,14 @@ public class WebAuthController {
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toSet());
 
-            // ✅ Cache permissions in Redis (TTL: 1 hour)
             permissionCacheService.cacheUserPermissions(username, permissions);
 
-            // Build response (OAuth2 Standard - Clean & Minimal)
-            Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", accessToken);
-            response.put("refreshToken", refreshToken);
-            response.put("tokenType", "Bearer");
-            response.put("expiresIn", expiresIn); // Token expiration in seconds
+            LoginResponse response = LoginResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .tokenType("Bearer")
+                    .expiresIn(expiresIn)
+                    .build();
 
             log.info("✅ Login successful - user: {}, cached {} permissions", username, permissions.size());
 
@@ -180,16 +228,10 @@ public class WebAuthController {
 
         } catch (UsernameNotFoundException e) {
             log.error("User not found: {}", username);
-            return ResponseEntity.status(401).body(Map.of(
-                    "error", "invalid_credentials",
-                    "message", "Login yoki parol noto'g'ri"
-            ));
+            throw new UsernameNotFoundException("Invalid credentials");
         } catch (Exception e) {
             log.error("Web login failed - username: {}", username, e);
-            return ResponseEntity.status(500).body(Map.of(
-                    "error", "internal_error",
-                    "message", "Server xatoligi"
-            ));
+            throw new RuntimeException("Server error during login");
         }
     }
 

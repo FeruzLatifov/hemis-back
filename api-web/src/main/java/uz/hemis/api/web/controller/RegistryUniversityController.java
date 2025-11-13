@@ -3,6 +3,7 @@ package uz.hemis.api.web.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -48,8 +49,33 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/v1/web/registry/universities")
-@Tag(name = "Universities Registry", description = "University Registry API for Frontend UI")
-@SecurityRequirement(name = "Bearer Authentication")
+@Tag(
+    name = "Registry - Universities",
+    description = """
+        University Registry API (Muassasalar Reestri)
+        
+        **🔍 Data Source:** READ REPLICA Database (zero master load)
+        
+        **Features:**
+        - Advanced filtering (region, ownership, type)
+        - Server-side pagination and sorting
+        - Search by code, name, TIN
+        - CSV export with filters
+        - Dictionaries for filter dropdowns
+        
+        **Use Case:** Frontend /registry/e-reestr/university page
+        
+        **Performance:**
+        - @Transactional(readOnly=true) → Reads from REPLICA
+        - Cached dictionaries
+        - Optimized JPA queries
+        
+        **Difference from Legacy API:**
+        - Legacy: /app/rest/v2/universities (CRUD for universitet)
+        - Registry: /api/v1/web/registry/universities (View only for admin)
+        """
+)
+@SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
 public class RegistryUniversityController {
@@ -59,20 +85,55 @@ public class RegistryUniversityController {
     @GetMapping
     @PreAuthorize("hasAuthority('registry.e-reestr.view')")
     @Operation(
-        summary = "Get universities list",
+        summary = "Get universities list (with advanced filters)",
         description = """
-            Get paginated list of universities with filtering and sorting.
-
-            **Filters:**
-            - q: Search by code, name, or TIN
-            - regionId: Filter by SOATO region code
-            - ownershipId: Filter by ownership type
-            - typeId: Filter by university type
-
-            **Sorting:**
-            - Default: name,asc
-            - Available: code, name, tin
-            """
+            Get paginated list of universities with multi-field filtering.
+            
+            **🔍 Data Source:** READ REPLICA Database (DB_REPLICA_HOST)
+            
+            **Query Parameters:**
+            - `q` - Search by code, name, or TIN (partial match, case-insensitive)
+            - `regionId` - Filter by SOATO region code (exact match)
+            - `ownershipId` - Filter by ownership type: 11=Davlat, 12=Xususiy
+            - `typeId` - Filter by university type: 11=Universitet, 12=Institut, 13=Akademiya
+            - `page` - Page number (default: 0)
+            - `size` - Page size (default: 20, max: 100)
+            - `sort` - Sort field (default: name,asc)
+            
+            **Statistics:**
+            - Total Universities: 264
+            - Active: 264 (delete_ts IS NULL)
+            - Regions: 14 (All Uzbekistan)
+            
+            **Example Request:**
+            ```
+            GET /api/v1/web/registry/universities?q=tatu&regionId=26&size=10
+            ```
+            
+            **Example Response:**
+            ```json
+            {
+              "success": true,
+              "data": {
+                "content": [
+                  {
+                    "code": "00001",
+                    "name": "Toshkent Axborot Texnologiyalari Universiteti",
+                    "tin": "123456789",
+                    "regionId": "1700",
+                    "regionName": "Toshkent shahri",
+                    "ownershipId": "1",
+                    "ownershipName": "Davlat",
+                    "active": true
+                  }
+                ],
+                "totalElements": 1,
+                "totalPages": 1
+              }
+            }
+            ```
+            """,
+        tags = {"Registry - Universities"}
     )
     @ApiResponses({
         @ApiResponse(
@@ -80,23 +141,44 @@ public class RegistryUniversityController {
             description = "Successfully retrieved universities list"
         ),
         @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized"
+        ),
+        @ApiResponse(
             responseCode = "403",
-            description = "Forbidden - Insufficient permissions"
+            description = "Forbidden - User lacks 'registry.e-reestr.view' permission"
         )
     })
     public ResponseEntity<ResponseWrapper<Page<UniversityDto>>> getUniversities(
-            @Parameter(description = "Search query (code, name, TIN)")
+            @Parameter(
+                description = "Search query (code, name, or TIN)",
+                example = "tatu",
+                required = false
+            )
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Region ID (SOATO code)")
+            @Parameter(
+                description = "Region ID (SOATO code)",
+                example = "1700",
+                required = false
+            )
             @RequestParam(required = false) String regionId,
 
-            @Parameter(description = "Ownership type code")
+            @Parameter(
+                description = "Ownership type code",
+                example = "1",
+                required = false
+            )
             @RequestParam(required = false) String ownershipId,
 
-            @Parameter(description = "University type code")
+            @Parameter(
+                description = "University type code",
+                example = "1",
+                required = false
+            )
             @RequestParam(required = false) String typeId,
 
+            @Parameter(hidden = true)
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC)
             Pageable pageable
     ) {

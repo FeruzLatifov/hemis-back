@@ -301,6 +301,8 @@ public class OpenApiConfig {
                 .description("Kafedra va bo'limlar: hierarchiya, xodimlar, fakultetga bog'lash"),
             new Tag().name("Faculty")
                 .description("Fakultetlar: asosiy ma'lumotlar, dekanlar, tuzilma"),
+            new Tag().name("Registry - Faculties")
+                .description("Fakultetlar Reestri: lazy tree, pagination, search, export (Frontend UI API)"),
             new Tag().name("Groups")
                 .description("O'quv guruhlari: talabalar ro'yxati, yo'nalish, kurs"),
 
@@ -466,8 +468,26 @@ public class OpenApiConfig {
                         .name("Web Authentication v1")
                         .description("hemis-front uchun authentication API - Login, Logout, Refresh, Me"),
                     new Tag()
+                        .name("📊 Dashboard Statistics")
+                        .description("Dashboard statistika - 30-min Redis cache, REPLICA database, 3M+ records"),
+                    new Tag()
+                        .name("Registry - Faculties")
+                        .description("Fakultetlar Reestri - Lazy tree, pagination, search, export"),
+                    new Tag()
+                        .name("Registry - Universities")
+                        .description("Muassasalar Reestri - Advanced filtering, export"),
+                    new Tag()
+                        .name("Menu API")
+                        .description("Dynamic menu structure - Permission-filtered, multilingual"),
+                    new Tag()
+                        .name("I18n API")
+                        .description("Internationalization - Message translation, bulk loading"),
+                    new Tag()
                         .name("Translation Admin")
-                        .description("Tizim tarjimalarini boshqarish - CRUD, cache, export")
+                        .description("Tizim tarjimalarini boshqarish - CRUD, cache, export"),
+                    new Tag()
+                        .name("Language API")
+                        .description("Language management - Available languages, locale settings")
                 ));
 
                 // Sodda description - ortiqcha ma'lumotlar kerak emas
@@ -485,6 +505,17 @@ public class OpenApiConfig {
 
                         1. `/api/v1/web/auth/login` - Token olish
                         2. Keyingi so'rovlarda: `Authorization: Bearer <token>`
+                        
+                        ## Registry APIs
+                        
+                        - **/registry/faculties** - Fakultetlar (lazy tree)
+                        - **/registry/universities** - Muassasalar (advanced filters)
+                        
+                        ## System APIs
+                        
+                        - **/menu** - Dynamic menu structure
+                        - **/i18n** - Multilingual support
+                        - **/admin/translations** - Translation management
                         """)
                     .contact(new Contact()
                         .name("HEMIS Development Team")
