@@ -109,14 +109,23 @@ public class TranslationAdminService {
         Page<SystemMessage> page = systemMessageRepository.findAll(spec, pageable);
 
         // Force-fetch translations to avoid LazyInitializationException
-        page.getContent().forEach(msg -> {
-            if (msg.getTranslations() != null) {
-                msg.getTranslations().size(); // Trigger Hibernate initialization
-            }
-        });
+        // Convert to DTOs within transaction to ensure lazy collections are accessible
+        List<TranslationDto> dtoList = page.getContent().stream()
+            .map(msg -> {
+                // Force Hibernate to initialize the translations collection
+                if (msg.getTranslations() != null) {
+                    msg.getTranslations().size(); // Trigger initialization
+                }
+                return messageMapper.toDto(msg);
+            })
+            .collect(java.util.stream.Collectors.toList());
 
-        // Convert to DTOs
-        return page.map(messageMapper::toDto);
+        // Create a new Page with the DTOs
+        return new org.springframework.data.domain.PageImpl<>(
+            dtoList,
+            pageable,
+            page.getTotalElements()
+        );
     }
 
     /**
