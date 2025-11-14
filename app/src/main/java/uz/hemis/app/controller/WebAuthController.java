@@ -125,16 +125,22 @@ public class WebAuthController {
                 ));
             }
 
+            // ✅ Extract roles/permissions for JWT claims
+            Set<String> authorities = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toSet());
+
             // Generate JWT token
             Instant now = Instant.now();
             long expiresIn = 900L; // 15 minutes (best practice for access token)
 
-            // ✅ MINIMAL JWT - No permissions, only essential claims
+            // ✅ JWT with roles - Redis fallback support
             JwtClaimsSet accessTokenClaims = JwtClaimsSet.builder()
                     .issuer("hemis")
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(expiresIn))
                     .subject(userDetails.getUsername())
+                    .claim("authorities", authorities) // ✅ Roles in JWT (Redis fallback)
                     .build();
 
             JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
@@ -279,6 +285,12 @@ public class WebAuthController {
 
             log.info("Refresh token valid for user: {}", username);
 
+            // ✅ Load fresh user authorities
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            Set<String> authorities = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toSet());
+
             // Generate new access token (15 minutes)
             Instant now = Instant.now();
             long expiresIn = 900L; // 15 minutes
@@ -288,6 +300,7 @@ public class WebAuthController {
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(expiresIn))
                     .subject(username)
+                    .claim("authorities", authorities) // ✅ Roles in JWT (Redis fallback)
                     .build();
 
             JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
