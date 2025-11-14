@@ -52,6 +52,9 @@ public class OpenApiConfig {
     @Value("${spring.application.version:3.0.0}")
     private String applicationVersion;
 
+    @Value("${hemis.swagger.server-url:http://localhost:8080}")
+    private String swaggerServerUrl;
+
     // =====================================================
     // Main OpenAPI Configuration
     // =====================================================
@@ -208,19 +211,10 @@ public class OpenApiConfig {
      * API Servers (Environment-based)
      */
     private List<Server> apiServers() {
-        return Arrays.asList(
+        return List.of(
             new Server()
-                .url("http://localhost:8080")
-                .description("🖥️ Local Development"),
-            new Server()
-                .url("https://test-hemis.uz")
-                .description("🧪 Test Environment"),
-            new Server()
-                .url("https://staging-hemis.uz")
-                .description("🎭 Staging Environment"),
-            new Server()
-                .url("https://api.hemis.uz")
-                .description("🚀 Production")
+                .url(swaggerServerUrl)
+                .description("🔗 Configured Base URL")
         );
     }
 
@@ -458,6 +452,7 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
             .group("Web Frontend API v1")
             .displayName("Web Frontend API v1")
+            .packagesToScan("uz.hemis.api.web.controller", "uz.hemis.web.controller")
             .pathsToMatch("/api/v1/web/**")
             .pathsToExclude("/actuator/**", "/error")
             .addOpenApiCustomizer(openApi -> {

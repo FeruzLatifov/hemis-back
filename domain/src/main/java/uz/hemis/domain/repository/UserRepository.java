@@ -60,6 +60,36 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByUsernameWithRoles(@Param("username") String username);
 
     /**
+     * Find user by username with roles AND permissions eagerly fetched
+     *
+     * <p>Used by MenuService to avoid N+1 lazy loading issues</p>
+     * <p>Fetches user → roles → permissions in single query</p>
+     *
+     * @param username login username
+     * @return user with roles and permissions if found
+     */
+    @Query("SELECT DISTINCT u FROM User u " +
+           "LEFT JOIN FETCH u.roleSet r " +
+           "LEFT JOIN FETCH r.permissions " +
+           "WHERE u.username = :username")
+    Optional<User> findByUsernameWithPermissions(@Param("username") String username);
+
+    /**
+     * Find user by ID with roles AND permissions eagerly fetched
+     *
+     * <p>Used by /auth/me endpoint to avoid N+1 lazy loading issues</p>
+     * <p>Fetches user → roles → permissions in single query</p>
+     *
+     * @param id user ID (UUID)
+     * @return user with roles and permissions if found
+     */
+    @Query("SELECT DISTINCT u FROM User u " +
+           "LEFT JOIN FETCH u.roleSet r " +
+           "LEFT JOIN FETCH r.permissions " +
+           "WHERE u.id = :id")
+    Optional<User> findByIdWithPermissions(@Param("id") UUID id);
+
+    /**
      * Find active user by username
      *
      * <p><strong>Active means:</strong></p>

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import uz.hemis.domain.entity.Permission;
 import uz.hemis.domain.entity.User;
 import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.service.I18nService;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Menu Service
@@ -63,10 +65,45 @@ public class MenuService {
     public MenuResponse getMenuForUsername(String username, String locale) {
         log.info("🔍 Getting menu for username: {}, locale: {} (CACHE MISS)", username, locale);
 
-        User user = userRepository.findByUsername(username)
+        // ✅ Load user with roles AND permissions eagerly (fixes N+1 lazy loading)
+        User user = userRepository.findByUsernameWithPermissions(username)
             .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
 
-        return getMenuForUser(user.getId(), locale);
+        // ✅ Get permissions directly from loaded user (avoid redundant DB query)
+        List<String> userPermissions = user.getAllPermissions().stream()
+            .map(Permission::getCode)
+            .sorted()
+            .collect(Collectors.toList());
+
+        log.info("User {} has {} permissions: {}", username, userPermissions.size(),
+            userPermissions.size() > 0 ? userPermissions.subList(0, Math.min(5, userPermissions.size())) : "[]");
+
+        // Get menu structure
+        List<MenuItem> menuStructure = menuConfig.menuStructure();
+        log.info("Menu structure has {} root items", menuStructure.size());
+
+        // Filter by permissions
+        List<MenuItem> filteredMenu = filterMenuByPermissions(
+            menuStructure,
+            userPermissions,
+            locale
+        );
+        log.info("Filtered menu has {} items", filteredMenu.size());
+
+        // Sort by order
+        sortMenuItems(filteredMenu);
+
+        // Build response
+        return MenuResponse.builder()
+            .menu(filteredMenu)
+            .permissions(userPermissions)
+            .locale(locale)
+            ._meta(MenuResponse.MetaData.builder()
+                .cached(false)
+                .cacheExpiresAt(System.currentTimeMillis() + 3600000) // 1 hour
+                .generatedAt(LocalDateTime.now().toString())
+                .build())
+            .build();
     }
 
     /**

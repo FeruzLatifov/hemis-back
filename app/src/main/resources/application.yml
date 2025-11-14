@@ -246,6 +246,11 @@ logging:
 # =====================================================
 
 hemis:
+  # Swagger/OpenAPI configuration
+  swagger:
+    # Base URL for Swagger UI server selector
+    server-url: ${SWAGGER_SERVER_URL:http://localhost:${SERVER_PORT:8081}}
+
   # API Configuration
   api:
     # Legacy CUBA REST API base path

@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/v1/web")
-@Tag(name = "Language Management API", description = "Manage system languages and configuration")
+@Tag(name = "Language API", description = "Language management - Available languages, locale settings")
 @RequiredArgsConstructor
 @Slf4j
 public class WebLanguageController {

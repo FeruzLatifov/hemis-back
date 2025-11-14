@@ -126,10 +126,12 @@ public class MenuController {
         @RequestParam(defaultValue = "uz-UZ") String locale,
         @AuthenticationPrincipal Jwt jwt
     ) {
-        String username = jwt.getSubject();
-        log.debug("GET /api/v1/web/menu - username: {}, locale: {}", username, locale);
+        // ✅ JWT sub = userId (UUID), not username
+        String userIdString = jwt.getSubject();
+        java.util.UUID userId = java.util.UUID.fromString(userIdString);
+        log.debug("GET /api/v1/web/menu - userId: {}, locale: {}", userId, locale);
 
-        MenuResponse menu = menuService.getMenuForUsername(username, locale);
+        MenuResponse menu = menuService.getMenuForUser(userId, locale);
         return ResponseEntity.ok(menu);
     }
 

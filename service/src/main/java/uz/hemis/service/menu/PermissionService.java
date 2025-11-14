@@ -39,6 +39,9 @@ public class PermissionService {
 
     /**
      * Get all permissions for a user (from all roles)
+     *
+     * <p><strong>NOTE:</strong> This method loads user from database.
+     * For better performance, caller should eagerly fetch user with permissions.</p>
      */
     public List<String> getUserPermissions(UUID userId) {
         Optional<User> userOpt = userRepository.findById(userId);
@@ -49,12 +52,18 @@ public class PermissionService {
         }
 
         User user = userOpt.get();
+
+        // ⚠️ WARNING: This may trigger lazy loading if user not fetched with permissions
+        // MenuService should use findByUsernameWithPermissions() to avoid N+1 queries
         Set<Permission> allPermissions = user.getAllPermissions();
 
-        return allPermissions.stream()
+        List<String> permissionCodes = allPermissions.stream()
             .map(Permission::getCode)
             .sorted()
             .collect(Collectors.toList());
+
+        log.debug("Loaded {} permissions for user {}", permissionCodes.size(), userId);
+        return permissionCodes;
     }
 
     /**

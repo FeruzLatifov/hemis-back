@@ -137,15 +137,18 @@ public class SecurityConfig {
                         .requestMatchers("/app/rest/v2/auth/**").permitAll()
                         .requestMatchers("/api/admin/login", "/api/admin/logout").permitAll()
 
-                        // Web Auth endpoints (PUBLIC - for web frontend login)
-                        .requestMatchers("/api/v1/web/auth/**").permitAll()
+                        // Web Auth endpoints
+                        // Only login + refresh are public; others require valid JWT
+                        .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/refresh").permitAll()
+                        .requestMatchers("/api/v1/web/auth/**").authenticated()
 
-                        // I18n endpoints (PUBLIC - for translations)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/web/i18n/**").permitAll()
+                        // I18n endpoints (AUTH REQUIRED - swaggerda ko'rinadi)
+                        .requestMatchers("/api/v1/web/i18n/**").authenticated()
 
-                        // Language Management endpoints (PUBLIC GET, Admin POST)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/web/languages/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/web/system/configuration").permitAll()
+                        // Language/System endpoints (hammasi token talab qiladi)
+                        .requestMatchers("/api/v1/web/languages/**").authenticated()
+                        .requestMatchers("/api/v1/web/system/configuration").authenticated()
 
                         // Admin endpoints (requires ROLE_ADMIN)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
