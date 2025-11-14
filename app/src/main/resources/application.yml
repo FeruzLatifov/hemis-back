@@ -25,9 +25,9 @@ spring:
   datasource:
     # Master Database (Write Operations)
     master:
-      jdbc-url: jdbc:postgresql://${DB_MASTER_HOST:localhost}:${DB_MASTER_PORT:5432}/${DB_MASTER_NAME:test_hemis}
-      username: ${DB_MASTER_USERNAME:postgres}
-      password: ${DB_MASTER_PASSWORD:postgres}
+      jdbc-url: jdbc:postgresql://${DB_MASTER_HOST}:${DB_MASTER_PORT}/${DB_MASTER_NAME}
+      username: ${DB_MASTER_USERNAME}
+      password: ${DB_MASTER_PASSWORD}
       driver-class-name: org.postgresql.Driver
       hikari:
         maximum-pool-size: 10
@@ -42,9 +42,9 @@ spring:
 
     # Replica Database (Read Operations)
     replica:
-      jdbc-url: jdbc:postgresql://${DB_REPLICA_HOST:localhost}:${DB_REPLICA_PORT:5432}/${DB_REPLICA_NAME:test_hemis}
-      username: ${DB_REPLICA_USERNAME:postgres}
-      password: ${DB_REPLICA_PASSWORD:postgres}
+      jdbc-url: jdbc:postgresql://${DB_REPLICA_HOST}:${DB_REPLICA_PORT}/${DB_REPLICA_NAME}
+      username: ${DB_REPLICA_USERNAME}
+      password: ${DB_REPLICA_PASSWORD}
       driver-class-name: org.postgresql.Driver
       hikari:
         maximum-pool-size: 20

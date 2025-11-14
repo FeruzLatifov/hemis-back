@@ -53,10 +53,10 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-    name = "message_translations",
+    name = "system_message_translations",
     indexes = {
-        @Index(name = "idx_message_translations_language", columnList = "language"),
-        @Index(name = "idx_message_translations_message_id", columnList = "message_id")
+        @Index(name = "idx_system_message_translations_language", columnList = "language"),
+        @Index(name = "idx_system_message_translations_message", columnList = "message_id")
     }
 )
 @IdClass(SystemMessageTranslationId.class)

@@ -45,12 +45,12 @@ public class DashboardDataSourceConfig {
         // Connection config from .env
         dataSource.setJdbcUrl(String.format(
             "jdbc:postgresql://%s:%s/%s",
-            System.getenv().getOrDefault("DB_REPLICA_HOST", "localhost"),
-            System.getenv().getOrDefault("DB_REPLICA_PORT", "5432"),
-            System.getenv().getOrDefault("DB_REPLICA_NAME", "test_hemis")
+            System.getenv().get("DB_REPLICA_HOST") != null ? System.getenv().get("DB_REPLICA_HOST") : System.getenv().get("DB_MASTER_HOST"),
+            System.getenv().get("DB_REPLICA_PORT") != null ? System.getenv().get("DB_REPLICA_PORT") : System.getenv().get("DB_MASTER_PORT"),
+            System.getenv().get("DB_REPLICA_NAME") != null ? System.getenv().get("DB_REPLICA_NAME") : System.getenv().get("DB_MASTER_NAME")
         ));
-        dataSource.setUsername(System.getenv().getOrDefault("DB_REPLICA_USERNAME", "postgres"));
-        dataSource.setPassword(System.getenv().getOrDefault("DB_REPLICA_PASSWORD", "postgres"));
+        dataSource.setUsername(System.getenv().get("DB_REPLICA_USERNAME") != null ? System.getenv().get("DB_REPLICA_USERNAME") : System.getenv().get("DB_MASTER_USERNAME"));
+        dataSource.setPassword(System.getenv().get("DB_REPLICA_PASSWORD") != null ? System.getenv().get("DB_REPLICA_PASSWORD") : System.getenv().get("DB_MASTER_PASSWORD"));
         dataSource.setDriverClassName("org.postgresql.Driver");
         
         // Pool configuration (optimized for analytics)

@@ -10,7 +10,8 @@ rootProject.name = "hemis"
 include(
     "common",                   // Shared utilities, DTOs (legacy JSON field names)
     "security",                 // JWT OAuth2 Resource Server
-    "domain",                   // JPA entities (@Table/@Column legacy mapping)
+    "domain",                   // JPA entities (@Table/@Column legacy mapping) + Liquibase migrations
+    // "infrastructure-persistence", // DISABLED: Kotlin plugin issue, migrations in domain module
     "service",                  // Service layer
     "api-legacy",               // 🎯 Legacy CUBA-compatible APIs (/app/rest/*)
     "api-web",                  // 🎯 Modern Web/UI APIs (/api/v1/web/*)
@@ -22,8 +23,7 @@ include(
 // Gradle Features
 // =====================================================
 
-// Enable type-safe project accessors (Gradle 7+)
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
+// Type-safe project accessors are default since Gradle 9
 
 // =====================================================
 // Dependency Resolution Management
@@ -35,6 +35,14 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
     }
+}
+
+// =====================================================
+// Toolchain Management (Fix for Liquibase tasks)
+// =====================================================
+
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
 // =====================================================

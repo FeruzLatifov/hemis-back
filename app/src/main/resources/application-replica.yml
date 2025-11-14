@@ -19,9 +19,9 @@ spring:
     # - @Transactional (readOnly=false or default)
     # =====================================================
     master:
-      jdbc-url: ${DB_MASTER_URL:jdbc:postgresql://localhost:5432/hemis4}
-      username: ${DB_MASTER_USERNAME:hemis_app}
-      password: ${DB_MASTER_PASSWORD:}
+      jdbc-url: ${DB_MASTER_URL}
+      username: ${DB_MASTER_USERNAME}
+      password: ${DB_MASTER_PASSWORD}
       driver-class-name: org.postgresql.Driver
 
       hikari:
@@ -47,9 +47,9 @@ spring:
     # - High availability for reads
     # =====================================================
     replica:
-      jdbc-url: ${DB_REPLICA_URL:jdbc:postgresql://localhost:5433/hemis4}
-      username: ${DB_REPLICA_USERNAME:hemis_app}
-      password: ${DB_REPLICA_PASSWORD:}
+      jdbc-url: ${DB_REPLICA_URL}
+      username: ${DB_REPLICA_USERNAME}
+      password: ${DB_REPLICA_PASSWORD}
       driver-class-name: org.postgresql.Driver
 
       hikari:

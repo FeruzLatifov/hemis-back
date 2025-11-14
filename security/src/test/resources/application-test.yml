@@ -1,0 +1,41 @@
+# =====================================================
+# Security Module Test Configuration
+# =====================================================
+
+spring:
+  # Simple datasource for tests (NO routing)
+  # Uses .env DB_MASTER_* variables
+  datasource:
+    url: jdbc:postgresql://${DB_MASTER_HOST}:${DB_MASTER_PORT}/${DB_MASTER_NAME}
+    username: ${DB_MASTER_USERNAME}
+    password: ${DB_MASTER_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      pool-name: HikariPool-Security-Test
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  flyway:
+    enabled: false
+
+# JWT Configuration for tests
+hemis:
+  security:
+    jwt:
+      secret: test-secret-key-minimum-256-bits-required-for-hmac-sha256-algorithm-must-be-at-least-256-bits-long
+      expiration: 900  # 15 minutes
+      refresh-expiration: 86400  # 24 hours
+      issuer: hemis-test
+
+logging:
+  level:
+    uz.hemis: DEBUG
+    org.springframework.security: INFO

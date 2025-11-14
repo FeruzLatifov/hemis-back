@@ -37,13 +37,23 @@ databaseChangeLog:
       runOnChange: false
 
       sqlFile:
-        path: classpath:/db/changelog/changesets/01-complete-schema.sql
+        path: changesets/01-complete-schema.sql
+        relativeToChangelogFile: true
         stripComments: false
         splitStatements: false
 
       rollback:
         sqlFile:
-          path: classpath:/db/changelog/changesets/01-complete-schema-rollback.sql
+          path: changesets/01-complete-schema-rollback.sql
+          relativeToChangelogFile: true
+
+  # Tag after V1 for rollback support
+  - changeSet:
+      id: tag-v1
+      author: hemis-team
+      changes:
+        - tagDatabase:
+            tag: v1-schema-complete
 
   # =====================================================
   # V2: Complete Seed Data
@@ -69,19 +79,30 @@ databaseChangeLog:
   - changeSet:
       id: v2-complete-seed-data
       author: hemis-team
-      comment: Seed complete data (admin + roles + 90 permissions including 60 menu)
+      comment: Seed complete data (roles + permissions only, NO admin user)
       context: "!test"
       labels: "data,seed"
       runOnChange: false
 
       sqlFile:
-        path: classpath:/db/changelog/changesets/02-complete-seed-data.sql
+        path: changesets/02-complete-seed-data.sql
+        relativeToChangelogFile: true
         stripComments: false
         splitStatements: false
+        # CRITICAL: DO NOT split - file contains PL/pgSQL blocks (DO $$)
 
       rollback:
         sqlFile:
-          path: classpath:/db/changelog/changesets/02-complete-seed-data-rollback.sql
+          path: changesets/02-complete-seed-data-rollback.sql
+          relativeToChangelogFile: true
+
+  # Tag after V2 for rollback support
+  - changeSet:
+      id: tag-v2
+      author: hemis-team
+      changes:
+        - tagDatabase:
+            tag: v2-seed-data-complete
 
   # =====================================================
   # V3: Migrate Old-Hemis Users
@@ -100,22 +121,45 @@ databaseChangeLog:
   # Source: V3 from main
   # =====================================================
 
+  # =====================================================
+  # V3: Migrate Old-Hemis Users (sec_user → users)
+  # =====================================================
+  # Strategy: Simple SQL INSERT statements (NO PL/pgSQL)
+  # Migrates all active users and their role mappings
+  # =====================================================
+
   - changeSet:
       id: v3-migrate-old-hemis-users
       author: hemis-team
-      comment: Migrate users from old-hemis (sec_* tables → new tables)
+      comment: Migrate users from old-hemis (sec_user → users) using simple SQL
       context: "!test"
       labels: "data,migration"
       runOnChange: false
 
+      preConditions:
+        onFail: MARK_RAN
+        tableExists:
+          tableName: sec_user
+
       sqlFile:
-        path: classpath:/db/changelog/changesets/03-migrate-old-users.sql
+        path: changesets/03-migrate-old-users.sql
+        relativeToChangelogFile: true
         stripComments: false
-        splitStatements: false
+        splitStatements: true
+        endDelimiter: ";"
 
       rollback:
         sqlFile:
-          path: classpath:/db/changelog/changesets/03-migrate-old-users-rollback.sql
+          path: changesets/03-migrate-old-users-rollback.sql
+          relativeToChangelogFile: true
+
+  # Tag after V3 for rollback support
+  - changeSet:
+      id: tag-v3
+      author: hemis-team
+      changes:
+        - tagDatabase:
+            tag: v3-users-migrated
 
   # =====================================================
   # V4: Complete Menu Translations
@@ -145,13 +189,23 @@ databaseChangeLog:
       runOnChange: false
 
       sqlFile:
-        path: classpath:/db/changelog/changesets/04-complete-translations.sql
+        path: changesets/04-complete-translations.sql
+        relativeToChangelogFile: true
         stripComments: false
         splitStatements: false
 
       rollback:
         sqlFile:
-          path: classpath:/db/changelog/changesets/04-complete-translations-rollback.sql
+          path: changesets/04-complete-translations-rollback.sql
+          relativeToChangelogFile: true
+
+  # Tag after V4 for rollback support
+  - changeSet:
+      id: tag-v4
+      author: hemis-team
+      changes:
+        - tagDatabase:
+            tag: v4-menu-translations-complete
 
   # =====================================================
   # V5: Faculty Registry Translations
@@ -170,20 +224,30 @@ databaseChangeLog:
 
   - changeSet:
       id: v5-faculty-registry-translations
-      author: ai-assistant
+      author: hemis-team
       comment: Add Faculty Registry translations (menu + table + actions + details)
       context: "!test"
       labels: "i18n,translations,faculty"
       runOnChange: false
 
       sqlFile:
-        path: classpath:/db/changelog/changesets/05-faculty-registry-translations.sql
+        path: changesets/05-faculty-registry-translations.sql
+        relativeToChangelogFile: true
         stripComments: false
         splitStatements: false
 
       rollback:
         sqlFile:
-          path: classpath:/db/changelog/changesets/05-faculty-registry-translations-rollback.sql
+          path: changesets/05-faculty-registry-translations-rollback.sql
+          relativeToChangelogFile: true
+
+  # Tag after V5 for rollback support
+  - changeSet:
+      id: tag-v5
+      author: hemis-team
+      changes:
+        - tagDatabase:
+            tag: v5-faculty-translations-complete
 
 # =====================================================
 # Liquibase Commands

@@ -25,6 +25,10 @@ dependencies {
 
     // SLF4J for logging
     api("org.slf4j:slf4j-api")
+    
+    // Testing dependencies
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.2.1")
 }
 
 // =====================================================

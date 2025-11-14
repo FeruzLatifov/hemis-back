@@ -2,6 +2,7 @@ package uz.hemis.api.web.controller.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,12 +49,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   <li>@TestMethodOrder for predictable execution</li>
  * </ul>
  */
+@EnabledIfEnvironmentVariable(named = "TESTS_ENABLED", matches = "(?i)true")
 @SpringBootTest(
     classes = HemisApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = {
-        "spring.datasource.master.jdbc-url=jdbc:postgresql://localhost:5432/test_hemis",
-        "spring.datasource.replica.jdbc-url=jdbc:postgresql://localhost:5432/test_hemis"
+        "spring.datasource.master.jdbc-url=jdbc:postgresql://${DB_MASTER_HOST}:${DB_MASTER_PORT}/${DB_MASTER_NAME}",
+        "spring.datasource.replica.jdbc-url=jdbc:postgresql://${DB_REPLICA_HOST:${DB_MASTER_HOST}}:${DB_REPLICA_PORT:${DB_MASTER_PORT}}/${DB_REPLICA_NAME:${DB_MASTER_NAME}}"
     }
 )
 @AutoConfigureMockMvc

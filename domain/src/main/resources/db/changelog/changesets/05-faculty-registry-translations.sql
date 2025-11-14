@@ -6,7 +6,7 @@
 -- ========================================
 -- 1. MENU TRANSLATIONS
 -- ========================================
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'menu', 'menu.registry.faculty', 'Fakultet', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (message_key) DO UPDATE SET
@@ -14,7 +14,7 @@ ON CONFLICT (message_key) DO UPDATE SET
     updated_at = CURRENT_TIMESTAMP;
 
 -- Menu translations (oz-UZ, ru-RU, en-US)
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT 
     sm.id,
     lang.code,
@@ -26,7 +26,7 @@ SELECT
     END,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 CROSS JOIN (
     SELECT 'oz-UZ' as code
     UNION ALL SELECT 'ru-RU'
@@ -40,7 +40,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- ========================================
 -- 2. TABLE COLUMN TRANSLATIONS (uz-UZ base)
 -- ========================================
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'table', 'table.actions', 'Amallar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'table', 'table.faculty.universityName', 'OTM nomi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -55,7 +55,7 @@ ON CONFLICT (message_key) DO UPDATE SET message = EXCLUDED.message, updated_at =
 -- ========================================
 -- 3. CYRILLIC (oz-UZ) TRANSLATIONS
 -- ========================================
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT
     sm.id,
     'oz-UZ',
@@ -71,7 +71,7 @@ SELECT
     END,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 WHERE sm.message_key IN (
     'table.actions', 'table.faculty.universityName', 'table.faculty.universityCode',
     'table.faculty.code', 'table.faculty.nameUz', 'table.faculty.nameRu', 
@@ -84,7 +84,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- ========================================
 -- 4. RUSSIAN (ru-RU) TRANSLATIONS
 -- ========================================
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT
     sm.id,
     'ru-RU',
@@ -100,7 +100,7 @@ SELECT
     END,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 WHERE sm.message_key IN (
     'table.actions', 'table.faculty.universityName', 'table.faculty.universityCode',
     'table.faculty.code', 'table.faculty.nameUz', 'table.faculty.nameRu',
@@ -113,7 +113,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- ========================================
 -- 5. ENGLISH (en-US) TRANSLATIONS
 -- ========================================
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT
     sm.id,
     'en-US',
@@ -129,7 +129,7 @@ SELECT
     END,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 WHERE sm.message_key IN (
     'table.actions', 'table.faculty.universityName', 'table.faculty.universityCode',
     'table.faculty.code', 'table.faculty.nameUz', 'table.faculty.nameRu',
@@ -142,14 +142,14 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- ========================================
 -- 6. ACTIONS TRANSLATIONS
 -- ========================================
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'actions', 'actions.view', 'Ko''rish', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'actions', 'actions.close', 'Yopish', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (message_key) DO UPDATE SET message = EXCLUDED.message, updated_at = CURRENT_TIMESTAMP;
 
 -- Actions translations (all languages)
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT sm.id, lang.code,
     CASE
         WHEN sm.message_key = 'actions.view' AND lang.code = 'oz-UZ' THEN 'Кўриш'
@@ -159,7 +159,7 @@ SELECT sm.id, lang.code,
         WHEN sm.message_key = 'actions.close' AND lang.code = 'ru-RU' THEN 'Закрыть'
         WHEN sm.message_key = 'actions.close' AND lang.code = 'en-US' THEN 'Close'
     END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 CROSS JOIN (SELECT 'oz-UZ' as code UNION ALL SELECT 'ru-RU' UNION ALL SELECT 'en-US') lang
 WHERE sm.message_key IN ('actions.view', 'actions.close')
 ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
@@ -167,7 +167,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translat
 -- ========================================
 -- 7. DETAILS DRAWER TRANSLATIONS
 -- ========================================
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'details', 'details.basicInfo', 'Asosiy ma''lumotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'details', 'details.auditInfo', 'Audit ma''lumotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -180,7 +180,7 @@ VALUES
 ON CONFLICT (message_key) DO UPDATE SET message = EXCLUDED.message, updated_at = CURRENT_TIMESTAMP;
 
 -- Details translations (oz-UZ)
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT sm.id, 'oz-UZ',
     CASE sm.message_key
         WHEN 'details.basicInfo' THEN 'Асосий маълумотлар'
@@ -192,13 +192,13 @@ SELECT sm.id, 'oz-UZ',
         WHEN 'details.updatedAt' THEN 'Янгиланган'
         WHEN 'details.updatedBy' THEN 'Янгиловчи'
     END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 WHERE sm.message_key IN ('details.basicInfo', 'details.auditInfo', 'details.shortName', 'details.facultyType',
     'details.createdAt', 'details.createdBy', 'details.updatedAt', 'details.updatedBy')
 ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
 
 -- Details translations (ru-RU)
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT sm.id, 'ru-RU',
     CASE sm.message_key
         WHEN 'details.basicInfo' THEN 'Основная информация'
@@ -210,13 +210,13 @@ SELECT sm.id, 'ru-RU',
         WHEN 'details.updatedAt' THEN 'Обновлено'
         WHEN 'details.updatedBy' THEN 'Обновил'
     END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 WHERE sm.message_key IN ('details.basicInfo', 'details.auditInfo', 'details.shortName', 'details.facultyType',
     'details.createdAt', 'details.createdBy', 'details.updatedAt', 'details.updatedBy')
 ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
 
 -- Details translations (en-US)
-INSERT INTO h_system_message_translation (message_id, language, translation, created_at, updated_at)
+INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
 SELECT sm.id, 'en-US',
     CASE sm.message_key
         WHEN 'details.basicInfo' THEN 'Basic Information'
@@ -228,7 +228,7 @@ SELECT sm.id, 'en-US',
         WHEN 'details.updatedAt' THEN 'Updated At'
         WHEN 'details.updatedBy' THEN 'Updated By'
     END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM h_system_message sm
+FROM system_messages sm
 WHERE sm.message_key IN ('details.basicInfo', 'details.auditInfo', 'details.shortName', 'details.facultyType',
     'details.createdAt', 'details.createdBy', 'details.updatedAt', 'details.updatedBy')
 ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;

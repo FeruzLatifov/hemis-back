@@ -37,6 +37,9 @@ dependencies {
     // PostgreSQL Driver
     runtimeOnly("org.postgresql:postgresql")
 
+    // Liquibase runtime (align with Gradle plugin runtime)
+    implementation("org.liquibase:liquibase-core:4.31.1")
+
     // SpringDoc OpenAPI (Swagger)
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
 

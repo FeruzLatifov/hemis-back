@@ -18,9 +18,9 @@
 -- ========================================
 -- 1. DELETE DETAILS TRANSLATIONS
 -- ========================================
-DELETE FROM h_system_message_translation 
+DELETE FROM system_message_translations 
 WHERE message_id IN (
-    SELECT id FROM h_system_message 
+    SELECT id FROM system_messages 
     WHERE message_key IN (
         'details.basicInfo',
         'details.auditInfo',
@@ -33,7 +33,7 @@ WHERE message_id IN (
     )
 );
 
-DELETE FROM h_system_message 
+DELETE FROM system_messages 
 WHERE message_key IN (
     'details.basicInfo',
     'details.auditInfo',
@@ -48,16 +48,16 @@ WHERE message_key IN (
 -- ========================================
 -- 2. DELETE ACTIONS TRANSLATIONS
 -- ========================================
-DELETE FROM h_system_message_translation 
+DELETE FROM system_message_translations 
 WHERE message_id IN (
-    SELECT id FROM h_system_message 
+    SELECT id FROM system_messages 
     WHERE message_key IN (
         'actions.view',
         'actions.close'
     )
 );
 
-DELETE FROM h_system_message 
+DELETE FROM system_messages 
 WHERE message_key IN (
     'actions.view',
     'actions.close'
@@ -66,9 +66,9 @@ WHERE message_key IN (
 -- ========================================
 -- 3. DELETE TABLE TRANSLATIONS
 -- ========================================
-DELETE FROM h_system_message_translation 
+DELETE FROM system_message_translations 
 WHERE message_id IN (
-    SELECT id FROM h_system_message 
+    SELECT id FROM system_messages 
     WHERE message_key IN (
         'table.actions',
         'table.faculty.universityName',
@@ -81,7 +81,7 @@ WHERE message_id IN (
     )
 );
 
-DELETE FROM h_system_message 
+DELETE FROM system_messages 
 WHERE message_key IN (
     'table.actions',
     'table.faculty.universityName',
@@ -96,13 +96,13 @@ WHERE message_key IN (
 -- ========================================
 -- 4. DELETE MENU TRANSLATIONS
 -- ========================================
-DELETE FROM h_system_message_translation 
+DELETE FROM system_message_translations 
 WHERE message_id IN (
-    SELECT id FROM h_system_message 
+    SELECT id FROM system_messages 
     WHERE message_key = 'menu.registry.faculty'
 );
 
-DELETE FROM h_system_message 
+DELETE FROM system_messages 
 WHERE message_key = 'menu.registry.faculty';
 
 -- ========================================
@@ -111,9 +111,9 @@ WHERE message_key = 'menu.registry.faculty';
 -- After this rollback:
 -- - All Faculty Registry translations removed
 -- - No orphaned translation records
--- - h_system_message and h_system_message_translation cleaned
+-- - system_messages and system_message_translations cleaned
 -- ========================================
 
 -- Verification query (should return 0):
--- SELECT COUNT(*) FROM h_system_message WHERE message_key LIKE '%faculty%' OR message_key IN ('table.actions', 'actions.view', 'actions.close', 'details.%');
+-- SELECT COUNT(*) FROM system_messages WHERE message_key LIKE '%faculty%' OR message_key IN ('table.actions', 'actions.view', 'actions.close', 'details.%');
 

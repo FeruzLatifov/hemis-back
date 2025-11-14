@@ -1,12 +1,12 @@
 -- =====================================================
 -- Menu Translation System (Using SystemMessage)
 -- =====================================================
--- Using existing h_system_message and h_system_message_translation tables
+-- Using existing system_messages and system_message_translations tables
 -- for menu labels to maintain single translation system
 --
 -- Architecture:
--- 1. h_system_message - stores default Uzbek (uz-UZ) message
--- 2. h_system_message_translation - stores translations (ru-RU, en-US)
+-- 1. system_messages - stores default Uzbek (uz-UZ) message
+-- 2. system_message_translations - stores translations (ru-RU, en-US)
 -- =====================================================
 
 -- =====================================================
@@ -14,12 +14,12 @@
 -- =====================================================
 
 -- Dashboard
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES (gen_random_uuid(), 'menu', 'menu.dashboard', 'Bosh sahifa', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (message_key) DO NOTHING;
 
 -- Registry Module (4 messages)
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'menu', 'menu.registry', 'Reestlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'menu', 'menu.registry.e_reestr', 'E-Reestr', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -28,7 +28,7 @@ VALUES
 ON CONFLICT (message_key) DO NOTHING;
 
 -- Rating Module (14 messages)
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'menu', 'menu.rating', 'Reyting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'menu', 'menu.rating.administrative', 'Administrativ reyting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -47,7 +47,7 @@ VALUES
 ON CONFLICT (message_key) DO NOTHING;
 
 -- Data Module (10 messages)
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'menu', 'menu.data', 'Ma''lumotlar bazasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'menu', 'menu.data.general', 'Umumiy ma''lumotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -62,7 +62,7 @@ VALUES
 ON CONFLICT (message_key) DO NOTHING;
 
 -- Reports Module (25 messages)
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'menu', 'menu.reports', 'Hisobotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'menu', 'menu.reports.universities', 'OTM hisobotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -89,7 +89,7 @@ VALUES
 ON CONFLICT (message_key) DO NOTHING;
 
 -- System Module (6 messages)
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 (gen_random_uuid(), 'menu', 'menu.system', 'Tizim', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'menu', 'menu.system.temp', 'Vaqtinchalik', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -103,7 +103,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- Menu Translations - Russian (ru-RU)
 -- =====================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'ru-RU',
   CASE m.message_key
     -- Dashboard
@@ -176,7 +176,7 @@ SELECT m.id, 'ru-RU',
     WHEN 'menu.system.report_update' THEN 'Обновления отчетов'
     ELSE m.message  -- Fallback to default Uzbek message
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key LIKE 'menu.%'
   AND CASE m.message_key
@@ -245,7 +245,7 @@ ON CONFLICT (message_id, language) DO NOTHING;
 -- Menu Translations - English (en-US)
 -- =====================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'en-US',
   CASE m.message_key
     -- Dashboard
@@ -318,7 +318,7 @@ SELECT m.id, 'en-US',
     WHEN 'menu.system.report_update' THEN 'Report Updates'
     ELSE m.message  -- Fallback to default Uzbek message
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key LIKE 'menu.%'
   AND CASE m.message_key
@@ -391,7 +391,7 @@ ON CONFLICT (message_id, language) DO NOTHING;
 -- =====================================================
 
 -- Insert Cyrillic Uzbek translations for existing menu items
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'oz-UZ', 
   CASE m.message_key
     WHEN 'menu.dashboard' THEN 'Бош саҳифа'
@@ -452,7 +452,7 @@ SELECT m.id, 'oz-UZ',
     WHEN 'menu.system.api_logs' THEN 'API журнал'
     WHEN 'menu.system.report_update' THEN 'Ҳисоботларни янгилаш'
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu' 
   AND m.message_key IN (
     'menu.dashboard', 'menu.registry', 'menu.rating', 'menu.data', 'menu.reports', 'menu.system',
@@ -488,8 +488,8 @@ ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translat
 -- 1. REGISTRY > E-REESTR (19 submenus)
 -- ========================================
 
--- Insert all 19 e-reestr submenus into h_system_message
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+-- Insert all 19 e-reestr submenus into system_messages
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 1.1 Universities
 (gen_random_uuid(), 'menu', 'menu.registry.e_reestr.university', 'Muassasalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -535,7 +535,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 2. DATA > STRUCTURE (6 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 2.1 University Types
 (gen_random_uuid(), 'menu', 'menu.data.structure.university_type', 'OTM tashkiliy shakllari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -555,7 +555,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 3. DATA > EDUCATION (13 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 3.1 Education Types
 (gen_random_uuid(), 'menu', 'menu.data.education.education_type', 'Ta''lim turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -589,7 +589,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 4. DATA > GENERAL (6 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 4.1 General (parent label fix)
 (gen_random_uuid(), 'menu', 'menu.data.general', 'Umumiy', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -613,7 +613,7 @@ ON CONFLICT (message_key) DO UPDATE SET
 -- TRANSLATIONS: Cyrillic (oz-UZ)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'oz-UZ',
   CASE m.message_key
     -- Registry > E-Reestr (19)
@@ -671,7 +671,7 @@ SELECT m.id, 'oz-UZ',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     -- Registry > E-Reestr (19)
@@ -703,7 +703,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translat
 -- TRANSLATIONS: Russian (ru-RU)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'ru-RU',
   CASE m.message_key
     -- Registry > E-Reestr (19)
@@ -761,7 +761,7 @@ SELECT m.id, 'ru-RU',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     -- Registry > E-Reestr (19)
@@ -793,7 +793,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translat
 -- TRANSLATIONS: English (en-US)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'en-US',
   CASE m.message_key
     -- Registry > E-Reestr (19)
@@ -851,7 +851,7 @@ SELECT m.id, 'en-US',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     -- Registry > E-Reestr (19)
@@ -900,7 +900,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translat
 -- 1. DATA > EMPLOYEE (9 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 1.1 Employee Type
 (gen_random_uuid(), 'menu', 'menu.data.employee.type', 'Xodimlar toifalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -926,7 +926,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 2. DATA > STUDENT (15 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 2.1 Student Status
 (gen_random_uuid(), 'menu', 'menu.data.student.status', 'Talaba holatlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -964,7 +964,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 3. DATA > STUDY (18 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 3.1 Education Year
 (gen_random_uuid(), 'menu', 'menu.data.study.year', 'O''quv yillari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -1008,7 +1008,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 4. DATA > SCIENCE (9 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 4.1 Project Type
 (gen_random_uuid(), 'menu', 'menu.data.science.project_type', 'Ilmiy loyihalar turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -1034,7 +1034,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 5. DATA > ORGANIZATIONAL (10 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 5.1 Payment Form
 (gen_random_uuid(), 'menu', 'menu.data.organizational.payment_form', 'To''lov turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -1062,7 +1062,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 6. DATA > GENERAL (10 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 6.1 Country
 (gen_random_uuid(), 'menu', 'menu.data.general.country', 'Davlatlar ro''yxati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -1090,7 +1090,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- TRANSLATIONS: Cyrillic (oz-UZ)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'oz-UZ',
   CASE m.message_key
     -- Data > Employee (9)
@@ -1178,7 +1178,7 @@ SELECT m.id, 'oz-UZ',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     -- Employee
@@ -1221,7 +1221,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- TRANSLATIONS: Russian (ru-RU)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'ru-RU',
   CASE m.message_key
     -- Data > Employee (9)
@@ -1309,7 +1309,7 @@ SELECT m.id, 'ru-RU',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     -- Employee
@@ -1352,7 +1352,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- TRANSLATIONS: English (en-US)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'en-US',
   CASE m.message_key
     -- Data > Employee (9)
@@ -1440,7 +1440,7 @@ SELECT m.id, 'en-US',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     -- Employee
@@ -1494,7 +1494,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- 1. REGISTRY > SCIENTIFIC (10 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 1.1 Doctorate Students
 (gen_random_uuid(), 'menu', 'menu.registry.scientific.doctorate', 'Ilmiy tadqiqotchilar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -1522,7 +1522,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- 2. REPORTS > UNIVERSITIES (2 submenus)
 -- ========================================
 
-INSERT INTO h_system_message (id, category, message_key, message, is_active, created_at, updated_at)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
 VALUES
 -- 2.1 Universities Count
 (gen_random_uuid(), 'menu', 'menu.reports.universities.count', 'OTMlar umumiy soni', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
@@ -1534,7 +1534,7 @@ ON CONFLICT (message_key) DO NOTHING;
 -- TRANSLATIONS: Cyrillic (oz-UZ)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'oz-UZ',
   CASE m.message_key
     -- Registry > Scientific (10)
@@ -1555,7 +1555,7 @@ SELECT m.id, 'oz-UZ',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     'menu.registry.scientific.doctorate', 'menu.registry.scientific.dissertation',
@@ -1573,7 +1573,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- TRANSLATIONS: Russian (ru-RU)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'ru-RU',
   CASE m.message_key
     -- Registry > Scientific (10)
@@ -1594,7 +1594,7 @@ SELECT m.id, 'ru-RU',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     'menu.registry.scientific.doctorate', 'menu.registry.scientific.dissertation',
@@ -1612,7 +1612,7 @@ ON CONFLICT (message_id, language) DO UPDATE SET
 -- TRANSLATIONS: English (en-US)
 -- ================================================
 
-INSERT INTO h_system_message_translation (message_id, language, translation)
+INSERT INTO system_message_translations (message_id, language, translation)
 SELECT m.id, 'en-US',
   CASE m.message_key
     -- Registry > Scientific (10)
@@ -1633,7 +1633,7 @@ SELECT m.id, 'en-US',
 
     ELSE m.message  -- Fallback
   END
-FROM h_system_message m
+FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
     'menu.registry.scientific.doctorate', 'menu.registry.scientific.dissertation',

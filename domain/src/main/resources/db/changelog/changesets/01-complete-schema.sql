@@ -327,7 +327,7 @@ END $$;
 -- SystemMessage Tables (for i18n/translations)
 -- =====================================================
 
-CREATE TABLE IF NOT EXISTS h_system_message (
+CREATE TABLE IF NOT EXISTS system_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category VARCHAR(100) NOT NULL,
     message_key VARCHAR(255) NOT NULL UNIQUE,
@@ -338,12 +338,12 @@ CREATE TABLE IF NOT EXISTS h_system_message (
     deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_h_system_message_category ON h_system_message(category);
-CREATE INDEX idx_h_system_message_key ON h_system_message(message_key);
+CREATE INDEX IF NOT EXISTS idx_system_messages_category ON system_messages(category);
+CREATE INDEX IF NOT EXISTS idx_system_messages_key ON system_messages(message_key);
 
-CREATE TABLE IF NOT EXISTS h_system_message_translation (
+CREATE TABLE IF NOT EXISTS system_message_translations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    message_id UUID NOT NULL REFERENCES h_system_message(id) ON DELETE CASCADE,
+    message_id UUID NOT NULL REFERENCES system_messages(id) ON DELETE CASCADE,
     language VARCHAR(10) NOT NULL,
     translation TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -352,5 +352,5 @@ CREATE TABLE IF NOT EXISTS h_system_message_translation (
     UNIQUE(message_id, language)
 );
 
-CREATE INDEX idx_h_system_message_translation_message ON h_system_message_translation(message_id);
-CREATE INDEX idx_h_system_message_translation_language ON h_system_message_translation(language);
+CREATE INDEX IF NOT EXISTS idx_system_message_translations_message ON system_message_translations(message_id);
+CREATE INDEX IF NOT EXISTS idx_system_message_translations_language ON system_message_translations(language);

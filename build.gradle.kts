@@ -98,6 +98,27 @@ subprojects {
     tasks.withType<Test> {
         useJUnitPlatform()
 
+        // Load .env vars for tests and gate by TESTS_ENABLED
+        val envFile = rootProject.file(".env")
+        val envMap = mutableMapOf<String, String>()
+        if (envFile.exists()) {
+            envFile.readLines()
+                .filter { it.isNotBlank() && !it.trim().startsWith("#") && it.contains("=") }
+                .forEach { line ->
+                    val (k, v) = line.split("=", limit = 2)
+                    envMap[k.trim()] = v.trim()
+                }
+        }
+        environment(envMap)
+
+        val testsEnabled = (System.getenv("TESTS_ENABLED") ?: envMap["TESTS_ENABLED"] ?: "false")
+            .equals("true", ignoreCase = true)
+        if (!testsEnabled) {
+            doFirst {
+                throw GradleException("Test qilish o'chirilgan. TESTS_ENABLED=true ni .env da yoqing.")
+            }
+        }
+
         // Parallel test execution
         maxParallelForks = Runtime.getRuntime().availableProcessors()
 

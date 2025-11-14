@@ -367,14 +367,19 @@ public class SecurityConfig {
     // =====================================================
 
     /**
-     * Password Encoder (BCrypt)
+     * Password Encoder Bean
      *
-     * <p>Used for password hashing and verification</p>
-     * <p>Strength: 10 rounds (default)</p>
+     * <p><strong>HYBRID APPROACH:</strong> Supports both legacy and modern formats</p>
+     * <ul>
+     *   <li>BCrypt format: $2a$10$... (new system - users table)</li>
+     *   <li>CUBA Platform format: hash:salt:iteration (old system - sec_user table)</li>
+     * </ul>
+     *
+     * @see uz.hemis.security.crypto.LegacyPasswordEncoder
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new uz.hemis.security.crypto.LegacyPasswordEncoder();
     }
 
     /**

@@ -2,5 +2,5 @@
 -- V4 ROLLBACK: Delete All Translations
 -- =====================================================
 
-DELETE FROM h_system_message_translation;
-DELETE FROM h_system_message WHERE category = 'menu';
+DELETE FROM system_message_translations;
+DELETE FROM system_messages WHERE category = 'menu';

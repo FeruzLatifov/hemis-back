@@ -110,8 +110,15 @@ public class WebAuthController {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             // Verify password using BCrypt
-            if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-                log.error("Invalid password for user: {}", username);
+            log.debug("🔐 Password verification - Input: '{}', Hash from DB: '{}'",
+                password, userDetails.getPassword().substring(0, Math.min(20, userDetails.getPassword().length())));
+
+            boolean passwordMatches = passwordEncoder.matches(password, userDetails.getPassword());
+            log.debug("🔐 Password match result: {}", passwordMatches);
+
+            if (!passwordMatches) {
+                log.error("Invalid password for user: {} (input='{}', hashStart='{}')",
+                    username, password, userDetails.getPassword().substring(0, 20));
                 return ResponseEntity.status(401).body(Map.of(
                         "error", "invalid_credentials",
                         "message", "Login yoki parol noto'g'ri"
