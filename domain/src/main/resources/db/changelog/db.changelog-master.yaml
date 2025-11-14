@@ -249,11 +249,49 @@ databaseChangeLog:
         - tagDatabase:
             tag: v5-faculty-translations-complete
 
+  # =====================================================
+  # V6: Menu Permissions (Registry, Rating, Data, System)
+  # =====================================================
+  # Add complete menu structure permissions from old-hemis:
+  # - Registry Module (4 permissions)
+  # - Rating Module (14 permissions)
+  # - Data Management (10 permissions)
+  # - Reports Module (24 permissions)
+  # - System Module (6 permissions)
+  #
+  # Total: 58 new permissions
+  # All assigned to Super Administrator role
+  #
+  # Source: V9__Update_Menu_Structure_Permissions.sql (Flyway backup)
+  # =====================================================
+
+  - changeSet:
+      id: v6-add-menu-permissions
+      author: hemis-team
+      comment: Add complete menu structure permissions (58 permissions)
+      context: "!test"
+      labels: "permissions,menu"
+      runOnChange: false
+
+      sqlFile:
+        path: changesets/06-add-menu-permissions.sql
+        relativeToChangelogFile: true
+        stripComments: false
+        splitStatements: false
+
+  # Tag after V6 for rollback support
+  - changeSet:
+      id: tag-v6
+      author: hemis-team
+      changes:
+        - tagDatabase:
+            tag: v6-menu-permissions-complete
+
 # =====================================================
 # Liquibase Commands
 # =====================================================
 # Apply all:      ./gradlew bootRun
-# Rollback all:   liquibase rollback-count 5
-# Rollback to V2: liquibase rollback-count 3
+# Rollback all:   liquibase rollback-count 6
+# Rollback to V2: liquibase rollback-count 4
 # Status:         liquibase status
 # =====================================================
