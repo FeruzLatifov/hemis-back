@@ -11,10 +11,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import jakarta.servlet.http.Cookie;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -180,7 +178,8 @@ public class WebAuthController {
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request
+            @Valid @RequestBody LoginRequest request,
+            jakarta.servlet.http.HttpServletResponse httpResponse
     ) {
         String username = request.getUsername();
         String password = request.getPassword();
@@ -237,6 +236,27 @@ public class WebAuthController {
 
             permissionCacheService.cacheUserPermissions(user.getId(), permissions);
 
+            // ✅ SECURITY BEST PRACTICE: HTTPOnly cookies for tokens
+            // Access Token cookie (15 minutes)
+            Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
+            accessTokenCookie.setHttpOnly(true);  // ✅ XSS protection
+            accessTokenCookie.setSecure(false);    // TODO: true in production (HTTPS)
+            accessTokenCookie.setPath("/");
+            accessTokenCookie.setMaxAge(900);     // 15 minutes
+            accessTokenCookie.setAttribute("SameSite", "Lax");
+            httpResponse.addCookie(accessTokenCookie);
+
+            // Refresh Token cookie (7 days)
+            Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+            refreshTokenCookie.setHttpOnly(true);  // ✅ XSS protection
+            refreshTokenCookie.setSecure(false);    // TODO: true in production (HTTPS)
+            refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setMaxAge(604800); // 7 days
+            refreshTokenCookie.setAttribute("SameSite", "Lax");
+            httpResponse.addCookie(refreshTokenCookie);
+
+            // ✅ Response body - still include tokens for backward compatibility
+            // Frontend can choose to use cookies OR localStorage
             LoginResponse response = LoginResponse.builder()
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
@@ -244,7 +264,7 @@ public class WebAuthController {
                     .expiresIn(expiresIn)
                     .build();
 
-            log.info("✅ Login successful - user: {}, cached {} permissions", username, permissions.size());
+            log.info("✅ Login successful - user: {}, cached {} permissions, set HTTPOnly cookies", username, permissions.size());
 
             return ResponseEntity.ok(response);
 
@@ -273,14 +293,23 @@ public class WebAuthController {
     )
     @PostMapping("/logout")
     public ResponseEntity<Map<String, Object>> logout(
-            @RequestHeader(value = "Authorization", required = false) String authHeader
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @CookieValue(value = "accessToken", required = false) String cookieToken,
+            jakarta.servlet.http.HttpServletResponse httpResponse
     ) {
         log.info("Web logout request");
 
-        // Extract userId from Authorization header (JWT token)
+        // Extract token from Authorization header OR cookie
+        String token = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else if (cookieToken != null) {
+            token = cookieToken;
+        }
+
+        // Extract userId from token
+        if (token != null) {
             try {
-                String token = authHeader.substring(7);
                 Jwt jwt = jwtDecoder.decode(token);
                 String userIdString = jwt.getSubject(); // ✅ JWT sub = userId (UUID)
 
@@ -293,17 +322,27 @@ public class WebAuthController {
                 } catch (IllegalArgumentException e) {
                     log.warn("Invalid userId in JWT during logout: {}", userIdString);
                 }
-
-                return ResponseEntity.ok(Map.of(
-                        "success", true,
-                        "message", "Logged out successfully"
-                ));
-
             } catch (Exception e) {
                 log.warn("Failed to decode JWT token during logout: {}", e.getMessage());
-                // Continue with logout even if token is invalid
             }
         }
+
+        // ✅ Clear HTTPOnly cookies
+        Cookie accessTokenCookie = new Cookie("accessToken", null);
+        accessTokenCookie.setHttpOnly(true);
+        accessTokenCookie.setSecure(false);  // TODO: true in production
+        accessTokenCookie.setPath("/");
+        accessTokenCookie.setMaxAge(0);      // Delete cookie
+        httpResponse.addCookie(accessTokenCookie);
+
+        Cookie refreshTokenCookie = new Cookie("refreshToken", null);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(false);  // TODO: true in production
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(0);      // Delete cookie
+        httpResponse.addCookie(refreshTokenCookie);
+
+        log.info("✅ Logout successful - cleared HTTPOnly cookies");
 
         return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -325,9 +364,26 @@ public class WebAuthController {
     )
     @PostMapping("/refresh")
     public ResponseEntity<Map<String, Object>> refresh(
-            @RequestBody Map<String, String> body
+            @RequestBody(required = false) Map<String, String> body,
+            @CookieValue(value = "refreshToken", required = false) String cookieRefreshToken,
+            jakarta.servlet.http.HttpServletResponse httpResponse
     ) {
-        String refreshToken = body.get("refreshToken");
+        // ✅ Get refresh token from request body OR cookie
+        String refreshToken = null;
+        if (body != null && body.get("refreshToken") != null) {
+            refreshToken = body.get("refreshToken");
+        } else if (cookieRefreshToken != null) {
+            refreshToken = cookieRefreshToken;
+        }
+
+        if (refreshToken == null) {
+            log.error("No refresh token provided");
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "invalid_request",
+                    "message", "Refresh token talab qilinadi"
+            ));
+        }
+
         log.info("Web token refresh request");
 
         try {
@@ -393,12 +449,29 @@ public class WebAuthController {
 
             String newRefreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, refreshTokenClaims)).getTokenValue();
 
-            // Build response
+            // ✅ Set new tokens in HTTPOnly cookies
+            Cookie accessTokenCookie = new Cookie("accessToken", newAccessToken);
+            accessTokenCookie.setHttpOnly(true);
+            accessTokenCookie.setSecure(false);  // TODO: true in production
+            accessTokenCookie.setPath("/");
+            accessTokenCookie.setMaxAge(900);    // 15 minutes
+            accessTokenCookie.setAttribute("SameSite", "Lax");
+            httpResponse.addCookie(accessTokenCookie);
+
+            Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
+            refreshTokenCookie.setHttpOnly(true);
+            refreshTokenCookie.setSecure(false);  // TODO: true in production
+            refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setMaxAge(604800); // 7 days
+            refreshTokenCookie.setAttribute("SameSite", "Lax");
+            httpResponse.addCookie(refreshTokenCookie);
+
+            // Build response (also include tokens in body for backward compatibility)
             Map<String, Object> response = new HashMap<>();
             response.put("accessToken", newAccessToken); // Frontend expects 'accessToken'
             response.put("refreshToken", newRefreshToken);
 
-            log.info("Token refreshed successfully for userId: {}", userId);
+            log.info("Token refreshed successfully for userId: {}, set HTTPOnly cookies", userId);
 
             return ResponseEntity.ok(response);
 

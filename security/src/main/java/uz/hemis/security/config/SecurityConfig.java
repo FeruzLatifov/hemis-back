@@ -120,6 +120,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // Public endpoints (health checks)
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        
+                        // Protected actuator endpoints (admin only)
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
 
                         // Swagger/OpenAPI endpoints (PUBLIC - for API documentation)
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
@@ -342,14 +345,16 @@ public class SecurityConfig {
                 "Authorization",
                 "Content-Type",
                 "Accept",
-                "X-Requested-With"
+                "X-Requested-With",
+                "Cookie" // ✅ CRITICAL: Allow Cookie header for HTTPOnly cookies
         ));
 
         // Expose headers (for pagination, etc.)
         configuration.setExposedHeaders(Arrays.asList(
                 "X-Total-Count",
                 "X-Page-Number",
-                "X-Page-Size"
+                "X-Page-Size",
+                "Set-Cookie" // ✅ CRITICAL: Expose Set-Cookie header
         ));
 
         // Allow credentials (cookies, authorization headers)

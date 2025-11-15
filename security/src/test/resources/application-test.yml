@@ -1,30 +1,39 @@
 # =====================================================
 # Security Module Test Configuration
 # =====================================================
+# Uses H2 in-memory database (same as app module)
+# =====================================================
 
 spring:
-  # Simple datasource for tests (NO routing)
-  # Uses .env DB_MASTER_* variables
+  # H2 In-Memory Database (Test Only)
   datasource:
-    url: jdbc:postgresql://${DB_MASTER_HOST}:${DB_MASTER_PORT}/${DB_MASTER_NAME}
-    username: ${DB_MASTER_USERNAME}
-    password: ${DB_MASTER_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      pool-name: HikariPool-Security-Test
+    url: jdbc:h2:mem:security-testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
   jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: create-drop  # Auto-create schema, drop after tests
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: false
 
   flyway:
     enabled: false
+
+  # Mock Redis for tests (embedded)
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 1000
+      lettuce:
+        pool:
+          max-active: 8
 
 # JWT Configuration for tests
 hemis:
@@ -39,3 +48,4 @@ logging:
   level:
     uz.hemis: DEBUG
     org.springframework.security: INFO
+    org.hibernate.SQL: INFO

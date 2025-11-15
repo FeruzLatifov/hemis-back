@@ -2,6 +2,8 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import uz.hemis.common.enums.RoleCode;
+import uz.hemis.common.enums.RoleType;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -79,8 +81,9 @@ public class Role {
      * Role type (for categorization)
      * <p>Values: SYSTEM, UNIVERSITY, CUSTOM</p>
      */
+    @Enumerated(EnumType.STRING)
     @Column(name = "role_type", length = 50)
-    private String roleType;
+    private RoleType roleType;
 
     /**
      * Active flag
@@ -170,7 +173,26 @@ public class Role {
      * @return true if role_type is SYSTEM
      */
     public boolean isSystemRole() {
-        return "SYSTEM".equals(roleType);
+        return RoleType.SYSTEM.equals(roleType);
+    }
+    
+    /**
+     * Get RoleCode enum from code string
+     *
+     * @return RoleCode enum or null if not a standard role
+     */
+    public RoleCode getRoleCode() {
+        return RoleCode.fromCode(this.code);
+    }
+    
+    /**
+     * Check if this role matches a standard RoleCode
+     *
+     * @param roleCode RoleCode to check
+     * @return true if code matches
+     */
+    public boolean hasCode(RoleCode roleCode) {
+        return roleCode != null && roleCode.getCode().equals(this.code);
     }
 
     /**
