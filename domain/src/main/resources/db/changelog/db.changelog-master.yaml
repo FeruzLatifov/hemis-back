@@ -16,6 +16,10 @@
 # =====================================================
 
 databaseChangeLog:
+  # Logical file path for consistent tracking across environments
+  - property:
+      name: logicalFilePath
+      value: db/changelog/db.changelog-master.yaml
   # =====================================================
   # V1: Complete Database Schema
   # =====================================================
@@ -32,9 +36,11 @@ databaseChangeLog:
       id: v1-complete-schema
       author: hemis-team
       comment: Create complete database schema (auth + i18n tables)
-      context: "!test"
+      context: "dev,staging,production"
       labels: "schema,ddl"
       runOnChange: false
+      logicalFilePath: db/changelog/db.changelog-master.yaml
+      failOnError: true
 
       sqlFile:
         path: changesets/01-complete-schema.sql
@@ -51,12 +57,10 @@ databaseChangeLog:
   - changeSet:
       id: tag-v1
       author: hemis-team
+      logicalFilePath: db/changelog/db.changelog-master.yaml
       changes:
         - tagDatabase:
             tag: v1-schema-complete
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
       rollback:
         - sql:
             sql: "-- Tag rollback (no-op)"
@@ -89,6 +93,7 @@ databaseChangeLog:
       context: "!test"
       labels: "data,seed"
       runOnChange: false
+      logicalFilePath: db/changelog/db.changelog-master.yaml
 
       sqlFile:
         path: changesets/02-complete-seed-data.sql
@@ -106,6 +111,7 @@ databaseChangeLog:
   - changeSet:
       id: tag-v2
       author: hemis-team
+      logicalFilePath: db/changelog/db.changelog-master.yaml
       changes:
         - tagDatabase:
             tag: v2-seed-data-complete
@@ -144,6 +150,7 @@ databaseChangeLog:
       context: "!test"
       labels: "data,migration"
       runOnChange: false
+      logicalFilePath: db/changelog/db.changelog-master.yaml
 
       preConditions:
         onFail: MARK_RAN
@@ -166,6 +173,7 @@ databaseChangeLog:
   - changeSet:
       id: tag-v3
       author: hemis-team
+      logicalFilePath: db/changelog/db.changelog-master.yaml
       changes:
         - tagDatabase:
             tag: v3-users-migrated
@@ -199,6 +207,7 @@ databaseChangeLog:
       context: "!test"
       labels: "i18n,menu,translations"
       runOnChange: false
+      logicalFilePath: db/changelog/db.changelog-master.yaml
 
       sqlFile:
         path: changesets/04-complete-translations.sql
@@ -215,6 +224,7 @@ databaseChangeLog:
   - changeSet:
       id: tag-v4
       author: hemis-team
+      logicalFilePath: db/changelog/db.changelog-master.yaml
       changes:
         - tagDatabase:
             tag: v4-menu-translations-complete
@@ -244,6 +254,7 @@ databaseChangeLog:
       context: "!test"
       labels: "i18n,translations,faculty"
       runOnChange: false
+      logicalFilePath: db/changelog/db.changelog-master.yaml
 
       sqlFile:
         path: changesets/05-faculty-registry-translations.sql
@@ -260,6 +271,7 @@ databaseChangeLog:
   - changeSet:
       id: tag-v5
       author: hemis-team
+      logicalFilePath: db/changelog/db.changelog-master.yaml
       changes:
         - tagDatabase:
             tag: v5-faculty-translations-complete
@@ -290,6 +302,7 @@ databaseChangeLog:
       context: "!test"
       labels: "permissions,menu"
       runOnChange: false
+      logicalFilePath: db/changelog/db.changelog-master.yaml
 
       sqlFile:
         path: changesets/06-add-menu-permissions.sql
@@ -308,6 +321,7 @@ databaseChangeLog:
   - changeSet:
       id: tag-v6
       author: hemis-team
+      logicalFilePath: db/changelog/db.changelog-master.yaml
       changes:
         - tagDatabase:
             tag: v6-menu-permissions-complete

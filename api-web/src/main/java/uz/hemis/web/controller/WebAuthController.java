@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.web.dto.LoginRequest;
 import uz.hemis.api.web.dto.LoginResponse;
@@ -591,19 +592,13 @@ public class WebAuthController {
     })
     @GetMapping("/me")
     public ResponseEntity<UserInfoResponse> getCurrentUser(
-            @RequestHeader(value = "Authorization") String authHeader
+            @AuthenticationPrincipal Jwt jwt  // ✅ Get JWT from SecurityContext
     ) {
         // NOTE: Backend caching will be added via service layer in future optimization
         // For now, HTTP caching (Cache-Control header) provides browser-level caching (60s)
         // Permissions are already cached via permissionCacheService during login
         try {
-            // Extract JWT token
-            String token = authHeader.startsWith("Bearer ")
-                ? authHeader.substring(7)
-                : authHeader;
-
-            // Decode JWT and extract userId (UUID)
-            Jwt jwt = jwtDecoder.decode(token);
+            // ✅ JWT already decoded by Spring Security (from cookie or header)
             String userIdString = jwt.getSubject(); // ✅ JWT sub = userId (UUID), not username
 
             UUID userId;

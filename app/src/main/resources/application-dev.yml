@@ -44,24 +44,30 @@ spring:
   # =====================================================
   # Development Liquibase Configuration
   # =====================================================
-  # BEST PRACTICE: Native rollback support with changesets
+  # ✅ AUTOMATIC MIGRATIONS (Best Practice for Development)
+  # Runs on every application startup
+  # Database lock prevents concurrent execution
   # =====================================================
 
   liquibase:
-    # Enable Liquibase migrations
-    enabled: true  # ✅ Liquibase yoqildi (native rollback support)
+    # Enable automatic migrations in development
+    enabled: true  # ✅ Automatic migrations (Spring Boot default)
 
-    # Changelog location (MUST match Gradle task path!)
+    # Changelog location
     change-log: classpath:/db/changelog/db.changelog-master.yaml
 
     # Default schema
     default-schema: public
 
     # Safety settings
-    drop-first: false  # NEVER drop database in any environment
+    drop-first: false  # NEVER drop database
 
-    # Context and labels (optional, for environment-specific changes)
+    # Context for environment-specific changesets
     contexts: dev
+    
+    # Database changelog lock (prevents concurrent migrations)
+    # Spring Boot Liquibase automatically uses DATABASECHANGELOGLOCK table
+    # to ensure only ONE instance runs migrations at a time
 
   # =====================================================
   # Redis Configuration - ENABLED for Permission Caching
@@ -191,9 +197,14 @@ springdoc:
 # =====================================================
 
 # =====================================================
-# Custom Properties
+# Liquibase Configuration (Global Override)
+# =====================================================
+# NOTE: Can be overridden per profile
+# 
+# Manual migration commands (for emergency rollback):
+# - ./gradlew :domain:liquibaseStatus
+# - ./gradlew :domain:liquibaseRollbackCount -Pcount=1
+# - ./gradlew :domain:liquibaseHistory
 # =====================================================
 
-# Liquibase filename fix (auto-fix mismatch between Gradle and Spring Boot)
-liquibase:
-  fix-filename: true  # ← AUTO-FIX ENABLED
+# No global override - each profile controls liquibase.enabled

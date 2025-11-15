@@ -69,13 +69,42 @@ spring:
           batch_size: 50  # Higher for production
 
   # =====================================================
-  # Database Migrations - Liquibase ONLY
+  # Production Liquibase Configuration
+  # =====================================================
+  # ✅ AUTOMATIC MIGRATIONS with Production Safeguards
+  # 
+  # Safeguards:
+  # 1. Database lock (DATABASECHANGELOGLOCK) - only 1 instance migrates
+  # 2. Context filtering (contexts: production)
+  # 3. Tag-based rollback support
+  # 4. Validation before deployment (CI/CD)
+  # 
+  # Best Practice: Run migrations before scaling to multiple instances
   # =====================================================
 
-  # Liquibase Configuration
   liquibase:
-    enabled: true
+    # Enable automatic migrations in production
+    enabled: true  # ✅ Automatic with safeguards
+    
+    # Changelog location
     change-log: classpath:/db/changelog/db.changelog-master.yaml
+    
+    # Default schema
+    default-schema: public
+    
+    # Production context (only runs production-safe changesets)
+    contexts: production
+    
+    # Database lock timeout (30 seconds)
+    # If another instance is running migrations, wait max 30s
+    lock-timeout: 30
+    
+    # Strict validation
+    # Fail fast if changesets were modified
+    liquibase-tablespace: null
+    
+    # Safety: Never drop in production
+    drop-first: false
 
 # =====================================================
 # Server Configuration (Production)

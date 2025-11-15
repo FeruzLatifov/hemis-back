@@ -33,6 +33,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import uz.hemis.security.filter.CookieJwtAuthenticationFilter;
 import uz.hemis.security.service.UserPermissionCacheService;
 
 import javax.crypto.SecretKey;
@@ -91,7 +92,7 @@ public class SecurityConfig {
      *
      * <p><strong>Key Features:</strong></p>
      * <ul>
-     *   <li>JWT-based authentication (no sessions)</li>
+     *   <li>JWT-based authentication (header + cookie support)</li>
      *   <li>CORS enabled for cross-origin requests</li>
      *   <li>CSRF disabled (stateless REST API)</li>
      *   <li>Public endpoints: /actuator/health, /actuator/info</li>
@@ -115,6 +116,12 @@ public class SecurityConfig {
 
                 // CSRF disabled (REST API with JWT, no cookies/sessions)
                 .csrf(AbstractHttpConfigurer::disable)
+
+                // ✅ Add Cookie JWT Filter BEFORE OAuth2 Resource Server
+                .addFilterBefore(
+                        cookieJwtAuthenticationFilter(),
+                        org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
+                )
 
                 // Authorization rules
                 .authorizeHttpRequests(authz -> authz
@@ -166,6 +173,7 @@ public class SecurityConfig {
 
                 // OAuth2 Resource Server (JWT validation)
                 .oauth2ResourceServer(oauth2 -> oauth2
+                        .bearerTokenResolver(bearerTokenResolver()) // ✅ Custom resolver (cookie + header)
                         .jwt(jwt -> jwt
                                 .decoder(jwtDecoder())
                                 .jwtAuthenticationConverter(jwtAuthConverter)
@@ -418,6 +426,53 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
+    }
+
+    /**
+     * Cookie JWT Authentication Filter
+     *
+     * <p>Extracts JWT from cookies and validates it.</p>
+     * <p>Supports both Authorization header and cookie-based authentication.</p>
+     *
+     * @return CookieJwtAuthenticationFilter
+     */
+    @Bean
+    public CookieJwtAuthenticationFilter cookieJwtAuthenticationFilter() {
+        return new CookieJwtAuthenticationFilter(jwtDecoder());
+    }
+
+    /**
+     * Bearer Token Resolver
+     *
+     * <p>Custom resolver that extracts JWT from:</p>
+     * <ol>
+     *   <li>Authorization header (standard)</li>
+     *   <li>Cookie (accessToken)</li>
+     * </ol>
+     *
+     * @return BearerTokenResolver
+     */
+    @Bean
+    public org.springframework.security.oauth2.server.resource.web.BearerTokenResolver bearerTokenResolver() {
+        return request -> {
+            // 1. Try Authorization header first
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                return authHeader.substring(7);
+            }
+
+            // 2. Try cookie
+            jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (jakarta.servlet.http.Cookie cookie : cookies) {
+                    if ("accessToken".equals(cookie.getName())) {
+                        return cookie.getValue();
+                    }
+                }
+            }
+
+            return null;
+        };
     }
 
     // =====================================================
