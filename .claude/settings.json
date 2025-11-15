@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      // Allow running Gradle commands for build, run and test
+      "Bash(./gradlew:*)",
+      "Bash(gradle:*)",
+      // Allow documentation searches
+      "WebSearch",
+      "WebFetch(domain:mvnrepository.com)",
+      "WebFetch(domain:docs.spring.io)",
+      "WebFetch(domain:docs.sentry.io)"
+    ],
+    "deny": [
+      // Protect secrets and environment files from being read【684543793350297†L329-L345】
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)",
+      "Read(./config/credentials.json)",
+      "Read(./build)",
+      // Disallow destructive shell commands by default
+      "Bash(rm:*)",
+      "Bash(sudo:*)"
+    ],
+    "ask": [
+      // Prompt before pushing to remote repositories or running containers
+      "Bash(git push:*)",
+      "Bash(docker run:*)"
+    ]
+  },
+  "env": {
+    // Enable tests by default; individual developers can override locally
+    "TESTS_ENABLED": "true"
+  },
+  // Company announcements provide high‑level reminders to developers
+  "companyAnnouncements": [
+    "Remember: all endpoints must have Swagger documentation and tests.",
+    "Use Liquibase migrations instead of direct SQL changes.",
+    "Do not modify legacy tables in ministry.sql without approval."
+  ]
+}

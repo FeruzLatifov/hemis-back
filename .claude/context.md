@@ -32,12 +32,12 @@
 
 ### Stack Overview
 ```
-Spring Boot:  3.5.7 (Latest stable)
-Java:         21 LTS (Temurin JDK)
-Gradle:       8.10.2 (Kotlin DSL)
-PostgreSQL:   16+ (ACID transactions)
-Redis:        7+ (Distributed cache + sessions)
-Liquibase:    4.31.1 (Professional migrations)
+Spring Boot: 3.5.7 (latest stable)
+Java:        21 LTS (Temurin JDK) – compiled via toolchain; fallback to JDK 25 if required
+Gradle:      9.2.0 (Kotlin DSL)
+PostgreSQL:  18 (master/replica configured via `.env`)
+Redis:       7 (distributed cache and token store)
+Liquibase:   4.31.1 (database migrations)
 ```
 
 ### Architecture Pattern
@@ -185,11 +185,16 @@ User ──has──> Roles ──have──> Permissions
  └─ 339       5 roles          30 perms
 
 Roles:
-- ROLE_SUPER_ADMIN      (tizim administratori)
-- ROLE_ADMINISTRATORS   (universitet admin)
-- ROLE_TEACHERS         (o'qituvchilar)
-- ROLE_STUDENTS         (talabalar)
-- ROLE_EMPLOYEES        (xodimlar)
+- SUPER_ADMIN        – System-level; full system access (Ministry)
+- MINISTRY_ADMIN     – System-level; ministry administrator
+- UNIVERSITY_ADMIN   – University-level administrator (per‑university)
+- VIEWER             – System-level read-only access
+- REPORT_VIEWER      – Custom role; read-only access for reports
+
+Role Types:
+ - **SYSTEM** – Built‑in roles common across all institutions (e.g. SUPER_ADMIN, MINISTRY_ADMIN, VIEWER).
+ - **UNIVERSITY** – Roles scoped to a single OTM/university (e.g. UNIVERSITY_ADMIN).
+ - **CUSTOM** – User‑defined roles created for specific organisational needs (e.g. REPORT_VIEWER).
 
 Permission Format: {resource}.{action}
 Examples: students.view, faculty.create, grades.edit
@@ -198,11 +203,11 @@ Examples: students.view, faculty.create, grades.edit
 ### JWT Configuration
 ```yaml
 Token Type:      Bearer
-Algorithm:       RS256 (RSA-SHA256)
-Validity:        24 hours
-Refresh:         7 days
-Storage:         Redis (distributed)
-Claims:          username, roles, university_id
+Algorithm:       HS256 (HMAC-SHA256)
+Access TTL:      12 hours (default)
+Refresh TTL:     7 days
+Storage:         Redis (distributed cache & session)
+Claims:          sub (user ID), username, scope
 ```
 
 ---
