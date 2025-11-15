@@ -6,6 +6,7 @@ import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
 import uz.hemis.service.I18nService;
+import uz.hemis.service.cache.CacheEvictionService;
 import uz.hemis.domain.event.TranslationCacheEvent;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +35,7 @@ import java.net.InetAddress;
 public class TranslationCacheEventListener implements MessageListener {
 
     private final I18nService i18nService;
+    private final CacheEvictionService cacheEvictionService;
     private final ObjectMapper objectMapper;
 
     private static String SERVER_ID;
@@ -67,9 +69,16 @@ public class TranslationCacheEventListener implements MessageListener {
                 case TRANSLATION_CREATED:
                 case TRANSLATION_UPDATED:
                 case TRANSLATION_DELETED:
+                    // Clear caches when a specific translation changed
+                    i18nService.clearCache();
+                    evictMenusIfNeeded(event.getMessageKey(), false);
+                    log.info("✅ Cache invalidated due to event: {}", event.getType());
+                    break;
+
                 case CACHE_CLEAR_ALL:
                     // Clear all caches
                     i18nService.clearCache();
+                    evictMenusIfNeeded(event.getMessageKey(), true);
                     log.info("✅ Cache invalidated due to event: {}", event.getType());
                     break;
 
@@ -78,6 +87,7 @@ public class TranslationCacheEventListener implements MessageListener {
                     if (event.getLanguage() != null) {
                         // For now, clear all caches (language-specific invalidation can be added later)
                         i18nService.clearCache();
+                        cacheEvictionService.evictAllMenus();
                         log.info("✅ Cache invalidated for language: {}", event.getLanguage());
                     }
                     break;
@@ -88,6 +98,16 @@ public class TranslationCacheEventListener implements MessageListener {
 
         } catch (Exception e) {
             log.error("Error processing translation cache event", e);
+        }
+    }
+
+    private void evictMenusIfNeeded(String messageKey, boolean force) {
+        if (force) {
+            cacheEvictionService.evictAllMenus();
+            return;
+        }
+        if (messageKey != null && messageKey.startsWith("menu.")) {
+            cacheEvictionService.evictAllMenus();
         }
     }
 

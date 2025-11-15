@@ -1,0 +1,25 @@
+# .claude directory gitignore
+# Keep documentation committed, ignore temporary files
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
+*~
+
+# Local settings (should not be committed)
+settings.local.json
+
+# IDE files
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keep these files (documentation)
+!context.md
+!rules.md
+!architecture.md
+!settings.json

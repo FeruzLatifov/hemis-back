@@ -65,6 +65,7 @@ public class CacheEvictionService {
 
     private final CacheManager cacheManager;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheVersionService cacheVersionService;
 
     // =====================================================
     // Menu Cache Eviction
@@ -194,15 +195,17 @@ public class CacheEvictionService {
     public void evictI18nLanguage(String language) {
         log.info("🗑️  Evicting i18n cache for language: {}", language);
 
-        String cacheKey = "i18n:messages:" + language;
-
         try {
-            Boolean deleted = redisTemplate.delete(cacheKey);
+            String versionedKey = cacheVersionService.buildVersionedKey("i18n", "messages:" + language);
+            Boolean deleted = redisTemplate.delete(versionedKey);
             if (Boolean.TRUE.equals(deleted)) {
-                log.info("✅ I18n cache evicted for language: {}", language);
+                log.info("✅ Removed Redis cache entry {}", versionedKey);
             } else {
-                log.warn("⚠️  I18n cache key not found: {}", cacheKey);
+                log.info("ℹ️  No Redis entry found for {}", versionedKey);
             }
+
+            cacheVersionService.incrementVersionAndPublish("i18n");
+            log.info("📡 Published invalidation event after clearing {}", language);
         } catch (Exception e) {
             log.error("❌ Failed to evict i18n cache for language: {}", language, e);
         }
@@ -221,12 +224,13 @@ public class CacheEvictionService {
         log.info("🗑️  Evicting ALL i18n caches");
 
         try {
-            Set<String> keys = redisTemplate.keys("i18n:messages:*");
+            cacheVersionService.incrementVersionAndPublish("i18n");
+            Set<String> keys = redisTemplate.keys("i18n:v*:messages:*");
             if (keys != null && !keys.isEmpty()) {
-                Long deleted = redisTemplate.delete(keys);
-                log.info("✅ Evicted {} i18n cache keys", deleted);
+                redisTemplate.delete(keys);
+                log.info("✅ Removed {} versioned i18n cache entries", keys.size());
             } else {
-                log.info("ℹ️  No i18n cache keys found");
+                log.info("ℹ️  No versioned i18n cache entries found");
             }
         } catch (Exception e) {
             log.error("❌ Failed to evict all i18n caches", e);

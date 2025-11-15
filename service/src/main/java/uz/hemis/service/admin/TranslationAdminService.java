@@ -86,7 +86,7 @@ public class TranslationAdminService {
         log.info("Getting translations: category={}, search={}, active={}, page={}",
             category, searchKey, active, pageable.getPageNumber());
 
-        Specification<SystemMessage> spec = Specification.where(null);
+        Specification<SystemMessage> spec = (root, query, cb) -> cb.conjunction();
 
         if (category != null && !category.isEmpty()) {
             spec = spec.and((root, query, cb) ->
@@ -457,8 +457,8 @@ public class TranslationAdminService {
 
             } catch (Exception e) {
                 log.error("❌ Failed to generate file: {}", fileName, e);
-                results.put("errors", results.getOrDefault("errors", new ArrayList<>()));
-                ((List<String>) results.get("errors")).add("Failed to generate " + fileName + ": " + e.getMessage());
+                List<String> errors = getOrCreateErrorList(results);
+                errors.add("Failed to generate " + fileName + ": " + e.getMessage());
             }
         }
 
@@ -499,5 +499,10 @@ public class TranslationAdminService {
             .replace("\n", "\\n")
             .replace("\r", "\\r")
             .replace("\t", "\\t");
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> getOrCreateErrorList(Map<String, Object> results) {
+        return (List<String>) results.computeIfAbsent("errors", key -> new ArrayList<String>());
     }
 }

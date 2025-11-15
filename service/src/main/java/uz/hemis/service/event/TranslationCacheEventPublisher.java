@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import uz.hemis.domain.event.TranslationCacheEvent;
+import uz.hemis.service.cache.CacheEvictionService;
 
 import java.time.Instant;
 
@@ -35,11 +36,13 @@ public class TranslationCacheEventPublisher {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
+    private final CacheEvictionService cacheEvictionService;
 
     /**
      * Publish translation created event
      */
     public void publishTranslationCreated(String messageKey) {
+        evictMenusIfNecessary(messageKey);
         publishEvent(TranslationCacheEvent.builder()
             .type(TranslationCacheEvent.EventType.TRANSLATION_CREATED)
             .messageKey(messageKey)
@@ -52,6 +55,7 @@ public class TranslationCacheEventPublisher {
      * Publish translation updated event
      */
     public void publishTranslationUpdated(String messageKey) {
+        evictMenusIfNecessary(messageKey);
         publishEvent(TranslationCacheEvent.builder()
             .type(TranslationCacheEvent.EventType.TRANSLATION_UPDATED)
             .messageKey(messageKey)
@@ -64,6 +68,7 @@ public class TranslationCacheEventPublisher {
      * Publish translation deleted event
      */
     public void publishTranslationDeleted(String messageKey) {
+        evictMenusIfNecessary(messageKey);
         publishEvent(TranslationCacheEvent.builder()
             .type(TranslationCacheEvent.EventType.TRANSLATION_DELETED)
             .messageKey(messageKey)
@@ -76,6 +81,7 @@ public class TranslationCacheEventPublisher {
      * Publish cache clear all event
      */
     public void publishCacheClearAll() {
+        cacheEvictionService.evictAllMenus();
         publishEvent(TranslationCacheEvent.builder()
             .type(TranslationCacheEvent.EventType.CACHE_CLEAR_ALL)
             .serverId(TranslationCacheEventListener.getServerId())
@@ -87,12 +93,19 @@ public class TranslationCacheEventPublisher {
      * Publish cache clear for specific language
      */
     public void publishCacheClearLanguage(String language) {
+        cacheEvictionService.evictAllMenus();
         publishEvent(TranslationCacheEvent.builder()
             .type(TranslationCacheEvent.EventType.CACHE_CLEAR_LANGUAGE)
             .language(language)
             .serverId(TranslationCacheEventListener.getServerId())
             .timestamp(Instant.now())
             .build());
+    }
+
+    private void evictMenusIfNecessary(String messageKey) {
+        if (messageKey != null && messageKey.startsWith("menu.")) {
+            cacheEvictionService.evictAllMenus();
+        }
     }
 
     /**

@@ -12,12 +12,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.menu.MenuService;
 import uz.hemis.service.menu.PermissionService;
 import uz.hemis.service.menu.dto.MenuResponse;
+import uz.hemis.service.cache.CacheEvictionService;
 
 import java.util.Map;
 
@@ -47,6 +49,7 @@ public class MenuController {
 
     private final MenuService menuService;
     private final PermissionService permissionService;
+    private final CacheEvictionService cacheEvictionService;
 
     @GetMapping
     @Operation(
@@ -204,13 +207,19 @@ public class MenuController {
      * Clear menu cache
      */
     @PostMapping("/clear-cache")
-    public ResponseEntity<Map<String, Object>> clearCache() {
-        log.info("POST /api/v1/web/menu/clear-cache");
+    @PreAuthorize("hasAuthority('system.view')")
+    public ResponseEntity<Map<String, Object>> clearCache(@AuthenticationPrincipal Jwt jwt) {
+        String requester = jwt != null ? jwt.getSubject() : "unknown";
+        log.info("POST /api/v1/web/menu/clear-cache requested by {}", requester);
 
-        // TODO: Implement cache clearing when Redis caching is added
+        cacheEvictionService.evictAllMenus();
+        cacheEvictionService.evictAllPermissions();
+
         return ResponseEntity.ok(Map.of(
             "success", true,
-            "message", "Cache cleared successfully (placeholder - caching not yet implemented)"
+            "message", "Menu cache cleared across Redis + JVM",
+            "requestedBy", requester,
+            "timestamp", System.currentTimeMillis()
         ));
     }
 

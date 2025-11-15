@@ -390,54 +390,46 @@ public class TranslationAdminController {
 
     /**
      * POST /api/v1/web/system/translation/cache/clear
-     * Clear translation cache - DISTRIBUTED (All Pods)
+     * Clear translation cache - TWO-LEVEL CACHE (All Pods)
      *
-     * <p><strong>Enterprise Distributed Cache Invalidation:</strong></p>
+     * <p><strong>TWO-LEVEL CACHE INVALIDATION:</strong></p>
      * <ul>
-     *   <li>Publishes Redis Pub/Sub message to all pods</li>
-     *   <li>Each pod clears L1 Caffeine cache</li>
-     *   <li>Leader pod reloads from database → Redis L2</li>
-     *   <li>Other pods reload from Redis L2 → Caffeine L1</li>
+     *   <li>Clears L1 Caffeine + L2 Redis on this pod</li>
+     *   <li>Publishes Redis Pub/Sub → all 10 pods clear their L1</li>
+     *   <li>Next request: cache miss → reload from DB → populate L1+L2</li>
+     *   <li>CacheInvalidationListener handles distributed refresh</li>
      * </ul>
      *
-     * <p><strong>10 Pods Scenario:</strong></p>
+     * <p><strong>Flow:</strong></p>
      * <pre>
      * Admin clicks button → POST /cache/clear
      *                             ↓
-     *                   Redis Pub/Sub broadcast
+     *                   I18nService.clearCache()
+     *                             ↓
+     *         TwoLevelCache.clear() (L1+L2) + Pub/Sub
      *                             ↓
      *         ┌──────────────────┼──────────────────┐
      *         ▼                  ▼                  ▼
      *      POD-1              POD-2    ...       POD-10
      *   Clear L1           Clear L1           Clear L1
-     *         ↓                  ↓                  ↓
-     *   Leader Election (Redis SETNX)
-     *         ↓
-     *   POD-5 (Leader): DB → Redis L2
-     *         ↓
-     *   Other pods: Redis L2 → Caffeine L1
-     *         ↓
-     *   ✅ All pods synchronized
      * </pre>
      */
     @Operation(
-        summary = "Clear cache (Distributed - All Pods)",
+        summary = "Clear cache (TWO-LEVEL - All Pods)",
         description = """
-            Distributed cache invalidation via Redis Pub/Sub.
+            Clear L1 Caffeine + L2 Redis translation cache across all pods.
 
             **Process:**
             1. Admin clicks "Clear Cache" button
-            2. Backend publishes Redis message: "cache:invalidate:i18n"
-            3. All 10 pods receive signal via CacheInvalidationListener
-            4. Each pod clears L1 Caffeine cache
-            5. Leader pod loads from DB → Redis
-            6. Other pods load from Redis → L1
-            7. Response: 200 OK with timing statistics
+            2. I18nService.clearCache() → TwoLevelCache.clear()
+            3. Publishes Redis Pub/Sub: "cache:invalidate:i18n"
+            4. All 10 pods receive signal → clear L1 Caffeine
+            5. Next request: cache miss → reload from DB
 
             **Performance:**
-            - Total time: ~200ms (all 10 pods)
-            - Database queries: 4 (only from leader pod)
-            - Network overhead: Minimal (Redis Pub/Sub)
+            - Total time: ~50ms (TwoLevelCache.clear())
+            - Database queries: 0 (cleared only, no reload)
+            - L1+L2 reloaded on-demand
 
             **Security:** Requires `system.translation.view` permission
             """
@@ -446,29 +438,20 @@ public class TranslationAdminController {
     @PreAuthorize("hasAuthority('system.translation.view')")
     public ResponseEntity<Map<String, Object>> clearCache() {
         log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        log.info("🔄 Translation cache refresh triggered by admin");
+        log.info("🔄 Translation cache clear triggered by admin");
         log.info("   Pod: {}", podName);
         log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
         try {
-            long timestamp = System.currentTimeMillis();
-            String channel = "cache:invalidate:i18n";
-            String payload = "refresh-i18n-" + timestamp;
+            long startTime = System.currentTimeMillis();
 
-            // 1️⃣ Publish Redis Pub/Sub message (broadcasts to all pods)
-            log.info("📡 Publishing to Redis Pub/Sub...");
-            log.info("   Channel: {}", channel);
-            log.info("   Payload: {}", payload);
+            // ✅ SIMPLIFIED: Just call I18nService.clearCache()
+            // This handles: L1+L2 clear + Pub/Sub + distributed invalidation
+            i18nService.clearCache();
 
-            redisMessageTemplate.convertAndSend(channel, payload);
-            log.info("✅ Redis Pub/Sub message sent");
+            long elapsed = System.currentTimeMillis() - startTime;
 
-            // 2️⃣ Clear local i18n cache (this pod)
-            log.info("🧹 Clearing local i18n cache (this pod)...");
-            cacheEvictionService.evictAllI18n();
-            log.info("✅ Local i18n cache cleared");
-
-            // 3️⃣ Localized message
+            // Localized message
             String incomingTag = LocaleContextHolder.getLocale() != null
                 ? LocaleContextHolder.getLocale().toLanguageTag()
                 : "uz";
@@ -491,30 +474,27 @@ public class TranslationAdminController {
                 };
             }
 
-            // 4️⃣ Build response
+            // Build response
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", localized);
-            response.put("timestamp", timestamp);
+            response.put("timestamp", System.currentTimeMillis());
             response.put("pod", podName);
-            response.put("channel", channel);
-            response.put("payload", payload);
             response.put("scope", "distributed");
-            response.put("expectedPods", "all");
-            response.put("estimatedTime", "200ms");
+            response.put("cacheType", "TwoLevelCache (L1 Caffeine + L2 Redis)");
+            response.put("elapsedMs", elapsed);
 
-            log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            log.info("✅ Translation cache refresh completed successfully");
+            log.info("✅ Cache cleared successfully in {}ms", elapsed);
             log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
-            log.error("❌ Translation cache refresh failed", e);
+            log.error("❌ Translation cache clear failed", e);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", "Cache refresh failed: " + e.getMessage());
+            errorResponse.put("message", "Cache clear failed: " + e.getMessage());
             errorResponse.put("timestamp", System.currentTimeMillis());
             errorResponse.put("pod", podName);
 
