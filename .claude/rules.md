@@ -41,6 +41,13 @@
    - EVERY service method MUST have unit tests
    - Test coverage MINIMUM 70%
    - NO pull request without tests
+
+7. DATABASE MIGRATIONS MANDATORY
+   - EVERY schema change via Liquibase ONLY
+   - IDEMPOTENCY required (safe to run multiple times)
+   - ROLLBACK script required for EVERY migration
+   - NO direct ALTER/CREATE/DROP on database
+   - Test locally, then staging, NEVER directly on production
 ```
 
 ---
@@ -1404,3 +1411,50 @@ students.forEach(s -> {
 
 **Remember:** Code is read more often than it is written.  
 **Write code that your future self (and teammates) will thank you for!**
+
+
+---
+
+
+See detailed guide: .claude/LIQUIBASE_GUIDE.md
+
+### Critical Rules
+
+```
+⚠️ EVERY schema change MUST use Liquibase!
+
+✅ REQUIRED:
+- Idempotent migrations (IF NOT EXISTS, ON CONFLICT)
+- Rollback script for EVERY migration
+- Test locally → staging → production
+- splitStatements: false for PostgreSQL DO blocks
+- Sequential numbering (06, 07, 08...)
+
+❌ FORBIDDEN:
+- Direct ALTER/CREATE/DROP on database
+- Migrations without rollback
+- Non-idempotent migrations
+- Testing on production directly
+- Hardcoded UUIDs/timestamps
+```
+
+### Quick Commands
+
+```bash
+# Check status
+./gradlew :domain:liquibaseStatus
+
+# Apply migrations
+./gradlew :domain:liquibaseUpdate
+
+# Rollback (count = migrations × 2)
+./gradlew :domain:liquibaseRollbackCount -Pcount=2
+
+# Preview rollback
+./gradlew :domain:liquibaseRollbackSQL -Pcount=2
+```
+
+**For complete migration guide, see:** `.claude/LIQUIBASE_GUIDE.md`
+
+---
+
