@@ -36,15 +36,15 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableCaching
 @org.springframework.scheduling.annotation.EnableScheduling
 @SpringBootApplication(scanBasePackages = {
-    "uz.hemis.common",
-    "uz.hemis.security",
-    "uz.hemis.domain",
-    "uz.hemis.service",
-    "uz.hemis.api.legacy",     // CUBA entity APIs (/app/rest/v2/entities/*)
-    "uz.hemis.api.web",        // Modern UI APIs (/app/rest/v2/*, /api/v1/web/*)
-    "uz.hemis.web",            // Web authentication controllers (/api/v1/web/auth/*)
-    "uz.hemis.api.external",   // S2S integrations
-    "uz.hemis.app"
+        "uz.hemis.common",
+        "uz.hemis.security",
+        "uz.hemis.domain",
+        "uz.hemis.service",
+        "uz.hemis.api.legacy",     // CUBA entity APIs (/app/rest/v2/entities/*)
+        "uz.hemis.api.web",        // Modern UI APIs (/app/rest/v2/*, /api/v1/web/*)
+        "uz.hemis.web",            // Web authentication controllers (/api/v1/web/auth/*)
+        "uz.hemis.api.external",   // S2S integrations
+        "uz.hemis.app"
 })
 @EntityScan(basePackages = "uz.hemis.domain.entity")
 @EnableJpaRepositories(basePackages = "uz.hemis.domain.repository")

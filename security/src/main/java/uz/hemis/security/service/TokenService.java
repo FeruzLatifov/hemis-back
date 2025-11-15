@@ -47,6 +47,7 @@ public class TokenService {
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
     private final UserPermissionCacheService permissionCacheService;
+    private final uz.hemis.domain.repository.UserRepository userRepository;
 
     @Value("${hemis.security.jwt.expiration:43200}")  // 12 hours (43200 seconds)
     private long accessTokenValiditySeconds;
@@ -85,6 +86,10 @@ public class TokenService {
     public TokenResponse generateToken(UserDetails userDetails) {
         log.info("Generating JWT token for user: {}", userDetails.getUsername());
 
+        // ✅ Load User entity to get userId (UUID)
+        uz.hemis.domain.entity.User user = userRepository.findByUsername(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
+
         // Current time
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(accessTokenValiditySeconds);
@@ -94,9 +99,9 @@ public class TokenService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        // ✅ Cache permissions in Redis (TTL: 1 hour)
-        permissionCacheService.cacheUserPermissions(userDetails.getUsername(), permissions);
-        log.info("✅ Cached {} permissions for user: {}", permissions.size(), userDetails.getUsername());
+        // ✅ Cache permissions in Redis by userId (UUID) - TTL: 1 hour
+        permissionCacheService.cacheUserPermissions(user.getId(), permissions);
+        log.info("✅ Cached {} permissions for userId: {}", permissions.size(), user.getId());
 
         // Build JWS Header with explicit HS256 algorithm
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
@@ -106,8 +111,8 @@ public class TokenService {
                 .issuer(issuer)                          // Issuer: hemis-backend
                 .issuedAt(now)                            // Issued at: now
                 .expiresAt(expiry)                        // Expires at: now + 12h
-                .subject(userDetails.getUsername())      // Subject: username
-                .claim("username", userDetails.getUsername())  // Username claim
+                .subject(user.getId().toString())        // ✅ Subject: userId (UUID)
+                .claim("username", userDetails.getUsername())  // Username claim (for display)
                 .claim("scope", "rest-api")              // Scope claim (OAuth2)
                 .build();
 
@@ -139,6 +144,10 @@ public class TokenService {
     public String generateRefreshToken(UserDetails userDetails) {
         log.info("Generating refresh token for user: {}", userDetails.getUsername());
 
+        // ✅ Load User entity to get userId (UUID)
+        uz.hemis.domain.entity.User user = userRepository.findByUsername(userDetails.getUsername())
+            .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
+
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(refreshTokenValiditySeconds);
 
@@ -150,15 +159,15 @@ public class TokenService {
                 .issuer(issuer)
                 .issuedAt(now)
                 .expiresAt(expiry)
-                .subject(userDetails.getUsername())
-                .claim("username", userDetails.getUsername())
+                .subject(user.getId().toString())        // ✅ Subject: userId (UUID)
+                .claim("username", userDetails.getUsername())  // Username (for display)
                 .claim("type", "refresh")  // Mark as refresh token
                 .build();
 
         String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
 
-        log.info("Refresh token generated for user: {} (expires in {} days)",
-                userDetails.getUsername(), refreshTokenValiditySeconds / 86400);
+        log.info("Refresh token generated for userId: {} (expires in {} days)",
+                user.getId(), refreshTokenValiditySeconds / 86400);
 
         return refreshToken;
     }
@@ -186,14 +195,17 @@ public class TokenService {
                 throw new IllegalArgumentException("Invalid token type: not a refresh token");
             }
 
-            // Extract user information from JWT claims
-            String username = jwt.getClaimAsString("username");
+            // Extract userId from JWT 'sub' claim
+            String userIdString = jwt.getSubject();
 
-            if (username == null || username.isEmpty()) {
-                throw new IllegalArgumentException("Username not found in refresh token");
+            if (userIdString == null || userIdString.isEmpty()) {
+                throw new IllegalArgumentException("UserId not found in refresh token");
             }
 
-            log.debug("Refreshing token for user: {}", username);
+            java.util.UUID userId = java.util.UUID.fromString(userIdString);
+            String username = jwt.getClaimAsString("username");  // Optional (for logging)
+
+            log.debug("Refreshing token for userId: {} (username: {})", userId, username);
 
             // Generate new tokens directly from claims (stateless approach)
             Instant now = Instant.now();
@@ -208,8 +220,8 @@ public class TokenService {
                     .issuer(issuer)
                     .issuedAt(now)
                     .expiresAt(accessExpiry)
-                    .subject(username)
-                    .claim("username", username)
+                    .subject(userId.toString())  // ✅ userId (UUID)
+                    .claim("username", username)  // Username (for display)
                     .claim("scope", "rest-api")
                     .build();
 
@@ -220,8 +232,8 @@ public class TokenService {
                     .issuer(issuer)
                     .issuedAt(now)
                     .expiresAt(refreshExpiry)
-                    .subject(username)
-                    .claim("username", username)
+                    .subject(userId.toString())  // ✅ userId (UUID)
+                    .claim("username", username)  // Username (for display)
                     .claim("type", "refresh")
                     .build();
 
@@ -236,7 +248,7 @@ public class TokenService {
                     .scope("rest-api")
                     .build();
 
-            log.info("Access token refreshed successfully for user: {}", username);
+            log.info("Access token refreshed successfully for userId: {}", userId);
 
             return tokenResponse;
 

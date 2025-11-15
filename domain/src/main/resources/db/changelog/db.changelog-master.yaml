@@ -54,6 +54,12 @@ databaseChangeLog:
       changes:
         - tagDatabase:
             tag: v1-schema-complete
+      rollback:
+        - sql:
+            sql: "-- Tag rollback (no-op)"
+      rollback:
+        - sql:
+            sql: "-- Tag rollback (no-op)"
 
   # =====================================================
   # V2: Complete Seed Data
@@ -103,6 +109,9 @@ databaseChangeLog:
       changes:
         - tagDatabase:
             tag: v2-seed-data-complete
+      rollback:
+        - sql:
+            sql: "-- Tag rollback (no-op)"
 
   # =====================================================
   # V3: Migrate Old-Hemis Users
@@ -160,6 +169,9 @@ databaseChangeLog:
       changes:
         - tagDatabase:
             tag: v3-users-migrated
+      rollback:
+        - sql:
+            sql: "-- Tag rollback (no-op)"
 
   # =====================================================
   # V4: Complete Menu Translations
@@ -206,6 +218,9 @@ databaseChangeLog:
       changes:
         - tagDatabase:
             tag: v4-menu-translations-complete
+      rollback:
+        - sql:
+            sql: "-- Tag rollback (no-op)"
 
   # =====================================================
   # V5: Faculty Registry Translations
@@ -248,6 +263,9 @@ databaseChangeLog:
       changes:
         - tagDatabase:
             tag: v5-faculty-translations-complete
+      rollback:
+        - sql:
+            sql: "-- Tag rollback (no-op)"
 
   # =====================================================
   # V6: Menu Permissions (Registry, Rating, Data, System)
@@ -279,6 +297,13 @@ databaseChangeLog:
         stripComments: false
         splitStatements: false
 
+      rollback:
+        sqlFile:
+          path: changesets/06-add-menu-permissions-rollback.sql
+          relativeToChangelogFile: true
+          stripComments: false
+          splitStatements: false
+
   # Tag after V6 for rollback support
   - changeSet:
       id: tag-v6
@@ -286,12 +311,18 @@ databaseChangeLog:
       changes:
         - tagDatabase:
             tag: v6-menu-permissions-complete
+      rollback:
+        - sql:
+            sql: "-- Tag rollback (no-op)"
 
 # =====================================================
 # Liquibase Commands
 # =====================================================
 # Apply all:      ./gradlew bootRun
-# Rollback all:   liquibase rollback-count 6
-# Rollback to V2: liquibase rollback-count 4
-# Status:         liquibase status
+# Rollback last:  ./gradlew :domain:liquibaseRollbackCount -Pcount=1
+# Rollback to V5: ./gradlew :domain:liquibaseRollbackCount -Pcount=2
+# Status:         ./gradlew :domain:liquibaseStatus
+#
+# IMPORTANT: Rollback requires splitStatements=false for PostgreSQL DO $$ blocks
+# All rollback SQL files must include this configuration
 # =====================================================

@@ -230,12 +230,12 @@ public class WebAuthController {
 
             String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, refreshTokenClaims)).getTokenValue();
 
-            // ✅ Extract and cache permissions
+            // ✅ Extract and cache permissions by userId (UUID)
             Set<String> permissions = userDetails.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toSet());
 
-            permissionCacheService.cacheUserPermissions(username, permissions);
+            permissionCacheService.cacheUserPermissions(user.getId(), permissions);
 
             LoginResponse response = LoginResponse.builder()
                     .accessToken(accessToken)
@@ -287,13 +287,9 @@ public class WebAuthController {
                 try {
                     UUID userId = UUID.fromString(userIdString);
 
-                    // Load user to get username for cache eviction
-                    User user = userRepository.findById(userId).orElse(null);
-                    if (user != null) {
-                        // ✅ Evict user permissions from Redis cache
-                        permissionCacheService.evictUserCache(user.getUsername());
-                        log.info("✅ Evicted cache for user: {}", user.getUsername());
-                    }
+                    // ✅ Evict user permissions from Redis cache by userId
+                    permissionCacheService.evictUserCache(userId);
+                    log.info("✅ Evicted cache for userId: {}", userId);
                 } catch (IllegalArgumentException e) {
                     log.warn("Invalid userId in JWT during logout: {}", userIdString);
                 }

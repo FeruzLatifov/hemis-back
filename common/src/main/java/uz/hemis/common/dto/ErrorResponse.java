@@ -72,6 +72,20 @@ public class ErrorResponse implements Serializable {
     private String path;
 
     /**
+     * ⭐ Sentry Event ID for error tracking correlation
+     * JSON field: "eventId"
+     */
+    @JsonProperty("eventId")
+    private String eventId;
+
+    /**
+     * ⭐ Error code for programmatic error handling
+     * JSON field: "errorCode"
+     */
+    @JsonProperty("errorCode")
+    private String errorCode;
+
+    /**
      * Validation errors (field-level)
      * JSON field: "errors"
      */
@@ -167,6 +181,30 @@ public class ErrorResponse implements Serializable {
                 .error(error)
                 .message(message)
                 .path(path)
+                .build();
+    }
+
+    /**
+     * ⭐ Create error response with Sentry Event ID
+     *
+     * @param status HTTP status code
+     * @param error error type
+     * @param message error message
+     * @param path request path
+     * @param eventId Sentry event ID
+     * @param errorCode error code
+     * @return error response
+     */
+    public static ErrorResponse of(Integer status, String error, String message,
+                                   String path, String eventId, String errorCode) {
+        return ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(status)
+                .error(error)
+                .message(message)
+                .path(path)
+                .eventId(eventId)
+                .errorCode(errorCode)
                 .build();
     }
 

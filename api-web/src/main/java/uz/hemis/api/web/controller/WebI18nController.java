@@ -351,7 +351,7 @@ public class WebI18nController {
      * @return Success message
      */
     @PostMapping("/cache/invalidate")
-    @PreAuthorize("hasAuthority('admin:translations')")
+    @PreAuthorize("hasAuthority('system.translation.view')")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(
         summary = "Invalidate translation cache (Admin Only)",
@@ -363,7 +363,7 @@ public class WebI18nController {
             - Call this endpoint to force reload from database
             - Next request will fetch fresh data
 
-            **Security:** Requires `admin:translations` permission
+            **Security:** Requires `system.translation.view` permission
 
             **Performance Impact:**
             - Next request: ~50ms (database query + cache rebuild)
@@ -429,7 +429,7 @@ public class WebI18nController {
         ),
         @ApiResponse(
             responseCode = "403",
-            description = "❌ Forbidden - User lacks admin:translations permission",
+            description = "❌ Forbidden - User lacks system.translation.view permission",
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
@@ -437,7 +437,7 @@ public class WebI18nController {
                         {
                           "success": false,
                           "error": "Access Denied",
-                          "message": "Requires 'admin:translations' permission"
+                          "message": "Requires 'system.translation.view' permission"
                         }
                         """
                 )

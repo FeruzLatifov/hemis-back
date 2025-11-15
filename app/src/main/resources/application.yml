@@ -14,6 +14,13 @@ spring:
     # include: redis  # Disabled - using JWT (stateless), not Redis sessions
 
   # =====================================================
+  # Lazy Initialization (fixes Sentry BeanPostProcessor warnings)
+  # =====================================================
+  main:
+    lazy-initialization: false  # Global lazy disabled
+    allow-bean-definition-overriding: false
+
+  # =====================================================
   # DataSource Configuration (Master/Replica)
   # =====================================================
   # CRITICAL: Connects to existing ministry.sql database
@@ -104,7 +111,7 @@ spring:
 
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Dialect auto-detected - do NOT set hibernate.dialect
         format_sql: true
         use_sql_comments: false
         default_schema: public
@@ -236,6 +243,10 @@ logging:
     uz.hemis: INFO
     org.springframework: INFO
     org.hibernate: INFO
+    # Suppress Hibernate dialect deprecation warning
+    org.hibernate.orm.deprecation: ERROR
+    # Suppress AuthenticationProvider warning (configuration is intentional)
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
@@ -350,3 +361,20 @@ legacy:
     # Read-only mode enforcement (NO DELETE/TRUNCATE)
     read-only: false  # Set to true for read-only replicas
     enforce-no-delete: true  # Block DELETE operations at app level
+
+# =====================================================
+# ⭐ Sentry Error Tracking & Performance Monitoring
+# =====================================================
+# Spring Boot auto-configuration (v8.16.0+)
+# Configure via environment variables or application.yml
+# =====================================================
+sentry:
+  enabled: ${SENTRY_ENABLED:false}
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:${spring.profiles.active}}
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.0}
+  
+  # In-app packages (for stack traces)
+  in-app-includes:
+    - uz.hemis
+

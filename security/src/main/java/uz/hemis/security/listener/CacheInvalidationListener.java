@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p><strong>10 Pods Scenario:</strong></p>
  * <pre>
- * T+0ms:   Admin clicks button → POST /admin/cache/refresh
+ * T+0ms:   Admin clicks cache clear button → POST /api/v1/web/system/translation/cache/clear
  * T+10ms:  Redis Pub/Sub: publish "cache:invalidate:all" "refresh-{timestamp}"
  * T+20ms:  All 10 pods receive signal (this listener)
  * T+25ms:  Leader election (POD-5 wins via Redis SETNX)

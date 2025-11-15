@@ -1,4 +1,4 @@
-package uz.hemis.api.web.controller;
+package uz.hemis.api.legacy.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

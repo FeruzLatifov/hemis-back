@@ -27,7 +27,7 @@ spring:
   # =====================================================
 
   jpa:
-    show-sql: true  # Log SQL statements
+    show-sql: false  # SQL loglarni o'chirish
 
     properties:
       hibernate:
@@ -44,7 +44,7 @@ spring:
     # Enable Liquibase migrations
     enabled: true  # ✅ Liquibase yoqildi (native rollback support)
 
-    # Changelog location
+    # Changelog location (MUST match Gradle task path!)
     change-log: classpath:/db/changelog/db.changelog-master.yaml
 
     # Default schema
@@ -111,13 +111,15 @@ server:
 logging:
   level:
     root: INFO
-    uz.hemis: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    uz.hemis: INFO  # DEBUG → INFO (kamroq log)
+    org.springframework.web: INFO  # DEBUG → INFO
+    org.springframework.security: INFO  # DEBUG → INFO
+    org.hibernate.SQL: INFO  # DEBUG → INFO (SQL loglarni o'chirish)
+    org.hibernate.type.descriptor.sql.BasicBinder: INFO  # TRACE → INFO
     liquibase: INFO
     liquibase.changelog: INFO
+    # Suppress AuthenticationProvider warning (configuration is intentional)
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
@@ -180,3 +182,11 @@ springdoc:
 # - SQL logging enabled
 # - Full stack traces on errors
 # =====================================================
+
+# =====================================================
+# Custom Properties
+# =====================================================
+
+# Liquibase filename fix (auto-fix mismatch between Gradle and Spring Boot)
+liquibase:
+  fix-filename: true  # ← AUTO-FIX ENABLED

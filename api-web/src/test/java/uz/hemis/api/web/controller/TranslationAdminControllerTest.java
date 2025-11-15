@@ -346,15 +346,11 @@ class TranslationAdminControllerTest {
         }
     }
 
-    // ==========================================================================
-    // Test 15: Regenerate Properties Files (POST /api/v1/admin/translations/regenerate-properties)
-    // ==========================================================================
-
     @Test
     @Order(15)
     @DisplayName("Test 15: Should regenerate properties files")
     void testRegeneratePropertiesFiles() throws Exception {
-        mockMvc.perform(post(BASE_URL + "/regenerate-properties"))
+        mockMvc.perform(post(BASE_URL + "/properties/regenerate"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.generatedFiles").isArray())

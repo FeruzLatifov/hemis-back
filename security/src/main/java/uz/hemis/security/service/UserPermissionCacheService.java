@@ -20,22 +20,23 @@ import java.util.stream.Collectors;
  * JWT Token (MINIMAL):
  * {
  *   "iss": "hemis",
- *   "sub": "admin",         ← username only
- *   "exp": 1762727000
+ *   "sub": "60885987-1b61-4247-94c7-dff348347f93",  ← userId (UUID)
+ *   "exp": 1762727000,
+ *   "username": "admin"  ← Optional (for frontend display only)
  * }
  *
  * Permissions (REDIS):
- * Key: "user:admin:permissions"
+ * Key: "user:permissions:60885987-1b61-4247-94c7-dff348347f93"
  * Value: ["student:read", "student:create", "teacher:read", ...]
  * TTL: 1 hour
  * </pre>
  *
  * <p><strong>Permission Loading Pipeline:</strong></p>
  * <ol>
- *   <li>JWT decode → extract username from 'sub' claim</li>
- *   <li>Check Redis: GET user:{username}:permissions</li>
+ *   <li>JWT decode → extract userId from 'sub' claim</li>
+ *   <li>Check Redis: GET user:permissions:{userId}</li>
  *   <li>If cache HIT → return Set&lt;String&gt;</li>
- *   <li>If cache MISS → load from DB via UserDetailsService</li>
+ *   <li>If cache MISS → load from DB via UserRepository</li>
  *   <li>Save to Redis with TTL: 1 hour</li>
  *   <li>Return Set&lt;String&gt;</li>
  * </ol>
@@ -66,12 +67,19 @@ import java.util.stream.Collectors;
  * @since 2.0.0
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class UserPermissionCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final UserDetailsService userDetailsService;
+    private final uz.hemis.domain.repository.UserRepository userRepository;
+
+    public UserPermissionCacheService(
+        RedisTemplate<String, Object> redisTemplate,
+        uz.hemis.domain.repository.UserRepository userRepository
+    ) {
+        this.redisTemplate = redisTemplate;
+        this.userRepository = userRepository;
+    }
 
     /**
      * Cache TTL: 1 hour
@@ -94,7 +102,7 @@ public class UserPermissionCacheService {
      *
      * <p><strong>Flow:</strong></p>
      * <ol>
-     *   <li>Check Redis: GET user:permissions:{username}</li>
+     *   <li>Check Redis: GET user:permissions:{userId}</li>
      *   <li>If HIT → return cached Set&lt;String&gt;</li>
      *   <li>If MISS → load from DB → cache → return</li>
      * </ol>
@@ -102,24 +110,24 @@ public class UserPermissionCacheService {
      * <p><strong>Fallback:</strong></p>
      * <p>If Redis fails → load directly from DB (no caching)</p>
      *
-     * @param username Username from JWT 'sub' claim
+     * @param userId User ID (UUID) from JWT 'sub' claim
      * @return Set of permission codes (e.g., "student:read", "teacher:create")
      */
     @SuppressWarnings("unchecked")
-    public Set<String> getUserPermissions(String username) {
-        if (username == null || username.isEmpty()) {
-            log.warn("getUserPermissions called with null/empty username");
+    public Set<String> getUserPermissions(java.util.UUID userId) {
+        if (userId == null) {
+            log.warn("getUserPermissions called with null userId");
             return Set.of();
         }
 
-        String cacheKey = KEY_PREFIX + username;
+        String cacheKey = KEY_PREFIX + userId.toString();
 
         try {
             // Try to get from Redis cache
             Object cached = redisTemplate.opsForValue().get(cacheKey);
 
             if (cached != null) {
-                log.debug("✅ Cache HIT for user: {}", username);
+                log.debug("✅ Cache HIT for userId: {}", userId);
 
                 // Convert to Set (Redis may return ArrayList due to JSON serialization)
                 if (cached instanceof Set) {
@@ -130,43 +138,45 @@ public class UserPermissionCacheService {
             }
 
             // Cache MISS - load from database
-            log.debug("⚠️ Cache MISS for user: {} - loading from DB", username);
-            Set<String> permissions = loadPermissionsFromDatabase(username);
+            log.debug("⚠️ Cache MISS for userId: {} - loading from DB", userId);
+            Set<String> permissions = loadPermissionsFromDatabase(userId);
 
             // Save to Redis cache
-            cacheUserPermissions(username, permissions);
+            cacheUserPermissions(userId, permissions);
 
             return permissions;
 
         } catch (Exception e) {
             // Redis error - fallback to DB (no caching)
-            log.error("❌ Redis error for user: {} - falling back to DB: {}", username, e.getMessage());
-            return loadPermissionsFromDatabase(username);
+            log.error("❌ Redis error for userId: {} - falling back to DB: {}", userId, e.getMessage());
+            return loadPermissionsFromDatabase(userId);
         }
     }
 
     /**
-     * Load permissions from database via UserDetailsService
+     * Load permissions from database via UserRepository
      *
-     * <p>Converts Spring Security GrantedAuthority to Set&lt;String&gt;</p>
+     * <p>Loads user by ID and extracts permissions from roles</p>
      *
-     * @param username Username
+     * @param userId User ID (UUID)
      * @return Set of permission codes
      */
-    private Set<String> loadPermissionsFromDatabase(String username) {
+    private Set<String> loadPermissionsFromDatabase(java.util.UUID userId) {
         try {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            // Load user with permissions eagerly (1 query with JOIN FETCH)
+            uz.hemis.domain.entity.User user = userRepository.findByIdWithPermissions(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
 
-            Set<String> permissions = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
+            Set<String> permissions = user.getAllPermissions().stream()
+                    .map(uz.hemis.domain.entity.Permission::getCode)
                     .collect(Collectors.toSet());
 
-            log.debug("Loaded {} permissions from DB for user: {}", permissions.size(), username);
+            log.debug("Loaded {} permissions from DB for userId: {}", permissions.size(), userId);
 
             return permissions;
 
         } catch (Exception e) {
-            log.error("Failed to load permissions from DB for user: {}", username, e);
+            log.error("Failed to load permissions from DB for userId: {}", userId, e);
             return Set.of();  // Empty permissions on error
         }
     }
@@ -176,22 +186,22 @@ public class UserPermissionCacheService {
      *
      * <p><strong>TTL:</strong> 1 hour</p>
      *
-     * @param username Username
+     * @param userId User ID (UUID)
      * @param permissions Set of permission codes
      */
-    public void cacheUserPermissions(String username, Set<String> permissions) {
-        if (username == null || username.isEmpty()) {
+    public void cacheUserPermissions(java.util.UUID userId, Set<String> permissions) {
+        if (userId == null) {
             return;
         }
 
-        String cacheKey = KEY_PREFIX + username;
+        String cacheKey = KEY_PREFIX + userId.toString();
 
         try {
             redisTemplate.opsForValue().set(cacheKey, permissions, CACHE_TTL);
-            log.debug("✅ Cached {} permissions for user: {} (TTL: 1 hour)", permissions.size(), username);
+            log.debug("✅ Cached {} permissions for userId: {} (TTL: 1 hour)", permissions.size(), userId);
 
         } catch (Exception e) {
-            log.warn("Failed to cache permissions for user: {} - {}", username, e.getMessage());
+            log.warn("Failed to cache permissions for userId: {} - {}", userId, e.getMessage());
             // Continue without caching (not critical)
         }
     }
@@ -206,25 +216,25 @@ public class UserPermissionCacheService {
      *   <li>User disabled</li>
      * </ul>
      *
-     * @param username Username
+     * @param userId User ID (UUID)
      */
-    public void evictUserCache(String username) {
-        if (username == null || username.isEmpty()) {
+    public void evictUserCache(java.util.UUID userId) {
+        if (userId == null) {
             return;
         }
 
-        String cacheKey = KEY_PREFIX + username;
+        String cacheKey = KEY_PREFIX + userId.toString();
 
         try {
             Boolean deleted = redisTemplate.delete(cacheKey);
             if (Boolean.TRUE.equals(deleted)) {
-                log.info("✅ Evicted cache for user: {}", username);
+                log.info("✅ Evicted cache for userId: {}", userId);
             } else {
-                log.debug("Cache key not found for user: {}", username);
+                log.debug("Cache key not found for userId: {}", userId);
             }
 
         } catch (Exception e) {
-            log.warn("Failed to evict cache for user: {} - {}", username, e.getMessage());
+            log.warn("Failed to evict cache for userId: {} - {}", userId, e.getMessage());
         }
     }
 

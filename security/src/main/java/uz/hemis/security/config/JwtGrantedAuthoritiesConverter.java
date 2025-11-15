@@ -19,26 +19,28 @@ import java.util.stream.Collectors;
  *
  * <p><strong>BEST PRACTICE - Minimal JWT + Redis Cache:</strong></p>
  * <pre>
- * JWT Token (MINIMAL - 180 bytes):
+ * JWT Token (MINIMAL - 200 bytes):
  * {
  *   "iss": "hemis",
- *   "sub": "admin",    ← username only, no permissions!
+ *   "sub": "60885987-1b61-4247-94c7-dff348347f93",  ← userId (UUID), no permissions!
+ *   "username": "admin",  ← Optional (for frontend display)
  *   "exp": 1762727000
  * }
  *
  * Permissions Loading Pipeline:
- * 1. JWT decode → extract 'sub' (username)
- * 2. Redis GET user:permissions:{username}
+ * 1. JWT decode → extract 'sub' (userId UUID)
+ * 2. Redis GET user:permissions:{userId}
  * 3. If cache HIT → return permissions
  * 4. If cache MISS → DB query → cache (TTL: 1h) → return
  * </pre>
  *
  * <p><strong>Performance Benefits:</strong></p>
  * <ul>
- *   <li>JWT size: 180 bytes (vs 2KB+ with permissions)</li>
+ *   <li>JWT size: 200 bytes (vs 2KB+ with permissions)</li>
  *   <li>Zero DB queries for cached users (99% hit rate)</li>
  *   <li>Fast permission updates (evict cache only)</li>
  *   <li>Horizontal scaling (Redis cluster)</li>
+ *   <li>Immutable userId (never changes, unlike username)</li>
  * </ul>
  *
  * <p><strong>Fallback Strategy:</strong></p>
@@ -88,7 +90,7 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
      *
      * <p><strong>NEW ARCHITECTURE - Redis-based Permission Loading:</strong></p>
      * <ol>
-     *   <li>Extract username from JWT 'sub' claim</li>
+     *   <li>Extract userId (UUID) from JWT 'sub' claim</li>
      *   <li>Load permissions from Redis cache (or DB if cache miss)</li>
      *   <li>Convert permissions to GrantedAuthority</li>
      * </ol>
@@ -104,21 +106,31 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
      */
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
-        // ✅ NEW: Extract username from JWT 'sub' claim
-        String username = jwt.getSubject();
+        // ✅ NEW: Extract userId (UUID) from JWT 'sub' claim
+        String userIdString = jwt.getSubject();
 
-        if (username == null || username.isEmpty()) {
+        if (userIdString == null || userIdString.isEmpty()) {
             log.warn("JWT token has no 'sub' claim - returning empty authorities");
             return List.of();
+        }
+
+        // ✅ NEW: Parse userId as UUID
+        java.util.UUID userId;
+        try {
+            userId = java.util.UUID.fromString(userIdString);
+        } catch (IllegalArgumentException e) {
+            log.warn("JWT 'sub' claim is not a valid UUID: {} - falling back to legacy mode", userIdString);
+            // Fallback to legacy JWT claims extraction (in case it's username)
+            return extractLegacyAuthorities(jwt);
         }
 
         // ✅ NEW: Load permissions from Redis cache (or DB)
         if (permissionCacheService != null) {
             try {
-                Set<String> permissions = permissionCacheService.getUserPermissions(username);
+                Set<String> permissions = permissionCacheService.getUserPermissions(userId);
 
                 if (permissions != null && !permissions.isEmpty()) {
-                    log.debug("Loaded {} permissions from cache for user: {}", permissions.size(), username);
+                    log.debug("Loaded {} permissions from cache for userId: {}", permissions.size(), userId);
 
                     return permissions.stream()
                             .map(SimpleGrantedAuthority::new)
@@ -126,7 +138,7 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
                 }
 
             } catch (Exception e) {
-                log.error("Failed to load permissions from cache for user: {} - {}", username, e.getMessage());
+                log.error("Failed to load permissions from cache for userId: {} - {}", userId, e.getMessage());
                 // Fall through to legacy JWT claims extraction
             }
         } else {
@@ -134,6 +146,16 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
         }
 
         // ⚠️ FALLBACK: Legacy JWT claims extraction (for backward compatibility)
+        return extractLegacyAuthorities(jwt);
+    }
+
+    /**
+     * Extract authorities from legacy JWT claims
+     *
+     * @param jwt JWT token
+     * @return list of granted authorities
+     */
+    private List<GrantedAuthority> extractLegacyAuthorities(Jwt jwt) {
         List<GrantedAuthority> authorities = new ArrayList<>();
 
         // Extract roles from 'roles' claim

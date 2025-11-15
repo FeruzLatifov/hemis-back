@@ -213,7 +213,7 @@ public class RedisConfig {
      *
      * <p><strong>Flow:</strong></p>
      * <pre>
-     * 1. Admin POST /api/v1/admin/cache/refresh
+     * 1. Admin POST /api/v1/web/system/translation/cache/clear (or other cache action)
      * 2. Backend publishes Redis message: "refresh-{timestamp}"
      * 3. All 10 pods receive message (MessageListener)
      * 4. Each pod clears L1 cache (JVM Caffeine)

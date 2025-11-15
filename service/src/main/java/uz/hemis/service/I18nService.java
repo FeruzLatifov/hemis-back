@@ -620,7 +620,7 @@ public class I18nService {
      * <p><strong>Called By:</strong></p>
      * <ul>
      *   <li>CacheInvalidationListener (leader pod only)</li>
-     *   <li>Admin triggers: POST /api/v1/admin/cache/refresh</li>
+     *   <li>Admin triggers: POST /api/v1/web/system/translation/cache/clear</li>
      * </ul>
      */
     public void warmupCacheFromDatabase() {

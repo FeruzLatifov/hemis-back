@@ -1,8 +1,8 @@
 # 📘 HEMIS Backend - Liquibase Migration Master Guide
 
-> **Version:** 1.1.0
-> **Last Updated:** 2025-11-14 (Idempotency fix added)
-> **Author:** HEMIS Team
+> **Version:** 2.0.0  
+> **Last Updated:** 2025-11-15 (Rollback system completely rewritten)  
+> **Author:** HEMIS Team  
 > **Liquibase Version:** 4.31.1
 
 ---
@@ -13,48 +13,359 @@ Bu qo'llanma HEMIS Backend loyihasida **Liquibase 4.x** yordamida yangi database
 
 **Maqsad:** Har bir dasturchi professional, rollback-friendly, production-ready migration yoza olishi.
 
+**🆕 Version 2.0 Yangiliklar:**
+- ✅ Rollback muammosi to'liq hal qilindi
+- ✅ TAG changeSet'lar uchun rollback qo'shildi
+- ✅ `splitStatements: false` muhimligi tushuntirildi
+- ✅ Real production case'lar qo'shildi
+- ✅ Troubleshooting kengaytirildi
+
 ---
 
-## 📋 Tez Boshlanish (Quick Start)
+## 🚨 CRITICAL: Rollback Tizimi (Version 2.0)
 
-### 1. Yangi Migration Yaratish (5 daqiqa)
+### ⚠️ Muammo (Version 1.0'da)
 
 ```bash
-# 1. Changesets papkaga o'tish
-cd /home/adm1n/startup/hemis-back/domain/src/main/resources/db/changelog/changesets/
-
-# 2. Yangi fayllar yaratish (XX - keyingi raqam, masalan 06)
-touch 06-add-departments-table.sql
-touch 06-add-departments-table-rollback.sql
-
-# 3. SQL yozish (quyidagi shablonlar bo'yicha)
-nano 06-add-departments-table.sql
-
-# 4. Rollback SQL yozish
-nano 06-add-departments-table-rollback.sql
-
-# 5. Changelog'ga qo'shish
-nano ../db.changelog-master.yaml
+./gradlew :domain:liquibaseRollbackCount -Pcount=10
+# Natija: "0 changesets rolled back" ❌
 ```
 
-### 2. Test Qilish
+**Sabab:** TAG changeSet'larda rollback SQL yo'q edi!
+
+### ✅ Yechim (Version 2.0)
+
+**1. Har bir TAG changeSet'ga rollback qo'shildi:**
+
+```yaml
+- changeSet:
+    id: tag-v6
+    author: hemis-team
+    changes:
+      - tagDatabase:
+          tag: v6-menu-permissions-complete
+    rollback:  # ← YANGI (MANDATORY!)
+      - sql:
+          sql: "-- Tag rollback (no-op)"
+```
+
+**2. Har bir migration rollback'da `splitStatements: false`:**
+
+```yaml
+- changeSet:
+    id: v6-add-menu-permissions
+    sqlFile:
+      path: changesets/06-add-menu-permissions.sql
+      stripComments: false
+      splitStatements: false  # ✅ REQUIRED
+    rollback:
+      sqlFile:
+        path: changesets/06-add-menu-permissions-rollback.sql
+        stripComments: false
+        splitStatements: false  # ✅ CRITICAL!
+```
+
+### 📊 Rollback Count Calculator
+
+**FORMULA:** `count = (migrations_to_rollback × 2)`
+
+| Maqsad | Migrations | Tags | Total Count |
+|--------|------------|------|-------------|
+| **Rollback V6** | 1 | 1 | **2** |
+| **Rollback V6+V5** | 2 | 2 | **4** |
+| **Rollback V6+V5+V4** | 3 | 3 | **6** |
+| **Rollback all (to V1)** | 5 | 5 | **10** |
+
+**Misol:**
+```bash
+# Oxirgi migration'ni rollback (V6 migration + tag)
+./gradlew :domain:liquibaseRollbackCount -Pcount=2
+
+# Oxirgi 3 ta migration'ni rollback (V6, V5, V4)
+./gradlew :domain:liquibaseRollbackCount -Pcount=6
+```
+
+### 🔧 splitStatements: false - Nega Kerak?
+
+**PostgreSQL `DO $$ ... $$` block'lar:**
+
+```sql
+-- Bu kod splitStatements=true bo'lsa BUZILADI!
+DO $$
+DECLARE
+    v_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO v_count FROM users;
+    RAISE NOTICE 'User count: %', v_count;
+END $$;
+```
+
+**Xatolik agar `splitStatements: true`:**
+```
+ERROR: Unterminated dollar quote started at position 19
+Expected terminating $$
+```
+
+**✅ Yechim - har doim `splitStatements: false`:**
+
+```yaml
+rollback:
+  sqlFile:
+    path: changesets/06-rollback.sql
+    stripComments: false
+    splitStatements: false  # ← CRITICAL!
+```
+
+---
+
+## 📋 Yangi Migration Yaratish (Complete Workflow)
+
+### STEP 1: Fayl Yaratish
+
+```bash
+cd /home/adm1n/startup/hemis-back/domain/src/main/resources/db/changelog/changesets/
+
+# Keyingi raqamni aniqlash (masalan, 07)
+ls -1 *.sql | tail -2
+
+# Yangi fayllar yaratish
+touch 07-add-departments-table.sql
+touch 07-add-departments-table-rollback.sql
+```
+
+### STEP 2: Migration SQL Yozish
+
+**File:** `07-add-departments-table.sql`
+
+```sql
+-- =====================================================
+-- V7: Add Departments Table
+-- =====================================================
+-- Author: hemis-team
+-- Date: 2025-11-15
+-- Description: Create departments table for university structure
+-- 
+-- Changes:
+-- - Table: departments (11 columns)
+-- - Indexes: 3 (faculty, head, code)  
+-- - Constraints: 1 (code length check)
+-- - Initial data: 3 departments
+--
+-- IMPORTANT: This migration is IDEMPOTENT
+-- =====================================================
+
+-- Create table (IDEMPOTENT)
+CREATE TABLE IF NOT EXISTS departments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    description TEXT,
+    faculty_id UUID,
+    head_id UUID,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID,
+    updated_by UUID,
+
+    -- Constraints
+    CONSTRAINT chk_departments_code_length CHECK (LENGTH(code) >= 2)
+);
+
+-- Add unique constraint (IDEMPOTENT)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'uk_departments_code'
+    ) THEN
+        ALTER TABLE departments 
+        ADD CONSTRAINT uk_departments_code UNIQUE (code);
+    END IF;
+END $$;
+
+-- Create indexes (IDEMPOTENT)
+CREATE INDEX IF NOT EXISTS idx_departments_faculty ON departments(faculty_id);
+CREATE INDEX IF NOT EXISTS idx_departments_head ON departments(head_id);
+CREATE INDEX IF NOT EXISTS idx_departments_code ON departments(code);
+
+-- Comments
+COMMENT ON TABLE departments IS 'University departments';
+COMMENT ON COLUMN departments.id IS 'Primary key (UUID)';
+COMMENT ON COLUMN departments.code IS 'Unique department code (2-50 chars)';
+
+-- Insert initial data (IDEMPOTENT)
+INSERT INTO departments (id, name, code, description, is_active) VALUES
+    ('550e8400-e29b-41d4-a716-446655440001', 'Informatika', 'CS', 'Computer Science Department', TRUE),
+    ('550e8400-e29b-41d4-a716-446655440002', 'Matematika', 'MATH', 'Mathematics Department', TRUE),
+    ('550e8400-e29b-41d4-a716-446655440003', 'Fizika', 'PHYS', 'Physics Department', TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Verification
+DO $$
+DECLARE
+    dept_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO dept_count FROM departments;
+    RAISE NOTICE '✅ Departments table created with % records', dept_count;
+END $$;
+```
+
+### STEP 3: Rollback SQL Yozish
+
+**File:** `07-add-departments-table-rollback.sql`
+
+```sql
+-- =====================================================
+-- V7 Rollback: Remove Departments Table
+-- =====================================================
+-- Author: hemis-team  
+-- Date: 2025-11-15
+-- Description: Rollback departments table creation
+--
+-- IMPORTANT: This rollback is SAFE and IDEMPOTENT
+-- =====================================================
+
+-- Drop indexes first (best practice)
+DROP INDEX IF EXISTS idx_departments_code;
+DROP INDEX IF EXISTS idx_departments_head;
+DROP INDEX IF EXISTS idx_departments_faculty;
+
+-- Drop constraints
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'uk_departments_code'
+    ) THEN
+        ALTER TABLE departments DROP CONSTRAINT uk_departments_code;
+    END IF;
+END $$;
+
+-- Drop table with CASCADE (removes all dependencies)
+DROP TABLE IF EXISTS departments CASCADE;
+
+-- Verification
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_name = 'departments'
+    ) THEN
+        RAISE EXCEPTION 'Rollback failed: departments table still exists';
+    ELSE
+        RAISE NOTICE '✅ Rollback successful: departments table removed';
+    END IF;
+END $$;
+```
+
+### STEP 4: Changelog'ga Qo'shish
+
+**File:** `db.changelog-master.yaml` (oxiriga qo'shing)
+
+```yaml
+  # =====================================================
+  # V7: Add Departments Table
+  # =====================================================
+  # Create departments table for university structure
+  # - Table: departments (11 columns)
+  # - Indexes: 3 (faculty, head, code)
+  # - Constraints: 2 (code length + unique)
+  # - Initial data: 3 departments
+  #
+  # Source: University Structure Enhancement
+  # Date: 2025-11-15
+  # =====================================================
+
+  - changeSet:
+      id: v7-add-departments-table
+      author: hemis-team
+      comment: Create departments table with indexes, constraints and initial data
+      context: "!test"
+      labels: "schema,departments,ddl"
+      runOnChange: false
+
+      sqlFile:
+        path: changesets/07-add-departments-table.sql
+        relativeToChangelogFile: true
+        stripComments: false
+        splitStatements: false  # ✅ REQUIRED for DO $$ blocks
+
+      rollback:
+        sqlFile:
+          path: changesets/07-add-departments-table-rollback.sql
+          relativeToChangelogFile: true
+          stripComments: false
+          splitStatements: false  # ✅ CRITICAL!
+
+  # Tag after V7 for rollback support
+  - changeSet:
+      id: tag-v7
+      author: hemis-team
+      changes:
+        - tagDatabase:
+            tag: v7-departments-complete
+      rollback:  # ✅ MANDATORY for all tags!
+        - sql:
+            sql: "-- Tag rollback (no-op)"
+```
+
+### STEP 5: Test Qilish (Complete Test Suite)
 
 ```bash
 cd /home/adm1n/startup/hemis-back
 
-# Preview
+# 1. Migration holatini ko'rish
 ./gradlew :domain:liquibaseStatus
 
-# Apply
+# Expected: "1 changesets have not been applied"
+
+# 2. Migration'ni apply qilish
 ./gradlew :domain:liquibaseUpdate
 
-# Verify
+# Expected: "Running Changeset: ...v7-add-departments-table..."
+# Expected: "UPDATE SUMMARY: Run: 2" (migration + tag)
+
+# 3. Database'da tekshirish
+PGPASSWORD=postgres psql -h localhost -U postgres -d test1_hemis << 'EOF'
+\d departments
+SELECT * FROM departments;
+SELECT COUNT(*) FROM departments;
+EOF
+
+# Expected: Table structure + 3 records
+
+# 4. IDEMPOTENCY TEST (CRITICAL!)
+./gradlew bootRun
+
+# Expected: Application ishga tushadi, ERROR yo'q
+# Expected: "already exists, skipping" (WARN - normal)
+
+# 5. Rollback SQL preview (xavfsiz)
+./gradlew :domain:liquibaseRollbackSQL -Pcount=2 > /tmp/rollback-preview.sql
+cat /tmp/rollback-preview.sql
+
+# Expected: DROP TABLE departments CASCADE ko'rinadi
+
+# 6. Rollback qilish (migration + tag = 2)
+./gradlew :domain:liquibaseRollbackCount -Pcount=2
+
+# Expected: "2 changesets rolled back"
+
+# 7. Table o'chirilganini tekshirish
 PGPASSWORD=postgres psql -h localhost -U postgres -d test1_hemis -c "\d departments"
 
-# Test rollback
-./gradlew :domain:liquibaseRollbackSQL -Pcount=1
-./gradlew :domain:liquibaseRollbackCount -Pcount=1
+# Expected: "Did not find any relation named departments"
+
+# 8. Qayta apply qilish
 ./gradlew :domain:liquibaseUpdate
+
+# Expected: "2 changesets applied"
+
+# 9. Migration tarixini ko'rish
+./gradlew :domain:liquibaseHistory
+
+# Expected: v7-add-departments-table (EXECUTED)
 ```
 
 ---

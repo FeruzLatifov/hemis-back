@@ -1,23 +1,23 @@
--- liquibase formatted sql
-
--- changeset system:06-add-menu-permissions
--- comment: Add complete menu structure permissions from old-hemis (60 permissions)
-
 -- =====================================================
--- HEMIS Backend - Complete Menu Permissions Migration
+-- V6: Add Menu Structure Permissions
 -- =====================================================
--- Purpose: Add complete menu structure permissions from old-hemis
+-- Author: hemis-team
+-- Date: 2025-01-15
+-- Description: Add complete menu structure permissions from old-hemis
 -- Migrated from: V9__Update_Menu_Structure_Permissions.sql
 --
 -- Structure:
--- 1. Dashboard (1 permission)
--- 2. Registry (4 permissions)
--- 3. Rating (14 permissions with nested structure)
--- 4. Data Management (10 permissions)
--- 5. Reports (25 permissions with nested structure)
--- 6. System (6 permissions)
+-- 1. Registry Module (4 permissions)
+-- 2. Rating Module (14 permissions with nested structure)
+-- 3. Data Management (10 permissions)
+-- 4. Reports Module (25 permissions with nested structure)
+-- 5. System Module (7 permissions - including system.translation.manage)
 --
 -- Total: 60 permissions
+--
+-- Changes:
+-- - Added system.translation.manage permission for translation CRUD operations
+-- - All permissions assigned to Super Administrator role
 -- =====================================================
 
 -- =====================================================
@@ -155,11 +155,18 @@ INSERT INTO permissions (id, resource, action, code, name, description, category
 VALUES
 (gen_random_uuid(), 'system', 'view', 'system.view', 'View System', 'Access to system section', 'ADMIN', CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'system.temp', 'view', 'system.temp.view', 'View Temp System', 'View temporary system data', 'ADMIN', CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'system.translation', 'view', 'system.translation.view', 'View Translations', 'View and manage translations', 'ADMIN', CURRENT_TIMESTAMP),
+(gen_random_uuid(), 'system.translation', 'view', 'system.translation.view', 'View Translations', 'View translation list', 'ADMIN', CURRENT_TIMESTAMP),
+(gen_random_uuid(), 'system.translation', 'manage', 'system.translation.manage', 'Manage Translations', 'Create, update, delete translations', 'ADMIN', CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'system.users', 'view', 'system.users.view', 'View University Users', 'View university user management', 'ADMIN', CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'system.logs', 'view', 'system.logs.view', 'View API Logs', 'View REST API access logs', 'ADMIN', CURRENT_TIMESTAMP),
 (gen_random_uuid(), 'system.report-update', 'view', 'system.report-update.view', 'View Report Updates', 'View report update logs', 'ADMIN', CURRENT_TIMESTAMP)
 ON CONFLICT (code) DO NOTHING;
+
+-- Add comments
+COMMENT ON TABLE permissions IS 'System permissions for role-based access control';
+COMMENT ON COLUMN permissions.code IS 'Unique permission code (e.g., system.translation.manage)';
+COMMENT ON COLUMN permissions.resource IS 'Resource identifier (e.g., system.translation)';
+COMMENT ON COLUMN permissions.action IS 'Action type: view, manage, create, update, delete';
 
 -- =====================================================
 -- STEP 6: Assign All New Permissions to Super Administrator
@@ -231,6 +238,7 @@ WHERE r.name = 'Super Administrator'
     'system.view',
     'system.temp.view',
     'system.translation.view',
+    'system.translation.manage',
     'system.users.view',
     'system.logs.view',
     'system.report-update.view'
@@ -239,5 +247,29 @@ WHERE r.name = 'Super Administrator'
   AND p.deleted_at IS NULL
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
--- rollback DELETE FROM role_permissions WHERE permission_id IN (SELECT id FROM permissions WHERE code IN ('registry.view', 'rating.view', 'data.view', 'system.view'));
--- rollback DELETE FROM permissions WHERE code IN ('registry.view', 'registry.e-reestr.view', 'registry.scientific.view', 'registry.student-meta.view', 'rating.view', 'rating.administrative.view', 'rating.administrative.employee.view', 'rating.administrative.students.view', 'rating.administrative.sport.view', 'rating.academic.view', 'rating.academic.methodical.view', 'rating.academic.study.view', 'rating.academic.verification.view', 'rating.scientific.view', 'rating.scientific.publications.view', 'rating.scientific.projects.view', 'rating.scientific.intellectual.view', 'rating.student-gpa.view', 'data.view', 'data.general.view', 'data.structure.view', 'data.employee.view', 'data.student.view', 'data.education.view', 'data.study.view', 'data.science.view', 'data.organizational.view', 'data.contract-category.view', 'reports.universities.view', 'reports.employees.view', 'reports.employees.private.view', 'reports.employees.work.view', 'reports.students.view', 'reports.students.statistics.view', 'reports.students.education.view', 'reports.students.private.view', 'reports.students.attendance.view', 'reports.students.score.view', 'reports.students.dynamic.view', 'reports.academic.view', 'reports.academic.study.view', 'reports.research.view', 'reports.research.project.view', 'reports.research.publication.view', 'reports.research.researcher.view', 'reports.economic.view', 'reports.economic.finance.view', 'reports.economic.xujalik.view', 'system.view', 'system.temp.view', 'system.translation.view', 'system.users.view', 'system.logs.view', 'system.report-update.view');
+-- Verify insertion
+DO $$
+DECLARE
+    permission_count INT;
+    role_permission_count INT;
+BEGIN
+    -- Count inserted permissions
+    SELECT COUNT(*) INTO permission_count
+    FROM permissions
+    WHERE code IN (
+        'registry.view', 'rating.view', 'data.view', 'system.view',
+        'system.translation.manage'
+    );
+
+    -- Count role-permission assignments
+    SELECT COUNT(*) INTO role_permission_count
+    FROM role_permissions rp
+    INNER JOIN permissions p ON rp.permission_id = p.id
+    INNER JOIN roles r ON rp.role_id = r.id
+    WHERE r.name = 'Super Administrator'
+      AND p.code LIKE 'system.translation.%';
+
+    RAISE NOTICE 'V6 Migration Complete:';
+    RAISE NOTICE '  - Total key permissions: %', permission_count;
+    RAISE NOTICE '  - Translation permissions assigned to Super Admin: %', role_permission_count;
+END $$;

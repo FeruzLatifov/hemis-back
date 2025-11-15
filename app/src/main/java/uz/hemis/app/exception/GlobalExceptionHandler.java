@@ -1,5 +1,6 @@
 package uz.hemis.app.exception;
 
+import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -7,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -131,6 +134,64 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    // =====================================================
+    // Spring Security Exceptions
+    // =====================================================
+
+    /**
+     * Handle AccessDeniedException (Spring Security 5.x)
+     *
+     * <p>HTTP Status: 403 FORBIDDEN</p>
+     *
+     * @param ex exception
+     * @param request HTTP request
+     * @return error response
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Access denied: {} - User attempted to access: {}", 
+                ex.getMessage(), request.getRequestURI());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                "You don't have permission to access this resource",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
+    /**
+     * Handle AuthorizationDeniedException (Spring Security 6.x)
+     *
+     * <p>HTTP Status: 403 FORBIDDEN</p>
+     *
+     * @param ex exception
+     * @param request HTTP request
+     * @return error response
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationDenied(
+            AuthorizationDeniedException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Authorization denied: {} - User attempted to access: {}", 
+                ex.getMessage(), request.getRequestURI());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                "You don't have permission to access this resource",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
     // =====================================================
@@ -305,11 +366,16 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Unhandled exception", ex);
 
+        // Capture to Sentry (auto-captures if enabled)
+        String eventId = Sentry.captureException(ex).toString();
+
         ErrorResponse error = ErrorResponse.of(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
                 "An unexpected error occurred. Please try again later.",
-                request.getRequestURI()
+                request.getRequestURI(),
+                eventId,
+                "INTERNAL_ERROR"
         );
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);

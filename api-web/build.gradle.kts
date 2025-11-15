@@ -14,8 +14,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
-    
+
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+
+    // ⭐ Sentry (compileOnly - runtime comes from :app module)
+    compileOnly("io.sentry:sentry-spring-boot-starter-jakarta:7.0.0")
     
     // Apache POI for Excel export
     implementation("org.apache.poi:poi:5.2.5")

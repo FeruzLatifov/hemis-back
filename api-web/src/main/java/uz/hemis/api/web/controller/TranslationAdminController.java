@@ -560,19 +560,6 @@ public class TranslationAdminController {
         return ResponseEntity.ok(results);
     }
 
-    /**
-     * Alias endpoint to support older frontend path
-     * POST /api/v1/web/system/translation/regenerate-properties
-     */
-    @Operation(hidden = true)
-    @PostMapping("/regenerate-properties")
-    @PreAuthorize("hasAuthority('system.translation.manage')")
-    public ResponseEntity<Map<String, Object>> regeneratePropertiesFilesAlias() {
-        log.info("POST /api/v1/admin/translations/regenerate-properties (alias)");
-        Map<String, Object> results = translationService.regeneratePropertiesFiles();
-        return ResponseEntity.ok(results);
-    }
-
     // =====================================================
     // Statistics
     // =====================================================
