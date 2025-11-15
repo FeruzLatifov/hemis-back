@@ -258,7 +258,7 @@ public class UniversityRegistryService {
         entity.setUniversityContractCategory(request.getContractCategory()); // Fixed
         entity.setParentUniversity(request.getParentUniversity());
         entity.setTerrain(request.getTerrain());
-        entity.setVersionType(request.getVersionType());
+        // entity.setVersionType(request.getVersionType()); // REMOVED: _version_type column doesn't exist in DB
         entity.setAddress(request.getAddress());
         entity.setCadastre(request.getCadastre());
         entity.setUniversityUrl(request.getUniversityUrl());

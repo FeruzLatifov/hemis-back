@@ -290,18 +290,16 @@ public class University implements Serializable {
     private Boolean allowTransferOutside;
 
     /**
-     * Version type code
-     * Column: _version_type VARCHAR(32)
-     */
-    @Column(name = "_version_type", length = 32)
-    private String versionType;
-
-    /**
      * Terrain code (mahalla)
      * Column: _terrain VARCHAR(32)
      */
     @Column(name = "_terrain", length = 32)
     private String terrain;
+
+    // NOTE: _version_type column exists in DB but NOT mapped to entity
+    // Reason: CUBA legacy field, not used in new system
+    // Hibernate would include it in SELECT even with insertable=false, updatable=false
+    // Solution: Don't map it at all - database column is ignored
 
     /**
      * Mail address

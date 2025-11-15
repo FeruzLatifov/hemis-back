@@ -4,6 +4,13 @@
 
 spring:
   # =====================================================
+  # Auto-Configuration Exclusions (to reduce warnings)
+  # =====================================================
+  autoconfigure:
+    exclude:
+      - io.sentry.spring.boot.jakarta.SentryAutoConfiguration  # Exclude Sentry when disabled
+      
+  # =====================================================
   # Development DataSource
   # =====================================================
   # Development: Single database (no master/replica split)
