@@ -331,7 +331,7 @@ docker build -t hemis-backend:1.0.0 .
 docker-compose up -d
 
 # Health check
-curl http://localhost:8080/actuator/health
+curl http://localhost:8081/actuator/health
 ```
 
 ### Resource Requirements
@@ -412,7 +412,7 @@ docker-compose up -d postgres redis
 ./gradlew :app:bootRun
 
 # 6. Access Swagger
-open http://localhost:8080/api/swagger-ui.html
+open http://localhost:8081/api/swagger-ui.html
 ```
 
 ### Build Commands
@@ -598,8 +598,8 @@ Set `TESTS_ENABLED=true` in `.env` to enable.
 ```
 
 ### API Documentation
-- **Swagger UI:** http://localhost:8080/api/swagger-ui.html
-- **OpenAPI JSON:** http://localhost:8080/api/v3/api-docs
+- **Swagger UI:** http://localhost:8081/api/swagger-ui.html
+- **OpenAPI JSON:** http://localhost:8081/api/v3/api-docs
 - **Format:** OpenAPI 3.0
 
 ⚠️ **MANDATORY REQUIREMENT:**

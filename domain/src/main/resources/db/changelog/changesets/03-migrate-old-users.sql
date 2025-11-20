@@ -5,39 +5,127 @@
 -- Purpose: Copy all active users from sec_user → users
 -- =====================================================
 
--- Step 1: Insert all active users
+-- Step 1: Insert all active users with COMPLETE field mapping
 INSERT INTO users (
+    -- Primary Key & Authentication
     id,
     username,
+    username_lowercase,
     password,
+    password_encryption,
     email,
+
+    -- Personal Information
+    name,
+    first_name,
+    last_name,
+    middle_name,
     full_name,
+    position,
+
+    -- User Settings
+    language,
+    time_zone,
+    time_zone_auto,
+    locale,
+
+    -- User Context (Multi-tenancy)
     user_type,
     entity_code,
+    university_id,
+    phone,
+
+    -- Legacy CUBA Relations
+    group_id,
+    group_names,
+
+    -- Account Status
     enabled,
+    active,
     account_non_locked,
+
+    -- Security Settings
+    ip_mask,
+    change_password_at_logon,
+
+    -- Multi-tenancy
+    sys_tenant_id,
+    dtype,
+
+    -- Versioning
+    version,
+
+    -- Timestamps
     created_at,
-    updated_at
+    created_by,
+    updated_at,
+    updated_by,
+    deleted_at,
+    deleted_by
 )
 SELECT
+    -- Primary Key & Authentication
     su.id,
     su.login,
+    su.login_lc,
     su.password,
+    su.password_encryption,
     NULLIF(TRIM(su.email), ''),
+
+    -- Personal Information
+    su.name,
+    su.first_name,
+    su.last_name,
+    su.middle_name,
     COALESCE(
         NULLIF(TRIM(su.first_name || ' ' || COALESCE(su.last_name, '')), ''),
         NULLIF(TRIM(su.name), ''),
         su.login
-    ),
+    ) as full_name,
+    su.position_,
+
+    -- User Settings
+    su.language_,
+    su.time_zone,
+    su.time_zone_auto,
+    su.language_ as locale,  -- computed from language_
+
+    -- User Context (Multi-tenancy)
     CASE
         WHEN su._university IS NOT NULL THEN 'UNIVERSITY'::VARCHAR
         ELSE 'SYSTEM'::VARCHAR
-    END,
-    su._university,
-    COALESCE(su.active, TRUE),
-    TRUE,
+    END as user_type,
+    su._university as entity_code,
+    su._university as university_id,
+    NULL as phone,  -- sec_user doesn't have phone
+
+    -- Legacy CUBA Relations
+    su.group_id,
+    su.group_names,
+
+    -- Account Status
+    COALESCE(su.active, TRUE) as enabled,
+    COALESCE(su.active, TRUE) as active,
+    TRUE as account_non_locked,
+
+    -- Security Settings
+    su.ip_mask,
+    su.change_password_at_logon,
+
+    -- Multi-tenancy
+    su.sys_tenant_id,
+    su.dtype,
+
+    -- Versioning
+    COALESCE(su.version, 1),
+
+    -- Timestamps
     COALESCE(su.create_ts, CURRENT_TIMESTAMP),
-    su.update_ts
+    su.created_by,
+    su.update_ts,
+    su.updated_by,
+    su.delete_ts,
+    su.deleted_by
 FROM sec_user su
 WHERE su.delete_ts IS NULL
   AND su.active = TRUE

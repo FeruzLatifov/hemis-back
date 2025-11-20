@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEMIS API Legacy Endpoint Tester</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!--
+    ⚠️ MUHIM: CORS xatosini oldini olish uchun bu faylni HTTP server orqali oching!
+
+    Quyidagi usullardan birini ishlatish kerak:
+
+    1️⃣ Python HTTP Server (Tezkor):
+       cd /home/adm1n/startup/docs/hemis-back
+       python3 -m http.server 9000
+       Keyin brauzerda: http://localhost:9000/endpoint_tester.html
+
+    2️⃣ Node.js http-server:
+       npm install -g http-server
+       http-server /home/adm1n/startup/docs/hemis-back -p 9000
+       Keyin brauzerda: http://localhost:9000/endpoint_tester.html
+
+    3️⃣ VS Code Live Server extension:
+       Faylni ochib "Go Live" tugmasini bosing
+
+    ❌ file:// protokoli ishlatilsa CORS xatolari bo'ladi!
+    -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+        }
+        .card {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: none;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 15px 20px;
+        }
+        .endpoint-card {
+            transition: transform 0.2s;
+        }
+        .endpoint-card:hover {
+            transform: translateY(-5px);
+        }
+        .btn-test {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        .btn-test:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+        }
+        .status-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .status-pending {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .response-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .request-box {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .config-panel {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .category-header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin: 30px 0 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .category-header:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        }
+        .category-title {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .category-toggle {
+            transition: transform 0.3s ease;
+        }
+        .category-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        .category-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            max-height: 10000px;
+            opacity: 1;
+        }
+        .category-content.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0 !important;
+        }
+        .badge-method {
+            font-size: 0.8rem;
+            padding: 5px 10px;
+        }
+        .badge-get {
+            background-color: #61affe;
+        }
+        .badge-post {
+            background-color: #49cc90;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .summary-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .progress {
+            height: 25px;
+        }
+        .detail-section {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #dee2e6;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .status-match {
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .status-diff {
+            color: #ffc107;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center text-white mb-4">
+            <h1><i class="fas fa-server"></i> HEMIS API Comparison Tester</h1>
+            <p class="lead">🆕 Yangi Hemis-Back vs 🏛️ Old-Hemis • 11 endpoint solishtirish</p>
+        </div>
+
+        <!-- CORS Warning (shown only if file:// protocol) -->
+        <div id="corsWarning" class="alert alert-danger alert-dismissible fade show d-none" role="alert">
+            <h5><i class="fas fa-exclamation-triangle"></i> CORS Xatosi!</h5>
+            <p class="mb-2">Siz bu faylni <code>file://</code> protokoli orqali ochgansiz. Bu CORS xatolarga olib keladi!</p>
+            <p class="mb-2"><strong>✅ YECHIM:</strong> HTTP server orqali oching:</p>
+            <ol class="mb-0">
+                <li><code>cd /home/adm1n/startup/docs/hemis-back</code></li>
+                <li><code>python3 -m http.server 9000</code></li>
+                <li>Brauzerda: <code>http://localhost:9000/endpoint_tester.html</code></li>
+            </ol>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Server Not Running Warning -->
+        <div id="serverWarning" class="alert alert-warning d-none" role="alert">
+            <h6><i class="fas fa-exclamation-triangle"></i> Serverlar ishlamayapti!</h6>
+            <p class="mb-2">Endpoint tester faqat HTML fayl - API so'rovlar uchun serverlar kerak!</p>
+            <p class="mb-2"><strong>1️⃣ Yangi Hemis serverini ishga tushiring:</strong></p>
+            <pre class="mb-2" style="background: #f8f9fa; padding: 10px; border-radius: 5px;">cd /home/adm1n/startup/hemis-back
+./gradlew :app:bootRun
+# Port: 8081</pre>
+            <p class="mb-2"><strong>2️⃣ Old Hemis serverini ishga tushiring:</strong></p>
+            <pre class="mb-0" style="background: #f8f9fa; padding: 10px; border-radius: 5px;">cd /home/adm1n/startup/old-hemis
+# Start server on port 8082</pre>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Success Info (shown when hosted properly) -->
+        <div id="successInfo" class="alert alert-success d-none" role="alert">
+            <h6><i class="fas fa-check-circle"></i> Same-Origin Mode</h6>
+            <p class="mb-0">✅ Bu sahifa <code>http://localhost:8081</code> dan ochilgan - CORS muammosi yo'q! (Yangi Hemis uchun)</p>
+            <p class="mb-0">⚠️ Old-Hemis (<code>http://localhost:8082</code>) uchun CORS headerlar kerak.</p>
+        </div>
+
+        <!-- Config Panel (Split for comparison) -->
+        <div class="config-panel">
+            <h5><i class="fas fa-cog"></i> Konfiguratsiya - Ikki Tizim Solishtirish</h5>
+            <div class="row g-3">
+                <!-- New Hemis Config -->
+                <div class="col-md-6">
+                    <div class="border rounded p-3" style="background: #f0fff4; border: 2px solid #51cf66;">
+                        <h6 style="color: #2b8a3e;"><i class="fas fa-server"></i> 🆕 Yangi Hemis-Back</h6>
+                        <div class="mb-2">
+                            <label class="form-label small">Base URL <span class="badge bg-info">Auto-detected</span></label>
+                            <input type="text" class="form-control form-control-sm" id="newBaseUrl" value="" placeholder="Auto-detecting...">
+                            <small class="text-muted">Avtomatik aniqlanadi (./gradlew :app:bootRun - port 8081)</small>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Username</label>
+                            <input type="text" class="form-control form-control-sm" id="newUsername" value="feruz">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Password</label>
+                            <input type="password" class="form-control form-control-sm" id="newPassword" value="BvZzXW6oQxEEte">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small">PINFL</label>
+                            <input type="text" class="form-control form-control-sm" id="newPinfl" value="31503776560016">
+                        </div>
+                    </div>
+                </div>
+                <!-- Old Hemis Config -->
+                <div class="col-md-6">
+                    <div class="border rounded p-3" style="background: #fff5f5; border: 2px solid #ff6b6b;">
+                        <h6 style="color: #c92a2a;"><i class="fas fa-archive"></i> 🏛️ Old-Hemis (CUBA)</h6>
+                        <div class="mb-2">
+                            <label class="form-label small">Base URL <span class="badge bg-info">Auto-detected</span></label>
+                            <input type="text" class="form-control form-control-sm" id="oldBaseUrl" value="" placeholder="Auto-detecting...">
+                            <small class="text-muted">Avtomatik aniqlanadi (old-hemis server - port 8082)</small>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Username</label>
+                            <input type="text" class="form-control form-control-sm" id="oldUsername" value="feruz">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Password</label>
+                            <input type="password" class="form-control form-control-sm" id="oldPassword" value="BvZzXW6oQxEEte">
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small">PINFL</label>
+                            <input type="text" class="form-control form-control-sm" id="oldPinfl" value="31503776560016">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-test btn-lg" onclick="testAllBoth()"><i class="fas fa-exchange-alt"></i> Ikkala Tizimni Ham Test Qilish</button>
+                <button class="btn btn-success btn-lg" onclick="expandAll()"><i class="fas fa-expand-alt"></i> Barchasini Ochish</button>
+                <button class="btn btn-warning btn-lg" onclick="collapseAll()"><i class="fas fa-compress-alt"></i> Barchasini Yopish</button>
+                <button class="btn btn-secondary btn-lg" onclick="resetAll()"><i class="fas fa-redo"></i> Reset</button>
+            </div>
+        </div>
+
+        <!-- Summary (Split for both systems) -->
+        <div class="summary-box">
+            <h5><i class="fas fa-chart-pie"></i> Test Natijasi - Solishtirish</h5>
+            <div class="row">
+                <!-- New Hemis Summary -->
+                <div class="col-md-6">
+                    <div class="border rounded p-3" style="background: #f0fff4; border: 2px solid #51cf66;">
+                        <h6 class="text-center" style="color: #2b8a3e;">🆕 Yangi Hemis-Back</h6>
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3">
+                                <h4 id="newTotalTests">0/11</h4>
+                                <small>Bajarildi</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <h4 class="status-success" id="newSuccessCount">0</h4>
+                                <small>✓ OK</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <h4 class="status-error" id="newErrorCount">0</h4>
+                                <small>✗ Xato</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <h4 class="status-pending" id="newPendingCount">11</h4>
+                                <small>⏳ Kutish</small>
+                            </div>
+                        </div>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="newProgressBar" style="width: 0%; background-color: #51cf66;">0%</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Old Hemis Summary -->
+                <div class="col-md-6">
+                    <div class="border rounded p-3" style="background: #fff5f5; border: 2px solid #ff6b6b;">
+                        <h6 class="text-center" style="color: #c92a2a;">🏛️ Old-Hemis (CUBA)</h6>
+                        <div class="row text-center">
+                            <div class="col-6 col-md-3">
+                                <h4 id="oldTotalTests">0/11</h4>
+                                <small>Bajarildi</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <h4 class="status-success" id="oldSuccessCount">0</h4>
+                                <small>✓ OK</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <h4 class="status-error" id="oldErrorCount">0</h4>
+                                <small>✗ Xato</small>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <h4 class="status-pending" id="oldPendingCount">11</h4>
+                                <small>⏳ Kutish</small>
+                            </div>
+                        </div>
+                        <div class="progress mt-2" style="height: 20px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" id="oldProgressBar" style="width: 0%; background-color: #ff6b6b;">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Endpoints by Category -->
+        <div id="endpointsContainer"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Endpoint konfiguratsiyasi (01.Token + 02.Passport ma'lumotlari)
+        const endpoints = [
+            // ============================================
+            // 01.Token (3 endpoint)
+            // ============================================
+            {
+                id: 1,
+                category: "01.Token",
+                name: "Token olish (Password Grant)",
+                method: "POST",
+                url: "/app/rest/v2/oauth/token",  // Same URL for both (backward compatibility)
+                requiresAuth: false,
+                auth: "basic",
+                contentType: "multipart",
+                params: {},
+                body: {
+                    grant_type: "password",
+                    username: "{username}",
+                    password: "{password}"
+                },
+                description: "Username va password bilan OAuth2 token olish",
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 2,
+                category: "01.Token",
+                name: "Token yangilash (Refresh Grant)",
+                method: "POST",
+                url: "/app/rest/v2/oauth/token",  // Same URL for both
+                requiresAuth: false,
+                auth: "basic",
+                contentType: "multipart",
+                params: {},
+                body: {
+                    grant_type: "refresh_token",
+                    refresh_token: "{refresh_token}"
+                },
+                description: "Refresh token bilan yangi access token olish",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 3,
+                category: "01.Token",
+                name: "Foydalanuvchi ma'lumotlari",
+                method: "GET",
+                url: "/app/rest/v2/userInfo",  // ✅ Old-hemis URL (backward compatible)
+                requiresAuth: true,
+                params: {},
+                description: "Joriy authenticated user ma'lumotlari (old-hemis format)",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported (supports both URLs)
+            },
+            // ============================================
+            // 02.Passport ma'lumotlari (7 endpoint)
+            // ============================================
+            {
+                id: 4,
+                category: "02.Passport ma'lumotlari",
+                name: "getData (Passport asosiy ma'lumot)",
+                method: "GET",
+                url: "/app/rest/v2/services/pass/data",
+                requiresAuth: true,
+                params: {
+                    pinfl: "{pinfl}"
+                },
+                description: "PINFL orqali passport asosiy ma'lumotlarini olish",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 5,
+                category: "02.Passport ma'lumotlari",
+                name: "getRegistration (Ro'yxatga olish)",
+                method: "GET",
+                url: "/app/rest/v2/services/pass/registration",
+                requiresAuth: true,
+                params: {
+                    pinfl: "{pinfl}"
+                },
+                description: "Ro'yxatga olish ma'lumotlari",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 6,
+                category: "02.Passport ma'lumotlari",
+                name: "getDocument (Hujjat)",
+                method: "GET",
+                url: "/app/rest/v2/services/pass/document",
+                requiresAuth: true,
+                params: {
+                    pinfl: "{pinfl}"
+                },
+                description: "Passport hujjat ma'lumotlari",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 7,
+                category: "02.Passport ma'lumotlari",
+                name: "getBirth (Tug'ilish guvohnomasi)",
+                method: "GET",
+                url: "/app/rest/v2/services/pass/birth",
+                requiresAuth: true,
+                params: {
+                    pinfl: "{pinfl}"
+                },
+                description: "Tug'ilish guvohnomasi ma'lumotlari",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 8,
+                category: "02.Passport ma'lumotlari",
+                name: "getPhoto (Rasm)",
+                method: "GET",
+                url: "/app/rest/v2/services/pass/photo",
+                requiresAuth: true,
+                params: {
+                    pinfl: "{pinfl}"
+                },
+                description: "Passport rasmini olish (base64)",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 9,
+                category: "02.Passport ma'lumotlari",
+                name: "getCitizenship (Fuqarolik)",
+                method: "GET",
+                url: "/app/rest/v2/services/pass/citizenship",
+                requiresAuth: true,
+                params: {
+                    pinfl: "{pinfl}"
+                },
+                description: "Fuqarolik ma'lumotlari",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            {
+                id: 10,
+                category: "02.Passport ma'lumotlari",
+                name: "getAddress (Manzil)",
+                method: "GET",
+                url: "/app/rest/v2/services/pass/address",
+                requiresAuth: true,
+                params: {
+                    pinfl: "{pinfl}"
+                },
+                description: "PINFL orqali ro'yxatdan o'tgan manzil ma'lumotini olish",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported
+            },
+            // ============================================
+            // 03.Captcha (1 endpoint)
+            // ============================================
+            {
+                id: 11,
+                category: "03.Captcha",
+                name: "getNumericCaptcha (Raqamli captcha)",
+                method: "GET",
+                url: "/app/rest/v2/services/captcha/getNumericCaptcha",
+                requiresAuth: false,
+                params: {},
+                description: "5 xonali numeric captcha generatsiya qilish (PNG base64)",
+                ported: true  // ✅ Controller ported
+            }
+        ];
+
+        // Separate results for both systems
+        let newTestResults = {};
+        let oldTestResults = {};
+        let newAccessToken = null;
+        let newRefreshToken = null;
+        let oldAccessToken = null;
+        let oldRefreshToken = null;
+
+        // Render endpoints by category
+        function renderEndpoints() {
+            const container = document.getElementById('endpointsContainer');
+            container.innerHTML = '';
+
+            // Group by category
+            const categories = {};
+            endpoints.forEach(ep => {
+                if (!categories[ep.category]) {
+                    categories[ep.category] = [];
+                }
+                categories[ep.category].push(ep);
+            });
+
+            // Render each category
+            Object.keys(categories).sort().forEach((category, index) => {
+                const categoryId = `category-${index}`;
+
+                // Category header (clickable)
+                const categoryHeader = document.createElement('div');
+                categoryHeader.className = 'category-header';
+                categoryHeader.onclick = () => toggleCategory(categoryId);
+                categoryHeader.innerHTML = `
+                    <h3 class="category-title">
+                        <span>
+                            <i class="fas fa-layer-group"></i> ${category}
+                            <span class="badge bg-primary ms-2">${categories[category].length} endpoint</span>
+                        </span>
+                        <i class="fas fa-chevron-down category-toggle" id="toggle-${categoryId}"></i>
+                    </h3>
+                `;
+                container.appendChild(categoryHeader);
+
+                // Endpoints row (collapsible)
+                const row = document.createElement('div');
+                row.className = 'row category-content';
+                row.id = categoryId;
+
+                categories[category].forEach(ep => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-12';
+
+                    // Build params display
+                    let paramsHtml = '';
+                    if (ep.params && Object.keys(ep.params).length > 0) {
+                        paramsHtml = '<div class="detail-label">Query Params:</div>';
+                        paramsHtml += '<div class="request-box">';
+                        Object.entries(ep.params).forEach(([key, value]) => {
+                            paramsHtml += `<div><strong>${key}:</strong> ${value}</div>`;
+                        });
+                        paramsHtml += '</div>';
+                    }
+
+                    // Build body display
+                    let bodyHtml = '';
+                    if (ep.body && Object.keys(ep.body).length > 0) {
+                        bodyHtml = '<div class="detail-label">Request Body (form-data):</div>';
+                        bodyHtml += '<div class="request-box">';
+                        Object.entries(ep.body).forEach(([key, value]) => {
+                            bodyHtml += `<div><strong>${key}:</strong> ${value}</div>`;
+                        });
+                        bodyHtml += '</div>';
+                    }
+
+                    col.innerHTML = `
+                        <div class="card endpoint-card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge badge-${ep.method.toLowerCase()} badge-method">${ep.method}</span>
+                                        <strong>#${ep.id}</strong> ${ep.name}
+                                    </div>
+                                    <span id="status-${ep.id}" class="status-pending">
+                                        <i class="fas fa-clock"></i> Kutilmoqda
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-2"><i class="fas fa-info-circle"></i> ${ep.description}</p>
+                                <div class="mb-2">
+                                    <code>${ep.method} ${ep.url}</code>
+                                    ${ep.ported ? '<span class="badge bg-success ms-2">✅ PORTED</span>' : '<span class="badge bg-warning text-dark ms-2">⏳ NOT PORTED</span>'}
+                                </div>
+                                <p class="text-muted small mb-2">
+                                    🆕 New: <code>http://localhost:8081${ep.url}</code><br>
+                                    🏛️ Old: <code>http://localhost:8082${ep.url}</code>
+                                </p>
+
+                                <div class="mt-3">
+                                    <button class="btn btn-sm" style="background: linear-gradient(135deg, #2F80ED 0%, #2666BE 100%); color: white;" onclick="testSingle('new', ${ep.id})">
+                                        <i class="fas fa-play"></i> 🆕 Yangi Hemis
+                                    </button>
+                                    <button class="btn btn-sm" style="background: linear-gradient(135deg, #F2C94C 0%, #E6B800 100%); color: #333;" onclick="testSingle('old', ${ep.id})">
+                                        <i class="fas fa-play"></i> 🏛️ Old Hemis
+                                    </button>
+                                    <button class="btn btn-success btn-sm" onclick="testBoth(${ep.id})">
+                                        <i class="fas fa-exchange-alt"></i> Ikkalasini Ham Test
+                                    </button>
+                                    <button class="btn btn-info btn-sm" onclick="toggleDetails(${ep.id})">
+                                        <i class="fas fa-eye"></i> Request/Response
+                                    </button>
+                                </div>
+
+                                <div id="details-${ep.id}" class="detail-section" style="display: none;">
+                                    ${paramsHtml}
+                                    ${bodyHtml}
+
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <div class="detail-label" style="color: #2b8a3e;">🆕 Yangi Hemis Response:</div>
+                                            <div class="response-box" style="border-left: 4px solid #51cf66; background: #f0fff4;">
+                                                <pre id="new-response-${ep.id}">Hali test qilinmagan</pre>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="detail-label" style="color: #c92a2a;">🏛️ Old Hemis Response:</div>
+                                            <div class="response-box" style="border-left: 4px solid #ff6b6b; background: #fff5f5;">
+                                                <pre id="old-response-${ep.id}">Hali test qilinmagan</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="diff-${ep.id}" class="text-center mt-2 p-2 rounded" style="background: white;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    row.appendChild(col);
+                });
+
+                container.appendChild(row);
+            });
+        }
+
+        // Toggle category visibility (Swagger-style)
+        function toggleCategory(categoryId) {
+            const content = document.getElementById(categoryId);
+            const toggle = document.getElementById(`toggle-${categoryId}`);
+
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+
+        // Expand all categories
+        function expandAll() {
+            document.querySelectorAll('.category-content').forEach(content => {
+                content.classList.remove('collapsed');
+            });
+            document.querySelectorAll('.category-toggle').forEach(toggle => {
+                toggle.classList.remove('collapsed');
+            });
+        }
+
+        // Collapse all categories
+        function collapseAll() {
+            document.querySelectorAll('.category-content').forEach(content => {
+                content.classList.add('collapsed');
+            });
+            document.querySelectorAll('.category-toggle').forEach(toggle => {
+                toggle.classList.add('collapsed');
+            });
+        }
+
+        // Toggle details visibility
+        function toggleDetails(id) {
+            const detailsBox = document.getElementById(`details-${id}`);
+            detailsBox.style.display = detailsBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Test single endpoint on specific system
+        async function testSingle(system, id) {
+            const endpoint = endpoints.find(e => e.id === id);
+            if (!endpoint) return;
+
+            const results = system === 'new' ? newTestResults : oldTestResults;
+            const tokens = system === 'new'
+                ? { access: newAccessToken, refresh: newRefreshToken }
+                : { access: oldAccessToken, refresh: oldRefreshToken };
+
+            // Check dependency
+            if (endpoint.dependsOn && !results[endpoint.dependsOn]?.success) {
+                alert(`Avval #${endpoint.dependsOn} endpointni test qiling!`);
+                return;
+            }
+
+            updateStatus(id, 'pending', '<i class="fas fa-spinner fa-spin"></i> Test qilinmoqda...');
+
+            const baseUrl = document.getElementById(system + 'BaseUrl').value;
+            const username = document.getElementById(system + 'Username').value;
+            const password = document.getElementById(system + 'Password').value;
+            const pinfl = document.getElementById(system + 'Pinfl').value;
+
+            try {
+                // Same URL for both systems (backward compatibility)
+                let url = baseUrl + endpoint.url;
+
+                // Replace placeholders and add query params for GET
+                if (endpoint.method === 'GET' && endpoint.params) {
+                    const params = new URLSearchParams();
+                    Object.entries(endpoint.params).forEach(([key, value]) => {
+                        let val = value;
+                        if (value === '{pinfl}') val = pinfl;
+                        params.append(key, val);
+                    });
+                    url += '?' + params.toString();
+                }
+
+                const options = {
+                    method: endpoint.method,
+                    headers: {},
+                    mode: 'cors'  // CORS rejimi
+                };
+
+                // Basic Auth
+                if (endpoint.auth === 'basic') {
+                    const basicAuth = btoa('client:secret');
+                    options.headers['Authorization'] = `Basic ${basicAuth}`;
+                }
+
+                // Bearer Auth
+                if (endpoint.requiresAuth && tokens.access) {
+                    options.headers['Authorization'] = `Bearer ${tokens.access}`;
+                }
+
+                // Body for POST
+                if (endpoint.method === 'POST' && endpoint.body) {
+                    const formData = new FormData();
+                    Object.entries(endpoint.body).forEach(([key, value]) => {
+                        let val = value;
+                        if (value === '{username}') val = username;
+                        if (value === '{password}') val = password;
+                        if (value === '{refresh_token}') val = tokens.refresh || '';
+                        formData.append(key, val);
+                    });
+                    options.body = formData;
+                }
+
+                console.log(`[${system.toUpperCase()}] Testing ${endpoint.method} ${url}`);
+                console.log(`[${system.toUpperCase()}] Options:`, JSON.stringify(options, null, 2));
+
+                const startTime = Date.now();
+                const response = await fetch(url, options);
+                const endTime = Date.now();
+                const responseTime = endTime - startTime;
+
+                const contentType = response.headers.get('content-type');
+                let data;
+
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+
+                // Save tokens from endpoint #1
+                if (id === 1 && response.ok) {
+                    if (system === 'new') {
+                        newAccessToken = data.access_token;
+                        newRefreshToken = data.refresh_token;
+                    } else {
+                        oldAccessToken = data.access_token;
+                        oldRefreshToken = data.refresh_token;
+                    }
+                }
+
+                // Save refresh token from endpoint #2
+                if (id === 2 && response.ok) {
+                    if (system === 'new') {
+                        newAccessToken = data.access_token;
+                        newRefreshToken = data.refresh_token;
+                    } else {
+                        oldAccessToken = data.access_token;
+                        oldRefreshToken = data.refresh_token;
+                    }
+                }
+
+                // Store test result
+                results[id] = {
+                    success: response.ok,
+                    status: response.status,
+                    responseTime: responseTime,
+                    data: data
+                };
+
+                // Auto-show details after test
+                document.getElementById(`details-${id}`).style.display = 'block';
+
+                if (response.ok) {
+                    updateStatus(id, 'success', `<i class="fas fa-check-circle"></i> ${response.status} OK (${responseTime}ms)`);
+                } else {
+                    updateStatus(id, 'error', `<i class="fas fa-times-circle"></i> ${response.status} ${response.statusText}`);
+                }
+
+                // Display response
+                document.getElementById(`${system}-response-${id}`).textContent =
+                    JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                console.error(`[${system.toUpperCase()}] Error:`, error);
+
+                results[id] = {
+                    success: false,
+                    error: error.message
+                };
+
+                let errorMsg = error.message;
+                if (error.message === 'Failed to fetch') {
+                    errorMsg = 'CORS xatosi yoki server ishlamayapti. Iltimos:\n' +
+                               '1. Server ishga tushganini tekshiring\n' +
+                               '2. CORS headerlarini qo\'shing (WebSecurityConfig da)\n' +
+                               '3. URL to\'g\'riligini tekshiring';
+                }
+
+                updateStatus(id, 'error', `<i class="fas fa-exclamation-triangle"></i> Error: ${errorMsg.split('\n')[0]}`);
+
+                // Display error
+                const errorResponse = {
+                    error: errorMsg,
+                    details: error.stack,
+                    hint: error.message === 'Failed to fetch'
+                        ? 'Server CORS headerlarini qo\'shish kerak: Access-Control-Allow-Origin, Access-Control-Allow-Methods, Access-Control-Allow-Headers'
+                        : null
+                };
+                document.getElementById(`${system}-response-${id}`).textContent =
+                    JSON.stringify(errorResponse, null, 2);
+
+                // Auto-show details after error
+                document.getElementById(`details-${id}`).style.display = 'block';
+            }
+
+            updateSummary();
+        }
+
+        // Test both systems for single endpoint
+        async function testBoth(id) {
+            await testSingle('new', id);
+            await testSingle('old', id);
+            compareResponses(id);
+        }
+
+        // Decode JWT token (simple base64 decode)
+        function decodeJWT(token) {
+            try {
+                if (!token || typeof token !== 'string') return null;
+                const parts = token.split('.');
+                if (parts.length !== 3) return null;
+                const payload = JSON.parse(atob(parts[1]));
+                return payload;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Smart comparison - structure and semantics
+        function compareResponses(id) {
+            const newData = newTestResults[id]?.data;
+            const oldData = oldTestResults[id]?.data;
+
+            if (!newData || !oldData) return;
+
+            const diffEl = document.getElementById(`diff-${id}`);
+            const differences = [];
+            const warnings = [];
+
+            // 1. Compare field names
+            const newFields = Object.keys(newData).sort();
+            const oldFields = Object.keys(oldData).sort();
+
+            if (JSON.stringify(newFields) !== JSON.stringify(oldFields)) {
+                differences.push(`Field nomlari farq qiladi: New=[${newFields.join(', ')}], Old=[${oldFields.join(', ')}]`);
+            }
+
+            // 2. Compare field types
+            for (const key of newFields) {
+                if (oldData.hasOwnProperty(key)) {
+                    const newType = typeof newData[key];
+                    const oldType = typeof oldData[key];
+                    if (newType !== oldType) {
+                        differences.push(`${key}: type farqi (New: ${newType}, Old: ${oldType})`);
+                    }
+                }
+            }
+
+            // 3. Special handling for OAuth tokens (endpoint #1, #2)
+            if (id === 1 || id === 2) {
+                // Token structure comparison
+                const requiredFields = ['access_token', 'token_type', 'refresh_token', 'expires_in', 'scope'];
+                const missingFields = requiredFields.filter(f => !newData[f] || !oldData[f]);
+
+                if (missingFields.length > 0) {
+                    differences.push(`Kerakli fieldlar yo'q: ${missingFields.join(', ')}`);
+                }
+
+                // JWT token validation
+                const newJWT = decodeJWT(newData.access_token);
+                const oldJWT = decodeJWT(oldData.access_token);
+
+                if (newJWT && oldJWT) {
+                    // Both are JWT - compare claims
+                    if (newJWT.username !== oldJWT.username) {
+                        differences.push(`username farqi: ${newJWT.username} vs ${oldJWT.username}`);
+                    }
+                    if (newJWT.scope !== oldJWT.scope) {
+                        differences.push(`scope farqi: ${newJWT.scope} vs ${oldJWT.scope}`);
+                    }
+                } else if (newJWT && !oldJWT) {
+                    // New is JWT, Old is random string - this is OK!
+                    warnings.push('Yangi: JWT format, Eski: Random string (backward compatible ✅)');
+                }
+
+                // token_type and scope should match
+                if (newData.token_type !== oldData.token_type) {
+                    differences.push(`token_type farqi: ${newData.token_type} vs ${oldData.token_type}`);
+                }
+                if (newData.scope !== oldData.scope) {
+                    differences.push(`scope farqi: ${newData.scope} vs ${oldData.scope}`);
+                }
+            }
+
+            // 4. For other endpoints - just check structure
+            // (values can differ, but structure should match)
+
+            // Display results
+            if (differences.length === 0) {
+                let html = '<span class="status-success"><i class="fas fa-check-circle"></i> ✅ Response structure bir xil!</span>';
+                if (warnings.length > 0) {
+                    html += '<div class="mt-2 small" style="color: #666;">' + warnings.map(w => `• ${w}`).join('<br>') + '</div>';
+                }
+                diffEl.innerHTML = html;
+                diffEl.style.background = '#d4edda';
+            } else {
+                let html = '<span class="status-error"><i class="fas fa-exclamation-triangle"></i> ⚠️ Farqlar topildi:</span>';
+                html += '<div class="mt-2 small">' + differences.map(d => `• ${d}`).join('<br>') + '</div>';
+                if (warnings.length > 0) {
+                    html += '<div class="mt-2 small" style="color: #666;">' + warnings.map(w => `• ${w}`).join('<br>') + '</div>';
+                }
+                diffEl.innerHTML = html;
+                diffEl.style.background = '#fff3cd';
+            }
+        }
+
+        // Update status
+        function updateStatus(id, type, text) {
+            const statusEl = document.getElementById(`status-${id}`);
+            statusEl.className = `status-${type}`;
+            statusEl.innerHTML = text;
+        }
+
+        // Test all endpoints on both systems
+        async function testAllBoth() {
+            // Expand all categories first
+            expandAll();
+
+            // Test each endpoint sequentially on both systems
+            for (const endpoint of endpoints) {
+                await testBoth(endpoint.id);
+                await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+            }
+        }
+
+        // Reset all
+        function resetAll() {
+            newTestResults = {};
+            oldTestResults = {};
+            newAccessToken = null;
+            newRefreshToken = null;
+            oldAccessToken = null;
+            oldRefreshToken = null;
+
+            endpoints.forEach(ep => {
+                updateStatus(ep.id, 'pending', '<i class="fas fa-clock"></i> Kutilmoqda');
+                document.getElementById(`new-response-${ep.id}`).textContent = 'Hali test qilinmagan';
+                document.getElementById(`old-response-${ep.id}`).textContent = 'Hali test qilinmagan';
+                document.getElementById(`diff-${ep.id}`).innerHTML = '';
+                document.getElementById(`details-${ep.id}`).style.display = 'none';
+            });
+
+            updateSummary();
+        }
+
+        // Update summary for both systems
+        function updateSummary() {
+            // New Hemis stats
+            const newTotal = Object.keys(newTestResults).length;
+            const newSuccess = Object.values(newTestResults).filter(r => r.success).length;
+            const newError = Object.values(newTestResults).filter(r => !r.success).length;
+            const newPending = 11 - newTotal;
+
+            document.getElementById('newTotalTests').textContent = `${newTotal}/11`;
+            document.getElementById('newSuccessCount').textContent = newSuccess;
+            document.getElementById('newErrorCount').textContent = newError;
+            document.getElementById('newPendingCount').textContent = newPending;
+
+            const newPercentage = (newTotal / 11) * 100;
+            const newProgressBar = document.getElementById('newProgressBar');
+            newProgressBar.style.width = newPercentage + '%';
+            newProgressBar.textContent = Math.round(newPercentage) + '%';
+
+            if (newPercentage === 100) {
+                newProgressBar.classList.remove('progress-bar-animated');
+                if (newSuccess === 11) {
+                    newProgressBar.style.backgroundColor = '#2b8a3e'; // Dark green for success
+                } else {
+                    newProgressBar.style.backgroundColor = '#c92a2a'; // Dark red for errors
+                }
+            }
+
+            // Old Hemis stats
+            const oldTotal = Object.keys(oldTestResults).length;
+            const oldSuccess = Object.values(oldTestResults).filter(r => r.success).length;
+            const oldError = Object.values(oldTestResults).filter(r => !r.success).length;
+            const oldPending = 11 - oldTotal;
+
+            document.getElementById('oldTotalTests').textContent = `${oldTotal}/11`;
+            document.getElementById('oldSuccessCount').textContent = oldSuccess;
+            document.getElementById('oldErrorCount').textContent = oldError;
+            document.getElementById('oldPendingCount').textContent = oldPending;
+
+            const oldPercentage = (oldTotal / 11) * 100;
+            const oldProgressBar = document.getElementById('oldProgressBar');
+            oldProgressBar.style.width = oldPercentage + '%';
+            oldProgressBar.textContent = Math.round(oldPercentage) + '%';
+
+            if (oldPercentage === 100) {
+                oldProgressBar.classList.remove('progress-bar-animated');
+                if (oldSuccess === 11) {
+                    oldProgressBar.style.backgroundColor = '#2b8a3e'; // Dark green for success
+                } else {
+                    oldProgressBar.style.backgroundColor = '#c92a2a'; // Dark red for errors
+                }
+            }
+        }
+
+        // Check for file:// protocol and show warning
+        function checkProtocol() {
+            if (window.location.protocol === 'file:') {
+                document.getElementById('corsWarning').classList.remove('d-none');
+                console.warn('⚠️ CORS Warning: File opened via file:// protocol. Use HTTP server instead!');
+            } else if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+                // Show success info for HTTP hosting
+                if (window.location.port === '8081' || window.location.hostname === 'localhost') {
+                    document.getElementById('successInfo').classList.remove('d-none');
+                    console.log('✅ Same-origin mode: CORS not required for new Hemis!');
+                }
+
+                // Show server warning if Python HTTP server
+                if (window.location.port === '9000') {
+                    document.getElementById('serverWarning').classList.remove('d-none');
+                    console.warn('⚠️ Running on Python HTTP server - make sure API servers are running!');
+                }
+            }
+        }
+
+        // Auto-detect Base URLs from browser location
+        function autoDetectBaseUrls() {
+            const currentOrigin = window.location.origin; // e.g., http://localhost:8081
+            const currentPort = window.location.port;
+
+            // Determine Base URLs
+            let newBaseUrl = 'http://localhost:8081';
+            let oldBaseUrl = 'http://localhost:8082';
+
+            // If running on port 8081 (same-origin with new hemis)
+            if (currentPort === '8081') {
+                newBaseUrl = currentOrigin; // Use same origin (no CORS)
+                oldBaseUrl = 'http://localhost:8082';
+            }
+            // If running on port 8082 (same-origin with old hemis)
+            else if (currentPort === '8082') {
+                newBaseUrl = 'http://localhost:8081';
+                oldBaseUrl = currentOrigin; // Use same origin (no CORS)
+            }
+            // If running on other port (e.g., 9000 - Python HTTP server)
+            else {
+                newBaseUrl = 'http://localhost:8081';
+                oldBaseUrl = 'http://localhost:8082';
+            }
+
+            // Set the input values
+            document.getElementById('newBaseUrl').value = newBaseUrl;
+            document.getElementById('oldBaseUrl').value = oldBaseUrl;
+
+            console.log(`🔗 Auto-detected URLs: New=${newBaseUrl}, Old=${oldBaseUrl}`);
+        }
+
+        // Initialize
+        autoDetectBaseUrls();
+        checkProtocol();
+        renderEndpoints();
+        updateSummary();
+    </script>
+</body>
+</html>

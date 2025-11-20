@@ -722,7 +722,7 @@ class StudentServiceImplTest {
 ☑ @RequestBody with schema on POST/PUT endpoints
 ☑ @Schema with example values on DTOs
 ☑ @ExampleObject with real JSON examples
-☑ Tested endpoint in Swagger UI (http://localhost:8080/api/swagger-ui.html)
+☑ Tested endpoint in Swagger UI (http://localhost:8081/api/swagger-ui.html)
 ☑ Verified response structure matches documentation
 ☑ All error scenarios documented
 ```
@@ -927,7 +927,7 @@ void findByFacultyId_WhenFacultyNotExists_ThrowsException() {
 ### Step 5: Test in Swagger UI
 
 1. Start application: `./gradlew :app:bootRun`
-2. Open: http://localhost:8080/api/swagger-ui.html
+2. Open: http://localhost:8081/api/swagger-ui.html
 3. Find: `GET /api/v1/web/students/faculty/{facultyId}`
 4. Click "Try it out"
 5. Enter facultyId: 1

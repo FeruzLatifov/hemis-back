@@ -66,6 +66,7 @@ public class TranslationAdminService {
     private final I18nService i18nService;
     private final TranslationCacheEventPublisher eventPublisher;
     private final SystemMessageMapper messageMapper;
+    private final uz.hemis.service.config.LanguageProperties languageProperties;
 
     // =====================================================
     // View & Update Operations (No Create/Delete)
@@ -339,7 +340,7 @@ public class TranslationAdminService {
         stats.put("inactiveMessages", totalMessages - activeMessages);
         stats.put("totalTranslations", totalTranslations);
         stats.put("categoryBreakdown", categoryCounts);
-        stats.put("languages", List.of("uz-UZ", "oz-UZ", "ru-RU", "en-US"));
+        stats.put("languages", languageProperties.getSupported()); // ✅ From config
 
         return stats;
     }

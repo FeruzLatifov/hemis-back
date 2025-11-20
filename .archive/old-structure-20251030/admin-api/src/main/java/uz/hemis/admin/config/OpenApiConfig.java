@@ -23,9 +23,9 @@ import java.util.List;
  * - Integration API: /app/rest/v2/integration/** (OAuth2)
  *
  * Access:
- * - Swagger UI: http://localhost:8080/swagger-ui.html
- * - OpenAPI JSON: http://localhost:8080/v3/api-docs
- * - OpenAPI YAML: http://localhost:8080/v3/api-docs.yaml
+ * - Swagger UI: http://localhost:8081/swagger-ui.html
+ * - OpenAPI JSON: http://localhost:8081/v3/api-docs
+ * - OpenAPI YAML: http://localhost:8081/v3/api-docs.yaml
  */
 @Configuration
 public class OpenApiConfig {
@@ -141,7 +141,7 @@ public class OpenApiConfig {
     private List<Server> apiServers() {
         return List.of(
                 new Server()
-                        .url("http://localhost:8080")
+                        .url("http://localhost:8081")
                         .description("Local Development"),
                 new Server()
                         .url("https://hemis.uz")

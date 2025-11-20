@@ -38,7 +38,7 @@ import java.util.Map;
  *
  * @since 2.0.0
  */
-@Tag(name = "04. External Integration APIs - BIMM", description = "Integration with Unified Social Information Center for social benefits verification")
+@Tag(name = "External Integration APIs - BIMM", description = "Integration with Unified Social Information Center for social benefits verification")
 @RestController
 @RequestMapping("/app/rest/v2/services/bimm")
 @RequiredArgsConstructor

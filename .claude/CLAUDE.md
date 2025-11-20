@@ -138,15 +138,72 @@ tables or columns without renaming or deleting existing structures.  Migrations 
 reversible.  Refer to the original system (`old-hemis.zip`) and the exported API definitions
 (`hemis_backend.json`) when uncertain about legacy behaviour.
 
+## ⚠️ CRITICAL: "Porting" vs "Migration"
+
+### 1️⃣ ENDPOINT PORTING (Controller Porting)
+**What:** Porting REST endpoints from old-hemis to api-legacy module
+**Triggers:** `PORT: GET /services/tax/rent` or URL pattern (`/services/*`, `/app/rest/*`)
+**Files:** old_hemis.json, rest-services.xml, Controller.java
+**Output:** Java controller + Swagger + Tests
+**Keywords:** "PORT", "endpoint", "controller", "REST API"
+
+### 2️⃣ DATABASE MIGRATION (Liquibase)
+**What:** Database schema changes using Liquibase changesets
+**Triggers:** "database", "schema", "table", "column", "changeset", "liquibase", "ALTER", "CREATE"
+**Files:** `V*.sql`, `db.changelog-master.yaml`
+**Output:** SQL changeset + Rollback script
+**Keywords:** "MIGRATE", "migration", "schema", "table", "column"
+
+**These are COMPLETELY DIFFERENT!** Do not confuse them.
+
+---
+
+## Legacy Endpoint Porting (Controller Porting)
+
+**IMPORTANT:** Endpoint Porting is triggered ONLY when user provides endpoint URL:
+
+### Porting Triggers:
+1. **`PORT: GET /services/tax/rent`** ← Explicit endpoint porting (RECOMMENDED)
+2. **`GET /app/rest/v2/services/tax/rent`** ← URL pattern match (`/services/*` or `/app/rest/*`)
+3. **`PORT:` + multiple URLs** ← Batch endpoint porting
+
+**Do NOT trigger endpoint porting for:**
+- Regular development questions
+- Code reviews
+- Database schema changes (use "migrate" keyword for Liquibase!)
+- General questions about architecture
+
+---
+
+When endpoint porting is triggered, Claude Code automatically:
+1. Extracts metadata from `old_hemis.json` (tag, name, description)
+2. Reads parameters from `rest-services.xml`
+3. Checks for duplicates (skips if already ported)
+4. Generates controller with Swagger docs (Uzbek language)
+5. Adds 3-button test interface to `endpoint_tester.html` (new/old/compare)
+6. Creates porting report
+
+**For complete endpoint porting workflow, see:** `@ENDPOINT_PORTING_GUIDE.md`
+
+**Quick examples:**
+- Existing endpoint: `PORT: GET /services/tax/rent` → Auto-detects tag from old_hemis.json
+- New endpoint: `PORT: GET /services/attendance/check` + `TAG: 09.Davomat` → Creates new category
+- Batch porting: `PORT:` + multiple URLs (one per line) → Processes sequentially
+
+---
+
 ## Further Reading
 
 This file provides a high‑level summary.  For more details consult:
 
+- **Legacy Endpoint Porting:** `@ENDPOINT_PORTING_GUIDE.md` ← **User endpoint porting workflow** (PORT: GET /services/...)
+- **Database Migration (Liquibase):** `@LIQUIBASE_GUIDE.md` ← **Schema changes** (ALTER TABLE, CREATE TABLE)
 - Detailed architecture and business context: `@context.md`
 - Complete coding standards: `@rules.md`
 - Swagger documentation guide: `@SWAGGER_GUIDE.md`
 - Testing guide: `@TESTING_GUIDE.md`
-- Database migration guide: `@LIQUIBASE_GUIDE.md`
 - System architecture diagrams: `@architecture.md`
+
+**Note:** "Porting" = copying endpoints from old-hemis; "Migration" = database schema changes (Liquibase)
 
 Referencing these files using the `@` syntax allows Claude Code to import them on demand【296851436055028†L92-L111】.

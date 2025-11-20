@@ -113,6 +113,6 @@ public interface SecUserRepository extends JpaRepository<SecUser, UUID> {
     // hemis-back is READ-ONLY for authentication purposes
     //
     // If you need to create/update users, use old-hemis admin UI:
-    // http://localhost:8080/app/#main/sec$User.browse
+    // http://localhost:8081/app/#main/sec$User.browse
     // =====================================================
 }

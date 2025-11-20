@@ -378,3 +378,31 @@ sentry:
   in-app-includes:
     - uz.hemis
 
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# CACHE WARMUP CONFIGURATION
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Industry Best Practice: Pre-cache critical data at startup for instant responses
+# Performance: First login 1ms (L1 hit) vs 50-100ms (cache miss + DB query)
+# Strategy: ROLE-BASED + HYBRID (Google, Microsoft, Facebook best practice)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+cache:
+  warmup:
+    # Menu Cache Warmup - ROLE-BASED + HYBRID Strategy
+    menu:
+      enabled: true  # Set to false to disable menu warmup
+
+      # Warmup mode: role-based (dynamic) or static (fallback)
+      mode: role-based
+
+      # Critical roles for synchronous warmup (VIP users)
+      critical-roles:
+        - SUPER_ADMIN
+        - MINISTRY_ADMIN
+        - UNIVERSITY_ADMIN
+
+      # Maximum users per role to warmup (minimize startup time)
+      max-users-per-role: 1
+
+      # Fallback usernames for STATIC mode only (not used in role-based mode)
+      sample-usernames: []

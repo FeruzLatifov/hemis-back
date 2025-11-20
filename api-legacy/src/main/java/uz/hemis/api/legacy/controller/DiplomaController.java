@@ -49,7 +49,7 @@ import java.util.UUID;
  *
  * @since 1.0.0
  */
-@Tag(name = "03. Modern Web APIs - Diplomas", description = "RESTful endpoints for diploma issuance, verification and management")
+@Tag(name = "Modern Web APIs - Diplomas", description = "RESTful endpoints for diploma issuance, verification and management")
 @RestController
 @RequestMapping("/app/rest/v2/diplomas")
 @RequiredArgsConstructor

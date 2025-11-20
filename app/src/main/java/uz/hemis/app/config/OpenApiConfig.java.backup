@@ -101,7 +101,7 @@ public class OpenApiConfig {
                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                 // Servers (local/dev/prod)
                 .servers(List.of(
-                        new Server().url("http://localhost:8080").description("Local"),
+                        new Server().url("http://localhost:8082").description("Local"),
                         new Server().url("https://dev.hemis.uz").description("Dev"),
                         new Server().url("https://api.hemis.uz").description("Prod")
                 ));

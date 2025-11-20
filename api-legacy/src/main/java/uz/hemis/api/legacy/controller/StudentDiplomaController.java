@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_EStudentDiploma           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_EStudentDiploma           - Create new
  */
-@Tag(name = "01. Legacy Entity APIs - Diplomas", description = "CUBA-compatible CRUD operations for student diploma entity (hemishe_EStudentDiploma)")
+@Tag(name = "Legacy Entity APIs - Diplomas", description = "CUBA-compatible CRUD operations for student diploma entity (hemishe_EStudentDiploma)")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EStudentDiploma")
 @RequiredArgsConstructor

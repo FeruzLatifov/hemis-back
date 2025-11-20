@@ -183,8 +183,8 @@ EOF
 ./gradlew clean :app:bootRun
 ```
 
-**Backend:** http://localhost:8080
-**Swagger UI:** http://localhost:8080/api/swagger-ui.html
+**Backend:** http://localhost:8082
+**Swagger UI:** http://localhost:8082/api/swagger-ui.html
 
 ### Initial Login
 
@@ -245,8 +245,8 @@ SPRING_PROFILES_ACTIVE=replica ./gradlew :app:bootRun
 
 Application ishga tushgandan keyin:
 
-**Swagger UI:** http://localhost:8080/api/swagger-ui.html
-**OpenAPI JSON:** http://localhost:8080/api/v3/api-docs
+**Swagger UI:** http://localhost:8082/api/swagger-ui.html
+**OpenAPI JSON:** http://localhost:8082/api/v3/api-docs
 
 ### API Endpoints
 
@@ -358,13 +358,13 @@ Application ishga tushgandan keyin:
 
 ```bash
 # Health check
-curl http://localhost:8080/api/actuator/health
+curl http://localhost:8082/api/actuator/health
 
 # Metrics
-curl http://localhost:8080/api/actuator/metrics
+curl http://localhost:8082/api/actuator/metrics
 
 # Database migration status
-curl http://localhost:8080/api/actuator/liquibase
+curl http://localhost:8082/api/actuator/liquibase
 ```
 
 ### Logging

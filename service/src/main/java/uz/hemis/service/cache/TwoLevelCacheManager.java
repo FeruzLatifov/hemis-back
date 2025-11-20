@@ -56,13 +56,15 @@ public class TwoLevelCacheManager implements CacheManager {
      * <p>Optimized based on data volume and access patterns:</p>
      * <ul>
      *   <li><strong>i18n:</strong> 5000 entries - High volume (4 langs × 1000+ keys)</li>
+     *   <li><strong>i18n-scope:</strong> 2000 entries - Scope-based i18n (4 langs × scopes)</li>
      *   <li><strong>menu:</strong> 1000 entries - Medium volume (users × locales)</li>
      *   <li><strong>userPermissions:</strong> 1000 entries - Medium volume</li>
      *   <li><strong>stats:</strong> 100 entries - Low volume (aggregated data)</li>
      * </ul>
      */
     private static final Map<String, Long> CACHE_MAX_SIZES = Map.of(
-        "i18n", 5000L,              // Translation cache - High volume
+        "i18n", 5000L,              // Translation cache - High volume (full translations)
+        "i18n-scope", 2000L,        // Scope-based translations - Progressive loading
         "menu", 1000L,              // User menu cache
         "userPermissions", 1000L,   // User permissions cache
         "stats", 100L,              // Dashboard statistics
@@ -78,7 +80,8 @@ public class TwoLevelCacheManager implements CacheManager {
 
         log.info("🚀 TwoLevelCacheManager initialized with per-cache size optimization");
         log.info("   L1 (Caffeine) sizes:");
-        log.info("      - i18n: 5000 entries (translations)");
+        log.info("      - i18n: 5000 entries (full translations)");
+        log.info("      - i18n-scope: 2000 entries (scope-based progressive loading)");
         log.info("      - menu: 1000 entries (user menus)");
         log.info("      - userPermissions: 1000 entries");
         log.info("      - stats: 100 entries (aggregated)");

@@ -185,14 +185,14 @@ hemis:
 # Master Database:
 # DB_MASTER_HOST=master-db-server
 # DB_MASTER_PORT=5432
-# DB_MASTER_NAME=hemis4
+# DB_MASTER_NAME=test1_hemis
 # DB_MASTER_USERNAME=hemis_app
 # DB_MASTER_PASSWORD=<secure-password>
 #
 # Replica Database:
 # DB_REPLICA_HOST=replica-db-server
 # DB_REPLICA_PORT=5432
-# DB_REPLICA_NAME=hemis4
+# DB_REPLICA_NAME=test1_hemis
 # DB_REPLICA_USERNAME=hemis_readonly
 # DB_REPLICA_PASSWORD=<secure-password>
 #

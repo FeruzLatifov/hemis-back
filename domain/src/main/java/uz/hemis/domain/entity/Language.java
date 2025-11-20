@@ -10,7 +10,7 @@ import org.hibernate.annotations.Where;
  * <p><strong>Purpose:</strong></p>
  * <ul>
  *   <li>Manage available languages in the system</li>
- *   <li>Support 9 languages with active/inactive toggle</li>
+ *   <li>Support multiple languages with active/inactive toggle</li>
  *   <li>Provide display names in multiple languages (JSONB translations)</li>
  * </ul>
  *
@@ -22,18 +22,30 @@ import org.hibernate.annotations.Where;
  *   <li>Code field as unique identifier (uz-UZ, ru-RU, etc.)</li>
  * </ul>
  *
- * <p><strong>Supported Languages:</strong></p>
+ * <p><strong>Currently Active Languages (4):</strong></p>
  * <ul>
- *   <li>uz-UZ - O'zbekcha (Lotin)</li>
- *   <li>oz-UZ - Ўзбекча (Kirill)</li>
- *   <li>ru-RU - Русский</li>
- *   <li>en-US - English</li>
- *   <li>kk-UZ - Қарақалпақша</li>
- *   <li>tg-TG - Тоҷикӣ</li>
- *   <li>kz-KZ - Қазақша</li>
- *   <li>tm-TM - Türkmençe</li>
- *   <li>kg-KG - Кыргызча</li>
+ *   <li>✅ uz-UZ - O'zbekcha (Lotin) - Primary language</li>
+ *   <li>✅ oz-UZ - Ўзбекча (Kirill)</li>
+ *   <li>✅ ru-RU - Русский</li>
+ *   <li>✅ en-US - English</li>
  * </ul>
+ *
+ * <p><strong>Planned Languages (5 - Future Support):</strong></p>
+ * <ul>
+ *   <li>⏳ kk-UZ - Қарақалпақша (Karakalpak)</li>
+ *   <li>⏳ tg-TG - Тоҷикӣ (Tajik)</li>
+ *   <li>⏳ kz-KZ - Қазақша (Kazakh)</li>
+ *   <li>⏳ tm-TM - Türkmençe (Turkmen)</li>
+ *   <li>⏳ kg-KG - Кыргызча (Kyrgyz)</li>
+ * </ul>
+ *
+ * <p><strong>Adding New Languages:</strong></p>
+ * <ol>
+ *   <li>Insert language record in languages table</li>
+ *   <li>Add translations to i18n_messages table</li>
+ *   <li>Update app.languages.supported in application.yml</li>
+ *   <li>Restart application</li>
+ * </ol>
  *
  * <p><strong>Usage:</strong></p>
  * <pre>

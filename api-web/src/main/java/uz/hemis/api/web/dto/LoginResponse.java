@@ -48,5 +48,18 @@ public class LoginResponse {
         minimum = "1"
     )
     private Long expiresIn;
+
+    // ✅ Error fields (OAuth2 standard for error responses)
+    @Schema(
+        description = "Error code (OAuth2 standard: invalid_grant, too_many_requests, etc.)",
+        example = "too_many_requests"
+    )
+    private String error;
+
+    @Schema(
+        description = "Human-readable error description",
+        example = "Too many login attempts. Please try again in 10 minutes."
+    )
+    private String errorDescription;
 }
 

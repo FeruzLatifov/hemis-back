@@ -28,6 +28,9 @@ dependencies {
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    // Spring Security (for SecurityContextHolder in audit trail)
+    implementation("org.springframework.security:spring-security-core")
+
     // Swagger/OpenAPI annotations for DTOs
     compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:2.2.0")
 

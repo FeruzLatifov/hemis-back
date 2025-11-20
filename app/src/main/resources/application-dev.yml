@@ -42,6 +42,20 @@ spring:
         use_sql_comments: true
 
   # =====================================================
+  # Development Security Configuration
+  # =====================================================
+  # Cookie settings for localhost HTTP testing
+  # =====================================================
+
+# Application-specific settings
+app:
+  security:
+    cookie:
+      secure: false  # ✅ localhost HTTP uchun (setSecure: false)
+      same-site: Lax
+      domain: localhost
+
+  # =====================================================
   # Development Liquibase Configuration
   # =====================================================
   # ✅ AUTOMATIC MIGRATIONS (Best Practice for Development)
@@ -94,18 +108,39 @@ spring:
       use-key-prefix: true
       key-prefix: "hemis:"
 
+# =====================================================
+# Cache Warmup Configuration - OPTIMIZATION
+# =====================================================
+# ✅ LAZY LOADING STRATEGY (Industry Best Practice)
+# Login → Cache Miss (50-100ms, acceptable!)
+# Subsequent → Cache Hit (<1ms)
+# =====================================================
+cache:
+  warmup:
+    menu:
+      enabled: false  # ✅ DISABLED: Lazy loading strategy (46s → 5s startup!)
+      mode: role-based
+      critical-roles:
+        - SUPER_ADMIN
+      max-users-per-role: 0  # No warmup
+
   # =====================================================
-  # DevTools
+  # DevTools (COMPLETELY DISABLED - Prevents restart loops)
+  # =====================================================
+  # ⚠️ DevTools completely disabled to prevent restart loops
+  # Manual restart: Ctrl+C and re-run ./gradlew :app:bootRun
   # =====================================================
 
   devtools:
     restart:
-      enabled: true
+      enabled: false  # ✅ FIX: Disabled to prevent restart loops
       additional-paths:
         - src/main/java
 
     livereload:
-      enabled: true
+      enabled: false  # ✅ Disabled for stability
+
+    add-properties: false  # ✅ CRITICAL: Prevents DevTools property defaults
 
 # =====================================================
 # Server Configuration (Development)

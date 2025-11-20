@@ -36,7 +36,7 @@ import java.util.Map;
  *
  * @since 2.0.0
  */
-@Tag(name = "02. Passport ma'lumotlari", description = "GUVD passport ma'lumotlarini olish va tekshirish xizmatlari")
+@Tag(name = "02.Passport ma'lumotlari", description = "GUVD passport ma'lumotlarini olish va tekshirish xizmatlari")
 @RestController
 @RequestMapping("/app/rest/v2/services")
 @RequiredArgsConstructor
@@ -61,10 +61,10 @@ public class PassportServiceController {
     )
     @GetMapping("/passport-data/getData")
     public ResponseEntity<Map<String, Object>> getPassportData(
-        @Parameter(description = "PINFL (14 raqam)", required = true, example = "31503776560016")
+        @Parameter(description = "PINFL (14 raqam)", required = true, example = "12345678901234")
         @RequestParam String pinfl,
-        
-        @Parameter(description = "Passport berilgan sana (yyyy-MM-dd)", example = "2015-05-15")
+
+        @Parameter(description = "Passport berilgan sana (yyyy-MM-dd)", example = "2020-01-01")
         @RequestParam(required = false) String givenDate
     ) {
         log.info("GET /app/rest/v2/services/passport-data/getData - pinfl: {}, givenDate: {}", pinfl, givenDate);
@@ -88,10 +88,10 @@ public class PassportServiceController {
     )
     @GetMapping("/passport-data/getDataBySN")
     public ResponseEntity<Map<String, Object>> getPassportDataBySerialNumber(
-        @Parameter(description = "PINFL", required = true, example = "31503776560016")
+        @Parameter(description = "PINFL", required = true, example = "12345678901234")
         @RequestParam String pinfl,
-        
-        @Parameter(description = "Passport seria va raqami", required = true, example = "AA1234567")
+
+        @Parameter(description = "Passport seria va raqami", required = true, example = "AB1234567")
         @RequestParam String seriaNumber,
         
         @Parameter(description = "Captcha ID", required = false)
@@ -122,10 +122,10 @@ public class PassportServiceController {
     )
     @GetMapping("/passport-data/getDataBySNBirthdate")
     public ResponseEntity<Map<String, Object>> getPassportDataBySerialAndBirthdate(
-        @Parameter(description = "Passport seria va raqami", required = true, example = "AA1234567")
+        @Parameter(description = "Passport seria va raqami", required = true, example = "AB1234567")
         @RequestParam String seriaNumber,
-        
-        @Parameter(description = "Tug'ilgan sana (yyyy-MM-dd)", required = true, example = "1976-03-15")
+
+        @Parameter(description = "Tug'ilgan sana (yyyy-MM-dd)", required = true, example = "1990-01-01")
         @RequestParam String birthdate,
         
         @Parameter(description = "Captcha ID", required = false)
@@ -157,10 +157,10 @@ public class PassportServiceController {
     )
     @GetMapping("/passport-data/getDataByPinflBirthdate")
     public ResponseEntity<Map<String, Object>> getPassportDataByPinflAndBirthdate(
-        @Parameter(description = "PINFL", required = true, example = "31503776560016")
+        @Parameter(description = "PINFL", required = true, example = "12345678901234")
         @RequestParam String pinfl,
-        
-        @Parameter(description = "Tug'ilgan sana (yyyy-MM-dd)", required = true, example = "1976-03-15")
+
+        @Parameter(description = "Tug'ilgan sana (yyyy-MM-dd)", required = true, example = "1990-01-01")
         @RequestParam String birthdate,
         
         @Parameter(description = "Captcha ID", required = false)
@@ -189,39 +189,11 @@ public class PassportServiceController {
     )
     @GetMapping("/passport-data/getAddress")
     public ResponseEntity<Map<String, Object>> getAddress(
-        @Parameter(description = "PINFL", required = true, example = "31503776560016")
+        @Parameter(description = "PINFL", required = true, example = "12345678901234")
         @RequestParam String pinfl
     ) {
         log.info("GET /app/rest/v2/services/passport-data/getAddress - pinfl: {}", pinfl);
         return ResponseEntity.ok(passportIntegrationService.getAddress(pinfl));
     }
 
-    /**
-     * Get passport data (legacy endpoint)
-     *
-     * <p><strong>Endpoint:</strong> GET /services/personal-data/getData</p>
-     * <p><strong>Status:</strong> DEPRECATED - use /passport-data/getData instead</p>
-     *
-     * @param pinfl Person PINFL
-     * @param serial Passport serial (deprecated parameter)
-     * @return Passport information
-     */
-    @Deprecated
-    @Operation(
-        summary = "Passport ma'lumotlarini olish (eski)",
-        description = "Legacy endpoint - /passport-data/getData dan foydalaning",
-        deprecated = true
-    )
-    @GetMapping("/personal-data/getData")
-    public ResponseEntity<Map<String, Object>> getPersonalData(
-        @Parameter(description = "PINFL", required = true, example = "31503776560016")
-        @RequestParam String pinfl,
-        
-        @Parameter(description = "Serial (deprecated)", required = false)
-        @RequestParam(required = false) String serial
-    ) {
-        log.warn("DEPRECATED: GET /app/rest/v2/services/personal-data/getData - pinfl: {}", pinfl);
-        // Delegate to new endpoint
-        return ResponseEntity.ok(passportIntegrationService.getPassportDataByPinfl(pinfl, null));
-    }
 }

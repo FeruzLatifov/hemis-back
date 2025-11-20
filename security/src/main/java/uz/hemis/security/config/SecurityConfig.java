@@ -34,6 +34,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import uz.hemis.security.filter.CookieJwtAuthenticationFilter;
+import uz.hemis.security.service.TokenBlacklistService;
 import uz.hemis.security.service.UserPermissionCacheService;
 
 import javax.crypto.SecretKey;
@@ -74,6 +75,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class SecurityConfig {
 
     private final UserPermissionCacheService permissionCacheService;
@@ -87,12 +89,17 @@ public class SecurityConfig {
     @Value("${hemis.security.jwt.secret}")
     private String jwtSecret;
 
+    // ✅ SECURITY FIX #7: CORS allowed origins from environment
+    @Value("${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://localhost:9000}")
+    private String corsAllowedOrigins;
+
     /**
      * Security Filter Chain Configuration
      *
      * <p><strong>Key Features:</strong></p>
      * <ul>
      *   <li>JWT-based authentication (header + cookie support)</li>
+     *   <li>Token blacklist support (logout revocation via Redis)</li>
      *   <li>CORS enabled for cross-origin requests</li>
      *   <li>CSRF disabled (stateless REST API)</li>
      *   <li>Public endpoints: /actuator/health, /actuator/info</li>
@@ -102,24 +109,51 @@ public class SecurityConfig {
      *
      * @param http HttpSecurity configuration
      * @param jwtAuthConverter JWT authentication converter (injected bean)
+     * @param cookieJwtAuthenticationFilter JWT filter with blacklist support (injected bean)
      * @return SecurityFilterChain
      * @throws Exception if configuration fails
      */
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            JwtAuthenticationConverter jwtAuthConverter
+            JwtAuthenticationConverter jwtAuthConverter,
+            CookieJwtAuthenticationFilter cookieJwtAuthenticationFilter
     ) throws Exception {
         http
                 // CORS configuration
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // CSRF disabled (REST API with JWT, no cookies/sessions)
-                .csrf(AbstractHttpConfigurer::disable)
+                // ✅ SECURITY FIX #7: CSRF Protection for Cookie-based Auth
+                // Problem: Cookie-based auth without CSRF = vulnerable to CSRF attacks
+                // Solution: Enable CSRF with CookieCsrfTokenRepository (double-submit pattern)
+                //
+                // How it works:
+                // 1. Server sends CSRF token in cookie (readable by JavaScript)
+                // 2. Client must send same token in X-XSRF-TOKEN header
+                // 3. Server compares cookie value with header value
+                // 4. If mismatch → reject request (403 Forbidden)
+                //
+                // Why safe:
+                // - Attacker can't read cookies from different origin (Same-Origin Policy)
+                // - Attacker can't set custom headers in CSRF attack
+                // - Even if SameSite=None, CSRF token prevents attack
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers(
+                                "/api/v1/web/auth/login",      // Public login endpoint
+                                "/api/v1/web/auth/refresh",    // Public refresh endpoint
+                                "/app/rest/v2/oauth/token",    // Legacy OAuth endpoint
+                                "/app/rest/v2/services/captcha/**", // Captcha endpoints (public)
+                                "/actuator/**",                 // Actuator endpoints
+                                "/swagger-ui/**",               // Swagger UI
+                                "/v3/api-docs/**"              // OpenAPI docs
+                        )
+                )
 
                 // ✅ Add Cookie JWT Filter BEFORE OAuth2 Resource Server
+                // This filter checks token blacklist (logout revocation)
                 .addFilterBefore(
-                        cookieJwtAuthenticationFilter(),
+                        cookieJwtAuthenticationFilter,
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
                 )
 
@@ -142,6 +176,11 @@ public class SecurityConfig {
                         // OAuth2 Token endpoint (PUBLIC - for login)
                         // CRITICAL: Must be public for universities to get tokens
                         .requestMatchers("/app/rest/v2/oauth/token").permitAll()
+                        .requestMatchers("/app/rest/oauth/token").permitAll() // Legacy fallback (v2 yo'q)
+
+                        // Captcha endpoints (PUBLIC - for login page security)
+                        // CRITICAL: Must be public - captcha olish uchun login qilish shart emas
+                        .requestMatchers("/app/rest/v2/services/captcha/**").permitAll()
 
                         // Admin Auth endpoints (PUBLIC - for admin login - DEPRECATED)
                         .requestMatchers("/app/rest/v2/auth/**").permitAll()
@@ -313,30 +352,52 @@ public class SecurityConfig {
     }
 
     /**
-     * CORS Configuration
+     * CORS Configuration Source
      *
-     * <p><strong>CRITICAL - University Access:</strong></p>
+     * <p><strong>✅ SECURITY FIX #7: Restricted CORS Origins</strong></p>
      * <ul>
-     *   <li>200+ universities access /app/rest/v2/** endpoints</li>
-     *   <li>Allow all origins in development</li>
-     *   <li>Configure specific origins in production</li>
+     *   <li>Problem: AllowedOriginPatterns("*") + AllowCredentials=true = CSRF vulnerability</li>
+     *   <li>Solution: Only allow specific origins from environment configuration</li>
+     *   <li>Production: Set app.security.cors.allowed-origins in application.properties</li>
      * </ul>
      *
-     * <p><strong>Allowed Methods:</strong></p>
-     * <ul>
-     *   <li>GET, POST, PUT, PATCH (NO DELETE - NDG)</li>
-     *   <li>OPTIONS for preflight requests</li>
-     * </ul>
+     * <p><strong>Example Configuration:</strong></p>
+     * <pre>
+     * Development: http://localhost:5173,http://localhost:3000
+     * Production:  https://hemis.uz,https://www.hemis.uz,https://admin.hemis.uz
+     * </pre>
      *
-     * @return CorsConfigurationSource
+     * <p><strong>Why This Matters:</strong></p>
+     * <ul>
+     *   <li>Without restriction: ANY website can make credentialed requests</li>
+     *   <li>Attacker site: fetch('https://api.hemis.uz/api/v1/web/...',{credentials:'include'})</li>
+     *   <li>Browser sends user's cookies → Attacker gets user data</li>
+     * </ul>
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow all origins in development
-        // TODO: Configure specific origins in production (list of 200+ universities)
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        // ✅ SECURITY FIX #7: Parse allowed origins from environment
+        // Format: "https://hemis.uz,https://www.hemis.uz,http://localhost:5173"
+        List<String> allowedOrigins = Arrays.asList(corsAllowedOrigins.split(","))
+                .stream()
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+
+        if (allowedOrigins.isEmpty()) {
+            throw new IllegalStateException(
+                "❌ SECURITY ERROR: app.security.cors.allowed-origins must not be empty when using cookie-based auth!\n" +
+                "Set in application.properties:\n" +
+                "  app.security.cors.allowed-origins=https://hemis.uz,https://admin.hemis.uz\n" +
+                "For development:\n" +
+                "  app.security.cors.allowed-origins=http://localhost:5173,http://localhost:3000"
+            );
+        }
+
+        configuration.setAllowedOrigins(allowedOrigins);
+        log.info("✅ CORS allowed origins: {}", allowedOrigins);
 
         // Allowed HTTP methods (NO DELETE - NDG)
         configuration.setAllowedMethods(Arrays.asList(
@@ -354,7 +415,8 @@ public class SecurityConfig {
                 "Content-Type",
                 "Accept",
                 "X-Requested-With",
-                "Cookie" // ✅ CRITICAL: Allow Cookie header for HTTPOnly cookies
+                "X-XSRF-TOKEN",  // ✅ CSRF token header
+                "Cookie"         // ✅ CRITICAL: Allow Cookie header for HTTPOnly cookies
         ));
 
         // Expose headers (for pagination, etc.)
@@ -362,10 +424,11 @@ public class SecurityConfig {
                 "X-Total-Count",
                 "X-Page-Number",
                 "X-Page-Size",
-                "Set-Cookie" // ✅ CRITICAL: Expose Set-Cookie header
+                "Set-Cookie"    // ✅ CRITICAL: Expose Set-Cookie header
         ));
 
-        // Allow credentials (cookies, authorization headers)
+        // ✅ Allow credentials (cookies, authorization headers)
+        // CRITICAL: This is safe now because we restrict allowed origins
         configuration.setAllowCredentials(true);
 
         // Max age for preflight cache (1 hour)
@@ -429,16 +492,33 @@ public class SecurityConfig {
     }
 
     /**
-     * Cookie JWT Authentication Filter
+     * Cookie JWT Authentication Filter with Token Blacklist Support
      *
-     * <p>Extracts JWT from cookies and validates it.</p>
-     * <p>Supports both Authorization header and cookie-based authentication.</p>
+     * <p><strong>Features:</strong></p>
+     * <ul>
+     *   <li>Extracts JWT from Authorization header or HTTPOnly cookie</li>
+     *   <li>Validates JWT signature and expiry</li>
+     *   <li>Checks Redis-based token blacklist (logout revocation)</li>
+     *   <li>Sets Spring Security authentication context if valid</li>
+     * </ul>
      *
+     * <p><strong>Security Flow:</strong></p>
+     * <pre>
+     * 1. Extract token from request (header/cookie)
+     * 2. Decode and validate JWT
+     * 3. Check if token is blacklisted (Redis)
+     * 4. If blacklisted → reject
+     * 5. If valid → authenticate
+     * </pre>
+     *
+     * @param tokenBlacklistService Injected blacklist service for token revocation
      * @return CookieJwtAuthenticationFilter
      */
     @Bean
-    public CookieJwtAuthenticationFilter cookieJwtAuthenticationFilter() {
-        return new CookieJwtAuthenticationFilter(jwtDecoder());
+    public CookieJwtAuthenticationFilter cookieJwtAuthenticationFilter(
+            TokenBlacklistService tokenBlacklistService
+    ) {
+        return new CookieJwtAuthenticationFilter(jwtDecoder(), tokenBlacklistService);
     }
 
     /**

@@ -144,6 +144,34 @@ public class User extends ModernBaseEntity {
     private String fullName;
 
     /**
+     * First name (legacy old-hemis compatibility)
+     * Column: first_name VARCHAR(255)
+     */
+    @Column(name = "first_name", length = 255)
+    private String firstName;
+
+    /**
+     * Middle name (legacy old-hemis compatibility)
+     * Column: middle_name VARCHAR(255)
+     */
+    @Column(name = "middle_name", length = 255)
+    private String middleName;
+
+    /**
+     * Last name (legacy old-hemis compatibility)
+     * Column: last_name VARCHAR(255)
+     */
+    @Column(name = "last_name", length = 255)
+    private String lastName;
+
+    /**
+     * Position/title (legacy old-hemis compatibility)
+     * Column: position VARCHAR(255)
+     */
+    @Column(name = "position", length = 255)
+    private String position;
+
+    /**
      * Email
      * Column: email VARCHAR(255)
      */
@@ -156,6 +184,37 @@ public class User extends ModernBaseEntity {
      */
     @Column(name = "phone", length = 50)
     private String phone;
+
+    /**
+     * Time zone (legacy old-hemis compatibility)
+     * Column: time_zone VARCHAR(50)
+     */
+    @Column(name = "time_zone", length = 50)
+    private String timeZone;
+
+    /**
+     * Language (legacy old-hemis compatibility)
+     * Column: language VARCHAR(10)
+     * Example: "ru", "uz", "en"
+     */
+    @Column(name = "language", length = 10)
+    private String language;
+
+    /**
+     * Locale (legacy old-hemis compatibility)
+     * Column: locale VARCHAR(10)
+     * Example: "uz", "ru", "en"
+     */
+    @Column(name = "locale", length = 10)
+    private String locale;
+
+    /**
+     * University reference (legacy old-hemis compatibility)
+     * Many-to-one relationship with University entity
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "university_id")
+    private University university;
 
     // =====================================================
     // Account Lockout (Security)

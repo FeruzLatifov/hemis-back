@@ -20,6 +20,7 @@ import uz.hemis.service.menu.MenuService;
 import uz.hemis.service.menu.PermissionService;
 import uz.hemis.service.menu.dto.MenuResponse;
 import uz.hemis.service.cache.CacheEvictionService;
+import uz.hemis.service.config.LanguageProperties;
 
 import java.util.Map;
 
@@ -29,14 +30,14 @@ import java.util.Map;
     name = "Menu API",
     description = """
         Dynamic menu structure API for hemis-front Sidebar
-        
+
         **Features:**
         - Permission-based filtering (shows only allowed menu items)
         - Multilingual support (uz-UZ, oz-UZ, ru-RU, en-US)
         - Hierarchical structure (unlimited nesting)
         - Cached for performance (1-hour TTL)
-        
-        **Use Case:** 
+
+        **Use Case:**
         - Sidebar menu rendering
         - Permission-based navigation
         - Breadcrumb generation
@@ -50,6 +51,7 @@ public class MenuController {
     private final MenuService menuService;
     private final PermissionService permissionService;
     private final CacheEvictionService cacheEvictionService;
+    private final LanguageProperties languageProperties;
 
     @GetMapping
     @Operation(
@@ -132,9 +134,12 @@ public class MenuController {
         // ✅ JWT sub = userId (UUID), not username
         String userIdString = jwt.getSubject();
         java.util.UUID userId = java.util.UUID.fromString(userIdString);
-        log.debug("GET /api/v1/web/menu - userId: {}, locale: {}", userId, locale);
 
-        MenuResponse menu = menuService.getMenuForUser(userId, locale);
+        // ✅ FIX #10: Validate locale - fallback to default if unsupported
+        String validatedLocale = languageProperties.getOrDefault(locale);
+        log.debug("GET /api/v1/web/menu - userId: {}, locale: {} (validated: {})", userId, locale, validatedLocale);
+
+        MenuResponse menu = menuService.getMenuForUser(userId, validatedLocale);
         return ResponseEntity.ok(menu);
     }
 
@@ -192,12 +197,14 @@ public class MenuController {
         @RequestBody Map<String, String> request,
         @AuthenticationPrincipal Jwt jwt
     ) {
-        String username = jwt.getSubject();
+        // ✅ FIX: Use UUID consistently (jwt.getSubject() = userId as UUID string)
+        java.util.UUID userId = java.util.UUID.fromString(jwt.getSubject());
         String path = request.get("path");
 
-        log.debug("POST /api/v1/web/menu/check-access - username: {}, path: {}", username, path);
+        log.debug("POST /api/v1/web/menu/check-access - userId: {}, path: {}", userId, path);
 
-        boolean accessible = permissionService.canAccessPath(username, path);
+        // ✅ FIX: Use UUID overload instead of username overload
+        boolean accessible = permissionService.canAccessPath(userId, path);
 
         return ResponseEntity.ok(Map.of("accessible", accessible));
     }
@@ -226,18 +233,28 @@ public class MenuController {
     /**
      * GET /api/v1/web/menu/structure
      * Get full menu structure (admin only)
+     *
+     * <p><strong>Security:</strong></p>
+     * <ul>
+     *   <li>Requires: system.menu.view permission</li>
+     *   <li>Use Case: Admin panel, menu configuration UI</li>
+     * </ul>
      */
     @GetMapping("/structure")
+    @PreAuthorize("hasAuthority('system.menu.view')")  // ✅ FIX: Admin-only authorization
     public ResponseEntity<MenuResponse> getStructure(
         @RequestParam(defaultValue = "uz-UZ") String locale,
         @AuthenticationPrincipal Jwt jwt
     ) {
-        String username = jwt.getSubject();
-        log.debug("GET /api/v1/web/menu/structure - username: {}, locale: {}", username, locale);
+        // ✅ FIX: Use UUID consistently
+        java.util.UUID userId = java.util.UUID.fromString(jwt.getSubject());
 
-        // For now, return same as regular menu
-        // TODO: Add admin-only check
-        MenuResponse menu = menuService.getMenuForUsername(username, locale);
+        // ✅ FIX #10: Validate locale - fallback to default if unsupported
+        String validatedLocale = languageProperties.getOrDefault(locale);
+        log.debug("GET /api/v1/web/menu/structure - userId: {}, locale: {} (validated: {})", userId, locale, validatedLocale);
+
+        // ✅ FIX: Use UUID overload
+        MenuResponse menu = menuService.getMenuForUser(userId, validatedLocale);
         return ResponseEntity.ok(menu);
     }
 }

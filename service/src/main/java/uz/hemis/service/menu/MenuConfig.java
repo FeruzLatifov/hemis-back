@@ -8,16 +8,60 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Menu Configuration
- * Migrated from old-hemis CUBA application (web-menu.xml)
+ * Menu Configuration - DEPRECATED & DISABLED ❌
+ *
+ * <p><strong>MIGRATION COMPLETE - v2.0:</strong></p>
+ * <ul>
+ *   <li>❌ This class is NO LONGER USED in production</li>
+ *   <li>✅ Menu structure is now loaded from database (see MenuService.loadMenuStructureFromDatabase())</li>
+ *   <li>✅ Menu data seeded via Liquibase migration V8 (08-seed-menu-data.sql - 178 items)</li>
+ *   <li>✅ Admin management available via MenuAdminService + MenuAdminController</li>
+ *   <li>✅ Audit trail tracked in menu_audit_logs table</li>
+ * </ul>
+ *
+ * <p><strong>Original Source:</strong></p>
+ * <ul>
+ *   <li>Migrated from old-hemis CUBA application (web-menu.xml)</li>
+ *   <li>1284 lines of hardcoded menu structure</li>
+ *   <li>Converted to 178 database records via migration</li>
+ * </ul>
+ *
+ * <p><strong>Why Deprecated:</strong></p>
+ * <ul>
+ *   <li>❌ Required code deployment for menu changes</li>
+ *   <li>❌ No audit trail (who changed what)</li>
+ *   <li>❌ No admin UI for menu management</li>
+ *   <li>❌ Not scalable for multi-tenant scenarios</li>
+ * </ul>
+ *
+ * <p><strong>New System Benefits:</strong></p>
+ * <ul>
+ *   <li>✅ Dynamic menu updates without deployment</li>
+ *   <li>✅ Complete audit trail (MenuAuditLog)</li>
+ *   <li>✅ Admin REST API for CRUD operations</li>
+ *   <li>✅ Export/Import functionality</li>
+ *   <li>✅ Drag & drop ordering support</li>
+ * </ul>
+ *
+ * <p><strong>This file is kept for reference only.</strong></p>
+ * <p>If you need to restore menu structure, use the export/import API:</p>
+ * <pre>
+ * GET  /api/v1/admin/menus/export  → Download menu as JSON
+ * POST /api/v1/admin/menus/import  → Upload menu from JSON
+ * </pre>
  *
  * @author System Architect
  * @version 2.0
+ * @deprecated Use database-driven menu system instead (MenuService + MenuAdminService)
+ * @see uz.hemis.service.menu.MenuService#loadMenuStructureFromDatabase()
+ * @see uz.hemis.service.menu.MenuAdminService
  */
-@Configuration
+@Deprecated(since = "2.0", forRemoval = true)
+// @Configuration // ❌ DISABLED - No longer a Spring Bean
 public class MenuConfig {
 
-    @Bean
+    // @Bean // ❌ DISABLED - Menu now loaded from database
+    @Deprecated(since = "2.0", forRemoval = true)
     public List<MenuItem> menuStructure() {
         return Arrays.asList(
             // 1. Dashboard

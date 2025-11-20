@@ -49,7 +49,7 @@ import java.util.UUID;
  *
  * @since 1.0.0
  */
-@Tag(name = "03. Modern Web APIs - Diploma Blanks", description = "RESTful endpoints for diploma blank management with advanced filtering and pagination")
+@Tag(name = "Modern Web APIs - Diploma Blanks", description = "RESTful endpoints for diploma blank management with advanced filtering and pagination")
 @RestController
 @RequestMapping("/app/rest/v2/diploma-blanks")
 @RequiredArgsConstructor

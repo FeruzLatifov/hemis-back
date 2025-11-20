@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -179,6 +180,31 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Query("SELECT COUNT(u) FROM User u WHERE u.entityCode = :entityCode")
     long countByUniversity(@Param("entityCode") String entityCode);
+
+    // =====================================================
+    // Cache Warmup Queries
+    // =====================================================
+
+    /**
+     * Find sample usernames by role code (for cache warmup)
+     *
+     * <p>Used by MenuCacheWarmup to get sample users per role for pre-caching menus</p>
+     * <p>Returns only active users (not deleted, enabled)</p>
+     *
+     * @param roleCode Role code (e.g., SUPER_ADMIN, UNIVERSITY_ADMIN)
+     * @param limit Maximum number of usernames to return (typically 1-2 per role)
+     * @return List of usernames with this role
+     */
+    @Query(value = "SELECT u.username FROM users u " +
+                   "JOIN user_roles ur ON u.id = ur.user_id " +
+                   "JOIN roles r ON ur.role_id = r.id " +
+                   "WHERE r.code = :roleCode " +
+                   "AND u.deleted_at IS NULL " +
+                   "AND u.enabled = true " +
+                   "ORDER BY u.created_at DESC " +
+                   "LIMIT :limit",
+           nativeQuery = true)
+    List<String> findSampleUsernamesByRoleCode(@Param("roleCode") String roleCode, @Param("limit") int limit);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

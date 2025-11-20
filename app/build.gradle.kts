@@ -51,8 +51,8 @@ dependencies {
     // HikariCP (connection pooling - included in spring-boot-starter-data-jpa)
     // No need to declare explicitly
 
-    // Development Tools
-    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    // Development Tools (DISABLED - causes restart loops with I18n warmup)
+    // developmentOnly("org.springframework.boot:spring-boot-devtools")  // ✅ Disabled to prevent restart loops
 
     // Configuration Processor
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")

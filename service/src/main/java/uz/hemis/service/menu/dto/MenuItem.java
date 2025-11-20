@@ -8,7 +8,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Menu Item DTO
@@ -53,26 +55,53 @@ public class MenuItem {
     private String label;
 
     /**
-     * Label in Uzbek Latin (for multi-language support)
+     * ✅ FIX #21: Dynamic labels for all supported languages
+     * <p>Map of locale → translated label</p>
+     * <p>Example: {"uz-UZ": "Bosh sahifa", "ru-RU": "Главная", "en-US": "Home"}</p>
+     *
+     * <p><strong>Benefits:</strong></p>
+     * <ul>
+     *   <li>Add new language without code changes</li>
+     *   <li>Frontend can display all available translations</li>
+     *   <li>Single source for multilingual support</li>
+     * </ul>
      */
+    @Builder.Default
+    private Map<String, String> labels = new HashMap<>();
+
+    /**
+     * Label in Uzbek Latin (for multi-language support)
+     * @deprecated Use {@link #labels} map with key "uz-UZ" instead
+     * <p>Kept for backward compatibility with old frontend versions</p>
+     */
+    @Deprecated
     @JsonProperty("labelUz")
     private String labelUz;
 
     /**
      * Label in Uzbek Cyrillic (for multi-language support)
+     * @deprecated Use {@link #labels} map with key "oz-UZ" instead
+     * <p>Kept for backward compatibility with old frontend versions</p>
      */
+    @Deprecated
     @JsonProperty("labelOz")
     private String labelOz;
 
     /**
      * Label in Russian (for multi-language support)
+     * @deprecated Use {@link #labels} map with key "ru-RU" instead
+     * <p>Kept for backward compatibility with old frontend versions</p>
      */
+    @Deprecated
     @JsonProperty("labelRu")
     private String labelRu;
 
     /**
      * Label in English (for multi-language support)
+     * @deprecated Use {@link #labels} map with key "en-US" instead
+     * <p>Kept for backward compatibility with old frontend versions</p>
      */
+    @Deprecated
     @JsonProperty("labelEn")
     private String labelEn;
 

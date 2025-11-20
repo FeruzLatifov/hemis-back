@@ -13,11 +13,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.*;
 import jakarta.servlet.http.Cookie;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -27,15 +32,19 @@ import uz.hemis.api.web.dto.LoginRequest;
 import uz.hemis.api.web.dto.LoginResponse;
 import uz.hemis.domain.entity.Permission;
 import uz.hemis.domain.entity.Role;
+import uz.hemis.domain.entity.SecUser;
 import uz.hemis.domain.entity.User;
+import uz.hemis.domain.repository.SecUserRepository;
 import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.security.service.UserPermissionCacheService;
 import uz.hemis.web.dto.UserInfoResponse;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -64,27 +73,47 @@ import java.util.stream.Collectors;
 @Slf4j
 public class WebAuthController {
 
+    private final AuthenticationManager authenticationManager;
     private final UserDetailsService userDetailsService;
-    private final PasswordEncoder passwordEncoder;
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
     private final UserPermissionCacheService permissionCacheService;
     private final UserRepository userRepository;
+    private final SecUserRepository secUserRepository;
+    private final uz.hemis.security.service.TokenBlacklistService tokenBlacklistService;
+    private final uz.hemis.security.service.RateLimitService rateLimitService;
+
+    // ✅ Environment-based cookie configuration
+    @org.springframework.beans.factory.annotation.Value("${app.security.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @org.springframework.beans.factory.annotation.Value("${app.security.cookie.same-site:Lax}")
+    private String cookieSameSite;
+
+    // ✅ SECURITY FIX #8: Trusted proxies configuration
+    @org.springframework.beans.factory.annotation.Value("${app.security.trusted-proxies:}")
+    private String trustedProxiesConfig;
 
     public WebAuthController(
+            AuthenticationManager authenticationManager,
             @Qualifier("hybridUserDetailsService") UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder,
             JwtEncoder jwtEncoder,
             JwtDecoder jwtDecoder,
             UserPermissionCacheService permissionCacheService,
-            UserRepository userRepository
+            UserRepository userRepository,
+            SecUserRepository secUserRepository,
+            uz.hemis.security.service.TokenBlacklistService tokenBlacklistService,
+            uz.hemis.security.service.RateLimitService rateLimitService
     ) {
+        this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
-        this.passwordEncoder = passwordEncoder;
         this.jwtEncoder = jwtEncoder;
         this.jwtDecoder = jwtDecoder;
         this.permissionCacheService = permissionCacheService;
         this.userRepository = userRepository;
+        this.secUserRepository = secUserRepository;
+        this.tokenBlacklistService = tokenBlacklistService;
+        this.rateLimitService = rateLimitService;
     }
 
     /**
@@ -180,26 +209,65 @@ public class WebAuthController {
     )
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest,
             jakarta.servlet.http.HttpServletResponse httpResponse
     ) {
         String username = request.getUsername();
         String password = request.getPassword();
 
-        log.info("Web login attempt - username: {}", username);
+        // ✅ Rate limiting - Brute force protection
+        String clientIp = getClientIP(httpRequest);
+        if (!rateLimitService.isAllowed(clientIp)) {
+            int remainingSeconds = (int) rateLimitService.getSecondsUntilReset(clientIp);
+            log.warn("🚨 Rate limit exceeded for IP: {} (try again in {} seconds)", clientIp, remainingSeconds);
+
+            return ResponseEntity.status(429) // HTTP 429 Too Many Requests
+                .body(LoginResponse.builder()
+                    .error("too_many_requests")
+                    .errorDescription(String.format("Juda ko'p urinish. %d soniyadan keyin qayta urinib ko'ring.", remainingSeconds))
+                    .build());
+        }
+
+        log.info("Web login attempt - username: {}, IP: {}", username, clientIp);
 
         try {
-            // Load user from database
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            // ✅ SECURITY FIX #1: Delegate to AuthenticationManager
+            // This automatically enforces ALL Spring Security checks:
+            // - Password verification (BCrypt via DaoAuthenticationProvider)
+            // - isEnabled() check (prevents disabled accounts from logging in)
+            // - isAccountNonLocked() check (prevents locked accounts)
+            // - isAccountNonExpired() check (prevents expired accounts)
+            // - isCredentialsNonExpired() check (prevents expired passwords)
+            //
+            // Previous code manually verified password and BYPASSED account status checks!
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+            );
 
-            // Verify password using BCrypt
-            if (!passwordEncoder.matches(password, userDetails.getPassword())) {
-                log.error("Invalid password for user: {}", username);
-                throw new UsernameNotFoundException("Invalid credentials");
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            // ✅ SECURITY FIX #2: Handle both new system (users table) and old system (sec_user only)
+            // Problem: sec_user accounts don't have corresponding rows in users table
+            // Solution: Generate deterministic UUID from username for legacy accounts
+            //
+            // NEW SYSTEM: Load User entity and use real UUID
+            // OLD SYSTEM: Generate synthetic UUID from username (consistent across logins)
+            UUID userId;
+            Optional<User> userOpt = userRepository.findByUsername(username);
+
+            if (userOpt.isPresent()) {
+                // ✅ NEW SYSTEM: User exists in users table
+                User user = userOpt.get();
+                userId = user.getId();
+                log.info("✅ NEW system user - userId: {}", userId);
+            } else {
+                // ✅ OLD SYSTEM: User only exists in sec_user (legacy fallback)
+                // Generate deterministic UUID from username (same username → same UUID)
+                // This ensures consistent userId across logins for legacy users
+                userId = generateLegacyUserId(username);
+                log.warn("⚠️ LEGACY system user - generated synthetic userId: {} for username: {}", userId, username);
+                log.warn("📋 ACTION REQUIRED: Migrate user '{}' to new users table", username);
             }
-
-            // ✅ Load full User entity to get userId (UUID)
-            User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
             // Generate JWT token
             Instant now = Instant.now();
@@ -209,23 +277,35 @@ public class WebAuthController {
             // - userId is immutable (username can change)
             // - Follows industry standards (Google, Facebook, Amazon)
             // - Smaller JWT size (UUID is fixed length)
+            //
+            // ✅ JTI (JWT ID) for token revocation
+            // - Unique identifier for each token
+            // - Used for blacklisting on logout
+            // - RFC 7519 standard claim
+            String accessTokenId = UUID.randomUUID().toString();
+
             JwtClaimsSet accessTokenClaims = JwtClaimsSet.builder()
                     .issuer("hemis")
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(expiresIn))
-                    .subject(user.getId().toString()) // ✅ userId (UUID), not username
+                    .subject(userId.toString()) // ✅ userId (real or synthetic UUID)
+                    .id(accessTokenId) // ✅ JTI (JWT ID) for blacklisting
                     .build();
 
             JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
             String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, accessTokenClaims)).getTokenValue();
 
             long refreshExpiresIn = 604800L; // 7 days
+            String refreshTokenId = UUID.randomUUID().toString();
+
             JwtClaimsSet refreshTokenClaims = JwtClaimsSet.builder()
                     .issuer("hemis")
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(refreshExpiresIn))
-                    .subject(user.getId().toString()) // ✅ userId (UUID), not username
+                    .subject(userId.toString()) // ✅ userId (real or synthetic UUID)
+                    .id(refreshTokenId) // ✅ JTI for blacklisting
                     .claim("type", "refresh")
+                    .claim("username", username) // ✅ For legacy user validation during refresh
                     .build();
 
             String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, refreshTokenClaims)).getTokenValue();
@@ -235,47 +315,251 @@ public class WebAuthController {
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toSet());
 
-            permissionCacheService.cacheUserPermissions(user.getId(), permissions);
+            permissionCacheService.cacheUserPermissions(userId, permissions);
 
             // ✅ SECURITY BEST PRACTICE: HTTPOnly cookies for tokens
             // Access Token cookie (15 minutes)
             Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
-            accessTokenCookie.setHttpOnly(true);  // ✅ XSS protection
-            accessTokenCookie.setSecure(false);    // TODO: true in production (HTTPS)
+            accessTokenCookie.setHttpOnly(true);           // ✅ XSS protection
+            accessTokenCookie.setSecure(cookieSecure);     // ✅ Environment-based (dev: false, prod: true)
             accessTokenCookie.setPath("/");
-            accessTokenCookie.setMaxAge(900);     // 15 minutes
-            accessTokenCookie.setAttribute("SameSite", "Lax");
+            accessTokenCookie.setMaxAge(900);              // 15 minutes
+            accessTokenCookie.setAttribute("SameSite", cookieSameSite);
             httpResponse.addCookie(accessTokenCookie);
 
             // Refresh Token cookie (7 days)
             Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
-            refreshTokenCookie.setHttpOnly(true);  // ✅ XSS protection
-            refreshTokenCookie.setSecure(false);    // TODO: true in production (HTTPS)
+            refreshTokenCookie.setHttpOnly(true);          // ✅ XSS protection
+            refreshTokenCookie.setSecure(cookieSecure);    // ✅ Environment-based (dev: false, prod: true)
             refreshTokenCookie.setPath("/");
-            refreshTokenCookie.setMaxAge(604800); // 7 days
-            refreshTokenCookie.setAttribute("SameSite", "Lax");
+            refreshTokenCookie.setMaxAge(604800);          // 7 days
+            refreshTokenCookie.setAttribute("SameSite", cookieSameSite);
             httpResponse.addCookie(refreshTokenCookie);
 
-            // ✅ Response body - still include tokens for backward compatibility
-            // Frontend can choose to use cookies OR localStorage
+            // ✅ SECURITY FIX #5: Don't include tokens in response body
+            // Problem: Tokens in both HTTPOnly cookies AND response body defeats XSS protection
+            // Solution: Use HTTPOnly cookies ONLY (XSS cannot access cookies)
+            //
+            // Previous behavior: Response body contained accessToken + refreshToken
+            // New behavior: Response body contains only metadata (no tokens)
+            // Rationale: If XSS steals response body, it gets nothing sensitive
+            //
+            // Frontend impact: Must read tokens from cookies instead of response body
+            // Cookie names: "accessToken" and "refreshToken"
             LoginResponse response = LoginResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
+                    .accessToken(null)  // ✅ FIX: Don't expose token in response body (use cookies)
+                    .refreshToken(null) // ✅ FIX: Don't expose token in response body (use cookies)
                     .tokenType("Bearer")
                     .expiresIn(expiresIn)
                     .build();
 
-            log.info("✅ Login successful - user: {}, cached {} permissions, set HTTPOnly cookies", username, permissions.size());
+            // ✅ Successful login → reset rate limit counter
+            rateLimitService.reset(clientIp);
+
+            log.info("✅ Login successful - user: {}, cached {} permissions, set HTTPOnly cookies (no body tokens), reset rate limit", username, permissions.size());
 
             return ResponseEntity.ok(response);
 
+        } catch (DisabledException e) {
+            // Account is disabled (isEnabled() = false)
+            log.warn("Login blocked - account disabled: {}", username);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(LoginResponse.builder()
+                    .error("account_disabled")
+                    .errorDescription("Akkaunt faolsizlantirilgan. Administrator bilan bog'laning.")
+                    .build());
+        } catch (LockedException e) {
+            // Account is locked (isAccountNonLocked() = false)
+            log.warn("Login blocked - account locked: {}", username);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(LoginResponse.builder()
+                    .error("account_locked")
+                    .errorDescription("Akkaunt bloklangan. Administrator bilan bog'laning.")
+                    .build());
+        } catch (BadCredentialsException e) {
+            // Invalid username or password
+            log.warn("Login failed - bad credentials: {}", username);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(LoginResponse.builder()
+                    .error("invalid_credentials")
+                    .errorDescription("Noto'g'ri foydalanuvchi nomi yoki parol.")
+                    .build());
         } catch (UsernameNotFoundException e) {
-            log.error("User not found: {}", username);
-            throw new UsernameNotFoundException("Invalid credentials");
+            // User not found (should not happen after AuthenticationManager, but keep for safety)
+            log.warn("Login failed - user not found: {}", username);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(LoginResponse.builder()
+                    .error("invalid_credentials")
+                    .errorDescription("Noto'g'ri foydalanuvchi nomi yoki parol.")
+                    .build());
         } catch (Exception e) {
             log.error("Web login failed - username: {}", username, e);
-            throw new RuntimeException("Server error during login");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(LoginResponse.builder()
+                    .error("server_error")
+                    .errorDescription("Server xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
+                    .build());
         }
+    }
+
+    /**
+     * Extract client IP address from HttpServletRequest
+     *
+     * <p><strong>SECURITY FIX #4b: Prevent X-Forwarded-For Spoofing</strong></p>
+     * <ul>
+     *   <li>Previous behavior: Blindly trusted X-Forwarded-For (easily spoofed)</li>
+     *   <li>New behavior: Only trust X-Forwarded-For from known proxies</li>
+     *   <li>Rationale: Attackers can spoof X-Forwarded-For to bypass rate limiting</li>
+     * </ul>
+     *
+     * <p><strong>Trusted Proxies:</strong></p>
+     * <ul>
+     *   <li>Localhost: 127.0.0.1, ::1</li>
+     *   <li>Private networks: 10.x.x.x, 172.16-31.x.x, 192.168.x.x</li>
+     *   <li>Docker: 172.17.0.0/16</li>
+     * </ul>
+     *
+     * <p><strong>Attack Scenario (Before Fix):</strong></p>
+     * <pre>
+     * Attacker sends: X-Forwarded-For: 1.2.3.4
+     * System trusts header and uses 1.2.3.4 for rate limiting
+     * Attacker changes header to 5.6.7.8 and bypasses rate limit
+     * </pre>
+     *
+     * <p><strong>After Fix:</strong></p>
+     * <pre>
+     * System checks if request.getRemoteAddr() is trusted proxy
+     * If YES: Trust X-Forwarded-For
+     * If NO:  Use request.getRemoteAddr() (ignore spoofed header)
+     * </pre>
+     *
+     * @param request HttpServletRequest
+     * @return Client IP address (validated)
+     */
+    private String getClientIP(jakarta.servlet.http.HttpServletRequest request) {
+        String remoteAddr = request.getRemoteAddr();
+
+        // ✅ SECURITY FIX: Only trust X-Forwarded-For if request comes from trusted proxy
+        if (isTrustedProxy(remoteAddr)) {
+            // Request from trusted proxy → trust X-Forwarded-For header
+            String xForwardedFor = request.getHeader("X-Forwarded-For");
+            if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                // Take first IP (client IP) from comma-separated list
+                // Format: "client, proxy1, proxy2"
+                String clientIp = xForwardedFor.split(",")[0].trim();
+                log.debug("Trusted proxy detected ({}), using X-Forwarded-For: {}", remoteAddr, clientIp);
+                return clientIp;
+            }
+
+            // Check X-Real-IP as fallback
+            String xRealIP = request.getHeader("X-Real-IP");
+            if (xRealIP != null && !xRealIP.isEmpty()) {
+                log.debug("Trusted proxy detected ({}), using X-Real-IP: {}", remoteAddr, xRealIP);
+                return xRealIP;
+            }
+        } else {
+            // Request NOT from trusted proxy → ignore X-Forwarded-For (could be spoofed)
+            if (request.getHeader("X-Forwarded-For") != null) {
+                log.warn("🚨 Untrusted client ({}) sent X-Forwarded-For header - IGNORED (potential spoofing)",
+                    remoteAddr);
+            }
+        }
+
+        // Use direct connection IP (most secure)
+        log.debug("Using direct connection IP: {}", remoteAddr);
+        return remoteAddr;
+    }
+
+    /**
+     * Check if IP address is from a trusted proxy/load balancer
+     *
+     * <p><strong>✅ SECURITY FIX #8: Configurable Trusted Proxies</strong></p>
+     * <ul>
+     *   <li>Problem: Public load balancers not recognized → all users appear as single IP → DoS</li>
+     *   <li>Solution: Configure trusted proxies via environment variable</li>
+     * </ul>
+     *
+     * <p><strong>Default Trusted Sources (RFC 1918):</strong></p>
+     * <ul>
+     *   <li>Localhost: 127.0.0.1, ::1, 0:0:0:0:0:0:0:1</li>
+     *   <li>Private Class A: 10.0.0.0/8</li>
+     *   <li>Private Class B: 172.16.0.0/12</li>
+     *   <li>Private Class C: 192.168.0.0/16</li>
+     *   <li>Docker default: 172.17.0.0/16</li>
+     * </ul>
+     *
+     * <p><strong>Production Configuration:</strong></p>
+     * <pre>
+     * # application.properties
+     * app.security.trusted-proxies=54.123.45.67,52.222.111.222
+     * </pre>
+     *
+     * <p><strong>Examples:</strong></p>
+     * <ul>
+     *   <li>AWS ELB: app.security.trusted-proxies=54.x.x.x,52.x.x.x</li>
+     *   <li>GCP LB: app.security.trusted-proxies=35.x.x.x,34.x.x.x</li>
+     *   <li>Cloudflare: Use Cloudflare IP ranges (or CF-Connecting-IP header)</li>
+     *   <li>nginx: app.security.trusted-proxies=10.0.1.5 (nginx server IP)</li>
+     * </ul>
+     *
+     * @param ipAddress IP address to check
+     * @return true if trusted proxy, false otherwise
+     */
+    private boolean isTrustedProxy(String ipAddress) {
+        if (ipAddress == null || ipAddress.isEmpty()) {
+            return false;
+        }
+
+        // ✅ SECURITY FIX #8: Check configured trusted proxies FIRST
+        // This allows production load balancers to be recognized
+        if (trustedProxiesConfig != null && !trustedProxiesConfig.isEmpty()) {
+            List<String> trustedProxies = Arrays.asList(trustedProxiesConfig.split(","))
+                    .stream()
+                    .map(String::trim)
+                    .filter(ip -> !ip.isEmpty())
+                    .toList();
+
+            if (trustedProxies.contains(ipAddress)) {
+                log.debug("✅ Trusted proxy (configured): {}", ipAddress);
+                return true;
+            }
+        }
+
+        // Localhost (IPv4 and IPv6)
+        if (ipAddress.equals("127.0.0.1") ||
+            ipAddress.equals("::1") ||
+            ipAddress.equals("0:0:0:0:0:0:0:1")) {
+            return true;
+        }
+
+        // Private IPv4 ranges (RFC 1918)
+        String[] parts = ipAddress.split("\\.");
+        if (parts.length == 4) {
+            try {
+                int first = Integer.parseInt(parts[0]);
+                int second = Integer.parseInt(parts[1]);
+
+                // 10.0.0.0/8 (Class A private)
+                if (first == 10) {
+                    return true;
+                }
+
+                // 172.16.0.0/12 (Class B private)
+                if (first == 172 && second >= 16 && second <= 31) {
+                    return true;
+                }
+
+                // 192.168.0.0/16 (Class C private)
+                if (first == 192 && second == 168) {
+                    return true;
+                }
+            } catch (NumberFormatException e) {
+                log.debug("Invalid IP address format: {}", ipAddress);
+                return false;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -295,53 +579,77 @@ public class WebAuthController {
     @PostMapping("/logout")
     public ResponseEntity<Map<String, Object>> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
-            @CookieValue(value = "accessToken", required = false) String cookieToken,
+            @CookieValue(value = "accessToken", required = false) String accessTokenCookie,
+            @CookieValue(value = "refreshToken", required = false) String refreshTokenCookie,
             jakarta.servlet.http.HttpServletResponse httpResponse
     ) {
         log.info("Web logout request");
 
-        // Extract token from Authorization header OR cookie
-        String token = null;
+        // Extract access token from Authorization header OR cookie
+        String accessToken = null;
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-        } else if (cookieToken != null) {
-            token = cookieToken;
+            accessToken = authHeader.substring(7);
+        } else if (accessTokenCookie != null) {
+            accessToken = accessTokenCookie;
         }
 
-        // Extract userId from token
-        if (token != null) {
+        // ✅ Blacklist access token (if present)
+        if (accessToken != null) {
             try {
-                Jwt jwt = jwtDecoder.decode(token);
+                Jwt jwt = jwtDecoder.decode(accessToken);
                 String userIdString = jwt.getSubject(); // ✅ JWT sub = userId (UUID)
+                String jti = jwt.getId(); // ✅ JWT ID (unique token identifier)
+                Instant expiryTime = jwt.getExpiresAt();
 
+                // Blacklist token (prevents reuse after logout)
+                if (jti != null && expiryTime != null) {
+                    tokenBlacklistService.addToBlacklist(jti, expiryTime);
+                    log.info("✅ Access token blacklisted: jti={}", jti);
+                }
+
+                // Evict user permissions from Redis cache by userId
                 try {
                     UUID userId = UUID.fromString(userIdString);
-
-                    // ✅ Evict user permissions from Redis cache by userId
                     permissionCacheService.evictUserCache(userId);
                     log.info("✅ Evicted cache for userId: {}", userId);
                 } catch (IllegalArgumentException e) {
                     log.warn("Invalid userId in JWT during logout: {}", userIdString);
                 }
             } catch (Exception e) {
-                log.warn("Failed to decode JWT token during logout: {}", e.getMessage());
+                log.warn("Failed to decode access token during logout: {}", e.getMessage());
+            }
+        }
+
+        // ✅ Blacklist refresh token (from cookie)
+        if (refreshTokenCookie != null) {
+            try {
+                Jwt refreshJwt = jwtDecoder.decode(refreshTokenCookie);
+                String refreshJti = refreshJwt.getId();
+                Instant refreshExpiryTime = refreshJwt.getExpiresAt();
+
+                if (refreshJti != null && refreshExpiryTime != null) {
+                    tokenBlacklistService.addToBlacklist(refreshJti, refreshExpiryTime);
+                    log.info("✅ Refresh token blacklisted: jti={}", refreshJti);
+                }
+            } catch (Exception e) {
+                log.debug("No refresh token to blacklist or failed to decode: {}", e.getMessage());
             }
         }
 
         // ✅ Clear HTTPOnly cookies
-        Cookie accessTokenCookie = new Cookie("accessToken", null);
-        accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(false);  // TODO: true in production
-        accessTokenCookie.setPath("/");
-        accessTokenCookie.setMaxAge(0);      // Delete cookie
-        httpResponse.addCookie(accessTokenCookie);
+        Cookie clearAccessToken = new Cookie("accessToken", null);
+        clearAccessToken.setHttpOnly(true);
+        clearAccessToken.setSecure(cookieSecure);  // ✅ Environment-based
+        clearAccessToken.setPath("/");
+        clearAccessToken.setMaxAge(0);             // Delete cookie
+        httpResponse.addCookie(clearAccessToken);
 
-        Cookie refreshTokenCookie = new Cookie("refreshToken", null);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(false);  // TODO: true in production
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(0);      // Delete cookie
-        httpResponse.addCookie(refreshTokenCookie);
+        Cookie clearRefreshToken = new Cookie("refreshToken", null);
+        clearRefreshToken.setHttpOnly(true);
+        clearRefreshToken.setSecure(cookieSecure);  // ✅ Environment-based
+        clearRefreshToken.setPath("/");
+        clearRefreshToken.setMaxAge(0);             // Delete cookie
+        httpResponse.addCookie(clearRefreshToken);
 
         log.info("✅ Logout successful - cleared HTTPOnly cookies");
 
@@ -401,6 +709,18 @@ public class WebAuthController {
                 ));
             }
 
+            // ✅ SECURITY FIX #3a: Check if refresh token is blacklisted
+            // Problem: After logout, refresh tokens could still be used
+            // Solution: Check blacklist before accepting refresh token
+            String refreshTokenId = decodedToken.getId(); // JTI claim
+            if (refreshTokenId != null && tokenBlacklistService.isBlacklisted(refreshTokenId)) {
+                log.warn("🚨 Attempt to use blacklisted refresh token: {}", refreshTokenId);
+                return ResponseEntity.status(401).body(Map.of(
+                        "error", "invalid_token",
+                        "message", "Token bekor qilingan (logout qilingan)"
+                ));
+            }
+
             // Extract userId from token
             String userIdString = decodedToken.getSubject(); // ✅ JWT sub = userId (UUID)
             if (userIdString == null || userIdString.isEmpty()) {
@@ -422,17 +742,88 @@ public class WebAuthController {
                 ));
             }
 
+            // ✅ SECURITY FIX #3b: Reload user account and verify still active/enabled
+            // Problem: Disabled/locked accounts could continue refreshing tokens
+            // Solution: Re-validate account status before issuing new tokens
+            //
+            // NOTE: This now applies to BOTH new system AND legacy sec_user accounts
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                // NEW SYSTEM: User exists in users table
+                User user = userOpt.get();
+
+                // Check account status flags
+                if (!user.getEnabled()) {
+                    log.warn("🚨 Refresh blocked - account disabled: userId={}", userId);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                            "error", "account_disabled",
+                            "message", "Akkaunt faolsizlantirilgan. Administrator bilan bog'laning."
+                    ));
+                }
+
+                if (!Boolean.TRUE.equals(user.getAccountNonLocked())) {
+                    log.warn("🚨 Refresh blocked - account locked: userId={}", userId);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                            "error", "account_locked",
+                            "message", "Akkaunt bloklangan. Administrator bilan bog'laning."
+                    ));
+                }
+
+                log.info("✅ Account status verified - userId: {}, enabled: {}, locked: {}",
+                    userId, user.getEnabled(), !Boolean.TRUE.equals(user.getAccountNonLocked()));
+            } else {
+                // ✅ SECURITY FIX #6: Legacy sec_user account validation
+                // Problem: Legacy users could continue refreshing even if blocked/deleted in sec_user table
+                // Solution: Check sec_user table active status before issuing new tokens
+
+                // Extract username from refresh token
+                String username = decodedToken.getClaimAsString("username");
+                if (username == null || username.isEmpty()) {
+                    log.warn("🚨 Refresh blocked - no username in token: userId={}", userId);
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                            "error", "invalid_token",
+                            "message", "Token'da username ma'lumoti yo'q."
+                    ));
+                }
+
+                // Validate legacy user status in sec_user table
+                Optional<SecUser> secUserOpt = secUserRepository.findByLoginAndActiveTrue(username);
+                if (secUserOpt.isEmpty()) {
+                    log.warn("🚨 Refresh blocked - legacy user inactive/deleted: username={}, userId={}", username, userId);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                            "error", "account_disabled",
+                            "message", "Akkaunt faolsizlantirilgan yoki o'chirilgan. Administrator bilan bog'laning."
+                    ));
+                }
+
+                SecUser secUser = secUserOpt.get();
+
+                // Check change password flag (credentials expired)
+                if (Boolean.TRUE.equals(secUser.getChangePasswordAtLogon())) {
+                    log.warn("🚨 Refresh blocked - legacy user must change password: username={}", username);
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                            "error", "credentials_expired",
+                            "message", "Parolni o'zgartirish talab qilinadi."
+                    ));
+                }
+
+                log.info("✅ Legacy user status verified - username: {}, userId: {}, active: {}",
+                    username, userId, secUser.getActive());
+            }
+
             log.info("Refresh token valid for userId: {}", userId);
 
             // Generate new access token (15 minutes)
             Instant now = Instant.now();
             long expiresIn = 900L; // 15 minutes
+            String newAccessTokenId = UUID.randomUUID().toString();
 
             JwtClaimsSet accessTokenClaims = JwtClaimsSet.builder()
                     .issuer("hemis")
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(expiresIn))
                     .subject(userId.toString()) // ✅ userId (UUID), not username
+                    .id(newAccessTokenId) // ✅ JTI for blacklisting
                     .build();
 
             JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
@@ -440,11 +831,14 @@ public class WebAuthController {
 
             // Generate new refresh token (7 days) - Token Rotation for security
             long refreshExpiresIn = 604800L; // 7 days
+            String newRefreshTokenId = UUID.randomUUID().toString();
+
             JwtClaimsSet refreshTokenClaims = JwtClaimsSet.builder()
                     .issuer("hemis")
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(refreshExpiresIn))
                     .subject(userId.toString()) // ✅ userId (UUID), not username
+                    .id(newRefreshTokenId) // ✅ JTI for blacklisting
                     .claim("type", "refresh")
                     .build();
 
@@ -453,26 +847,49 @@ public class WebAuthController {
             // ✅ Set new tokens in HTTPOnly cookies
             Cookie accessTokenCookie = new Cookie("accessToken", newAccessToken);
             accessTokenCookie.setHttpOnly(true);
-            accessTokenCookie.setSecure(false);  // TODO: true in production
+            accessTokenCookie.setSecure(cookieSecure);  // ✅ Environment-based
             accessTokenCookie.setPath("/");
-            accessTokenCookie.setMaxAge(900);    // 15 minutes
-            accessTokenCookie.setAttribute("SameSite", "Lax");
+            accessTokenCookie.setMaxAge(900);           // 15 minutes
+            accessTokenCookie.setAttribute("SameSite", cookieSameSite);
             httpResponse.addCookie(accessTokenCookie);
 
             Cookie refreshTokenCookie = new Cookie("refreshToken", newRefreshToken);
             refreshTokenCookie.setHttpOnly(true);
-            refreshTokenCookie.setSecure(false);  // TODO: true in production
+            refreshTokenCookie.setSecure(cookieSecure);  // ✅ Environment-based
             refreshTokenCookie.setPath("/");
-            refreshTokenCookie.setMaxAge(604800); // 7 days
-            refreshTokenCookie.setAttribute("SameSite", "Lax");
+            refreshTokenCookie.setMaxAge(604800);        // 7 days
+            refreshTokenCookie.setAttribute("SameSite", cookieSameSite);
             httpResponse.addCookie(refreshTokenCookie);
 
-            // Build response (also include tokens in body for backward compatibility)
-            Map<String, Object> response = new HashMap<>();
-            response.put("accessToken", newAccessToken); // Frontend expects 'accessToken'
-            response.put("refreshToken", newRefreshToken);
+            // ✅ SECURITY FIX #3c: Blacklist old refresh token after rotation
+            // Problem: Old refresh tokens could be reused (token replay attack)
+            // Solution: Blacklist old refresh token JTI to prevent reuse
+            //
+            // This implements "refresh token rotation":
+            // - Old refresh token becomes invalid after use
+            // - Only the newest refresh token can be used
+            // - Prevents token replay attacks
+            if (refreshTokenId != null) {
+                Instant expiresAt = decodedToken.getExpiresAt();
+                if (expiresAt != null) {
+                    tokenBlacklistService.addToBlacklist(refreshTokenId, expiresAt);
+                    long ttlSeconds = expiresAt.getEpochSecond() - Instant.now().getEpochSecond();
+                    log.info("✅ Old refresh token blacklisted: {} (TTL: {}s)", refreshTokenId, ttlSeconds);
+                } else {
+                    log.warn("⚠️ Cannot blacklist refresh token {} - no expiry time", refreshTokenId);
+                }
+            }
 
-            log.info("Token refreshed successfully for userId: {}, set HTTPOnly cookies", userId);
+            // ✅ SECURITY FIX #5: Don't include tokens in response body
+            // Same fix as login endpoint - use HTTPOnly cookies only
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Tokens refreshed and stored in HTTPOnly cookies");
+            // ✅ FIX: Don't expose tokens in response body
+            // Previous: response.put("accessToken", newAccessToken);
+            // Previous: response.put("refreshToken", newRefreshToken);
+
+            log.info("Token refreshed successfully for userId: {}, set HTTPOnly cookies (no body tokens), rotated refresh token", userId);
 
             return ResponseEntity.ok(response);
 
@@ -674,5 +1091,53 @@ public class WebAuthController {
             log.error("Failed to get current user: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to load user info");
         }
+    }
+
+    // =====================================================
+    // HELPER METHODS
+    // =====================================================
+
+    /**
+     * Generate deterministic UUID for legacy sec_user accounts
+     *
+     * <p><strong>Purpose:</strong></p>
+     * <ul>
+     *   <li>Legacy sec_user accounts don't have corresponding rows in users table</li>
+     *   <li>We need consistent UUID for JWT subject and permission caching</li>
+     *   <li>UUID must be deterministic (same username → same UUID)</li>
+     * </ul>
+     *
+     * <p><strong>Implementation:</strong></p>
+     * <ul>
+     *   <li>Uses UUID v3 (name-based MD5 hash)</li>
+     *   <li>Namespace: Custom namespace for HEMIS legacy users</li>
+     *   <li>Input: username string</li>
+     *   <li>Output: Consistent UUID across logins</li>
+     * </ul>
+     *
+     * <p><strong>Example:</strong></p>
+     * <pre>
+     * generateLegacyUserId("otm999") → "a1b2c3d4-e5f6-3789-0abc-def123456789" (always same)
+     * generateLegacyUserId("admin")  → "f1e2d3c4-b5a6-3987-0fed-cba987654321" (always same)
+     * </pre>
+     *
+     * <p><strong>Security Note:</strong></p>
+     * <ul>
+     *   <li>UUID is public (included in JWT), so no security risk</li>
+     *   <li>Cannot reverse UUID to get username (one-way hash)</li>
+     *   <li>Consistent UUID needed for permission caching and audit trail</li>
+     * </ul>
+     *
+     * @param username the username from sec_user table
+     * @return deterministic UUID for this username
+     */
+    private UUID generateLegacyUserId(String username) {
+        // Custom namespace UUID for HEMIS legacy users
+        // This ensures no collisions with other UUID generation systems
+        UUID namespace = UUID.fromString("6ba7b810-9dad-11d1-80b4-00c04fd430c8"); // ISO OID namespace
+
+        // Generate deterministic UUID using namespace + username
+        // Same username will always produce same UUID
+        return UUID.nameUUIDFromBytes((namespace.toString() + ":" + username).getBytes());
     }
 }

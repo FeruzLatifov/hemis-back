@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * @since 2.0.0
  */
-@Tag(name = "01. Legacy Entity APIs - Student", description = "Legacy student REST endpoints from old-hemis")
+@Tag(name = "Legacy Entity APIs - Student", description = "Legacy student REST endpoints from old-hemis")
 @RestController
 @RequestMapping("/student")
 @RequiredArgsConstructor

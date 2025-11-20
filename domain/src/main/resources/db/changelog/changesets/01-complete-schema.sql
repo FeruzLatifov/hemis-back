@@ -34,11 +34,26 @@ CREATE TABLE IF NOT EXISTS users (
     -- Primary Key
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    -- Authentication
-    username VARCHAR(255) NOT NULL UNIQUE,
+    -- Authentication (from sec_user)
+    username VARCHAR(255) NOT NULL UNIQUE,  -- from login
+    username_lowercase VARCHAR(255),  -- from login_lc
     password VARCHAR(255) NOT NULL,  -- BCrypt hash
+    password_encryption VARCHAR(50),  -- from password_encryption
     email VARCHAR(255) UNIQUE,
-    full_name VARCHAR(255),
+
+    -- Personal Information (from sec_user)
+    name VARCHAR(255),  -- from name (legacy full name)
+    first_name VARCHAR(255),  -- from first_name
+    last_name VARCHAR(255),  -- from last_name
+    middle_name VARCHAR(255),  -- from middle_name
+    full_name VARCHAR(255),  -- computed field for modern usage
+    position VARCHAR(255),  -- from position_
+
+    -- User Settings (from sec_user)
+    language VARCHAR(20),  -- from language_
+    time_zone VARCHAR(50),  -- from time_zone
+    time_zone_auto BOOLEAN,  -- from time_zone_auto
+    locale VARCHAR(20),  -- computed from language
 
     -- User Context (Multi-tenancy)
     user_type VARCHAR(50) NOT NULL DEFAULT 'SYSTEM',
@@ -46,22 +61,39 @@ CREATE TABLE IF NOT EXISTS users (
     entity_code VARCHAR(255),
         -- OTM code for UNIVERSITY users (TATU, NUUZ, etc.)
         -- NULL for SYSTEM users
+    university_id VARCHAR(255),  -- from _university (FK to hemishe_e_university.code)
     phone VARCHAR(50),
         -- Optional phone number
 
+    -- Legacy CUBA Relations (from sec_user)
+    group_id UUID,  -- from group_id (FK to sec_group.id)
+    group_names VARCHAR(255),  -- from group_names
+
     -- Account Status
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,  -- modern
+    active BOOLEAN NOT NULL DEFAULT TRUE,  -- from active (legacy)
     account_non_locked BOOLEAN NOT NULL DEFAULT TRUE,
     failed_attempts INTEGER DEFAULT 0,
         -- Lock account after 5 failed attempts
+
+    -- Security Settings (from sec_user)
+    ip_mask VARCHAR(200),  -- from ip_mask
+    change_password_at_logon BOOLEAN,  -- from change_password_at_logon
+
+    -- Multi-tenancy (from sec_user)
+    sys_tenant_id VARCHAR(255),  -- from sys_tenant_id
+    dtype VARCHAR(100),  -- from dtype (discriminator type)
 
     -- Versioning (Optimistic Locking)
     version INTEGER DEFAULT 1,
 
     -- Timestamps (Modern naming)
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP,
-    deleted_at TIMESTAMP,  -- Soft delete (NULL = active)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- from create_ts
+    created_by VARCHAR(50),  -- from created_by
+    updated_at TIMESTAMP,  -- from update_ts
+    updated_by VARCHAR(50),  -- from updated_by
+    deleted_at TIMESTAMP,  -- Soft delete (NULL = active) from delete_ts
+    deleted_by VARCHAR(50),  -- from deleted_by
 
     -- Constraints
     CONSTRAINT chk_user_type CHECK (
@@ -73,9 +105,23 @@ CREATE TABLE IF NOT EXISTS users (
     )
 );
 
-COMMENT ON TABLE users IS 'Modern user authentication table - JWT-ready - Spring Boot best practice';
-COMMENT ON COLUMN users.username IS 'Login username - unique identifier';
+-- Foreign key constraints for legacy relations
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_group
+    FOREIGN KEY (group_id) REFERENCES sec_group(id) ON DELETE SET NULL;
+
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_university
+    FOREIGN KEY (university_id) REFERENCES hemishe_e_university(code) ON DELETE SET NULL;
+
+COMMENT ON TABLE users IS 'Modern user authentication table - JWT-ready - includes all legacy sec_user fields';
+COMMENT ON COLUMN users.username IS 'Login username - unique identifier (from login)';
 COMMENT ON COLUMN users.password IS 'BCrypt password hash - NEVER store plain text';
+COMMENT ON COLUMN users.first_name IS 'User first name (from sec_user.first_name)';
+COMMENT ON COLUMN users.last_name IS 'User last name (from sec_user.last_name)';
+COMMENT ON COLUMN users.middle_name IS 'User middle name (from sec_user.middle_name)';
+COMMENT ON COLUMN users.university_id IS 'University code (from sec_user._university FK to hemishe_e_university.code)';
+COMMENT ON COLUMN users.group_id IS 'Legacy CUBA group (from sec_user.group_id FK to sec_group.id)';
 COMMENT ON COLUMN users.user_type IS 'User category: UNIVERSITY, MINISTRY, ORGANIZATION, SYSTEM';
 COMMENT ON COLUMN users.entity_code IS 'OTM code for university users (e.g., TATU, NUUZ)';
 COMMENT ON COLUMN users.deleted_at IS 'Soft delete timestamp (NULL = active user)';
@@ -228,6 +274,9 @@ COMMENT ON TABLE role_permissions IS 'Role-Permission mapping - many-to-many rel
 CREATE INDEX IF NOT EXISTS idx_users_username
     ON users(username) WHERE deleted_at IS NULL;
 
+CREATE INDEX IF NOT EXISTS idx_users_username_lowercase
+    ON users(username_lowercase) WHERE deleted_at IS NULL;
+
 CREATE INDEX IF NOT EXISTS idx_users_email
     ON users(email) WHERE deleted_at IS NULL;
 
@@ -236,6 +285,15 @@ CREATE INDEX IF NOT EXISTS idx_users_entity_code
 
 CREATE INDEX IF NOT EXISTS idx_users_user_type
     ON users(user_type) WHERE deleted_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_users_university_id
+    ON users(university_id) WHERE deleted_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_users_group_id
+    ON users(group_id) WHERE deleted_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_users_active
+    ON users(active) WHERE deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_users_deleted
     ON users(deleted_at);

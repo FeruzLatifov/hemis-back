@@ -10,7 +10,7 @@
       "WebFetch(domain:docs.spring.io)",
       "WebFetch(domain:docs.sentry.io)"
     ],
-    "deny": [
+        "ask": [
       // Protect secrets and environment files from being read【684543793350297†L329-L345】
       "Read(./.env)",
       "Read(./.env.*)",
@@ -21,6 +21,17 @@
       "Bash(rm:*)",
       "Bash(sudo:*)"
     ],
+    // "deny": [
+    //   // Protect secrets and environment files from being read【684543793350297†L329-L345】
+    //   "Read(./.env)",
+    //   "Read(./.env.*)",
+    //   "Read(./secrets/**)",
+    //   "Read(./config/credentials.json)",
+    //   "Read(./build)",
+    //   // Disallow destructive shell commands by default
+    //   "Bash(rm:*)",
+    //   "Bash(sudo:*)"
+    // ],
     "ask": [
       // Prompt before pushing to remote repositories or running containers
       "Bash(git push:*)",

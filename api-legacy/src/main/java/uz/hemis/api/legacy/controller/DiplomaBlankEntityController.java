@@ -15,7 +15,7 @@ import uz.hemis.domain.repository.DiplomaBlankRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Tag(name = "01. Legacy Entity APIs - Diploma Blanks", description = "CUBA-compatible CRUD operations for diploma blanks entity (hemishe_EDiplomaBlank)")
+@Tag(name = "Legacy Entity APIs - Diploma Blanks", description = "CUBA-compatible CRUD operations for diploma blanks entity (hemishe_EDiplomaBlank)")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EDiplomaBlank")
 @RequiredArgsConstructor

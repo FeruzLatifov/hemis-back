@@ -52,7 +52,7 @@ public class OpenApiConfig {
     @Value("${spring.application.version:3.0.0}")
     private String applicationVersion;
 
-    @Value("${hemis.swagger.server-url:http://localhost:8080}")
+    @Value("${hemis.swagger.server-url:http://localhost:8082}")
     private String swaggerServerUrl;
 
     // =====================================================
@@ -269,8 +269,14 @@ public class OpenApiConfig {
     private List<Tag> apiTags() {
         return Arrays.asList(
             // === AUTHENTICATION ===
+            new Tag().name("01.Token")
+                .description("OAuth2 autentifikatsiya - token olish, yangilash. Old-hemis loyihasidagi foydalanuvchilar uchun uzluksiz xizmat."),
             new Tag().name("Authentication")
                 .description("Token olish, login, logout, refresh token, OAuth2"),
+
+            // === CAPTCHA ===
+            new Tag().name("03.Captcha")
+                .description("🔢 Captcha generatsiya va validatsiya - login sahifasi uchun xavfsizlik. 5 xonali numeric captcha, 300 soniya amal qiladi."),
 
             // === STUDENTS ===
             new Tag().name("Students")

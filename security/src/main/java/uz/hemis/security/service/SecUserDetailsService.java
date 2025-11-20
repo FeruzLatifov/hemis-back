@@ -271,7 +271,7 @@ public class SecUserDetailsService implements UserDetailsService {
     // All user management done by old-hemis (CUBA Platform)
     //
     // To manage users:
-    // 1. Open old-hemis: http://localhost:8080/app/
+    // 1. Open old-hemis: http://localhost:8081/app/
     // 2. Navigate to: Administration > Users
     // 3. Use CUBA admin UI for user management
     // =====================================================

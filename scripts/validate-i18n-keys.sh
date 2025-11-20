@@ -3,27 +3,34 @@
 ###############################################################################
 # I18n Key Validator - Build-time Differential Check
 #
+# ⚠️  DEPRECATED: This script reads from MenuConfig.java which is deprecated
+# ✅ USE INSTEAD: ./scripts/validate-i18n-keys-db.sh (database-aware version)
+#
 # PURPOSE:
 #   Validates that all i18n keys referenced in code exist in properties files
 #   and identifies unused keys in properties files.
 #
+# DEPRECATION NOTICE:
+#   MenuConfig.java has been migrated to database (menus table).
+#   This script is kept for backward compatibility but will be removed in v3.0.
+#
+# MIGRATION PATH:
+#   Use validate-i18n-keys-db.sh which reads directly from database
+#
 # USAGE:
-#   ./scripts/validate-i18n-keys.sh
+#   ./scripts/validate-i18n-keys.sh (DEPRECATED)
+#   ./scripts/validate-i18n-keys-db.sh (RECOMMENDED)
 #
 # EXIT CODES:
 #   0 - All keys valid
 #   1 - Missing or extra keys found
-#
-# INTEGRATION:
-#   Add to build.gradle.kts:
-#   tasks.named("build") {
-#       doFirst {
-#           exec {
-#               commandLine("./scripts/validate-i18n-keys.sh")
-#           }
-#       }
-#   }
 ###############################################################################
+
+echo "⚠️  WARNING: This script is DEPRECATED"
+echo "    MenuConfig.java has been migrated to database"
+echo "    Use: ./scripts/validate-i18n-keys-db.sh instead"
+echo ""
+sleep 2
 
 set -e
 
