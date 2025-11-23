@@ -2,6 +2,10 @@ package uz.hemis.api.legacy.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -54,7 +58,7 @@ import java.util.stream.Collectors;
  * @since 2.0.0 (Clean Architecture)
  * @author Senior System Architect
  */
-@Tag(name = "Students")
+@Tag(name = "04.Talaba", description = "Talaba entity ma'lumotlari API - CUBA Platform REST API compatible")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EStudent")
 @RequiredArgsConstructor
@@ -68,17 +72,60 @@ public class StudentEntityController {
     private static final String ENTITY_NAME = "hemishe_EStudent";
 
     /**
-     * Get student by ID
-     * 
+     * Build _instanceName for CUBA compatibility
+     * Format: "LASTNAME FIRSTNAME FATHERNAME"
+     */
+    private String buildInstanceName(StudentDto dto) {
+        StringBuilder sb = new StringBuilder();
+        if (dto.getLastname() != null) sb.append(dto.getLastname());
+        if (dto.getFirstname() != null) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(dto.getFirstname());
+        }
+        if (dto.getFathername() != null) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(dto.getFathername());
+        }
+        return sb.length() > 0 ? sb.toString() : dto.getId().toString();
+    }
+
+    /**
+     * Bitta talaba ma'lumotlarini olish
+     *
      * ✅ REFACTORED: Uses service layer
      * ✅ BACKWARD COMPATIBLE: Same response format (CUBA Map)
      */
     @GetMapping("/{entityId}")
-    @Operation(summary = "Get student by ID", description = "Returns a single student by UUID")
+    @Operation(
+        summary = "Bitta talaba ma'lumotlarini olish",
+        description = """
+            ID bo'yicha talaba ma'lumotlarini olish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** GET /app/rest/v2/entities/hemishe_EStudent/{entityId}
+            **Auth:** Bearer token (required)
+
+            **Parametrlar:**
+            - dynamicAttributes: Dinamik atributlarni qaytarish (boolean)
+            - returnNulls: Null qiymatlarni qaytarish (boolean)
+            - view: CUBA view nomi (string)
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talaba ma'lumotlari qaytarildi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi - Token noto'g'ri yoki muddati o'tgan"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q - Foydalanuvchida entity o'qish huquqi yo'q"),
+        @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba topilmadi")
+    })
     public ResponseEntity<Map<String, Object>> getById(
+            @Parameter(description = "Talaba UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable UUID entityId,
+            @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,
+            @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "CUBA view nomi (masalan: eStudent-view)")
             @RequestParam(required = false) String view) {
 
         log.debug("GET student by id: {} (via service layer)", entityId);
@@ -99,58 +146,132 @@ public class StudentEntityController {
     }
 
     /**
-     * Update student
-     * 
-     * ✅ REFACTORED: Uses service layer with validation
+     * Talaba ma'lumotlarini o'zgartirish (Partial Update)
+     *
+     * ✅ REFACTORED: Uses service.partialUpdate() - only passed fields are updated
      * ✅ BACKWARD COMPATIBLE: Accepts CUBA Map format
+     * ✅ CUBA PATTERN: PUT = partial update (only fields in JSON body are changed)
      */
     @PutMapping("/{entityId}")
-    @Operation(summary = "Update student", description = "Updates an existing student")
+    @Operation(
+        summary = "Talaba ma'lumotlarini o'zgartirish",
+        description = """
+            Mavjud talaba ma'lumotlarini qisman yangilash.
+
+            **Faqat JSON body da yuborilgan fieldlar yangilanadi!**
+            Yuborilmagan fieldlar o'zgartirilmaydi.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** PUT /app/rest/v2/entities/hemishe_EStudent/{entityId}
+            **Auth:** Bearer token (required)
+
+            **Misol request body:**
+            ```json
+            {
+                "phone": "+998901234567",
+                "email": "student@example.com"
+            }
+            ```
+            Faqat phone va email yangilanadi, boshqa fieldlar o'zgartirilmaydi.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talaba yangilandi",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(implementation = Map.class))),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov - Validatsiya xatosi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi - Token noto'g'ri yoki muddati o'tgan"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q - Foydalanuvchida yangilash huquqi yo'q"),
+        @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba topilmadi")
+    })
     public ResponseEntity<Map<String, Object>> update(
+            @Parameter(description = "Talaba UUID identifikatori", example = "9dbdbe96-88e2-f6c7-453a-298c7187311c")
             @PathVariable UUID entityId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "Yangilanadigan fieldlar (faqat yuborilgan fieldlar o'zgaradi)",
+                required = true,
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(example = """
+                        {
+                            "phone": "+998901234567",
+                            "email": "student@example.com",
+                            "address": "Toshkent shahar"
+                        }
+                        """)))
             @RequestBody Map<String, Object> body,
+            @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("PUT student id: {} (via service layer)", entityId);
+        log.info("PUT student id: {} - partial update (only passed fields)", entityId);
+        log.debug("Fields to update: {}", body.keySet());
 
         try {
-            // Convert CUBA Map to DTO
+            // Convert CUBA Map to DTO (null fields stay null)
             StudentDto dto = adapter.fromMap(body, StudentDto.class);
-            
-            // Service layer - with validation, cache eviction, audit
-            StudentDto updated = studentService.update(entityId, dto);
-            
-            // Convert back to CUBA format
-            Map<String, Object> cubaMap = adapter.toMap(updated, ENTITY_NAME, returnNulls);
-            
-            return ResponseEntity.ok(cubaMap);
-            
+
+            // Service layer - PARTIAL UPDATE (null values ignored)
+            // Only fields passed in JSON body will be updated
+            StudentDto updated = studentService.partialUpdate(entityId, dto);
+
+            // OLD-HEMIS COMPATIBLE: Return minimal response (only _entityName, _instanceName, id)
+            // Old-hemis PUT response format: {"_entityName":"hemishe_EStudent","_instanceName":"...","id":"..."}
+            Map<String, Object> minimalResponse = new LinkedHashMap<>();
+            minimalResponse.put("_entityName", ENTITY_NAME);
+            minimalResponse.put("_instanceName", buildInstanceName(updated));
+            minimalResponse.put("id", updated.getId().toString());
+
+            log.info("Student {} updated successfully", entityId);
+            return ResponseEntity.ok(minimalResponse);
+
         } catch (ResourceNotFoundException e) {
-            log.debug("Student not found for update: {}", entityId);
+            log.warn("Student not found for update: {}", entityId);
             return ResponseEntity.notFound().build();
         }
     }
 
     /**
-     * Delete student (SOFT DELETE ONLY)
-     * 
+     * Talabani o'chirish (SOFT DELETE ONLY)
+     *
      * ✅ REFACTORED: Uses service.softDelete() - NO PHYSICAL DELETE
      * ✅ BACKWARD COMPATIBLE: Same response (204 No Content)
-     * 
-     * CRITICAL: This is a soft delete (sets delete_ts). 
+     *
+     * CRITICAL: This is a soft delete (sets delete_ts).
      * Physical DELETE is blocked at service and database level.
      */
     @DeleteMapping("/{entityId}")
-    @Operation(summary = "Delete student", description = "Soft deletes a student (sets delete_ts)")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
+    @Operation(
+        summary = "Talabani o'chirish",
+        description = """
+            Talabani soft delete qilish (delete_ts ni belgilaydi).
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** DELETE /app/rest/v2/entities/hemishe_EStudent/{entityId}
+            **Auth:** Bearer token (required)
+
+            **Muhim:** Bu soft delete - ma'lumot bazadan o'chirilmaydi, faqat delete_ts belgilanadi.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talaba o'chirildi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q - Foydalanuvchida o'chirish huquqi yo'q"),
+        @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba topilmadi")
+    })
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Talaba UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
+            @PathVariable UUID entityId) {
         log.debug("DELETE student id: {} (SOFT DELETE via service)", entityId);
 
         try {
             // Service layer - soft delete only
             studentService.softDelete(entityId);
-            
-            return ResponseEntity.noContent().build();
-            
+
+            // OLD-HEMIS COMPATIBLE: Return 200 OK with empty body (not 204 No Content)
+            // Old-hemis DELETE response: HTTP 200 with empty body
+            return ResponseEntity.ok().build();
+
         } catch (ResourceNotFoundException e) {
             log.debug("Student not found for delete: {}", entityId);
             return ResponseEntity.notFound().build();
@@ -158,16 +279,34 @@ public class StudentEntityController {
     }
 
     /**
-     * Search students (GET with URL parameters)
-     * 
+     * Talabalarni qidirish (GET)
+     *
      * ✅ REFACTORED: Uses service layer
      * ✅ BACKWARD COMPATIBLE: Same response format (List of CUBA Maps)
      */
     @GetMapping("/search")
-    @Operation(summary = "Search students (GET)", description = "Search using URL parameters")
+    @Operation(
+        summary = "Talabalarni qidirish (GET)",
+        description = """
+            URL parametrlari orqali talabalarni qidirish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** GET /app/rest/v2/entities/hemishe_EStudent/search
+            **Auth:** Bearer token (required)
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talabalar ro'yxati qaytarildi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
+    })
     public ResponseEntity<List<Map<String, Object>>> searchGet(
+            @Parameter(description = "CUBA filter expression")
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "CUBA view nomi")
             @RequestParam(required = false) String view) {
 
         log.debug("GET search students with filter: {}", filter);
@@ -182,16 +321,33 @@ public class StudentEntityController {
     }
 
     /**
-     * Search students (POST with JSON filter)
-     * 
+     * Talabalarni qidirish (POST)
+     *
      * ✅ REFACTORED: Uses service layer
      * ✅ BACKWARD COMPATIBLE: Same response format
      */
     @PostMapping("/search")
-    @Operation(summary = "Search students (POST)", description = "Search using JSON filter")
+    @Operation(
+        summary = "Talabalarni qidirish (POST)",
+        description = """
+            JSON filter orqali talabalarni qidirish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** POST /app/rest/v2/entities/hemishe_EStudent/search
+            **Auth:** Bearer token (required)
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talabalar ro'yxati qaytarildi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
+    })
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filter,
+            @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "CUBA view nomi")
             @RequestParam(required = false) String view) {
 
         log.debug("POST search students with filter: {}", filter);
@@ -206,21 +362,41 @@ public class StudentEntityController {
     }
 
     /**
-     * Get all students (paginated)
-     * 
+     * Barcha talabalar ro'yxati (paginated)
+     *
      * ✅ REFACTORED: Uses service layer with proper pagination
      * ✅ BACKWARD COMPATIBLE: Same response format and parameters
      */
     @GetMapping
-    @Operation(summary = "Get all students", description = "Returns paginated list")
+    @Operation(
+        summary = "Barcha talabalar ro'yxati",
+        description = """
+            Sahifalangan talabalar ro'yxatini olish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** GET /app/rest/v2/entities/hemishe_EStudent
+            **Auth:** Bearer token (required)
+
+            **Pagination:**
+            - offset: Boshlang'ich pozitsiya (default: 0)
+            - limit: Sahifadagi yozuvlar soni (default: 50)
+            - returnCount: X-Total-Count headerini qaytarish
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talabalar ro'yxati qaytarildi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
+    })
     public ResponseEntity<List<Map<String, Object>>> getAll(
-            @Parameter(description = "Return total count") @RequestParam(required = false) Boolean returnCount,
-            @Parameter(description = "Offset for pagination") @RequestParam(defaultValue = "0") Integer offset,
-            @Parameter(description = "Limit per page") @RequestParam(defaultValue = "50") Integer limit,
-            @Parameter(description = "Sort") @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Boolean dynamicAttributes,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @Parameter(description = "Umumiy sonni qaytarish (X-Total-Count header)") @RequestParam(required = false) Boolean returnCount,
+            @Parameter(description = "Boshlang'ich pozitsiya") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Sahifadagi yozuvlar soni") @RequestParam(defaultValue = "50") Integer limit,
+            @Parameter(description = "Tartiblash (masalan: firstname,ASC)") @RequestParam(required = false) String sort,
+            @Parameter(description = "Dinamik atributlarni qaytarish") @RequestParam(required = false) Boolean dynamicAttributes,
+            @Parameter(description = "Null qiymatlarni qaytarish") @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "CUBA view nomi") @RequestParam(required = false) String view) {
 
         log.debug("GET all students - offset: {}, limit: {} (via service)", offset, limit);
 
@@ -258,15 +434,34 @@ public class StudentEntityController {
     }
 
     /**
-     * Create new student
-     * 
+     * Yangi talaba yaratish
+     *
      * ✅ REFACTORED: Uses service layer with validation
      * ✅ BACKWARD COMPATIBLE: Accepts CUBA Map format
      */
     @PostMapping
-    @Operation(summary = "Create student", description = "Creates a new student")
+    @Operation(
+        summary = "Yangi talaba yaratish",
+        description = """
+            Yangi talaba yozuvini yaratish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** POST /app/rest/v2/entities/hemishe_EStudent
+            **Auth:** Bearer token (required)
+
+            Request body CUBA entity formatida bo'lishi kerak.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talaba yaratildi"),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov - Validatsiya xatosi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q - Foydalanuvchida yaratish huquqi yo'q")
+    })
     public ResponseEntity<Map<String, Object>> create(
             @RequestBody Map<String, Object> body,
+            @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
 
         log.debug("POST create student (via service layer)");

@@ -313,6 +313,94 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     Page<Student> searchByName(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     // =====================================================
+    // Student ID Generation Queries (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Find active student by PINFL or serial number
+     * Used for duplicate detection when generating student ID
+     *
+     * @param pinfl PINFL raqami
+     * @return aktiv talaba yoki empty
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
+           "AND s.studentStatus IN ('10', '11', '13', '15') " +
+           "AND s.isDuplicate = true")
+    Optional<Student> findActiveByPinfl(@Param("pinfl") String pinfl);
+
+    /**
+     * Find active student by serial number (for foreign citizens)
+     *
+     * @param serialNumber passport serial number
+     * @return aktiv talaba yoki empty
+     */
+    @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber " +
+           "AND s.studentStatus IN ('10', '11', '13', '15')")
+    Optional<Student> findActiveBySerialNumber(@Param("serialNumber") String serialNumber);
+
+    /**
+     * Find existing student by PINFL, education type and year (for returning existing record)
+     *
+     * @param pinfl PINFL raqami
+     * @param educationType ta'lim turi kodi
+     * @param educationYear ta'lim yili kodi
+     * @return talaba yoki empty
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
+           "AND s.educationType = :educationType " +
+           "AND s.educationYear = :educationYear " +
+           "AND s.studentStatus <> '12' " +
+           "AND s.isDuplicate = false")
+    Optional<Student> findExistingStudent(
+            @Param("pinfl") String pinfl,
+            @Param("educationType") String educationType,
+            @Param("educationYear") String educationYear);
+
+    /**
+     * Find existing student by serial number for foreign citizens
+     *
+     * @param serialNumber passport serial number
+     * @param citizenship fuqarolik kodi
+     * @param educationType ta'lim turi kodi
+     * @param educationYear ta'lim yili kodi
+     * @return talaba yoki empty
+     */
+    @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber " +
+           "AND s.citizenship = :citizenship " +
+           "AND s.educationType = :educationType " +
+           "AND s.educationYear = :educationYear " +
+           "AND s.studentStatus <> '12'")
+    Optional<Student> findExistingForeignStudent(
+            @Param("serialNumber") String serialNumber,
+            @Param("citizenship") String citizenship,
+            @Param("educationType") String educationType,
+            @Param("educationYear") String educationYear);
+
+    /**
+     * Count students for generating unique code
+     *
+     * @param universityCode universitet kodi
+     * @param educationType ta'lim turi kodi
+     * @param educationYear ta'lim yili kodi
+     * @return talabalar soni
+     */
+    @Query("SELECT COUNT(s) FROM Student s WHERE s.university = :university " +
+           "AND s.educationType = :educationType " +
+           "AND s.educationYear = :educationYear")
+    long countForIdGeneration(
+            @Param("university") String universityCode,
+            @Param("educationType") String educationType,
+            @Param("educationYear") String educationYear);
+
+    /**
+     * Check if student code exists
+     *
+     * @param code student unique code
+     * @return true if exists
+     */
+    boolean existsByCode(String code);
+
+    // =====================================================
     // NOTE: NO DELETE METHODS
     // =====================================================
     // The following inherited methods are available but PROHIBITED:

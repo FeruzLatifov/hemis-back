@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
  * <p>
  * Old-hemis /app/rest/v2/services/captcha/getNumericCaptcha endpointining javobi.
  * </p>
- * <p><strong>Port:</strong> 100% old-hemis bilan mos - barcha fieldlar bir xil.</p>
+ * <p><strong>Port:</strong> 100% old-hemis bilan mos - FAQAT {id, image} fieldlari.</p>
+ * <p><strong>Old-hemis response:</strong> <code>{"id": "uuid", "image": "data:image/png;base64,..."}</code></p>
  *
  * @author HEMIS Backend Team
  * @since 2025-11-19
@@ -24,38 +25,16 @@ public class CaptchaResponse {
 
     /**
      * UUID - Captcha uchun unique identifier
+     * <p>Old-hemis: Bu ID captcha image uchun identifier.</p>
      */
     @JsonProperty("id")
     private String id;
 
     /**
      * Base64-encoded PNG image (data URI scheme)
+     * <p>Old-hemis: <code>data:image/png;base64,iVBORw0KGgo...</code></p>
+     * <p>Format: 200×60px PNG with 5-digit numeric captcha</p>
      */
     @JsonProperty("image")
     private String image;
-
-    /**
-     * Captcha ID - Redis da saqlash uchun key
-     */
-    @JsonProperty("captchaId")
-    private String captchaId;
-
-    /**
-     * Captcha type - "numeric" yoki boshqa turlar
-     */
-    @JsonProperty("captchaType")
-    private String captchaType;
-
-    /**
-     * Captcha qiymati - tekshirish uchun (faqat development/test rejimida qaytariladi)
-     * Production da bu field null bo'lishi kerak!
-     */
-    @JsonProperty("captchaValue")
-    private String captchaValue;
-
-    /**
-     * Captcha amal qilish muddati (soniyalarda)
-     */
-    @JsonProperty("expiresIn")
-    private Integer expiresIn;
 }

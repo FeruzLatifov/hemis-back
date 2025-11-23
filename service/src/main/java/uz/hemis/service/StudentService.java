@@ -16,9 +16,13 @@ import uz.hemis.domain.entity.Student;
 import uz.hemis.service.mapper.StudentMapper;
 import uz.hemis.domain.repository.StudentRepository;
 
+import uz.hemis.common.dto.StudentIdRequest;
+
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -621,5 +625,183 @@ public class StudentService {
     public Object submitContractStatistics(Map<String, Object> request) {
         log.info("Submitting contract statistics: {}", request);
         return Map.of("success", true, "submitted", true);
+    }
+
+    // =====================================================
+    // Student ID Generation (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Generate or retrieve student unique ID (OLD-HEMIS compatible)
+     *
+     * <p><strong>Endpoint:</strong> POST /app/rest/v2/services/student/id</p>
+     *
+     * <p><strong>Logic (from old-hemis StudentServiceBean.id()):</strong></p>
+     * <ol>
+     *   <li>Validate input parameters</li>
+     *   <li>Check if student is already active (return error)</li>
+     *   <li>Search for existing student by PINFL/serial + educationType + educationYear</li>
+     *   <li>If found, return existing student</li>
+     *   <li>If not found, generate new unique ID and create student</li>
+     * </ol>
+     *
+     * <p><strong>ID Format:</strong> {universityCode}{YY}{educationType}{sequence}</p>
+     * <p>Example: 010242311234 = university 0102, year 24, type 23, sequence 11234</p>
+     *
+     * @param data StudentIdRequest with citizenship, pinfl, serial, year, education_type
+     * @param universityCode current user's university code
+     * @return Map with success, unique_id, is_new, student, etc.
+     */
+    @Transactional
+    public Map<String, Object> generateStudentId(StudentIdRequest data, String universityCode) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        log.info("Generating student ID - PINFL: {}, Serial: {}, University: {}",
+                data.getPinfl(), data.getSerial(), universityCode);
+
+        // Step 1: Validate parameters
+        try {
+            data.validate();
+        } catch (IllegalArgumentException ex) {
+            log.warn("Validation failed: {}", ex.getMessage());
+            result.put("success", false);
+            result.put("message", ex.getMessage());
+            result.put("data", data);
+            return result;
+        }
+
+        // Step 2: Determine ID data (PINFL for Uzbeks, serial for foreigners)
+        String idData;
+        if ("11".equals(data.getCitizenship())) {
+            idData = data.getPinfl();
+        } else {
+            idData = data.getSerial();
+        }
+
+        // Step 3: Check if student is already active
+        Optional<Student> activeStudent = findActiveStudent(idData, data.getCitizenship());
+        if (activeStudent.isPresent()) {
+            log.warn("Student is already active: {}", activeStudent.get().getCode());
+            result.put("success", false);
+            result.put("message", "Student is active!");
+            result.put("is_active", true);
+            result.put("student", studentMapper.toDto(activeStudent.get()));
+            return result;
+        }
+
+        // Step 4: Search for existing student (not expelled)
+        Optional<Student> existingStudent = findExistingStudent(data);
+        if (existingStudent.isPresent()) {
+            Student student = existingStudent.get();
+            log.info("Found existing student: {}", student.getCode());
+            result.put("success", true);
+            result.put("is_new", false);
+            result.put("unique_id", student.getCode());
+            result.put("student", studentMapper.toDto(student));
+            return result;
+        }
+
+        // Step 5: Create new student (OLD-HEMIS compatible)
+        try {
+            // Generate unique student code: {universityCode}{year[2:]}{education_type}{sequence(5)}
+            String uniqueCode = generateUniqueCode(universityCode, data.getYear(), data.getEducationType());
+
+            // Create new student
+            Student newStudent = new Student();
+            newStudent.setPinfl(data.getPinfl());
+            newStudent.setSerialNumber(data.getSerial());
+            newStudent.setCode(uniqueCode);
+            newStudent.setUniversity(universityCode); // FK to hemishe_e_university.code
+            newStudent.setEducationYear(data.getYear());
+            newStudent.setEducationType(data.getEducationType());
+            newStudent.setEducationForm(data.getEducationForm());
+            newStudent.setCitizenship(data.getCitizenship());
+            newStudent.setStudentStatus("10"); // Default: "boshqa" status
+            newStudent.setIsDuplicate(false);
+
+            Student saved = studentRepository.save(newStudent);
+            log.info("New student created with code: {}", uniqueCode);
+
+            result.put("success", true);
+            result.put("is_new", true);
+            result.put("unique_id", uniqueCode);
+            result.put("university", universityCode);
+            result.put("student", studentMapper.toDto(saved));
+            return result;
+
+        } catch (Exception ex) {
+            log.error("Error creating student: {}", ex.getMessage(), ex);
+            result.put("success", false);
+            result.put("message", "No results");
+            result.put("data", Map.of(
+                    "citizenship", data.getCitizenship(),
+                    "pinfl", data.getPinfl(),
+                    "serial", data.getSerial(),
+                    "year", data.getYear(),
+                    "education_type", data.getEducationType(),
+                    "education_form", data.getEducationForm()
+            ));
+            return result;
+        }
+    }
+
+    /**
+     * Find active student by PINFL or serial number
+     */
+    private Optional<Student> findActiveStudent(String idData, String citizenship) {
+        if ("11".equals(citizenship)) {
+            return studentRepository.findActiveByPinfl(idData);
+        } else {
+            return studentRepository.findActiveBySerialNumber(idData);
+        }
+    }
+
+    /**
+     * Find existing student by request data
+     */
+    private Optional<Student> findExistingStudent(StudentIdRequest data) {
+        if ("11".equals(data.getCitizenship())) {
+            return studentRepository.findExistingStudent(
+                    data.getPinfl(),
+                    data.getEducationType(),
+                    data.getYear()
+            );
+        } else {
+            return studentRepository.findExistingForeignStudent(
+                    data.getSerial(),
+                    data.getCitizenship(),
+                    data.getEducationType(),
+                    data.getYear()
+            );
+        }
+    }
+
+    /**
+     * Generate unique student code (OLD-HEMIS format)
+     * Format: {universityCode}{YY}{educationType}{sequence}
+     */
+    private String generateUniqueCode(String universityCode, String year, String educationType) {
+        // Get last 2 digits of year
+        String yearSuffix = year.length() >= 2 ? year.substring(year.length() - 2) : year;
+
+        // Get current count for this university/year/type combination
+        long count = studentRepository.countForIdGeneration(universityCode, educationType, year) + 1;
+
+        String uniqueCode;
+        int iterations = 0;
+        final int MAX_ITERATIONS = 1000;
+
+        // Generate unique code (ensure no collisions)
+        do {
+            String sequence = String.format("%05d", count);
+            uniqueCode = universityCode + yearSuffix + educationType + sequence;
+            count++;
+            iterations++;
+
+            if (iterations > MAX_ITERATIONS) {
+                throw new RuntimeException("Unable to generate unique student code after " + MAX_ITERATIONS + " attempts");
+            }
+        } while (studentRepository.existsByCode(uniqueCode));
+
+        return uniqueCode;
     }
 }

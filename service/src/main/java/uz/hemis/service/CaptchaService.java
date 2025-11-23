@@ -99,22 +99,75 @@ public class CaptchaService {
         redisTemplate.opsForValue().set(redisKey, captchaValue, CAPTCHA_EXPIRATION_SECONDS, TimeUnit.SECONDS);
         log.debug("✅ Stored captcha in Redis: key={}, ttl={}s", redisKey, CAPTCHA_EXPIRATION_SECONDS);
 
-        // 5. Build response
+        // 5. Build response - OLD-HEMIS FORMAT: faqat {id, image}
         CaptchaResponse response = CaptchaResponse.builder()
-                .id(id)
+                .id(captchaId)  // captchaId ni id sifatida ishlatamiz (old-hemis format)
                 .image(base64Image)
-                .captchaId(captchaId)
-                .captchaType("numeric")
-                .expiresIn(CAPTCHA_EXPIRATION_SECONDS)
                 .build();
 
-        // Only return captcha value in development mode (for testing)
-        if (returnCaptchaValue) {
-            response.setCaptchaValue(captchaValue);
-            log.warn("⚠️ DEVELOPMENT MODE: Returning captcha value in response!");
+        log.info("✅ Generated captcha: id={}, ttl={}s (old-hemis format)", captchaId, CAPTCHA_EXPIRATION_SECONDS);
+        return response;
+    }
+
+    /**
+     * Generate arithmetic captcha (e.g., "5 + 3 = ?")
+     * <p>
+     * Old-hemis endpoint: GET /app/rest/v2/services/captcha/getArithmeticCaptcha
+     * </p>
+     *
+     * @return CaptchaResponse with image and metadata
+     */
+    public CaptchaResponse generateArithmeticCaptcha() {
+        log.debug("🔢 Generating arithmetic captcha...");
+
+        // 1. Generate random arithmetic expression
+        int num1 = RANDOM.nextInt(20); // 0-19
+        int num2 = RANDOM.nextInt(20); // 0-19
+        char operator = RANDOM.nextBoolean() ? '+' : '-';
+
+        int result;
+        String expression;
+        if (operator == '+') {
+            result = num1 + num2;
+            expression = num1 + " + " + num2 + " = ?";
+        } else {
+            // Ensure non-negative result
+            if (num1 < num2) {
+                int temp = num1;
+                num1 = num2;
+                num2 = temp;
+            }
+            result = num1 - num2;
+            expression = num1 + " - " + num2 + " = ?";
         }
 
-        log.info("✅ Generated captcha: id={}, captchaId={}, expiresIn={}s", id, captchaId, CAPTCHA_EXPIRATION_SECONDS);
+        String captchaValue = String.valueOf(result);
+        log.debug("Generated arithmetic expression: {} (answer: {})", expression, captchaValue);
+
+        // 2. Generate unique IDs
+        String captchaId = UUID.randomUUID().toString();
+
+        // 3. Create PNG image
+        String base64Image;
+        try {
+            base64Image = createCaptchaImage(expression);
+        } catch (IOException e) {
+            log.error("❌ Failed to create arithmetic captcha image", e);
+            throw new RuntimeException("Failed to generate arithmetic captcha image", e);
+        }
+
+        // 4. Store in Redis
+        String redisKey = "captcha:" + captchaId;
+        redisTemplate.opsForValue().set(redisKey, captchaValue, CAPTCHA_EXPIRATION_SECONDS, TimeUnit.SECONDS);
+        log.debug("✅ Stored arithmetic captcha in Redis: key={}, answer={}, ttl={}s", redisKey, captchaValue, CAPTCHA_EXPIRATION_SECONDS);
+
+        // 5. Build response - OLD-HEMIS FORMAT: faqat {id, image}
+        CaptchaResponse response = CaptchaResponse.builder()
+                .id(captchaId)
+                .image(base64Image)
+                .build();
+
+        log.info("✅ Generated arithmetic captcha: id={}, expression='{}', ttl={}s (old-hemis format)", captchaId, expression, CAPTCHA_EXPIRATION_SECONDS);
         return response;
     }
 

@@ -1,587 +1,335 @@
-# =====================================================
-# HEMIS Backend - Liquibase Master Changelog
-# =====================================================
-# Senior Architect: Clean, Consolidated Migrations
-# Migrated from: hemis-back-main Flyway migrations
-# Date: 2025-01-12
-#
-# Strategy:
-# ✅ No duplication - all migrations consolidated
-# ✅ Logical grouping - schema, data, migration, translations
-# ✅ Complete rollback support
-# ✅ Best practice naming and structure
-#
-# Original source: 15 Flyway files (3774 lines)
-# Consolidated to: 4 Liquibase changesets (2883 lines)
-# =====================================================
-
 databaseChangeLog:
-  # Logical file path for consistent tracking across environments
-  - property:
-      name: logicalFilePath
-      value: db/changelog/db.changelog-master.yaml
   # =====================================================
-  # V1: Complete Database Schema
+  # HEMIS DATABASE MIGRATIONS
   # =====================================================
-  # Creates all required tables:
-  # - Authentication: users, roles, permissions
-  # - RBAC: user_roles, role_permissions
-  # - I18n: h_system_message, h_system_message_translation
-  #
-  # Total: 7 tables with indexes and constraints
-  # Source: V1 + V5 from main (consolidated)
+  # Industry Best Practices (Large Project Structure):
+  # - Nested structure: schema/, seed/, migration/
+  # - 1 file = 1 table (granular changesets)
+  # - preConditions instead of IF NOT EXISTS
+  # - Idempotent seeds (ON CONFLICT DO UPDATE)
+  # - Rollback scripts alongside main files
   # =====================================================
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PHASE 1: SCHEMA (DDL) - changesets/schema/
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
-      id: v1-complete-schema
+      id: V001_create_users
       author: hemis-team
-      comment: Create complete database schema (auth + i18n tables)
-      context: "dev,staging,production"
-      labels: "schema,ddl"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      failOnError: true
-
-      sqlFile:
-        path: changesets/01-complete-schema.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-
-      rollback:
-        sqlFile:
-          path: changesets/01-complete-schema-rollback.sql
-          relativeToChangelogFile: true
-
-  # Tag after V1 for rollback support
-  - changeSet:
-      id: tag-v1
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v1-schema-complete
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V2: Complete Seed Data
-  # =====================================================
-  # Seeds all required data:
-  # - 1 admin user (username: admin, password: admin)
-  # - 5 roles (SUPER_ADMIN, ADMINISTRATORS, etc.)
-  # - 90 permissions (30 basic CRUD + 60 menu permissions)
-  # - Role-permission assignments (all to ADMINISTRATORS)
-  # - User-role assignments
-  #
-  # Menu permissions structure:
-  # - Dashboard (1)
-  # - Registry (4)
-  # - Rating (14)
-  # - Data Management (10)
-  # - Reports (25)
-  # - System (6)
-  #
-  # Source: V2 + V9 from main (consolidated)
-  # =====================================================
-
-  - changeSet:
-      id: v2-complete-seed-data
-      author: hemis-team
-      comment: Seed complete data (roles + permissions only, NO admin user)
-      context: "!test"
-      labels: "data,seed"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-
-      sqlFile:
-        path: changesets/02-complete-seed-data.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-        # CRITICAL: DO NOT split - file contains PL/pgSQL blocks (DO $$)
-
-      rollback:
-        sqlFile:
-          path: changesets/02-complete-seed-data-rollback.sql
-          relativeToChangelogFile: true
-
-  # Tag after V2 for rollback support
-  - changeSet:
-      id: tag-v2
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v2-seed-data-complete
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V3: Migrate Old-Hemis Users
-  # =====================================================
-  # Migrates existing data from old-hemis CUBA:
-  # - Roles: sec_role → roles
-  # - Users: sec_user → users (357 users)
-  # - Mappings: sec_user_role → user_roles
-  #
-  # Strategy: Hybrid approach
-  # - Preserves original UUIDs for integrity
-  # - Keeps BCrypt passwords as-is
-  # - Only migrates active records (delete_ts IS NULL)
-  # - Skips duplicates (ON CONFLICT DO NOTHING)
-  #
-  # Source: V3 from main
-  # =====================================================
-
-  # =====================================================
-  # V3: Migrate Old-Hemis Users (sec_user → users)
-  # =====================================================
-  # Strategy: Simple SQL INSERT statements (NO PL/pgSQL)
-  # Migrates all active users and their role mappings
-  # =====================================================
-
-  - changeSet:
-      id: v3-migrate-old-hemis-users
-      author: hemis-team
-      comment: Migrate users from old-hemis (sec_user → users) using simple SQL
-      context: "!test"
-      labels: "data,migration"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-
       preConditions:
-        onFail: MARK_RAN
-        tableExists:
-          tableName: sec_user
-
-      sqlFile:
-        path: changesets/03-migrate-old-users.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: true
-        endDelimiter: ";"
-
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: users
+      changes:
+        - sqlFile:
+            path: changesets/schema/V001_create_users.sql
+            relativeToChangelogFile: true
+            splitStatements: false
       rollback:
-        sqlFile:
-          path: changesets/03-migrate-old-users-rollback.sql
-          relativeToChangelogFile: true
+        - sqlFile:
+            path: changesets/schema/V001_create_users_rollback.sql
+            relativeToChangelogFile: true
 
-  # Tag after V3 for rollback support
   - changeSet:
-      id: tag-v3
+      id: V002_create_roles
       author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: roles
+      changes:
+        - sqlFile:
+            path: changesets/schema/V002_create_roles.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V002_create_roles_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: V003_create_permissions
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: permissions
+      changes:
+        - sqlFile:
+            path: changesets/schema/V003_create_permissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V003_create_permissions_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: V004_create_user_roles
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: user_roles
+      changes:
+        - sqlFile:
+            path: changesets/schema/V004_create_user_roles.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V004_create_user_roles_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: V005_create_role_permissions
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: role_permissions
+      changes:
+        - sqlFile:
+            path: changesets/schema/V005_create_role_permissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V005_create_role_permissions_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: V006_create_system_messages
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: system_messages
+      changes:
+        - sqlFile:
+            path: changesets/schema/V006_create_system_messages.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V006_create_system_messages_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: V007_create_system_message_translations
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: system_message_translations
+      changes:
+        - sqlFile:
+            path: changesets/schema/V007_create_system_message_translations.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V007_create_system_message_translations_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: V008_create_menus
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: menus
+      changes:
+        - sqlFile:
+            path: changesets/schema/V008_create_menus.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V008_create_menus_rollback.sql
+            relativeToChangelogFile: true
+
+  # V009, V010 - Languages (renamed from V011, V012)
+
+  - changeSet:
+      id: V009_create_languages
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: languages
+      changes:
+        - sqlFile:
+            path: changesets/schema/V009_create_languages.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V009_create_languages_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: V010_create_language_translations
+      author: hemis-team
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            tableExists:
+              tableName: language_translations
+      changes:
+        - sqlFile:
+            path: changesets/schema/V010_create_language_translations.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/schema/V010_create_language_translations_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: tag-schema-complete
+      author: hemis-team
       changes:
         - tagDatabase:
-            tag: v3-users-migrated
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
+            tag: schema-v1.0
 
-  # =====================================================
-  # V4: Complete Menu Translations
-  # =====================================================
-  # Complete translation system for menu:
-  # - 127 menu items with full nested structure
-  # - 4 languages: uz-UZ, oz-UZ (Cyrillic), ru-RU, en-US
-  # - Total: 508 translation records (127 × 4)
-  #
-  # Menu structure (6 main sections):
-  # 1. Dashboard
-  # 2. Registry (Reestlar) - 19 nested items
-  # 3. Rating (Reyting) - 14 nested items
-  # 4. Data Management - 44 nested items
-  # 5. Reports (Hisobotlar) - 43 nested items
-  # 6. System (Tizim) - 6 items
-  #
-  # Source: V10 + V12 + V13 + V14 + V15 from main (consolidated)
-  # =====================================================
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PHASE 2: SEED DATA (DML) - changesets/seed/
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
-      id: v4-complete-menu-translations
+      id: S001_seed_roles
       author: hemis-team
-      comment: Complete menu translations (127 items × 4 languages = 508 records)
-      context: "!test"
-      labels: "i18n,menu,translations"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-
-      sqlFile:
-        path: changesets/04-complete-translations.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-
+      changes:
+        - sqlFile:
+            path: changesets/seed/S001_seed_roles.sql
+            relativeToChangelogFile: true
+            splitStatements: false
       rollback:
-        sqlFile:
-          path: changesets/04-complete-translations-rollback.sql
-          relativeToChangelogFile: true
+        - sqlFile:
+            path: changesets/seed/S001_seed_roles_rollback.sql
+            relativeToChangelogFile: true
 
-  # Tag after V4 for rollback support
   - changeSet:
-      id: tag-v4
+      id: S002_seed_permissions_core
       author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
+      changes:
+        - sqlFile:
+            path: changesets/seed/S002_seed_permissions_core.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S002_seed_permissions_core_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: S003_seed_permissions_admin
+      author: hemis-team
+      changes:
+        - sqlFile:
+            path: changesets/seed/S003_seed_permissions_admin.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S003_seed_permissions_admin_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: S003b_seed_permissions_menu
+      author: hemis-team
+      changes:
+        - sqlFile:
+            path: changesets/seed/S003b_seed_permissions_menu.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql: |
+            DELETE FROM permissions WHERE code LIKE 'registry.%';
+            DELETE FROM permissions WHERE code LIKE 'rating.%';
+            DELETE FROM permissions WHERE code LIKE 'data.%';
+            DELETE FROM permissions WHERE code LIKE 'reports.%' AND code != 'reports.view';
+            DELETE FROM permissions WHERE code LIKE 'system.%' AND code NOT IN ('settings.view', 'settings.edit');
+
+  - changeSet:
+      id: S004_seed_role_permissions
+      author: hemis-team
+      changes:
+        - sqlFile:
+            path: changesets/seed/S004_seed_role_permissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S004_seed_role_permissions_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: S005_seed_languages
+      author: hemis-team
+      changes:
+        - sqlFile:
+            path: changesets/seed/S005_seed_languages.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S005_seed_languages_rollback.sql
+            relativeToChangelogFile: true
+
+  - changeSet:
+      id: S006_seed_translations
+      author: hemis-team
+      changes:
+        - sqlFile:
+            path: changesets/seed/S006_seed_translations.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sql: |
+            DELETE FROM system_message_translations WHERE message_id IN (
+              SELECT id FROM system_messages WHERE category = 'menu'
+            );
+            DELETE FROM system_messages WHERE category = 'menu';
+
+  - changeSet:
+      id: tag-seed-complete
+      author: hemis-team
       changes:
         - tagDatabase:
-            tag: v4-menu-translations-complete
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
+            tag: seed-v1.0
 
-  # =====================================================
-  # V5: Faculty Registry Translations
-  # =====================================================
-  # Add translations for Faculty Registry module:
-  # - Menu: menu.registry.faculty
-  # - Table columns: table.faculty.* (8 fields)
-  # - Actions: actions.view, actions.close
-  # - Details drawer: details.* (8 fields)
-  #
-  # Languages: uz-UZ, oz-UZ (Cyrillic), ru-RU, en-US
-  # Total: ~50 new translation records
-  #
-  # Source: Faculty Registry Module (new feature)
-  # =====================================================
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PHASE 3: MIGRATION (Legacy Data) - changesets/migration/
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
-      id: v5-faculty-registry-translations
+      id: M001_migrate_old_hemis_users
       author: hemis-team
-      comment: Add Faculty Registry translations (menu + table + actions + details)
-      context: "!test"
-      labels: "i18n,translations,faculty"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-
-      sqlFile:
-        path: changesets/05-faculty-registry-translations.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-
+      changes:
+        - sqlFile:
+            path: changesets/migration/M001_migrate_old_hemis_users.sql
+            relativeToChangelogFile: true
+            splitStatements: false
       rollback:
-        sqlFile:
-          path: changesets/05-faculty-registry-translations-rollback.sql
-          relativeToChangelogFile: true
+        - sqlFile:
+            path: changesets/migration/M001_migrate_old_hemis_users_rollback.sql
+            relativeToChangelogFile: true
 
-  # Tag after V5 for rollback support
   - changeSet:
-      id: tag-v5
+      id: tag-v1.0.0
       author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
       changes:
         - tagDatabase:
-            tag: v5-faculty-translations-complete
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V6: Menu Permissions (Registry, Rating, Data, System)
-  # =====================================================
-  # Add complete menu structure permissions from old-hemis:
-  # - Registry Module (4 permissions)
-  # - Rating Module (14 permissions)
-  # - Data Management (10 permissions)
-  # - Reports Module (24 permissions)
-  # - System Module (6 permissions)
-  #
-  # Total: 58 new permissions
-  # All assigned to Super Administrator role
-  #
-  # Source: V9__Update_Menu_Structure_Permissions.sql (Flyway backup)
-  # =====================================================
-
-  - changeSet:
-      id: v6-add-menu-permissions
-      author: hemis-team
-      comment: Add complete menu structure permissions (58 permissions)
-      context: "!test"
-      labels: "permissions,menu"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-
-      sqlFile:
-        path: changesets/06-add-menu-permissions.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-
-      rollback:
-        sqlFile:
-          path: changesets/06-add-menu-permissions-rollback.sql
-          relativeToChangelogFile: true
-          stripComments: false
-          splitStatements: false
-
-  # Tag after V6 for rollback support
-  - changeSet:
-      id: tag-v6
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v6-menu-permissions-complete
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V7: Create Menus Table (Dynamic Menu System)
-  # =====================================================
-  # Database-driven menu structure (Industry Best Practice):
-  # - Google Cloud / AWS / Netflix approach
-  # - Hierarchical menu with self-reference (parent_id)
-  # - Admin UI support (CRUD operations)
-  # - Cache invalidation strategy
-  # - Replaces hardcoded MenuConfig.java (1280+ lines)
-  #
-  # Features:
-  # - Dynamic menu management via Admin UI
-  # - Hierarchical structure (unlimited nesting)
-  # - i18n support (via h_system_message_translation)
-  # - Permission-based filtering
-  # - Soft delete support (deleted_at)
-  # - Audit trail (created_at, updated_at, created_by, updated_by)
-  #
-  # Total: 1 table (menus) with 5 indexes + triggers
-  # Source: Dynamic Menu System Implementation
-  # =====================================================
-
-  - changeSet:
-      id: v7-create-menus-table
-      author: hemis-team
-      comment: Create menus table for database-driven menu structure
-      context: "!test"
-      labels: "schema,menu,ddl"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      failOnError: true
-
-      sqlFile:
-        path: changesets/07-create-menus-table.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-
-      rollback:
-        sqlFile:
-          path: changesets/07-create-menus-table-rollback.sql
-          relativeToChangelogFile: true
-
-  # Tag after V7 for rollback support
-  - changeSet:
-      id: tag-v7
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v7-menus-table-created
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V8: Seed Menu Data (Initial Menu Structure)
-  # =====================================================
-  # Populates menus table with initial menu structure:
-  # - 6 root menus (Dashboard, Registry, Rating, Data, Reports, System)
-  # - 15 child menus (E-Reestr items + System items)
-  # - Total: 21 menu items
-  #
-  # Migrated from: MenuConfig.java (hardcoded structure)
-  # Purpose: Bootstrap database-driven menu system
-  # =====================================================
-
-  - changeSet:
-      id: v8-seed-menu-data
-      author: hemis-team
-      comment: Seed initial menu structure from MenuConfig (21 items)
-      context: "!test"
-      labels: "data,menu,seed"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-
-      sqlFile:
-        path: changesets/08-seed-menu-data.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: true
-        endDelimiter: ";"
-
-      rollback:
-        sqlFile:
-          path: changesets/08-seed-menu-data-rollback.sql
-          relativeToChangelogFile: true
-
-  # Tag after V8 for rollback support
-  - changeSet:
-      id: tag-v8
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v8-menu-data-seeded
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V9: Create Menu Audit Logs Table
-  # =====================================================
-  # Audit trail for menu CRUD operations:
-  # - Tracks WHO changed WHAT and WHEN
-  # - Stores before/after snapshots (JSONB)
-  # - Supports all actions: CREATE, UPDATE, DELETE, REORDER, etc.
-  #
-  # Industry Best Practice:
-  # - Google Workspace Audit Logs pattern
-  # - AWS CloudTrail pattern
-  # - Immutable log entries (no updates/deletes)
-  # =====================================================
-
-  - changeSet:
-      id: v9-create-menu-audit-logs-table
-      author: hemis-team
-      comment: Create menu_audit_logs table for complete audit trail
-      context: "dev,staging,production"
-      labels: "schema,ddl,audit"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      failOnError: true
-
-      sqlFile:
-        path: changesets/09-create-menu-audit-logs-table.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: true
-
-      rollback:
-        sqlFile:
-          path: changesets/09-create-menu-audit-logs-table-rollback.sql
-          relativeToChangelogFile: true
-
-  # Tag after V9 for rollback support
-  - changeSet:
-      id: tag-v9
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v9-menu-audit-logs-complete
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V10: Create Languages Table (Database-Driven i18n)
-  # =====================================================
-  # Dynamic language management without code changes:
-  # - Replaces hard-coded YAML configuration
-  # - Admin panel can add/remove languages
-  # - No application restart required
-  # - Database as single source of truth
-  #
-  # Features:
-  # - Position-based sorting
-  # - RTL support (Arabic, Hebrew, Persian)
-  # - Soft delete support
-  # - Audit timestamps
-  #
-  # Total: 1 table (languages) with 3 indexes + trigger
-  # Source: Database-Driven Language Configuration (v2.1)
-  # =====================================================
-
-  - changeSet:
-      id: v10-create-languages-table
-      author: hemis-team
-      comment: Create languages table for database-driven i18n configuration
-      context: "dev,staging,production"
-      labels: "schema,i18n,ddl"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      failOnError: true
-
-      sqlFile:
-        path: changesets/10-create-languages-table.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-
-      rollback:
-        sqlFile:
-          path: changesets/10-create-languages-table-rollback.sql
-          relativeToChangelogFile: true
-
-  # Tag after V10 for rollback support
-  - changeSet:
-      id: tag-v10
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v10-languages-table-created
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-  # =====================================================
-  # V11: Seed Languages Data (Initial 4 Languages)
-  # =====================================================
-  # Populates languages table with default languages:
-  # - uz-UZ: Uzbek (Latin) [DEFAULT]
-  # - oz-UZ: Uzbek (Cyrillic)
-  # - ru-RU: Russian
-  # - en-US: English (US)
-  #
-  # All languages active by default for backward compatibility
-  # Purpose: Bootstrap database-driven i18n system
-  # =====================================================
-
-  - changeSet:
-      id: v11-seed-languages-data
-      author: hemis-team
-      comment: Seed initial language data (4 languages)
-      context: "!test"
-      labels: "data,i18n,seed"
-      runOnChange: false
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-
-      sqlFile:
-        path: changesets/11-seed-languages-data.sql
-        relativeToChangelogFile: true
-        stripComments: false
-        splitStatements: false
-        # CRITICAL: DO NOT split - file contains PL/pgSQL block (DO $$)
-
-      rollback:
-        sqlFile:
-          path: changesets/11-seed-languages-data-rollback.sql
-          relativeToChangelogFile: true
-
-  # Tag after V11 for rollback support
-  - changeSet:
-      id: tag-v11
-      author: hemis-team
-      logicalFilePath: db/changelog/db.changelog-master.yaml
-      changes:
-        - tagDatabase:
-            tag: v11-languages-data-seeded
-      rollback:
-        - sql:
-            sql: "-- Tag rollback (no-op)"
-
-# =====================================================
-# Liquibase Commands
-# =====================================================
-# Apply all:      ./gradlew bootRun
-# Rollback last:  ./gradlew :domain:liquibaseRollbackCount -Pcount=1
-# Rollback to V6: ./gradlew :domain:liquibaseRollbackCount -Pcount=2
-# Status:         ./gradlew :domain:liquibaseStatus
-#
-# IMPORTANT: Rollback requires splitStatements=false for PostgreSQL DO $$ blocks
-# All rollback SQL files must include this configuration
-# =====================================================
+            tag: v1.0.0

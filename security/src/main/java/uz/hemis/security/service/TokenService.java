@@ -48,8 +48,9 @@ public class TokenService {
     private final JwtDecoder jwtDecoder;
     private final UserPermissionCacheService permissionCacheService;
     private final uz.hemis.domain.repository.UserRepository userRepository;
+    private final uz.hemis.domain.repository.SecUserRepository secUserRepository;  // ✅ OLD-HEMIS fallback
 
-    @Value("${hemis.security.jwt.expiration:43200}")  // 12 hours (43200 seconds)
+    @Value("${hemis.security.jwt.expiration:2592000}")  // 30 days (2592000 seconds) - OLD-HEMIS compatible
     private long accessTokenValiditySeconds;
 
     @Value("${hemis.security.jwt.refresh-expiration:604800}")  // 7 days
@@ -86,9 +87,8 @@ public class TokenService {
     public TokenResponse generateToken(UserDetails userDetails) {
         log.info("Generating JWT token for user: {}", userDetails.getUsername());
 
-        // ✅ Load User entity to get userId (UUID)
-        uz.hemis.domain.entity.User user = userRepository.findByUsername(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
+        // ✅ HYBRID: Try users table first, fallback to sec_user
+        String userId = getUserId(userDetails.getUsername());
 
         // Current time
         Instant now = Instant.now();
@@ -100,8 +100,8 @@ public class TokenService {
                 .collect(Collectors.toSet());
 
         // ✅ Cache permissions in Redis by userId (UUID) - TTL: 1 hour
-        permissionCacheService.cacheUserPermissions(user.getId(), permissions);
-        log.info("✅ Cached {} permissions for userId: {}", permissions.size(), user.getId());
+        permissionCacheService.cacheUserPermissions(java.util.UUID.fromString(userId), permissions);
+        log.info("✅ Cached {} permissions for userId: {}", permissions.size(), userId);
 
         // Build JWS Header with explicit HS256 algorithm
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
@@ -110,8 +110,8 @@ public class TokenService {
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)                          // Issuer: hemis-backend
                 .issuedAt(now)                            // Issued at: now
-                .expiresAt(expiry)                        // Expires at: now + 12h
-                .subject(user.getId().toString())        // ✅ Subject: userId (UUID)
+                .expiresAt(expiry)                        // Expires at: now + 30 days
+                .subject(userId)                          // ✅ Subject: userId (UUID string)
                 .claim("username", userDetails.getUsername())  // Username claim (for display)
                 .claim("scope", "rest-api")              // Scope claim (OAuth2)
                 .build();
@@ -130,7 +130,7 @@ public class TokenService {
                 .accessToken(accessToken)
                 .tokenType("bearer")  // OLD-HEMIS uses lowercase "bearer"
                 .refreshToken(refreshToken)  // ✅ old-hemis compatibility - WITH refresh_token
-                .expiresIn(2591998)  // OLD-HEMIS uses 2591998 (30 days - 2 seconds)
+                .expiresIn((int) (accessTokenValiditySeconds - 2))  // OLD-HEMIS uses expiration - 2 seconds
                 .scope("rest-api")
                 .build();
     }
@@ -144,9 +144,8 @@ public class TokenService {
     public String generateRefreshToken(UserDetails userDetails) {
         log.info("Generating refresh token for user: {}", userDetails.getUsername());
 
-        // ✅ Load User entity to get userId (UUID)
-        uz.hemis.domain.entity.User user = userRepository.findByUsername(userDetails.getUsername())
-            .orElseThrow(() -> new RuntimeException("User not found: " + userDetails.getUsername()));
+        // ✅ HYBRID: Try users table first, fallback to sec_user
+        String userId = getUserId(userDetails.getUsername());
 
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(refreshTokenValiditySeconds);
@@ -159,7 +158,7 @@ public class TokenService {
                 .issuer(issuer)
                 .issuedAt(now)
                 .expiresAt(expiry)
-                .subject(user.getId().toString())        // ✅ Subject: userId (UUID)
+                .subject(userId)                          // ✅ Subject: userId (UUID string)
                 .claim("username", userDetails.getUsername())  // Username (for display)
                 .claim("type", "refresh")  // Mark as refresh token
                 .build();
@@ -167,7 +166,7 @@ public class TokenService {
         String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
 
         log.info("Refresh token generated for userId: {} (expires in {} days)",
-                user.getId(), refreshTokenValiditySeconds / 86400);
+                userId, refreshTokenValiditySeconds / 86400);
 
         return refreshToken;
     }
@@ -244,7 +243,7 @@ public class TokenService {
                     .accessToken(newAccessToken)
                     .refreshToken(newRefreshToken)
                     .tokenType("bearer")  // OLD-HEMIS uses lowercase "bearer"
-                    .expiresIn(2591998)  // OLD-HEMIS uses 2591998 (30 days - 2 seconds)
+                    .expiresIn((int) (accessTokenValiditySeconds - 2))  // OLD-HEMIS uses expiration - 2 seconds
                     .scope("rest-api")
                     .build();
 
@@ -256,6 +255,41 @@ public class TokenService {
             log.warn("Invalid or expired refresh token: {}", e.getMessage());
             throw new IllegalArgumentException("Invalid or expired refresh token", e);
         }
+    }
+
+    /**
+     * Get userId by username - HYBRID lookup (users → sec_user fallback)
+     *
+     * <p><strong>CRITICAL - sec_user Compatibility:</strong></p>
+     * <ol>
+     *   <li>First try users table (new structure)</li>
+     *   <li>If not found, fallback to sec_user table (old-hemis)</li>
+     * </ol>
+     *
+     * @param username the username to lookup
+     * @return userId as String (UUID)
+     * @throws IllegalArgumentException if user not found in either table
+     */
+    private String getUserId(String username) {
+        // 1️⃣ Try users table first (new structure)
+        var userOpt = userRepository.findByUsername(username);
+        if (userOpt.isPresent()) {
+            String userId = userOpt.get().getId().toString();
+            log.debug("✅ User found in 'users' table: {} -> {}", username, userId);
+            return userId;
+        }
+
+        // 2️⃣ Fallback to sec_user table (old-hemis)
+        var secUserOpt = secUserRepository.findByLogin(username);
+        if (secUserOpt.isPresent()) {
+            String userId = secUserOpt.get().getId().toString();
+            log.debug("✅ User found in 'sec_user' table (fallback): {} -> {}", username, userId);
+            return userId;
+        }
+
+        // 3️⃣ User not found in either table
+        log.error("❌ User not found in 'users' or 'sec_user' tables: {}", username);
+        throw new IllegalArgumentException("User not found: " + username);
     }
 
     // =====================================================

@@ -181,6 +181,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT COUNT(u) FROM User u WHERE u.entityCode = :entityCode")
     long countByUniversity(@Param("entityCode") String entityCode);
 
+    /**
+     * Get university code by user ID
+     *
+     * <p>Used by Student Service to get current user's university</p>
+     *
+     * @param userId user UUID
+     * @return university code (e.g., "401") or null if not assigned
+     */
+    @Query("SELECT u.university.code FROM User u WHERE u.id = :userId")
+    Optional<String> findUniversityCodeById(@Param("userId") UUID userId);
+
     // =====================================================
     // Cache Warmup Queries
     // =====================================================

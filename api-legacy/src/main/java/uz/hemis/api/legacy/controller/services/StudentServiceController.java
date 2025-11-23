@@ -1,11 +1,22 @@
 package uz.hemis.api.legacy.controller.services;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.StudentIdRequest;
+import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.service.StudentService;
 
 import java.util.Map;
@@ -33,13 +44,14 @@ import java.util.UUID;
  * @see StudentService
  */
 @RestController
-@RequestMapping("/services/student")
+@RequestMapping("/app/rest/v2/services/student")
 @Tag(name = "Student Service API", description = "CUBA compatible student service endpoints")
 @RequiredArgsConstructor
 @Slf4j
 public class StudentServiceController {
 
     private final StudentService studentService;
+    private final UserRepository userRepository;
 
     /**
      * Verify student by PINFL
@@ -170,19 +182,189 @@ public class StudentServiceController {
     // =====================================================
 
     /**
-     * Get student ID by criteria
+     * Talaba unique ID sini olish yoki yaratish (OLD-HEMIS Compatible)
      *
-     * <p><strong>URL:</strong> {@code POST /services/student/id}</p>
+     * <p><strong>URL:</strong> {@code POST /app/rest/v2/services/student/id}</p>
      *
-     * @param request Student ID request (PINFL, passport, etc.)
-     * @return Student UUID
+     * <p><strong>Old-hemis format (JSON):</strong></p>
+     * <pre>
+     * {
+     *   "data": {
+     *     "citizenship": "11",
+     *     "pinfl": "31507976020031",
+     *     "serial": "AA6970877",
+     *     "year": "2024",
+     *     "education_type": "11",
+     *     "education_form": "11"
+     *   }
+     * }
+     * </pre>
+     *
+     * <p><strong>Response:</strong></p>
+     * <pre>
+     * {
+     *   "success": true,
+     *   "is_new": true/false,
+     *   "unique_id": "0102241100001",
+     *   "student": {...}
+     * }
+     * </pre>
+     *
+     * @param request {"data": StudentIdRequest}
+     * @return Talaba ID va ma'lumotlari
      */
     @PostMapping("/id")
-    @Operation(summary = "Talaba ID sini olish", description = "PINFL yoki boshqa ma'lumotlar orqali talaba UUID raqamini olish")
+    @Operation(
+            summary = "Talaba ID sini olish",
+            description = """
+                Talaba uchun unique ID olish yoki yangi ID yaratish.
+
+                **Agar talaba mavjud bo'lsa** - mavjud ID qaytariladi.
+                **Agar talaba mavjud bo'lmasa** - yangi ID generatsiya qilinadi va talaba yaratiladi.
+
+                **Majburiy parametrlar:**
+                - citizenship: Fuqarolik kodi (11 = O'zbekiston)
+                - pinfl: JSHSHIR raqami (O'zbeklar uchun)
+                - serial: Passport seria/raqami
+                - year: Ta'lim yili (masalan: "2024")
+                - education_type: Ta'lim turi (11=Bakalavr, 12=Magistr, 13=Doktorant)
+
+                **ID formati:** {universityCode}{YY}{educationType}{sequence}
+                **Misol:** 010224110001
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Talaba ID muvaffaqiyatli qaytarildi",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Yangi talaba",
+                                    value = """
+                                        {
+                                          "success": true,
+                                          "is_new": true,
+                                          "unique_id": "0102241100001",
+                                          "university": "0102",
+                                          "student": {
+                                            "id": "...",
+                                            "code": "0102241100001",
+                                            "pinfl": "31507976020031"
+                                          }
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Talaba aktiv (xatolik)",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Aktiv talaba xatosi",
+                                    value = """
+                                        {
+                                          "success": false,
+                                          "message": "Student is active!",
+                                          "is_active": true,
+                                          "student": {...}
+                                        }
+                                        """
+                            )
+                    )
+            )
+    })
+    @SuppressWarnings("unchecked")
     public ResponseEntity<?> id(@RequestBody Map<String, Object> request) {
         log.info("[CUBA Service] student/id: request={}", request);
-        String pinfl = (String) request.get("pinfl");
-        return ResponseEntity.ok(studentService.getById(pinfl));
+
+        // Extract "data" wrapper (old-hemis format)
+        Object dataObj = request.get("data");
+        if (dataObj == null) {
+            log.warn("Missing 'data' parameter in request");
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", "Missing 'data' parameter"
+            ));
+        }
+
+        // Convert to StudentIdRequest
+        StudentIdRequest studentIdRequest = new StudentIdRequest();
+        if (dataObj instanceof Map) {
+            Map<String, Object> data = (Map<String, Object>) dataObj;
+            studentIdRequest.setCitizenship((String) data.get("citizenship"));
+            studentIdRequest.setPinfl((String) data.get("pinfl"));
+            studentIdRequest.setSerial((String) data.get("serial"));
+            studentIdRequest.setYear((String) data.get("year"));
+            studentIdRequest.setEducationType((String) data.get("education_type"));
+            studentIdRequest.setEducationForm((String) data.get("education_form"));
+        }
+
+        // Get current user's university code from users table
+        String universityCode = getCurrentUserUniversityCode();
+
+        // Validate university code
+        if (universityCode == null || universityCode.isEmpty()) {
+            log.error("University code not found for current user");
+            return ResponseEntity.ok(Map.of(
+                    "success", false,
+                    "message", "User university not configured"
+            ));
+        }
+
+        log.info("Using university code: {} for student/id request", universityCode);
+
+        // Call service
+        Map<String, Object> result = studentService.generateStudentId(studentIdRequest, universityCode);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Get current user's university code from JWT token and users table
+     *
+     * <p><strong>Flow:</strong></p>
+     * <ol>
+     *   <li>Extract user ID from JWT 'sub' claim</li>
+     *   <li>Query users table for university_id</li>
+     *   <li>Return university code (e.g., "401")</li>
+     * </ol>
+     *
+     * @return university code or null if not found
+     */
+    private String getCurrentUserUniversityCode() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            log.warn("No authentication found in security context");
+            return null;
+        }
+
+        // Extract user ID from JWT token
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            Jwt jwt = jwtAuth.getToken();
+            String userId = jwt.getSubject();  // JWT 'sub' claim = user UUID
+            String username = jwt.getClaimAsString("username");
+
+            log.debug("Current user: {} (userId: {})", username, userId);
+
+            if (userId != null) {
+                try {
+                    UUID userUuid = UUID.fromString(userId);
+                    // Query users table for university_id
+                    return userRepository.findUniversityCodeById(userUuid)
+                            .orElseGet(() -> {
+                                log.warn("University not found for user: {}", username);
+                                return null;
+                            });
+                } catch (IllegalArgumentException e) {
+                    log.error("Invalid UUID in JWT subject: {}", userId);
+                }
+            }
+        }
+
+        log.warn("Unable to extract university code from authentication: {}", auth.getClass().getSimpleName());
+        return null;
     }
 
     /**

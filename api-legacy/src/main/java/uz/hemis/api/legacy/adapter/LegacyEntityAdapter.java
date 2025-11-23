@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.adapter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -33,35 +34,71 @@ public class LegacyEntityAdapter {
         
         Field[] fields = dto.getClass().getDeclaredFields();
         for (Field field : fields) {
+            // Skip static fields (like serialVersionUID)
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+
             field.setAccessible(true);
             try {
                 Object value = field.get(dto);
-                
+
+                // Get JSON property name from @JsonProperty annotation, fallback to field name
+                String jsonName = getJsonPropertyName(field);
+
                 if (value == null) {
                     if (Boolean.TRUE.equals(returnNulls)) {
-                        map.put(field.getName(), null);
+                        map.put(jsonName, null);
                     }
                     continue;
                 }
-                
+
                 if (value instanceof LocalDateTime) {
-                    map.put(field.getName(), ((LocalDateTime) value).format(ISO_DATETIME_FORMAT));
+                    map.put(jsonName, ((LocalDateTime) value).format(ISO_DATETIME_FORMAT));
                 } else if (value instanceof LocalDate) {
-                    map.put(field.getName(), ((LocalDate) value).format(ISO_DATE_FORMAT));
+                    map.put(jsonName, ((LocalDate) value).format(ISO_DATE_FORMAT));
                 } else if (value instanceof UUID) {
-                    map.put(field.getName(), value.toString());
+                    map.put(jsonName, value.toString());
                 } else if (value instanceof Enum) {
-                    map.put(field.getName(), ((Enum<?>) value).name());
+                    map.put(jsonName, ((Enum<?>) value).name());
                 } else {
-                    map.put(field.getName(), value);
+                    map.put(jsonName, value);
                 }
-                
+
             } catch (IllegalAccessException e) {
                 log.warn("Cannot access field: {}", field.getName());
             }
         }
-        
+
+        // Add computed fields from methods with @JsonProperty(access = READ_ONLY)
+        addComputedFields(dto, map, returnNulls);
+
         return map;
+    }
+
+    /**
+     * Add computed fields from getter methods annotated with @JsonProperty(access = READ_ONLY)
+     * These are fields like 'fullname' that are computed, not stored
+     */
+    private void addComputedFields(Object dto, Map<String, Object> map, Boolean returnNulls) {
+        for (java.lang.reflect.Method method : dto.getClass().getMethods()) {
+            JsonProperty jsonProperty = method.getAnnotation(JsonProperty.class);
+            if (jsonProperty != null && jsonProperty.access() == JsonProperty.Access.READ_ONLY) {
+                try {
+                    Object value = method.invoke(dto);
+                    String jsonName = jsonProperty.value();
+                    if (!jsonName.isEmpty()) {
+                        if (value != null) {
+                            map.put(jsonName, value);
+                        } else if (Boolean.TRUE.equals(returnNulls)) {
+                            map.put(jsonName, null);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Cannot invoke computed method: {}", method.getName());
+                }
+            }
+        }
     }
 
     public <T> T fromMap(Map<String, Object> map, Class<T> dtoClass) {
@@ -97,17 +134,29 @@ public class LegacyEntityAdapter {
 
     private String getInstanceName(Object dto) {
         try {
+            // First try to call getFullname() method (for StudentDto)
+            try {
+                java.lang.reflect.Method fullnameMethod = dto.getClass().getMethod("getFullname");
+                Object result = fullnameMethod.invoke(dto);
+                if (result != null && !result.toString().isEmpty()) {
+                    return result.toString();
+                }
+            } catch (NoSuchMethodException ignored) {
+                // Method doesn't exist, try fallback
+            }
+
+            // Fallback: try field-based approach
             Field nameField = findField(dto.getClass(), "name", "fullName", "firstName");
             Field idField = findField(dto.getClass(), "studentIdNumber", "employeeIdNumber", "code");
-            
+
             StringBuilder name = new StringBuilder();
-            
+
             if (nameField != null) {
                 nameField.setAccessible(true);
                 Object val = nameField.get(dto);
                 if (val != null) name.append(val);
             }
-            
+
             if (idField != null) {
                 idField.setAccessible(true);
                 Object val = idField.get(dto);
@@ -116,9 +165,9 @@ public class LegacyEntityAdapter {
                     name.append(val);
                 }
             }
-            
+
             return name.length() > 0 ? name.toString() : dto.toString();
-            
+
         } catch (Exception e) {
             return dto.toString();
         }
@@ -133,6 +182,20 @@ public class LegacyEntityAdapter {
             }
         }
         return null;
+    }
+
+    /**
+     * Get JSON property name from @JsonProperty annotation, fallback to field name
+     *
+     * @param field the field to get JSON name from
+     * @return JSON property name or field name if no annotation
+     */
+    private String getJsonPropertyName(Field field) {
+        JsonProperty jsonProperty = field.getAnnotation(JsonProperty.class);
+        if (jsonProperty != null && !jsonProperty.value().isEmpty()) {
+            return jsonProperty.value();
+        }
+        return field.getName();
     }
 
     private Object convertValue(Object value, Class<?> targetType) {

@@ -88,9 +88,9 @@ public class StudentDto implements Serializable {
 
     /**
      * Serial number (passport/ID)
-     * JSON field: "serial_number"
+     * JSON field: "serialNumber" (old-hemis camelCase format)
      */
-    @JsonProperty("serial_number")
+    @JsonProperty("serialNumber")
     private String serialNumber;
 
     /**
@@ -113,9 +113,9 @@ public class StudentDto implements Serializable {
 
     /**
      * Current address
-     * JSON field: "current_address"
+     * JSON field: "currentAddress" (old-hemis camelCase format)
      */
-    @JsonProperty("current_address")
+    @JsonProperty("currentAddress")
     private String currentAddress;
 
     /**
@@ -250,7 +250,7 @@ public class StudentDto implements Serializable {
     private String socialCategory;
 
     // =====================================================
-    // Additional Fields
+    // Additional Fields (from old-hemis for backward compatibility)
     // =====================================================
 
     /**
@@ -259,6 +259,111 @@ public class StudentDto implements Serializable {
      */
     @JsonProperty("status")
     private String status;
+
+    /**
+     * Email address
+     * JSON field: "email"
+     */
+    @JsonProperty("email")
+    private String email;
+
+    /**
+     * Parent phone number
+     * JSON field: "parentPhone"
+     */
+    @JsonProperty("parentPhone")
+    private String parentPhone;
+
+    /**
+     * Responsible person phone
+     * JSON field: "responsiblePersonPhone"
+     */
+    @JsonProperty("responsiblePersonPhone")
+    private String responsiblePersonPhone;
+
+    /**
+     * Geo address
+     * JSON field: "geoAddress"
+     */
+    @JsonProperty("geoAddress")
+    private String geoAddress;
+
+    /**
+     * Passport given date
+     * JSON field: "passportGivenDate"
+     */
+    @JsonProperty("passportGivenDate")
+    private LocalDate passportGivenDate;
+
+    /**
+     * Tag field
+     * JSON field: "tag"
+     */
+    @JsonProperty("tag")
+    private String tag;
+
+    /**
+     * Group ID
+     * JSON field: "groupId"
+     */
+    @JsonProperty("groupId")
+    private String groupId;
+
+    /**
+     * Group name
+     * JSON field: "groupName"
+     */
+    @JsonProperty("groupName")
+    private String groupName;
+
+    /**
+     * Is graduate flag
+     * JSON field: "isGraduate"
+     */
+    @JsonProperty("isGraduate")
+    private String isGraduate;
+
+    /**
+     * Is duplicate flag
+     * JSON field: "isDuplicate"
+     */
+    @JsonProperty("isDuplicate")
+    private Boolean isDuplicate;
+
+    /**
+     * Enroll order name
+     * JSON field: "enrollOrderName"
+     */
+    @JsonProperty("enrollOrderName")
+    private String enrollOrderName;
+
+    /**
+     * Enroll order date
+     * JSON field: "enrollOrderDate"
+     */
+    @JsonProperty("enrollOrderDate")
+    private LocalDate enrollOrderDate;
+
+    /**
+     * Enroll order number
+     * JSON field: "enrollOrderNumber"
+     */
+    @JsonProperty("enrollOrderNumber")
+    private String enrollOrderNumber;
+
+    /**
+     * Enroll order category
+     * JSON field: "enrollOrderCategory"
+     */
+    @JsonProperty("enrollOrderCategory")
+    private String enrollOrderCategory;
+
+    /**
+     * Version (for optimistic locking)
+     * JSON field: "version"
+     */
+    @JsonProperty("version")
+    private Integer version;
 
     /**
      * Active flag
@@ -294,13 +399,11 @@ public class StudentDto implements Serializable {
     // =====================================================
 
     /**
-     * Full name (computed field - optional)
-     * JSON field: "full_name" (if included)
-     *
-     * <p>This is an OPTIONAL field - can be added without breaking contract</p>
+     * Full name (computed field)
+     * JSON field: "fullname" (old-hemis format - no underscore!)
      */
-    @JsonProperty(value = "full_name", access = JsonProperty.Access.READ_ONLY)
-    public String getFullName() {
+    @JsonProperty(value = "fullname", access = JsonProperty.Access.READ_ONLY)
+    public String getFullname() {
         StringBuilder sb = new StringBuilder();
         if (lastname != null) sb.append(lastname);
         if (firstname != null) {

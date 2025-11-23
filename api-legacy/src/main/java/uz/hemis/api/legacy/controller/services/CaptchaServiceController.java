@@ -40,7 +40,7 @@ import uz.hemis.service.CaptchaService;
 @RequestMapping("/app/rest/v2/services")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "03.Captcha", description = "🔢 Captcha generatsiya va validatsiya - login sahifasi uchun xavfsizlik")
+@Tag(name = "02.Captcha", description = "🔢 Captcha generatsiya va validatsiya - login sahifasi uchun xavfsizlik")
 public class CaptchaServiceController {
 
     private final CaptchaService captchaService;
@@ -95,7 +95,7 @@ public class CaptchaServiceController {
 
                     **OLD-HEMIS COMPATIBILITY:** ✅ 100% mos - barcha fieldlar va format bir xil.
                     """,
-            tags = {"03.Captcha"}
+            tags = {"02.Captcha"}
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -132,8 +132,91 @@ public class CaptchaServiceController {
 
         CaptchaResponse response = captchaService.generateNumericCaptcha();
 
-        log.info("✅ Captcha generated: captchaId={}, expiresIn={}s",
-                response.getCaptchaId(), response.getExpiresIn());
+        log.info("✅ Captcha generated: id={} (old-hemis format)", response.getId());
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Generate arithmetic captcha (e.g., "5 + 3 = ?")
+     * <p>
+     * <strong>Old-hemis endpoint:</strong> GET /app/rest/v2/services/captcha/getArithmeticCaptcha
+     * </p>
+     * <p><strong>PUBLIC:</strong> Authentication talab qilinmaydi (login sahifasida ishlatiladi)</p>
+     *
+     * @return CaptchaResponse with base64 PNG image and metadata
+     */
+    @Operation(
+            summary = "Arithmetic captcha generatsiya qilish",
+            description = """
+                    **Old-hemis endpoint:** `GET /app/rest/v2/services/captcha/getArithmeticCaptcha`
+
+                    **Vazifa:**
+                    - Arifmetik ifoda yaratadi (masalan: "5 + 3 = ?")
+                    - PNG rasmni base64 formatida qaytaradi
+                    - Redis da 300 soniya (5 daqiqa) saqlaydi
+                    - Login sahifasida xavfsizlik uchun ishlatiladi
+
+                    **PUBLIC endpoint:** Authentication talab qilinmaydi.
+
+                    **Javob:**
+                    - `id`: Captcha uchun unique identifier (UUID)
+                    - `image`: Base64-encoded PNG image (data URI)
+
+                    **Qanday ishlaydi:**
+                    1. Random arifmetik ifoda generatsiya qilinadi (0-19 sonlar, + yoki -)
+                    2. PNG rasm yaratiladi (200x60 px)
+                    3. Redis da saqlanadi: `captcha:{captchaId}` → `{result}` (TTL: 300s)
+                    4. Base64-encoded image qaytariladi
+
+                    **Foydalanish:**
+                    ```bash
+                    # Captcha olish (token kerak emas)
+                    curl http://localhost:8081/app/rest/v2/services/captcha/getArithmeticCaptcha
+
+                    # Javobda captchaId va image keladi
+                    # Image ni HTML img tag da ko'rsatish:
+                    <img src="data:image/png;base64,iVBORw0KG..."/>
+
+                    # Login da captchaId va user-entered result yuboriladi
+                    ```
+
+                    **OLD-HEMIS COMPATIBILITY:** ✅ 100% mos - barcha fieldlar va format bir xil.
+                    """,
+            tags = {"02.Captcha"}
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "✅ Arithmetic captcha muvaffaqiyatli yaratildi",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = CaptchaResponse.class),
+                            examples = @ExampleObject(
+                                    name = "Arithmetic Captcha Response",
+                                    summary = "Arithmetic captcha javob namunasi",
+                                    description = "Old-hemis bilan 100% mos javob",
+                                    value = """
+                                            {
+                                              "id": "3bc8e7a2-4d1f-46e9-a823-9f6d4e5c2b7a",
+                                              "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8CAYAAAA..."
+                                            }
+                                            """
+                            )
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "❌ Server xatosi - captcha generatsiya qilishda xatolik"
+            )
+    })
+    @GetMapping("/captcha/getArithmeticCaptcha")
+    public ResponseEntity<CaptchaResponse> getArithmeticCaptcha() {
+        log.info("🔢 GET /app/rest/v2/services/captcha/getArithmeticCaptcha - Generating arithmetic captcha");
+
+        CaptchaResponse response = captchaService.generateArithmeticCaptcha();
+
+        log.info("✅ Arithmetic captcha generated: id={} (old-hemis format)", response.getId());
 
         return ResponseEntity.ok(response);
     }

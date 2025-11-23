@@ -40,11 +40,13 @@ public interface StudentMapper {
      * Convert Student entity to StudentDto
      *
      * <p>Audit fields are excluded from DTO (internal use only)</p>
+     * <p>All fields from old-hemis are mapped for 100% backward compatibility</p>
      *
      * @param student entity
      * @return DTO
      */
-    @Mapping(target = "fullName", ignore = true)  // Computed field via getter
+    @Mapping(target = "fullname", ignore = true)  // Computed field via getter method getFullname()
+    @Mapping(source = "firstName", target = "firstname")  // Entity getter: getFirstName() -> DTO field: firstname
     StudentDto toDto(Student student);
 
     /**

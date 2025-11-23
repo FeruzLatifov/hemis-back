@@ -40,9 +40,11 @@ public class Student extends BaseEntity {
     public String getFirstName() { return firstname; }
     public String getSecondName() { return lastname; }
     public String getThirdName() { return fathername; }
-    public String getFirstNameLatin() { return firstname_latin; }
-    public String getSecondNameLatin() { return lastname_latin; }
-    public String getThirdNameLatin() { return fathername_latin; }
+    // NOTE: Latin name columns do not exist in current database schema
+    // These methods return null until columns are added via Liquibase migration
+    public String getFirstNameLatin() { return null; }
+    public String getSecondNameLatin() { return null; }
+    public String getThirdNameLatin() { return null; }
     public LocalDate getBirthDate() { return birth_date; }
 
     // =====================================================
@@ -122,26 +124,18 @@ public class Student extends BaseEntity {
     @Column(name = "birthday", insertable = false, updatable = false)
     private LocalDate birth_date;
 
-    /**
-     * First name (Latin)
-     * Column: firstname_latin VARCHAR(255)
-     */
-    @Column(name = "firstname_latin", length = 255)
-    private String firstname_latin;
+    // NOTE: Latin name columns do not exist in current database schema
+    // Commented out to prevent SQL errors
+    // If needed, create Liquibase migration to add these columns
 
-    /**
-     * Last name (Latin)
-     * Column: lastname_latin VARCHAR(255)
-     */
-    @Column(name = "lastname_latin", length = 255)
-    private String lastname_latin;
+    // @Column(name = "firstname_latin", length = 255)
+    // private String firstname_latin;
 
-    /**
-     * Father's name (Latin)
-     * Column: fathername_latin VARCHAR(255)
-     */
-    @Column(name = "fathername_latin", length = 255)
-    private String fathername_latin;
+    // @Column(name = "lastname_latin", length = 255)
+    // private String lastname_latin;
+
+    // @Column(name = "fathername_latin", length = 255)
+    // private String fathername_latin;
 
     /**
      * Serial number (passport/ID)
@@ -461,6 +455,99 @@ public class Student extends BaseEntity {
      */
     @Column(name = "points", length = 255)
     private String points;
+
+    // =====================================================
+    // Contact Fields (from old-hemis)
+    // =====================================================
+
+    /**
+     * Email address
+     * Column: email VARCHAR(255)
+     */
+    @Column(name = "email", length = 255)
+    private String email;
+
+    /**
+     * Parent phone
+     * Column: parent_phone VARCHAR(255)
+     */
+    @Column(name = "parent_phone", length = 255)
+    private String parentPhone;
+
+    /**
+     * Geo address
+     * Column: geo_address VARCHAR(1024)
+     */
+    @Column(name = "geo_address", length = 1024)
+    private String geoAddress;
+
+    // =====================================================
+    // Group Fields
+    // =====================================================
+
+    /**
+     * Group ID
+     * Column: group_id VARCHAR(255)
+     */
+    @Column(name = "group_id", length = 255)
+    private String groupId;
+
+    /**
+     * Group name
+     * Column: group_name VARCHAR(255)
+     */
+    @Column(name = "group_name", length = 255)
+    private String groupName;
+
+    // =====================================================
+    // Graduate and Status Fields
+    // =====================================================
+
+    /**
+     * Is graduate flag
+     * Column: is_graduate VARCHAR(10)
+     */
+    @Column(name = "is_graduate", length = 10)
+    private String isGraduate;
+
+    /**
+     * Passport given date
+     * Column: passport_given_date DATE
+     */
+    @Column(name = "passport_given_date")
+    private LocalDate passportGivenDate;
+
+    // =====================================================
+    // Enrollment Order Fields
+    // =====================================================
+
+    /**
+     * Enroll order name
+     * Column: enroll_order_name VARCHAR(1024)
+     */
+    @Column(name = "enroll_order_name", length = 1024)
+    private String enrollOrderName;
+
+    /**
+     * Enroll order date
+     * Column: enroll_order_date DATE
+     */
+    @Column(name = "enroll_order_date")
+    private LocalDate enrollOrderDate;
+
+    /**
+     * Enroll order number
+     * Column: enroll_order_number VARCHAR(255)
+     */
+    @Column(name = "enroll_order_number", length = 255)
+    private String enrollOrderNumber;
+
+    /**
+     * Enroll order category
+     * Column: enroll_order_category VARCHAR(255)
+     */
+    @Column(name = "enroll_order_category", length = 255)
+    private String enrollOrderCategory;
 
     // =====================================================
     // Business Methods

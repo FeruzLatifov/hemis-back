@@ -268,9 +268,9 @@ public class LegacyOAuthTokenController {
         // Token generatsiya qilish
         TokenResponse tokenResponse = tokenService.generateToken(userDetails);
 
-        // OLD-HEMIS token muddati: 2591998 sekund (30 kun - 2 sekund)
-        // Old-hemis bilan birga bir: 30 * 24 * 60 * 60 - 2 = 2591998
-        tokenResponse.setExpiresIn(2591998);
+        // OLD-HEMIS token muddati: 2591997 sekund (30 kun - 3 sekund)
+        // Old-hemis bilan bir xil: 30 * 24 * 60 * 60 - 3 = 2591997
+        tokenResponse.setExpiresIn(2591997);
 
         log.info("Legacy token generated for user: {}", username);
 
@@ -294,9 +294,9 @@ public class LegacyOAuthTokenController {
             // TokenService yordamida tokenni yangilash
             TokenResponse newToken = tokenService.refreshToken(refreshToken);
 
-            // OLD-HEMIS token muddati: 2591998 sekund (30 kun - 2 sekund)
-            // Old-hemis bilan birga bir: 30 * 24 * 60 * 60 - 2 = 2591998
-            newToken.setExpiresIn(2591998);
+            // OLD-HEMIS refresh token muddati: 2591999 sekund (30 kun - 1 sekund)
+            // Old-hemis bilan bir xil: 30 * 24 * 60 * 60 - 1 = 2591999
+            newToken.setExpiresIn(2591999);
 
             log.info("Legacy token refreshed successfully");
 

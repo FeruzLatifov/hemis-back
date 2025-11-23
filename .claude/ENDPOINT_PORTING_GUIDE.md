@@ -41,6 +41,18 @@
 | **Old-Hemis (CUBA)** | `http://localhost:8082` | 8082 | `/home/adm1n/startup/old-hemis` |
 | **Yangi Hemis (Spring Boot)** | `http://localhost:8081` | 8081 | `/home/adm1n/startup/hemis-back` |
 
+### 📁 MUHIM FAYL YO'LLARI
+
+| Fayl | To'liq yo'l | Tavsif |
+|------|-------------|--------|
+| **Old-Hemis API hujjati** | `/home/adm1n/startup/old_hemis.json` | Eski HEMIS API Swagger/OpenAPI hujjati |
+| **Endpoint Tester** | `/home/adm1n/startup/docs/hemis-back/endpoint_tester.html` | Test interfeysi (3 tugmali) |
+
+⚠️ **DIQQAT:**
+- `old_hemis.json` - endpoint metadata olish uchun ishlatiladi (tag, description, parameters)
+- `endpoint_tester.html` - test muvaffaqiyatli bo'lgandan keyin yangilanadi
+- Boshqa joylardagi fayllar (masalan, `hemis-back/app/src/.../endpoint-tester.html`) **ESKIRGAN** - ularni yangilamaslik!
+
 **Serverlarni ishga tushirish:**
 
 ```bash

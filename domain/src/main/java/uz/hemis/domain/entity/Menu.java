@@ -181,7 +181,7 @@ public class Menu extends ModernBaseEntity {
      * <p>false = hidden from users (soft hide)</p>
      * <p>Use this instead of hard delete for temporary hide</p>
      */
-    @Column(name = "active", nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean active = true;
 
     // =====================================================

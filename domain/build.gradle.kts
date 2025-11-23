@@ -97,10 +97,17 @@ val changelogRelativePath = "src/main/resources/db/changelog/db.changelog-master
 
 fun JavaExec.configureLiquibase(command: String, commandArgs: List<String> = emptyList()) {
     val db = project.resolveDbConfig()
+    // Large Project Structure: Nested changesets directories
+    // - schema/  : DDL (CREATE TABLE, indexes, constraints)
+    // - seed/    : DML (INSERT/UPSERT reference data)
+    // - migration/: Data migrations from legacy systems
     val searchPath = listOf(
         project.layout.projectDirectory.file("src/main/resources").asFile.absolutePath,
         project.layout.projectDirectory.file("src/main/resources/db/changelog").asFile.absolutePath,
-        project.layout.projectDirectory.file("src/main/resources/db/changelog/changesets").asFile.absolutePath
+        project.layout.projectDirectory.file("src/main/resources/db/changelog/changesets").asFile.absolutePath,
+        project.layout.projectDirectory.file("src/main/resources/db/changelog/changesets/schema").asFile.absolutePath,
+        project.layout.projectDirectory.file("src/main/resources/db/changelog/changesets/seed").asFile.absolutePath,
+        project.layout.projectDirectory.file("src/main/resources/db/changelog/changesets/migration").asFile.absolutePath
     ).joinToString(",")
     group = "liquibase"
     description = "Liquibase $command"

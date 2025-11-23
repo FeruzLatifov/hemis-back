@@ -191,7 +191,7 @@
         <!-- Header -->
         <div class="text-center text-white mb-4">
             <h1><i class="fas fa-server"></i> HEMIS API Comparison Tester</h1>
-            <p class="lead">🆕 Yangi Hemis-Back vs 🏛️ Old-Hemis • 11 endpoint solishtirish</p>
+            <p class="lead">🆕 Yangi Hemis-Back vs 🏛️ Old-Hemis • 13 endpoint solishtirish</p>
         </div>
 
         <!-- CORS Warning (shown only if file:// protocol) -->
@@ -297,7 +297,7 @@
                         <h6 class="text-center" style="color: #2b8a3e;">🆕 Yangi Hemis-Back</h6>
                         <div class="row text-center">
                             <div class="col-6 col-md-3">
-                                <h4 id="newTotalTests">0/11</h4>
+                                <h4 id="newTotalTests">0/13</h4>
                                 <small>Bajarildi</small>
                             </div>
                             <div class="col-6 col-md-3">
@@ -309,7 +309,7 @@
                                 <small>✗ Xato</small>
                             </div>
                             <div class="col-6 col-md-3">
-                                <h4 class="status-pending" id="newPendingCount">11</h4>
+                                <h4 class="status-pending" id="newPendingCount">13</h4>
                                 <small>⏳ Kutish</small>
                             </div>
                         </div>
@@ -324,7 +324,7 @@
                         <h6 class="text-center" style="color: #c92a2a;">🏛️ Old-Hemis (CUBA)</h6>
                         <div class="row text-center">
                             <div class="col-6 col-md-3">
-                                <h4 id="oldTotalTests">0/11</h4>
+                                <h4 id="oldTotalTests">0/13</h4>
                                 <small>Bajarildi</small>
                             </div>
                             <div class="col-6 col-md-3">
@@ -336,7 +336,7 @@
                                 <small>✗ Xato</small>
                             </div>
                             <div class="col-6 col-md-3">
-                                <h4 class="status-pending" id="oldPendingCount">11</h4>
+                                <h4 class="status-pending" id="oldPendingCount">13</h4>
                                 <small>⏳ Kutish</small>
                             </div>
                         </div>
@@ -520,6 +520,41 @@
                 requiresAuth: false,
                 params: {},
                 description: "5 xonali numeric captcha generatsiya qilish (PNG base64)",
+                ported: true  // ✅ Controller ported
+            },
+            // ============================================
+            // 04.Talaba (Entity API)
+            // ============================================
+            {
+                id: 12,
+                category: "04.Talaba",
+                name: "Bitta talaba ma'lumotlarini olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EStudent/{entityId}",
+                requiresAuth: true,
+                params: {
+                    dynamicAttributes: "false",
+                    returnNulls: "false"
+                },
+                description: "ID bo'yicha talaba ma'lumotlarini olish (CUBA Entity API)",
+                dependsOn: 1,
+                ported: true,  // ✅ Controller ported
+                testEntityId: "cdd4acfc-a616-ddde-debd-5631777ec588"  // Test uchun ID
+            },
+            {
+                id: 13,
+                category: "04.Talaba",
+                name: "Barcha talabalar ro'yxati",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EStudent",
+                requiresAuth: true,
+                params: {
+                    limit: "5",
+                    offset: "0",
+                    returnCount: "true"
+                },
+                description: "Sahifalangan talabalar ro'yxatini olish (CUBA Entity API)",
+                dependsOn: 1,
                 ported: true  // ✅ Controller ported
             }
         ];
@@ -727,6 +762,11 @@
             try {
                 // Same URL for both systems (backward compatibility)
                 let url = baseUrl + endpoint.url;
+
+                // Replace {entityId} placeholder with testEntityId
+                if (endpoint.testEntityId && url.includes('{entityId}')) {
+                    url = url.replace('{entityId}', endpoint.testEntityId);
+                }
 
                 // Replace placeholders and add query params for GET
                 if (endpoint.method === 'GET' && endpoint.params) {
@@ -1018,21 +1058,21 @@
             const newTotal = Object.keys(newTestResults).length;
             const newSuccess = Object.values(newTestResults).filter(r => r.success).length;
             const newError = Object.values(newTestResults).filter(r => !r.success).length;
-            const newPending = 11 - newTotal;
+            const newPending = endpoints.length - newTotal;
 
-            document.getElementById('newTotalTests').textContent = `${newTotal}/11`;
+            document.getElementById('newTotalTests').textContent = `${newTotal}/${endpoints.length}`;
             document.getElementById('newSuccessCount').textContent = newSuccess;
             document.getElementById('newErrorCount').textContent = newError;
             document.getElementById('newPendingCount').textContent = newPending;
 
-            const newPercentage = (newTotal / 11) * 100;
+            const newPercentage = (newTotal / endpoints.length) * 100;
             const newProgressBar = document.getElementById('newProgressBar');
             newProgressBar.style.width = newPercentage + '%';
             newProgressBar.textContent = Math.round(newPercentage) + '%';
 
             if (newPercentage === 100) {
                 newProgressBar.classList.remove('progress-bar-animated');
-                if (newSuccess === 11) {
+                if (newSuccess === endpoints.length) {
                     newProgressBar.style.backgroundColor = '#2b8a3e'; // Dark green for success
                 } else {
                     newProgressBar.style.backgroundColor = '#c92a2a'; // Dark red for errors
@@ -1043,21 +1083,21 @@
             const oldTotal = Object.keys(oldTestResults).length;
             const oldSuccess = Object.values(oldTestResults).filter(r => r.success).length;
             const oldError = Object.values(oldTestResults).filter(r => !r.success).length;
-            const oldPending = 11 - oldTotal;
+            const oldPending = endpoints.length - oldTotal;
 
-            document.getElementById('oldTotalTests').textContent = `${oldTotal}/11`;
+            document.getElementById('oldTotalTests').textContent = `${oldTotal}/${endpoints.length}`;
             document.getElementById('oldSuccessCount').textContent = oldSuccess;
             document.getElementById('oldErrorCount').textContent = oldError;
             document.getElementById('oldPendingCount').textContent = oldPending;
 
-            const oldPercentage = (oldTotal / 11) * 100;
+            const oldPercentage = (oldTotal / endpoints.length) * 100;
             const oldProgressBar = document.getElementById('oldProgressBar');
             oldProgressBar.style.width = oldPercentage + '%';
             oldProgressBar.textContent = Math.round(oldPercentage) + '%';
 
             if (oldPercentage === 100) {
                 oldProgressBar.classList.remove('progress-bar-animated');
-                if (oldSuccess === 11) {
+                if (oldSuccess === endpoints.length) {
                     oldProgressBar.style.backgroundColor = '#2b8a3e'; // Dark green for success
                 } else {
                     oldProgressBar.style.backgroundColor = '#c92a2a'; // Dark red for errors

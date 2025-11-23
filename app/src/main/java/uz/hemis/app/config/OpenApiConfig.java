@@ -275,8 +275,12 @@ public class OpenApiConfig {
                 .description("Token olish, login, logout, refresh token, OAuth2"),
 
             // === CAPTCHA ===
-            new Tag().name("03.Captcha")
+            new Tag().name("02.Captcha")
                 .description("🔢 Captcha generatsiya va validatsiya - login sahifasi uchun xavfsizlik. 5 xonali numeric captcha, 300 soniya amal qiladi."),
+
+            // === PASSPORT INTEGRATION ===
+            new Tag().name("03.Passport ma'lumotlari")
+                .description("📋 GUVD passport ma'lumotlarini olish va tekshirish xizmatlari. PINFL, seria/raqam va tug'ilgan sana orqali fuqarolarning passport ma'lumotlarini GUVD e-gov API orqali olish imkonini beradi."),
 
             // === STUDENTS ===
             new Tag().name("Students")

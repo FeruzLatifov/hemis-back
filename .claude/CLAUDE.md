@@ -143,7 +143,10 @@ reversible.  Refer to the original system (`old-hemis.zip`) and the exported API
 ### 1️⃣ ENDPOINT PORTING (Controller Porting)
 **What:** Porting REST endpoints from old-hemis to api-legacy module
 **Triggers:** `PORT: GET /services/tax/rent` or URL pattern (`/services/*`, `/app/rest/*`)
-**Files:** old_hemis.json, rest-services.xml, Controller.java
+**Files:**
+- `/home/adm1n/startup/old_hemis.json` - Old-hemis API hujjati (Swagger/OpenAPI)
+- `/home/adm1n/startup/docs/hemis-back/endpoint_tester.html` - Test interfeysi
+- Controller.java - Yangi controller fayl
 **Output:** Java controller + Swagger + Tests
 **Keywords:** "PORT", "endpoint", "controller", "REST API"
 
@@ -176,17 +179,17 @@ reversible.  Refer to the original system (`old-hemis.zip`) and the exported API
 ---
 
 When endpoint porting is triggered, Claude Code automatically:
-1. Extracts metadata from `old_hemis.json` (tag, name, description)
+1. Extracts metadata from `/home/adm1n/startup/old_hemis.json` (tag, name, description)
 2. Reads parameters from `rest-services.xml`
 3. Checks for duplicates (skips if already ported)
 4. Generates controller with Swagger docs (Uzbek language)
-5. Adds 3-button test interface to `endpoint_tester.html` (new/old/compare)
+5. Adds 3-button test interface to `/home/adm1n/startup/docs/hemis-back/endpoint_tester.html` (new/old/compare)
 6. Creates porting report
 
 **For complete endpoint porting workflow, see:** `@ENDPOINT_PORTING_GUIDE.md`
 
 **Quick examples:**
-- Existing endpoint: `PORT: GET /services/tax/rent` → Auto-detects tag from old_hemis.json
+- Existing endpoint: `PORT: GET /services/tax/rent` → Auto-detects tag from `/home/adm1n/startup/old_hemis.json`
 - New endpoint: `PORT: GET /services/attendance/check` + `TAG: 09.Davomat` → Creates new category
 - Batch porting: `PORT:` + multiple URLs (one per line) → Processes sequentially
 
