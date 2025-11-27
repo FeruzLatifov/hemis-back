@@ -480,6 +480,34 @@ WHERE m.category = 'menu'
     'menu.system.temp', 'menu.system.translation', 'menu.system.university_users', 'menu.system.api_logs', 'menu.system.report_update'
   )
 ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
+-- =====================================================
+-- Menu Translations - Uzbek Latin (uz-UZ)
+-- =====================================================
+-- Note: system_messages already contains uz-UZ as default message,
+-- but we need to explicitly add to system_message_translations table
+
+INSERT INTO system_message_translations (message_id, language, translation)
+SELECT m.id, 'uz-UZ', m.message  -- Use default message which is already in Uzbek Latin
+FROM system_messages m
+WHERE m.category = 'menu'
+  AND m.message_key IN (
+    'menu.dashboard', 'menu.registry', 'menu.rating', 'menu.data', 'menu.reports', 'menu.system',
+    'menu.registry.e_reestr', 'menu.registry.scientific', 'menu.registry.student_meta',
+    'menu.rating.administrative', 'menu.rating.administrative.employee', 'menu.rating.administrative.students', 'menu.rating.administrative.sport',
+    'menu.rating.academic', 'menu.rating.academic.methodical', 'menu.rating.academic.study', 'menu.rating.academic.verification',
+    'menu.rating.scientific', 'menu.rating.scientific.publications', 'menu.rating.scientific.projects', 'menu.rating.scientific.intellectual',
+    'menu.rating.student_gpa',
+    'menu.data.general', 'menu.data.structure', 'menu.data.employee', 'menu.data.student', 'menu.data.education', 'menu.data.study', 'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category',
+    'menu.reports.universities', 'menu.reports.employees', 'menu.reports.employees.navigation', 'menu.reports.employees.private', 'menu.reports.employees.work',
+    'menu.reports.students', 'menu.reports.students.statistics', 'menu.reports.students.education', 'menu.reports.students.private', 'menu.reports.students.attendance', 'menu.reports.students.score', 'menu.reports.students.dynamic',
+    'menu.reports.academic', 'menu.reports.academic.study',
+    'menu.reports.research', 'menu.reports.research.project', 'menu.reports.research.publication', 'menu.reports.research.researcher',
+    'menu.reports.economic', 'menu.reports.economic.finance', 'menu.reports.economic.xujalik',
+    'menu.system', 'menu.system.temp', 'menu.system.translation', 'menu.system.university_users', 'menu.system.api_logs', 'menu.system.report_update'
+  )
+ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
 -- ================================================
 -- V13: Add Complete Menu Translations
 -- Date: 2025-01-10
@@ -681,6 +709,40 @@ SELECT m.id, 'oz-UZ',
 
     ELSE m.message  -- Fallback
   END
+FROM system_messages m
+WHERE m.category = 'menu'
+  AND m.message_key IN (
+    -- Registry > E-Reestr (19)
+    'menu.registry.e_reestr.university', 'menu.registry.e_reestr.faculty', 'menu.registry.e_reestr.cathedra',
+    'menu.registry.e_reestr.teacher', 'menu.registry.e_reestr.student', 'menu.registry.e_reestr.diploma',
+    'menu.registry.e_reestr.speciality_bachelor', 'menu.registry.e_reestr.speciality_master',
+    'menu.registry.e_reestr.speciality_doctoral', 'menu.registry.e_reestr.employee_jobs',
+    'menu.registry.e_reestr.diploma_blank_distribution', 'menu.registry.e_reestr.diploma_blank',
+    'menu.registry.e_reestr.speciality_ordinatura', 'menu.registry.e_reestr.university_speciality',
+    'menu.registry.e_reestr.university_group', 'menu.registry.e_reestr.student_scholarship',
+    'menu.registry.e_reestr.student_certificate', 'menu.registry.e_reestr.employee_certificate',
+    'menu.registry.e_reestr.student_lite',
+    -- Data > Structure (6)
+    'menu.data.structure.university_type', 'menu.data.structure.ownership', 'menu.data.structure.department_type',
+    'menu.data.structure.locality_type', 'menu.data.structure.activity_status', 'menu.data.structure.belongs_to',
+    -- Data > Education (13)
+    'menu.data.education.education_type', 'menu.data.education.education_form', 'menu.data.education.education_language',
+    'menu.data.education.grade_system_type', 'menu.data.education.score_type', 'menu.data.education.exam_type',
+    'menu.data.education.diploma_blank_category', 'menu.data.education.diploma_blank_status',
+    'menu.data.education.diploma_blank_generate_status', 'menu.data.education.certificate_type',
+    'menu.data.education.certificate_names', 'menu.data.education.certificate_subjects', 'menu.data.education.certificate_grades',
+    -- Data > General (7)
+    'menu.data.general', 'menu.data.employee', 'menu.data.student', 'menu.data.study',
+    'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category'
+  )
+ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
+-- ================================================
+-- TRANSLATIONS: Uzbek Latin (uz-UZ)
+-- ================================================
+
+INSERT INTO system_message_translations (message_id, language, translation)
+SELECT m.id, 'uz-UZ', m.message  -- Use default Uzbek Latin from system_messages
 FROM system_messages m
 WHERE m.category = 'menu'
   AND m.message_key IN (
@@ -1940,5 +2002,50 @@ BEGIN
     END IF;
 
     RAISE NOTICE '   Status: READY FOR MENU PERMISSIONS (V4)';
+    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+END $$;
+
+-- =====================================================
+-- FINAL: Ensure ALL menu translations have uz-UZ
+-- =====================================================
+-- This universal INSERT ensures every menu message has
+-- an uz-UZ translation (using default Uzbek Latin from system_messages)
+
+INSERT INTO system_message_translations (message_id, language, translation)
+SELECT m.id, 'uz-UZ', m.message
+FROM system_messages m
+WHERE m.category = 'menu'
+  AND NOT EXISTS (
+    SELECT 1 FROM system_message_translations smt
+    WHERE smt.message_id = m.id AND smt.language = 'uz-UZ'
+  )
+ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
+-- Verification for uz-UZ completeness
+DO $$
+DECLARE
+    total_menus INTEGER;
+    uz_translations INTEGER;
+    missing_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO total_menus FROM system_messages WHERE category = 'menu';
+    SELECT COUNT(*) INTO uz_translations
+    FROM system_message_translations smt
+    JOIN system_messages sm ON sm.id = smt.message_id
+    WHERE sm.category = 'menu' AND smt.language = 'uz-UZ';
+
+    missing_count := total_menus - uz_translations;
+
+    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    RAISE NOTICE '📋 UZ-UZ TRANSLATION VERIFICATION';
+    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    RAISE NOTICE '   Total menu messages: %', total_menus;
+    RAISE NOTICE '   uz-UZ translations: %', uz_translations;
+
+    IF missing_count > 0 THEN
+        RAISE WARNING '⚠️  Missing % uz-UZ translations!', missing_count;
+    ELSE
+        RAISE NOTICE '✅ All menu messages have uz-UZ translations';
+    END IF;
     RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
 END $$;

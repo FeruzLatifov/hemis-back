@@ -202,15 +202,21 @@ WHERE r.code = 'SUPER_ADMIN'
   )
 ON CONFLICT DO NOTHING;
 
--- VIEWER: All view permissions from new permissions
+-- VIEWER: All view permissions from new permissions (excluding system.*)
+-- FIX: Added parentheses to fix SQL operator precedence bug
+-- system.* permissions are admin-only, VIEWER should not have them
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
 FROM roles r
 CROSS JOIN permissions p
 WHERE r.code = 'VIEWER'
   AND p.action = 'view'
-  AND p.code LIKE 'registry.%' OR p.code LIKE 'rating.%' OR p.code LIKE 'data.%'
-  OR p.code LIKE 'reports.%' OR p.code LIKE 'system.%'
+  AND (
+    p.code LIKE 'registry.%'
+    OR p.code LIKE 'rating.%'
+    OR p.code LIKE 'data.%'
+    OR p.code LIKE 'reports.%'
+  )
 ON CONFLICT DO NOTHING;
 
 -- REPORT_VIEWER: Reports permissions

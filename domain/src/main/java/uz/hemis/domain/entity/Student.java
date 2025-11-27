@@ -550,6 +550,38 @@ public class Student extends BaseEntity {
     private String enrollOrderCategory;
 
     // =====================================================
+    // Status Order Fields (OLD-HEMIS backward compatibility)
+    // =====================================================
+
+    /**
+     * Status order name
+     * Column: status_order_name VARCHAR(1024)
+     */
+    @Column(name = "status_order_name", length = 1024)
+    private String statusOrderName;
+
+    /**
+     * Status order date
+     * Column: status_order_date DATE
+     */
+    @Column(name = "status_order_date")
+    private LocalDate statusOrderDate;
+
+    /**
+     * Status order number
+     * Column: status_order_number VARCHAR(255)
+     */
+    @Column(name = "status_order_number", length = 255)
+    private String statusOrderNumber;
+
+    /**
+     * Status order category
+     * Column: status_order_category VARCHAR(255)
+     */
+    @Column(name = "status_order_category", length = 255)
+    private String statusOrderCategory;
+
+    // =====================================================
     // Business Methods
     // =====================================================
 

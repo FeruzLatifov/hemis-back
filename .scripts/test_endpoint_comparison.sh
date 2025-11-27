@@ -14,8 +14,10 @@ NC='\033[0m' # No Color
 # Configuration (default values from database)
 OLD_BASE="http://localhost:8082"
 NEW_BASE="http://localhost:8081"
-USERNAME="feruz"
-PASSWORD="BvZzXW6oQxEEte"
+NEW_USERNAME="otm401"
+OLD_USERNAME="otm351"
+NEW_PASSWORD="XCZDAb7qvGTXxz"
+OLD_PASSWORD="XCZDAb7qvGTXxz"
 CLIENT_ID="client"
 CLIENT_SECRET="secret"
 
@@ -65,9 +67,8 @@ ENDPOINT="$1"
 # Print configuration
 print_header "HEMIS API ENDPOINT COMPARISON TESTER"
 echo "Endpoint: $ENDPOINT"
-echo "Old-Hemis: $OLD_BASE"
-echo "New-Hemis: $NEW_BASE"
-echo "Username: $USERNAME"
+echo "Old-Hemis: $OLD_BASE (user: $OLD_USERNAME)"
+echo "New-Hemis: $NEW_BASE (user: $NEW_USERNAME)"
 echo ""
 
 # Special handling for OAuth token endpoint
@@ -81,7 +82,7 @@ if [[ "$ENDPOINT" == *"/oauth/token"* ]]; then
     OLD_TOKEN_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST "$OLD_BASE$ENDPOINT" \
       -H "Authorization: Basic $(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)" \
       -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "grant_type=password&username=$USERNAME&password=$PASSWORD")
+      -d "grant_type=password&username=$OLD_USERNAME&password=$OLD_PASSWORD")
 
     OLD_HTTP_CODE=$(echo "$OLD_TOKEN_RESPONSE" | grep "HTTP_CODE:" | cut -d':' -f2)
     OLD_TOKEN_JSON=$(echo "$OLD_TOKEN_RESPONSE" | sed '/HTTP_CODE:/d')
@@ -103,7 +104,7 @@ if [[ "$ENDPOINT" == *"/oauth/token"* ]]; then
     NEW_TOKEN_RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST "$NEW_BASE$ENDPOINT" \
       -H "Authorization: Basic $(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)" \
       -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "grant_type=password&username=$USERNAME&password=$PASSWORD")
+      -d "grant_type=password&username=$NEW_USERNAME&password=$NEW_PASSWORD")
 
     NEW_HTTP_CODE=$(echo "$NEW_TOKEN_RESPONSE" | grep "HTTP_CODE:" | cut -d':' -f2)
     NEW_TOKEN_JSON=$(echo "$NEW_TOKEN_RESPONSE" | sed '/HTTP_CODE:/d')
@@ -158,8 +159,8 @@ print_info "1️⃣ Getting token from Old-Hemis (port 8082)..."
 OLD_TOKEN_RESPONSE=$(curl -s -X POST "$OLD_BASE/app/rest/v2/oauth/token" \
   -H "Authorization: Basic $(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)" \
   -F "grant_type=password" \
-  -F "username=$USERNAME" \
-  -F "password=$PASSWORD")
+  -F "username=$OLD_USERNAME" \
+  -F "password=$OLD_PASSWORD")
 
 OLD_TOKEN=$(echo "$OLD_TOKEN_RESPONSE" | jq -r '.access_token')
 
@@ -177,8 +178,8 @@ print_info "2️⃣ Getting token from New-Hemis (port 8081)..."
 NEW_TOKEN_RESPONSE=$(curl -s -X POST "$NEW_BASE/app/rest/v2/oauth/token" \
   -H "Authorization: Basic $(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)" \
   -F "grant_type=password" \
-  -F "username=$USERNAME" \
-  -F "password=$PASSWORD")
+  -F "username=$NEW_USERNAME" \
+  -F "password=$NEW_PASSWORD")
 
 NEW_TOKEN=$(echo "$NEW_TOKEN_RESPONSE" | jq -r '.access_token')
 

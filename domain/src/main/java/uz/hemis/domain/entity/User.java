@@ -209,11 +209,12 @@ public class User extends ModernBaseEntity {
     private String locale;
 
     /**
-     * University reference (legacy old-hemis compatibility)
+     * University reference
      * Many-to-one relationship with University entity
+     * Column: university_id VARCHAR(255) -> hemishe_e_university.code
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "university_id")
+    @JoinColumn(name = "university_id", referencedColumnName = "code")
     private University university;
 
     // =====================================================

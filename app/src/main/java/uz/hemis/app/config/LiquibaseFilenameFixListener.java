@@ -10,31 +10,40 @@ import org.springframework.stereotype.Component;
 
 /**
  * Liquibase Filename Fix Listener
- * 
- * <p><strong>Problem:</strong></p>
+ *
+ * <p><strong>@deprecated</strong> This workaround is no longer needed.</p>
+ * <p>The root cause has been fixed by adding {@code logicalFilePath} to all changesets
+ * in db.changelog-master.yaml. This ensures consistent changeset identity regardless
+ * of whether migrations are run via Gradle or Spring Boot.</p>
+ *
+ * <p><strong>Original Problem:</strong></p>
  * <ul>
  *   <li>Gradle tasks write: {@code src/main/resources/db/changelog/db.changelog-master.yaml}</li>
  *   <li>Spring Boot writes: {@code db/changelog/db.changelog-master.yaml}</li>
  *   <li>Result: Rollback only removes Gradle entries, bootRun entries remain!</li>
  * </ul>
- * 
- * <p><strong>Solution:</strong></p>
- * <p>Auto-fix filename after bootRun to match Gradle task format.</p>
- * 
+ *
+ * <p><strong>Proper Solution (implemented):</strong></p>
+ * <p>All changesets now use {@code logicalFilePath: db/changelog/db.changelog-master.yaml}</p>
+ * <p>Migration M003_fix_changelog_filenames standardizes existing entries.</p>
+ *
  * <p><strong>Configuration:</strong></p>
  * <pre>
- * # application-dev.yml
+ * # application-dev.yml - can be removed
  * liquibase:
- *   fix-filename: true
+ *   fix-filename: false  # or remove entirely
  * </pre>
- * 
+ *
  * @author hemis-team
  * @since 2.0.0
+ * @deprecated Since 2.1.0 - Use logicalFilePath in db.changelog-master.yaml instead.
+ *             This class will be removed in version 3.0.0.
  */
+@Deprecated(since = "2.1.0", forRemoval = true)
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "liquibase.fix-filename", havingValue = "true")
+@ConditionalOnProperty(name = "liquibase.fix-filename", havingValue = "true", matchIfMissing = false)
 public class LiquibaseFilenameFixListener {
 
     private final JdbcTemplate jdbcTemplate;

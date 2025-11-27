@@ -358,6 +358,45 @@ public class StudentDto implements Serializable {
     @JsonProperty("enrollOrderCategory")
     private String enrollOrderCategory;
 
+    // =====================================================
+    // Status Order Fields (OLD-HEMIS backward compatibility)
+    // =====================================================
+
+    /**
+     * Status order name
+     * JSON field: "statusOrderName"
+     */
+    @JsonProperty("statusOrderName")
+    private String statusOrderName;
+
+    /**
+     * Status order date
+     * JSON field: "statusOrderDate"
+     */
+    @JsonProperty("statusOrderDate")
+    private LocalDate statusOrderDate;
+
+    /**
+     * Status order number
+     * JSON field: "statusOrderNumber"
+     */
+    @JsonProperty("statusOrderNumber")
+    private String statusOrderNumber;
+
+    /**
+     * Status order category
+     * JSON field: "statusOrderCategory"
+     */
+    @JsonProperty("statusOrderCategory")
+    private String statusOrderCategory;
+
+    /**
+     * Roommate count
+     * JSON field: "roommateCount"
+     */
+    @JsonProperty("roommateCount")
+    private Integer roommateCount;
+
     /**
      * Version (for optimistic locking)
      * JSON field: "version"

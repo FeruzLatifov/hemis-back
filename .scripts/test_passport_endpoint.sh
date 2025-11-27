@@ -16,8 +16,10 @@ NC='\033[0m' # No Color
 # Configuration
 OLD_BASE="http://localhost:8082"
 NEW_BASE="http://localhost:8081"
-USERNAME="feruz"
-PASSWORD="BvZzXW6oQxEEte"
+NEW_USERNAME="otm401"
+OLD_USERNAME="otm351"
+NEW_PASSWORD="XCZDAb7qvGTXxz"
+OLD_PASSWORD="XCZDAb7qvGTXxz"
 CLIENT_ID="client"
 CLIENT_SECRET="secret"
 
@@ -75,7 +77,7 @@ get_token() {
     local RESPONSE=$(curl -s -w "\nHTTP_CODE:%{http_code}" -X POST "$BASE_URL/app/rest/v2/oauth/token" \
       -H "Authorization: Basic $(echo -n "$CLIENT_ID:$CLIENT_SECRET" | base64)" \
       -H "Content-Type: application/x-www-form-urlencoded" \
-      -d "grant_type=password&username=$USERNAME&password=$PASSWORD")
+      -d "grant_type=password&username=$NEW_USERNAME&password=$NEW_PASSWORD")
 
     local HTTP_CODE=$(echo "$RESPONSE" | grep "HTTP_CODE:" | cut -d':' -f2)
     local JSON=$(echo "$RESPONSE" | sed '/HTTP_CODE:/d')

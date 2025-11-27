@@ -14,6 +14,7 @@ import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Student;
 import uz.hemis.service.mapper.StudentMapper;
+import uz.hemis.service.mapper.StudentLegacyMapper;
 import uz.hemis.domain.repository.StudentRepository;
 
 import uz.hemis.common.dto.StudentIdRequest;
@@ -53,6 +54,7 @@ public class StudentService {
 
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
+    private final StudentLegacyMapper studentLegacyMapper;
 
     // =====================================================
     // Read Operations (Read-Only Transactions)
@@ -684,7 +686,7 @@ public class StudentService {
             result.put("success", false);
             result.put("message", "Student is active!");
             result.put("is_active", true);
-            result.put("student", studentMapper.toDto(activeStudent.get()));
+            result.put("student", studentLegacyMapper.toLegacyDto(activeStudent.get()));
             return result;
         }
 
@@ -696,7 +698,7 @@ public class StudentService {
             result.put("success", true);
             result.put("is_new", false);
             result.put("unique_id", student.getCode());
-            result.put("student", studentMapper.toDto(student));
+            result.put("student", studentLegacyMapper.toLegacyDto(student));
             return result;
         }
 
@@ -725,7 +727,7 @@ public class StudentService {
             result.put("is_new", true);
             result.put("unique_id", uniqueCode);
             result.put("university", universityCode);
-            result.put("student", studentMapper.toDto(saved));
+            result.put("student", studentLegacyMapper.toLegacyDto(saved));
             return result;
 
         } catch (Exception ex) {

@@ -1068,4 +1068,232 @@ diff old_response.json new_response.json
 
 ---
 
+## 🎛️ ENDPOINT_TESTER.HTML CONFIG PANEL QOIDALARI
+
+### ✅ Config Panel Struktura
+
+`endpoint_tester.html` da ikki tizim uchun alohida config panellar mavjud:
+
+#### 🆕 Yangi Hemis Config (Chapda - Yashil)
+| Config ID | Tavsif | Misol |
+|-----------|--------|-------|
+| `newBaseUrl` | Base URL | `http://localhost:8081` |
+| `newUsername` | Username | `otm401` |
+| `newPassword` | Password | `XCZDAb7qvGTXxz` |
+| `newPinfl` | PINFL | `31507976020031` |
+| `newSerial` | Passport seriyasi | `AA6970877` |
+| `newBirthdate` | Tug'ilgan sana | `1997-07-15` |
+| `newStudentId` | Student UUID | `cdd4acfc-a616-ddde-debd-5631777ec588` |
+
+#### 🏛️ Old Hemis Config (O'ngda - Qizil)
+| Config ID | Tavsif | Misol |
+|-----------|--------|-------|
+| `oldBaseUrl` | Base URL | `http://localhost:9000/proxy/old-hemis` |
+| `oldUsername` | Username | `otm351` |
+| `oldPassword` | Password | `XCZDAb7qvGTXxz` |
+| `oldPinfl` | PINFL | `31507976020031` |
+| `oldSerial` | Passport seriyasi | `AA6970877` |
+| `oldBirthdate` | Tug'ilgan sana | `1997-07-15` |
+| `oldStudentId` | Student UUID | `cdd4acfc-a616-ddde-debd-5631777ec588` |
+
+---
+
+### ✅ useConfig Flags (Input Fields)
+
+Endpoint yaratishda `inputFields` ichida config paneldan qiymat olish uchun quyidagi flaglar ishlatiladi:
+
+```javascript
+inputFields: {
+    pinfl: {
+        label: "PINFL",
+        type: "text",
+        placeholder: "14 raqamli PINFL",
+        default: "",  // ⚠️ Bo'sh qoldirish - configdan olinadi!
+        useConfigPinfl: true,  // ← CONFIG FLAG
+        required: true
+    },
+    seriaNumber: {
+        label: "Passport seria",
+        type: "text",
+        placeholder: "AA1234567",
+        default: "",
+        useConfigSerial: true,  // ← CONFIG FLAG
+        required: true
+    },
+    birthdate: {
+        label: "Tug'ilgan sana",
+        type: "text",
+        placeholder: "YYYY-MM-DD",
+        default: "",
+        useConfigBirthdate: true,  // ← CONFIG FLAG
+        required: true
+    },
+    entityId: {
+        label: "Student ID",
+        type: "text",
+        placeholder: "UUID format",
+        default: "",
+        useConfigStudentId: true,  // ← CONFIG FLAG
+        required: true
+    }
+}
+```
+
+#### Flag Types:
+| Flag | Config IDs | Tavsif |
+|------|-----------|--------|
+| `useConfigPinfl: true` | `newPinfl` / `oldPinfl` | PINFL maydoniga config qiymati |
+| `useConfigSerial: true` | `newSerial` / `oldSerial` | Passport seriyasiga config qiymati |
+| `useConfigBirthdate: true` | `newBirthdate` / `oldBirthdate` | Tug'ilgan sanaga config qiymati |
+| `useConfigStudentId: true` | `newStudentId` / `oldStudentId` | Student UUID ga config qiymati |
+
+#### ⚠️ MUHIM: JavaScript Render Logic
+
+Yangi endpoint qo'shganda, `renderNewHemisInputs()` va `renderOldHemisInputs()` funksiyalarida quyidagi logic mavjud:
+
+```javascript
+// renderNewHemisInputs() ichida:
+let defaultValue = field.default || '';
+if (field.useConfigPinfl) {
+    defaultValue = document.getElementById('newPinfl')?.value || '';
+} else if (field.useConfigSerial) {
+    defaultValue = document.getElementById('newSerial')?.value || '';
+} else if (field.useConfigBirthdate) {
+    defaultValue = document.getElementById('newBirthdate')?.value || '';
+} else if (field.useConfigStudentId) {
+    defaultValue = document.getElementById('newStudentId')?.value || '';
+}
+
+// renderOldHemisInputs() ichida:
+let defaultValue = field.default || '';
+if (field.useConfigPinfl) {
+    defaultValue = document.getElementById('oldPinfl')?.value || '';
+} else if (field.useConfigSerial) {
+    defaultValue = document.getElementById('oldSerial')?.value || '';
+} else if (field.useConfigBirthdate) {
+    defaultValue = document.getElementById('oldBirthdate')?.value || '';
+} else if (field.useConfigStudentId) {
+    defaultValue = document.getElementById('oldStudentId')?.value || '';
+}
+```
+
+---
+
+### ✅ Authentication Requirements (requiresAuth & dependsOn)
+
+#### ⚠️ CRITICAL: Old-Hemis uchun auth talablari
+
+Old-Hemis **barcha** endpointlar uchun auth talab qiladi (public endpointlar ham!). Shuning uchun:
+
+```javascript
+{
+    id: 4,
+    category: "02.Captcha",
+    name: "getNumericCaptcha",
+    method: "GET",
+    url: "/app/rest/v2/services/captcha/getNumericCaptcha",
+    requiresAuth: true,   // ← OLD-HEMIS UCHUN MAJBURIY!
+    dependsOn: 1,         // ← #1 Token olish dan keyin
+    description: "..."
+}
+```
+
+| Property | Qiymat | Tavsif |
+|----------|--------|--------|
+| `requiresAuth: true` | ✅ MAJBURIY | Old-hemis uchun har doim `true` |
+| `dependsOn: 1` | ✅ MAJBURIY | Token endpoint (id=1) dan keyin ishlaydi |
+| `requiresAuth: false` | ❌ QILMASLIK | Faqat yangi hemis public endpointlar uchun |
+
+#### Noto'g'ri va To'g'ri Misollar:
+
+```javascript
+// ❌ NOTO'G'RI - Old-hemis da 401 error beradi!
+{
+    id: 4,
+    requiresAuth: false,  // ← XATO!
+    // dependsOn yo'q      // ← XATO!
+}
+
+// ✅ TO'G'RI
+{
+    id: 4,
+    requiresAuth: true,
+    dependsOn: 1,
+}
+```
+
+---
+
+### 📋 YANGI ENDPOINT QO'SHISH CHECKLIST
+
+Har bir yangi endpoint qo'shganda quyidagilarni tekshiring:
+
+1. **[ ] Category** - To'g'ri kategoriya (`01.Token`, `02.Captcha`, `03.Passport`, etc.)
+
+2. **[ ] URL** - Old-hemis URL bilan bir xil (`/app/rest/v2/services/...`)
+
+3. **[ ] requiresAuth** - Old-hemis uchun `true` qo'yilganmi?
+
+4. **[ ] dependsOn** - Token endpoint ga bog'langanmi? (`dependsOn: 1`)
+
+5. **[ ] inputFields** - Config flaglar to'g'ri qo'yilganmi?
+   - `useConfigPinfl: true` - PINFL maydonlari uchun
+   - `useConfigSerial: true` - Passport seriya maydonlari uchun
+   - `useConfigBirthdate: true` - Tug'ilgan sana maydonlari uchun
+   - `useConfigStudentId: true` - Student UUID maydonlari uchun
+
+6. **[ ] default: ""** - Config flag bo'lsa, default bo'sh qoldirish
+
+---
+
+### 📊 MISOL: To'liq Endpoint Definition
+
+```javascript
+{
+    id: 15,
+    category: "03.Passport ma'lumotlari",
+    name: "getDataByPinflBirthdate (PINFL + birthdate)",
+    method: "GET",
+    url: "/app/rest/v2/services/passport-data/getDataByPinflBirthdate",
+    requiresAuth: true,      // ← OLD-HEMIS UCHUN
+    dependsOn: 1,            // ← TOKEN OLISH DAN KEYIN
+    inputFields: {
+        pinfl: {
+            label: "PINFL",
+            type: "text",
+            placeholder: "14 raqamli PINFL",
+            default: "",              // ← BO'SH (configdan olinadi)
+            useConfigPinfl: true,     // ← CONFIG FLAG
+            required: true
+        },
+        birthdate: {
+            label: "Tug'ilgan sana",
+            type: "text",
+            placeholder: "YYYY-MM-DD",
+            default: "",              // ← BO'SH (configdan olinadi)
+            useConfigBirthdate: true, // ← CONFIG FLAG
+            required: true
+        },
+        captchaId: {
+            label: "Captcha ID",
+            type: "text",
+            placeholder: "#4 dan olingan captcha ID",
+            default: "",
+            required: true
+        },
+        captchaValue: {
+            label: "Captcha qiymati",
+            type: "text",
+            placeholder: "Rasmda ko'rsatilgan raqam",
+            default: "",
+            required: true
+        }
+    },
+    description: "PINFL va tug'ilgan sana orqali passport ma'lumotlarini olish",
+    ported: true
+}
+```
+
+---
+
 **Faqat user endpoint berganda ishlayman!**

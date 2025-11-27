@@ -317,29 +317,41 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     // =====================================================
 
     /**
-     * Find active student by PINFL or serial number
+     * Find active student by PINFL
      * Used for duplicate detection when generating student ID
+     *
+     * OLD-HEMIS logic: student is "active" if:
+     * - studentStatus IN ('10', '11', '13', '15') (not expelled/graduated)
+     * - active = true
      *
      * @param pinfl PINFL raqami
      * @return aktiv talaba yoki empty
      */
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
            "AND s.studentStatus IN ('10', '11', '13', '15') " +
-           "AND s.isDuplicate = true")
+           "AND s.active = true")
     Optional<Student> findActiveByPinfl(@Param("pinfl") String pinfl);
 
     /**
      * Find active student by serial number (for foreign citizens)
      *
+     * OLD-HEMIS logic: student is "active" if:
+     * - studentStatus IN ('10', '11', '13', '15') (not expelled/graduated)
+     * - active = true
+     *
      * @param serialNumber passport serial number
      * @return aktiv talaba yoki empty
      */
     @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber " +
-           "AND s.studentStatus IN ('10', '11', '13', '15')")
+           "AND s.studentStatus IN ('10', '11', '13', '15') " +
+           "AND s.active = true")
     Optional<Student> findActiveBySerialNumber(@Param("serialNumber") String serialNumber);
 
     /**
      * Find existing student by PINFL, education type and year (for returning existing record)
+     *
+     * OLD-HEMIS logic: Find student that is NOT expelled (status != '12')
+     * Used when active check passed but we need to return existing record
      *
      * @param pinfl PINFL raqami
      * @param educationType ta'lim turi kodi
@@ -349,8 +361,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
            "AND s.educationType = :educationType " +
            "AND s.educationYear = :educationYear " +
-           "AND s.studentStatus <> '12' " +
-           "AND s.isDuplicate = false")
+           "AND s.studentStatus <> '12'")
     Optional<Student> findExistingStudent(
             @Param("pinfl") String pinfl,
             @Param("educationType") String educationType,

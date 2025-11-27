@@ -1,298 +1,193 @@
-# 🧪 HEMIS Backend Test Scripts
+# HEMIS Backend Test Scripts
 
-Bu papkada endpoint testlari uchun bash scriptlar mavjud.
+Bu papkada HEMIS backend API larini test qilish uchun scriptlar joylashgan.
 
-## 📋 Mavjud Scriptlar
+## 🆕 Yangi scriptlar
 
-### 1. test_endpoint_comparison.sh
+### 1. `test_create_new_student.sh` - Yangi talaba yaratish
+**Maqsad**: POST /services/student/id endpoint orqali yangi talaba yaratish va ID generatsiyasini test qilish
 
-**Maqsad:** Old-hemis va yangi-hemis endpointlarini solishtirish
-
-**Foydalanish:**
+**Ishlatish**:
 ```bash
-# Oddiy endpoint (token talab qilmaydigan)
-./test_endpoint_comparison.sh "/app/rest/v2/oauth/token"
-
-# Token talab qiladigan endpoint
-./test_endpoint_comparison.sh "/app/rest/v2/userInfo"
-
-# Parametrli endpoint
-./test_endpoint_comparison.sh "/app/rest/v2/services/pass/data?pinfl=31503776560016"
+bash ./.scripts/test_create_new_student.sh
 ```
 
-**Xususiyatlari:**
-- ✅ Avtomatik token olish
-- ✅ Ikki tizim parallel test qilish
-- ✅ Response solishtirish
-- ✅ HTTP status code tekshirish
-- ✅ JSON formatda natija
+**Nima qiladi**:
+- Random PINFL (14 raqam) va Serial (AA + 7 raqam) generatsiya qiladi
+- NEW-HEMIS va OLD-HEMIS da bir xil ma'lumotlar bilan yangi talaba yaratadi
+- Yaratilgan talaba ID larini ko'rsatadi
+- ID generatsiya mexanizmini tekshiradi
+- Code (unique_id) ni ko'rsatadi
 
-**Output:**
-- `/tmp/old_response.json` - Old-hemis response
-- `/tmp/new_response.json` - New-hemis response
+**Natija misoli**:
+```
+✅ OLD-HEMIS: Talaba muvaffaqiyatli yaratildi!
+   📌 Student ID: 1d41e44d-985d-f4c4-8e8b-ab32c943074b
+   📝 PINFL: 20925658178205
+   📄 Serial: AA9042671
+   📁 Code: 351241102829
+```
+
+**Test qilingan endpointlar**:
+- POST `/app/rest/v2/services/student/id` (endpoint #14)
 
 ---
 
-### 2. test_passport_endpoint.sh
+### 2. `get_active_student_ids.sh` - Active talabalarni topish
+**Maqsad**: Har ikkala tizimdan `active=true` bo'lgan talabalarni topib, ularning ID larini olish
 
-**Maqsad:** Passport endpoint to'liq workflow test (token + captcha + passport)
-
-**Foydalanish:**
+**Ishlatish**:
 ```bash
-# Default qiymatlar bilan (PINFL: 61902025630068, Seria: AC2455764)
-./.scripts/test_passport_endpoint.sh
-
-# Maxsus qiymatlar bilan
-./.scripts/test_passport_endpoint.sh 31501662700089 AB4518000
-
-# Faqat PINFL o'zgartirish (seria default)
-./.scripts/test_passport_endpoint.sh 31503776560016
+bash ./.scripts/get_active_student_ids.sh
 ```
 
-**Workflow:**
-1. 📝 Token olish (`/app/rest/v2/oauth/token`)
-2. 🎨 Captcha olish (`/app/rest/v2/services/captcha/getNumericCaptcha`)
-3. 🔍 Passport test (`/app/rest/v2/services/passport-data/getDataBySN`)
-4. 📊 Responselarni solishtirish
+**Nima qiladi**:
+- NEW-HEMIS dan birinchi active talabani topadi
+- OLD-HEMIS dan birinchi active talabani topadi
+- endpoint_tester.html ga qo'yish uchun formatda ko'rsatadi
 
-**Xususiyatlari:**
-- ✅ Ikki tizim (old-hemis va new-hemis) to'liq workflow test
-- ✅ Captcha validation test
-- ✅ Token authentication test
-- ✅ Response format solishtirish
-- ✅ Ranglar bilan chiroyli output
-- ✅ Xato holatlarini to'g'ri handle qilish
+**Natija misoli**:
+```
+✅ NEW-HEMIS active talaba: 057de9db-b1db-c2b0-522d-7edca7d02f06
+✅ OLD-HEMIS active talaba: 057de9db-b1db-c2b0-522d-7edca7d02f06
 
-**Output:**
-- `/tmp/old_passport_token.txt` - Old-hemis access token
-- `/tmp/new_passport_token.txt` - New-hemis access token
-- `/tmp/old_passport_captcha.json` - Old-hemis captcha (base64 image)
-- `/tmp/new_passport_captcha.json` - New-hemis captcha (base64 image)
-- `/tmp/old_passport_response.json` - Old-hemis passport response
-- `/tmp/new_passport_response.json` - New-hemis passport response
-
-**Captcha imageini ko'rish:**
-```bash
-# PNG faylga decode qilish
-cat /tmp/new_passport_captcha.json | jq -r '.image' | base64 -d > /tmp/captcha.png
-
-# Imageini ochish (Linux)
-xdg-open /tmp/captcha.png
-
-# Yoki endpoint_tester.html da ko'rish
-# http://localhost:9000/endpoint_tester.html
+NEW: <input id="newStudentId" value="057de9db-b1db-c2b0-522d-7edca7d02f06">
+OLD: <input id="oldStudentId" value="057de9db-b1db-c2b0-522d-7edca7d02f06">
 ```
 
 ---
 
-## 🎨 Test Natijasi Formatlari
+### 3. `test_student_delete_recreate.sh` - DELETE va qayta yaratish
+**Maqsad**: DELETE endpoint (#13) ni test qilib, keyin POST (#14) bilan qayta yaratish
 
-### Muvaffaqiyatli Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "status": 1,
-    "error": null,
-    "data": [
-      {
-        "current_pinpp": "61902025630068",
-        "sur_name_latin": "ABDULLAYEV",
-        "name_latin": "AKMAL",
-        "patronym_name_latin": "AHMADOVICH",
-        "birth_date": "1990-01-15",
-        "birth_place": "TOSHKENT SHAHAR",
-        "sex": "M",
-        "doc_give_place": "TOSHKENT SHAHAR IIB",
-        "issued_date": "2020-05-20",
-        "expiry_date": "2030-05-20",
-        "document": "AC2455764",
-        "nationality": "O'ZBEKISTON",
-        "photo": "base64_encoded_photo_string"
-      }
-    ]
-  },
-  "address": {
-    "status": 1,
-    "data": {
-      "permanent_registration": {
-        "region": "TOSHKENT SHAHAR",
-        "district": "YUNUSOBOD TUMANI",
-        "address": "AMIR TEMUR SHOX KO'CHASI, 1-UY"
-      }
-    }
-  }
-}
+**Ishlatish**:
+```bash
+bash ./.scripts/test_student_delete_recreate.sh
 ```
 
-### Xato Response (Invalid Captcha)
+**Nima qiladi**:
+1. Belgilangan student ID larni o'chiradi (soft delete)
+2. Test ma'lumotlar bilan yangi talaba yaratadi
+3. Eski va yangi ID larni solishtiradi
 
-```json
-{
-  "success": false,
-  "data": "Invalid captcha!"
-}
+---
+
+## 📝 Mavjud scriptlar
+
+### 4. `test_passport_endpoint.sh` - Passport endpoint workflow test
+**Maqsad**: Captcha + Passport ma'lumotlarini olish endpointlarini test qilish
+
+**Ishlatish**:
+```bash
+bash ./.scripts/test_passport_endpoint.sh [PINFL] [Serial]
+```
+
+**Default qiymatlar**:
+- PINFL: `61902025630068`
+- Serial: `AC2455764`
+
+**Workflow**:
+1. Token olish
+2. Captcha generatsiya qilish
+3. Passport ma'lumotlarini tekshirish
+
+---
+
+### 5. `test_endpoint_comparison.sh` - Endpoint solishtirish
+**Maqsad**: Bir xil endpointni NEW-HEMIS va OLD-HEMIS da test qilib, javoblarni solishtirish
+
+**Ishlatish**:
+```bash
+bash ./.scripts/test_endpoint_comparison.sh "/app/rest/v2/userInfo"
+```
+
+**Natija**:
+- Javoblar bir xil bo'lsa: ✅ "Responses are 100% IDENTICAL!"
+- Farq bo'lsa: ⚠️ farqlarni ko'rsatadi
+
+---
+
+### 6. `test_student_id.sh` - Student ID olish (oddiy)
+**Maqsad**: POST /services/student/id ni test qilish
+
+**Ishlatish**:
+```bash
+bash ./.scripts/test_student_id.sh
 ```
 
 ---
 
-## 🛠️ Konfiguratsiya
+### 7. `test_student_put.sh` - Student ma'lumotlarini yangilash
+**Maqsad**: PUT endpoint ni test qilish (partial update)
 
-Scriptlardagi default qiymatlar:
-
+**Ishlatish**:
 ```bash
-OLD_BASE="http://localhost:8082"    # Old-hemis base URL
-NEW_BASE="http://localhost:8081"    # New-hemis base URL
-USERNAME="feruz"                      # Test user
-PASSWORD="BvZzXW6oQxEEte"            # Test password
-CLIENT_ID="client"                    # OAuth client ID
-CLIENT_SECRET="secret"                # OAuth client secret
-DEFAULT_PINFL="61902025630068"        # Default PINFL (from database)
-DEFAULT_SERIA="AC2455764"             # Default passport seria
+bash ./.scripts/test_student_put.sh
 ```
-
-Bu qiymatlarni o'zgartirish uchun scriptni edit qiling yoki environment variablelar qo'ying.
 
 ---
 
-## 📊 Test Natijalarini Solishtirish
-
-### test_endpoint_comparison.sh
-
-```bash
-# 1. Endpointni test qilish
-./test_endpoint_comparison.sh "/app/rest/v2/userInfo"
-
-# 2. Responselarni tekshirish
-cat /tmp/old_response.json | jq '.'
-cat /tmp/new_response.json | jq '.'
-
-# 3. Farqlarni ko'rish
-diff <(jq -S '.' /tmp/old_response.json) <(jq -S '.' /tmp/new_response.json)
-```
-
-### test_passport_endpoint.sh
-
-Script avtomatik solishtiradi va natijani ranglar bilan ko'rsatadi:
-- 🟢 **Green (✅)**: Mos keladi
-- 🟡 **Yellow (⚠️)**: Ogohlantirish
-- 🔴 **Red (❌)**: Xato
+### 8. `compare_students.sh` - Talabalarni solishtirish
+**Maqsad**: NEW-HEMIS va OLD-HEMIS dagi talabalar ma'lumotlarini solishtirish
 
 ---
 
-## 🚦 Server Holati Tekshirish
+## 🔧 Konfiguratsiya
 
-Agar scriptlar "server not running" xatosini ko'rsatsa:
+Barcha scriptlar quyidagi default qiymatlardan foydalanadi:
 
-```bash
-# Old-hemis holati
-curl http://localhost:8082/actuator/health
+**NEW-HEMIS (port 8081)**:
+- Username: `otm401`
+- Password: `XCZDAb7qvGTXxz`
+- University: 401
 
-# New-hemis holati
-curl http://localhost:8081/actuator/health
+**OLD-HEMIS (port 8082)**:
+- Username: `otm351`
+- Password: `XCZDAb7qvGTXxz`
+- University: 351
 
-# Old-hemis ishga tushirish
-cd /home/adm1n/startup/old-hemis && ./run.sh
-
-# New-hemis ishga tushirish
-cd /home/adm1n/startup/hemis-back && ./gradlew :app:bootRun
-```
+**OAuth Client**:
+- Client ID: `client`
+- Client Secret: `secret`
 
 ---
 
 ## 💡 Maslahatlar
 
-### 1. Captcha Validation Test
-
-Captcha validation to'g'ri ishlashini tekshirish:
-
-```bash
-# 1. Script ishga tushiring (noto'g'ri captcha bilan test qiladi)
-./.scripts/test_passport_endpoint.sh
-
-# 2. Captcha imageini ko'ring
-cat /tmp/new_passport_captcha.json | jq -r '.image'
-
-# 3. To'g'ri captcha bilan manual test qiling:
-curl -s "http://localhost:8081/app/rest/v2/services/passport-data/getDataBySN?pinfl=61902025630068&seriaNumber=AC2455764&captchaId=YOUR_CAPTCHA_ID&captchaValue=CORRECT_VALUE" \
-  -H "Authorization: Bearer YOUR_TOKEN" | jq '.'
-```
-
-### 2. Database Test Ma'lumotlari
-
-Default PINFL va passport seria database dan olingan:
-
-```sql
--- PINFL va passport seria olish
-SELECT passport_pin, passport_given_date, passport_seria, passport_number
-FROM e_student
-WHERE passport_pin IS NOT NULL
-LIMIT 10;
-```
-
-### 3. Parallel Test
-
-Bir vaqtning o'zida ikkala scriptni ishga tushirish:
-
-```bash
-# Terminal 1
-./.scripts/test_passport_endpoint.sh
-
-# Terminal 2
-./.scripts/test_endpoint_comparison.sh "/app/rest/v2/userInfo"
-```
-
----
-
-## 🐛 Debugging
-
-Agar muammo bo'lsa:
-
-1. **Verbose mode yoqish:**
+1. **Server ishlab turganini tekshiring**:
    ```bash
-   bash -x ./.scripts/test_passport_endpoint.sh
+   curl http://localhost:8081/actuator/health
+   curl http://localhost:8082/actuator/health
    ```
 
-2. **Network traffic ko'rish:**
-   ```bash
-   # tcpdump yoki wireshark ishlatish
-   sudo tcpdump -i lo port 8081 or port 8082
-   ```
+2. **Yangi talaba yaratish uchun**: `test_create_new_student.sh` dan foydalaning - bu har safar yangi random ma'lumotlar generatsiya qiladi
 
-3. **Server loglarini tekshirish:**
-   ```bash
-   # New-hemis logs
-   tail -f /tmp/hemis_server.log
+3. **Active talabalarni topish uchun**: `get_active_student_ids.sh` - bu DELETE test qilish uchun kerak
 
-   # Old-hemis logs
-   # (old-hemis log location)
-   ```
+4. **endpoint_tester.html** avtomatik ravishda active talabalarni yuklaydi (JavaScript)
 
 ---
 
-## ✅ Test Checklist
+## 📊 Test natijalarini saqlash
 
-Har bir endpoint port qilgandan keyin:
-
-- [ ] `test_endpoint_comparison.sh` bilan basic test
-- [ ] Response format solishtirish (success, data, address)
-- [ ] HTTP status code tekshirish (200, 400, 401, 404, 500)
-- [ ] Captcha validation (agar kerak bo'lsa)
-- [ ] Token authentication (agar kerak bo'lsa)
-- [ ] Error handling (noto'g'ri input, expired token, etc.)
-- [ ] endpoint_tester.html da manual test
-- [ ] Swagger documentation tekshirish
+Barcha scriptlar `/tmp/` papkasiga natijalarni saqlaydi:
+- `/tmp/new_created_student.json` - yangi yaratilgan talaba (NEW-HEMIS)
+- `/tmp/old_created_student.json` - yangi yaratilgan talaba (OLD-HEMIS)
+- `/tmp/new_response.json` - oxirgi NEW-HEMIS javobi
+- `/tmp/old_response.json` - oxirgi OLD-HEMIS javobi
 
 ---
 
-## 📚 Qo'shimcha Ma'lumotlar
+## 🐛 Muammolarni hal qilish
 
-- **Endpoint porting guide:** `.claude/ENDPOINT_PORTING_GUIDE.md`
-- **Test guide:** `.claude/TESTING_GUIDE.md`
-- **Frontend tester:** `http://localhost:9000/endpoint_tester.html`
+**CORS xatosi (old-hemis)**:
+- Browser dan emas, terminaldan test qiling
+- yoki proxy-server.py dan foydalaning
 
----
+**Token olishda xato**:
+- Username/password to'g'riligini tekshiring
+- Server ishlab turganini tekshiring
 
-**Muallif:** HEMIS Backend Team
-**Oxirgi yangilanish:** 2025-11-21
+**Student yaratilmadi (NEW-HEMIS)**:
+- "User university not configured" - userga universitet biriktirilmagan
+- Admin orqali university assign qiling

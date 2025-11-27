@@ -3,6 +3,7 @@
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2025-01-23
+-- Updated: 2025-11-27 - Added all missing fields from sec_user
 -- Purpose: One-time migration of users from old HEMIS (sec_user)
 -- Strategy: IDEMPOTENT - safe to re-run
 -- =====================================================
@@ -13,7 +14,7 @@ DECLARE
     migrated_count INTEGER := 0;
     old_table_exists BOOLEAN;
 BEGIN
-    -- Check if old table exists (sec_user - underscore, not dollar sign)
+    -- Check if old table exists
     SELECT EXISTS (
         SELECT 1 FROM information_schema.tables
         WHERE table_schema = 'public' AND table_name = 'sec_user'
@@ -38,6 +39,7 @@ BEGIN
             time_zone,
             time_zone_auto,
             user_type,
+            university_id,
             group_id,
             group_names,
             enabled,
@@ -48,38 +50,43 @@ BEGIN
             dtype,
             version,
             created_at,
-            created_by
+            created_by,
+            updated_at,
+            updated_by
         )
         SELECT
-            COALESCE(id, gen_random_uuid()),
-            login_lc,
-            login_lc,
-            COALESCE(password, '$2a$10$DISABLED_ACCOUNT_NO_PASSWORD'),  -- Handle NULL passwords
-            password_encryption,
-            email,
-            name,
-            first_name,
-            last_name,
-            middle_name,
-            COALESCE(first_name || ' ' || last_name, name),
-            position_,
-            language_,
-            time_zone,
-            time_zone_auto,
+            COALESCE(old.id, gen_random_uuid()),
+            old.login_lc,
+            old.login_lc,
+            COALESCE(old.password, '$2a$10$DISABLED_ACCOUNT_NO_PASSWORD'),
+            old.password_encryption,
+            old.email,
+            old.name,
+            old.first_name,
+            old.last_name,
+            old.middle_name,
+            COALESCE(old.first_name || ' ' || old.last_name, old.name),
+            old.position_,
+            old.language_,
+            old.time_zone,
+            old.time_zone_auto,
             'SYSTEM',
-            group_id,
-            group_names,
-            COALESCE(active, TRUE),
-            COALESCE(active, TRUE),
-            ip_mask,
-            change_password_at_logon,
-            sys_tenant_id,
-            dtype,
-            COALESCE(version, 1),
-            COALESCE(create_ts, CURRENT_TIMESTAMP),
-            'migration'
+            old._university,
+            old.group_id,
+            old.group_names,
+            COALESCE(old.active, TRUE),
+            COALESCE(old.active, TRUE),
+            old.ip_mask,
+            old.change_password_at_logon,
+            old.sys_tenant_id,
+            old.dtype,
+            COALESCE(old.version, 1),
+            COALESCE(old.create_ts, CURRENT_TIMESTAMP),
+            'migration',
+            old.update_ts,
+            old.updated_by
         FROM sec_user old
-        WHERE old.delete_ts IS NULL  -- Only active users (not soft-deleted)
+        WHERE old.delete_ts IS NULL
           AND NOT EXISTS (
             SELECT 1 FROM users u
             WHERE u.username = old.login_lc
@@ -106,13 +113,29 @@ WHERE r.code = 'VIEWER'
   )
 ON CONFLICT DO NOTHING;
 
+-- Assign SUPER_ADMIN role to 'admin' user (system administrator)
+INSERT INTO user_roles (user_id, role_id, assigned_by)
+SELECT u.id, r.id, 'migration'
+FROM users u
+CROSS JOIN roles r
+WHERE u.username = 'admin'
+  AND r.code = 'SUPER_ADMIN'
+  AND NOT EXISTS (
+      SELECT 1 FROM user_roles ur
+      WHERE ur.user_id = u.id AND ur.role_id = r.id
+  )
+ON CONFLICT DO NOTHING;
+
 -- Verification
 DO $$
 DECLARE
     total_users INTEGER;
     migrated_users INTEGER;
+    with_university INTEGER;
 BEGIN
     SELECT COUNT(*) INTO total_users FROM users;
     SELECT COUNT(*) INTO migrated_users FROM users WHERE created_by = 'migration';
-    RAISE NOTICE 'M001 Complete: % total users (% migrated from old HEMIS)', total_users, migrated_users;
+    SELECT COUNT(*) INTO with_university FROM users WHERE university_id IS NOT NULL;
+    RAISE NOTICE 'M001 Complete: % total users (% migrated, % with university)',
+        total_users, migrated_users, with_university;
 END $$;
