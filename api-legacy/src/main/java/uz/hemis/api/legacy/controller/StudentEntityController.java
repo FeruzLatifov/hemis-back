@@ -128,17 +128,18 @@ public class StudentEntityController {
             @Parameter(description = "CUBA view nomi (masalan: eStudent-view)")
             @RequestParam(required = false) String view) {
 
-        log.debug("GET student by id: {} (via service layer)", entityId);
-        
+        log.debug("GET student by id: {} (via service layer), view: {}", entityId, view);
+
         try {
             // Service layer - with cache, validation, etc.
             StudentDto dto = studentService.findById(entityId);
-            
+
             // Convert to CUBA format for backward compatibility
-            Map<String, Object> cubaMap = adapter.toMap(dto, ENTITY_NAME, returnNulls);
-            
+            // Pass view parameter to filter fields (_local excludes underscore-prefixed fields)
+            Map<String, Object> cubaMap = adapter.toMap(dto, ENTITY_NAME, returnNulls, view);
+
             return ResponseEntity.ok(cubaMap);
-            
+
         } catch (ResourceNotFoundException e) {
             log.debug("Student not found: {}", entityId);
             return ResponseEntity.notFound().build();
@@ -309,14 +310,14 @@ public class StudentEntityController {
             @Parameter(description = "CUBA view nomi")
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search students with filter: {}", filter);
-        
+        log.debug("GET search students with filter: {}, view: {}", filter, view);
+
         // For now, return all (pagination can be added later)
         List<StudentDto> dtos = studentService.findAll(Pageable.unpaged()).getContent();
-        
-        // Convert to CUBA format
-        List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls);
-        
+
+        // Convert to CUBA format with view support
+        List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls, view);
+
         return ResponseEntity.ok(cubaMaps);
     }
 
@@ -350,14 +351,14 @@ public class StudentEntityController {
             @Parameter(description = "CUBA view nomi")
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search students with filter: {}", filter);
-        
+        log.debug("POST search students with filter: {}, view: {}", filter, view);
+
         // For now, return all (complex filtering can be added later)
         List<StudentDto> dtos = studentService.findAll(Pageable.unpaged()).getContent();
-        
-        // Convert to CUBA format
-        List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls);
-        
+
+        // Convert to CUBA format with view support
+        List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls, view);
+
         return ResponseEntity.ok(cubaMaps);
     }
 
@@ -415,21 +416,22 @@ public class StudentEntityController {
         // Service layer with pagination
         PageRequest pageRequest = PageRequest.of(offset / limit, limit, sorting);
         Page<StudentDto> page = studentService.findAll(pageRequest);
-        
-        // Convert to CUBA format
+
+        // Convert to CUBA format with view support
         List<Map<String, Object>> cubaMaps = adapter.toMapList(
-            page.getContent(), 
-            ENTITY_NAME, 
-            returnNulls
+            page.getContent(),
+            ENTITY_NAME,
+            returnNulls,
+            view
         );
-        
+
         // Add count header if requested (CUBA compatibility)
         if (Boolean.TRUE.equals(returnCount)) {
             return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(page.getTotalElements()))
                 .body(cubaMaps);
         }
-        
+
         return ResponseEntity.ok(cubaMaps);
     }
 
@@ -441,16 +443,43 @@ public class StudentEntityController {
      */
     @PostMapping
     @Operation(
-        summary = "Yangi talaba yaratish",
+        summary = "Talaba yaratish",
         description = """
-            Yangi talaba yozuvini yaratish.
+            Yangi talaba yozuvini yaratish (CUBA Entity API).
 
             **OLD-HEMIS Compatible** - 100% backward compatibility
 
             **Endpoint:** POST /app/rest/v2/entities/hemishe_EStudent
             **Auth:** Bearer token (required)
 
-            Request body CUBA entity formatida bo'lishi kerak.
+            Request body CUBA entity formatida bo'lishi kerak. Boshqa entitylarga
+            reference berishda nested object ichida faqat identifikator (id yoki code) yuboring.
+
+            **Misol request body:**
+            ```json
+            {
+                "code": "520241100001",
+                "pinfl": "12345678901234",
+                "serialNumber": "AB1234567",
+                "firstname": "Ism",
+                "lastname": "Familiya",
+                "fathername": "Otasining ismi",
+                "university": { "code": "520" },
+                "educationType": { "code": "11" },
+                "educationForm": { "code": "11" },
+                "educationYear": "2024",
+                "studentStatus": { "code": "11" }
+            }
+            ```
+
+            **Qaytariladigan natija (OLD-HEMIS format):**
+            ```json
+            {
+                "_entityName": "hemishe_EStudent",
+                "_instanceName": "FAMILIYA ISM",
+                "id": "uuid-here"
+            }
+            ```
             """
     )
     @ApiResponses({
@@ -468,13 +497,18 @@ public class StudentEntityController {
 
         // Convert CUBA Map to DTO
         StudentDto dto = adapter.fromMap(body, StudentDto.class);
-        
+
         // Service layer - with validation, cache, audit
         StudentDto created = studentService.create(dto);
-        
-        // Convert back to CUBA format
-        Map<String, Object> cubaMap = adapter.toMap(created, ENTITY_NAME, returnNulls);
-        
-        return ResponseEntity.ok(cubaMap);
+
+        // OLD-HEMIS COMPATIBLE: Return minimal response (only _entityName, _instanceName, id)
+        // Old-hemis POST response format: {"_entityName":"hemishe_EStudent","_instanceName":"...","id":"..."}
+        Map<String, Object> minimalResponse = new LinkedHashMap<>();
+        minimalResponse.put("_entityName", ENTITY_NAME);
+        minimalResponse.put("_instanceName", buildInstanceName(created));
+        minimalResponse.put("id", created.getId().toString());
+
+        log.info("Student created successfully with id: {}", created.getId());
+        return ResponseEntity.ok(minimalResponse);
     }
 }

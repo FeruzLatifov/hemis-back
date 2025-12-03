@@ -1,5 +1,6 @@
 package uz.hemis.service.mapper;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Component;
 import uz.hemis.common.dto.legacy.StudentLegacyDto;
 import uz.hemis.domain.entity.Student;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,6 +41,7 @@ import java.util.UUID;
 public class StudentLegacyMapper {
 
     private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
 
     /**
      * Convert Student entity to OLD-HEMIS CUBA format
@@ -393,5 +396,42 @@ public class StudentLegacyMapper {
             return ((Number) val).intValue();
         }
         return null;
+    }
+
+    /**
+     * Convert Student entity to Map (for JSON serialization with _entityName)
+     *
+     * <p>Used by student/update endpoint to return OLD-HEMIS CUBA format</p>
+     *
+     * @param student Student entity
+     * @return Map representation with _entityName field
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> toLegacyMap(Student student) {
+        if (student == null) {
+            return null;
+        }
+
+        try {
+            // Convert DTO to Map via JSON
+            StudentLegacyDto dto = toLegacyDto(student);
+            String json = objectMapper.writeValueAsString(dto);
+            Map<String, Object> map = objectMapper.readValue(json, LinkedHashMap.class);
+
+            // Add CUBA _entityName at top level
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("_entityName", "hemishe_EStudent");
+            result.putAll(map);
+
+            return result;
+        } catch (Exception e) {
+            log.error("Failed to convert student to legacy map: {}", e.getMessage());
+            // Fallback: simple map
+            Map<String, Object> fallback = new LinkedHashMap<>();
+            fallback.put("_entityName", "hemishe_EStudent");
+            fallback.put("id", student.getId().toString());
+            fallback.put("code", student.getCode());
+            return fallback;
+        }
     }
 }

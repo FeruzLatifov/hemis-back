@@ -756,6 +756,83 @@ const defaults = {
 - Format A: To'g'ridan-to'g'ri obyekt (wrapper yo'q)
 - Format B: CUBA wrapper `{success, data, error}`
 
+### ⚠️ JSON FIELD KETMA-KETLIGI (ORDERING) - MUHIM!
+
+**QOIDA:** Old-hemis qaysi tartibda field qaytarsa, yangi hemis ham xuddi shu tartibda!
+
+**Sabab:** Ba'zi klientlar JSON field ketma-ketligiga bog'liq bo'lishi mumkin. 100% backward compatibility uchun ketma-ketlik ham bir xil bo'lishi kerak.
+
+**Jackson `@JsonPropertyOrder` annotatsiyasi:**
+
+```java
+// ❌ NOTO'G'RI - Ketma-ketlik aniqlanmagan
+@Data
+public class StudentLegacyDto {
+    private UUID id;
+    private String code;
+    private String pinfl;
+    // ... Jackson alifbo tartibida yoki random tartibda chiqaradi
+}
+
+// ✅ TO'G'RI - Old-hemis ketma-ketligi aniq belgilangan
+@Data
+@JsonPropertyOrder({
+    "_entityName", "id", "isGraduate", "country", "educationType", "groupId",
+    "language", "socialCategory", "educationYear", "educationForm", "faculty",
+    // ... old-hemis tartibida davom etadi
+})
+public class StudentLegacyDto {
+    @JsonProperty("_entityName")
+    private String entityName = "hemishe_EStudent";
+    private UUID id;
+    // ...
+}
+```
+
+**Ketma-ketlikni aniqlash:**
+
+```python
+# Old-hemis response dan field ketma-ketligini olish
+import json
+import collections
+
+with open('old_response.json') as f:
+    data = json.loads(f.read(), object_pairs_hook=collections.OrderedDict)
+    print('Field order:', list(data.keys()))
+```
+
+**Ichki obyektlar:**
+
+Har bir ichki DTO ham o'z `@JsonPropertyOrder` ga ega bo'lishi kerak:
+
+```java
+@Data
+@JsonPropertyOrder({"_entityName", "id", "studentUrl", "code", "universityType", ...})
+public static class UniversityReferenceDto { ... }
+
+@Data
+@JsonPropertyOrder({"_entityName", "id", "nameRu", "code", "name", "active", ...})
+public static class SimpleReferenceDto { ... }
+```
+
+**LinkedHashMap ishlatish (Service layer):**
+
+Response Map qaytarganda `LinkedHashMap` ishlatish:
+
+```java
+// ❌ NOTO'G'RI - HashMap ketma-ketlikni saqlamaydi
+Map<String, Object> result = new HashMap<>();
+result.put("success", true);
+result.put("message", "...");
+result.put("student", dto);
+
+// ✅ TO'G'RI - LinkedHashMap ketma-ketlikni saqlaydi
+Map<String, Object> result = new LinkedHashMap<>();
+result.put("success", true);
+result.put("message", "...");
+result.put("student", dto);
+```
+
 ### ⚠️ RESPONSE FORMAT TEST QOIDALARI
 
 **PORT qilishdan OLDIN:**
@@ -1036,8 +1113,12 @@ diff old_response.json new_response.json
 ### 3️⃣ endpoint_tester.html Yangilanadi
 
 ```javascript
+// ID raqamlash: har bir kategoriya ichida 1 dan boshlanadi
+// 01.Token: id 1, 2, 3
+// 02.Captcha: id 1, 2
+// 03.BIMM: id 1, 2, 3, ...
 {
-  id: 11,
+  id: 1,  // ← Kategoriya ichida birinchi endpoint
   category: "03.BIMM",
   name: "Nogironlik tekshiruvi",
   method: "GET",
@@ -1061,7 +1142,7 @@ diff old_response.json new_response.json
 - Test natijasi: ✅ 100% backward compatible
 
 🔗 Test qilish:
-- endpoint_tester.html: ID=11
+- endpoint_tester.html: 03.BIMM kategoriyasida ID=1 (har kategoriya o'z ID tartibiga ega)
 - Yangi: http://localhost:8081/api/swagger-ui.html
 - Old: http://localhost:8082/app/rest/v2/services/bimm/disabilityCheck?pinfl=...
 ```
@@ -1187,7 +1268,7 @@ Old-Hemis **barcha** endpointlar uchun auth talab qiladi (public endpointlar ham
 
 ```javascript
 {
-    id: 4,
+    id: 1,  // ← Kategoriya ichida 1 dan boshlanadi
     category: "02.Captcha",
     name: "getNumericCaptcha",
     method: "GET",
@@ -1209,16 +1290,16 @@ Old-Hemis **barcha** endpointlar uchun auth talab qiladi (public endpointlar ham
 ```javascript
 // ❌ NOTO'G'RI - Old-hemis da 401 error beradi!
 {
-    id: 4,
+    id: 1,  // ← Kategoriya ichida 1 dan boshlanadi
     requiresAuth: false,  // ← XATO!
     // dependsOn yo'q      // ← XATO!
 }
 
 // ✅ TO'G'RI
 {
-    id: 4,
+    id: 1,  // ← Kategoriya ichida 1 dan boshlanadi
     requiresAuth: true,
-    dependsOn: 1,
+    dependsOn: 1,  // ← Token endpoint (01.Token kategoriyasida id=1)
 }
 ```
 
@@ -1250,7 +1331,7 @@ Har bir yangi endpoint qo'shganda quyidagilarni tekshiring:
 
 ```javascript
 {
-    id: 15,
+    id: 3,  // ← Kategoriya ichida uchinchi endpoint (1, 2, 3...)
     category: "03.Passport ma'lumotlari",
     name: "getDataByPinflBirthdate (PINFL + birthdate)",
     method: "GET",

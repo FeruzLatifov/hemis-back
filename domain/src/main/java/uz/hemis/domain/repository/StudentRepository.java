@@ -411,6 +411,49 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      */
     boolean existsByCode(String code);
 
+    /**
+     * Find student by serial number (passport)
+     *
+     * Used for validate endpoint - search by passport seria/number
+     *
+     * @param serialNumber passport serial number (e.g., "AA6970877")
+     * @return student if found
+     */
+    @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber ORDER BY s.createTs DESC")
+    List<Student> findBySerialNumber(@Param("serialNumber") String serialNumber);
+
+    /**
+     * Find student by PINFL or serial number (for validate endpoint)
+     *
+     * OLD-HEMIS compatible: searches by PINFL first, then by serial number
+     *
+     * @param data PINFL or serial number
+     * @return first matching student
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :data OR s.serialNumber = :data ORDER BY s.createTs DESC")
+    List<Student> findByPinflOrSerialNumber(@Param("data") String data);
+
+    // =====================================================
+    // Update Queries (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Find student for university transfer
+     *
+     * OLD-HEMIS logic: Used in student/update endpoint
+     * Finds active student (status='11') that is transferring to a different university
+     *
+     * @param studentId student ID
+     * @param targetUniversityCode target university code (where student is transferring TO)
+     * @return student if found and valid for transfer
+     */
+    @Query("SELECT s FROM Student s WHERE s.id = :studentId " +
+           "AND s.university <> :targetUniversity " +
+           "AND s.studentStatus = '11'")
+    Optional<Student> findStudentForTransfer(
+            @Param("studentId") UUID studentId,
+            @Param("targetUniversity") String targetUniversityCode);
+
     // =====================================================
     // NOTE: NO DELETE METHODS
     // =====================================================

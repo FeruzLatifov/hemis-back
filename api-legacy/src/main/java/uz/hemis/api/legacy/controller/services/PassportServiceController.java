@@ -62,6 +62,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @PreAuthorize("isAuthenticated()")
+@SuppressWarnings("unchecked")
 public class PassportServiceController {
 
     private final CaptchaService captchaService;

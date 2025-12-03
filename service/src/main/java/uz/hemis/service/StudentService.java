@@ -571,35 +571,224 @@ public class StudentService {
     }
 
     /**
-     * Update student information
+     * Update student information (university transfer)
+     *
+     * <p><strong>OLD-HEMIS Compatible:</strong></p>
+     * <ul>
+     *   <li>Request format: { "student": { "id": "...", "university": {"code": "..."}, "studentStatus": {"code": "..."} } }</li>
+     *   <li>Logic: When status='12' (chetlashgan) and university specified → transfer student</li>
+     *   <li>Transfer: Create new record with target university, keeping original data</li>
+     * </ul>
+     *
+     * @param request request map containing student data
+     * @return updated student entity or null if conditions not met
      */
     @Transactional
+    @SuppressWarnings("unchecked")
     public Object updateStudent(Map<String, Object> request) {
         log.info("Updating student: {}", request);
-        String studentIdStr = (String) request.get("id");
+
+        // Extract student object from request (OLD-HEMIS format)
+        Map<String, Object> studentData = (Map<String, Object>) request.get("student");
+        if (studentData == null) {
+            // Direct format (new API style)
+            studentData = request;
+        }
+
+        // Extract student ID
+        String studentIdStr = (String) studentData.get("id");
         if (studentIdStr == null) {
             return Map.of("success", false, "error", "Student ID required");
         }
-        
-        // TODO: Implement full update logic
-        // For now, return success
-        return Map.of("success", true, "message", "Student update scheduled");
+
+        UUID studentId;
+        try {
+            studentId = UUID.fromString(studentIdStr);
+        } catch (IllegalArgumentException e) {
+            return Map.of("success", false, "error", "Invalid student ID format");
+        }
+
+        // Extract university code
+        String targetUniversityCode = null;
+        Object universityObj = studentData.get("university");
+        if (universityObj instanceof Map) {
+            targetUniversityCode = (String) ((Map<String, Object>) universityObj).get("code");
+        } else if (universityObj instanceof String) {
+            targetUniversityCode = (String) universityObj;
+        }
+
+        // Extract student status code
+        String statusCode = null;
+        Object statusObj = studentData.get("studentStatus");
+        if (statusObj instanceof Map) {
+            statusCode = (String) ((Map<String, Object>) statusObj).get("code");
+        } else if (statusObj instanceof String) {
+            statusCode = (String) statusObj;
+        }
+
+        log.debug("Update request - studentId: {}, targetUniversity: {}, status: {}",
+                studentId, targetUniversityCode, statusCode);
+
+        // OLD-HEMIS Logic: Transfer student when status='12' (chetlashgan) and university specified
+        if ("12".equals(statusCode) && targetUniversityCode != null) {
+            // Find student that is active (status='11') at DIFFERENT university
+            Optional<Student> transferCandidate = studentRepository.findStudentForTransfer(
+                    studentId, targetUniversityCode);
+
+            if (transferCandidate.isPresent()) {
+                Student originalStudent = transferCandidate.get();
+                log.info("Student transfer detected - {} from {} to {}",
+                        originalStudent.getPinfl(), originalStudent.getUniversity(), targetUniversityCode);
+
+                // Create new student record (transfer copy)
+                Student transferredStudent = copyStudentForTransfer(originalStudent, targetUniversityCode, statusCode);
+
+                // Save and return the transferred student
+                Student saved = studentRepository.save(transferredStudent);
+                log.info("Student transferred successfully - new ID: {}, new code: {}",
+                        saved.getId(), saved.getCode());
+
+                // Return in OLD-HEMIS format (entity with _entityName)
+                return studentLegacyMapper.toLegacyMap(saved);
+            } else {
+                log.debug("No valid transfer candidate found for student ID: {}", studentId);
+            }
+        }
+
+        // If no transfer conditions met, return null (OLD-HEMIS behavior)
+        return null;
     }
 
     /**
-     * Validate student status
+     * Create a copy of student for university transfer
+     *
+     * <p>OLD-HEMIS logic: Deep copy with new ID, modified code, target university/status</p>
      */
-    public Object validateStudent(String data) {
-        log.info("Validating student: {}", data);
+    private Student copyStudentForTransfer(Student original, String targetUniversityCode, String statusCode) {
+        Student copy = new Student();
+
+        // New ID
+        copy.setId(UUID.randomUUID());
+
+        // Modified code - generate unique code by appending "0", "00", "000", etc.
+        // until we find a unique code
+        String baseCode = original.getCode();
+        String newCode = baseCode + "0";
+        int suffix = 0;
+        while (studentRepository.existsByCode(newCode)) {
+            suffix++;
+            newCode = baseCode + "0".repeat(suffix + 1);
+            // Safety limit
+            if (suffix > 10) {
+                // Fallback: use timestamp-based suffix
+                newCode = baseCode + "_" + System.currentTimeMillis();
+                break;
+            }
+        }
+        copy.setCode(newCode);
+
+        // Target university and status
+        copy.setUniversity(targetUniversityCode);
+        copy.setStudentStatus(statusCode);
+
+        // Copy all other fields from original
+        copy.setFirstname(original.getFirstName());
+        copy.setLastname(original.getLastname());
+        copy.setFathername(original.getFathername());
+        copy.setPinfl(original.getPinfl());
+        copy.setSerialNumber(original.getSerialNumber());
+        copy.setBirthday(original.getBirthday());
+        copy.setPhone(original.getPhone());
+        copy.setAddress(original.getAddress());
+        copy.setCurrentAddress(original.getCurrentAddress());
+        copy.setSoato(original.getSoato());
+        copy.setCurrentSoato(original.getCurrentSoato());
+        copy.setFaculty(original.getFaculty());
+        copy.setSpeciality(original.getSpeciality());
+        copy.setPaymentForm(original.getPaymentForm());
+        copy.setEducationType(original.getEducationType());
+        copy.setEducationForm(original.getEducationForm());
+        copy.setEducationYear(original.getEducationYear());
+        copy.setCourse(original.getCourse());
+        copy.setGroupId(original.getGroupId());
+        copy.setGroupName(original.getGroupName());
+        copy.setGender(original.getGender());
+        copy.setCitizenship(original.getCitizenship());
+        copy.setCountry(original.getCountry());
+        copy.setNationality(original.getNationality());
+        copy.setSocialCategory(original.getSocialCategory());
+        copy.setAccomodation(original.getAccomodation());
+        copy.setActive(original.getActive());
+        copy.setIsDuplicate(original.getIsDuplicate());
+
+        // Set audit fields
+        copy.setCreateTs(LocalDateTime.now());
+        copy.setCreatedBy(original.getCreatedBy());
+
+        return copy;
+    }
+
+    /**
+     * Validate student status (OLD-HEMIS Compatible).
+     * Endpoint: GET /app/rest/v2/services/student/validate?data=...
+     * Returns: success, code (active/not_active/graduated), message, data
+     *
+     * @param data PINFL or Passport serial number
+     * @return OLD-HEMIS compatible response map
+     */
+    public Map<String, Object> validateStudent(String data) {
+        log.info("Validating student by PINFL or Serial: {}", data);
+        Map<String, Object> result = new LinkedHashMap<>();
+
         try {
-            StudentDto student = findByPinfl(data);
-            return Map.of(
-                "success", true,
-                "valid", true,
-                "status", student.getStatus() != null ? student.getStatus() : "ACTIVE"
-            );
+            // Search by PINFL or Serial Number (OLD-HEMIS compatible)
+            List<Student> students = studentRepository.findByPinflOrSerialNumber(data);
+
+            if (students.isEmpty()) {
+                // Not found - can create new student
+                log.info("Student not found for data: {} - can create new", data);
+                result.put("success", true);
+                result.put("code", "not_active");
+                result.put("message", "Student not found. You can create it!");
+                return result;
+            }
+
+            // Found student(s) - get the most recent one
+            Student student = students.get(0);
+            String statusCode = student.getStudentStatus();
+            log.info("Found student: {} with status: {}", student.getCode(), statusCode);
+
+            // Determine status code based on studentStatus
+            String code;
+            String message;
+
+            if ("16".equals(statusCode)) {
+                // Graduated
+                code = "graduated";
+                message = "Student is graduated!";
+            } else if ("12".equals(statusCode)) {
+                // Expelled/removed - can re-enroll
+                code = "not_active";
+                message = "Student is expelled. You can create it again!";
+            } else {
+                // Active statuses: 10, 11, 13, 14, 15
+                code = "active";
+                message = "Student is active! You can not create it again!";
+            }
+
+            result.put("success", true);
+            result.put("code", code);
+            result.put("message", message);
+            result.put("data", studentLegacyMapper.toLegacyMap(student));
+
+            return result;
+
         } catch (Exception e) {
-            return Map.of("success", true, "valid", false, "status", "NOT_FOUND");
+            log.error("Error validating student: {}", e.getMessage(), e);
+            result.put("success", false);
+            result.put("code", "error");
+            result.put("message", "Error validating student: " + e.getMessage());
+            return result;
         }
     }
 

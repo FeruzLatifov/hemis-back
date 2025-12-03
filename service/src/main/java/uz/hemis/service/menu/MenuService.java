@@ -169,6 +169,7 @@ public class MenuService {
     /**
      * Filter menu with pre-loaded translations (recursive)
      */
+    @SuppressWarnings("deprecation")  // labelUz, labelOz, labelRu, labelEn are deprecated but kept for backward compatibility
     private List<MenuItem> filterMenuByPermissionsWithCache(
         List<MenuItem> items,
         List<String> permissions,

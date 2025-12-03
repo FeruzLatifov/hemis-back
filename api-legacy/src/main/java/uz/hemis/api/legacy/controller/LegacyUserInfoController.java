@@ -114,29 +114,32 @@ public class LegacyUserInfoController {
 
         try {
             // ✅ authentication.getName() returns userId (UUID from JWT 'sub' claim)
-            // Convert to UUID and find user by ID with permissions
+            // Convert to UUID and find user by ID with university (eager fetch)
             java.util.UUID userId = java.util.UUID.fromString(authentication.getName());
-            User user = userRepository.findByIdWithPermissions(userId)
+            User user = userRepository.findByIdWithUniversity(userId)
                     .orElseThrow(() -> new RuntimeException("User not found: " + userId));
+
+            // ✅ Get university name for 'name' and '_instanceName' fields
+            String universityName = getUniversityName(user);
 
             // Build user data (old-hemis format - NO wrapper!)
             LegacyUserInfoResponse.UserData userData = LegacyUserInfoResponse.UserData.builder()
                     .id(user.getId().toString())
                     .login(user.getUsername())
-                    .name(buildFullName(user))
+                    .name(universityName)  // ✅ OLD-HEMIS: university name, not user fullName!
                     .firstName(user.getFirstName())
                     .middleName(user.getMiddleName())
                     .lastName(user.getLastName())
                     .position(user.getPosition())
                     .email(user.getEmail())
                     .timeZone(user.getTimeZone())
-                    .language(user.getLanguage() != null ? user.getLanguage() : "ru")
-                    .instanceName(buildInstanceName(user))
-                    .locale(user.getLocale() != null ? user.getLocale() : "ru")  // ✅ old-hemis returns "ru" as default, not "uz"
+                    .language(user.getLanguage() != null ? user.getLanguage() : "uz")  // ✅ OLD-HEMIS: default "uz" not "ru"
+                    .instanceName(buildInstanceName(user, universityName))  // ✅ "{universityName} [{login}]"
+                    .locale(user.getLocale() != null ? user.getLocale() : "uz")  // ✅ OLD-HEMIS: default "uz" not "ru"
                     // NOTE: "university" field is NOT in old-hemis /app/rest/v2/userInfo response! Removed for 100% compatibility
                     .build();
 
-            log.info("Returning user info for: {}", user.getUsername());
+            log.info("Returning user info for: {} (university: {})", user.getUsername(), universityName);
 
             // ✅ OLD-HEMIS compatibility: Return UserData directly (NO wrapper)
             return ResponseEntity.ok(userData);
@@ -147,38 +150,36 @@ public class LegacyUserInfoController {
     }
 
     /**
-     * Build full name from user fields
+     * Get university name from user
      *
-     * <p>Format: "firstName middleName lastName"</p>
-     * <p>Example: "feruz " (note trailing space if no middleName/lastName)</p>
+     * <p>OLD-HEMIS format: returns university name or empty string</p>
+     * <p>Example: "Jizzax davlat pedagogika universiteti"</p>
+     *
+     * @param user User entity with university eagerly fetched
+     * @return university name or empty string if no university
      */
-    private String buildFullName(User user) {
-        StringBuilder name = new StringBuilder();
-        if (user.getFirstName() != null) {
-            name.append(user.getFirstName());
+    private String getUniversityName(User user) {
+        if (user.getUniversity() != null && user.getUniversity().getName() != null) {
+            return user.getUniversity().getName();
         }
-        if (user.getMiddleName() != null) {
-            name.append(" ").append(user.getMiddleName());
-        }
-        if (user.getLastName() != null) {
-            name.append(" ").append(user.getLastName());
-        }
-        // Add trailing space if only firstName exists (old-hemis compatibility)
-        String result = name.toString().trim();
-        if (user.getMiddleName() == null && user.getLastName() == null && user.getFirstName() != null) {
-            result += " ";
-        }
-        return result;
+        return "";
     }
 
     /**
      * Build instance name (old-hemis format)
      *
-     * <p>Format: "firstName [username]"</p>
-     * <p>Example: "feruz [feruz]"</p>
+     * <p>Format: "{universityName} [{login}]"</p>
+     * <p>Example: "Jizzax davlat pedagogika universiteti [otm351]"</p>
+     *
+     * @param user User entity
+     * @param universityName University name (or empty string)
+     * @return formatted instance name
      */
-    private String buildInstanceName(User user) {
-        String displayName = user.getFirstName() != null ? user.getFirstName() : user.getUsername();
-        return displayName + " [" + user.getUsername() + "]";
+    private String buildInstanceName(User user, String universityName) {
+        if (universityName != null && !universityName.isEmpty()) {
+            return universityName + " [" + user.getUsername() + "]";
+        }
+        // Fallback: username [username] if no university
+        return user.getUsername() + " [" + user.getUsername() + "]";
     }
 }

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
@@ -311,6 +312,43 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handle HttpMediaTypeNotSupportedException
+     *
+     * <p>Thrown when Content-Type is not supported by the endpoint</p>
+     * <p>HTTP Status: 415 UNSUPPORTED MEDIA TYPE</p>
+     *
+     * @param ex exception
+     * @param request HTTP request
+     * @return error response
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Unsupported media type: {} for {}", ex.getContentType(), request.getRequestURI());
+
+        String supportedTypes = ex.getSupportedMediaTypes().stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(", "));
+
+        String message = String.format(
+                "Content-Type '%s' is not supported. Supported types: %s",
+                ex.getContentType(),
+                supportedTypes.isEmpty() ? "application/json" : supportedTypes
+        );
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNSUPPORTED_MEDIA_TYPE.value(),
+                "Unsupported Media Type",
+                message,
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(error);
     }
 
     /**

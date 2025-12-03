@@ -91,6 +91,20 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByIdWithPermissions(@Param("id") UUID id);
 
     /**
+     * Find user by ID with university eagerly fetched
+     *
+     * <p>Used by /app/rest/user/info endpoint to get university name</p>
+     * <p>Fetches user → university in single query</p>
+     *
+     * @param id user ID (UUID)
+     * @return user with university if found
+     */
+    @Query("SELECT u FROM User u " +
+           "LEFT JOIN FETCH u.university " +
+           "WHERE u.id = :id")
+    Optional<User> findByIdWithUniversity(@Param("id") UUID id);
+
+    /**
      * Find active user by username
      *
      * <p><strong>Active means:</strong></p>

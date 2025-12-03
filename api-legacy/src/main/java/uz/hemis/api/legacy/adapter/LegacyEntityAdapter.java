@@ -12,10 +12,10 @@ import java.util.*;
 
 /**
  * Legacy Entity Adapter - CUBA Platform Compatibility Layer
- * 
+ *
  * Converts between CUBA Platform API format and modern DTOs.
  * Maintains 100% backward compatibility with old-HEMIS CUBA REST API.
- * 
+ *
  * @since 2.0.0
  */
 @Component
@@ -23,15 +23,40 @@ import java.util.*;
 public class LegacyEntityAdapter {
 
     private static final DateTimeFormatter ISO_DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final DateTimeFormatter ISO_DATETIME_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    // CUBA Platform format: "yyyy-MM-dd HH:mm:ss.SSS" (space instead of T)
+    private static final DateTimeFormatter CUBA_DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
+    /**
+     * CUBA _local view - excludes underscore-prefixed fields (references)
+     * Only includes "local" entity fields without relations
+     */
+    private static final String VIEW_LOCAL = "_local";
+
+    /**
+     * Convert DTO to CUBA Map format with view support
+     */
     public Map<String, Object> toMap(Object dto, String entityName, Boolean returnNulls) {
+        return toMap(dto, entityName, returnNulls, null);
+    }
+
+    /**
+     * Convert DTO to CUBA Map format with view filtering
+     *
+     * @param dto The DTO object to convert
+     * @param entityName CUBA entity name (e.g., "hemishe_EStudent")
+     * @param returnNulls Whether to include null values
+     * @param view CUBA view name (_local excludes underscore-prefixed fields)
+     */
+    public Map<String, Object> toMap(Object dto, String entityName, Boolean returnNulls, String view) {
         if (dto == null) return null;
+
+        // Check if _local view - exclude underscore-prefixed reference fields
+        boolean isLocalView = VIEW_LOCAL.equals(view);
 
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", entityName);
         map.put("_instanceName", getInstanceName(dto));
-        
+
         Field[] fields = dto.getClass().getDeclaredFields();
         for (Field field : fields) {
             // Skip static fields (like serialVersionUID)
@@ -46,6 +71,17 @@ public class LegacyEntityAdapter {
                 // Get JSON property name from @JsonProperty annotation, fallback to field name
                 String jsonName = getJsonPropertyName(field);
 
+                // For _local view: skip underscore-prefixed fields (references like _university, _faculty, etc.)
+                // These fields are entity references, not local scalar fields
+                if (isLocalView && jsonName.startsWith("_")) {
+                    continue;
+                }
+
+                // For _local view: skip version and fullname fields (not in OLD-hemis _local response)
+                if (isLocalView && ("version".equals(jsonName) || "fullname".equals(jsonName))) {
+                    continue;
+                }
+
                 if (value == null) {
                     if (Boolean.TRUE.equals(returnNulls)) {
                         map.put(jsonName, null);
@@ -54,7 +90,7 @@ public class LegacyEntityAdapter {
                 }
 
                 if (value instanceof LocalDateTime) {
-                    map.put(jsonName, ((LocalDateTime) value).format(ISO_DATETIME_FORMAT));
+                    map.put(jsonName, ((LocalDateTime) value).format(CUBA_DATETIME_FORMAT));
                 } else if (value instanceof LocalDate) {
                     map.put(jsonName, ((LocalDate) value).format(ISO_DATE_FORMAT));
                 } else if (value instanceof UUID) {
@@ -71,7 +107,10 @@ public class LegacyEntityAdapter {
         }
 
         // Add computed fields from methods with @JsonProperty(access = READ_ONLY)
-        addComputedFields(dto, map, returnNulls);
+        // Skip for _local view
+        if (!isLocalView) {
+            addComputedFields(dto, map, returnNulls);
+        }
 
         return map;
     }
@@ -206,7 +245,12 @@ public class LegacyEntityAdapter {
         }
 
         if (targetType == LocalDateTime.class && value instanceof String) {
-            return LocalDateTime.parse((String) value, ISO_DATETIME_FORMAT);
+            String str = (String) value;
+            // Support both CUBA format (space) and ISO format (T)
+            if (str.contains("T")) {
+                return LocalDateTime.parse(str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            }
+            return LocalDateTime.parse(str, CUBA_DATETIME_FORMAT);
         }
 
         if (targetType == LocalDate.class && value instanceof String) {
@@ -237,11 +281,15 @@ public class LegacyEntityAdapter {
     }
 
     public List<Map<String, Object>> toMapList(List<?> dtos, String entityName, Boolean returnNulls) {
+        return toMapList(dtos, entityName, returnNulls, null);
+    }
+
+    public List<Map<String, Object>> toMapList(List<?> dtos, String entityName, Boolean returnNulls, String view) {
         if (dtos == null) return Collections.emptyList();
 
         List<Map<String, Object>> maps = new ArrayList<>(dtos.size());
         for (Object dto : dtos) {
-            maps.add(toMap(dto, entityName, returnNulls));
+            maps.add(toMap(dto, entityName, returnNulls, view));
         }
         return maps;
     }

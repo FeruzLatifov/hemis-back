@@ -1,13 +1,13 @@
 // =====================================================
 // HEMIS Root Build Configuration
 // =====================================================
-// Stack: Spring Boot 3.5.7 + JDK 25 LTS + Gradle 8.10.2
+// Stack: Spring Boot 3.5.8 + JDK 21 LTS + Gradle 9.2.1
 // Mode: NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
 // =====================================================
 
 plugins {
     java
-    id("org.springframework.boot") version "3.5.7" apply false
+    id("org.springframework.boot") version "3.5.8" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
@@ -34,7 +34,7 @@ subprojects {
     // Import for dependency management extension
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.7")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.8")
             mavenBom("io.netty:netty-bom:4.1.115.Final")
         }
     }
@@ -50,10 +50,10 @@ subprojects {
     }
 
     // =====================================================
-    // JDK 25 LTS Toolchain
+    // JDK 21 LTS Toolchain
     // =====================================================
-    // CRITICAL: Boot 3.5.7 supports Java 17-25
-    // If third-party libs fail on JDK 25, fallback to 21 LTS
+    // CRITICAL: Boot 3.5.8 supports Java 17-24
+    // Using JDK 21 LTS for long-term stability
     // =====================================================
 
     java {
@@ -156,12 +156,12 @@ tasks.register("testAll") {
 // =====================================================
 // Technology Stack (Managed by Spring Boot BOM)
 // =====================================================
-// Java: JDK 25 LTS
-// Gradle: 8.10.2
-// Spring Boot: 3.5.7
+// Java: JDK 21 LTS
+// Gradle: 9.2.1
+// Spring Boot: 3.5.8
 // Spring Framework: 6.2.x (via Boot)
 // PostgreSQL Driver: Managed by BOM
-// Flyway: Managed by BOM
+// Liquibase: Managed by BOM
 // Hibernate: Managed by BOM
 // Jackson: Managed by BOM
 // Validation API: Managed by BOM

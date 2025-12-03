@@ -83,7 +83,7 @@ public abstract class AbstractGovernmentApiService {
             disableSslVerification();
 
             // Build URL with query parameters
-            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl);
+            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
             if (params != null) {
                 params.forEach(builder::queryParam);
             }
@@ -145,7 +145,7 @@ public abstract class AbstractGovernmentApiService {
             disableSslVerification();
 
             // Build URL with query parameters
-            UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl);
+            UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
             if (params != null) {
                 params.forEach(builder::queryParam);
             }

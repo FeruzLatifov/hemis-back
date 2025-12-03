@@ -469,14 +469,14 @@ public class SecurityConfig {
      *
      * <p>Uses hybridUserDetailsService which supports both new User and legacy sec_user tables.</p>
      */
+    @SuppressWarnings("deprecation")  // DaoAuthenticationProvider constructors are deprecated but still recommended for use
     @Bean
     public AuthenticationProvider authenticationProvider(
             @Qualifier("hybridUserDetailsService") UserDetailsService userDetailsService,
             PasswordEncoder passwordEncoder
     ) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder);
         provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
 

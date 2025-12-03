@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_ETeacher           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_ETeacher           - Create new
  */
-@Tag(name = "Teachers")
+@Tag(name = "05.O'qituvchi")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_ETeacher")
 @RequiredArgsConstructor
@@ -51,31 +51,38 @@ public class TeacherEntityController {
     private static final String ENTITY_NAME = "hemishe_ETeacher";
 
     @GetMapping("/{entityId}")
-    @Operation(summary = "Get teacher by ID", description = "Returns a single teacher by UUID")
+    @Operation(
+        summary = "Bitta o'qituvchi ma'lumotlarini olish",
+        description = "ID bo'yicha bitta o'qituvchi ma'lumotlarini qaytaradi. view=_local - faqat asosiy fieldlar."
+    )
     public ResponseEntity<Map<String, Object>> getById(
             @PathVariable UUID entityId,
-            @RequestParam(required = false) Boolean dynamicAttributes,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @Parameter(description = "Dinamik atributlarni qo'shish") @RequestParam(required = false) Boolean dynamicAttributes,
+            @Parameter(description = "Null qiymatlarni qaytarish") @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("GET teacher by id: {}", entityId);
-        
+        log.debug("GET teacher by id: {}, view: {}", entityId, view);
+
         Optional<Teacher> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(toMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(toMap(entity.get(), returnNulls, view));
     }
 
     @PutMapping("/{entityId}")
-    @Operation(summary = "Update teacher", description = "Updates an existing teacher")
+    @Operation(
+        summary = "O'qituvchi ma'lumotlarini o'zgartirish",
+        description = "Mavjud o'qituvchi ma'lumotlarini yangilaydi. Faqat yuborilgan fieldlar o'zgaradi (partial update)."
+    )
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable UUID entityId,
             @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @Parameter(description = "Null qiymatlarni qaytarish") @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("PUT teacher id: {}", entityId);
+        log.debug("PUT teacher id: {}, body keys: {}", entityId, body.keySet());
 
         Optional<Teacher> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
@@ -86,7 +93,7 @@ public class TeacherEntityController {
         updateFromMap(entity, body);
 
         Teacher saved = repository.save(entity);
-        return ResponseEntity.ok(toMap(saved, returnNulls));
+        return ResponseEntity.ok(toMap(saved, returnNulls, view));
     }
 
     @DeleteMapping("/{entityId}")
@@ -104,47 +111,47 @@ public class TeacherEntityController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search teachers (GET)", description = "Search using URL parameters")
+    @Operation(summary = "O'qituvchilarni qidirish (GET)", description = "URL parametrlari orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("GET search teachers with filter: {}", filter);
-        
+        log.debug("GET search teachers with filter: {}, view: {}", filter, view);
+
         List<Teacher> entities = repository.findAll();
         return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
+            .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
     @PostMapping("/search")
-    @Operation(summary = "Search teachers (POST)", description = "Search using JSON filter")
+    @Operation(summary = "O'qituvchilarni qidirish (POST)", description = "JSON filter orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filter,
             @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("POST search teachers with filter: {}", filter);
-        
+        log.debug("POST search teachers with filter: {}, view: {}", filter, view);
+
         List<Teacher> entities = repository.findAll();
         return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
+            .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
     @GetMapping
-    @Operation(summary = "Get all teachers", description = "Returns paginated list")
+    @Operation(summary = "Barcha o'qituvchilar ro'yxati", description = "Sahifalangan ro'yxat qaytaradi")
     public ResponseEntity<List<Map<String, Object>>> getAll(
-            @Parameter(description = "Return total count") @RequestParam(required = false) Boolean returnCount,
-            @Parameter(description = "Offset for pagination") @RequestParam(defaultValue = "0") Integer offset,
-            @Parameter(description = "Limit per page") @RequestParam(defaultValue = "50") Integer limit,
-            @Parameter(description = "Sort") @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Boolean dynamicAttributes,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @Parameter(description = "Umumiy sonni qaytarish") @RequestParam(required = false) Boolean returnCount,
+            @Parameter(description = "Offset (boshlanish nuqtasi)") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit (sahifa hajmi)") @RequestParam(defaultValue = "50") Integer limit,
+            @Parameter(description = "Saralash (field-asc/desc)") @RequestParam(required = false) String sort,
+            @Parameter(description = "Dinamik atributlar") @RequestParam(required = false) Boolean dynamicAttributes,
+            @Parameter(description = "Null qiymatlarni qaytarish") @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("GET all teachers - offset: {}, limit: {}", offset, limit);
+        log.debug("GET all teachers - offset: {}, limit: {}, view: {}", offset, limit, view);
 
         Sort sorting = Sort.unsorted();
         if (sort != null && !sort.isEmpty()) {
@@ -160,7 +167,7 @@ public class TeacherEntityController {
         Page<Teacher> entityPage = repository.findAll(pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> toMap(e, returnNulls))
+            .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -179,42 +186,142 @@ public class TeacherEntityController {
         return ResponseEntity.ok(toMap(saved, returnNulls));
     }
 
-    private Map<String, Object> toMap(Teacher entity, Boolean returnNulls) {
+    /**
+     * Teacher entity ni CUBA Map formatiga o'tkazish
+     * view=_local uchun: _entityName, _instanceName, id va barcha _local fieldlar
+     * Field tartibi old-hemis bilan 100% mos bo'lishi kerak
+     */
+    private Map<String, Object> toMap(Teacher entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
+
+        // CUBA metadata
         map.put("_entityName", ENTITY_NAME);
 
-        // Instance name using full name
+        // Instance name: "LASTNAME FIRSTNAME FATHERNAME" formatida
         String instanceName = entity.getFullName() != null && !entity.getFullName().isEmpty() ?
             entity.getFullName() : "Teacher-" + entity.getId();
         map.put("_instanceName", instanceName);
 
-        map.put("id", entity.getId());
+        // Primary key
+        map.put("id", entity.getId() != null ? entity.getId().toString() : null);
 
-        // Add teacher-specific fields
-        putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);
-        putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);
-        putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);
-        putIfNotNull(map, "pinfl", entity.getPinfl(), returnNulls);
-        putIfNotNull(map, "birthday", entity.getBirthDate(), returnNulls);
-        putIfNotNull(map, "citizenship", entity.getCitizenship(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "_academic_degree", entity.getAcademicDegree(), returnNulls);
-        putIfNotNull(map, "_academic_rank", entity.getAcademicRank(), returnNulls);
-
-        // BaseEntity audit fields
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        // view=_local bo'lsa - faqat oddiy fieldlar (old-hemis tartibi bilan)
+        if ("_local".equals(view)) {
+            putIfNotNull(map, "pinfl", entity.getPinfl(), returnNulls);
+            putIfNotNull(map, "birthday", entity.getBirthDate(), returnNulls);
+            putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);  // getFirstName() - manual getter
+            putIfNotNull(map, "code", entity.getCode(), returnNulls);
+            putIfNotNull(map, "tag", entity.getTag(), returnNulls);
+            putIfNotNull(map, "serialNumber", entity.getSerialNumber(), returnNulls);
+            putIfNotNull(map, "address", entity.getAddress(), returnNulls);
+            putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);  // getSecondName() - manual getter
+            putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);  // getThirdName() - manual getter
+            putIfNotNull(map, "phone", entity.getPhone(), returnNulls);
+            putIfNotNull(map, "employeeYear", entity.getEmployeeYear(), returnNulls);
+        } else {
+            // Default view - barcha fieldlar
+            putIfNotNull(map, "pinfl", entity.getPinfl(), returnNulls);
+            putIfNotNull(map, "birthday", entity.getBirthDate(), returnNulls);
+            putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);
+            putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);
+            putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);
+            putIfNotNull(map, "code", entity.getCode(), returnNulls);
+            putIfNotNull(map, "tag", entity.getTag(), returnNulls);
+            putIfNotNull(map, "serialNumber", entity.getSerialNumber(), returnNulls);
+            putIfNotNull(map, "address", entity.getAddress(), returnNulls);
+            putIfNotNull(map, "phone", entity.getPhone(), returnNulls);
+            putIfNotNull(map, "employeeYear", entity.getEmployeeYear(), returnNulls);
+            putIfNotNull(map, "citizenship", entity.getCitizenship(), returnNulls);
+            putIfNotNull(map, "_gender", entity.getGender(), returnNulls);
+            putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
+            putIfNotNull(map, "_academic_degree", entity.getAcademicDegree(), returnNulls);
+            putIfNotNull(map, "_academic_rank", entity.getAcademicRank(), returnNulls);
+        }
 
         return map;
     }
 
+    // Backward compatibility uchun overload
+    private Map<String, Object> toMap(Teacher entity, Boolean returnNulls) {
+        return toMap(entity, returnNulls, null);
+    }
+
+    /**
+     * Map dan Teacher entity ga fieldlarni o'tkazish (partial update)
+     * CUBA Platform bilan 100% mos format
+     *
+     * Qabul qilinadigan field nomlari:
+     * - firstname, lastname, fathername - ismlar
+     * - pinfl, serialNumber - identifikatorlar
+     * - birthday - tug'ilgan sana (YYYY-MM-DD)
+     * - phone, address - kontakt
+     * - employeeYear, code, tag - qo'shimcha
+     * - _citizenship, _gender, _university - reference kodlar
+     * - _academic_degree, _academic_rank - ilmiy darajalar
+     */
     private void updateFromMap(Teacher entity, Map<String, Object> map) {
-        // TODO: Add specific field mappings based on entity properties
-        // For now, minimal implementation
+        // Personal info
+        if (map.containsKey("firstname")) {
+            entity.setFirstname((String) map.get("firstname"));
+        }
+        if (map.containsKey("lastname")) {
+            entity.setLastname((String) map.get("lastname"));
+        }
+        if (map.containsKey("fathername")) {
+            entity.setFathername((String) map.get("fathername"));
+        }
+
+        // Identifiers
+        if (map.containsKey("pinfl")) {
+            entity.setPinfl((String) map.get("pinfl"));
+        }
+        if (map.containsKey("serialNumber")) {
+            entity.setSerialNumber((String) map.get("serialNumber"));
+        }
+
+        // Birthday - YYYY-MM-DD formatda
+        if (map.containsKey("birthday")) {
+            Object birthdayObj = map.get("birthday");
+            if (birthdayObj instanceof String) {
+                entity.setBirthday(java.time.LocalDate.parse((String) birthdayObj));
+            }
+        }
+
+        // Contact
+        if (map.containsKey("phone")) {
+            entity.setPhone((String) map.get("phone"));
+        }
+        if (map.containsKey("address")) {
+            entity.setAddress((String) map.get("address"));
+        }
+
+        // Additional
+        if (map.containsKey("employeeYear")) {
+            entity.setEmployeeYear((String) map.get("employeeYear"));
+        }
+        if (map.containsKey("code")) {
+            entity.setCode((String) map.get("code"));
+        }
+        if (map.containsKey("tag")) {
+            entity.setTag((String) map.get("tag"));
+        }
+
+        // References (underscore prefix - CUBA convention)
+        if (map.containsKey("_citizenship")) {
+            entity.setCitizenship((String) map.get("_citizenship"));
+        }
+        if (map.containsKey("_gender")) {
+            entity.setGender((String) map.get("_gender"));
+        }
+        if (map.containsKey("_university")) {
+            entity.setUniversity((String) map.get("_university"));
+        }
+        if (map.containsKey("_academic_degree")) {
+            entity.setAcademicDegree((String) map.get("_academic_degree"));
+        }
+        if (map.containsKey("_academic_rank")) {
+            entity.setAcademicRank((String) map.get("_academic_rank"));
+        }
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

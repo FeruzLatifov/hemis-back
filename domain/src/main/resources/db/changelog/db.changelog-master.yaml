@@ -327,6 +327,7 @@ databaseChangeLog:
       id: S006_seed_translations
       author: hemis-team
       logicalFilePath: ${changelog.path}
+      runOnChange: true
       changes:
         - sqlFile:
             path: changesets/seed/S006_seed_translations.sql

@@ -2,6 +2,7 @@ package uz.hemis.common.dto.legacy;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -20,12 +21,26 @@ import java.util.UUID;
  *   <li>_entityName field on every object</li>
  *   <li>Nested objects instead of IDs</li>
  *   <li>All reference fields are full objects with their own nested references</li>
+ *   <li>Field order matches OLD-HEMIS exactly</li>
  * </ul>
  *
  * @since 1.0.0
  */
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({
+    "_entityName", "id", "isGraduate", "country", "educationType", "groupId", "language",
+    "socialCategory", "educationYear", "educationForm", "faculty", "studentSuccess",
+    "currentTerrain", "statusEducationYear", "createTs", "tag", "responsiblePersonPhone",
+    "terrain", "geoAddress", "commonSpecialityName", "serialNumber", "currentSoato",
+    "active", "version", "lastname", "groupName", "nationality", "phone", "specialityName",
+    "livingStatus", "roommateType", "pinfl", "birthday", "studentType", "firstname", "code",
+    "paymentForm", "gender", "university", "soato", "commonSpecialityCode", "parentPhone",
+    "specialityCode", "course", "studentStatus", "isDuplicate", "email", "address",
+    "citizenship", "passportGivenDate", "verified", "currentAddress", "fathername",
+    "accomodation", "fullname", "specialityBachelor", "updateTs", "createdBy", "updatedBy",
+    "enrollOrderName", "enrollOrderDate", "enrollOrderNumber", "enrollOrderCategory", "grantType"
+})
 public class StudentLegacyDto {
 
     @JsonProperty("_entityName")
@@ -105,9 +120,11 @@ public class StudentLegacyDto {
 
     /**
      * Simple reference DTO for classifiers
+     * Field order: _entityName, id, nameRu, code, name, active, nameEn, version, nameUz
      */
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonPropertyOrder({"_entityName", "id", "nameRu", "code", "name", "active", "nameEn", "version", "nameUz"})
     public static class SimpleReferenceDto {
         @JsonProperty("_entityName")
         private String entityName;
@@ -123,9 +140,17 @@ public class StudentLegacyDto {
 
     /**
      * University reference with nested properties
+     * Field order: _entityName, id, studentUrl, code, universityType, tin, versionType, addStudent,
+     *              address, accreditationEdit, active, universityContractCategory, version,
+     *              allowGrouping, teacherUrl, allowTransferOutside, ownership, name, gpaEdit
      */
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonPropertyOrder({
+        "_entityName", "id", "studentUrl", "code", "universityType", "tin", "versionType",
+        "addStudent", "address", "accreditationEdit", "active", "universityContractCategory",
+        "version", "allowGrouping", "teacherUrl", "allowTransferOutside", "ownership", "name", "gpaEdit"
+    })
     public static class UniversityReferenceDto {
         @JsonProperty("_entityName")
         private String entityName = "hemishe_EUniversity";
@@ -152,9 +177,11 @@ public class StudentLegacyDto {
 
     /**
      * Faculty/Department reference
+     * Field order: _entityName, id, code, version, nameUz, nameRu, nameEn
      */
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonPropertyOrder({"_entityName", "id", "code", "version", "nameUz", "nameRu", "nameEn"})
     public static class FacultyReferenceDto {
         @JsonProperty("_entityName")
         private String entityName = "hemishe_EUniversityDepartment";
@@ -168,9 +195,11 @@ public class StudentLegacyDto {
 
     /**
      * SOATO (location classifier) reference
+     * Field order: _entityName, id, code, version, name_ru, parent_code, name_uz
      */
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonPropertyOrder({"_entityName", "id", "code", "version", "name_ru", "parent_code", "name_uz"})
     public static class SoatoReferenceDto {
         @JsonProperty("_entityName")
         private String entityName = "hemishe_HSoato";
@@ -188,9 +217,11 @@ public class StudentLegacyDto {
 
     /**
      * Terrain (mahalla) reference
+     * Field order: _entityName, id, code, soato, version, nameRu, name
      */
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonPropertyOrder({"_entityName", "id", "code", "soato", "version", "nameRu", "name"})
     public static class TerrainReferenceDto {
         @JsonProperty("_entityName")
         private String entityName = "hemishe_HTerrain";
@@ -205,9 +236,11 @@ public class StudentLegacyDto {
 
     /**
      * Speciality reference
+     * Field order: _entityName, id, code, version, name
      */
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonPropertyOrder({"_entityName", "id", "code", "version", "name"})
     public static class SpecialityReferenceDto {
         @JsonProperty("_entityName")
         private String entityName = "hemishe_HSpecialityBachelor";

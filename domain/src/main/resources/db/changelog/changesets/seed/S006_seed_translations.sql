@@ -2049,3 +2049,152 @@ BEGIN
     END IF;
     RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
 END $$;
+
+-- =====================================================
+-- ERROR MESSAGES (Backend-driven i18n)
+-- =====================================================
+-- Industrial best practice: Backend returns localized error messages
+-- based on Accept-Language header
+-- =====================================================
+
+-- Error messages - Default (Uzbek Latin)
+INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
+VALUES
+    (gen_random_uuid(), 'error', 'error.auth.failed', 'Login yoki parol noto''g''ri', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.auth.token_expired', 'Sessiya muddati tugagan. Qaytadan kiring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.auth.token_invalid', 'Noto''g''ri token', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.auth.access_denied', 'Sizda bu amalni bajarish huquqi yo''q', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.auth.user_disabled', 'Foydalanuvchi bloklangan', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.auth.user_not_found', 'Foydalanuvchi topilmadi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.internal', 'Serverda xatolik yuz berdi. Iltimos, qaytadan urinib ko''ring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.not_found', 'Ma''lumot topilmadi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.validation', 'Kiritilgan ma''lumotlar noto''g''ri', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.validation.required', 'Bu maydon to''ldirilishi shart', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.validation.email', 'Email formati noto''g''ri', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.validation.min_length', 'Minimal uzunlik: {0} belgi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.validation.max_length', 'Maksimal uzunlik: {0} belgi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.duplicate', 'Bunday ma''lumot allaqachon mavjud', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.delete.has_children', 'Avval bog''liq ma''lumotlarni o''chiring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.file.too_large', 'Fayl hajmi juda katta. Maksimal: {0} MB', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.file.invalid_type', 'Fayl turi qo''llab-quvvatlanmaydi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.network', 'Tarmoq xatosi. Internet aloqasini tekshiring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.timeout', 'So''rov vaqti tugadi. Qaytadan urinib ko''ring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    (gen_random_uuid(), 'error', 'error.rate_limit', 'Juda ko''p so''rov. Biroz kuting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+ON CONFLICT (message_key) DO UPDATE SET
+    message = EXCLUDED.message,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- Error translations - Russian (ru-RU)
+INSERT INTO system_message_translations (message_id, language, translation)
+SELECT m.id, 'ru-RU',
+    CASE m.message_key
+        WHEN 'error.auth.failed' THEN 'Неверный логин или пароль'
+        WHEN 'error.auth.token_expired' THEN 'Сессия истекла. Войдите снова'
+        WHEN 'error.auth.token_invalid' THEN 'Недействительный токен'
+        WHEN 'error.auth.access_denied' THEN 'У вас нет прав для выполнения этого действия'
+        WHEN 'error.auth.user_disabled' THEN 'Пользователь заблокирован'
+        WHEN 'error.auth.user_not_found' THEN 'Пользователь не найден'
+        WHEN 'error.internal' THEN 'Ошибка сервера. Пожалуйста, попробуйте снова'
+        WHEN 'error.not_found' THEN 'Данные не найдены'
+        WHEN 'error.validation' THEN 'Введенные данные некорректны'
+        WHEN 'error.validation.required' THEN 'Это поле обязательно для заполнения'
+        WHEN 'error.validation.email' THEN 'Неверный формат email'
+        WHEN 'error.validation.min_length' THEN 'Минимальная длина: {0} символов'
+        WHEN 'error.validation.max_length' THEN 'Максимальная длина: {0} символов'
+        WHEN 'error.duplicate' THEN 'Такие данные уже существуют'
+        WHEN 'error.delete.has_children' THEN 'Сначала удалите связанные данные'
+        WHEN 'error.file.too_large' THEN 'Файл слишком большой. Максимум: {0} МБ'
+        WHEN 'error.file.invalid_type' THEN 'Тип файла не поддерживается'
+        WHEN 'error.network' THEN 'Ошибка сети. Проверьте интернет-соединение'
+        WHEN 'error.timeout' THEN 'Время запроса истекло. Попробуйте снова'
+        WHEN 'error.rate_limit' THEN 'Слишком много запросов. Подождите немного'
+        ELSE m.message
+    END
+FROM system_messages m
+WHERE m.category = 'error'
+ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
+-- Error translations - English (en-US)
+INSERT INTO system_message_translations (message_id, language, translation)
+SELECT m.id, 'en-US',
+    CASE m.message_key
+        WHEN 'error.auth.failed' THEN 'Invalid username or password'
+        WHEN 'error.auth.token_expired' THEN 'Session expired. Please login again'
+        WHEN 'error.auth.token_invalid' THEN 'Invalid token'
+        WHEN 'error.auth.access_denied' THEN 'You do not have permission to perform this action'
+        WHEN 'error.auth.user_disabled' THEN 'User account is disabled'
+        WHEN 'error.auth.user_not_found' THEN 'User not found'
+        WHEN 'error.internal' THEN 'Server error. Please try again'
+        WHEN 'error.not_found' THEN 'Data not found'
+        WHEN 'error.validation' THEN 'Invalid input data'
+        WHEN 'error.validation.required' THEN 'This field is required'
+        WHEN 'error.validation.email' THEN 'Invalid email format'
+        WHEN 'error.validation.min_length' THEN 'Minimum length: {0} characters'
+        WHEN 'error.validation.max_length' THEN 'Maximum length: {0} characters'
+        WHEN 'error.duplicate' THEN 'This data already exists'
+        WHEN 'error.delete.has_children' THEN 'Delete related data first'
+        WHEN 'error.file.too_large' THEN 'File too large. Maximum: {0} MB'
+        WHEN 'error.file.invalid_type' THEN 'File type not supported'
+        WHEN 'error.network' THEN 'Network error. Check your internet connection'
+        WHEN 'error.timeout' THEN 'Request timed out. Please try again'
+        WHEN 'error.rate_limit' THEN 'Too many requests. Please wait'
+        ELSE m.message
+    END
+FROM system_messages m
+WHERE m.category = 'error'
+ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
+-- Error translations - Uzbek Cyrillic (oz-UZ)
+INSERT INTO system_message_translations (message_id, language, translation)
+SELECT m.id, 'oz-UZ',
+    CASE m.message_key
+        WHEN 'error.auth.failed' THEN 'Логин ёки парол нотўғри'
+        WHEN 'error.auth.token_expired' THEN 'Сессия муддати тугаган. Қайтадан киринг'
+        WHEN 'error.auth.token_invalid' THEN 'Нотўғри токен'
+        WHEN 'error.auth.access_denied' THEN 'Сизда бу амални бажариш ҳуқуқи йўқ'
+        WHEN 'error.auth.user_disabled' THEN 'Фойдаланувчи блокланган'
+        WHEN 'error.auth.user_not_found' THEN 'Фойдаланувчи топилмади'
+        WHEN 'error.internal' THEN 'Серверда хатолик юз берди. Илтимос, қайтадан уриниб кўринг'
+        WHEN 'error.not_found' THEN 'Маълумот топилмади'
+        WHEN 'error.validation' THEN 'Киритилган маълумотлар нотўғри'
+        WHEN 'error.validation.required' THEN 'Бу майдон тўлдирилиши шарт'
+        WHEN 'error.validation.email' THEN 'Email формати нотўғри'
+        WHEN 'error.validation.min_length' THEN 'Минимал узунлик: {0} белги'
+        WHEN 'error.validation.max_length' THEN 'Максимал узунлик: {0} белги'
+        WHEN 'error.duplicate' THEN 'Бундай маълумот аллақачон мавжуд'
+        WHEN 'error.delete.has_children' THEN 'Аввал боғлиқ маълумотларни ўчиринг'
+        WHEN 'error.file.too_large' THEN 'Файл ҳажми жуда катта. Максимал: {0} МБ'
+        WHEN 'error.file.invalid_type' THEN 'Файл тури қўллаб-қувватланмайди'
+        WHEN 'error.network' THEN 'Тармоқ хатоси. Интернет алоқасини текширинг'
+        WHEN 'error.timeout' THEN 'Сўров вақти тугади. Қайтадан уриниб кўринг'
+        WHEN 'error.rate_limit' THEN 'Жуда кўп сўров. Бироз кутинг'
+        ELSE m.message
+    END
+FROM system_messages m
+WHERE m.category = 'error'
+ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
+-- Error translations - Uzbek Latin (uz-UZ)
+INSERT INTO system_message_translations (message_id, language, translation)
+SELECT m.id, 'uz-UZ', m.message
+FROM system_messages m
+WHERE m.category = 'error'
+ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+
+-- Verification for error translations
+DO $$
+DECLARE
+    error_msg_count INTEGER;
+    error_trans_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO error_msg_count FROM system_messages WHERE category = 'error';
+    SELECT COUNT(*) INTO error_trans_count FROM system_message_translations smt
+        JOIN system_messages sm ON sm.id = smt.message_id WHERE sm.category = 'error';
+
+    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    RAISE NOTICE '📋 ERROR TRANSLATIONS VERIFICATION';
+    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+    RAISE NOTICE '   Error messages: %', error_msg_count;
+    RAISE NOTICE '   Error translations: % (expected: %)', error_trans_count, error_msg_count * 4;
+    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
+END $$;

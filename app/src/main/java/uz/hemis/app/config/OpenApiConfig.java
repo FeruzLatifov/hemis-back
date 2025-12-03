@@ -231,16 +231,33 @@ public class OpenApiConfig {
                     .description("""
                         JWT Bearer Token Authentication
 
-                        **How to get token:**
-                        1. POST /app/rest/v2/oauth/token with credentials
-                        2. Copy access_token from response
-                        3. Click "Authorize" button above
-                        4. Paste token (without "Bearer" prefix)
+                        **MUHIM:** Swagger UI orqali to'g'ridan-to'g'ri token olish imkoni yo'q!
+                        Sabab: Token endpoint Basic Authorization header talab qiladi (old-hemis compatibility).
 
-                        **Token expires in:** 8 hours
+                        **Token olish uchun Postman yoki curl ishlating:**
+                        ```bash
+                        curl -X POST "http://localhost:8081/app/rest/v2/oauth/token" \\
+                          -H "Authorization: Basic Y2xpZW50OnNlY3JldA==" \\
+                          -H "Content-Type: application/x-www-form-urlencoded" \\
+                          -d "grant_type=password&username=YOUR_USERNAME&password=YOUR_PASSWORD"
+                        ```
+
+                        **Javobdan access_token ni oling va Swagger UI da Authorize bosib kiriting.**
+
+                        **Token expires in:** 30 days (legacy compatibility)
                         **Refresh token:** Use refresh_token to get new access_token
                         """)
-            );
+            )
+            // NOTE: OAuth2 Password Flow Swagger UI dan ishlamaydi!
+            // Sabab: Endpoint Basic Authorization header talab qiladi (old-hemis compatibility),
+            // lekin Swagger UI client_id/client_secret ni form body sifatida yuboradi.
+            //
+            // Token olish uchun Postman yoki curl ishlating:
+            // curl -X POST "http://localhost:8081/app/rest/v2/oauth/token" \
+            //   -H "Authorization: Basic Y2xpZW50OnNlY3JldA==" \
+            //   -H "Content-Type: application/x-www-form-urlencoded" \
+            //   -d "grant_type=password&username=feruz&password=your_password"
+            ;
     }
 
     /**

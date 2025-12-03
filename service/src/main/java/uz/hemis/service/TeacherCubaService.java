@@ -225,9 +225,6 @@ public class TeacherCubaService extends AbstractInternalCubaService {
         map.put("first_name", teacher.getFirstName());
         map.put("second_name", teacher.getSecondName());
         map.put("third_name", teacher.getThirdName());
-        map.put("first_name_latin", teacher.getFirstNameLatin());
-        map.put("second_name_latin", teacher.getSecondNameLatin());
-        map.put("third_name_latin", teacher.getThirdNameLatin());
         map.put("birth_date", teacher.getBirthDate());
         map.put("university", teacher.getUniversity());
         map.put("gender", teacher.getGender());

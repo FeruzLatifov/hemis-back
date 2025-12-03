@@ -30,7 +30,7 @@ public class GenericLegacyEntityJdbcController {
 
     private static final Map<String, String> PATH_TO_TABLE = Map.ofEntries(
             // Entities
-            Map.entry("/app/rest/v2/entities/hemishe_EStudentGpa", "hemishe_e_student_gpa"),
+            // hemishe_EStudentGpa - maxsus StudentGpaEntityController.java da
             Map.entry("/app/rest/v2/entities/hemishe_EPublicationCriteria", "hemishe_e_publication_criteria"),
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicGroup", "hemishe_r_academic_group"),
             Map.entry("/app/rest/v2/entities/hemishe_RExpel", "hemishe_r_expel"),
@@ -83,7 +83,6 @@ public class GenericLegacyEntityJdbcController {
     // GET by ID
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_EStudentGpa/{id}",
             "/app/rest/v2/entities/hemishe_EPublicationCriteria/{id}",
             "/app/rest/v2/entities/hemishe_RAcademicGroup/{id}",
             "/app/rest/v2/entities/hemishe_RExpel/{id}",
@@ -120,7 +119,6 @@ public class GenericLegacyEntityJdbcController {
     // LIST (paginated)
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_EStudentGpa",
             "/app/rest/v2/entities/hemishe_EPublicationCriteria",
             "/app/rest/v2/entities/hemishe_RAcademicGroup",
             "/app/rest/v2/entities/hemishe_RExpel",
@@ -162,7 +160,6 @@ public class GenericLegacyEntityJdbcController {
     // SEARCH (best-effort by code/name)
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_EStudentGpa/search",
             "/app/rest/v2/entities/hemishe_EPublicationCriteria/search",
             "/app/rest/v2/entities/hemishe_RAcademicGroup/search",
             "/app/rest/v2/entities/hemishe_RExpel/search",

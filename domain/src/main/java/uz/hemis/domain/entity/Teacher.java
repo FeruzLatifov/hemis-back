@@ -38,9 +38,6 @@ public class Teacher extends BaseEntity {
     public String getFirstName() { return firstname; }
     public String getSecondName() { return lastname; }
     public String getThirdName() { return fathername; }
-    public String getFirstNameLatin() { return firstname_latin; }
-    public String getSecondNameLatin() { return lastname_latin; }
-    public String getThirdNameLatin() { return fathername_latin; }
     public LocalDate getBirthDate() { return birthday; }
     public String getCitizenship() { return citizenship; }
 
@@ -84,31 +81,11 @@ public class Teacher extends BaseEntity {
     private String pinfl;
 
     /**
-     * First name (Latin)
-     * Column: firstname_latin VARCHAR(255)
+     * Citizenship code
+     * Column: _citizenship VARCHAR(32)
+     * References: hemishe_h_citizenship.code
      */
-    @Column(name = "firstname_latin", length = 255)
-    private String firstname_latin;
-
-    /**
-     * Last name (Latin)
-     * Column: lastname_latin VARCHAR(255)
-     */
-    @Column(name = "lastname_latin", length = 255)
-    private String lastname_latin;
-
-    /**
-     * Father's name (Latin)
-     * Column: fathername_latin VARCHAR(255)
-     */
-    @Column(name = "fathername_latin", length = 255)
-    private String fathername_latin;
-
-    /**
-     * Citizenship
-     * Column: citizenship VARCHAR(255)
-     */
-    @Column(name = "citizenship", length = 255)
+    @Column(name = "_citizenship", length = 32)
     private String citizenship;
 
     /**
@@ -118,6 +95,48 @@ public class Teacher extends BaseEntity {
      */
     @Column(name = "_gender", length = 32)
     private String gender;
+
+    /**
+     * Teacher code (unique identifier)
+     * Column: code VARCHAR(255)
+     */
+    @Column(name = "code", length = 255)
+    private String code;
+
+    /**
+     * Passport serial number
+     * Column: serial_number VARCHAR(255)
+     */
+    @Column(name = "serial_number", length = 255)
+    private String serialNumber;
+
+    /**
+     * Address
+     * Column: address VARCHAR(1024)
+     */
+    @Column(name = "address", length = 1024)
+    private String address;
+
+    /**
+     * Phone number
+     * Column: phone VARCHAR(1024)
+     */
+    @Column(name = "phone", length = 1024)
+    private String phone;
+
+    /**
+     * Employment year
+     * Column: employee_year VARCHAR(255)
+     */
+    @Column(name = "employee_year", length = 255)
+    private String employeeYear;
+
+    /**
+     * Tag for versioning
+     * Column: tag VARCHAR(255)
+     */
+    @Column(name = "tag", length = 255)
+    private String tag;
 
     // =====================================================
     // University Reference
