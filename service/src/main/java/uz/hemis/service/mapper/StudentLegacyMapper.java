@@ -26,7 +26,7 @@ import java.util.UUID;
  *   <li>Keeps domain layer clean</li>
  * </ul>
  *
- * <p><strong>Table Naming (CUBA format in test3_hemis):</strong></p>
+ * <p><strong>Table Naming (CUBA format in test1_hemis):</strong></p>
  * <ul>
  *   <li>Classifiers: hemishe_h_* (e.g., hemishe_h_country, hemishe_h_education_type)</li>
  *   <li>Entities: hemishe_e_* (e.g., hemishe_e_student, hemishe_e_university)</li>

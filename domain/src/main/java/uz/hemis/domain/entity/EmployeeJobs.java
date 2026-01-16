@@ -19,25 +19,25 @@ public class EmployeeJobs extends BaseEntity {
     private UUID employee;
 
     @Column(name = "_university")
-    private UUID university;
+    private String university;
 
     @Column(name = "_department")
-    private UUID department;
+    private String department;
 
     @Column(name = "_employee_type")
-    private UUID employeeType;
+    private String employeeType;
 
     @Column(name = "_employee_position")
-    private UUID employeePosition;
+    private String employeePosition;
 
     @Column(name = "_employee_rate")
-    private UUID employeeRate;
+    private String employeeRate;
 
     @Column(name = "_employee_form")
-    private UUID employeeForm;
+    private String employeeForm;
 
     @Column(name = "_employee_status")
-    private UUID employeeStatus;
+    private String employeeStatus;
 
     @Column(name = "job_start_date")
     private LocalDate jobStartDate;

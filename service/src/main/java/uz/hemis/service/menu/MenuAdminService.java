@@ -3,7 +3,6 @@ package uz.hemis.service.menu;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
+import uz.hemis.common.port.cache.CacheEvictionPort;
 import uz.hemis.domain.entity.Menu;
 import uz.hemis.domain.entity.MenuAuditLog;
 import uz.hemis.domain.repository.MenuAuditLogRepository;
@@ -62,7 +62,7 @@ public class MenuAdminService {
     private final MenuRepository menuRepository;
     private final MenuAuditLogRepository auditLogRepository;
     private final MenuMapper menuMapper;
-    private final CacheManager cacheManager;
+    private final CacheEvictionPort cacheEvictionPort;
     private final ObjectMapper objectMapper;
     private final MenuService menuService;
 
@@ -489,19 +489,16 @@ public class MenuAdminService {
      *
      * <p><strong>Cache Invalidation Strategy:</strong></p>
      * <ul>
-     *   <li>Step 1: Clear local cache (Caffeine/Redis)</li>
+     *   <li>Step 1: Clear local cache via CacheEvictionPort (Caffeine/Redis)</li>
      *   <li>Step 2: Increment cache version + Publish Redis Pub/Sub event</li>
      *   <li>Step 3: All pods receive event → clear their L1 Caffeine cache</li>
      *   <li>Step 4: Next request: cache miss → reload from database</li>
      * </ul>
      */
     private void clearMenuCache() {
-        // Step 1: Clear local cache (current pod)
-        var menuCache = cacheManager.getCache("menu");
-        if (menuCache != null) {
-            menuCache.clear();
-            log.debug("Menu cache cleared (local pod)");
-        }
+        // Step 1: Clear local cache via port (current pod)
+        cacheEvictionPort.evictCache("menu");
+        log.debug("Menu cache cleared (local pod)");
 
         // Step 2: Invalidate cache across all pods (Redis Pub/Sub)
         menuService.invalidateMenuCache();

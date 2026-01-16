@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  */
 @Tag(name = "Employee Categories")
 @RestController
-@RequestMapping("/app/rest/v2/entities/hemishe_HUniversityEmployeeType")
+@RequestMapping("/app/rest/v2/entities/hemishe_HEmployeeCategory")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -58,7 +58,7 @@ public class EmployeeCategoryController {
 
     private final ClassifierRepository classifierRepository;
 
-    private static final String ENTITY_NAME = "hemishe_HUniversityEmployeeType";
+    private static final String ENTITY_NAME = "hemishe_HEmployeeCategory";
     private static final String CLASSIFIER_TYPE = "EMPLOYEE_CATEGORY";
 
     // =====================================================

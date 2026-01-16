@@ -8,13 +8,13 @@ rootProject.name = "hemis"
 // =====================================================
 
 include(
-    "common",                   // Shared utilities, DTOs (legacy JSON field names)
+    "common",                   // Shared utilities, DTOs, Port interfaces
     "security",                 // JWT OAuth2 Resource Server
-    "domain",                   // JPA entities (@Table/@Column legacy mapping) + Liquibase migrations
+    "domain",                   // JPA entities + Port adapters + Liquibase
     // "infrastructure-persistence", // DISABLED: Kotlin plugin issue, migrations in domain module
-    "service",                  // Service layer
+    "service",                  // Service layer + Cache adapters
     "api-legacy",               // 🎯 Legacy CUBA-compatible APIs (/app/rest/*)
-    "api-web",                  // 🎯 Modern Web/UI APIs (/api/v1/web/*)
+    "api-web",                  // 🎯 Modern Web APIs (/api/v1/web/*)
     "api-external",             // 🎯 S2S integrations (gov, education, finance)
     "app"                       // Main Spring Boot application
 )
@@ -49,12 +49,12 @@ plugins {
 // Module Structure (Clean Architecture v2.0.0)
 // =====================================================
 // hemis/
-// ├── common/                  → Shared code (NO internal dependencies)
-// ├── security/                → JWT + OAuth2 (depends on: common, domain)
-// ├── domain/                  → JPA entities + repositories (depends on: common)
-// ├── service/                 → Business logic layer (depends on: domain, common)
-// ├── api-legacy/              → 🎯 CUBA entity APIs /app/rest/* (56 controllers)
-// ├── api-web/                 → 🎯 Modern Web APIs /api/v1/web/* (30 controllers)
-// ├── api-external/            → 🎯 S2S integrations (6 controllers)
-// └── app/                     → Main Boot app (5 auth/public controllers only)
+// ├── common/                  → DTOs, Port interfaces, Exceptions
+// ├── security/                → JWT + OAuth2 (uses common ports)
+// ├── domain/                  → JPA entities + Port adapters
+// ├── service/                 → Business logic + Cache adapters
+// ├── api-legacy/              → 🎯 CUBA entity APIs /app/rest/*
+// ├── api-web/                 → 🎯 Modern Web APIs /api/v1/web/*
+// ├── api-external/            → 🎯 S2S integrations
+// └── app/                     → Main Spring Boot application
 // =====================================================

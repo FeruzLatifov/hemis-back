@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.LegacyEntityAdapter;
 import uz.hemis.common.dto.StudentMetaDto;
@@ -113,6 +114,7 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q - Foydalanuvchida entity o'qish huquqi yo'q"),
         @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba meta topilmadi")
     })
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> getById(
             @Parameter(description = "Talaba meta UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable UUID entityId,
@@ -165,6 +167,7 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "Sahifadagi elementlar soni")
             @RequestParam(defaultValue = "100") int limit,
@@ -229,6 +232,7 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
         @ApiResponse(responseCode = "409", description = "Konflikt - (uId, university) kombinatsiyasi mavjud")
     })
+    @Transactional
     public ResponseEntity<Map<String, Object>> create(
             @RequestBody StudentMetaDto dto,
             @Parameter(description = "Null qiymatlarni qaytarish")
@@ -272,6 +276,7 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi"),
         @ApiResponse(responseCode = "409", description = "Konflikt - (uId, university) kombinatsiyasi mavjud")
     })
+    @Transactional
     public ResponseEntity<Map<String, Object>> update(
             @Parameter(description = "Talaba meta UUID identifikatori")
             @PathVariable UUID entityId,
@@ -320,6 +325,7 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
+    @Transactional
     public ResponseEntity<Void> delete(
             @Parameter(description = "Talaba meta UUID identifikatori")
             @PathVariable UUID entityId) {

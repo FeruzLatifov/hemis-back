@@ -1,12 +1,11 @@
 package uz.hemis.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import uz.hemis.common.dto.CaptchaResponse;
+import uz.hemis.common.port.cache.DistributedCachePort;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -14,9 +13,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Captcha Service - Numeric Captcha Generation
@@ -47,19 +46,15 @@ import java.util.concurrent.TimeUnit;
  * @since 2025-11-19
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class CaptchaService {
 
-    private final RedisTemplate<String, String> redisTemplate;
-
-    @Autowired
-    public CaptchaService(@Qualifier("stringRedisTemplate") RedisTemplate<String, String> redisTemplate) {
-        this.redisTemplate = redisTemplate;
-    }
+    private final DistributedCachePort cachePort;
 
     private static final SecureRandom RANDOM = new SecureRandom();
     private static final int CAPTCHA_LENGTH = 5;
-    private static final int CAPTCHA_EXPIRATION_SECONDS = 300; // 5 minutes
+    private static final Duration CAPTCHA_TTL = Duration.ofSeconds(300); // 5 minutes
     private static final int IMAGE_WIDTH = 200;
     private static final int IMAGE_HEIGHT = 60;
 
@@ -94,10 +89,10 @@ public class CaptchaService {
             throw new RuntimeException("Failed to generate captcha image", e);
         }
 
-        // 4. Store in Redis
-        String redisKey = "captcha:" + captchaId;
-        redisTemplate.opsForValue().set(redisKey, captchaValue, CAPTCHA_EXPIRATION_SECONDS, TimeUnit.SECONDS);
-        log.debug("✅ Stored captcha in Redis: key={}, ttl={}s", redisKey, CAPTCHA_EXPIRATION_SECONDS);
+        // 4. Store in distributed cache
+        String cacheKey = "captcha:" + captchaId;
+        cachePort.store(cacheKey, captchaValue, CAPTCHA_TTL);
+        log.debug("✅ Stored captcha: key={}, ttl={}s", cacheKey, CAPTCHA_TTL.getSeconds());
 
         // 5. Build response - OLD-HEMIS FORMAT: faqat {id, image}
         CaptchaResponse response = CaptchaResponse.builder()
@@ -105,7 +100,7 @@ public class CaptchaService {
                 .image(base64Image)
                 .build();
 
-        log.info("✅ Generated captcha: id={}, ttl={}s (old-hemis format)", captchaId, CAPTCHA_EXPIRATION_SECONDS);
+        log.info("✅ Generated captcha: id={}, ttl={}s (old-hemis format)", captchaId, CAPTCHA_TTL.getSeconds());
         return response;
     }
 
@@ -156,10 +151,10 @@ public class CaptchaService {
             throw new RuntimeException("Failed to generate arithmetic captcha image", e);
         }
 
-        // 4. Store in Redis
-        String redisKey = "captcha:" + captchaId;
-        redisTemplate.opsForValue().set(redisKey, captchaValue, CAPTCHA_EXPIRATION_SECONDS, TimeUnit.SECONDS);
-        log.debug("✅ Stored arithmetic captcha in Redis: key={}, answer={}, ttl={}s", redisKey, captchaValue, CAPTCHA_EXPIRATION_SECONDS);
+        // 4. Store in distributed cache
+        String cacheKey = "captcha:" + captchaId;
+        cachePort.store(cacheKey, captchaValue, CAPTCHA_TTL);
+        log.debug("✅ Stored arithmetic captcha: key={}, answer={}, ttl={}s", cacheKey, captchaValue, CAPTCHA_TTL.getSeconds());
 
         // 5. Build response - OLD-HEMIS FORMAT: faqat {id, image}
         CaptchaResponse response = CaptchaResponse.builder()
@@ -167,7 +162,7 @@ public class CaptchaService {
                 .image(base64Image)
                 .build();
 
-        log.info("✅ Generated arithmetic captcha: id={}, expression='{}', ttl={}s (old-hemis format)", captchaId, expression, CAPTCHA_EXPIRATION_SECONDS);
+        log.info("✅ Generated arithmetic captcha: id={}, expression='{}', ttl={}s (old-hemis format)", captchaId, expression, CAPTCHA_TTL.getSeconds());
         return response;
     }
 
@@ -184,11 +179,11 @@ public class CaptchaService {
             return false;
         }
 
-        String redisKey = "captcha:" + captchaId;
-        String storedValue = redisTemplate.opsForValue().get(redisKey);
+        String cacheKey = "captcha:" + captchaId;
+        String storedValue = cachePort.<String>retrieve(cacheKey).orElse(null);
 
         if (storedValue == null) {
-            log.warn("⚠️ Captcha validation failed: captcha not found or expired (key={})", redisKey);
+            log.warn("⚠️ Captcha validation failed: captcha not found or expired (key={})", cacheKey);
             return false;
         }
 
@@ -196,7 +191,7 @@ public class CaptchaService {
 
         if (isValid) {
             // Delete after successful validation (one-time use)
-            redisTemplate.delete(redisKey);
+            cachePort.delete(cacheKey);
             log.info("✅ Captcha validated successfully: captchaId={}", captchaId);
         } else {
             log.warn("⚠️ Captcha validation failed: incorrect value (captchaId={})", captchaId);

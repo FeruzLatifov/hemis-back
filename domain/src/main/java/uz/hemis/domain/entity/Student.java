@@ -40,6 +40,10 @@ public class Student extends BaseEntity {
     public String getFirstName() { return firstname; }
     public String getSecondName() { return lastname; }
     public String getThirdName() { return fathername; }
+
+    // MapStruct compatibility: Boolean isDuplicate field needs explicit getter
+    // Lombok generates getIsDuplicate() but MapStruct expects isDuplicate property
+    public Boolean isDuplicate() { return isDuplicate; }
     // NOTE: Latin name columns do not exist in current database schema
     // These methods return null until columns are added via Liquibase migration
     public String getFirstNameLatin() { return null; }

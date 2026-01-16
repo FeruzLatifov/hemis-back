@@ -399,14 +399,14 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(allowedOrigins);
         log.info("✅ CORS allowed origins: {}", allowedOrigins);
 
-        // Allowed HTTP methods (NO DELETE - NDG)
+        // Allowed HTTP methods (DELETE enabled for soft-delete endpoints)
         configuration.setAllowedMethods(Arrays.asList(
                 HttpMethod.GET.name(),
                 HttpMethod.POST.name(),
                 HttpMethod.PUT.name(),
                 HttpMethod.PATCH.name(),
+                HttpMethod.DELETE.name(),  // Soft delete only - no physical delete
                 HttpMethod.OPTIONS.name()
-                // NO DELETE - NDG enforced
         ));
 
         // Allowed headers

@@ -199,6 +199,16 @@ server:
   servlet:
     context-path: /
 
+  # =====================================================
+  # Tomcat Configuration
+  # =====================================================
+  # maxHttpHeaderSize: JWT tokenlar katta bo'lganda kerak
+  # Default: 8KB (8192) - ko'pincha yetarli emas
+  # =====================================================
+  tomcat:
+    max-http-header-size: 48KB
+    max-swallow-size: 2MB
+
   compression:
     enabled: true
     mime-types:

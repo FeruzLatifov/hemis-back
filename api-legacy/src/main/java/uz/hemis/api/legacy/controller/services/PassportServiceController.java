@@ -18,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import uz.hemis.service.CaptchaService;
 import uz.hemis.service.integration.GuvdTokenService;
@@ -202,6 +203,7 @@ public class PassportServiceController {
             )
     })
     @GetMapping("/getDataBySN")
+    @Transactional(readOnly = true)
     public ResponseEntity<Object> getDataBySN(
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")
             @RequestParam String pinfl,
@@ -436,6 +438,7 @@ public class PassportServiceController {
             )
     })
     @GetMapping("/getDataBySNBirthdate")
+    @Transactional(readOnly = true)
     public ResponseEntity<Object> getDataBySNBirthdate(
             @Parameter(description = "Passport seria va raqam (masalan: AA6970877)", required = true, example = "AA1234567")
             @RequestParam String seriaNumber,
@@ -739,6 +742,7 @@ public class PassportServiceController {
             )
     })
     @GetMapping("/getDataByPinflBirthdate")
+    @Transactional(readOnly = true)
     public ResponseEntity<Object> getDataByPinflBirthdate(
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "31507976020031")
             @RequestParam String pinfl,
@@ -923,6 +927,7 @@ public class PassportServiceController {
             )
     })
     @GetMapping("/getAddress")
+    @Transactional(readOnly = true)
     public ResponseEntity<Object> getAddressPublic(
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")
             @RequestParam String pinfl

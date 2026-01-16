@@ -1,5 +1,6 @@
 package uz.hemis.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -24,6 +25,7 @@ import java.util.UUID;
  * @since 1.0.0
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true) // Ignore unknown fields during Redis cache deserialization
 public class StudentDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -329,6 +331,9 @@ public class StudentDto implements Serializable {
      */
     @JsonProperty("isDuplicate")
     private Boolean isDuplicate;
+
+    // MapStruct/Jackson compatibility: explicit getter for isDuplicate
+    public Boolean isDuplicate() { return isDuplicate; }
 
     /**
      * Enroll order name

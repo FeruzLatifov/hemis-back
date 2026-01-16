@@ -44,9 +44,9 @@ public class GenericLegacyEntityJdbcController {
             Map.entry("/app/rest/v2/entities/hemishe_HDoctoralStudentType", "hemishe_h_doctoral_student_type"),
             Map.entry("/app/rest/v2/entities/hemishe_HMethodicalPublicationType", "hemishe_h_methodical_publication_type"),
             Map.entry("/app/rest/v2/entities/hemishe_HPublicationLocality", "hemishe_h_publication_locality"),
-            Map.entry("/app/rest/v2/entities/hemishe_HUniversityEmployeeForm", "hemishe_h_university_employee_form"),
-            Map.entry("/app/rest/v2/entities/hemishe_HUniversityEmployeeRate", "hemishe_h_university_employee_rate"),
-            Map.entry("/app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType", "hemishe_h_university_employee_status_type")
+            Map.entry("/app/rest/v2/entities/hemishe_HUniversityEmployeeForm", "hemishe_h_university_employee_form")
+            // hemishe_HUniversityEmployeeStatusType - moved to dedicated UniversityEmployeeStatusTypeEntityController
+            // hemishe_HUniversityEmployeeRate - moved to dedicated UniversityEmployeeRateEntityController
     );
 
     private String resolveTable(String servletPathBase) {
@@ -95,9 +95,7 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{id}",
             "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{id}",
             "/app/rest/v2/entities/hemishe_HPublicationLocality/{id}",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/{id}",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate/{id}",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType/{id}"
+            "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/{id}"
     })
     @Operation(summary = "Get entity by ID (legacy CUBA format)")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable("id") String id, HttpServletRequest request) {
@@ -131,9 +129,7 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
             "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
             "/app/rest/v2/entities/hemishe_HPublicationLocality",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType"
+            "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm"
     })
     @Operation(summary = "List entities (legacy CUBA list)")
     public ResponseEntity<List<Map<String, Object>>> list(
@@ -172,9 +168,7 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
             "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/search",
             "/app/rest/v2/entities/hemishe_HPublicationLocality/search",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate/search",
-            "/app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType/search"
+            "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search"
     })
     @Operation(summary = "Search entities by code/name (best-effort)")
     public ResponseEntity<List<Map<String, Object>>> search(

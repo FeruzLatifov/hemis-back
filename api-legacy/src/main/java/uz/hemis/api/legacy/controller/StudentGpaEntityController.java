@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.StudentGpaService;
 
@@ -156,6 +157,7 @@ public class StudentGpaEntityController {
             @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "View nomi", example = "eStudentGpa-view")
             @RequestParam(value = "view", required = false, defaultValue = "eStudentGpa-view") String view,
@@ -205,6 +207,7 @@ public class StudentGpaEntityController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
             @ApiResponse(responseCode = "404", description = "GPA yozuvi topilmadi")
     })
+    @Transactional(readOnly = true)
     public ResponseEntity<?> getById(
             @Parameter(description = "GPA yozuv UUID", example = "ccb27f69-5258-0ae3-9e97-f068d65fadf9")
             @PathVariable UUID entityId,
@@ -325,6 +328,7 @@ public class StudentGpaEntityController {
             @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
+    @Transactional
     public ResponseEntity<Map<String, Object>> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "GPA ma'lumotlari (CUBA entity format)",

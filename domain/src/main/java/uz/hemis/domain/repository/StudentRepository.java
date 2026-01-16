@@ -333,6 +333,25 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     Optional<Student> findActiveByPinfl(@Param("pinfl") String pinfl);
 
     /**
+     * Find active student by PINFL and isDuplicate flag
+     *
+     * <p><strong>OLD-HEMIS Logic:</strong></p>
+     * <p>If isDuplicate=TRUE active student exists, the student has transferred
+     * to another university and is NOT considered active for new registration.</p>
+     *
+     * @param pinfl PINFL raqami
+     * @param isDuplicate duplicate flag
+     * @return aktiv talaba yoki empty
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
+           "AND s.isDuplicate = :isDuplicate " +
+           "AND s.studentStatus IN ('10', '11', '13', '15') " +
+           "AND s.active = true")
+    Optional<Student> findActiveByPinflAndDuplicate(
+            @Param("pinfl") String pinfl,
+            @Param("isDuplicate") Boolean isDuplicate);
+
+    /**
      * Find active student by serial number (for foreign citizens)
      *
      * OLD-HEMIS logic: student is "active" if:

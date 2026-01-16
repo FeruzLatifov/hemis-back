@@ -141,6 +141,9 @@ public abstract class BaseEntity implements Serializable {
         if (id == null) {
             id = UUID.randomUUID();
         }
+        if (version == null) {
+            version = 1;
+        }
         createTs = LocalDateTime.now();
         // TODO: Set createdBy from SecurityContext
         // createdBy = SecurityContextHolder.getContext().getAuthentication().getName();

@@ -363,7 +363,7 @@ public class StudentService {
     // =====================================================
 
     /**
-     * Soft delete student
+     * Soft delete student WITH university authorization check
      *
      * <p><strong>CRITICAL - Soft Delete Only:</strong></p>
      * <ul>
@@ -373,22 +373,46 @@ public class StudentService {
      *   <li>Student still exists but filtered by @Where clause</li>
      * </ul>
      *
+     * <p><strong>AUTHORIZATION CHECK:</strong></p>
+     * <ul>
+     *   <li>User can only delete students from their own university</li>
+     *   <li>If userUniversityCode is null, no restriction (admin mode)</li>
+     * </ul>
+     *
      * @param id student ID
+     * @param userUniversityCode current user's university code (null = admin, no restriction)
+     * @return deleted student DTO (for response)
      * @throws ResourceNotFoundException if student not found
+     * @throws ValidationException if user not authorized to delete this student
      */
     @Transactional
     @CacheEvict(value = "students", allEntries = true)
-    public void softDelete(UUID id) {
-        log.warn("Soft deleting student ID: {}", id);
+    public StudentDto softDelete(UUID id, String userUniversityCode) {
+        log.warn("Soft deleting student ID: {} by university: {}", id, userUniversityCode);
 
         // Find existing student
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
+        // AUTHORIZATION CHECK: User can only delete students from their own university
+        if (userUniversityCode != null && !userUniversityCode.isEmpty()) {
+            String studentUniversity = student.getUniversity();
+            if (studentUniversity != null && !studentUniversity.equals(userUniversityCode)) {
+                log.error("AUTHORIZATION FAILED: User from university {} tried to delete student from university {}",
+                        userUniversityCode, studentUniversity);
+                throw new ValidationException(
+                        "Access denied",
+                        "university",
+                        "You can only delete students from your own university. " +
+                        "Student belongs to university: " + studentUniversity + ", your university: " + userUniversityCode
+                );
+            }
+        }
+
         // Check if already deleted
         if (student.isDeleted()) {
             log.warn("Student already deleted: {}", id);
-            return;
+            return studentMapper.toDto(student);
         }
 
         // Set soft delete fields
@@ -397,9 +421,23 @@ public class StudentService {
         // student.setDeletedBy(SecurityContextHolder.getContext().getAuthentication().getName());
 
         // Save (this triggers @PreUpdate)
-        studentRepository.save(student);
+        Student deleted = studentRepository.save(student);
 
-        log.warn("Student soft deleted: {}", id);
+        log.warn("Student soft deleted: {} from university: {}", id, student.getUniversity());
+
+        return studentMapper.toDto(deleted);
+    }
+
+    /**
+     * Soft delete student (backward compatible - no university check)
+     *
+     * @deprecated Use {@link #softDelete(UUID, String)} with university check instead
+     */
+    @Transactional
+    @CacheEvict(value = "students", allEntries = true)
+    @Deprecated
+    public void softDelete(UUID id) {
+        softDelete(id, null);
     }
 
     /**
@@ -937,13 +975,38 @@ public class StudentService {
 
     /**
      * Find active student by PINFL or serial number
+     *
+     * <p><strong>OLD-HEMIS Logic (StudentServiceBean.activeStudent):</strong></p>
+     * <ol>
+     *   <li>First check if isDuplicate=TRUE active student exists</li>
+     *   <li>If isDuplicate=TRUE exists → return NULL (not active, can create new)</li>
+     *   <li>Then general search (without isDuplicate filter)</li>
+     *   <li>If active student found → return student (active, cannot create new)</li>
+     *   <li>If not found by PINFL → search by serial number</li>
+     * </ol>
+     *
+     * <p><strong>Key insight:</strong> isDuplicate=TRUE means student transferred to another university,
+     * so they are NOT considered active for new registration purposes.</p>
      */
     private Optional<Student> findActiveStudent(String idData, String citizenship) {
-        if ("11".equals(citizenship)) {
-            return studentRepository.findActiveByPinfl(idData);
-        } else {
-            return studentRepository.findActiveBySerialNumber(idData);
+        // Step 1: Check for isDuplicate=TRUE active student (master record)
+        // If master record exists, student is NOT active (can create new)
+        Optional<Student> masterStudent = studentRepository.findActiveByPinflAndDuplicate(idData, true);
+        if (masterStudent.isPresent()) {
+            log.debug("Master record (isDuplicate=true) found for PINFL: {} - NOT active", idData);
+            return Optional.empty();  // NOT active → can create new
         }
+
+        // Step 2: General search without isDuplicate filter
+        if ("11".equals(citizenship)) {
+            Optional<Student> student = studentRepository.findActiveByPinfl(idData);
+            if (student.isPresent()) {
+                return student;  // Active → cannot create new
+            }
+        }
+
+        // Step 3: Search by serial number (for foreign citizens or as fallback)
+        return studentRepository.findActiveBySerialNumber(idData);
     }
 
     /**

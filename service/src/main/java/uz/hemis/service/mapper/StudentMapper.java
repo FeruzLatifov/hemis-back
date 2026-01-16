@@ -47,6 +47,7 @@ public interface StudentMapper {
      */
     @Mapping(target = "fullname", ignore = true)  // Computed field via getter method getFullname()
     @Mapping(source = "firstName", target = "firstname")  // Entity getter: getFirstName() -> DTO field: firstname
+    @Mapping(source = "isDuplicate", target = "isDuplicate", defaultValue = "false")  // Default to false if null
     StudentDto toDto(Student student);
 
     /**

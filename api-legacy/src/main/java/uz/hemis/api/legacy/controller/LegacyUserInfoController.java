@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.dto.LegacyUserInfoResponse;
 import uz.hemis.domain.entity.User;
@@ -109,6 +110,7 @@ public class LegacyUserInfoController {
      * 2. /app/rest/user/info (alternative)
      */
     @GetMapping({"/v2/userInfo", "/user/info"})
+    @Transactional(readOnly = true)
     public ResponseEntity<LegacyUserInfoResponse.UserData> getUserInfo(Authentication authentication) {
         log.info("GET /app/rest/user/info - principal: {}", authentication.getName());
 

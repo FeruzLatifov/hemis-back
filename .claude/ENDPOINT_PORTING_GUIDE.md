@@ -730,6 +730,162 @@ const defaults = {
 })
 ```
 
+---
+
+## 🔄 MASTER/REPLICA DATABASE ROUTING (MAJBURIY!)
+
+### ⚠️ QOIDA: Har bir controller metodiga `@Transactional` qo'yish SHART!
+
+Tizim Master/Replica database arxitekturasidan foydalanadi:
+- **Master database** → WRITE operatsiyalar (INSERT, UPDATE, DELETE)
+- **Replica database** → READ operatsiyalar (SELECT)
+
+### 📋 Routing Qoidalari
+
+| HTTP Method | Operatsiya | Annotatsiya | Database |
+|-------------|------------|-------------|----------|
+| **GET** | READ | `@Transactional(readOnly = true)` | Replica |
+| **POST** (read) | READ (search) | `@Transactional(readOnly = true)` | Replica |
+| **POST** (create) | WRITE | `@Transactional` | Master |
+| **PUT** | WRITE | `@Transactional` | Master |
+| **PATCH** | WRITE | `@Transactional` | Master |
+| **DELETE** | WRITE | `@Transactional` | Master |
+
+### ✅ TO'G'RI Namuna (Entity Controller)
+
+```java
+import org.springframework.transaction.annotation.Transactional;
+
+@RestController
+@RequestMapping("/app/rest/v2/entities/hemishe_EStudent")
+public class StudentEntityController {
+
+    // ✅ GET - READ operatsiya → Replica database
+    @GetMapping("/{entityId}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId) {
+        // ...
+    }
+
+    // ✅ GET (list) - READ operatsiya → Replica database
+    @GetMapping
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<Map<String, Object>>> getAll(
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = "0") int offset) {
+        // ...
+    }
+
+    // ✅ POST (search) - READ operatsiya → Replica database
+    @PostMapping("/search")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<Map<String, Object>>> search(@RequestBody Map<String, Object> filter) {
+        // ...
+    }
+
+    // ✅ POST (create) - WRITE operatsiya → Master database
+    @PostMapping
+    @Transactional
+    public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body) {
+        // ...
+    }
+
+    // ✅ PUT - WRITE operatsiya → Master database
+    @PutMapping("/{entityId}")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> update(
+            @PathVariable UUID entityId,
+            @RequestBody Map<String, Object> body) {
+        // ...
+    }
+
+    // ✅ DELETE - WRITE operatsiya → Master database
+    @DeleteMapping("/{entityId}")
+    @Transactional
+    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
+        // ...
+    }
+}
+```
+
+### ✅ TO'G'RI Namuna (Service Controller)
+
+```java
+import org.springframework.transaction.annotation.Transactional;
+
+@RestController
+@RequestMapping("/app/rest/v2/services/student")
+public class StudentServiceController {
+
+    // ✅ GET - READ operatsiya → Replica database
+    @GetMapping("/verify")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> verify(@RequestParam String pinfl) {
+        // ...
+    }
+
+    // ✅ GET - READ operatsiya → Replica database
+    @GetMapping("/contractInfo")
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> contractInfo(@RequestParam String pinfl) {
+        // ...
+    }
+
+    // ✅ POST (yaratish/yangilash) - WRITE operatsiya → Master database
+    @PostMapping("/id")
+    @Transactional
+    public ResponseEntity<?> getOrCreateId(@RequestBody Map<String, Object> request) {
+        // ...
+    }
+
+    // ✅ POST (update) - WRITE operatsiya → Master database
+    @PostMapping("/update")
+    @Transactional
+    public ResponseEntity<?> update(@RequestBody Map<String, Object> request) {
+        // ...
+    }
+}
+```
+
+### ❌ NOTO'G'RI Namunalar
+
+```java
+// ❌ NOTO'G'RI - @Transactional yo'q!
+@GetMapping("/{entityId}")
+public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId) {
+    // Routing ishlamaydi - default Master ga ketadi (keraksiz yuk!)
+}
+
+// ❌ NOTO'G'RI - GET uchun readOnly=true yo'q!
+@GetMapping("/{entityId}")
+@Transactional  // <- readOnly yo'q!
+public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId) {
+    // Master ga ketadi - Replica ishlatilmaydi!
+}
+
+// ❌ NOTO'G'RI - POST (create) uchun readOnly=true qo'yilgan!
+@PostMapping
+@Transactional(readOnly = true)  // <- XATO! Write qilolmaydi!
+public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body) {
+    // SQLException: Read-only transaction!
+}
+```
+
+### 📊 Xulosa Jadvali
+
+| Metod turi | Annotatsiya | Noto'g'ri bo'lsa |
+|------------|-------------|------------------|
+| `getById()`, `getAll()`, `search()` | `@Transactional(readOnly = true)` | Master ga keraksiz yuk |
+| `create()`, `update()`, `delete()` | `@Transactional` | Read-only error yoki routing xatosi |
+
+### ⚠️ Import qilishni unutmang!
+
+```java
+import org.springframework.transaction.annotation.Transactional;
+```
+
+---
+
 ### ⚠️ XATO NAMUNALAR
 
 ```java
@@ -864,6 +1020,197 @@ result.put("student", dto);
 
 5. **endpoint_tester.html ga qo'shish:**
    - Faqat javoblar 100% bir xil bo'lgandan keyin!
+
+---
+
+## 🔒 UNIVERSITY FILTERING (SECURITY IMPROVEMENT)
+
+### ⚠️ MUHIM: OLD-HEMIS vs NEW-HEMIS Security Farqi
+
+**OLD-HEMIS:**
+- Entity REST API (`/app/rest/v2/entities/*`) → **FILTER YO'Q!**
+- Service endpoints (`/services/teacher/id`, `/services/student/id`) → Filter BOR (service layer)
+- CUBA Row-Level Security → **KONFIGURATSIYA QILINMAGAN**
+- Natija: Bir OTM foydalanuvchisi boshqa OTM ma'lumotlarini ko'rishi mumkin edi!
+
+**NEW-HEMIS:**
+- Entity REST API → **UNIVERSITY FILTER QO'SHILGAN** (security improvement)
+- Service endpoints → Filter BOR (xuddi old-hemis kabi)
+- Natija: Har bir foydalanuvchi faqat o'z OTM ma'lumotlarini ko'radi
+
+### 📋 Qachon University Filter Kerak?
+
+| Endpoint Turi | Filter Kerak? | Sabab |
+|---------------|---------------|-------|
+| **Entity (user-specific data)** | ✅ HA | EEmployeeJobs, EStudent, ETeacher - OTM ga tegishli |
+| **Classifier (global data)** | ❌ YO'Q | HTeacherPositionType, HUniversityEmployeeRate - barcha OTM uchun bir xil |
+| **Service (id/create)** | ✅ HA | teacher/id, student/id - yangi yozuv yaratadi |
+| **Service (read-only)** | ⚠️ TEKSHIRISH | Ma'lumot turiga qarab |
+
+### ✅ Filter Kerak Bo'lgan Entity Endpointlar
+
+```java
+// hemishe_EEmployeeJobs - Xodim ish joylari
+GET    /app/rest/v2/entities/hemishe_EEmployeeJobs           // ✅ Filter
+GET    /app/rest/v2/entities/hemishe_EEmployeeJobs/{id}      // ✅ Filter
+POST   /app/rest/v2/entities/hemishe_EEmployeeJobs           // ✅ Filter + Set university
+PUT    /app/rest/v2/entities/hemishe_EEmployeeJobs/{id}      // ✅ Filter
+DELETE /app/rest/v2/entities/hemishe_EEmployeeJobs/{id}      // ✅ Filter
+
+// hemishe_EStudent - Talabalar
+GET    /app/rest/v2/entities/hemishe_EStudent                // ✅ Filter
+GET    /app/rest/v2/entities/hemishe_EStudent/{id}           // ✅ Filter
+POST   /app/rest/v2/entities/hemishe_EStudent                // ✅ Filter + Set university
+PUT    /app/rest/v2/entities/hemishe_EStudent/{id}           // ✅ Filter
+DELETE /app/rest/v2/entities/hemishe_EStudent/{id}           // ✅ Filter
+
+// hemishe_ETeacher - O'qituvchilar
+GET    /app/rest/v2/entities/hemishe_ETeacher                // ✅ Filter
+GET    /app/rest/v2/entities/hemishe_ETeacher/{id}           // ✅ Filter
+// ... va hokazo
+```
+
+### ❌ Filter Kerak EMAS - Classifier Endpointlar
+
+```java
+// Lavozimlari klassifikatorlari - BARCHA OTM UCHUN BIR XIL
+GET /app/rest/v2/entities/hemishe_HTeacherPositionType       // ❌ Filter yo'q
+GET /app/rest/v2/entities/hemishe_HTeacherPositionType/{id}  // ❌ Filter yo'q
+
+GET /app/rest/v2/entities/hemishe_HUniversityEmployeeRate    // ❌ Filter yo'q
+GET /app/rest/v2/entities/hemishe_HUniversityEmployeeRate/{id}
+
+GET /app/rest/v2/entities/hemishe_HUniversityEmployeeType    // ❌ Filter yo'q
+GET /app/rest/v2/entities/hemishe_HUniversityEmployeeType/{id}
+
+GET /app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType // ❌ Filter yo'q
+GET /app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType/{id}
+
+// Boshqa klassifikatorlar
+GET /app/rest/v2/entities/hemishe_HGender                    // ❌ Filter yo'q
+GET /app/rest/v2/entities/hemishe_HAcademicDegree            // ❌ Filter yo'q
+GET /app/rest/v2/entities/hemishe_HAcademicRank              // ❌ Filter yo'q
+// ... va hokazo
+```
+
+### 🔧 University Filter Implementatsiyasi
+
+```java
+@RestController
+@RequestMapping("/app/rest/v2/entities/hemishe_EEmployeeJobs")
+@RequiredArgsConstructor
+public class EmployeeJobsEntityController {
+
+    private final EmployeeJobsRepository repository;
+    private final AuthenticationFacade authFacade;  // ← JWT dan user olish
+
+    @GetMapping
+    @Transactional(readOnly = true)  // ← Replica database
+    public ResponseEntity<List<Map<String, Object>>> getAll(...) {
+        // 1️⃣ JWT dan user's university olish
+        String universityCode = authFacade.getCurrentUser().getUniversity().getCode();
+
+        // 2️⃣ Faqat shu OTM ma'lumotlarini qaytarish
+        Page<EmployeeJobs> page = repository.findByUniversityCode(universityCode, pageable);
+
+        return ResponseEntity.ok(toMapList(page.getContent()));
+    }
+
+    @GetMapping("/{entityId}")
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId) {
+        String universityCode = authFacade.getCurrentUser().getUniversity().getCode();
+
+        // ✅ Filter: faqat o'z OTM ning yozuvini qaytarish
+        Optional<EmployeeJobs> entity = repository.findByIdAndUniversityCode(entityId, universityCode);
+
+        if (entity.isEmpty()) {
+            return ResponseEntity.notFound().build();  // 404 - boshqa OTM yoki yo'q
+        }
+        return ResponseEntity.ok(toMap(entity.get()));
+    }
+
+    @PostMapping
+    @Transactional  // ← Master database
+    public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body) {
+        String universityCode = authFacade.getCurrentUser().getUniversity().getCode();
+
+        EmployeeJobs entity = new EmployeeJobs();
+        // ... map body to entity
+
+        // ✅ Avtomatik university set qilish
+        entity.setUniversity(universityCode);
+
+        entity = repository.save(entity);
+        return ResponseEntity.ok(toMap(entity));
+    }
+
+    @PutMapping("/{entityId}")
+    @Transactional  // ← Master database
+    public ResponseEntity<Map<String, Object>> update(
+            @PathVariable UUID entityId,
+            @RequestBody Map<String, Object> body) {
+        String universityCode = authFacade.getCurrentUser().getUniversity().getCode();
+
+        // ✅ Filter: faqat o'z OTM ning yozuvini yangilash
+        Optional<EmployeeJobs> existing = repository.findByIdAndUniversityCode(entityId, universityCode);
+
+        if (existing.isEmpty()) {
+            return ResponseEntity.notFound().build();  // 404 - boshqa OTM yoki yo'q
+        }
+
+        // ... update entity
+        return ResponseEntity.ok(toMap(updated));
+    }
+
+    @DeleteMapping("/{entityId}")
+    @Transactional  // ← Master database
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID entityId) {
+        String universityCode = authFacade.getCurrentUser().getUniversity().getCode();
+
+        // ✅ Filter: faqat o'z OTM ning yozuvini o'chirish
+        Optional<EmployeeJobs> existing = repository.findByIdAndUniversityCode(entityId, universityCode);
+
+        if (existing.isEmpty()) {
+            return ResponseEntity.notFound().build();  // 404 - boshqa OTM yoki yo'q
+        }
+
+        repository.delete(existing.get());
+        return ResponseEntity.ok(toMap(existing.get()));  // ← Deleted entity qaytarish
+    }
+}
+```
+
+### ⚠️ BACKWARD COMPATIBILITY HAQIDA
+
+University filter qo'shish **backward-compatible**:
+
+| Aspekt | OLD-HEMIS | NEW-HEMIS | Compatible? |
+|--------|-----------|-----------|-------------|
+| Response format | `{...JSON...}` | `{...JSON...}` | ✅ HA |
+| Field nomlari | `id, code, name` | `id, code, name` | ✅ HA |
+| HTTP kodlari | 200, 404, 401 | 200, 404, 401 | ✅ HA |
+| Ma'lumot hajmi | Barcha OTM | Faqat o'z OTM | ✅ HA (security) |
+
+**Nima uchun compatible?**
+- Foydalanuvchi o'z OTM ma'lumotlarini so'raganda - xuddi old-hemis kabi javob oladi
+- Foydalanuvchi boshqa OTM ma'lumotini so'raganda - 404 oladi (old-hemis da ma'lumot ko'rsatardi - XAVFSIZLIK KAMCHILIGI edi!)
+
+### 📊 Entity vs Classifier Farqi
+
+```
+ENTITY (User-specific data):           CLASSIFIER (Global data):
+┌─────────────────────────────┐        ┌─────────────────────────────┐
+│ hemishe_EEmployeeJobs       │        │ hemishe_HTeacherPositionType│
+│ - Har bir OTM o'z xodimlari │        │ - 11: Stajer-o'qituvchi    │
+│ - FILTER KERAK!             │        │ - 12: O'qituvchi           │
+│                             │        │ - 13: Katta o'qituvchi     │
+│ OTM 305: 50 ta xodim        │        │ - 14: Dotsent              │
+│ OTM 380: 100 ta xodim       │        │ - 15: Professor            │
+│ OTM 401: 75 ta xodim        │        │ FILTER KERAK EMAS!         │
+│                             │        │ (barcha OTM uchun bir xil) │
+└─────────────────────────────┘        └─────────────────────────────┘
+```
 
 ---
 
@@ -1025,6 +1372,7 @@ chmod +x test_endpoint_comparison.sh
 │    - Swagger annotations (o'zbek tilida)                       │
 │    - Request/Response DTOs                                      │
 │    - Service method call                                        │
+│    - @Transactional annotatsiyalari (Master/Replica routing)   │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼

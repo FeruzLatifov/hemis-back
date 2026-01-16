@@ -18,6 +18,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.TokenResponse;
 import uz.hemis.security.config.LegacyOAuthClientProperties;
@@ -199,6 +200,7 @@ public class LegacyOAuthTokenController {
         },
         consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE}
     )
+    @Transactional(readOnly = true)
     public ResponseEntity<?> token(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam("grant_type") String grantType,

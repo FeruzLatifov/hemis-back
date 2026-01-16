@@ -8,14 +8,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.User;
-import uz.hemis.domain.repository.UserRepository;
+import uz.hemis.common.dto.security.LoadedUser;
+import uz.hemis.common.port.security.UserLoadingPort;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Custom UserDetailsService Implementation
@@ -47,7 +44,7 @@ import java.util.List;
 @Slf4j
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final UserLoadingPort userLoadingPort;
 
     /**
      * Load user by username for authentication
@@ -77,12 +74,11 @@ public class CustomUserDetailsService implements UserDetailsService {
      * @throws UsernameNotFoundException if user not found
      */
     @Override
-    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         log.debug("Loading user by username: {}", username);
 
-        // Load user from database
-        User user = userRepository.findByUsername(username)
+        // Load user via port (Clean Architecture)
+        LoadedUser user = userLoadingPort.findByUsername(username)
                 .orElseThrow(() -> {
                     log.warn("User not found: {}", username);
                     return new UsernameNotFoundException("User not found: " + username);
@@ -96,11 +92,13 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         log.debug("User found: {} (enabled: {}, locked: {})",
                 username,
-                user.getEnabled(),
-                !user.getAccountNonLocked());
+                user.isEnabled(),
+                !user.isAccountNonLocked());
 
-        // Parse roles from new permission system (Set<Role>) or fallback to old (String roles)
-        Collection<? extends GrantedAuthority> authorities = parseAuthoritiesFromUser(user);
+        // Authorities are pre-computed by adapter
+        Collection<? extends GrantedAuthority> authorities = user.getAuthorities().stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
 
         log.debug("User {} has {} authorities: {}", username, authorities.size(), authorities);
 
@@ -110,83 +108,12 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .password(user.getPassword())  // BCrypt hashed
                 .authorities(authorities)
                 .accountExpired(false)  // We don't have account expiration
-                .accountLocked(!user.getAccountNonLocked())  // From user.accountNonLocked
+                .accountLocked(!user.isAccountNonLocked())
                 .credentialsExpired(false)  // We don't have password expiration
-                .disabled(!user.getEnabled())  // From user.enabled
+                .disabled(!user.isEnabled())
                 .build();
     }
 
-    /**
-     * Parse authorities from User (handles both new Set<Role> and old String roles)
-     *
-     * <p>HYBRID APPROACH - Checks new permission system first, falls back to old</p>
-     *
-     * @param user User entity
-     * @return collection of GrantedAuthority
-     */
-    private Collection<? extends GrantedAuthority> parseAuthoritiesFromUser(User user) {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-
-        // OPTION 1: New permission system (Set<Role>)
-        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
-            log.debug("Loading authorities from new permission system (Set<Role>)");
-
-            user.getRoles().forEach(role -> {
-                // Add role as authority (e.g., "ROLE_SUPER_ADMIN")
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getCode()));
-
-                // Add all permissions from this role
-                if (role.getPermissions() != null) {
-                    role.getPermissions().forEach(permission -> {
-                        authorities.add(new SimpleGrantedAuthority(permission.getCode()));
-                    });
-                }
-            });
-
-            return authorities;
-        }
-
-        // OPTION 2: Fallback to old String roles field (deprecated)
-        // Note: Cannot use user.getRoles() here as it returns Set<Role>
-        // Would need user.roles direct field access (not available via getter)
-        log.debug("No roles found in new permission system");
-
-        // For now, return empty if no new roles
-        // Later: Add hybrid service to check sec_user table
-
-        log.warn("User {} has no roles assigned", user.getUsername());
-        return List.of();
-    }
-
-    /**
-     * Parse authorities from comma-separated roles string (DEPRECATED - for backward compatibility)
-     *
-     * <p><strong>Examples:</strong></p>
-     * <ul>
-     *   <li>"ROLE_ADMIN" → [ROLE_ADMIN]</li>
-     *   <li>"ROLE_ADMIN,ROLE_UNIVERSITY_ADMIN" → [ROLE_ADMIN, ROLE_UNIVERSITY_ADMIN]</li>
-     *   <li>null or empty → []</li>
-     * </ul>
-     *
-     * @param roles comma-separated roles string
-     * @return collection of GrantedAuthority
-     */
-    private Collection<? extends GrantedAuthority> parseAuthoritiesFromString(String roles) {
-        if (roles == null || roles.trim().isEmpty()) {
-            return List.of();
-        }
-
-        // Split by comma and create SimpleGrantedAuthority for each role
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        String[] roleArray = roles.split(",");
-
-        for (String role : roleArray) {
-            String trimmedRole = role.trim();
-            if (!trimmedRole.isEmpty()) {
-                authorities.add(new SimpleGrantedAuthority(trimmedRole));
-            }
-        }
-
-        return authorities;
-    }
+    // NOTE: Authority parsing is now done by UserLoadingAdapter (Clean Architecture)
+    // This service only converts LoadedUser DTO to Spring Security UserDetails
 }

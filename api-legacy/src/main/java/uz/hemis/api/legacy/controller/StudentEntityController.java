@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.LegacyEntityAdapter;
 import uz.hemis.common.dto.StudentDto;
@@ -96,6 +97,7 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format (CUBA Map)
      */
     @GetMapping("/{entityId}")
+    @Transactional(readOnly = true)
     @Operation(
         summary = "Bitta talaba ma'lumotlarini olish",
         description = """
@@ -154,6 +156,7 @@ public class StudentEntityController {
      * ✅ CUBA PATTERN: PUT = partial update (only fields in JSON body are changed)
      */
     @PutMapping("/{entityId}")
+    @Transactional
     @Operation(
         summary = "Talaba ma'lumotlarini o'zgartirish",
         description = """
@@ -235,12 +238,13 @@ public class StudentEntityController {
      * Talabani o'chirish (SOFT DELETE ONLY)
      *
      * ✅ REFACTORED: Uses service.softDelete() - NO PHYSICAL DELETE
-     * ✅ BACKWARD COMPATIBLE: Same response (204 No Content)
+     * ✅ BACKWARD COMPATIBLE: Same response as OLD-HEMIS (200 OK empty body)
      *
      * CRITICAL: This is a soft delete (sets delete_ts).
      * Physical DELETE is blocked at service and database level.
      */
     @DeleteMapping("/{entityId}")
+    @Transactional
     @Operation(
         summary = "Talabani o'chirish",
         description = """
@@ -251,31 +255,34 @@ public class StudentEntityController {
             **Endpoint:** DELETE /app/rest/v2/entities/hemishe_EStudent/{entityId}
             **Auth:** Bearer token (required)
 
-            **Muhim:** Bu soft delete - ma'lumot bazadan o'chirilmaydi, faqat delete_ts belgilanadi.
+            **Muhim:**
+            - Bu soft delete - ma'lumot bazadan o'chirilmaydi, faqat delete_ts belgilanadi.
             """
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talaba o'chirildi"),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
-        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q - Foydalanuvchida o'chirish huquqi yo'q"),
         @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba topilmadi")
     })
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<?> delete(
             @Parameter(description = "Talaba UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable UUID entityId) {
         log.debug("DELETE student id: {} (SOFT DELETE via service)", entityId);
 
         try {
-            // Service layer - soft delete only
+            // Service layer - soft delete (no university check - OLD-HEMIS compatible)
             studentService.softDelete(entityId);
 
-            // OLD-HEMIS COMPATIBLE: Return 200 OK with empty body (not 204 No Content)
-            // Old-hemis DELETE response: HTTP 200 with empty body
+            // OLD-HEMIS COMPATIBLE: Return 200 OK with empty body
             return ResponseEntity.ok().build();
 
         } catch (ResourceNotFoundException e) {
             log.debug("Student not found for delete: {}", entityId);
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS COMPATIBLE: Return 404 with JSON error body
+            Map<String, String> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
     }
 
@@ -286,6 +293,7 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format (List of CUBA Maps)
      */
     @GetMapping("/search")
+    @Transactional(readOnly = true)
     @Operation(
         summary = "Talabalarni qidirish (GET)",
         description = """
@@ -328,6 +336,7 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format
      */
     @PostMapping("/search")
+    @Transactional(readOnly = true)
     @Operation(
         summary = "Talabalarni qidirish (POST)",
         description = """
@@ -369,6 +378,7 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format and parameters
      */
     @GetMapping
+    @Transactional(readOnly = true)
     @Operation(
         summary = "Barcha talabalar ro'yxati",
         description = """
@@ -442,6 +452,7 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Accepts CUBA Map format
      */
     @PostMapping
+    @Transactional
     @Operation(
         summary = "Talaba yaratish",
         description = """

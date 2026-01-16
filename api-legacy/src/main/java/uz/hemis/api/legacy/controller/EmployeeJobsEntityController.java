@@ -2,6 +2,11 @@ package uz.hemis.api.legacy.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -10,10 +15,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.EmployeeJobs;
-import uz.hemis.domain.repository.EmployeeJobsRepository;
+import uz.hemis.domain.entity.*;
+import uz.hemis.domain.repository.*;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,13 +33,14 @@ import java.util.stream.Collectors;
  * Tag 53: Employee Jobs (Entity API)
  *
  * CUBA Platform REST API compatible controller
- * Entity: hemishe_EEmployeeJobs
+ * Entity: hemishe_EEmployeeJob
  *
  * CRITICAL - 100% Backward Compatible:
  * - Preserves exact CUBA entity API pattern
  * - URL: /app/rest/v2/entities/hemishe_EEmployeeJobs
  * - Response format: CUBA Map structure with _entityName, _instanceName
  * - Parameters: returnNulls, view, dynamicAttributes (CUBA-compatible)
+ * - VIEW SUPPORT: When view=eEmployeeJob-view, returns nested objects (OLD-HEMIS compatible)
  *
  * Endpoints:
  * - GET    /app/rest/v2/entities/hemishe_EEmployeeJobs/{id}      - Get by ID
@@ -39,7 +51,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_EEmployeeJobs           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_EEmployeeJobs           - Create new
  */
-@Tag(name = "Employee Jobs")
+@Tag(name = "06.Xodim lavozimlari")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EEmployeeJobs")
 @RequiredArgsConstructor
@@ -48,37 +60,143 @@ import java.util.stream.Collectors;
 public class EmployeeJobsEntityController {
 
     private final EmployeeJobsRepository repository;
+    private final UserRepository userRepository;
+
+    // Related entity repositories for view support
+    private final UniversityRepository universityRepository;
+    private final UniversityDepartmentRepository universityDepartmentRepository;
+    private final UniversityEmployeeStatusTypeRepository employeeStatusRepository;
+    private final UniversityEmployeeTypeRepository employeeTypeRepository;
+    private final UniversityEmployeeRateRepository employeeRateRepository;
+    private final TeacherPositionTypeRepository positionTypeRepository;
+    private final TeacherRepository teacherRepository;
+
     private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
     @GetMapping("/{entityId}")
-    @Operation(summary = "Get EmployeeJobs by ID", description = "Returns a single EmployeeJobs by UUID")
+    @Transactional(readOnly = true)
+    @Operation(
+        summary = "Xodim ish joyini olish",
+        description = """
+            ID bo'yicha xodim ish joyi ma'lumotlarini olish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** GET /app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}
+            **Auth:** Bearer token (required)
+            **Database:** Replica (read-only)
+
+            **View Support:**
+            - view=eEmployeeJob-view: Returns nested objects (university, department, etc.)
+            - No view: Returns flat IDs only
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "404", description = "Topilmadi")
+    })
     public ResponseEntity<Map<String, Object>> getById(
+            @Parameter(description = "Xodim ish joyi UUID", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable UUID entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET EmployeeJobs by id: {}", entityId);
+        String universityCode = getUniversityCodeFromContext();
+        log.debug("GET EmployeeJobs by id: {}, university: {}, view: {}", entityId, universityCode, view);
 
-        Optional<EmployeeJobs> entity = repository.findById(entityId);
+        // Security: Faqat o'z universitetining lavozimlarini ko'rish
+        Optional<EmployeeJobs> entity = repository.findByIdAndUniversity(entityId, universityCode);
         if (entity.isEmpty()) {
+            log.warn("EmployeeJob not found or access denied: id={}, university={}", entityId, universityCode);
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(toMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(toMap(entity.get(), returnNulls, view));
     }
 
+    /**
+     * Xodim lavozimini yangilash
+     *
+     * <p><strong>URL:</strong> {@code PUT /app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}}</p>
+     *
+     * <p><strong>OLD-HEMIS Compatible</strong> - 100% backward compatibility</p>
+     *
+     * @param entityId Lavozim UUID identifikatori
+     * @param body Yangilanadigan maydonlar (partial update)
+     * @param returnNulls Null qiymatlarni qaytarish
+     * @return Yangilangan lavozim ma'lumotlari (CUBA format)
+     */
     @PutMapping("/{entityId}")
-    @Operation(summary = "Update EmployeeJobs", description = "Updates an existing EmployeeJobs")
+    @Transactional
+    @Operation(
+            summary = "Xodim lavozimini yangilash",
+            description = """
+                ID bo'yicha xodim lavozimi ma'lumotlarini yangilash.
+
+                **OLD-HEMIS Compatible** - 100% backward compatibility
+
+                **Endpoint:** PUT /app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}
+                **Auth:** Bearer token (required)
+
+                **Qo'llab-quvvatlanadigan maydonlar:**
+                - `_employee`: Xodim UUID
+                - `_university`: OTM kodi
+                - `_department`: Bo'lim kodi
+                - `_employeeType`: Xodim turi kodi
+                - `_employeePosition`: Lavozim kodi
+                - `_employeeRate`: Stavka kodi
+                - `_employeeForm`: Ish shakli kodi
+                - `_employeeStatus`: Holat kodi
+                - `jobStartDate`: Ish boshlash sanasi (YYYY-MM-DD)
+                - `jobEndDate`: Ish tugash sanasi (YYYY-MM-DD)
+                - `contractDate`: Shartnoma sanasi
+                - `contractNumber`: Shartnoma raqami
+                - `decreeDate`: Buyruq sanasi
+                - `decreeNumber`: Buyruq raqami
+                - `tag`: Yorliq/belgi
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yangilandi"),
+            @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov parametrlari"),
+            @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+            @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
+            @ApiResponse(responseCode = "404", description = "Lavozim topilmadi")
+    })
     public ResponseEntity<Map<String, Object>> update(
+            @Parameter(description = "Lavozim UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable UUID entityId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Yangilanadigan maydonlar (partial update)",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Lavozim yangilash",
+                                    value = """
+                                        {
+                                          "_employeeStatus": "11",
+                                          "jobEndDate": "2025-12-31",
+                                          "contractNumber": "123/2025"
+                                        }
+                                        """
+                            )
+                    )
+            )
             @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @Parameter(description = "Null qiymatlarni qaytarish")
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
 
-        log.debug("PUT EmployeeJobs id: {}", entityId);
+        String universityCode = getUniversityCodeFromContext();
+        log.info("PUT /app/rest/v2/entities/hemishe_EEmployeeJob/{} - university: {}", entityId, universityCode);
 
-        Optional<EmployeeJobs> existingOpt = repository.findById(entityId);
+        // Security: Faqat o'z universitetining lavozimlarini yangilash
+        Optional<EmployeeJobs> existingOpt = repository.findByIdAndUniversity(entityId, universityCode);
         if (existingOpt.isEmpty()) {
+            log.warn("EmployeeJob not found or access denied: id={}, university={}", entityId, universityCode);
             return ResponseEntity.notFound().build();
         }
 
@@ -86,55 +204,343 @@ public class EmployeeJobsEntityController {
         updateFromMap(entity, body);
 
         EmployeeJobs saved = repository.save(entity);
-        return ResponseEntity.ok(toMap(saved, returnNulls));
+        log.info("EmployeeJob updated successfully: {}", entityId);
+        return ResponseEntity.ok(toMap(saved, returnNulls, view));
     }
 
+    /**
+     * Xodim lavozimini o'chirish
+     *
+     * <p><strong>URL:</strong> {@code DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}}</p>
+     *
+     * <p><strong>OLD-HEMIS Compatible</strong> - 100% backward compatibility</p>
+     *
+     * <p>Soft delete: ma'lumot bazadan o'chirilmaydi, faqat delete_ts belgilanadi</p>
+     *
+     * @param entityId Lavozim UUID identifikatori
+     * @return 204 No Content (muvaffaqiyatli) yoki 404 Not Found
+     */
     @DeleteMapping("/{entityId}")
-    @Operation(summary = "Delete EmployeeJobs", description = "Soft deletes an EmployeeJobs")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
-        log.debug("DELETE EmployeeJobs id: {}", entityId);
+    @Transactional
+    @Operation(
+            summary = "Xodim lavozimini o'chirish",
+            description = """
+                ID bo'yicha xodim lavozimini o'chirish (soft delete).
 
-        Optional<EmployeeJobs> entity = repository.findById(entityId);
+                **OLD-HEMIS Compatible** - 100% backward compatibility
+
+                **Endpoint:** DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}
+                **Auth:** Bearer token (required)
+
+                **Soft Delete:** Ma'lumot bazadan o'chirilmaydi, faqat `delete_ts` va `deleted_by`
+                maydonlari belgilanadi. Keyinchalik `@Where(clause = "delete_ts IS NULL")` orqali
+                o'chirilgan yozuvlar avtomatik filtrlanadi.
+
+                **Response:**
+                - `200 OK` - Muvaffaqiyatli o'chirildi (OLD-HEMIS compatible)
+                - `404 Not Found` - Lavozim topilmadi
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli o'chirildi"),
+            @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+            @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
+            @ApiResponse(responseCode = "404", description = "Lavozim topilmadi")
+    })
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Lavozim UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
+            @PathVariable UUID entityId) {
+
+        String universityCode = getUniversityCodeFromContext();
+        log.info("DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{} - university: {}", entityId, universityCode);
+
+        // Security: Faqat o'z universitetining lavozimlarini o'chirish
+        Optional<EmployeeJobs> entity = repository.findByIdAndUniversity(entityId, universityCode);
         if (entity.isEmpty()) {
+            log.warn("EmployeeJob not found or access denied for deletion: id={}, university={}", entityId, universityCode);
             return ResponseEntity.notFound().build();
         }
 
         repository.delete(entity.get());
-        return ResponseEntity.noContent().build();
+        log.info("EmployeeJob deleted successfully: {}", entityId);
+        // OLD-HEMIS returns 200 OK with empty body (not 204)
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Search EmployeeJobs (GET)", description = "Search using URL parameters")
+    @Transactional(readOnly = true)
+    @Operation(
+        summary = "Lavozimlarni qidirish (GET)",
+        description = """
+            URL parametrlari orqali lavozimlarni qidirish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            **Database:** Replica (read-only)
+
+            **View Support:**
+            - view=eEmployeeJob-view: Returns nested objects
+            """
+    )
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search EmployeeJobs with filter: {}", filter);
+        String universityCode = getUniversityCodeFromContext();
+        log.debug("GET search EmployeeJobs - university: {}, filter: {}, view: {}", universityCode, filter, view);
 
-        List<EmployeeJobs> entities = repository.findAll();
+        // Security: Faqat o'z universitetining lavozimlarini qidirish
+        List<EmployeeJobs> entities = repository.findByUniversity(universityCode);
         return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
+            .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
     @PostMapping("/search")
-    @Operation(summary = "Search EmployeeJobs (POST)", description = "Search using JSON filter")
+    @Transactional(readOnly = true)
+    @Operation(
+        summary = "Xodim kodi orqali ish joylarini olish",
+        description = """
+            Xodim kodi (employee.code) bo'yicha barcha ish joylarini qidirish.
+
+            **NEW-HEMIS Enhanced** - OLD-HEMIS da tugallanmagan funksionallik
+            **Database:** Replica (read-only)
+
+            **MUHIM:** OLD-HEMIS CUBA platformasida nested property filterlar
+            (employee.code, employee.id) qo'llab-quvvatlanmagan va filterni e'tiborsiz qoldirgan.
+            Bu endpoint to'liq filter qo'llab-quvvatlashni amalga oshiradi.
+
+            **Qo'llab-quvvatlanadigan filterlar:**
+            - employee.code: Xodim kodi bo'yicha qidirish (masalan: "3011911003")
+            - employee (UUID): Xodim ID bo'yicha qidirish
+
+            **Filter formatlari:**
+            1. CUBA format: {"filter": {"conditions": [{"property": "employee.code", "operator": "=", "value": "3011911003"}]}}
+            2. Oddiy format: {"employee.code": "3011911003"}
+
+            **View Support:**
+            - view=eEmployeeJob-view: Returns nested objects (_employee, _department, etc.)
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - ish joylari ro'yxati"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri filter formati")
+    })
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "CUBA filter format (employee.code yoki employee ID)",
+                content = @Content(
+                    mediaType = "application/json",
+                    examples = {
+                        @ExampleObject(
+                            name = "Xodim kodi bo'yicha",
+                            value = """
+                                {
+                                  "filter": {
+                                    "conditions": [
+                                      {
+                                        "property": "employee.code",
+                                        "operator": "=",
+                                        "value": "3011911003"
+                                      }
+                                    ]
+                                  }
+                                }
+                                """
+                        ),
+                        @ExampleObject(
+                            name = "Oddiy format",
+                            value = """
+                                {
+                                  "employee.code": "3011911003"
+                                }
+                                """
+                        )
+                    }
+                )
+            )
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "View nomi (eEmployeeJob-view)")
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search EmployeeJobs with filter: {}", filter);
+        log.debug("POST search EmployeeJobs - body: {}, view: {}", body, view);
 
-        List<EmployeeJobs> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
-            .collect(Collectors.toList()));
+        // Filter yo'q bo'lsa bo'sh array
+        if (body == null || body.isEmpty()) {
+            log.debug("Empty body - returning empty array");
+            return ResponseEntity.ok(List.of());
+        }
+
+        // employee.code filter ni ajratib olish
+        String employeeCode = extractEmployeeCodeFromFilter(body);
+        if (employeeCode != null) {
+            log.debug("Searching by employee.code: {}", employeeCode);
+            List<EmployeeJobs> entities = repository.findByEmployeeCode(employeeCode);
+            log.debug("Found {} jobs for employee code: {}", entities.size(), employeeCode);
+            return ResponseEntity.ok(entities.stream()
+                .map(e -> toMap(e, returnNulls, view))
+                .collect(Collectors.toList()));
+        }
+
+        // employee (UUID) filter ni tekshirish
+        UUID employeeId = extractEmployeeIdFromFilter(body);
+        if (employeeId != null) {
+            log.debug("Searching by employee UUID: {}", employeeId);
+            List<EmployeeJobs> entities = repository.findByEmployeeId(employeeId);
+            log.debug("Found {} jobs for employee UUID: {}", entities.size(), employeeId);
+            return ResponseEntity.ok(entities.stream()
+                .map(e -> toMap(e, returnNulls, view))
+                .collect(Collectors.toList()));
+        }
+
+        // Qo'llab-quvvatlanmagan filter
+        log.warn("Unsupported filter format: {}", body);
+        return ResponseEntity.ok(List.of());
+    }
+
+    /**
+     * CUBA filter formatidan employee.code ni ajratib olish
+     *
+     * <p>Qo'llab-quvvatlanadigan formatlar:</p>
+     * <ul>
+     *   <li>{"filter": {"conditions": [{"property": "employee.code", "operator": "=", "value": "3011911003"}]}}</li>
+     *   <li>{"conditions": [{"property": "employee.code", "operator": "=", "value": "3011911003"}]}</li>
+     *   <li>{"employee.code": "3011911003"}</li>
+     * </ul>
+     *
+     * @param body request body
+     * @return employee code yoki null
+     */
+    @SuppressWarnings("unchecked")
+    private String extractEmployeeCodeFromFilter(Map<String, Object> body) {
+        if (body == null || body.isEmpty()) {
+            return null;
+        }
+
+        // Format 1: {"filter": {"conditions": [...]}}
+        Object filterObj = body.get("filter");
+        if (filterObj instanceof Map) {
+            Map<String, Object> filter = (Map<String, Object>) filterObj;
+            String code = extractCodeFromConditions(filter);
+            if (code != null) return code;
+        }
+
+        // Format 2: {"conditions": [...]}
+        String code = extractCodeFromConditions(body);
+        if (code != null) return code;
+
+        // Format 3: {"employee.code": "..."} - oddiy format
+        Object simpleCode = body.get("employee.code");
+        if (simpleCode != null) {
+            return simpleCode.toString();
+        }
+
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractCodeFromConditions(Map<String, Object> map) {
+        Object conditionsObj = map.get("conditions");
+        if (conditionsObj instanceof List) {
+            List<Object> conditions = (List<Object>) conditionsObj;
+            for (Object condObj : conditions) {
+                if (condObj instanceof Map) {
+                    Map<String, Object> condition = (Map<String, Object>) condObj;
+                    String property = (String) condition.get("property");
+                    if ("employee.code".equals(property)) {
+                        Object value = condition.get("value");
+                        return value != null ? value.toString() : null;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * CUBA filter formatidan employee.id (UUID) ni ajratib olish
+     *
+     * @param body request body
+     * @return employee UUID yoki null
+     */
+    @SuppressWarnings("unchecked")
+    private UUID extractEmployeeIdFromFilter(Map<String, Object> body) {
+        if (body == null || body.isEmpty()) {
+            return null;
+        }
+
+        // Format 1: {"filter": {"conditions": [{"property": "employee", ...}]}}
+        Object filterObj = body.get("filter");
+        if (filterObj instanceof Map) {
+            Map<String, Object> filter = (Map<String, Object>) filterObj;
+            UUID id = extractIdFromConditions(filter);
+            if (id != null) return id;
+        }
+
+        // Format 2: {"conditions": [{"property": "employee", ...}]}
+        UUID id = extractIdFromConditions(body);
+        if (id != null) return id;
+
+        // Format 3: {"employee": "uuid-string"} - oddiy format
+        Object simpleId = body.get("employee");
+        if (simpleId != null) {
+            try {
+                return UUID.fromString(simpleId.toString());
+            } catch (IllegalArgumentException e) {
+                // UUID emas, e'tiborsiz qoldirish
+            }
+        }
+
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private UUID extractIdFromConditions(Map<String, Object> map) {
+        Object conditionsObj = map.get("conditions");
+        if (conditionsObj instanceof List) {
+            List<Object> conditions = (List<Object>) conditionsObj;
+            for (Object condObj : conditions) {
+                if (condObj instanceof Map) {
+                    Map<String, Object> condition = (Map<String, Object>) condObj;
+                    String property = (String) condition.get("property");
+                    if ("employee".equals(property) || "employee.id".equals(property)) {
+                        Object value = condition.get("value");
+                        if (value != null) {
+                            try {
+                                return UUID.fromString(value.toString());
+                            } catch (IllegalArgumentException e) {
+                                // UUID emas
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     @GetMapping
-    @Operation(summary = "Get all EmployeeJobs", description = "Returns paginated list")
+    @Transactional(readOnly = true)
+    @Operation(
+        summary = "Barcha xodim ish joylari",
+        description = """
+            Sahifalangan xodim ish joylari ro'yxatini olish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            **Database:** Replica (read-only)
+
+            **View Support:**
+            - view=eEmployeeJob-view: Returns nested objects (university, department, etc.)
+            - No view: Returns flat IDs only
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
+    })
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "Return total count") @RequestParam(required = false) Boolean returnCount,
             @Parameter(description = "Offset for pagination") @RequestParam(defaultValue = "0") Integer offset,
@@ -144,7 +550,8 @@ public class EmployeeJobsEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET all EmployeeJobs - offset: {}, limit: {}", offset, limit);
+        String universityCode = getUniversityCodeFromContext();
+        log.debug("GET all EmployeeJobs - university: {}, offset: {}, limit: {}, view: {}", universityCode, offset, limit, view);
 
         Sort sorting = Sort.unsorted();
         if (sort != null && !sort.isEmpty()) {
@@ -157,54 +564,112 @@ public class EmployeeJobsEntityController {
 
         int page = offset / limit;
         PageRequest pageRequest = PageRequest.of(page, limit, sorting);
-        Page<EmployeeJobs> entityPage = repository.findAll(pageRequest);
+        // Security: Faqat o'z universitetining lavozimlarini ko'rish
+        Page<EmployeeJobs> entityPage = repository.findAllByUniversity(universityCode, pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> toMap(e, returnNulls))
+            .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
     @PostMapping
-    @Operation(summary = "Create EmployeeJobs", description = "Creates a new EmployeeJobs")
+    @Transactional
+    @Operation(
+        summary = "Xodim ish joyini yaratish",
+        description = """
+            Yangi xodim ish joyini yaratish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** POST /app/rest/v2/entities/hemishe_EEmployeeJob
+            **Auth:** Bearer token (required)
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi"),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
+    })
     public ResponseEntity<Map<String, Object>> create(
             @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
 
-        log.debug("POST create new EmployeeJobs");
+        String universityCode = getUniversityCodeFromContext();
+        log.debug("POST create new EmployeeJobs - university: {}", universityCode);
 
         EmployeeJobs entity = new EmployeeJobs();
         updateFromMap(entity, body);
-        EmployeeJobs saved = repository.save(entity);
 
-        return ResponseEntity.ok(toMap(saved, returnNulls));
+        // Security: Avtomatik ravishda joriy foydalanuvchining universitetini belgilash
+        // Agar so'rovda universitet ko'rsatilmagan bo'lsa
+        if (entity.getUniversity() == null || entity.getUniversity().isEmpty()) {
+            entity.setUniversity(universityCode);
+            log.debug("Auto-set university to: {}", universityCode);
+        } else if (!entity.getUniversity().equals(universityCode)) {
+            // Boshqa universitetga yozib bo'lmaydi
+            log.warn("Attempted to create job for different university: requested={}, user={}",
+                    entity.getUniversity(), universityCode);
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
+            error.put("error", "Cannot create job for different university");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        EmployeeJobs saved = repository.save(entity);
+        log.info("EmployeeJob created successfully: id={}, university={}", saved.getId(), universityCode);
+        return ResponseEntity.ok(toMap(saved, returnNulls, view));
     }
 
-    private Map<String, Object> toMap(EmployeeJobs entity, Boolean returnNulls) {
+    /**
+     * Convert entity to CUBA-compatible Map with view support
+     *
+     * When view is specified (e.g., "eEmployeeJob-view"), returns nested objects
+     * for related entities to match OLD-HEMIS format exactly.
+     */
+    private Map<String, Object> toMap(EmployeeJobs entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ENTITY_NAME);
 
-        // Instance name
-        String instanceName = "EmployeeJobs-" + entity.getId();
+        // Instance name - xodim to'liq ismi (OLD-HEMIS compatible)
+        String instanceName = getEmployeeFullName(entity.getEmployee());
         map.put("_instanceName", instanceName);
 
         map.put("id", entity.getId());
 
-        // Add entity-specific fields
-        putIfNotNull(map, "_employee", entity.getEmployee(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "_department", entity.getDepartment(), returnNulls);
-        putIfNotNull(map, "_employee_type", entity.getEmployeeType(), returnNulls);
-        putIfNotNull(map, "_employee_position", entity.getEmployeePosition(), returnNulls);
-        putIfNotNull(map, "_employee_rate", entity.getEmployeeRate(), returnNulls);
-        putIfNotNull(map, "_employee_form", entity.getEmployeeForm(), returnNulls);
-        putIfNotNull(map, "_employee_status", entity.getEmployeeStatus(), returnNulls);
-        putIfNotNull(map, "job_start_date", entity.getJobStartDate(), returnNulls);
-        putIfNotNull(map, "job_end_date", entity.getJobEndDate(), returnNulls);
+        // Check if view is specified for nested objects
+        boolean useNestedObjects = view != null && !view.isEmpty();
+
+        if (useNestedObjects) {
+            // Return nested objects (OLD-HEMIS compatible format)
+            putNestedEmployee(map, entity.getEmployee(), returnNulls);
+            putNestedUniversity(map, entity.getUniversity(), returnNulls);
+            putNestedDepartment(map, entity.getDepartment(), returnNulls);
+            putNestedEmployeeType(map, entity.getEmployeeType(), returnNulls);
+            putNestedPosition(map, entity.getEmployeePosition(), returnNulls);
+            putNestedRate(map, entity.getEmployeeRate(), returnNulls);
+            putNestedEmployeeForm(map, entity.getEmployeeForm(), returnNulls);
+            putNestedEmployeeStatus(map, entity.getEmployeeStatus(), returnNulls);
+        } else {
+            // Return flat IDs only (simple format)
+            putIfNotNull(map, "_employee", entity.getEmployee(), returnNulls);
+            putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
+            putIfNotNull(map, "_department", entity.getDepartment(), returnNulls);
+            putIfNotNull(map, "_employeeType", entity.getEmployeeType(), returnNulls);
+            putIfNotNull(map, "_employeePosition", entity.getEmployeePosition(), returnNulls);
+            putIfNotNull(map, "_employeeRate", entity.getEmployeeRate(), returnNulls);
+            putIfNotNull(map, "_employeeForm", entity.getEmployeeForm(), returnNulls);
+            putIfNotNull(map, "_employeeStatus", entity.getEmployeeStatus(), returnNulls);
+        }
+
+        // Date and string fields (always flat)
+        putIfNotNull(map, "jobStartDate", entity.getJobStartDate(), returnNulls);
+        putIfNotNull(map, "jobEndDate", entity.getJobEndDate(), returnNulls);
         putIfNotNull(map, "tag", entity.getTag(), returnNulls);
-        putIfNotNull(map, "contract_date", entity.getContractDate(), returnNulls);
-        putIfNotNull(map, "contract_number", entity.getContractNumber(), returnNulls);
-        putIfNotNull(map, "decree_date", entity.getDecreeDate(), returnNulls);
-        putIfNotNull(map, "decree_number", entity.getDecreeNumber(), returnNulls);
+        putIfNotNull(map, "contractDate", entity.getContractDate(), returnNulls);
+        putIfNotNull(map, "contractNumber", entity.getContractNumber(), returnNulls);
+        putIfNotNull(map, "decreeDate", entity.getDecreeDate(), returnNulls);
+        putIfNotNull(map, "decreeNumber", entity.getDecreeNumber(), returnNulls);
 
         // BaseEntity audit fields
         putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
@@ -217,14 +682,591 @@ public class EmployeeJobsEntityController {
         return map;
     }
 
+    // =====================================================
+    // Nested Object Builders (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Build nested employee object (hemishe_EEmployee)
+     */
+    private void putNestedEmployee(Map<String, Object> map, UUID employeeId, Boolean returnNulls) {
+        if (employeeId == null) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employee", null);
+            }
+            return;
+        }
+
+        try {
+            Optional<Teacher> teacherOpt = teacherRepository.findById(employeeId);
+            if (teacherOpt.isPresent()) {
+                Teacher teacher = teacherOpt.get();
+                Map<String, Object> nested = new LinkedHashMap<>();
+                nested.put("_entityName", "hemishe_EEmployee");
+
+                String fullName = buildFullName(teacher.getFirstName(), teacher.getSecondName(), teacher.getThirdName());
+                nested.put("_instanceName", fullName);
+                nested.put("id", teacher.getId());
+                nested.put("firstName", teacher.getFirstName());
+                nested.put("secondName", teacher.getSecondName());
+                nested.put("thirdName", teacher.getThirdName());
+
+                map.put("employee", nested);
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch employee: {}", e.getMessage());
+        }
+
+        // Employee not found or error, return ID only
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_EEmployee");
+        nested.put("id", employeeId);
+        map.put("employee", nested);
+    }
+
+    /**
+     * Build nested university object (hemishe_EUniversity)
+     */
+    private void putNestedUniversity(Map<String, Object> map, String universityCode, Boolean returnNulls) {
+        if (universityCode == null || universityCode.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", null);
+            }
+            return;
+        }
+
+        try {
+            Optional<University> uniOpt = universityRepository.findById(universityCode);
+            if (uniOpt.isPresent()) {
+                University university = uniOpt.get();
+                Map<String, Object> nested = new LinkedHashMap<>();
+                nested.put("_entityName", "hemishe_EUniversity");
+                nested.put("_instanceName", university.getCode() + "-" + university.getName());
+                nested.put("id", university.getCode());
+                nested.put("name", university.getName());
+
+                map.put("university", nested);
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch university: {}", e.getMessage());
+        }
+
+        // University not found or error, return code only
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_EUniversity");
+        nested.put("id", universityCode);
+        map.put("university", nested);
+    }
+
+    /**
+     * Build nested department object (hemishe_EDepartment)
+     * Uses hemishe_e_university_department table
+     */
+    private void putNestedDepartment(Map<String, Object> map, String departmentCode, Boolean returnNulls) {
+        if (departmentCode == null || departmentCode.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("department", null);
+            }
+            return;
+        }
+
+        try {
+            Optional<UniversityDepartment> deptOpt = universityDepartmentRepository.findByCode(departmentCode);
+            if (deptOpt.isPresent()) {
+                UniversityDepartment department = deptOpt.get();
+                Map<String, Object> nested = new LinkedHashMap<>();
+                nested.put("_entityName", "hemishe_EDepartment");
+                nested.put("_instanceName", department.getName());
+                nested.put("id", department.getCode());
+                nested.put("code", department.getCode());
+                nested.put("name", department.getName());
+
+                map.put("department", nested);
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch department: {}", e.getMessage());
+        }
+
+        // Department not found or error, return code only
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_EDepartment");
+        nested.put("code", departmentCode);
+        map.put("department", nested);
+    }
+
+    /**
+     * Build nested employeeType object (hemishe_HUniversityEmployeeType)
+     */
+    private void putNestedEmployeeType(Map<String, Object> map, String typeCode, Boolean returnNulls) {
+        if (typeCode == null || typeCode.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employeeType", null);
+            }
+            return;
+        }
+
+        try {
+            Optional<UniversityEmployeeType> typeOpt = employeeTypeRepository.findById(typeCode);
+            if (typeOpt.isPresent()) {
+                UniversityEmployeeType type = typeOpt.get();
+                Map<String, Object> nested = new LinkedHashMap<>();
+                nested.put("_entityName", "hemishe_HUniversityEmployeeType");
+                nested.put("_instanceName", type.getName());
+                nested.put("id", type.getCode());
+                nested.put("code", type.getCode());
+                nested.put("name", type.getName());
+
+                map.put("employeeType", nested);
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch employeeType: {}", e.getMessage());
+        }
+
+        // Type not found or error, return code only
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_HUniversityEmployeeType");
+        nested.put("id", typeCode);
+        map.put("employeeType", nested);
+    }
+
+    /**
+     * Build nested position object (hemishe_HTeacherPositionType)
+     */
+    private void putNestedPosition(Map<String, Object> map, String positionCode, Boolean returnNulls) {
+        if (positionCode == null || positionCode.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employeePosition", null);
+            }
+            return;
+        }
+
+        try {
+            Optional<TeacherPositionType> posOpt = positionTypeRepository.findById(positionCode);
+            if (posOpt.isPresent()) {
+                TeacherPositionType position = posOpt.get();
+                Map<String, Object> nested = new LinkedHashMap<>();
+                nested.put("_entityName", "hemishe_HTeacherPositionType");
+                nested.put("_instanceName", position.getName());
+                nested.put("id", position.getCode());
+                nested.put("code", position.getCode());
+                nested.put("name", position.getName());
+
+                map.put("employeePosition", nested);
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch position: {}", e.getMessage());
+        }
+
+        // Position not found or error, return code only
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_HTeacherPositionType");
+        nested.put("id", positionCode);
+        map.put("employeePosition", nested);
+    }
+
+    /**
+     * Build nested rate object (hemishe_HUniversityEmployeeRate)
+     */
+    private void putNestedRate(Map<String, Object> map, String rateCode, Boolean returnNulls) {
+        if (rateCode == null || rateCode.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employeeRate", null);
+            }
+            return;
+        }
+
+        try {
+            Optional<UniversityEmployeeRate> rateOpt = employeeRateRepository.findById(rateCode);
+            if (rateOpt.isPresent()) {
+                UniversityEmployeeRate rate = rateOpt.get();
+                Map<String, Object> nested = new LinkedHashMap<>();
+                nested.put("_entityName", "hemishe_HUniversityEmployeeRate");
+                nested.put("_instanceName", rate.getName());
+                nested.put("id", rate.getCode());
+                nested.put("code", rate.getCode());
+                nested.put("name", rate.getName());
+
+                map.put("employeeRate", nested);
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch rate: {}", e.getMessage());
+        }
+
+        // Rate not found or error, return code only
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_HUniversityEmployeeRate");
+        nested.put("id", rateCode);
+        map.put("employeeRate", nested);
+    }
+
+    /**
+     * Build nested employeeForm object (hemishe_HEmployeeForm)
+     * Note: This classifier may not exist in the system yet
+     */
+    private void putNestedEmployeeForm(Map<String, Object> map, String formCode, Boolean returnNulls) {
+        if (formCode == null || formCode.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employeeForm", null);
+            }
+            return;
+        }
+
+        // EmployeeForm classifier - return basic structure
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_HEmployeeForm");
+        nested.put("id", formCode);
+        nested.put("code", formCode);
+
+        map.put("employeeForm", nested);
+    }
+
+    /**
+     * Build nested employeeStatus object (hemishe_HUniversityEmployeeStatusType)
+     */
+    private void putNestedEmployeeStatus(Map<String, Object> map, String statusCode, Boolean returnNulls) {
+        if (statusCode == null || statusCode.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employeeStatus", null);
+            }
+            return;
+        }
+
+        try {
+            Optional<UniversityEmployeeStatusType> statusOpt = employeeStatusRepository.findById(statusCode);
+            if (statusOpt.isPresent()) {
+                UniversityEmployeeStatusType status = statusOpt.get();
+                Map<String, Object> nested = new LinkedHashMap<>();
+                nested.put("_entityName", "hemishe_HUniversityEmployeeStatusType");
+                nested.put("_instanceName", status.getName());
+                nested.put("id", status.getCode());
+                nested.put("code", status.getCode());
+                nested.put("name", status.getName());
+
+                map.put("employeeStatus", nested);
+                return;
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch employeeStatus: {}", e.getMessage());
+        }
+
+        // Status not found or error, return code only
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_HUniversityEmployeeStatusType");
+        nested.put("id", statusCode);
+        map.put("employeeStatus", nested);
+    }
+
+    /**
+     * Get employee full name by UUID (for _instanceName)
+     * Returns "FAMILIYA ISM OTASI" format (uppercase)
+     */
+    private String getEmployeeFullName(UUID employeeId) {
+        if (employeeId == null) {
+            return "Unknown Employee";
+        }
+        try {
+            Optional<Teacher> teacherOpt = teacherRepository.findById(employeeId);
+            if (teacherOpt.isPresent()) {
+                Teacher teacher = teacherOpt.get();
+                String fullName = buildFullName(teacher.getFirstName(), teacher.getSecondName(), teacher.getThirdName());
+                return fullName.toUpperCase(); // OLD-HEMIS returns uppercase
+            }
+        } catch (Exception e) {
+            log.debug("Failed to fetch employee name: {}", e.getMessage());
+        }
+        return "Employee-" + employeeId;
+    }
+
+    /**
+     * Build full name from parts
+     */
+    private String buildFullName(String firstName, String secondName, String thirdName) {
+        StringBuilder sb = new StringBuilder();
+        if (secondName != null && !secondName.isEmpty()) {
+            sb.append(secondName);
+        }
+        if (firstName != null && !firstName.isEmpty()) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(firstName);
+        }
+        if (thirdName != null && !thirdName.isEmpty()) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(thirdName);
+        }
+        return sb.length() > 0 ? sb.toString() : "Employee";
+    }
+
+    /**
+     * Map dan entity maydonlarini yangilash (partial update)
+     *
+     * <p>CUBA format qo'llab-quvvatlaydi (ikkala format):</p>
+     * <ul>
+     *   <li>_employee - Xodim UUID: "uuid-string" YOKI {"id": "uuid-string"}</li>
+     *   <li>_university - OTM kodi: "305" YOKI {"code": "305"}</li>
+     *   <li>_department - Bo'lim kodi: "305-212" YOKI {"code": "305-212"}</li>
+     *   <li>_employeeType - Xodim turi: "12" YOKI {"code": "12"}</li>
+     *   <li>_teacherPositionType - Lavozim: "11" YOKI {"code": "11"}</li>
+     *   <li>_employeeRate - Stavka: "11" YOKI {"code": "11"}</li>
+     *   <li>_employmentForm - Ish shakli: "11" YOKI {"code": "11"}</li>
+     *   <li>_employeeStatus - Holat: "11" YOKI {"code": "11"}</li>
+     *   <li>jobStartDate, jobEndDate - Sana maydonlari (YYYY-MM-DD)</li>
+     *   <li>contractDate, contractNumber - Shartnoma ma'lumotlari</li>
+     *   <li>decreeDate, decreeNumber - Buyruq ma'lumotlari</li>
+     *   <li>tag - Yorliq</li>
+     * </ul>
+     *
+     * @param entity Yangilanadigan entity
+     * @param map So'rov body (CUBA format)
+     */
     private void updateFromMap(EmployeeJobs entity, Map<String, Object> map) {
-        // TODO: Add specific field mappings based on entity properties
-        // For now, minimal implementation
+        // UUID field: _employee (supports both String and nested object)
+        if (map.containsKey("_employee")) {
+            UUID value = parseUuid(map.get("_employee"));
+            if (value != null) {
+                entity.setEmployee(value);
+            }
+        }
+
+        // String fields (reference codes) - supports both flat and nested
+        // Only update if value is not null/empty (partial update semantics)
+        if (map.containsKey("_university")) {
+            String value = parseCode(map.get("_university"));
+            if (value != null) {
+                entity.setUniversity(value);
+            }
+        }
+        if (map.containsKey("_department")) {
+            String value = parseCode(map.get("_department"));
+            if (value != null) {
+                entity.setDepartment(value);
+            }
+        }
+        if (map.containsKey("_employeeType")) {
+            String value = parseCode(map.get("_employeeType"));
+            if (value != null) {
+                entity.setEmployeeType(value);
+            }
+        }
+        // Support both _employeePosition and _teacherPositionType
+        if (map.containsKey("_employeePosition")) {
+            String value = parseCode(map.get("_employeePosition"));
+            if (value != null) {
+                entity.setEmployeePosition(value);
+            }
+        }
+        if (map.containsKey("_teacherPositionType")) {
+            String value = parseCode(map.get("_teacherPositionType"));
+            if (value != null) {
+                entity.setEmployeePosition(value);
+            }
+        }
+        if (map.containsKey("_employeeRate")) {
+            String value = parseCode(map.get("_employeeRate"));
+            if (value != null) {
+                entity.setEmployeeRate(value);
+            }
+        }
+        // Support both _employeeForm and _employmentForm
+        if (map.containsKey("_employeeForm")) {
+            String value = parseCode(map.get("_employeeForm"));
+            if (value != null) {
+                entity.setEmployeeForm(value);
+            }
+        }
+        if (map.containsKey("_employmentForm")) {
+            String value = parseCode(map.get("_employmentForm"));
+            if (value != null) {
+                entity.setEmployeeForm(value);
+            }
+        }
+        if (map.containsKey("_employeeStatus")) {
+            String value = parseCode(map.get("_employeeStatus"));
+            if (value != null) {
+                entity.setEmployeeStatus(value);
+            }
+        }
+
+        // Date fields - allow null to clear the date
+        if (map.containsKey("jobStartDate")) {
+            entity.setJobStartDate(parseLocalDate(map.get("jobStartDate")));
+        }
+        if (map.containsKey("jobEndDate")) {
+            entity.setJobEndDate(parseLocalDate(map.get("jobEndDate")));
+        }
+        if (map.containsKey("contractDate")) {
+            entity.setContractDate(parseLocalDate(map.get("contractDate")));
+        }
+        if (map.containsKey("decreeDate")) {
+            entity.setDecreeDate(parseLocalDate(map.get("decreeDate")));
+        }
+
+        // String fields - allow empty to clear
+        if (map.containsKey("contractNumber")) {
+            entity.setContractNumber(parseString(map.get("contractNumber")));
+        }
+        if (map.containsKey("decreeNumber")) {
+            entity.setDecreeNumber(parseString(map.get("decreeNumber")));
+        }
+        if (map.containsKey("tag")) {
+            entity.setTag(parseString(map.get("tag")));
+        }
+    }
+
+    /**
+     * Parse UUID from flat string or nested object {"id": "uuid"}
+     */
+    @SuppressWarnings("unchecked")
+    private UUID parseUuid(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof UUID u) {
+            return u;
+        }
+        if (value instanceof String s) {
+            return s.isEmpty() ? null : UUID.fromString(s);
+        }
+        if (value instanceof Map) {
+            Map<String, Object> nested = (Map<String, Object>) value;
+            Object id = nested.get("id");
+            if (id == null) {
+                return null;
+            }
+            if (id instanceof UUID u) {
+                return u;
+            }
+            if (id instanceof String s) {
+                return s.isEmpty() ? null : UUID.fromString(s);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parse code from flat string or nested object {"code": "..."} or {"id": "..."}
+     * Returns null for empty strings or empty objects to avoid FK constraint violations
+     */
+    @SuppressWarnings("unchecked")
+    private String parseCode(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof String s) {
+            return s.isEmpty() ? null : s;
+        }
+        if (value instanceof Map) {
+            Map<String, Object> nested = (Map<String, Object>) value;
+            // Try "code" first, then "id"
+            Object code = nested.get("code");
+            if (code != null) {
+                String codeStr = code.toString();
+                // Return null for empty strings
+                return codeStr.isEmpty() ? null : codeStr;
+            }
+            Object id = nested.get("id");
+            if (id != null) {
+                String idStr = id.toString();
+                // Return null for empty strings
+                return idStr.isEmpty() ? null : idStr;
+            }
+            // Empty map - return null
+            return null;
+        }
+        // Fallback to toString, but check for empty
+        String str = value.toString();
+        return str.isEmpty() ? null : str;
+    }
+
+    /**
+     * Object dan String ga parse qilish
+     */
+    private String parseString(Object value) {
+        if (value == null) {
+            return null;
+        }
+        return value.toString();
+    }
+
+    /**
+     * Object dan LocalDate ga parse qilish (YYYY-MM-DD format)
+     */
+    private LocalDate parseLocalDate(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof LocalDate ld) {
+            return ld;
+        }
+        String str = value.toString();
+        if (str.isEmpty()) {
+            return null;
+        }
+        // YYYY-MM-DD format
+        return LocalDate.parse(str);
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
         if (value != null || Boolean.TRUE.equals(returnNulls)) {
             map.put(key, value);
         }
+    }
+
+    // =====================================================
+    // Security: University Code from Context
+    // =====================================================
+
+    /**
+     * Security context dan joriy foydalanuvchining universitet kodini olish
+     *
+     * <p><strong>OLD-HEMIS Compatible:</strong> Har bir OTM faqat o'z ma'lumotlarini ko'rishi kerak</p>
+     *
+     * @return universitet kodi yoki null (development uchun fallback "520")
+     */
+    private String getUniversityCodeFromContext() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            log.warn("No authentication found in security context");
+            return getDefaultUniversityCode();
+        }
+
+        // JWT token dan username olish
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            Jwt jwt = jwtAuth.getToken();
+            String username = jwt.getClaimAsString("username");
+            if (username == null) {
+                username = jwt.getSubject();
+            }
+
+            // User dan university olish
+            if (username != null) {
+                try {
+                    UUID userId = UUID.fromString(jwt.getSubject());
+                    var userOpt = userRepository.findById(userId);
+                    if (userOpt.isPresent() && userOpt.get().getUniversity() != null) {
+                        String code = userOpt.get().getUniversity().getCode();
+                        log.debug("University code from user: {}", code);
+                        return code;
+                    }
+                } catch (Exception e) {
+                    log.debug("Could not get university from user: {}", e.getMessage());
+                }
+            }
+        }
+
+        return getDefaultUniversityCode();
+    }
+
+    /**
+     * Development uchun default universitet kodi
+     */
+    private String getDefaultUniversityCode() {
+        log.warn("Using default university code for development");
+        return "520";
     }
 }

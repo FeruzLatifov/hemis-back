@@ -6,13 +6,9 @@
 // =====================================================
 
 dependencies {
-    // Spring Context (for @Component, @Service annotations)
-    api("org.springframework:spring-context")
-
-    // Spring Boot Autoconfigure (for @ConditionalOnProperty)
-    api("org.springframework.boot:spring-boot-autoconfigure")
-
-    // Spring Data Commons (for Page interface)
+    // Spring Data Commons (for Page interface - minimal Spring dependency)
+    // NOTE: This is the ONLY Spring dependency in common module
+    // Used by PageResponse.of(Page) factory methods
     api("org.springframework.data:spring-data-commons")
 
     // Jackson for JSON (DTO serialization with @JsonProperty)
@@ -25,7 +21,7 @@ dependencies {
 
     // SLF4J for logging
     api("org.slf4j:slf4j-api")
-    
+
     // Testing dependencies
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("com.tngtech.archunit:archunit-junit5:1.2.1")

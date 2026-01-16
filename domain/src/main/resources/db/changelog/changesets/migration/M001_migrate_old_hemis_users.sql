@@ -87,12 +87,19 @@ BEGIN
             old.updated_by
         FROM sec_user old
         WHERE old.delete_ts IS NULL
-          AND NOT EXISTS (
-            SELECT 1 FROM users u
-            WHERE u.username = old.login_lc
-               OR u.id = old.id
-        )
-        ON CONFLICT (username) DO NOTHING;
+        ON CONFLICT (username) DO UPDATE SET
+            password = EXCLUDED.password,
+            password_encryption = EXCLUDED.password_encryption,
+            email = EXCLUDED.email,
+            name = EXCLUDED.name,
+            first_name = EXCLUDED.first_name,
+            last_name = EXCLUDED.last_name,
+            middle_name = EXCLUDED.middle_name,
+            full_name = EXCLUDED.full_name,
+            enabled = EXCLUDED.enabled,
+            active = EXCLUDED.active,
+            updated_at = CURRENT_TIMESTAMP,
+            updated_by = 'migration-sync';
 
         GET DIAGNOSTICS migrated_count = ROW_COUNT;
         RAISE NOTICE 'M001: Migrated % users from sec_user', migrated_count;

@@ -71,14 +71,14 @@ import java.util.stream.Collectors;
 public class UserPermissionCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final uz.hemis.domain.repository.UserRepository userRepository;
+    private final uz.hemis.common.port.security.PermissionLoadingPort permissionLoadingPort;
 
     public UserPermissionCacheService(
         RedisTemplate<String, Object> redisTemplate,
-        uz.hemis.domain.repository.UserRepository userRepository
+        uz.hemis.common.port.security.PermissionLoadingPort permissionLoadingPort
     ) {
         this.redisTemplate = redisTemplate;
-        this.userRepository = userRepository;
+        this.permissionLoadingPort = permissionLoadingPort;
     }
 
     /**
@@ -154,27 +154,18 @@ public class UserPermissionCacheService {
     }
 
     /**
-     * Load permissions from database via UserRepository
+     * Load permissions from database via PermissionLoadingPort (Clean Architecture)
      *
-     * <p>Loads user by ID and extracts permissions from roles</p>
+     * <p>Uses port to load permissions - no direct JPA dependency</p>
      *
      * @param userId User ID (UUID)
      * @return Set of permission codes
      */
     private Set<String> loadPermissionsFromDatabase(java.util.UUID userId) {
         try {
-            // Load user with permissions eagerly (1 query with JOIN FETCH)
-            uz.hemis.domain.entity.User user = userRepository.findByIdWithPermissions(userId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userId));
-
-            Set<String> permissions = user.getAllPermissions().stream()
-                    .map(uz.hemis.domain.entity.Permission::getCode)
-                    .collect(Collectors.toSet());
-
+            Set<String> permissions = permissionLoadingPort.getPermissionsForUser(userId);
             log.debug("Loaded {} permissions from DB for userId: {}", permissions.size(), userId);
-
             return permissions;
-
         } catch (Exception e) {
             log.error("Failed to load permissions from DB for userId: {}", userId, e);
             return Set.of();  // Empty permissions on error

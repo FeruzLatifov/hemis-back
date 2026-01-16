@@ -7,18 +7,19 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.TeacherDto;
+import uz.hemis.common.dto.TeacherIdRequest;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
+import uz.hemis.domain.entity.EmployeeJobs;
 import uz.hemis.domain.entity.Teacher;
 import uz.hemis.service.mapper.TeacherMapper;
+import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Teacher Service - Business Logic Layer
@@ -49,6 +50,7 @@ public class TeacherService {
     private final TeacherRepository teacherRepository;
     private final TeacherMapper teacherMapper;
     private final UniversityRepository universityRepository;
+    private final EmployeeJobsRepository employeeJobsRepository;
 
     // =====================================================
     // Read Operations (Read-Only Transactions)
@@ -478,5 +480,386 @@ public class TeacherService {
         teacherRepository.save(teacher);
 
         log.info("Teacher restored successfully: {}", id);
+    }
+
+    // =====================================================
+    // Teacher ID Generation (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Generate or retrieve Teacher ID (OLD-HEMIS Compatible)
+     *
+     * <p><strong>OLD-HEMIS URL:</strong> POST /app/rest/v2/services/teacher/id</p>
+     *
+     * <p><strong>Logic:</strong></p>
+     * <ol>
+     *   <li>Validate input parameters</li>
+     *   <li>For O'zbekiston citizens (citizenship=11): search by PINFL</li>
+     *   <li>For foreigners: search by serialNumber + citizenship</li>
+     *   <li>If found: return existing teacher with is_new=false</li>
+     *   <li>If not found: create new teacher with generated code, is_new=true</li>
+     * </ol>
+     *
+     * <p><strong>ID Format:</strong> {universityCode}{YY}{gender}{sequence}</p>
+     * <p>Example: "3801911001" = university 380, year 2019, male (11), sequence 001</p>
+     *
+     * @param request TeacherIdRequest with citizenship, pinfl, serial, year, gender
+     * @param universityCode university code from authenticated user
+     * @return Map with teacher data and is_new flag
+     */
+    @Transactional
+    public Map<String, Object> generateTeacherId(TeacherIdRequest request, String universityCode) {
+        log.info("Generating teacher ID - University: {}, PINFL: {}, Serial: {}",
+                universityCode, request.getPinfl(), request.getSerial());
+
+        // 1. Validate request parameters
+        try {
+            request.validate();
+        } catch (IllegalArgumentException e) {
+            log.error("Validation failed: {}", e.getMessage());
+            Map<String, Object> errorResult = new LinkedHashMap<>();
+            errorResult.put("success", false);
+            errorResult.put("error", e.getMessage());
+            return errorResult;
+        }
+
+        // 2. Search for existing teacher
+        Optional<Teacher> existingTeacher;
+
+        if ("11".equals(request.getCitizenship())) {
+            // O'zbekiston fuqarosi - PINFL bo'yicha qidirish
+            existingTeacher = teacherRepository.findByPinfl(request.getPinfl());
+        } else {
+            // Chet el fuqarosi - serialNumber + citizenship bo'yicha qidirish
+            existingTeacher = teacherRepository.findBySerialNumberAndCitizenship(
+                    request.getSerial(),
+                    request.getCitizenship()
+            );
+        }
+
+        // 3. If found - return existing
+        if (existingTeacher.isPresent()) {
+            Teacher teacher = existingTeacher.get();
+            log.info("Found existing teacher: {} (ID: {})", teacher.getFullName(), teacher.getId());
+            return buildTeacherResponse(teacher, false);
+        }
+
+        // 4. Create new teacher with generated code
+        Teacher newTeacher = new Teacher();
+        newTeacher.setPinfl(request.getPinfl());
+        newTeacher.setSerialNumber(request.getSerial());
+        newTeacher.setCitizenship(request.getCitizenship());
+        newTeacher.setGender(request.getGender());
+        newTeacher.setEmployeeYear(request.getYear());
+        newTeacher.setUniversity(universityCode);
+
+        // Generate unique code
+        String generatedCode = generateUniqueTeacherCode(universityCode, request.getYear(), request.getGender());
+        newTeacher.setCode(generatedCode);
+
+        // Save
+        Teacher savedTeacher = teacherRepository.save(newTeacher);
+        log.info("Created new teacher with code: {} (ID: {})", generatedCode, savedTeacher.getId());
+
+        return buildTeacherResponse(savedTeacher, true);
+    }
+
+    /**
+     * Generate unique teacher code
+     *
+     * <p><strong>Format:</strong> {universityCode}{YY}{gender}{sequence}</p>
+     * <p>Example: "3801911001" = university 380, year 2019, male (11), sequence 001</p>
+     *
+     * @param universityCode university code (e.g., "380")
+     * @param year full year or 2-digit year (e.g., "2019" or "19")
+     * @param gender gender code ("11" = male, "12" = female)
+     * @return unique code (e.g., "3801911001")
+     */
+    private String generateUniqueTeacherCode(String universityCode, String year, String gender) {
+        // Extract 2-digit year
+        String yearSuffix = year;
+        if (year != null && year.length() == 4) {
+            yearSuffix = year.substring(2); // "2019" -> "19"
+        }
+
+        // Build prefix: {universityCode}{YY}{gender}
+        String prefix = universityCode + yearSuffix + gender;
+
+        // Count existing teachers with this prefix
+        long existingCount = teacherRepository.countByCodePrefix(prefix);
+
+        // Generate sequence (3 digits)
+        long sequence = existingCount + 1;
+        String sequenceStr = String.format("%03d", sequence);
+
+        return prefix + sequenceStr;
+    }
+
+    /**
+     * Build teacher response Map for API (OLD-HEMIS format)
+     *
+     * @param teacher Teacher entity
+     * @param isNew true if newly created
+     * @return response Map
+     */
+    private Map<String, Object> buildTeacherResponse(Teacher teacher, boolean isNew) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        result.put("success", true);
+        result.put("is_new", isNew);
+        // OLD-HEMIS compatible: unique_id = teacher code
+        result.put("unique_id", teacher.getCode());
+
+        Map<String, Object> teacherMap = new LinkedHashMap<>();
+        teacherMap.put("_entityName", "hemishe_ETeacher");
+        teacherMap.put("id", teacher.getId() != null ? teacher.getId().toString() : null);
+        teacherMap.put("pinfl", teacher.getPinfl());
+        teacherMap.put("birthday", teacher.getBirthDate());
+        teacherMap.put("firstname", teacher.getFirstName());
+        teacherMap.put("code", teacher.getCode());
+
+        // Gender as nested object (OLD-HEMIS format)
+        if (teacher.getGender() != null) {
+            Map<String, Object> genderMap = new LinkedHashMap<>();
+            genderMap.put("_entityName", "hemishe_HGender");
+            genderMap.put("id", teacher.getGender());
+            genderMap.put("code", teacher.getGender());
+            genderMap.put("name", "11".equals(teacher.getGender()) ? "Erkak" : "Ayol");
+            teacherMap.put("gender", genderMap);
+        }
+
+        // University as nested object (OLD-HEMIS format)
+        if (teacher.getUniversity() != null) {
+            Map<String, Object> universityMap = new LinkedHashMap<>();
+            universityMap.put("_entityName", "hemishe_EUniversity");
+            universityMap.put("id", teacher.getUniversity());
+            universityMap.put("code", teacher.getUniversity());
+            teacherMap.put("university", universityMap);
+        }
+
+        teacherMap.put("tag", teacher.getTag());
+        teacherMap.put("serialNumber", teacher.getSerialNumber());
+        teacherMap.put("address", teacher.getAddress());
+
+        // Citizenship as nested object (OLD-HEMIS format)
+        if (teacher.getCitizenship() != null) {
+            Map<String, Object> citizenshipMap = new LinkedHashMap<>();
+            citizenshipMap.put("_entityName", "hemishe_HCitizenship");
+            citizenshipMap.put("id", teacher.getCitizenship());
+            citizenshipMap.put("code", teacher.getCitizenship());
+            citizenshipMap.put("name", "11".equals(teacher.getCitizenship()) ?
+                "O'zbekiston Respublikasi fuqarosi" : "Chet el fuqarosi");
+            teacherMap.put("citizenship", citizenshipMap);
+        }
+
+        teacherMap.put("lastname", teacher.getSecondName());
+        teacherMap.put("fathername", teacher.getThirdName());
+        teacherMap.put("phone", teacher.getPhone());
+        teacherMap.put("employeeYear", teacher.getEmployeeYear());
+        teacherMap.put("fullname", teacher.getFullName());
+
+        result.put("teacher", teacherMap);
+
+        // OLD-HEMIS compatible: personal_data stub
+        Map<String, Object> personalData = new LinkedHashMap<>();
+        personalData.put("success", false);
+        personalData.put("code", "service_not_available");
+        personalData.put("message", "Personal data service not available");
+        personalData.put("exception", "talaba.edu.uz");
+        result.put("personal_data", personalData);
+
+        return result;
+    }
+
+    // =====================================================
+    // Add Job (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Xodimga yangi lavozim qo'shish (OLD-HEMIS Compatible)
+     *
+     * <p><strong>OLD-HEMIS URL:</strong> POST /app/rest/v2/services/teacher/addJob</p>
+     *
+     * <p><strong>Logic:</strong></p>
+     * <ol>
+     *   <li>Employee (Teacher) ni ID bo'yicha topish</li>
+     *   <li>Agar topilmasa, soft-deleted bo'lsa restore qilish</li>
+     *   <li>Agar xodim asosiy shtat birligida ishlasa va yangi job ham asosiy shtat bo'lsa - xato</li>
+     *   <li>Yangi job yaratish va saqlash</li>
+     * </ol>
+     *
+     * @param jobData Job ma'lumotlari (employee, university, department, etc.)
+     * @return Map with success, message, data
+     */
+    @Transactional
+    public Map<String, Object> addJob(Map<String, Object> jobData) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        // 1. Extract job data from wrapper
+        @SuppressWarnings("unchecked")
+        Map<String, Object> job = (Map<String, Object>) jobData.get("job");
+        if (job == null) {
+            job = jobData; // Fallback: direct job object without wrapper
+        }
+
+        // 2. Extract employee ID
+        @SuppressWarnings("unchecked")
+        Map<String, Object> employeeData = (Map<String, Object>) job.get("employee");
+        if (employeeData == null || employeeData.get("id") == null) {
+            result.put("success", false);
+            result.put("message", "Employee ID kiritilmagan!");
+            return result;
+        }
+
+        UUID employeeId;
+        try {
+            employeeId = UUID.fromString(employeeData.get("id").toString());
+        } catch (IllegalArgumentException e) {
+            result.put("success", false);
+            result.put("message", "Employee ID noto'g'ri formatda!");
+            return result;
+        }
+
+        // 3. Find employee (teacher)
+        Optional<Teacher> teacherOpt = teacherRepository.findById(employeeId);
+        Teacher employee;
+
+        if (teacherOpt.isPresent()) {
+            employee = teacherOpt.get();
+        } else {
+            // Try to find soft-deleted and restore
+            Optional<Teacher> deletedTeacher = teacherRepository.findDeletedById(employeeId);
+            if (deletedTeacher.isPresent()) {
+                employee = deletedTeacher.get();
+                employee.setDeleteTs(null);
+                employee.setDeletedBy(null);
+                teacherRepository.save(employee);
+                log.info("Restored soft-deleted teacher: {}", employeeId);
+            } else {
+                result.put("success", false);
+                result.put("message", "Bunday xodim vazirlik tizimidan mavjud emas!");
+                return result;
+            }
+        }
+
+        // 4. Extract codes from nested objects
+        String universityCode = extractCode(job, "university");
+        String departmentCode = extractCode(job, "department");
+        String employeeFormCode = extractCode(job, "employeeForm");
+        String employeeStatusCode = extractCode(job, "employeeStatus");
+        String employeeTypeCode = extractCode(job, "employeeType");
+        String employeeRateCode = extractCode(job, "employeeRate");
+        String employeePositionCode = extractCode(job, "employeePosition");
+
+        LocalDate jobStartDate = parseDate(job.get("jobStartDate"));
+        LocalDate jobEndDate = parseDate(job.get("jobEndDate"));
+
+        // 5. Check if employee already has main job (asosiy shtat birligida)
+        // Main form code = "11", working status = "11"
+        if ("11".equals(employeeFormCode) && "11".equals(employeeStatusCode)) {
+            Optional<EmployeeJobs> existingMainJob = employeeJobsRepository.findMainJobByEmployee(
+                    employeeId, "11", "11"
+            );
+
+            if (existingMainJob.isPresent()) {
+                EmployeeJobs mainJob = existingMainJob.get();
+                StringBuilder details = new StringBuilder();
+                details.append(employee.getFullName()).append(" ");
+
+                // Get university and department names from codes
+                String uniName = mainJob.getUniversity() != null ? mainJob.getUniversity() : "unknown";
+                String deptName = mainJob.getDepartment() != null ? mainJob.getDepartment() : "unknown";
+
+                details.append(uniName).append("ning ");
+                details.append(deptName).append("da asosiy shtat birligida ishlamoqda");
+
+                result.put("success", false);
+                result.put("message", details.toString());
+                return result;
+            }
+        }
+
+        // 6. Create new job
+        try {
+            EmployeeJobs newJob = new EmployeeJobs();
+            newJob.setEmployee(employeeId);
+            newJob.setUniversity(universityCode);
+            newJob.setDepartment(departmentCode);
+            newJob.setEmployeeForm(employeeFormCode);
+            newJob.setEmployeeStatus(employeeStatusCode);
+            newJob.setEmployeeType(employeeTypeCode);
+            newJob.setEmployeeRate(employeeRateCode);
+            newJob.setEmployeePosition(employeePositionCode);
+            newJob.setJobStartDate(jobStartDate);
+            newJob.setJobEndDate(jobEndDate);
+
+            EmployeeJobs savedJob = employeeJobsRepository.save(newJob);
+
+            result.put("success", true);
+            result.put("message", "Xodim lavozimi saqlandi");
+            result.put("data", buildJobResponse(savedJob));
+
+            log.info("Created new job for employee {} at university {}", employeeId, universityCode);
+            return result;
+
+        } catch (Exception ex) {
+            log.error("Error creating job for employee {}: {}", employeeId, ex.getMessage());
+            result.put("success", false);
+            result.put("message", "Xodimda bunday lavozim mavjud");
+            result.put("data", ex.getMessage());
+            return result;
+        }
+    }
+
+    /**
+     * Extract code from nested object
+     * Example: {"university": {"code": "401"}} -> "401"
+     */
+    @SuppressWarnings("unchecked")
+    private String extractCode(Map<String, Object> data, String fieldName) {
+        Object field = data.get(fieldName);
+        if (field instanceof Map) {
+            Map<String, Object> fieldMap = (Map<String, Object>) field;
+            Object code = fieldMap.get("code");
+            return code != null ? code.toString() : null;
+        }
+        return field != null ? field.toString() : null;
+    }
+
+    /**
+     * Parse date from string or LocalDate
+     */
+    private LocalDate parseDate(Object dateObj) {
+        if (dateObj == null) {
+            return null;
+        }
+        if (dateObj instanceof LocalDate) {
+            return (LocalDate) dateObj;
+        }
+        try {
+            return LocalDate.parse(dateObj.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Build job response Map for API
+     */
+    private Map<String, Object> buildJobResponse(EmployeeJobs job) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("_entityName", "hemishe_EEmployeeJobs");
+        response.put("id", job.getId() != null ? job.getId().toString() : null);
+        response.put("employee", job.getEmployee() != null ? job.getEmployee().toString() : null);
+        response.put("university", job.getUniversity());
+        response.put("department", job.getDepartment());
+        response.put("employeeForm", job.getEmployeeForm());
+        response.put("employeeStatus", job.getEmployeeStatus());
+        response.put("employeeType", job.getEmployeeType());
+        response.put("employeeRate", job.getEmployeeRate());
+        response.put("employeePosition", job.getEmployeePosition());
+        response.put("jobStartDate", job.getJobStartDate());
+        response.put("jobEndDate", job.getJobEndDate());
+        return response;
     }
 }

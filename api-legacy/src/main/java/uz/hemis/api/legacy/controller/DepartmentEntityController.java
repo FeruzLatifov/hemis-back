@@ -18,30 +18,16 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Department Entity Controller (CUBA Pattern)
- * Tag 07: OTM bo'linmalari (Entity API)
+ * Department Entity Controller (DEPRECATED - use UniversityDepartmentEntityController instead)
  *
- * CUBA Platform REST API compatible controller
- * Entity: hemishe_EUniversityDepartment
- *
- * CRITICAL - 100% Backward Compatible:
- * - Preserves exact CUBA entity API pattern
- * - URL: /app/rest/v2/entities/hemishe_EUniversityDepartment
- * - Response format: CUBA Map structure with _entityName, _instanceName
- * - Parameters: returnNulls, view, dynamicAttributes (CUBA-compatible)
- *
- * Endpoints:
- * - GET    /app/rest/v2/entities/hemishe_EUniversityDepartment/{id}      - Get by ID
- * - PUT    /app/rest/v2/entities/hemishe_EUniversityDepartment/{id}      - Update
- * - DELETE /app/rest/v2/entities/hemishe_EUniversityDepartment/{id}      - Soft delete
- * - GET    /app/rest/v2/entities/hemishe_EUniversityDepartment/search    - Search (URL params)
- * - POST   /app/rest/v2/entities/hemishe_EUniversityDepartment/search    - Search (JSON filter)
- * - GET    /app/rest/v2/entities/hemishe_EUniversityDepartment           - List all with pagination
- * - POST   /app/rest/v2/entities/hemishe_EUniversityDepartment           - Create new
+ * @deprecated Bu controller noto'g'ri entity ishlatadi.
+ *             {@link UniversityDepartmentEntityController} dan foydalaning.
+ *             Bu controller boshqa URL ga o'zgartirildi: /app/rest/v2/entities/_deprecated_Department
  */
-@Tag(name = "Departments")
+@Tag(name = "Departments (Deprecated)", description = "ESKIRGAN - UniversityDepartmentEntityController ishlatilsin")
 @RestController
-@RequestMapping("/app/rest/v2/entities/hemishe_EUniversityDepartment")
+@RequestMapping("/app/rest/v2/entities/_deprecated_Department")
+@Deprecated
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")

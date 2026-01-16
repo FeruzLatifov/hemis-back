@@ -323,4 +323,61 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
     @Query("SELECT t FROM Teacher t WHERE t.university = :universityCode " +
            "AND t.academicDegree IN ('12', '13')")
     Page<Teacher> findDoctorsByUniversity(@Param("universityCode") String universityCode, Pageable pageable);
+
+    // =====================================================
+    // Teacher ID Generation (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Find teacher by serialNumber and citizenship (for foreign citizens)
+     *
+     * <p><strong>Use case:</strong> Finding foreign teachers who don't have PINFL</p>
+     * <p>For O'zbekiston citizens, use {@link #findByPinfl(String)} instead.</p>
+     *
+     * @param serialNumber passport serial number
+     * @param citizenship citizenship code
+     * @return teacher if found
+     */
+    @Query("SELECT t FROM Teacher t WHERE t.serialNumber = :serialNumber AND t.citizenship = :citizenship")
+    java.util.Optional<Teacher> findBySerialNumberAndCitizenship(
+            @Param("serialNumber") String serialNumber,
+            @Param("citizenship") String citizenship
+    );
+
+    /**
+     * Count teachers by code prefix (for ID generation)
+     *
+     * <p><strong>Use case:</strong> Generating unique teacher ID codes</p>
+     * <p>ID format: {universityCode}{YY}{gender}{sequence}</p>
+     * <p>Example: "3801911001" = university 380, year 2019, male (11), sequence 001</p>
+     *
+     * @param codePrefix prefix to match (e.g., "38019")
+     * @return count of teachers with this prefix
+     */
+    @Query("SELECT COUNT(t) FROM Teacher t WHERE t.code LIKE CONCAT(:codePrefix, '%')")
+    long countByCodePrefix(@Param("codePrefix") String codePrefix);
+
+    /**
+     * Find maximum code by prefix
+     *
+     * <p><strong>Use case:</strong> Generating unique teacher ID codes</p>
+     * <p>Returns the maximum code value that matches the given pattern</p>
+     *
+     * @param codePattern LIKE pattern (e.g., "5202511%")
+     * @return max code or null if none exists
+     */
+    @Query("SELECT MAX(t.code) FROM Teacher t WHERE t.code LIKE :codePattern")
+    String findMaxCodeByPrefix(@Param("codePattern") String codePattern);
+
+    /**
+     * Find soft-deleted teacher by ID
+     *
+     * <p><strong>Use case:</strong> Restoring soft-deleted teachers</p>
+     * <p>This query bypasses @Where(clause = "delete_ts IS NULL") filter</p>
+     *
+     * @param id teacher ID
+     * @return deleted teacher if found
+     */
+    @Query(value = "SELECT * FROM hemishe_e_teacher WHERE id = :id AND delete_ts IS NOT NULL", nativeQuery = true)
+    java.util.Optional<Teacher> findDeletedById(@Param("id") UUID id);
 }

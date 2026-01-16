@@ -1,9 +1,8 @@
 package uz.hemis.service.integration;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import uz.hemis.common.port.cache.DistributedCachePort;
 
 import java.time.Duration;
 import java.util.Base64;
@@ -37,27 +37,15 @@ import java.util.Map;
  * @since 2025-11-21
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class GuvdTokenService {
 
     private final RestTemplate restTemplate;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final DistributedCachePort cachePort;
 
-    /**
-     * Constructor with @Qualifier to resolve RedisTemplate bean ambiguity
-     *
-     * @param restTemplate RestTemplate for HTTP calls
-     * @param redisTemplate Redis template (stringRedisTemplate bean)
-     */
-    public GuvdTokenService(
-            RestTemplate restTemplate,
-            @Qualifier("stringRedisTemplate") RedisTemplate<String, String> redisTemplate) {
-        this.restTemplate = restTemplate;
-        this.redisTemplate = redisTemplate;
-    }
-
-    // Redis cache key
-    private static final String REDIS_KEY = "guvd:oauth2:token";
+    // Cache key
+    private static final String CACHE_KEY = "guvd:oauth2:token";
     private static final Duration TOKEN_TTL = Duration.ofHours(1); // 1 hour cache
 
     // Configuration from .env
@@ -87,7 +75,7 @@ public class GuvdTokenService {
      */
     public String getToken() {
         // 1. Try to get from cache
-        String cachedToken = redisTemplate.opsForValue().get(REDIS_KEY);
+        String cachedToken = cachePort.<String>retrieve(CACHE_KEY).orElse(null);
         if (cachedToken != null && !cachedToken.isEmpty()) {
             log.debug("✅ Using cached GUVD token");
             return cachedToken;
@@ -125,8 +113,8 @@ public class GuvdTokenService {
                 String accessToken = (String) responseBody.get("access_token");
 
                 if (accessToken != null && !accessToken.isEmpty()) {
-                    // 3. Cache token in Redis
-                    redisTemplate.opsForValue().set(REDIS_KEY, accessToken, TOKEN_TTL);
+                    // 3. Cache token
+                    cachePort.store(CACHE_KEY, accessToken, TOKEN_TTL);
                     log.info("✅ GUVD OAuth2 token fetched and cached (TTL: {} seconds)", TOKEN_TTL.getSeconds());
                     return accessToken;
                 } else {
@@ -148,7 +136,7 @@ public class GuvdTokenService {
      * Invalidate cached token (force refresh on next request)
      */
     public void invalidateToken() {
-        redisTemplate.delete(REDIS_KEY);
+        cachePort.delete(CACHE_KEY);
         log.info("🗑️ GUVD token cache invalidated");
     }
 }

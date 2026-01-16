@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * to the implemented plural endpoint /app/rest/v2/entities/hemishe_EEmployeeJobs/**
  * without changing HTTP method, path suffix, query string, or body.
  */
-@Tag(name = "Employee Jobs")
+@Tag(name = "06.Xodim lavozimlari")
 @Hidden
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EEmployeeJob")

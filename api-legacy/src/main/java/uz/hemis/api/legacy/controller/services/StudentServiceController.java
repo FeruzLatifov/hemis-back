@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.StudentIdRequest;
 import uz.hemis.domain.repository.UserRepository;
@@ -92,6 +93,7 @@ public class StudentServiceController {
      * @return DTM verification ballari va ma'lumotlari
      */
     @GetMapping("/verify")
+    @Transactional(readOnly = true)
     @Operation(
             summary = "Talaba tasdiqlash (DTM verification)",
             description = """
@@ -224,6 +226,7 @@ public class StudentServiceController {
      * @return Shartnoma ma'lumotlari (api.hemis.uz dan)
      */
     @GetMapping("/contractInfo")
+    @Transactional(readOnly = true)
     @Operation(
             summary = "Talaba shartnoma ma'lumotlari (Contract Info)",
             description = """
@@ -393,6 +396,7 @@ public class StudentServiceController {
      * @return Talaba ID va ma'lumotlari
      */
     @PostMapping("/id")
+    @Transactional
     @Operation(
             summary = "Check - Talaba ID sini olish",
             description = """
@@ -558,6 +562,7 @@ public class StudentServiceController {
      * @return Success status
      */
     @PostMapping("/update")
+    @Transactional
     @Operation(summary = "Talabani o'zgartirish", description = "Talaba ma'lumotlarini yangilash")
     public ResponseEntity<?> update(@RequestBody Map<String, Object> request) {
         log.info("[CUBA Service] student/update: request={}", request);
@@ -573,6 +578,7 @@ public class StudentServiceController {
      * @return Student validation status
      */
     @GetMapping("/validate")
+    @Transactional(readOnly = true)
     @Operation(
             summary = "Talaba statusini tekshirish (Passport seriya)",
             description = """
@@ -669,6 +675,7 @@ public class StudentServiceController {
      * @return Saqlangan GPA yozuvi
      */
     @PostMapping("/gpa")
+    @Transactional
     @Operation(
             summary = "Talaba GPA servis (UPSERT)",
             description = """

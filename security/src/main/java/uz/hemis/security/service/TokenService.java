@@ -47,8 +47,7 @@ public class TokenService {
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
     private final UserPermissionCacheService permissionCacheService;
-    private final uz.hemis.domain.repository.UserRepository userRepository;
-    private final uz.hemis.domain.repository.SecUserRepository secUserRepository;  // ✅ OLD-HEMIS fallback
+    private final uz.hemis.common.port.security.UserIdentificationPort userIdentificationPort;
 
     @Value("${hemis.security.jwt.expiration:2592000}")  // 30 days (2592000 seconds) - OLD-HEMIS compatible
     private long accessTokenValiditySeconds;
@@ -258,9 +257,9 @@ public class TokenService {
     }
 
     /**
-     * Get userId by username - HYBRID lookup (users → sec_user fallback)
+     * Get userId by username - Uses UserIdentificationPort (Clean Architecture)
      *
-     * <p><strong>CRITICAL - sec_user Compatibility:</strong></p>
+     * <p><strong>Hybrid Lookup (via Port):</strong></p>
      * <ol>
      *   <li>First try users table (new structure)</li>
      *   <li>If not found, fallback to sec_user table (old-hemis)</li>
@@ -271,25 +270,15 @@ public class TokenService {
      * @throws IllegalArgumentException if user not found in either table
      */
     private String getUserId(String username) {
-        // 1️⃣ Try users table first (new structure)
-        var userOpt = userRepository.findByUsername(username);
-        if (userOpt.isPresent()) {
-            String userId = userOpt.get().getId().toString();
-            log.debug("✅ User found in 'users' table: {} -> {}", username, userId);
-            return userId;
-        }
-
-        // 2️⃣ Fallback to sec_user table (old-hemis)
-        var secUserOpt = secUserRepository.findByLogin(username);
-        if (secUserOpt.isPresent()) {
-            String userId = secUserOpt.get().getId().toString();
-            log.debug("✅ User found in 'sec_user' table (fallback): {} -> {}", username, userId);
-            return userId;
-        }
-
-        // 3️⃣ User not found in either table
-        log.error("❌ User not found in 'users' or 'sec_user' tables: {}", username);
-        throw new IllegalArgumentException("User not found: " + username);
+        return userIdentificationPort.getUserIdByUsername(username)
+                .map(uuid -> {
+                    log.debug("User found: {} -> {}", username, uuid);
+                    return uuid.toString();
+                })
+                .orElseThrow(() -> {
+                    log.error("User not found in 'users' or 'sec_user' tables: {}", username);
+                    return new IllegalArgumentException("User not found: " + username);
+                });
     }
 
     // =====================================================

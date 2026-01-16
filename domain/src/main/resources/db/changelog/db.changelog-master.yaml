@@ -355,6 +355,8 @@ databaseChangeLog:
       id: M001_migrate_old_hemis_users
       author: hemis-team
       logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Sync users from sec_user - runs on every change to keep passwords in sync"
       changes:
         - sqlFile:
             path: changesets/migration/M001_migrate_old_hemis_users.sql
