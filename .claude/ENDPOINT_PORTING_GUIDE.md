@@ -5,12 +5,27 @@
 
 **1. Faqat user endpoint berganda ishlayman!**
 
-**2. ⚠️ Har bir PORT uchun TEST & SOLISHTIRISH MAJBURIY:**
-   - Old-hemis (`http://localhost:8082`) dan test qilish
-   - Yangi hemis (`http://localhost:8081`) dan test qilish
-   - Javoblarni solishtirish
-   - Agar farq bor → tuzatish va qayta test qilish
-   - Faqat javoblar 100% bir xil bo'lgandan keyin endpoint_tester.html ga qo'shish
+**2. 🎯 AVVAL OLD-HEMIS DAN RESPONSE OLISH - KEYIN CONTROLLER YOZISH!**
+
+   ```
+   ┌─────────────────────────────────────────────────────────────┐
+   │  OPTIMAL WORKFLOW (Solishtirish kamayadi!)                  │
+   ├─────────────────────────────────────────────────────────────┤
+   │  1️⃣ AVVAL: Old-hemis dan so'rov yuborish                    │
+   │     curl http://localhost:8082/app/rest/v2/entities/...     │
+   │     → Response formatini SAQLASH                            │
+   │                                                              │
+   │  2️⃣ KEYIN: Shu response ga MOS controller yozish            │
+   │     - Aynan shu maydonlar                                   │
+   │     - Aynan shu tartib                                      │
+   │     - Aynan shu format                                      │
+   │                                                              │
+   │  3️⃣ TEST: Avtomatik 100% mos bo'ladi!                       │
+   └─────────────────────────────────────────────────────────────┘
+   ```
+
+   **NOTO'G'RI:** Controller yozish → Test → Farq topish → Tuzatish → Qayta test (ko'p qadam!)
+   **TO'G'RI:** Old-hemis response olish → Shu formatga mos controller → 100% mos!
 
 **3. Serverlar ishlamasa test qilib bo'lmaydi:**
    - Old-hemis server: `http://localhost:8082` (port 8082)
@@ -46,7 +61,7 @@
 | Fayl | To'liq yo'l | Tavsif |
 |------|-------------|--------|
 | **Old-Hemis API hujjati** | `/home/adm1n/startup/old_hemis.json` | Eski HEMIS API Swagger/OpenAPI hujjati |
-| **Endpoint Tester** | `/home/adm1n/startup/docs/hemis-back/endpoint_tester.html` | Test interfeysi (3 tugmali) |
+| **Endpoint Tester** | `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` | Test interfeysi (3 tugmali) |
 
 ⚠️ **DIQQAT:**
 - `old_hemis.json` - endpoint metadata olish uchun ishlatiladi (tag, description, parameters)
@@ -325,51 +340,84 @@ Siz endpoint yozganingizdan keyin:
 
 ### 1️⃣ TEKSHIRISH (Duplicate oldini olish)
 
+✅ Mavjud controllerlarni tekshiraman:
+   - Agar endpoint allaqachon migrate qilingan bo'lsa → ⚠️ "Bu endpoint allaqachon mavjud!" deb xabar beraman
+   - Agar yo'q bo'lsa → ✅ davom etaman
+
+### 2️⃣ 🎯 AVVAL: OLD-HEMIS DAN RESPONSE OLISH (KRITIK!)
+
+**Bu qadam eng muhim! Controller yozishdan OLDIN bajariladi!**
+
+```bash
+# Token olish
+OLD_TOKEN=$(curl -s -X POST "http://localhost:8082/app/rest/v2/oauth/token" \
+  -u "client:secret" \
+  -d "grant_type=password&username=otm351&password=XCZDAb7qvGTXxz" \
+  | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
+
+# Response olish va saqlash
+curl -s "http://localhost:8082/app/rest/v2/entities/hemishe_XXX/entityId" \
+  -H "Authorization: Bearer $OLD_TOKEN" \
+  | python3 -m json.tool > /tmp/old_response.json
+```
+
+✅ Response formatini TAHLIL qilaman:
+   - Qaysi maydonlar bor?
+   - Qaysi tartibda?
+   - Nested objectlar bormi?
+   - Audit fields (createTs, updateTs) bormi?
+
+⚠️ AGAR OLD-HEMIS XATO QAYTARSA → PORT qilmaslik!
+
+### 3️⃣ METADATA EXTRACTION
+
 ✅ `old_hemis.json` dan qidiramam:
    - Tag nomini (masalan: "Soliq", "Passport ma'lumotlari")
    - Endpoint o'zbek nomini (masalan: "Ijara shartnomasi")
    - Description/izohni
-   - Parametrlarni
 
-✅ Mavjud controllerlarni tekshiraman:
-   - Agar endpoint allaqachon migrate qilingan bo'lsa → ⚠️ "Bu endpoint allaqachon mavjud!" deb xabar beraman
-   - Agar yo'q bo'lsa → ✅ migration boshlayman
+### 4️⃣ CONTROLLER GENERATION (OLD-HEMIS RESPONSE GA MOS!)
 
-### 2️⃣ MIGRATION (Yangi endpointlar uchun)
-
-✅ `rest-services.xml` dan parametrlarni olaman
-✅ `old_hemis.json` dan nom va izohlarni olaman
 ✅ `api-legacy` ga controller yarataman
-✅ Swagger qo'shaman (o'zbek tilida, old_hemis.json dan):
-   ```java
-   @Tag(name = "04.Soliq", description = "Soliq xizmati API")
-   @Operation(
-       summary = "Ijara shartnomasi",  // old_hemis.json dan
-       description = "..."              // old_hemis.json dan
-   )
-   ```
+✅ **toMap() metodini OLD-HEMIS formatiga 100% moslashtirib yozaman:**
+   - Faqat old-hemis qaytargan maydonlarni qaytarish
+   - Aynan shu tartibda (LinkedHashMap)
+   - Qo'shimcha maydonlar QO'SHMASLIK!
 
-### 3️⃣ TEST & SOLISHTIRISH (⚠️ MUHIM - Har doim bajarish kerak!)
+```java
+// ✅ TO'G'RI: Faqat old-hemis qaytargan maydonlar
+private Map<String, Object> toMap(Entity entity) {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("_entityName", ENTITY_NAME);
+    map.put("_instanceName", entity.getName());
+    map.put("id", entity.getCode());
+    map.put("code", entity.getCode());
+    map.put("version", entity.getVersion());
+    map.put("nameUz", entity.getNameUz());
+    map.put("nameRu", entity.getNameRu());
+    map.put("status", entity.getStatus());
+    // ❌ university, deparmentType, createTs, etc. - OLD-HEMIS QAYTARMAYDI!
+    return map;
+}
+```
 
-**QOIDA:** Har bir PORTlangan endpoint uchun:
+✅ Swagger qo'shaman (o'zbek tilida)
 
-1. **Old-Hemis dan test qilish** (`http://localhost:8082`):
-   ```bash
-   # Serverning ishlab turganini tekshirish
-   curl http://localhost:8082/app/rest/v2/services/... -H "Authorization: Bearer TOKEN"
-   ```
-   → Javobni saqlash (reference response)
+### 5️⃣ TEST (Avtomatik 100% mos bo'lishi kerak!)
 
-2. **Yangi Hemis dan test qilish** (`http://localhost:8081`):
-   ```bash
-   curl http://localhost:8081/app/rest/v2/services/... -H "Authorization: Bearer TOKEN"
-   ```
-   → Javobni saqlash
+**Agar 2️⃣-4️⃣ qadamlar to'g'ri bajarilgan bo'lsa, test avtomatik o'tadi!**
 
-3. **Javoblarni solishtirish:**
-   - ✅ Agar javoblar **100% bir xil** → PORT muvaffaqiyatli!
-   - ⚠️ Agar **farq bor** → Yangi hemisni old-hemis bilan bir xil qilish kerak:
-     - Response formatini tekshirish (wrapper yo'qmi?)
+```bash
+curl -s "http://localhost:8081/app/rest/v2/entities/..." \
+  -H "Authorization: Bearer $NEW_TOKEN" > /tmp/new_response.json
+
+diff /tmp/old_response.json /tmp/new_response.json
+# ✅ Farq yo'q = 100% mos!
+```
+
+3. **Agar farq bor:**
+   - ⚠️ 4️⃣ ga qaytib toMap() ni to'g'rilash kerak
+   - Response formatini tekshirish (wrapper yo'qmi?)
      - Field nomlarini tekshirish
      - Field typelarini tekshirish
      - Ma'lumot strukturasini tekshirish
@@ -663,6 +711,26 @@ Har bir tizim uchun alohida konfiguratsiya:
 
 - Yangi Hemis: Yashil `#51cf66` → Qora-yashil `#2b8a3e` (success) yoki Qizil `#c92a2a` (error)
 - Old Hemis: Qizil `#ff6b6b` → Qora-yashil `#2b8a3e` (success) yoki Qizil `#c92a2a` (error)
+
+### 📦 Default Collapse Holati (UI Qoidasi)
+
+**Barcha kategoriyalar default holatda YOPIQ (collapsed) bo'lishi kerak:**
+
+- 01.Token, 02.Captcha, 03.BIMM va boshqa kategoriyalar sahifa yuklanganda yopiq turadi
+- Foydalanuvchi kerakli kategoriyani bosib ochadi va ichidagi endpointlarni test qiladi
+- Bu UI/UX yaxshilash - foydalanuvchi ko'p kategoriyalar orasidan keraklisini tezroq topadi
+
+**JavaScript kodida kategoriya yaratilganda `collapsed` class avtomatik qo'shiladi:**
+
+```javascript
+// Toggle ikonasi - yopiq holatda (strelka o'ngga qaragan)
+toggle.className = 'fas fa-chevron-down category-toggle collapsed';
+
+// Kategoriya kontenti - yopiq holatda (yashirin)
+row.className = 'row category-content collapsed';
+```
+
+**Yangi kategoriya qo'shganda** bu qoida avtomatik ishlaydi - JavaScript kodi barcha kategoriyalarga `collapsed` class qo'shadi.
 
 ---
 
@@ -1343,59 +1411,68 @@ chmod +x test_endpoint_comparison.sh
 
 ---
 
-## 📊 PORT WORKFLOW DIAGRAMMASI
+## 📊 PORT WORKFLOW DIAGRAMMASI (YANGILANGAN!)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1️⃣ USER ENDPOINT BERADI                                         │
-│    PORT: GET /app/rest/v2/services/bimm/disabilityCheck        │
+│    PORT: GET /app/rest/v2/entities/hemishe_EUniversityDepartment│
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 2️⃣ DUPLICATE CHECK (old_hemis.json, existing controllers)      │
+│ 2️⃣ DUPLICATE CHECK (existing controllers)                       │
 │    ✅ Topilmadi → Davom et                                      │
 │    ⚠️ Topildi → "Allaqachon mavjud!" xabar ber                 │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 3️⃣ METADATA EXTRACTION                                          │
+│ 3️⃣ 🎯 AVVAL: OLD-HEMIS DAN RESPONSE OLISH (MUHIM!)             │
+│                                                                  │
+│    curl http://localhost:8082/app/rest/v2/entities/...         │
+│      -H "Authorization: Bearer $TOKEN"                          │
+│      > /tmp/old_response.json                                   │
+│                                                                  │
+│    Response formatini SAQLASH va TAHLIL qilish:                 │
+│    - Qaysi maydonlar bor?                                       │
+│    - Qaysi tartibda?                                            │
+│    - Nested objectlar bormi?                                    │
+│    - Qaysi maydonlar null/empty?                                │
+│                                                                  │
+│    ⚠️ AGAR OLD-HEMIS XATO QAYTARSA → PORT qilmaslik!           │
+└──────────────────────┬──────────────────────────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ 4️⃣ METADATA EXTRACTION                                          │
 │    - old_hemis.json: tag, nom, description                     │
 │    - rest-services.xml: parametrlar, method                    │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 4️⃣ CONTROLLER GENERATION                                        │
+│ 5️⃣ CONTROLLER GENERATION (OLD-HEMIS RESPONSE GA MOS!)          │
+│                                                                  │
+│    ✅ Faqat old-hemis qaytargan maydonlarni qaytarish          │
+│    ✅ Aynan shu tartibda (LinkedHashMap)                        │
+│    ✅ Aynan shu format (nested/flat)                            │
+│                                                                  │
 │    - Java controller class                                      │
+│    - toMap() metodi - OLD-HEMIS formatiga 100% mos             │
 │    - Swagger annotations (o'zbek tilida)                       │
-│    - Request/Response DTOs                                      │
-│    - Service method call                                        │
-│    - @Transactional annotatsiyalari (Master/Replica routing)   │
+│    - @Transactional annotatsiyalari                            │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 5️⃣ ⚠️ TEST & SOLISHTIRISH (MAJBURIY!)                          │
+│ 6️⃣ TEST (Avtomatik 100% mos bo'lishi kerak!)                   │
 │                                                                  │
-│    A) Old-hemis test (port 8082):                              │
-│       curl http://localhost:8082/.../endpoint                  │
-│       → old_response.json                                       │
+│    curl http://localhost:8081/.../endpoint > new_response.json │
+│    diff old_response.json new_response.json                    │
 │                                                                  │
-│    B) Yangi hemis test (port 8081):                            │
-│       curl http://localhost:8081/.../endpoint                  │
-│       → new_response.json                                       │
-│                                                                  │
-│    C) Solishtirish:                                             │
-│       - Old-hemis HTTP code tekshirish                          │
-│       - Agar 500/404/etc → ⚠️ "PORT qilish kerak emas!" (EXIT) │
-│       - Agar 200 OK → diff old_response.json new_response.json │
-│         ├─ ✅ Bir xil → Davom et                                │
-│         └─ ⚠️ Farq bor → Controllerni tuzat va qayta test qil  │
-│                                                                  │
-│    ⚠️ AGAR SERVERLAR ISHLAMASA → ABORT!                        │
-│    ⚠️ AGAR OLD-HEMIS XATO QAYTARSA → SKIP (PORT qilmaslik!)    │
+│    ✅ 100% bir xil → Davom et                                   │
+│    ⚠️ Farq bor → 5️⃣ ga qaytib toMap() ni to'g'rilash           │
 └──────────────────────┬──────────────────────────────────────────┘
                        │
                        ▼

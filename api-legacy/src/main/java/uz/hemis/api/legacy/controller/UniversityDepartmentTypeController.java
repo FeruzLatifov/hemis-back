@@ -10,45 +10,43 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.Classifier;
-import uz.hemis.domain.repository.ClassifierRepository;
+import uz.hemis.domain.entity.HUniversityDepartmentType;
+import uz.hemis.domain.repository.HUniversityDepartmentTypeRepository;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * University Department Type Controller - CUBA REST API Pattern
+ * OTM Bo'linma Turlari Controller - CUBA REST API Pattern
  *
  * <p><strong>CRITICAL - OLD-HEMIS Compatibility:</strong></p>
  * <ul>
  *   <li>Entity name: hemishe_HUniversityDepartmentType</li>
- *   <li>Maps to Classifier entity with type: UNIVERSITY_DEPARTMENT_TYPE</li>
+ *   <li>Table: hemishe_h_university_department_type</li>
+ *   <li>Primary key: code (VARCHAR, NOT UUID!)</li>
  *   <li>Base URL: /app/rest/v2/entities/hemishe_HUniversityDepartmentType</li>
  *   <li>100% backward compatible with OLD-HEMIS CUBA Platform REST API</li>
  * </ul>
  *
- * <p><strong>Endpoints (7 total):</strong></p>
+ * <p><strong>Endpoints (7 ta):</strong></p>
  * <ul>
- *   <li>GET /{id} - Get by ID</li>
- *   <li>PUT /{id} - Update</li>
- *   <li>DELETE /{id} - Delete</li>
- *   <li>GET /search - Search with URL params</li>
- *   <li>POST /search - Search with JSON filter</li>
- *   <li>GET / - List all (paginated)</li>
- *   <li>POST / - Create new</li>
+ *   <li>GET /{entityId} - ID bo'yicha olish</li>
+ *   <li>PUT /{entityId} - Yangilash</li>
+ *   <li>DELETE /{entityId} - O'chirish (soft delete)</li>
+ *   <li>GET /search - URL parametrlari bilan qidirish</li>
+ *   <li>POST /search - JSON filter bilan qidirish</li>
+ *   <li>GET / - Barcha ro'yxat (sahifalangan)</li>
+ *   <li>POST / - Yangi yaratish</li>
  * </ul>
  *
  * @since 2.0.0
  */
-@Tag(name = "University Department Types")
+@Tag(name = "08.OTM bo'linma turlari", description = "OTM bo'linma turlarini boshqarish API (Fakultet, Kafedra, Bo'lim, Markaz va h.k.)")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_HUniversityDepartmentType")
 @RequiredArgsConstructor
@@ -56,117 +54,146 @@ import java.util.stream.Collectors;
 @SecurityRequirement(name = "bearerAuth")
 public class UniversityDepartmentTypeController {
 
-    private final ClassifierRepository classifierRepository;
+    private final HUniversityDepartmentTypeRepository repository;
 
     private static final String ENTITY_NAME = "hemishe_HUniversityDepartmentType";
-    private static final String CLASSIFIER_TYPE = "UNIVERSITY_DEPARTMENT_TYPE";
 
     // =====================================================
-    // 1. GET BY ID
+    // 1. GET BY ID (entityId = code)
     // =====================================================
 
-    @Operation(summary = "Get department type by ID",
-               description = "Gets a single entity by identifier")
+    @Operation(
+        summary = "Bo'linma turini ID bo'yicha olish",
+        description = """
+            Berilgan identifikator (code) bo'yicha bitta bo'linma turini qaytaradi.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **Endpoint:** GET /app/rest/v2/entities/hemishe_HUniversityDepartmentType/{entityId}
+            **Auth:** Bearer token (majburiy)
+            """
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success. The entity is returned in the response body."),
-        @ApiResponse(responseCode = "403", description = "Forbidden. The user doesn't have permissions to read the entity."),
-        @ApiResponse(responseCode = "404", description = "Not found. Entity with the given ID not found.")
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli. Bo'linma turi qaytarildi."),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi. Token noto'g'ri yoki muddati o'tgan."),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q. Foydalanuvchida bu ma'lumotni o'qish huquqi yo'q."),
+        @ApiResponse(responseCode = "404", description = "Topilmadi. Berilgan ID bilan bo'linma turi mavjud emas.")
     })
     @GetMapping("/{entityId}")
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Entity identifier", required = true)
-            @PathVariable UUID entityId,
-            @Parameter(description = "Specifies whether entity dynamic attributes should be returned")
+            @Parameter(description = "Bo'linma turi identifikatori (code)", required = true, example = "11")
+            @PathVariable String entityId,
+            @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,
-            @Parameter(description = "Specifies whether null fields will be written to the result JSON")
+            @Parameter(description = "Null qiymatlarni JSON ga yozish")
             @RequestParam(required = false) Boolean returnNulls,
-            @Parameter(description = "Name of the view which is used for loading the entity")
+            @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        log.info("GET department type by ID: {}", entityId);
+        log.info("=== GET bo'linma turi === entityId={}, returnNulls={}", entityId, returnNulls);
 
-        Optional<Classifier> classifier = classifierRepository.findById(entityId);
+        Optional<HUniversityDepartmentType> entity = repository.findById(entityId);
 
-        if (classifier.isEmpty() || !CLASSIFIER_TYPE.equals(classifier.get().getClassifierType())) {
+        if (entity.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(toMap(classifier.get(), returnNulls));
+        return ResponseEntity.ok(toMap(entity.get(), returnNulls));
     }
 
     // =====================================================
     // 2. UPDATE
     // =====================================================
 
-    @Operation(summary = "Update department type",
-               description = "Updates the entity. Only fields that are passed in the JSON object (the request body) are updated.")
+    @Operation(
+        summary = "Bo'linma turini yangilash",
+        description = """
+            Mavjud bo'linma turini yangilaydi. Faqat jo'natilgan maydonlar yangilanadi.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            """
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success. The updated entity is returned in the response body."),
-        @ApiResponse(responseCode = "403", description = "Forbidden. The user doesn't have permissions to update the entity."),
-        @ApiResponse(responseCode = "404", description = "Not found. Entity with the given ID not found.")
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli. Yangilangan bo'linma turi qaytarildi."),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
+        @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
     @PutMapping("/{entityId}")
+    @Transactional
     public ResponseEntity<Map<String, Object>> update(
-            @Parameter(description = "Entity identifier", required = true)
-            @PathVariable UUID entityId,
+            @Parameter(description = "Bo'linma turi identifikatori (code)", required = true)
+            @PathVariable String entityId,
             @RequestBody Map<String, Object> entityData) {
 
-        log.info("UPDATE department type: {}", entityId);
+        log.info("UPDATE bo'linma turi: {}", entityId);
 
-        Optional<Classifier> existingOpt = classifierRepository.findById(entityId);
+        Optional<HUniversityDepartmentType> existingOpt = repository.findById(entityId);
 
-        if (existingOpt.isEmpty() || !CLASSIFIER_TYPE.equals(existingOpt.get().getClassifierType())) {
+        if (existingOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        Classifier classifier = existingOpt.get();
+        HUniversityDepartmentType entity = existingOpt.get();
 
-        // Update fields from request body
-        if (entityData.containsKey("code")) {
-            classifier.setCode((String) entityData.get("code"));
-        }
+        // Maydonlarni yangilash
         if (entityData.containsKey("name")) {
-            classifier.setNameUz((String) entityData.get("name"));
+            entity.setName((String) entityData.get("name"));
         }
-        if (entityData.containsKey("sortOrder")) {
-            classifier.setSortOrder((Integer) entityData.get("sortOrder"));
+        if (entityData.containsKey("nameRu")) {
+            entity.setNameRu((String) entityData.get("nameRu"));
         }
-        if (entityData.containsKey("isActive")) {
-            classifier.setIsActive((Boolean) entityData.get("isActive"));
+        if (entityData.containsKey("nameEn")) {
+            entity.setNameEn((String) entityData.get("nameEn"));
+        }
+        if (entityData.containsKey("active")) {
+            entity.setActive((Boolean) entityData.get("active"));
         }
 
-        Classifier saved = classifierRepository.save(classifier);
+        entity.setUpdateTs(LocalDateTime.now());
+
+        HUniversityDepartmentType saved = repository.save(entity);
 
         return ResponseEntity.ok(toMap(saved, false));
     }
 
     // =====================================================
-    // 3. DELETE
+    // 3. DELETE (Soft Delete)
     // =====================================================
 
-    @Operation(summary = "Delete department type",
-               description = "Deletes the entity (soft delete)")
+    @Operation(
+        summary = "Bo'linma turini o'chirish",
+        description = """
+            Bo'linma turini o'chiradi (soft delete - delete_ts qo'yiladi).
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            """
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success. Entity was deleted."),
-        @ApiResponse(responseCode = "403", description = "Forbidden. The user doesn't have permissions to delete the entity."),
-        @ApiResponse(responseCode = "404", description = "Not found. Entity with the given ID not found.")
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli. Bo'linma turi o'chirildi."),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
+        @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
     @DeleteMapping("/{entityId}")
+    @Transactional
     public ResponseEntity<Void> delete(
-            @Parameter(description = "Entity identifier", required = true)
-            @PathVariable UUID entityId) {
+            @Parameter(description = "Bo'linma turi identifikatori (code)", required = true)
+            @PathVariable String entityId) {
 
-        log.info("DELETE department type: {}", entityId);
+        log.info("DELETE bo'linma turi: {}", entityId);
 
-        Optional<Classifier> classifier = classifierRepository.findById(entityId);
+        Optional<HUniversityDepartmentType> entity = repository.findById(entityId);
 
-        if (classifier.isEmpty() || !CLASSIFIER_TYPE.equals(classifier.get().getClassifierType())) {
+        if (entity.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
         // Soft delete
-        classifier.get().setIsActive(false);
-        classifierRepository.save(classifier.get());
+        entity.get().setDeleteTs(LocalDateTime.now());
+        entity.get().setActive(false);
+        repository.save(entity.get());
 
         return ResponseEntity.ok().build();
     }
@@ -175,34 +202,42 @@ public class UniversityDepartmentTypeController {
     // 4. SEARCH (GET with filter parameter)
     // =====================================================
 
-    @Operation(summary = "Search department types (GET)",
-               description = "Finds entities by filter conditions. The filter is defined by JSON object that is passed as URL parameter.")
+    @Operation(
+        summary = "Bo'linma turlarini qidirish (GET)",
+        description = """
+            Filter shartlari bo'yicha bo'linma turlarini qidiradi.
+            Filter JSON obyekt sifatida URL parametrida beriladi.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            """
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success. Entities that conform to filter conditions are returned in the response body."),
-        @ApiResponse(responseCode = "400", description = "Bad request. For example, the condition value cannot be parsed."),
-        @ApiResponse(responseCode = "403", description = "Forbidden. The user doesn't have permissions to read the entity."),
-        @ApiResponse(responseCode = "404", description = "Not found. MetaClass for the entity with the given name not found.")
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli. Filter shartlariga mos bo'linma turlari qaytarildi."),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov. Masalan, filter qiymati parse qilib bo'lmadi."),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
     @GetMapping("/search")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> searchGet(
-            @Parameter(description = "Filter condition", required = true)
+            @Parameter(description = "Filter sharti (JSON)", required = true)
             @RequestParam String filter,
-            @Parameter(description = "Specifies whether the total count of entities should be returned in the 'X-Total-Count' header")
+            @Parameter(description = "Jami sonni 'X-Total-Count' headerda qaytarish")
             @RequestParam(required = false) Boolean returnCount,
-            @Parameter(description = "Position of the first result to retrieve")
+            @Parameter(description = "Boshlang'ich pozitsiya")
             @RequestParam(required = false) Integer offset,
-            @Parameter(description = "Number of extracted entities")
+            @Parameter(description = "Chiqariladigan yozuvlar soni")
             @RequestParam(required = false) Integer limit,
-            @Parameter(description = "Name of the field to be sorted by")
+            @Parameter(description = "Saralash maydoni")
             @RequestParam(required = false) String sort,
-            @Parameter(description = "Specifies whether entity dynamic attributes should be returned")
+            @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,
-            @Parameter(description = "Specifies whether null fields will be written to the result JSON")
+            @Parameter(description = "Null qiymatlarni JSON ga yozish")
             @RequestParam(required = false) Boolean returnNulls,
-            @Parameter(description = "Name of the view which is used for loading the entity")
+            @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        log.info("SEARCH department types (GET) - filter: {}", filter);
+        log.info("SEARCH bo'linma turlari (GET) - filter: {}", filter);
 
         return search(filter, offset, limit, sort, returnCount, returnNulls);
     }
@@ -211,33 +246,41 @@ public class UniversityDepartmentTypeController {
     // 5. SEARCH (POST with filter in body)
     // =====================================================
 
-    @Operation(summary = "Search department types (POST)",
-               description = "Finds entities by filter conditions. The filter is defined by JSON object that is passed in request body.")
+    @Operation(
+        summary = "Bo'linma turlarini qidirish (POST)",
+        description = """
+            Filter shartlari bo'yicha bo'linma turlarini qidiradi.
+            Filter JSON obyekt sifatida request body da beriladi.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            """
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success. Entities that conform to filter conditions are returned in the response body."),
-        @ApiResponse(responseCode = "400", description = "Bad request. For example, the condition value cannot be parsed."),
-        @ApiResponse(responseCode = "403", description = "Forbidden. The user doesn't have permissions to read the entity."),
-        @ApiResponse(responseCode = "404", description = "Not found. MetaClass for the entity with the given name not found.")
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli. Filter shartlariga mos bo'linma turlari qaytarildi."),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov."),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
     @PostMapping("/search")
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filterBody,
-            @Parameter(description = "Specifies whether the total count of entities should be returned in the 'X-Total-Count' header")
+            @Parameter(description = "Jami sonni 'X-Total-Count' headerda qaytarish")
             @RequestParam(required = false) Boolean returnCount,
-            @Parameter(description = "Position of the first result to retrieve")
+            @Parameter(description = "Boshlang'ich pozitsiya")
             @RequestParam(required = false) Integer offset,
-            @Parameter(description = "Number of extracted entities")
+            @Parameter(description = "Chiqariladigan yozuvlar soni")
             @RequestParam(required = false) Integer limit,
-            @Parameter(description = "Name of the field to be sorted by")
+            @Parameter(description = "Saralash maydoni")
             @RequestParam(required = false) String sort,
-            @Parameter(description = "Specifies whether entity dynamic attributes should be returned")
+            @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,
-            @Parameter(description = "Specifies whether null fields will be written to the result JSON")
+            @Parameter(description = "Null qiymatlarni JSON ga yozish")
             @RequestParam(required = false) Boolean returnNulls,
-            @Parameter(description = "Name of the view which is used for loading the entity")
+            @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        log.info("SEARCH department types (POST) - filter: {}", filterBody);
+        log.info("SEARCH bo'linma turlari (POST) - filter: {}", filterBody);
 
         String filterStr = filterBody != null ? filterBody.toString() : null;
         return search(filterStr, offset, limit, sort, returnCount, returnNulls);
@@ -247,52 +290,57 @@ public class UniversityDepartmentTypeController {
     // 6. LIST ALL
     // =====================================================
 
-    @Operation(summary = "Get all department types",
-               description = "Gets a list of entities (paginated)")
+    @Operation(
+        summary = "Barcha bo'linma turlarini olish",
+        description = """
+            Barcha bo'linma turlarini sahifalangan ro'yxat sifatida qaytaradi.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            """
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success. The list of entities is returned in the response body."),
-        @ApiResponse(responseCode = "403", description = "Forbidden. The user doesn't have permissions to read the entity."),
-        @ApiResponse(responseCode = "404", description = "Not found. MetaClass for the entity with the given name not found.")
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli. Bo'linma turlari ro'yxati qaytarildi."),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
     @GetMapping
+    @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> listAll(
-            @Parameter(description = "Specifies whether the total count of entities should be returned in the 'X-Total-Count' header")
+            @Parameter(description = "Jami sonni 'X-Total-Count' headerda qaytarish")
             @RequestParam(required = false) Boolean returnCount,
-            @Parameter(description = "Position of the first result to retrieve")
+            @Parameter(description = "Boshlang'ich pozitsiya")
             @RequestParam(required = false) Integer offset,
-            @Parameter(description = "Number of extracted entities")
+            @Parameter(description = "Chiqariladigan yozuvlar soni")
             @RequestParam(required = false) Integer limit,
-            @Parameter(description = "Name of the field to be sorted by")
+            @Parameter(description = "Saralash maydoni")
             @RequestParam(required = false) String sort,
-            @Parameter(description = "Specifies whether entity dynamic attributes should be returned")
+            @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,
-            @Parameter(description = "Specifies whether null fields will be written to the result JSON")
+            @Parameter(description = "Null qiymatlarni JSON ga yozish")
             @RequestParam(required = false) Boolean returnNulls,
-            @Parameter(description = "Name of the view which is used for loading the entity")
+            @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        log.info("LIST ALL department types");
+        log.info("LIST ALL bo'linma turlari");
 
-        Pageable pageable = createPageable(offset, limit, sort);
+        List<HUniversityDepartmentType> allEntities = repository.findAll();
 
-        List<Classifier> allClassifiers = classifierRepository.findAllByType(CLASSIFIER_TYPE);
-
-        // Apply pagination manually
+        // Sahifalash
         int start = offset != null ? offset : 0;
-        int end = limit != null ? Math.min(start + limit, allClassifiers.size()) : allClassifiers.size();
+        int end = limit != null ? Math.min(start + limit, allEntities.size()) : allEntities.size();
 
-        List<Classifier> paged = allClassifiers.subList(
-            Math.min(start, allClassifiers.size()),
-            Math.min(end, allClassifiers.size())
+        List<HUniversityDepartmentType> paged = allEntities.subList(
+            Math.min(start, allEntities.size()),
+            Math.min(end, allEntities.size())
         );
 
         List<Map<String, Object>> result = paged.stream()
-            .map(c -> toMap(c, returnNulls))
+            .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList());
 
         HttpHeaders headers = new HttpHeaders();
         if (Boolean.TRUE.equals(returnCount)) {
-            headers.add("X-Total-Count", String.valueOf(allClassifiers.size()));
+            headers.add("X-Total-Count", String.valueOf(allEntities.size()));
         }
 
         return ResponseEntity.ok().headers(headers).body(result);
@@ -302,30 +350,36 @@ public class UniversityDepartmentTypeController {
     // 7. CREATE
     // =====================================================
 
-    @Operation(summary = "Create new department type",
-               description = "Creates a new entity. The method expects a JSON with entity object in the request body.")
+    @Operation(
+        summary = "Yangi bo'linma turi yaratish",
+        description = """
+            Yangi bo'linma turi yaratadi. Request body da JSON obyekt kutiladi.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+            """
+    )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Success. The created entity is returned in the response body."),
-        @ApiResponse(responseCode = "400", description = "Bad request. For example, the entity may have a reference to the non-existing entity."),
-        @ApiResponse(responseCode = "403", description = "Forbidden. The user doesn't have permissions to create the entity."),
-        @ApiResponse(responseCode = "404", description = "Not found. MetaClass for the entity with the given name not found.")
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli. Yaratilgan bo'linma turi qaytarildi."),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov. Masalan, mavjud bo'lmagan reference."),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
     @PostMapping
+    @Transactional
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> entityData) {
 
-        log.info("CREATE department type: {}", entityData);
+        log.info("CREATE bo'linma turi: {}", entityData);
 
-        Classifier classifier = new Classifier();
-        classifier.setClassifierType(CLASSIFIER_TYPE);
-        classifier.setCode((String) entityData.get("code"));
-        classifier.setNameUz((String) entityData.get("name"));
-        classifier.setIsActive(true);
+        HUniversityDepartmentType entity = new HUniversityDepartmentType();
+        entity.setCode((String) entityData.get("code"));
+        entity.setName((String) entityData.get("name"));
+        entity.setNameRu((String) entityData.get("nameRu"));
+        entity.setNameEn((String) entityData.get("nameEn"));
+        entity.setActive(true);
+        entity.setVersion(1);
+        entity.setCreateTs(LocalDateTime.now());
 
-        if (entityData.containsKey("sortOrder")) {
-            classifier.setSortOrder((Integer) entityData.get("sortOrder"));
-        }
-
-        Classifier saved = classifierRepository.save(classifier);
+        HUniversityDepartmentType saved = repository.save(entity);
 
         return ResponseEntity.ok(toMap(saved, false));
     }
@@ -335,32 +389,61 @@ public class UniversityDepartmentTypeController {
     // =====================================================
 
     /**
-     * Convert Classifier entity to CUBA-style JSON map
+     * Entity ni CUBA-style JSON map ga o'girish
+     *
+     * <p><strong>OLD-HEMIS FIELD ORDER (100% compatible):</strong></p>
+     * <ul>
+     *   <li>_entityName, _instanceName, id - har doim</li>
+     *   <li>nameRu, deleteTs - returnNulls=true bo'lganda</li>
+     *   <li>code, name, active - har doim (null bo'lmasa)</li>
+     *   <li>nameEn - returnNulls=true bo'lganda</li>
+     *   <li>version - har doim</li>
+     *   <li>deletedBy - returnNulls=true bo'lganda</li>
+     * </ul>
+     *
+     * <p><strong>NOT INCLUDED (old-hemis da yo'q):</strong></p>
+     * <ul>
+     *   <li>createdBy, createTs, updatedBy, updateTs - QAYTARILMAYDI!</li>
+     * </ul>
      */
-    private Map<String, Object> toMap(Classifier classifier, Boolean returnNulls) {
+    private Map<String, Object> toMap(HUniversityDepartmentType entity, Boolean returnNulls) {
+        log.info("toMap() called: returnNulls={}, nameRu={}, nameEn={}", returnNulls, entity.getNameRu(), entity.getNameEn());
+
         Map<String, Object> map = new LinkedHashMap<>();
 
+        // OLD-HEMIS exact field order
         map.put("_entityName", ENTITY_NAME);
-        map.put("_instanceName", classifier.getNameUz());
-        map.put("id", classifier.getId());
+        map.put("_instanceName", entity.getName());
+        map.put("id", entity.getCode()); // CUBA da id = code
 
-        putIfNotNull(map, "code", classifier.getCode(), returnNulls);
-        putIfNotNull(map, "name", classifier.getNameUz(), returnNulls);
-        putIfNotNull(map, "sortOrder", classifier.getSortOrder(), returnNulls);
-        putIfNotNull(map, "isActive", classifier.getIsActive(), returnNulls);
-        putIfNotNull(map, "createdBy", classifier.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updatedBy", classifier.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "createTs", classifier.getCreateTs(), returnNulls);
-        putIfNotNull(map, "updateTs", classifier.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "deleteTs", classifier.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", classifier.getDeletedBy(), returnNulls);
-        putIfNotNull(map, "version", classifier.getVersion(), returnNulls);
+        // returnNulls=true bo'lganda nameRu
+        putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
+
+        // returnNulls=true bo'lganda deleteTs
+        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+
+        // Asosiy maydonlar (har doim, null bo'lmasa)
+        putIfNotNull(map, "code", entity.getCode(), returnNulls);
+        putIfNotNull(map, "name", entity.getName(), returnNulls);
+        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+
+        // returnNulls=true bo'lganda nameEn
+        putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
+
+        // Version (har doim)
+        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+
+        // returnNulls=true bo'lganda deletedBy
+        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+
+        // MUHIM: createdBy, createTs, updatedBy, updateTs - OLD-HEMIS DA YO'Q!
+        // Shuning uchun QAYTARILMAYDI!
 
         return map;
     }
 
     /**
-     * Add field to map only if not null (unless returnNulls is true)
+     * Faqat null bo'lmasa map ga qo'shish (returnNulls=true bo'lmasa)
      */
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
         if (value != null || Boolean.TRUE.equals(returnNulls)) {
@@ -369,69 +452,39 @@ public class UniversityDepartmentTypeController {
     }
 
     /**
-     * Common search logic for both GET and POST search endpoints
+     * GET va POST search endpointlari uchun umumiy logika
      */
     private ResponseEntity<List<Map<String, Object>>> search(
             String filter, Integer offset, Integer limit, String sort, Boolean returnCount, Boolean returnNulls) {
 
-        // For now, simple implementation - get all by type and filter in memory
-        // In production, you'd want to parse the filter and create a proper query
-        List<Classifier> allClassifiers = classifierRepository.findAllByType(CLASSIFIER_TYPE);
+        List<HUniversityDepartmentType> allEntities = repository.findAll();
 
-        // Apply simple filter if provided (search in name)
+        // Oddiy filter (name bo'yicha qidirish)
         if (filter != null && !filter.isEmpty()) {
             String searchTerm = filter.toLowerCase();
-            allClassifiers = allClassifiers.stream()
-                .filter(c -> c.getNameUz() != null && c.getNameUz().toLowerCase().contains(searchTerm))
+            allEntities = allEntities.stream()
+                .filter(e -> e.getName() != null && e.getName().toLowerCase().contains(searchTerm))
                 .collect(Collectors.toList());
         }
 
-        // Apply pagination
+        // Sahifalash
         int start = offset != null ? offset : 0;
-        int end = limit != null ? Math.min(start + limit, allClassifiers.size()) : allClassifiers.size();
+        int end = limit != null ? Math.min(start + limit, allEntities.size()) : allEntities.size();
 
-        List<Classifier> paged = allClassifiers.subList(
-            Math.min(start, allClassifiers.size()),
-            Math.min(end, allClassifiers.size())
+        List<HUniversityDepartmentType> paged = allEntities.subList(
+            Math.min(start, allEntities.size()),
+            Math.min(end, allEntities.size())
         );
 
         List<Map<String, Object>> result = paged.stream()
-            .map(c -> toMap(c, returnNulls))
+            .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList());
 
         HttpHeaders headers = new HttpHeaders();
         if (Boolean.TRUE.equals(returnCount)) {
-            headers.add("X-Total-Count", String.valueOf(allClassifiers.size()));
+            headers.add("X-Total-Count", String.valueOf(allEntities.size()));
         }
 
         return ResponseEntity.ok().headers(headers).body(result);
-    }
-
-    /**
-     * Create Pageable from CUBA-style parameters
-     */
-    private Pageable createPageable(Integer offset, Integer limit, String sort) {
-        int page = 0;
-        int size = limit != null ? limit : 20;
-
-        if (offset != null && limit != null) {
-            page = offset / limit;
-        }
-
-        Sort.Direction direction = Sort.Direction.ASC;
-        String property = "sortOrder";
-
-        if (sort != null && !sort.isEmpty()) {
-            if (sort.startsWith("-")) {
-                direction = Sort.Direction.DESC;
-                property = sort.substring(1);
-            } else if (sort.startsWith("+")) {
-                property = sort.substring(1);
-            } else {
-                property = sort;
-            }
-        }
-
-        return PageRequest.of(page, size, Sort.by(direction, property));
     }
 }

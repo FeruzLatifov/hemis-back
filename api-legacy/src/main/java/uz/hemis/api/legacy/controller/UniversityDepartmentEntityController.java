@@ -677,11 +677,21 @@ public class UniversityDepartmentEntityController {
     private Map<String, Object> toMap(UniversityDepartment entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
 
+        // ✅ OLD-HEMIS 100% COMPATIBLE FORMAT
+        // Old-hemis response formati (faqat shu maydonlar!):
+        // {
+        //   "_entityName": "hemishe_EUniversityDepartment",
+        //   "_instanceName": "O'zbek tili va adabiyoti",
+        //   "id": "351-118",
+        //   "code": "351-118",
+        //   "version": 5,
+        //   "nameUz": "O'zbek tili va adabiyoti",
+        //   "nameRu": "O'zbek tili va adabiyoti",
+        //   "status": false
+        // }
+
         // CUBA meta fields
         map.put("_entityName", ENTITY_NAME);
-        // ✅ OLD-HEMIS FORMAT: faqat nameUz (code qo'shilmasin!)
-        // Old response: "_instanceName": "Test bo'lim"
-        // XATO format: "_instanceName": "Test bo'lim [305-99-TEST]"
         String instanceName = entity.getNameUz() != null
                 ? entity.getNameUz()
                 : entity.getCode();
@@ -691,50 +701,20 @@ public class UniversityDepartmentEntityController {
         map.put("id", entity.getCode());
         map.put("code", entity.getCode());
 
-        // Nested parent (if exists)
-        if (entity.getParentCode() != null) {
-            Map<String, Object> parent = new LinkedHashMap<>();
-            parent.put("_entityName", ENTITY_NAME);
-            parent.put("id", entity.getParentCode());
-            map.put("parent", parent);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("parent", null);
-        }
+        // Version - OLD-HEMIS qaytaradi
+        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
 
-        // Nested university
-        if (entity.getUniversityCode() != null) {
-            Map<String, Object> university = new LinkedHashMap<>();
-            university.put("_entityName", "hemishe_EUniversity");
-            university.put("code", entity.getUniversityCode());
-            map.put("university", university);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("university", null);
-        }
-
-        // Nested deparmentType
-        if (entity.getDepartmentType() != null) {
-            Map<String, Object> deptType = new LinkedHashMap<>();
-            deptType.put("_entityName", "hemishe_HUniversityDepartmentType");
-            deptType.put("code", entity.getDepartmentType());
-            map.put("deparmentType", deptType);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("deparmentType", null);
-        }
-
-        // Main fields
+        // Main fields - OLD-HEMIS qaytaradi
         putIfNotNull(map, "nameUz", entity.getNameUz(), returnNulls);
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
-        putIfNotNull(map, "path", entity.getPath(), returnNulls);
         putIfNotNull(map, "status", entity.getStatus(), returnNulls);
 
-        // Audit fields (only for full view)
-        if ("eUniversityDepartment-view".equals(view) || view == null) {
-            putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-            putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-            putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-            putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-            putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        }
+        // ❌ OLD-HEMIS QAYTARMAYDI - shuning uchun olib tashlandi:
+        // - parent (nested object)
+        // - university (nested object)
+        // - deparmentType (nested object)
+        // - path
+        // - createTs, createdBy, updateTs, updatedBy (audit fields)
 
         return map;
     }
