@@ -32,7 +32,7 @@ import java.util.Optional;
  *
  * <p><strong>Soft Delete Filtering:</strong></p>
  * <ul>
- *   <li>@Where(clause = "delete_ts IS NULL") on University entity</li>
+ *   <li>@SQLRestriction("delete_ts IS NULL") on University entity</li>
  *   <li>All queries automatically filter deleted records</li>
  * </ul>
  *

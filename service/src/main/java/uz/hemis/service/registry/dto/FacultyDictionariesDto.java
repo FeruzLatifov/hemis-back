@@ -49,14 +49,14 @@ public class FacultyDictionariesDto {
         @Schema(
             description = "Unique code/value for this option",
             example = "true",
-            required = true
+            requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String code;
 
         @Schema(
             description = "Display label (localized)",
             example = "Active",
-            required = true
+            requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String label;
 

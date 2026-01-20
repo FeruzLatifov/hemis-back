@@ -5,15 +5,15 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Diploma Entity
+ * Diploma Entity - Talaba diplomlari
  *
- * Table: hemishe_e_diploma
+ * Table: hemishe_e_student_diploma
  * Purpose: Student diploma/degree certificates
  *
  * Relationships:
@@ -21,12 +21,12 @@ import java.util.UUID;
  * - References DiplomaBlank (blank form)
  * - Belongs to University
  *
- * Legacy: Maps to old-HEMIS Diploma entity
+ * Legacy: Maps to old-HEMIS EStudentDiploma entity (hemishe_EStudentDiploma)
  * External Access: /app/rest/diploma/info, /app/rest/diploma/byhash
  */
 @Entity
-@Table(name = "hemishe_e_diploma")
-@Where(clause = "delete_ts IS NULL")
+@Table(name = "hemishe_e_student_diploma")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor

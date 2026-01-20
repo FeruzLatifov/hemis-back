@@ -2,7 +2,7 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -47,7 +47,7 @@ import java.util.Set;
         @Index(name = "idx_system_messages_active", columnList = "is_active")
     }
 )
-@Where(clause = "deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor

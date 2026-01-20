@@ -2,7 +2,7 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 /**
  * System Configuration Entity - UNIVER Pattern
@@ -50,7 +50,7 @@ import org.hibernate.annotations.Where;
         @Index(name = "idx_configurations_category", columnList = "category")
     }
 )
-@Where(clause = "deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor

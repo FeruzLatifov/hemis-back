@@ -9,29 +9,28 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * Teacher Position Type Entity - Xodim lavozimlari klassifikatori
+ * Student Status Type Entity - Talaba holatlari klassifikatori
  *
- * <p>Table: hemishe_h_teacher_position_type</p>
+ * <p>Table: hemishe_h_student_status_type</p>
  * <p>Primary key: code (VARCHAR, not UUID)</p>
  *
- * <p>Lavozimlar (227 ta):</p>
+ * <p>Holatlar:</p>
  * <ul>
- *   <li>11 - Stajer-o'qituvchi</li>
- *   <li>12 - O'qituvchi</li>
- *   <li>13 - Katta o'qituvchi</li>
- *   <li>14 - Dotsent</li>
- *   <li>15 - Professor</li>
- *   <li>... va boshqalar</li>
+ *   <li>10 - Boshqa</li>
+ *   <li>11 - O'qimoqda</li>
+ *   <li>12 - Chetlashgan</li>
+ *   <li>13 - Akademik ta'til</li>
+ *   <li>14 - Bitirgan</li>
  * </ul>
  *
  * @since 1.0.0
  */
 @Entity
-@Table(name = "hemishe_h_teacher_position_type")
+@Table(name = "hemishe_h_student_status_type")
 @SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class TeacherPositionType implements Serializable {
+public class StudentStatusType implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

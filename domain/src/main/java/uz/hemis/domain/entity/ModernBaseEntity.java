@@ -24,7 +24,7 @@ import java.util.UUID;
  * <ul>
  *   <li>Active records: deleted_at IS NULL</li>
  *   <li>Deleted records: deleted_at IS NOT NULL</li>
- *   <li>Use @Where(clause = "deleted_at IS NULL") on entity classes</li>
+ *   <li>Use @SQLRestriction("deleted_at IS NULL") on entity classes</li>
  * </ul>
  *
  * @since 2.0.0

@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 /**
  * Faculty Entity - Mapped to hemishe_e_faculty table
@@ -14,7 +14,7 @@ import org.hibernate.annotations.Where;
  * <ul>
  *   <li>Table: hemishe_e_faculty</li>
  *   <li>Primary Key: id (UUID) - extends BaseEntity</li>
- *   <li>Soft delete: @Where(clause = "delete_ts IS NULL")</li>
+ *   <li>Soft delete: @SQLRestriction("delete_ts IS NULL")</li>
  * </ul>
  *
  * <p>Extends {@link BaseEntity} for CUBA audit pattern.</p>
@@ -24,7 +24,7 @@ import org.hibernate.annotations.Where;
  */
 @Entity
 @Table(name = "hemishe_e_faculty")
-@Where(clause = "delete_ts IS NULL")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 public class Faculty extends BaseEntity {

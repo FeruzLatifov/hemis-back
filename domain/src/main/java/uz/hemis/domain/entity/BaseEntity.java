@@ -33,7 +33,7 @@ import java.util.UUID;
  * <ul>
  *   <li>Active records: delete_ts IS NULL</li>
  *   <li>Deleted records: delete_ts IS NOT NULL</li>
- *   <li>Use @Where(clause = "delete_ts IS NULL") on entity classes</li>
+ *   <li>Use @SQLRestriction("delete_ts IS NULL") on entity classes</li>
  * </ul>
  *
  * @since 1.0.0

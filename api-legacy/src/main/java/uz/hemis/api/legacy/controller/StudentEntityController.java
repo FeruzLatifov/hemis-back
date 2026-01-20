@@ -271,7 +271,8 @@ public class StudentEntityController {
 
         try {
             // Service layer - soft delete (no university check - OLD-HEMIS compatible)
-            studentService.softDelete(entityId);
+            // Using null for userUniversityCode to skip authorization check
+            studentService.softDelete(entityId, null);
 
             // OLD-HEMIS COMPATIBLE: Return 200 OK with empty body
             return ResponseEntity.ok().build();

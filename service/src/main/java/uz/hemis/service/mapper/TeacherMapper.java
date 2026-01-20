@@ -46,6 +46,7 @@ public interface TeacherMapper {
      * @return DTO
      */
     @Mapping(target = "fullName", ignore = true)  // Set via @AfterMapping
+    @Mapping(target = "firstname", ignore = true) // Not in entity
     TeacherDto toDto(Teacher teacher);
 
     /**
@@ -90,6 +91,13 @@ public interface TeacherMapper {
     @Mapping(target = "deleteTs", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "citizenship", ignore = true)
+    @Mapping(target = "code", ignore = true)
+    @Mapping(target = "serialNumber", ignore = true)
+    @Mapping(target = "address", ignore = true)
+    @Mapping(target = "phone", ignore = true)
+    @Mapping(target = "employeeYear", ignore = true)
+    @Mapping(target = "tag", ignore = true)
     Teacher toEntity(TeacherDto dto);
 
     /**
@@ -123,6 +131,13 @@ public interface TeacherMapper {
     @Mapping(target = "deleteTs", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "citizenship", ignore = true)
+    @Mapping(target = "code", ignore = true)
+    @Mapping(target = "serialNumber", ignore = true)
+    @Mapping(target = "address", ignore = true)
+    @Mapping(target = "phone", ignore = true)
+    @Mapping(target = "employeeYear", ignore = true)
+    @Mapping(target = "tag", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(TeacherDto dto, @MappingTarget Teacher teacher);
 }

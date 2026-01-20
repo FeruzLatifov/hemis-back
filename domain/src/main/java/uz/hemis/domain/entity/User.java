@@ -3,7 +3,7 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -28,7 +28,7 @@ import java.util.Set;
  *
  * <p><strong>Soft Delete Pattern:</strong></p>
  * <ul>
- *   <li>@Where(clause = "delete_ts IS NULL")</li>
+ *   <li>@SQLRestriction("delete_ts IS NULL")</li>
  *   <li>Disabled users: enabled = false (NOT deleted)</li>
  *   <li>Deleted users: delete_ts != null</li>
  * </ul>
@@ -38,7 +38,7 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "users")
-@Where(clause = "deleted_at IS NULL")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 public class User extends ModernBaseEntity {

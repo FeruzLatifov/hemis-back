@@ -406,7 +406,7 @@ public class CubaTeacherServiceController {
      */
     @Schema(description = "O'qituvchi ID so'rovi (CUBA format)")
     public static class TeacherIdRequestWrapper {
-        @Schema(description = "So'rov ma'lumotlari", required = true)
+        @Schema(description = "So'rov ma'lumotlari", requiredMode = Schema.RequiredMode.REQUIRED)
         public TeacherIdRequest data;
     }
 
@@ -415,7 +415,7 @@ public class CubaTeacherServiceController {
      */
     @Schema(description = "Xodim lavozimi so'rovi (CUBA format)")
     public static class AddJobRequestWrapper {
-        @Schema(description = "Lavozim ma'lumotlari", required = true)
+        @Schema(description = "Lavozim ma'lumotlari", requiredMode = Schema.RequiredMode.REQUIRED)
         public AddJobRequest job;
     }
 

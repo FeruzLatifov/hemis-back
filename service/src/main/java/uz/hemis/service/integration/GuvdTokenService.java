@@ -73,6 +73,7 @@ public class GuvdTokenService {
      *
      * @return OAuth2 access token
      */
+    @SuppressWarnings("unchecked")
     public String getToken() {
         // 1. Try to get from cache
         String cachedToken = cachePort.<String>retrieve(CACHE_KEY).orElse(null);

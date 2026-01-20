@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 
@@ -26,7 +26,7 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "hemishe_e_diploma_blank")
-@Where(clause = "delete_ts IS NULL")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor

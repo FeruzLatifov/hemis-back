@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,7 +18,7 @@ import java.util.UUID;
  * <ul>
  *   <li>Table: hemishe_e_student_meta (EXACT name from ministry.sql)</li>
  *   <li>Columns: All names preserved with underscores</li>
- *   <li>Soft delete: @Where(clause = "delete_ts IS NULL")</li>
+ *   <li>Soft delete: @SQLRestriction("delete_ts IS NULL")</li>
  *   <li>41 columns total (7 audit + 34 business)</li>
  *   <li>Unique index: (u_id, _university)</li>
  * </ul>
@@ -32,7 +32,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "hemishe_e_student_meta")
-@Where(clause = "delete_ts IS NULL")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 public class StudentMeta extends BaseEntity {

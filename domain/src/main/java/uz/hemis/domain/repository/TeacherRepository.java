@@ -25,7 +25,7 @@ import java.util.UUID;
  *
  * <p><strong>Soft Delete Filtering:</strong></p>
  * <ul>
- *   <li>@Where(clause = "delete_ts IS NULL") on Teacher entity</li>
+ *   <li>@SQLRestriction("delete_ts IS NULL") on Teacher entity</li>
  *   <li>All queries automatically filter deleted records</li>
  * </ul>
  *
@@ -373,7 +373,7 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
      * Find soft-deleted teacher by ID
      *
      * <p><strong>Use case:</strong> Restoring soft-deleted teachers</p>
-     * <p>This query bypasses @Where(clause = "delete_ts IS NULL") filter</p>
+     * <p>This query bypasses @SQLRestriction("delete_ts IS NULL") filter</p>
      *
      * @param id teacher ID
      * @return deleted teacher if found

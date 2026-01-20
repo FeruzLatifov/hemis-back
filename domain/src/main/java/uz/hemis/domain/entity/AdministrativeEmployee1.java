@@ -3,7 +3,7 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "hemishe_ri_administrative_employee1")
-@Where(clause = "delete_ts IS NULL")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 public class AdministrativeEmployee1 extends BaseEntity {

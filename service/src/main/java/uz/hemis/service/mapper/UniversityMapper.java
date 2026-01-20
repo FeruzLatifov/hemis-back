@@ -44,6 +44,7 @@ public interface UniversityMapper {
      * @param university entity
      * @return DTO
      */
+    @Mapping(target = "versionType", ignore = true)  // Not in entity
     UniversityDto toDto(University university);
 
     /**

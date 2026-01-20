@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.util.UUID;
 
@@ -16,7 +16,7 @@ import java.util.UUID;
  * <ul>
  *   <li>Table: hemishe_e_curriculum</li>
  *   <li>Primary Key: id (UUID) - extends BaseEntity</li>
- *   <li>Soft delete: @Where(clause = "delete_ts IS NULL")</li>
+ *   <li>Soft delete: @SQLRestriction("delete_ts IS NULL")</li>
  * </ul>
  *
  * <p>Represents an academic program curriculum for a specialty.</p>
@@ -28,7 +28,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "hemishe_e_curriculum")
-@Where(clause = "delete_ts IS NULL")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 public class Curriculum extends BaseEntity {

@@ -25,14 +25,14 @@ public class FacultyRowDto {
     @Schema(
         description = "Faculty code (Primary key, unique identifier)",
         example = "00001-01",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String code;
 
     @Schema(
         description = "Faculty name in Uzbek (Latin script)",
         example = "Axborot texnologiyalari fakulteti",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String nameUz;
 
@@ -45,21 +45,21 @@ public class FacultyRowDto {
     @Schema(
         description = "Parent university code",
         example = "00001",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String universityCode;
 
     @Schema(
         description = "Parent university name",
         example = "TATU",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String universityName;
 
     @Schema(
         description = "Active status (true=active, false=inactive)",
         example = "true",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private Boolean status;
 

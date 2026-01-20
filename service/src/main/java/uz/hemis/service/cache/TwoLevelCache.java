@@ -99,6 +99,7 @@ public class TwoLevelCache extends AbstractValueAdaptingCache {
      * <p>If cache miss, calls valueLoader (DB query)</p>
      */
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T get(Object key, Callable<T> valueLoader) {
         // Try cache first
         Object value = lookup(key);

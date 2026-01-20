@@ -27,14 +27,14 @@ public class FacultyDetailDto {
     @Schema(
         description = "Faculty code (Primary key)",
         example = "00001-01",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String code;
 
     @Schema(
         description = "Faculty name in Uzbek (Latin)",
         example = "Axborot texnologiyalari fakulteti",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String nameUz;
 
@@ -47,21 +47,21 @@ public class FacultyDetailDto {
     @Schema(
         description = "University code (Foreign key)",
         example = "00001",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String universityCode;
 
     @Schema(
         description = "University name",
         example = "Toshkent Axborot Texnologiyalari Universiteti",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String universityName;
 
     @Schema(
         description = "Active status",
         example = "true",
-        required = true
+        requiredMode = Schema.RequiredMode.REQUIRED
     )
     private Boolean status;
 

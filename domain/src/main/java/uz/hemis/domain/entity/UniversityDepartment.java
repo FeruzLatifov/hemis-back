@@ -3,7 +3,7 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.domain.Persistable;
 
 import java.io.Serializable;
@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "hemishe_e_university_department")
-@Where(clause = "delete_ts IS NULL")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 public class UniversityDepartment implements Serializable, Persistable<String> {

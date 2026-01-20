@@ -3,7 +3,7 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -24,14 +24,14 @@ import java.time.LocalDateTime;
  *   <li>Table: hemishe_e_university</li>
  *   <li>PK: code VARCHAR(255)</li>
  *   <li>Business Key: tin VARCHAR(255)</li>
- *   <li>Soft delete: @Where(clause = "delete_ts IS NULL")</li>
+ *   <li>Soft delete: @SQLRestriction("delete_ts IS NULL")</li>
  * </ul>
  *
  * @since 1.0.0
  */
 @Entity
 @Table(name = "hemishe_e_university")
-@Where(clause = "delete_ts IS NULL")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
 public class University implements Serializable {
