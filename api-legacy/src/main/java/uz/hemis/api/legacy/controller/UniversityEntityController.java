@@ -2,17 +2,27 @@ package uz.hemis.api.legacy.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uz.hemis.domain.entity.University;
 import uz.hemis.domain.repository.UniversityRepository;
+
+import java.net.URI;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,25 +31,30 @@ import java.util.stream.Collectors;
  * University Entity Controller (CUBA Pattern)
  * Tag 15: OTM (Entity API)
  *
- * CUBA Platform REST API compatible controller
- * Entity: hemishe_EUniversity
+ * <p><strong>URL Pattern:</strong> {@code /app/rest/v2/entities/hemishe_EUniversity}</p>
  *
- * CRITICAL - 100% Backward Compatible:
- * - Preserves exact CUBA entity API pattern
- * - URL: /app/rest/v2/entities/hemishe_EUniversity
- * - Response format: CUBA Map structure with _entityName, _instanceName
- * - Parameters: returnNulls, view, dynamicAttributes (CUBA-compatible)
+ * <p><strong>Legacy Compatibility:</strong></p>
+ * <ul>
+ *   <li>Preserves exact CUBA entity API pattern</li>
+ *   <li>Response format: CUBA Map structure with _entityName, _instanceName</li>
+ *   <li>Parameters: returnNulls, view, dynamicAttributes (CUBA-compatible)</li>
+ *   <li>View: eUniversity-view - asosiy maydonlar</li>
+ * </ul>
  *
- * Endpoints:
- * - GET    /app/rest/v2/entities/hemishe_EUniversity/{id}      - Get by ID
- * - PUT    /app/rest/v2/entities/hemishe_EUniversity/{id}      - Update
- * - DELETE /app/rest/v2/entities/hemishe_EUniversity/{id}      - Soft delete
- * - GET    /app/rest/v2/entities/hemishe_EUniversity/search    - Search (URL params)
- * - POST   /app/rest/v2/entities/hemishe_EUniversity/search    - Search (JSON filter)
- * - GET    /app/rest/v2/entities/hemishe_EUniversity           - List all with pagination
- * - POST   /app/rest/v2/entities/hemishe_EUniversity           - Create new
+ * <p><strong>Endpoints:</strong></p>
+ * <ul>
+ *   <li>GET    /app/rest/v2/entities/hemishe_EUniversity           - OTM ro'yxati</li>
+ *   <li>GET    /app/rest/v2/entities/hemishe_EUniversity/{id}      - ID bo'yicha olish</li>
+ *   <li>PUT    /app/rest/v2/entities/hemishe_EUniversity/{id}      - Yangilash</li>
+ *   <li>DELETE /app/rest/v2/entities/hemishe_EUniversity/{id}      - O'chirish</li>
+ *   <li>GET    /app/rest/v2/entities/hemishe_EUniversity/search    - Qidirish (GET)</li>
+ *   <li>POST   /app/rest/v2/entities/hemishe_EUniversity/search    - Qidirish (POST)</li>
+ *   <li>POST   /app/rest/v2/entities/hemishe_EUniversity           - Yaratish</li>
+ * </ul>
+ *
+ * @since 2.0.0
  */
-@Tag(name = "Universities")
+@Tag(name = "15.OTM", description = "Oliy ta'lim muassasalari - universitetlar ro'yxati va boshqaruvi")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EUniversity")
 @RequiredArgsConstructor
@@ -48,103 +63,215 @@ import java.util.stream.Collectors;
 public class UniversityEntityController {
 
     private final UniversityRepository repository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
     private static final String ENTITY_NAME = "hemishe_EUniversity";
 
+    /**
+     * ID bo'yicha OTM olish
+     */
     @GetMapping("/{entityId}")
-    @Operation(summary = "Get university by ID", description = "Returns a single university by code")
+    @Transactional(readOnly = true)
+    @Operation(summary = "OTM olish (ID bo'yicha)", description = "Bitta OTM ni code bo'yicha qaytaradi")
     public ResponseEntity<Map<String, Object>> getById(
-            @PathVariable String entityId,
+            @Parameter(description = "OTM kodi") @PathVariable String entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET university by id: {}", entityId);
+        log.info("GET /entities/hemishe_EUniversity/{}", entityId);
 
         Optional<University> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            log.warn("GET /entities/hemishe_EUniversity/{} - topilmadi", entityId);
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity hemishe_EUniversity with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
-        return ResponseEntity.ok(toMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(toMap(entity.get(), returnNulls, view));
     }
 
+    /**
+     * OTM yangilash
+     *
+     * <p><strong>Legacy Endpoint:</strong> PUT /app/rest/v2/entities/hemishe_EUniversity/{entityId}</p>
+     *
+     * @param entityId OTM kodi
+     * @param body Yangilanadigan maydonlar
+     * @param returnNulls null maydonlarni qaytarish
+     * @return Yangilangan OTM
+     */
     @PutMapping("/{entityId}")
-    @Operation(summary = "Update university", description = "Updates an existing university")
+    @Transactional
+    @Operation(
+        summary = "OTM yangilash",
+        description = "Mavjud OTM ni yangilaydi. Faqat body da ko'rsatilgan maydonlar yangilanadi."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yangilandi"),
+        @ApiResponse(responseCode = "404", description = "OTM topilmadi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya talab qilinadi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
+    })
     public ResponseEntity<Map<String, Object>> update(
-            @PathVariable String entityId,
+            @Parameter(description = "OTM kodi") @PathVariable String entityId,
             @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @Parameter(description = "null maydonlarni qaytarish") @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("PUT university id: {}", entityId);
+        log.info("PUT /entities/hemishe_EUniversity/{}", entityId);
 
         Optional<University> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            log.warn("PUT /entities/hemishe_EUniversity/{} - topilmadi", entityId);
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity hemishe_EUniversity with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         University entity = existingOpt.get();
         updateFromMap(entity, body);
 
         University saved = repository.save(entity);
-        return ResponseEntity.ok(toMap(saved, returnNulls));
+        log.info("PUT /entities/hemishe_EUniversity/{} - muvaffaqiyatli yangilandi", entityId);
+        return ResponseEntity.ok(toMap(saved, returnNulls, null));
     }
 
+    /**
+     * OTM o'chirish (soft delete)
+     *
+     * <p><strong>Legacy Endpoint:</strong> DELETE /app/rest/v2/entities/hemishe_EUniversity/{entityId}</p>
+     *
+     * @param entityId OTM kodi
+     * @return 204 No Content yoki 404 Not Found
+     */
     @DeleteMapping("/{entityId}")
-    @Operation(summary = "Delete university", description = "Soft deletes a university")
-    public ResponseEntity<Void> delete(@PathVariable String entityId) {
-        log.debug("DELETE university id: {}", entityId);
+    @Transactional
+    @Operation(
+        summary = "OTM o'chirish",
+        description = "OTM ni o'chiradi (soft delete). deleteTs va deletedBy maydonlari o'rnatiladi."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli o'chirildi"),
+        @ApiResponse(responseCode = "404", description = "OTM topilmadi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya talab qilinadi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
+    })
+    public ResponseEntity<?> delete(
+            @Parameter(description = "OTM kodi") @PathVariable String entityId) {
+
+        log.info("DELETE /entities/hemishe_EUniversity/{}", entityId);
 
         Optional<University> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            log.warn("DELETE /entities/hemishe_EUniversity/{} - topilmadi", entityId);
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity hemishe_EUniversity with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         repository.delete(entity.get());
-        return ResponseEntity.noContent().build();
+        log.info("DELETE /entities/hemishe_EUniversity/{} - muvaffaqiyatli o'chirildi", entityId);
+        // OLD-HEMIS: 200 OK (not 204 No Content)
+        return ResponseEntity.ok().build();
     }
 
+    /**
+     * OTM qidirish (GET)
+     */
     @GetMapping("/search")
-    @Operation(summary = "Search universitys (GET)", description = "Search using URL parameters")
+    @Transactional(readOnly = true)
+    @Operation(summary = "OTM qidirish (GET)", description = "URL parametrlari orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search universitys with filter: {}", filter);
+        log.info("GET /entities/hemishe_EUniversity/search - filter: {}", filter);
 
         List<University> entities = repository.findAll();
         return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
+            .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
+    /**
+     * OTM qidirish (POST)
+     */
     @PostMapping("/search")
-    @Operation(summary = "Search universitys (POST)", description = "Search using JSON filter")
+    @Transactional(readOnly = true)
+    @Operation(summary = "OTM qidirish (POST)", description = "JSON filter orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filter,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search universitys with filter: {}", filter);
+        log.info("POST /entities/hemishe_EUniversity/search - filter: {}", filter);
 
         List<University> entities = repository.findAll();
         return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
+            .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
+    /**
+     * OTM ro'yxatini olish
+     *
+     * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/entities/hemishe_EUniversity</p>
+     *
+     * <p>OLD-HEMIS formatida OTM ro'yxatini qaytaradi (eUniversity-view):</p>
+     * <pre>
+     * [
+     *   {
+     *     "_entityName": "hemishe_EUniversity",
+     *     "_instanceName": "301-Andijon davlat universiteti",
+     *     "code": "301",
+     *     "name": "Andijon davlat universiteti",
+     *     "tin": "200123456",
+     *     "address": "Andijon sh.",
+     *     "ownership": { "_entityName": "...", "code": "11", "name": "Davlat" },
+     *     "universityType": { "_entityName": "...", "code": "11", "name": "Universitet" },
+     *     "soato": { "_entityName": "...", "code": "1703", "name": "Andijon viloyati" }
+     *   }
+     * ]
+     * </pre>
+     *
+     * @param returnCount X-Total-Count headerni qaytarish
+     * @param offset pagination boshlanish nuqtasi
+     * @param limit sahifa hajmi
+     * @param sort saralash (masalan: "name" yoki "-code")
+     * @param view ko'rinish (eUniversity-view)
+     * @return OTM ro'yxati OLD-HEMIS formatida
+     */
     @GetMapping
-    @Operation(summary = "Get all universitys", description = "Returns paginated list")
+    @Transactional(readOnly = true)
+    @Operation(
+        summary = "OTM ro'yxati",
+        description = "Barcha oliy ta'lim muassasalari ro'yxatini OLD-HEMIS formatida qaytaradi (eUniversity-view)"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(example = "[{\"_entityName\":\"hemishe_EUniversity\",\"_instanceName\":\"301-Andijon davlat universiteti\",\"code\":\"301\",\"name\":\"Andijon davlat universiteti\"}]")))
+    })
     public ResponseEntity<List<Map<String, Object>>> getAll(
-            @Parameter(description = "Return total count") @RequestParam(required = false) Boolean returnCount,
-            @Parameter(description = "Offset for pagination") @RequestParam(defaultValue = "0") Integer offset,
-            @Parameter(description = "Limit per page") @RequestParam(defaultValue = "50") Integer limit,
-            @Parameter(description = "Sort") @RequestParam(required = false) String sort,
+            @Parameter(description = "X-Total-Count headerni qaytarish") @RequestParam(required = false) Boolean returnCount,
+            @Parameter(description = "Pagination boshlanish nuqtasi") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Sahifa hajmi (bo'lmasa barcha yozuvlar)") @RequestParam(required = false) Integer limit,
+            @Parameter(description = "Saralash (masalan: name, -code)") @RequestParam(required = false) String sort,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @Parameter(description = "Ko'rinish nomi (eUniversity-view)") @RequestParam(required = false) String view) {
 
-        log.debug("GET all universitys - offset: {}, limit: {}", offset, limit);
+        log.info("GET /entities/hemishe_EUniversity - offset: {}, limit: {}, view: {}", offset, limit, view);
 
         Sort sorting = Sort.unsorted();
         if (sort != null && !sort.isEmpty()) {
@@ -155,62 +282,348 @@ public class UniversityEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
-        Page<University> entityPage = repository.findAll(pageRequest);
+        List<University> entities;
+        if (limit == null) {
+            // OLD-HEMIS: limit bo'lmasa barcha yozuvlarni qaytarish
+            entities = repository.findAll(sorting);
+        } else {
+            int effectiveOffset = offset != null ? offset : 0;
+            int page = effectiveOffset / limit;
+            PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+            entities = repository.findAll(pageRequest).getContent();
+        }
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> toMap(e, returnNulls))
-            .collect(Collectors.toList()));
+        List<Map<String, Object>> result = entities.stream()
+            .map(e -> toMap(e, returnNulls, view))
+            .collect(Collectors.toList());
+
+        log.info("Jami {} ta OTM topildi", result.size());
+        return ResponseEntity.ok(result);
     }
 
+    /**
+     * Yangi OTM yaratish yoki mavjud OTM ni yangilash
+     *
+     * <p><strong>Legacy Endpoint:</strong> POST /app/rest/v2/entities/hemishe_EUniversity</p>
+     *
+     * <p>OLD-HEMIS formatida OTM yaratadi yoki mavjudini yangilaydi (CUBA Entity API pattern):</p>
+     * <ul>
+     *   <li>Agar body da "id" yoki "code" mavjud bo'lsa va bazada bor - yangilash</li>
+     *   <li>Agar body da "id" yoki "code" yo'q yoki bazada mavjud emas - yaratish</li>
+     * </ul>
+     *
+     * <p><strong>Request body formati:</strong></p>
+     * <pre>
+     * {
+     *   "code": "999",
+     *   "name": "Test universiteti",
+     *   "tin": "123456789",
+     *   "address": "Test manzil",
+     *   "active": true,
+     *   "studentUrl": "student.test.uz",
+     *   "teacherUrl": "teacher.test.uz",
+     *   "universityUrl": "www.test.uz",
+     *   "addStudent": true,
+     *   "accreditationEdit": false,
+     *   "gpaEdit": false,
+     *   "oneId": true,
+     *   "allowGrouping": true,
+     *   "allowTransferOutside": true,
+     *   "gradingSystem": false
+     * }
+     * </pre>
+     *
+     * <p><strong>Response:</strong> Yaratilgan/yangilangan OTM OLD-HEMIS formatida + Location header</p>
+     *
+     * @param body OTM ma'lumotlari JSON formatida
+     * @param returnNulls null maydonlarni responseda qaytarish
+     * @param request HTTP request (Location header uchun)
+     * @return Yaratilgan/yangilangan OTM OLD-HEMIS formatida
+     */
     @PostMapping
-    @Operation(summary = "Create university", description = "Creates a new university")
+    @Transactional
+    @Operation(
+        summary = "OTM yaratish yoki yangilash",
+        description = "Yangi OTM yaratadi yoki mavjudini yangilaydi (CUBA Entity API pattern). " +
+                      "Agar body da id/code mavjud va bazada bor bo'lsa - yangilash, aks holda yaratish."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi/yangilandi",
+            content = @Content(mediaType = "application/json",
+                schema = @Schema(example = "{\"_entityName\":\"hemishe_EUniversity\",\"_instanceName\":\"999-Test universiteti\",\"id\":\"999\",\"code\":\"999\",\"name\":\"Test universiteti\",\"active\":true}"))),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov - code majburiy"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya talab qilinadi"),
+        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
+    })
     public ResponseEntity<Map<String, Object>> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                description = "OTM ma'lumotlari",
+                required = true,
+                content = @Content(mediaType = "application/json",
+                    schema = @Schema(example = "{\"code\":\"999\",\"name\":\"Test universiteti\",\"tin\":\"123456789\",\"address\":\"Test manzil\",\"active\":true}"))
+            )
             @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @Parameter(description = "null maydonlarni qaytarish") @RequestParam(required = false) Boolean returnNulls,
+            HttpServletRequest request) {
 
-        log.debug("POST create new university");
+        log.info("POST /entities/hemishe_EUniversity - OTM yaratish/yangilash. Body: {}", body);
 
-        University entity = new University();
+        // code ni olish (id yoki code dan)
+        String code = null;
+        if (body.containsKey("id")) {
+            code = String.valueOf(body.get("id"));
+            log.debug("Code from 'id': {}", code);
+        } else if (body.containsKey("code")) {
+            code = String.valueOf(body.get("code"));
+            log.debug("Code from 'code': {}", code);
+        }
+        log.info("Extracted code: {}", code);
+
+        if (code == null || code.isEmpty() || "null".equals(code)) {
+            log.warn("POST /entities/hemishe_EUniversity - code majburiy");
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "code maydoni majburiy");
+            error.put("details", "OTM yaratish uchun 'code' yoki 'id' maydoni kerak");
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        // Mavjud OTM ni tekshirish
+        Optional<University> existingOpt = repository.findById(code);
+        University entity;
+
+        if (existingOpt.isPresent()) {
+            // Yangilash
+            log.info("POST /entities/hemishe_EUniversity - mavjud OTM yangilanmoqda: {}", code);
+            entity = existingOpt.get();
+        } else {
+            // Yaratish
+            log.info("POST /entities/hemishe_EUniversity - yangi OTM yaratilmoqda: {}", code);
+            entity = new University();
+            entity.setCode(code);
+        }
+
         updateFromMap(entity, body);
         University saved = repository.save(entity);
 
-        return ResponseEntity.ok(toMap(saved, returnNulls));
+        // Location header yaratish (CUBA pattern)
+        URI location = ServletUriComponentsBuilder
+                .fromRequestUri(request)
+                .path("/{id}")
+                .buildAndExpand(saved.getCode())
+                .toUri();
+
+        log.info("POST /entities/hemishe_EUniversity - muvaffaqiyatli: {}", saved.getCode());
+
+        return ResponseEntity.ok()
+                .header("Location", location.toString())
+                .body(toMap(saved, returnNulls, null));
     }
 
-    private Map<String, Object> toMap(University entity, Boolean returnNulls) {
+    /**
+     * University entity ni OLD-HEMIS formatiga o'girish
+     *
+     * <p>OLD-HEMIS response formati (aynan shu tartibda):</p>
+     * <pre>
+     * {
+     *   "_entityName": "hemishe_EUniversity",
+     *   "_instanceName": "301-Andijon davlat universiteti",
+     *   "id": "301",
+     *   "studentUrl": "student.adu.uz",
+     *   "code": "301",
+     *   "tin": "202217655",
+     *   "addStudent": true,
+     *   "address": "Andijon shahar",
+     *   "accreditationEdit": false,
+     *   "active": true,
+     *   "version": 20,
+     *   "oneId": true,
+     *   "allowGrouping": true,
+     *   "teacherUrl": "hemis.adu.uz",
+     *   "allowTransferOutside": true,
+     *   "name": "Andijon davlat universiteti",
+     *   "gpaEdit": false
+     * }
+     * </pre>
+     *
+     * @param entity University entity
+     * @param returnNulls null maydonlarni qaytarish
+     * @param view ko'rinish nomi (e'tiborsiz - OLD-HEMIS formati)
+     * @return OLD-HEMIS formatidagi map
+     */
+    private Map<String, Object> toMap(University entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ENTITY_NAME);
 
-        // Instance name
-        String instanceName = entity.getName() != null ?
-            entity.getName() : "University-" + entity.getCode();
+        // Instance name: "code-name" format (CUBA pattern)
+        String instanceName = entity.getCode() + "-" + (entity.getName() != null ? entity.getName() : "");
         map.put("_instanceName", instanceName);
 
+        // id = code (OLD-HEMIS formatida id maydoni bor)
         map.put("id", entity.getCode());
 
-        // Add all other fields with putIfNotNull
-        putIfNotNull(map, "code", entity.getCode(), returnNulls);
-        putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "tin", entity.getTin(), returnNulls);
-        putIfNotNull(map, "address", entity.getAddress(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        // URL maydonlari
+        putIfNotNull(map, "studentUrl", entity.getStudentUrl(), returnNulls);
+        putIfNotNull(map, "gradingSystem", entity.getGradingSystem(), returnNulls);
 
-        // Audit fields
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        // Asosiy maydonlar
+        map.put("code", entity.getCode());
+        putIfNotNull(map, "uzbmbUrl", entity.getUzbmbUrl(), returnNulls);
+        putIfNotNull(map, "tin", entity.getTin(), returnNulls);
+        putIfNotNull(map, "universityUrl", entity.getUniversityUrl(), returnNulls);
+        putIfNotNull(map, "addStudent", entity.getAddStudent(), returnNulls);
+        putIfNotNull(map, "address", entity.getAddress(), returnNulls);
+        putIfNotNull(map, "accreditationEdit", entity.getAccreditationEdit(), returnNulls);
+        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "cadastre", entity.getCadastre(), returnNulls);
+        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+        putIfNotNull(map, "oneId", entity.getOneId(), returnNulls);
+        putIfNotNull(map, "allowGrouping", entity.getAllowGrouping(), returnNulls);
+        putIfNotNull(map, "teacherUrl", entity.getTeacherUrl(), returnNulls);
+        putIfNotNull(map, "allowTransferOutside", entity.getAllowTransferOutside(), returnNulls);
+        putIfNotNull(map, "name", entity.getName(), returnNulls);
+        putIfNotNull(map, "gpaEdit", entity.getGpaEdit(), returnNulls);
+
+        // Audit fields (faqat deletedBy ko'rinadi ba'zan)
         putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
 
         return map;
     }
 
+    /**
+     * Map dan University entity ga ma'lumotlarni o'tkazish
+     *
+     * <p>OLD-HEMIS CUBA entity formatiga mos holda barcha maydonlarni qo'llab-quvvatlaydi.</p>
+     *
+     * @param entity University entity
+     * @param map Request body map
+     */
     private void updateFromMap(University entity, Map<String, Object> map) {
-        // TODO: Add specific field mappings based on entity properties
-        // For now, minimal implementation
+        // Asosiy maydonlar
+        if (map.containsKey("name")) {
+            entity.setName((String) map.get("name"));
+        }
+        if (map.containsKey("tin")) {
+            entity.setTin((String) map.get("tin"));
+        }
+        if (map.containsKey("address")) {
+            entity.setAddress((String) map.get("address"));
+        }
+        if (map.containsKey("cadastre")) {
+            entity.setCadastre((String) map.get("cadastre"));
+        }
+
+        // URL maydonlari
+        if (map.containsKey("universityUrl")) {
+            entity.setUniversityUrl((String) map.get("universityUrl"));
+        }
+        if (map.containsKey("studentUrl")) {
+            entity.setStudentUrl((String) map.get("studentUrl"));
+        }
+        if (map.containsKey("teacherUrl")) {
+            entity.setTeacherUrl((String) map.get("teacherUrl"));
+        }
+        if (map.containsKey("uzbmbUrl")) {
+            entity.setUzbmbUrl((String) map.get("uzbmbUrl"));
+        }
+
+        // Location classifiers
+        if (map.containsKey("soato")) {
+            entity.setSoato((String) map.get("soato"));
+        }
+        if (map.containsKey("soatoRegion")) {
+            entity.setSoatoRegion((String) map.get("soatoRegion"));
+        }
+
+        // University classifiers
+        if (map.containsKey("universityType")) {
+            entity.setUniversityType((String) map.get("universityType"));
+        }
+        if (map.containsKey("ownership")) {
+            entity.setOwnership((String) map.get("ownership"));
+        }
+        if (map.containsKey("universityVersion")) {
+            entity.setUniversityVersion((String) map.get("universityVersion"));
+        }
+        if (map.containsKey("universityActivityStatus")) {
+            entity.setUniversityActivityStatus((String) map.get("universityActivityStatus"));
+        }
+        if (map.containsKey("universityBelongsTo")) {
+            entity.setUniversityBelongsTo((String) map.get("universityBelongsTo"));
+        }
+        if (map.containsKey("universityContractCategory")) {
+            entity.setUniversityContractCategory((String) map.get("universityContractCategory"));
+        }
+        if (map.containsKey("parentUniversity")) {
+            entity.setParentUniversity((String) map.get("parentUniversity"));
+        }
+        if (map.containsKey("terrain")) {
+            entity.setTerrain((String) map.get("terrain"));
+        }
+
+        // Boolean flags
+        if (map.containsKey("active")) {
+            entity.setActive(toBoolean(map.get("active")));
+        }
+        if (map.containsKey("gpaEdit")) {
+            entity.setGpaEdit(toBoolean(map.get("gpaEdit")));
+        }
+        if (map.containsKey("accreditationEdit")) {
+            entity.setAccreditationEdit(toBoolean(map.get("accreditationEdit")));
+        }
+        if (map.containsKey("addStudent")) {
+            entity.setAddStudent(toBoolean(map.get("addStudent")));
+        }
+        if (map.containsKey("allowGrouping")) {
+            entity.setAllowGrouping(toBoolean(map.get("allowGrouping")));
+        }
+        if (map.containsKey("allowTransferOutside")) {
+            entity.setAllowTransferOutside(toBoolean(map.get("allowTransferOutside")));
+        }
+        if (map.containsKey("oneId")) {
+            entity.setOneId(toBoolean(map.get("oneId")));
+        }
+        if (map.containsKey("gradingSystem")) {
+            entity.setGradingSystem(toBoolean(map.get("gradingSystem")));
+        }
+
+        // Additional text fields
+        if (map.containsKey("mailAddress")) {
+            entity.setMailAddress((String) map.get("mailAddress"));
+        }
+        if (map.containsKey("bankInfo")) {
+            entity.setBankInfo((String) map.get("bankInfo"));
+        }
+        if (map.containsKey("accreditationInfo")) {
+            entity.setAccreditationInfo((String) map.get("accreditationInfo"));
+        }
+    }
+
+    /**
+     * Object ni Boolean ga xavfsiz o'girish
+     *
+     * @param value Object qiymat (Boolean, String yoki boshqa)
+     * @return Boolean qiymat yoki null
+     */
+    private Boolean toBoolean(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            String str = (String) value;
+            if ("true".equalsIgnoreCase(str) || "1".equals(str)) {
+                return true;
+            }
+            if ("false".equalsIgnoreCase(str) || "0".equals(str)) {
+                return false;
+            }
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue() != 0;
+        }
+        return null;
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

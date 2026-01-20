@@ -290,6 +290,20 @@ public class University implements Serializable {
     private Boolean allowTransferOutside;
 
     /**
+     * OneID integration flag
+     * Column: one_id BOOLEAN
+     */
+    @Column(name = "one_id")
+    private Boolean oneId;
+
+    /**
+     * Grading system flag
+     * Column: grading_system BOOLEAN
+     */
+    @Column(name = "grading_system")
+    private Boolean gradingSystem;
+
+    /**
      * Terrain code (mahalla)
      * Column: _terrain VARCHAR(32)
      */

@@ -56,6 +56,9 @@ public class UniversityDepartmentTypeController {
 
     private final HUniversityDepartmentTypeRepository repository;
 
+    @jakarta.persistence.PersistenceContext
+    private jakarta.persistence.EntityManager entityManager;
+
     private static final String ENTITY_NAME = "hemishe_HUniversityDepartmentType";
 
     // =====================================================
@@ -81,7 +84,7 @@ public class UniversityDepartmentTypeController {
     })
     @GetMapping("/{entityId}")
     @Transactional(readOnly = true)
-    public ResponseEntity<Map<String, Object>> getById(
+    public ResponseEntity<?> getById(
             @Parameter(description = "Bo'linma turi identifikatori (code)", required = true, example = "11")
             @PathVariable String entityId,
             @Parameter(description = "Dinamik atributlarni qaytarish")
@@ -96,7 +99,11 @@ public class UniversityDepartmentTypeController {
         Optional<HUniversityDepartmentType> entity = repository.findById(entityId);
 
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, String> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         return ResponseEntity.ok(toMap(entity.get(), returnNulls));
@@ -122,7 +129,7 @@ public class UniversityDepartmentTypeController {
     })
     @PutMapping("/{entityId}")
     @Transactional
-    public ResponseEntity<Map<String, Object>> update(
+    public ResponseEntity<?> update(
             @Parameter(description = "Bo'linma turi identifikatori (code)", required = true)
             @PathVariable String entityId,
             @RequestBody Map<String, Object> entityData) {
@@ -132,7 +139,11 @@ public class UniversityDepartmentTypeController {
         Optional<HUniversityDepartmentType> existingOpt = repository.findById(entityId);
 
         if (existingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, String> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         HUniversityDepartmentType entity = existingOpt.get();
@@ -178,7 +189,7 @@ public class UniversityDepartmentTypeController {
     })
     @DeleteMapping("/{entityId}")
     @Transactional
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<?> delete(
             @Parameter(description = "Bo'linma turi identifikatori (code)", required = true)
             @PathVariable String entityId) {
 
@@ -187,7 +198,11 @@ public class UniversityDepartmentTypeController {
         Optional<HUniversityDepartmentType> entity = repository.findById(entityId);
 
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, String> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         // Soft delete
@@ -282,7 +297,21 @@ public class UniversityDepartmentTypeController {
 
         log.info("SEARCH bo'linma turlari (POST) - filter: {}", filterBody);
 
-        String filterStr = filterBody != null ? filterBody.toString() : null;
+        // CUBA format: {"filter":{"conditions":[...]}}
+        // filter kalitini olish va JSON stringga aylantirish
+        String filterStr = null;
+        if (filterBody != null) {
+            Object filterObj = filterBody.get("filter");
+            if (filterObj != null) {
+                try {
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    filterStr = mapper.writeValueAsString(filterObj);
+                } catch (Exception e) {
+                    log.warn("Filter JSON ga aylantirishda xato: {}", e.getMessage());
+                    filterStr = filterObj.toString();
+                }
+            }
+        }
         return search(filterStr, offset, limit, sort, returnCount, returnNulls);
     }
 
@@ -366,22 +395,59 @@ public class UniversityDepartmentTypeController {
     })
     @PostMapping
     @Transactional
-    public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> entityData) {
+    public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
 
         log.info("CREATE bo'linma turi: {}", entityData);
 
-        HUniversityDepartmentType entity = new HUniversityDepartmentType();
-        entity.setCode((String) entityData.get("code"));
-        entity.setName((String) entityData.get("name"));
-        entity.setNameRu((String) entityData.get("nameRu"));
-        entity.setNameEn((String) entityData.get("nameEn"));
-        entity.setActive(true);
-        entity.setVersion(1);
-        entity.setCreateTs(LocalDateTime.now());
+        String code = (String) entityData.get("code");
+        String name = (String) entityData.get("name");
+        String nameRu = (String) entityData.get("nameRu");
+        String nameEn = (String) entityData.get("nameEn");
 
-        HUniversityDepartmentType saved = repository.save(entity);
+        try {
+            // Native query - @Where(delete_ts IS NULL) ni bypass qiladi
+            // Soft deleted entitylarni ham topadi
+            @SuppressWarnings("unchecked")
+            List<HUniversityDepartmentType> results = entityManager
+                .createNativeQuery(
+                    "SELECT * FROM hemishe_h_university_department_type WHERE code = :code",
+                    HUniversityDepartmentType.class)
+                .setParameter("code", code)
+                .getResultList();
 
-        return ResponseEntity.ok(toMap(saved, false));
+            HUniversityDepartmentType entity;
+            if (!results.isEmpty()) {
+                // Mavjud entity (soft deleted bo'lishi mumkin) - upsert
+                entity = results.get(0);
+                log.info("Entity mavjud (soft deleted bo'lishi mumkin), yangilanmoqda: {}", code);
+                entity.setDeleteTs(null);  // Soft delete ni bekor qilish
+                entity.setDeletedBy(null);
+            } else {
+                // Yangi yaratish
+                entity = new HUniversityDepartmentType();
+                entity.setCode(code);
+                entity.setCreateTs(LocalDateTime.now());
+            }
+
+            // Maydonlarni o'rnatish
+            entity.setName(name);
+            entity.setNameRu(nameRu);
+            entity.setNameEn(nameEn);
+            entity.setActive(true);
+            entity.setUpdateTs(LocalDateTime.now());
+
+            HUniversityDepartmentType saved = entityManager.merge(entity);
+            entityManager.flush();
+
+            return ResponseEntity.ok(toMap(saved, false));
+
+        } catch (Exception e) {
+            log.error("CREATE xatosi: {}", e.getMessage(), e);
+            Map<String, String> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Server error");
+            errorResponse.put("details", "Entity yaratishda xatolik: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
     }
 
     // =====================================================
@@ -452,19 +518,23 @@ public class UniversityDepartmentTypeController {
     }
 
     /**
-     * GET va POST search endpointlari uchun umumiy logika
+     * GET va POST search endpointlari uchun umumiy logika.
+     *
+     * <p><strong>CUBA Filter Format:</strong></p>
+     * <pre>
+     * {"conditions":[{"property":"name","operator":"contains","value":"Fakultet"}]}
+     * </pre>
+     *
+     * <p><strong>Supported operators:</strong> =, contains, startsWith, endsWith, notEmpty, isNull</p>
      */
     private ResponseEntity<List<Map<String, Object>>> search(
             String filter, Integer offset, Integer limit, String sort, Boolean returnCount, Boolean returnNulls) {
 
         List<HUniversityDepartmentType> allEntities = repository.findAll();
 
-        // Oddiy filter (name bo'yicha qidirish)
+        // CUBA JSON filter yoki oddiy string filter
         if (filter != null && !filter.isEmpty()) {
-            String searchTerm = filter.toLowerCase();
-            allEntities = allEntities.stream()
-                .filter(e -> e.getName() != null && e.getName().toLowerCase().contains(searchTerm))
-                .collect(Collectors.toList());
+            allEntities = applyFilter(allEntities, filter);
         }
 
         // Sahifalash
@@ -486,5 +556,98 @@ public class UniversityDepartmentTypeController {
         }
 
         return ResponseEntity.ok().headers(headers).body(result);
+    }
+
+    /**
+     * CUBA JSON filter yoki oddiy string filter qo'llash
+     */
+    @SuppressWarnings("unchecked")
+    private List<HUniversityDepartmentType> applyFilter(List<HUniversityDepartmentType> entities, String filter) {
+        // CUBA JSON format ekanligini tekshirish
+        if (filter.trim().startsWith("{")) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Object> filterJson = mapper.readValue(filter, Map.class);
+
+                Object conditionsObj = filterJson.get("conditions");
+                if (conditionsObj instanceof List) {
+                    List<Map<String, Object>> conditions = (List<Map<String, Object>>) conditionsObj;
+
+                    for (Map<String, Object> condition : conditions) {
+                        String property = (String) condition.get("property");
+                        String operator = (String) condition.get("operator");
+                        Object value = condition.get("value");
+
+                        entities = filterByCondition(entities, property, operator, value);
+                    }
+                }
+                return entities;
+            } catch (Exception e) {
+                log.warn("CUBA filter parse xatosi, oddiy filter sifatida ishlatiladi: {}", e.getMessage());
+            }
+        }
+
+        // Oddiy string filter - name bo'yicha qidirish
+        String searchTerm = filter.toLowerCase();
+        return entities.stream()
+            .filter(e -> e.getName() != null && e.getName().toLowerCase().contains(searchTerm))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * CUBA condition bo'yicha filtrlash
+     */
+    private List<HUniversityDepartmentType> filterByCondition(
+            List<HUniversityDepartmentType> entities, String property, String operator, Object value) {
+
+        return entities.stream()
+            .filter(e -> matchesCondition(e, property, operator, value))
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Entity CUBA conditionga mos kelishini tekshirish
+     */
+    private boolean matchesCondition(HUniversityDepartmentType entity, String property, String operator, Object value) {
+        Object fieldValue = getFieldValue(entity, property);
+
+        if (operator == null) operator = "=";
+
+        switch (operator) {
+            case "=":
+                return fieldValue != null && fieldValue.toString().equals(value != null ? value.toString() : null);
+            case "contains":
+                return fieldValue != null && value != null &&
+                       fieldValue.toString().toLowerCase().contains(value.toString().toLowerCase());
+            case "startsWith":
+                return fieldValue != null && value != null &&
+                       fieldValue.toString().toLowerCase().startsWith(value.toString().toLowerCase());
+            case "endsWith":
+                return fieldValue != null && value != null &&
+                       fieldValue.toString().toLowerCase().endsWith(value.toString().toLowerCase());
+            case "notEmpty":
+                return fieldValue != null && !fieldValue.toString().isEmpty();
+            case "isNull":
+                return fieldValue == null;
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Entity dan field qiymatini olish
+     */
+    private Object getFieldValue(HUniversityDepartmentType entity, String property) {
+        if (property == null) return null;
+
+        switch (property) {
+            case "code": return entity.getCode();
+            case "name": return entity.getName();
+            case "nameRu": return entity.getNameRu();
+            case "nameEn": return entity.getNameEn();
+            case "active": return entity.getActive();
+            case "version": return entity.getVersion();
+            default: return null;
+        }
     }
 }

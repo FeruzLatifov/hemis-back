@@ -321,14 +321,23 @@ public class UniversityDepartmentEntityController {
         // Parse filter from URL-encoded JSON string
         Map<String, Object> filterMap = parseFilterFromString(filter);
 
+        // ✅ OLD-HEMIS COMPATIBLE: Filter dan university.code ni olish
+        // Agar filterda university.code bo'lsa - shu bo'yicha filtrlash (OLD-HEMIS behavior)
+        // Agar yo'q bo'lsa - user kontekstidan olish (xavfsizlik uchun)
+        String filterUniversityCode = extractUniversityCodeFromFilter(filterMap);
+        String effectiveUniversityCode = filterUniversityCode != null ? filterUniversityCode : universityCode;
+
         List<UniversityDepartment> entities;
-        if (universityCode != null) {
-            entities = repository.findByUniversityCode(universityCode);
+        if (effectiveUniversityCode != null) {
+            entities = repository.findByUniversityCode(effectiveUniversityCode);
+            log.debug("Filtering by university code: {} (from {})",
+                    effectiveUniversityCode, filterUniversityCode != null ? "filter" : "context");
         } else {
             entities = repository.findAll();
+            log.debug("No university filter - returning all");
         }
 
-        // Apply CUBA filter conditions
+        // Apply CUBA filter conditions (university.code dan boshqa filterlar)
         List<UniversityDepartment> filtered = applyFilter(entities, filterMap);
 
         Boolean returnNullsBool = parseBoolean(returnNulls);
@@ -411,14 +420,23 @@ public class UniversityDepartmentEntityController {
         String universityCode = getUniversityCodeFromContext();
         log.debug("POST search UniversityDepartment - university: {}, body: {}", universityCode, body);
 
+        // ✅ OLD-HEMIS COMPATIBLE: Filter dan university.code ni olish
+        // Agar filterda university.code bo'lsa - shu bo'yicha filtrlash (OLD-HEMIS behavior)
+        // Agar yo'q bo'lsa - user kontekstidan olish (xavfsizlik uchun)
+        String filterUniversityCode = extractUniversityCodeFromFilter(body);
+        String effectiveUniversityCode = filterUniversityCode != null ? filterUniversityCode : universityCode;
+
         List<UniversityDepartment> entities;
-        if (universityCode != null) {
-            entities = repository.findByUniversityCode(universityCode);
+        if (effectiveUniversityCode != null) {
+            entities = repository.findByUniversityCode(effectiveUniversityCode);
+            log.debug("Filtering by university code: {} (from {})",
+                    effectiveUniversityCode, filterUniversityCode != null ? "filter" : "context");
         } else {
             entities = repository.findAll();
+            log.debug("No university filter - returning all");
         }
 
-        // Apply CUBA filter conditions from request body
+        // Apply CUBA filter conditions from request body (university.code dan boshqa filterlar)
         List<UniversityDepartment> filtered = applyFilter(entities, body);
 
         // Extract view from body if not in query param
@@ -491,18 +509,12 @@ public class UniversityDepartmentEntityController {
         Boolean returnNullsBool = parseBoolean(returnNulls);
         Page<UniversityDepartment> entityPage;
         if (universityCode != null) {
-            // Filter by user's university
+            // ✅ TO'G'RI: Repository da pagination bilan filter
+            entityPage = repository.findByUniversityCode(universityCode, pageRequest);
+        } else {
             entityPage = repository.findAll(pageRequest);
-            // Additional filter in memory (should add repository method for proper pagination)
-            List<UniversityDepartment> filtered = entityPage.getContent().stream()
-                    .filter(e -> universityCode.equals(e.getUniversityCode()))
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(filtered.stream()
-                    .map(e -> toMap(e, returnNullsBool, view))
-                    .collect(Collectors.toList()));
         }
 
-        entityPage = repository.findAll(pageRequest);
         return ResponseEntity.ok(entityPage.getContent().stream()
                 .map(e -> toMap(e, returnNullsBool, view))
                 .collect(Collectors.toList()));
@@ -1112,5 +1124,65 @@ public class UniversityDepartmentEntityController {
             // Fall back to string comparison
             return entityValue.toString().compareTo(filterValue.toString());
         }
+    }
+
+    /**
+     * Filter dan university.code qiymatini olish
+     *
+     * <p>OLD-HEMIS COMPATIBLE: CUBA filter ichidan university.code ni topish</p>
+     *
+     * <p>Filter formati:</p>
+     * <pre>
+     * {
+     *   "filter": {
+     *     "conditions": [
+     *       {"property": "university.code", "operator": "=", "value": "401"}
+     *     ]
+     *   }
+     * }
+     * </pre>
+     *
+     * @param filterBody Filter map (request body yoki parsed JSON)
+     * @return university.code qiymati yoki null
+     */
+    @SuppressWarnings("unchecked")
+    private String extractUniversityCodeFromFilter(Map<String, Object> filterBody) {
+        if (filterBody == null || filterBody.isEmpty()) {
+            return null;
+        }
+
+        // Filter object ni olish
+        Object filterObj = filterBody.get("filter");
+        if (filterObj == null || !(filterObj instanceof Map)) {
+            return null;
+        }
+
+        Map<String, Object> filter = (Map<String, Object>) filterObj;
+
+        // Conditions ni olish
+        Object conditionsObj = filter.get("conditions");
+        if (conditionsObj == null || !(conditionsObj instanceof List)) {
+            return null;
+        }
+
+        List<Map<String, Object>> conditions = (List<Map<String, Object>>) conditionsObj;
+
+        // university.code conditionni topish
+        for (Map<String, Object> condition : conditions) {
+            String property = (String) condition.get("property");
+            String operator = (String) condition.get("operator");
+            Object value = condition.get("value");
+
+            // university.code yoki universityCode property ni tekshirish
+            if (property != null && value != null &&
+                    (property.equals("university.code") || property.equals("universityCode")) &&
+                    "=".equals(operator)) {
+                String universityCode = value.toString();
+                log.debug("Extracted university.code from filter: {}", universityCode);
+                return universityCode;
+            }
+        }
+
+        return null;
     }
 }

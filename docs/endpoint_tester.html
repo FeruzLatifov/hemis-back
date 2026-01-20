@@ -191,7 +191,7 @@
         <!-- Header -->
         <div class="text-center text-white mb-4">
             <h1><i class="fas fa-server"></i> HEMIS API Comparison Tester</h1>
-            <p class="lead">🆕 Yangi Hemis-Back vs 🏛️ Old-Hemis • <span id="totalEndpointCount">35</span> endpoint solishtirish</p>
+            <p class="lead">🆕 Yangi Hemis-Back vs 🏛️ Old-Hemis • <span id="totalEndpointCount">40</span> endpoint solishtirish</p>
         </div>
 
         <!-- CORS Warning (shown only if file:// protocol) -->
@@ -2411,9 +2411,9 @@
                     entityId: {
                         label: "Bo'linma kodi",
                         type: "text",
-                        default: "351-118",
+                        default: "401-102-08",
                         required: true,
-                        placeholder: "Masalan: 351-118, 401-102-08"
+                        placeholder: "Yangi:401-102-08, Eski:351-118"
                     },
                     view: {
                         label: "View nomi",
@@ -2489,19 +2489,25 @@
                     filter: {
                         label: "Filter (CUBA format JSON)",
                         type: "textarea",
+                        // 🎯 Ikkala tizim uchun ham university.code = 401 (solishtirish uchun)
                         default: JSON.stringify({
                             filter: {
                                 conditions: [
+                                    { property: "university.code", operator: "=", value: "401" },
                                     { property: "status", operator: "=", value: true }
                                 ]
                             }
                         }),
                         required: false,
-                        placeholder: '{"filter":{"conditions":[{"property":"code","operator":"=","value":"351-118"}]}}',
+                        placeholder: '{"filter":{"conditions":[{"property":"university.code","operator":"=","value":"401"}]}}',
                         rows: 4,
-                        helpText: `<b>CUBA Filter formati:</b><br>
+                        helpText: `<b>🎯 Test uchun avtomatik filter:</b><br>
+- university.code = "401" (solishtirish uchun bir xil)<br>
+- status = true (faqat faol bo'linmalar)<br><br>
+<b>CUBA Filter formati:</b><br>
 <pre>{"filter":{"conditions":[
-  {"property":"...", "operator":"=", "value":"..."}
+  {"property":"university.code", "operator":"=", "value":"401"},
+  {"property":"status", "operator":"=", "value":true}
 ]}}</pre>
 <b>Qo'llab-quvvatlanadigan operatorlar:</b> =, <>, like, startsWith, endsWith, in, isNull, notNull<br>
 <b>Filtrlash mumkin maydonlar:</b> code, nameUz, nameRu, university.code, deparmentType.code, status`
@@ -2520,7 +2526,7 @@
                         required: false
                     }
                 },
-                description: "Bo'linmalarni URL parametrlari orqali qidirish. CUBA filter format: {\"filter\":{\"conditions\":[{\"property\":\"...\",\"operator\":\"=\",\"value\":\"...\"}]}}",
+                description: "Bo'linmalarni URL parametrlari orqali qidirish. 🎯 Filter: university.code=401, status=true",
                 ported: true
             },
             {
@@ -2540,19 +2546,25 @@
                         required: false
                     }
                 },
-                requestBody: {
+                // 🎯 Ikkala tizim uchun ham university.code = 401 (solishtirish uchun)
+                bodyGenerator: (inputs) => ({
                     filter: {
                         conditions: [
+                            { property: "university.code", operator: "=", value: "401" },
                             { property: "status", operator: "=", value: true }
                         ]
                     },
                     view: "eUniversityDepartment-view"
-                },
+                }),
                 description: `Bo'linmalarni JSON filter orqali qidirish.
+
+<b>🎯 Test uchun avtomatik filter (ikkala tizim uchun):</b>
+- <b>university.code = "401"</b> (solishtirish uchun bir xil)
+- <b>status = true</b> (faqat faol bo'linmalar)
 
 <b>CUBA Filter formati:</b>
 <pre>{"filter":{"conditions":[
-  {"property":"code", "operator":"=", "value":"351-118"},
+  {"property":"university.code", "operator":"=", "value":"401"},
   {"property":"status", "operator":"=", "value":true}
 ]}, "view":"..."}</pre>
 
@@ -2572,7 +2584,8 @@
                     body_id: {
                         label: "id (code)",
                         type: "text",
-                        default: "401-99-TEST",
+                        defaultNew: "401-99-TEST",  // 🎯 Yangi HEMIS (otm401)
+                        defaultOld: "351-99-TEST",  // 🏛️ Eski HEMIS (otm351)
                         required: true,
                         placeholder: "Yangi: 401-xx-xx, Eski: 351-xx-xx",
                         bodyField: "id"
@@ -2605,7 +2618,8 @@
                     body_university_code: {
                         label: "university.code",
                         type: "text",
-                        default: "401",
+                        defaultNew: "401",  // 🎯 Yangi HEMIS (otm401)
+                        defaultOld: "351",  // 🏛️ Eski HEMIS (otm351)
                         required: true,
                         placeholder: "Yangi Hemis: 401, Eski Hemis: 351",
                         bodyField: "university.code"
@@ -2668,9 +2682,10 @@
                     entityId: {
                         label: "Bo'linma kodi",
                         type: "text",
-                        default: "351-118",
+                        defaultNew: "401-99-TEST",  // 🎯 Yangi HEMIS (otm401)
+                        defaultOld: "351-99-TEST",  // 🏛️ Eski HEMIS (otm351)
                         required: true,
-                        placeholder: "Masalan: 351-118, 401-102-08",
+                        placeholder: "Yangi: 401-xx-xx, Eski: 351-xx-xx",
                         useStoredId: "departmentCode"
                     },
                     returnNulls: {
@@ -2686,7 +2701,13 @@
                     nameRu: "Обновленное название",
                     status: true
                 },
-                description: "Mavjud bo'linmani yangilash. Faqat o'z OTM bo'linmalarini yangilash mumkin.",
+                description: `Bo'linmani yangilash.
+
+**🧪 Test uchun:**
+- 🆕 **Yangi Hemis (otm401):** entityId = 401-99-TEST
+- 🏛️ **Eski Hemis (otm351):** entityId = 351-99-TEST
+
+Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali yangilang.`,
                 ported: true
             },
             {
@@ -2700,13 +2721,20 @@
                     entityId: {
                         label: "Bo'linma kodi (o'chirish uchun)",
                         type: "text",
-                        default: "",
+                        defaultNew: "401-99-TEST",  // 🎯 Yangi HEMIS (otm401)
+                        defaultOld: "351-99-TEST",  // 🏛️ Eski HEMIS (otm351)
                         required: true,
-                        placeholder: "Avval yaratilgan kod",
+                        placeholder: "Yangi: 401-xx-xx, Eski: 351-xx-xx",
                         useStoredId: "createdDepartmentCode"
                     }
                 },
-                description: "Bo'linmani soft delete qilish. delete_ts belgilanadi, bazadan o'chirilmaydi. Faqat o'z OTM bo'linmalarini o'chirish mumkin.",
+                description: `Bo'linmani soft delete qilish (delete_ts belgilanadi, bazadan o'chirilmaydi).
+
+**🧪 Test uchun:**
+- 🆕 **Yangi Hemis (otm401):** entityId = 401-99-TEST
+- 🏛️ **Eski Hemis (otm351):** entityId = 351-99-TEST
+
+Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
@@ -2790,11 +2818,13 @@
                 dependsOn: 1,
                 inputFields: {
                     filter: {
-                        label: "Filter (nom bo'yicha)",
-                        type: "text",
-                        default: "Fakultet",
+                        label: "Filter (CUBA JSON format)",
+                        type: "textarea",
+                        rows: 3,
+                        default: '{"conditions":[{"property":"name","operator":"contains","value":"Fakultet"}]}',
                         required: true,
-                        placeholder: "Qidiruv so'zi"
+                        placeholder: '{"conditions":[{"property":"name","operator":"contains","value":"..."}]}',
+                        helpText: 'CUBA filter: property=name/code/active, operator=contains/=/startsWith'
                     },
                     limit: {
                         label: "Limit",
@@ -2810,7 +2840,7 @@
                         required: false
                     }
                 },
-                description: "Bo'linma turlarini nom bo'yicha qidirish",
+                description: "Bo'linma turlarini CUBA JSON filter bilan qidirish",
                 ported: true
             },
             {
@@ -2838,9 +2868,13 @@
                     }
                 },
                 requestBody: {
-                    filter: "Kafedra"
+                    filter: {
+                        conditions: [
+                            { property: "name", operator: "contains", value: "Kafedra" }
+                        ]
+                    }
                 },
-                description: "Bo'linma turlarini JSON filter bilan qidirish",
+                description: "Bo'linma turlarini CUBA JSON filter bilan qidirish (POST)",
                 ported: true
             },
             {
@@ -2904,6 +2938,257 @@
                     }
                 },
                 description: "Bo'linma turini soft delete qilish",
+                ported: true
+            },
+
+            // ==============================================================================
+            // 13. KLASSIFIKATORLAR
+            // ==============================================================================
+            {
+                id: 1,
+                category: "13.Klassifikatorlar",
+                name: "Barcha klassifikatorlar ro'yxati (GET /info)",
+                method: "GET",
+                url: "/app/rest/v2/services/classifiers/info",
+                requiresAuth: true,
+                description: "Tizimda mavjud barcha klassifikatorlar ro'yxatini olish (title, version, count)",
+                ported: true
+            },
+            {
+                id: 2,
+                category: "13.Klassifikatorlar",
+                name: "Bitta klassifikatorni olish (GET /single)",
+                method: "GET",
+                url: "/app/rest/v2/services/classifiers/single",
+                requiresAuth: true,
+                inputFields: {
+                    classifier: {
+                        label: "Klassifikator nomi",
+                        type: "text",
+                        default: "h_university",
+                        defaultNew: "h_university",
+                        defaultOld: "h_university",
+                        required: true,
+                        placeholder: "h_gender, h_citizenship_type, h_education_form...",
+                        description: "Klassifikator nomi (masalan: h_university, h_gender, h_citizenship_type, h_education_form, h_payment_form)"
+                    }
+                },
+                description: "Bitta klassifikator ma'lumotlarini olish (CUBA formatida)",
+                ported: true
+            },
+            {
+                id: 3,
+                category: "13.Klassifikatorlar",
+                name: "Barcha klassifikatorlar (items bilan) (GET /allItems)",
+                method: "GET",
+                url: "/app/rest/v2/services/classifiers/allItems",
+                requiresAuth: true,
+                description: "Barcha klassifikatorlarni items bilan birga olish (CUBA formatida)",
+                ported: true
+            },
+            // ============================================
+            // 14.Tarjima (2 endpoint)
+            // ============================================
+            {
+                id: 1,
+                category: "14.Tarjima",
+                name: "Barcha tarjimalar (GET /translate/get)",
+                method: "GET",
+                url: "/app/rest/v2/services/translate/get",
+                requiresAuth: true,
+                description: "Barcha tarjimalarni OLD-HEMIS formatida olish (_entityName, message, uz_Uz, ru_Ru, oz_Uz, en_Us, kk_Uz, category, version)",
+                ported: true
+            },
+            {
+                id: 2,
+                category: "14.Tarjima",
+                name: "Tarjimalarni filtrlab olish (POST /translate/get)",
+                method: "POST",
+                url: "/app/rest/v2/services/translate/get",
+                requiresAuth: true,
+                inputFields: {
+                    category: { label: "Kategoriya", type: "text", defaultValue: "app", required: false }
+                },
+                description: "Tarjimalarni kategoriya bo'yicha filtrlab olish",
+                ported: true
+            },
+            // ============================================
+            // 15.OTM (1 endpoint)
+            // ============================================
+            {
+                id: 1,
+                category: "15.OTM",
+                name: "OTM ro'yxati (GET /entities/hemishe_EUniversity)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EUniversity",
+                requiresAuth: true,
+                inputFields: {
+                    limit: { label: "Limit", type: "number", defaultValue: "5", required: false },
+                    view: { label: "View", type: "text", defaultValue: "eUniversity-view", required: false }
+                },
+                description: "Barcha OTM ro'yxatini OLD-HEMIS formatida olish (eUniversity-view: code, name, tin, address, ownership, universityType, soato)",
+                ported: true
+            },
+            {
+                id: 2,
+                category: "15.OTM",
+                name: "OTM yaratish/yangilash (POST /entities/hemishe_EUniversity)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EUniversity",
+                requiresAuth: true,
+                contentType: "json",
+                inputFields: {
+                    body_code: {
+                        label: "code (OTM kodi)",
+                        type: "text",
+                        defaultNew: "999-NEW-TEST",   // 🆕 Yangi HEMIS uchun
+                        defaultOld: "999-OLD-TEST",   // 🏛️ Eski HEMIS uchun
+                        required: true,
+                        placeholder: "Yangi: 999-NEW-TEST, Eski: 999-OLD-TEST",
+                        bodyField: "code"
+                    },
+                    body_name: {
+                        label: "name (OTM nomi)",
+                        type: "text",
+                        defaultNew: "Yangi Test Universiteti",   // 🆕 Yangi HEMIS uchun
+                        defaultOld: "Eski Test Universiteti",    // 🏛️ Eski HEMIS uchun
+                        required: true,
+                        placeholder: "OTM nomi",
+                        bodyField: "name"
+                    },
+                    body_tin: {
+                        label: "tin (STIR)",
+                        type: "text",
+                        defaultNew: "111222333",   // 🆕 Yangi HEMIS uchun
+                        defaultOld: "444555666",   // 🏛️ Eski HEMIS uchun
+                        required: false,
+                        placeholder: "STIR raqami",
+                        bodyField: "tin"
+                    },
+                    body_address: {
+                        label: "address (Manzil)",
+                        type: "text",
+                        defaultNew: "Yangi manzil, Toshkent",   // 🆕 Yangi HEMIS uchun
+                        defaultOld: "Eski manzil, Toshkent",    // 🏛️ Eski HEMIS uchun
+                        required: false,
+                        placeholder: "Manzil",
+                        bodyField: "address"
+                    },
+                    body_active: {
+                        label: "active (Faol)",
+                        type: "select",
+                        options: [{value: "true", label: "true (faol)"}, {value: "false", label: "false (nofaol)"}],
+                        default: "true",
+                        required: false,
+                        bodyField: "active",
+                        parseAs: "boolean"
+                    },
+                    body_studentUrl: {
+                        label: "studentUrl",
+                        type: "text",
+                        defaultNew: "student.new-test.uz",   // 🆕 Yangi HEMIS uchun
+                        defaultOld: "student.old-test.uz",   // 🏛️ Eski HEMIS uchun
+                        required: false,
+                        placeholder: "Talaba portal URL",
+                        bodyField: "studentUrl"
+                    },
+                    body_teacherUrl: {
+                        label: "teacherUrl",
+                        type: "text",
+                        defaultNew: "teacher.new-test.uz",   // 🆕 Yangi HEMIS uchun
+                        defaultOld: "teacher.old-test.uz",   // 🏛️ Eski HEMIS uchun
+                        required: false,
+                        placeholder: "O'qituvchi portal URL",
+                        bodyField: "teacherUrl"
+                    },
+                    body_oneId: {
+                        label: "oneId",
+                        type: "select",
+                        options: [{value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "true",
+                        required: false,
+                        bodyField: "oneId",
+                        parseAs: "boolean"
+                    },
+                    returnNulls: {
+                        label: "null qiymatlarni qaytarish",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                bodyGenerator: (inputs) => ({
+                    code: inputs.body_code,
+                    name: inputs.body_name,
+                    tin: inputs.body_tin || null,
+                    address: inputs.body_address || null,
+                    active: inputs.body_active === 'true',
+                    studentUrl: inputs.body_studentUrl || null,
+                    teacherUrl: inputs.body_teacherUrl || null,
+                    oneId: inputs.body_oneId === 'true',
+                    addStudent: true,
+                    allowGrouping: true,
+                    allowTransferOutside: true,
+                    gpaEdit: false,
+                    accreditationEdit: false,
+                    gradingSystem: false
+                }),
+                description: `**OTM yaratish yoki yangilash** (CUBA Entity API pattern)
+
+<b>🧪 Test uchun:</b>
+- 🆕 <b>Yangi Hemis:</b> code=999-NEW-TEST, name="Yangi Test Universiteti"
+- 🏛️ <b>Eski Hemis:</b> code=999-OLD-TEST, name="Eski Test Universiteti"
+
+<b>Xususiyatlar:</b>
+- Agar body da "code" mavjud va bazada bor → yangilash
+- Agar body da "code" bazada mavjud emas → yaratish
+- Response: Yaratilgan/yangilangan OTM + Location header
+
+<b>Majburiy maydonlar:</b>
+- code - OTM kodi (String, unique)
+- name - OTM nomi
+
+<b>Ixtiyoriy maydonlar:</b>
+- tin - STIR raqami
+- address - Manzil
+- active - Faol holat (boolean)
+- studentUrl, teacherUrl - Portal URL lari
+- oneId, addStudent, allowGrouping - Boolean flaglar
+
+<b>⚠️ Eslatma:</b> Bu endpoint faqat admin yoki tegishli huquqli foydalanuvchilar uchun!`,
+                ported: true,
+                storeFirstId: "createdUniversityCode"
+            },
+            {
+                id: 3,
+                category: "15.OTM",
+                name: "OTM o'chirish (DELETE /entities/hemishe_EUniversity)",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_EUniversity/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "OTM kodi (o'chirish uchun)",
+                        type: "text",
+                        defaultNew: "999-NEW-TEST",   // 🆕 Yangi HEMIS uchun
+                        defaultOld: "999-OLD-TEST",   // 🏛️ Eski HEMIS uchun
+                        required: true,
+                        placeholder: "Yangi: 999-NEW-TEST, Eski: 999-OLD-TEST",
+                        useStoredId: "createdUniversityCode"
+                    }
+                },
+                description: `**OTM o'chirish** (soft delete)
+
+<b>🧪 Test uchun:</b>
+- 🆕 <b>Yangi Hemis:</b> entityId=999-NEW-TEST
+- 🏛️ <b>Eski Hemis:</b> entityId=999-OLD-TEST
+
+<b>Xususiyatlar:</b>
+- Soft delete: deleteTs va deletedBy maydonlari o'rnatiladi
+- Response: 204 No Content (muvaffaqiyatli) yoki 404 Not Found
+
+<b>⚠️ Eslatma:</b> Avval #2 orqali test OTM yarating, keyin shu endpoint orqali o'chiring!`,
                 ported: true
             },
         ];
@@ -3002,7 +3287,8 @@
                                 `;
                             } else {
                                 // Get default value from config if useConfig flags set
-                                let defaultValue = field.default;
+                                // 🎯 NEW tizim uchun defaultNew yoki default
+                                let defaultValue = field.defaultNew !== undefined ? field.defaultNew : field.default;
                                 if (field.useConfigPinfl) {
                                     defaultValue = document.getElementById('newPinfl')?.value || '';
                                 } else if (field.useConfigSerial) {
@@ -3017,8 +3303,11 @@
                                 if (field.type === 'select' && field.options) {
                                     paramsHtml += `<select class="form-control form-control-sm" id="input-new-${uniqueId}-${key}">`;
                                     field.options.forEach(opt => {
-                                        const selected = opt.value === defaultValue ? 'selected' : '';
-                                        paramsHtml += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
+                                        // Options oddiy string array yoki object array bo'lishi mumkin
+                                        const optValue = typeof opt === 'object' ? opt.value : opt;
+                                        const optLabel = typeof opt === 'object' ? opt.label : (opt || '(bo\'sh)');
+                                        const selected = optValue === defaultValue ? 'selected' : '';
+                                        paramsHtml += `<option value="${optValue}" ${selected}>${optLabel}</option>`;
                                     });
                                     paramsHtml += `</select>`;
                                 } else if (field.type === 'textarea') {
@@ -3069,7 +3358,8 @@
                                 `;
                             } else {
                                 // Get default value from config if useConfig flags set
-                                let defaultValue = field.default;
+                                // 🏛️ OLD tizim uchun defaultOld yoki default
+                                let defaultValue = field.defaultOld !== undefined ? field.defaultOld : field.default;
                                 if (field.useConfigPinfl) {
                                     defaultValue = document.getElementById('oldPinfl')?.value || '';
                                 } else if (field.useConfigStudentId) {
@@ -3084,8 +3374,11 @@
                                 if (field.type === 'select' && field.options) {
                                     paramsHtml += `<select class="form-control form-control-sm" id="input-old-${uniqueId}-${key}">`;
                                     field.options.forEach(opt => {
-                                        const selected = opt.value === defaultValue ? 'selected' : '';
-                                        paramsHtml += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
+                                        // Options oddiy string array yoki object array bo'lishi mumkin
+                                        const optValue = typeof opt === 'object' ? opt.value : opt;
+                                        const optLabel = typeof opt === 'object' ? opt.label : (opt || '(bo\'sh)');
+                                        const selected = optValue === defaultValue ? 'selected' : '';
+                                        paramsHtml += `<option value="${optValue}" ${selected}>${optLabel}</option>`;
                                     });
                                     paramsHtml += `</select>`;
                                 } else if (field.type === 'textarea') {
@@ -3476,7 +3769,9 @@
                 if ((endpoint.method === 'PUT' || endpoint.method === 'POST') && endpoint.bodyGenerator && !endpoint.bodyTemplate && !endpoint.requestBody) {
                     options.headers['Content-Type'] = 'application/json';
                     // Collect input values for bodyGenerator
-                    const inputs = {};
+                    const inputs = {
+                        _system: system  // 'new' yoki 'old' - bodyGenerator ichida ishlatish uchun
+                    };
                     if (endpoint.inputFields) {
                         Object.entries(endpoint.inputFields).forEach(([key, field]) => {
                             const inputElement = document.getElementById(`input-${system}-${uniqueId}-${key}`);

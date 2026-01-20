@@ -1576,6 +1576,54 @@ diff old_response.json new_response.json
 
 ## 🎛️ ENDPOINT_TESTER.HTML CONFIG PANEL QOIDALARI
 
+### ⚠️ MUHIM: Default Qiymatlar - User/University bo'yicha
+
+**Ikki tizim TURLI userlar va universitetlar bilan ishlaydi:**
+
+| Tizim | Port | User | University | Ma'lumotlar bazasi |
+|-------|------|------|------------|-------------------|
+| **🆕 Yangi Hemis** | 8081 | `otm401` | 401 | `hemis_401` |
+| **🏛️ Eski Hemis** | 8082 | `otm351` | 351 | `hemis_351` |
+
+**Shuning uchun default qiymatlar quyidagicha bo'lishi SHART:**
+
+```javascript
+// ✅ TO'G'RI - Yangi Hemis (otm401) uchun default
+{
+    entityId: {
+        label: "Bo'linma kodi",
+        type: "text",
+        default: "401-102-08",  // ← otm401/university 401 ma'lumoti
+        placeholder: "Yangi:401-102-08, Eski:351-118"
+    }
+}
+
+// ❌ NOTO'G'RI - Eski hemis ma'lumoti yangi hemis uchun ishlamaydi!
+{
+    entityId: {
+        label: "Bo'linma kodi",
+        type: "text",
+        default: "351-118",  // ← Bu otm351 ga tegishli, otm401 da topilmaydi!
+        ...
+    }
+}
+```
+
+**Qoida:**
+1. **default** qiymat = **Yangi Hemis (otm401/university 401)** ma'lumotlaridan
+2. **placeholder** da ikkala variant ko'rsatilsin: `"Yangi:XXX, Eski:YYY"`
+3. Foydalanuvchi eski hemis test qilganda placeholder dan to'g'ri qiymatni ko'radi
+
+**Misollar:**
+
+| Ma'lumot turi | Yangi Hemis (default) | Eski Hemis (placeholder) |
+|---------------|----------------------|--------------------------|
+| Bo'linma kodi | `401-102-08` | `351-118` |
+| Student ID | `401-xxx-xxx` | `351-xxx-xxx` |
+| Employee ID | `401-yyy-yyy` | `351-yyy-yyy` |
+
+---
+
 ### ✅ Config Panel Struktura
 
 `endpoint_tester.html` da ikki tizim uchun alohida config panellar mavjud:
