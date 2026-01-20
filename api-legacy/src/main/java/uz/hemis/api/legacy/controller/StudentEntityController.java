@@ -144,7 +144,11 @@ public class StudentEntityController {
 
         } catch (ResourceNotFoundException e) {
             log.debug("Student not found: {}", entityId);
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
     }
 
@@ -230,7 +234,11 @@ public class StudentEntityController {
 
         } catch (ResourceNotFoundException e) {
             log.warn("Student not found for update: {}", entityId);
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
     }
 

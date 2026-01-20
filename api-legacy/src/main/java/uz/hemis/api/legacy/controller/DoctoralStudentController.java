@@ -20,7 +20,13 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.List;
 import java.util.UUID;
 
-@Tag(name = "Doctoral Students")
+/**
+ * Controller for DoctoralStudent API
+ *
+ * This is a modern API controller (not legacy CUBA format).
+ * For legacy CUBA format, see DoctoralStudentEntityController.
+ */
+@Tag(name = "Doctoral Students", description = "Doktorant talabalar API (zamonaviy format)")
 @RestController
 @RequestMapping("/app/rest/v2/doctoral-students")
 @RequiredArgsConstructor
@@ -31,7 +37,7 @@ public class DoctoralStudentController {
 
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<DoctoralStudentDto>>> getAllDoctoralStudents(
-            @PageableDefault(size = 20, sort = "admissionDate", direction = Sort.Direction.DESC) Pageable pageable
+            @PageableDefault(size = 20, sort = "acceptedDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findAll(pageable);
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(doctoralStudents)));
@@ -43,40 +49,52 @@ public class DoctoralStudentController {
         return ResponseEntity.ok(ResponseWrapper.success(doctoralStudent));
     }
 
-    @GetMapping("/code/{code}")
-    public ResponseEntity<ResponseWrapper<DoctoralStudentDto>> getDoctoralStudentByCode(@PathVariable String code) {
-        DoctoralStudentDto doctoralStudent = doctoralStudentService.findByCode(code);
+    @GetMapping("/student-id/{studentIdNumber}")
+    public ResponseEntity<ResponseWrapper<DoctoralStudentDto>> getDoctoralStudentByStudentIdNumber(
+            @PathVariable String studentIdNumber
+    ) {
+        DoctoralStudentDto doctoralStudent = doctoralStudentService.findByStudentIdNumber(studentIdNumber);
         return ResponseEntity.ok(ResponseWrapper.success(doctoralStudent));
     }
 
-    @GetMapping("/student/{studentId}")
-    public ResponseEntity<ResponseWrapper<DoctoralStudentDto>> getDoctoralStudentByStudent(@PathVariable UUID studentId) {
-        DoctoralStudentDto doctoralStudent = doctoralStudentService.findByStudent(studentId);
+    @GetMapping("/passport-pin/{passportPin}")
+    public ResponseEntity<ResponseWrapper<DoctoralStudentDto>> getDoctoralStudentByPassportPin(
+            @PathVariable String passportPin
+    ) {
+        DoctoralStudentDto doctoralStudent = doctoralStudentService.findByPassportPin(passportPin);
         return ResponseEntity.ok(ResponseWrapper.success(doctoralStudent));
     }
 
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<DoctoralStudentDto>>> getDoctoralStudentsByUniversity(
-            @RequestParam("university") String universityCode,
-            @PageableDefault(size = 20, sort = "admissionDate", direction = Sort.Direction.DESC) Pageable pageable
+            @RequestParam("university") String university,
+            @PageableDefault(size = 20, sort = "acceptedDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findByUniversity(universityCode, pageable);
+        Page<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findByUniversity(university, pageable);
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(doctoralStudents)));
     }
 
     @GetMapping(value = "/active", params = "university")
     public ResponseEntity<ResponseWrapper<List<DoctoralStudentDto>>> getActiveDoctoralStudentsByUniversity(
-            @RequestParam("university") String universityCode
+            @RequestParam("university") String university
     ) {
-        List<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findActiveByUniversity(universityCode);
+        List<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findActiveByUniversity(university);
         return ResponseEntity.ok(ResponseWrapper.success(doctoralStudents));
     }
 
-    @GetMapping(params = "advisor")
-    public ResponseEntity<ResponseWrapper<List<DoctoralStudentDto>>> getDoctoralStudentsByAdvisor(
-            @RequestParam("advisor") UUID advisorId
+    @GetMapping(params = "doctoralStudentType")
+    public ResponseEntity<ResponseWrapper<List<DoctoralStudentDto>>> getDoctoralStudentsByType(
+            @RequestParam("doctoralStudentType") String doctoralStudentType
     ) {
-        List<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findByScientificAdvisor(advisorId);
+        List<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findByDoctoralStudentType(doctoralStudentType);
+        return ResponseEntity.ok(ResponseWrapper.success(doctoralStudents));
+    }
+
+    @GetMapping(params = "doctorateStudentStatus")
+    public ResponseEntity<ResponseWrapper<List<DoctoralStudentDto>>> getDoctoralStudentsByStatus(
+            @RequestParam("doctorateStudentStatus") String doctorateStudentStatus
+    ) {
+        List<DoctoralStudentDto> doctoralStudents = doctoralStudentService.findByDoctorateStudentStatus(doctorateStudentStatus);
         return ResponseEntity.ok(ResponseWrapper.success(doctoralStudents));
     }
 

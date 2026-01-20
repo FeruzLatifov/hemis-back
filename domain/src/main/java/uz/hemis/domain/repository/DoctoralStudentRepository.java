@@ -12,35 +12,94 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Repository for DoctoralStudent entity
+ *
+ * Table: hemishe_e_doctorate_student
+ * All methods match actual entity fields from ministry.sql
+ *
+ * NO-DELETE • NO-RENAME • NO-BREAKING-CHANGES
+ */
 @Repository
 public interface DoctoralStudentRepository extends JpaRepository<DoctoralStudent, UUID> {
 
-    Optional<DoctoralStudent> findByDoctoralCode(String doctoralCode);
+    /**
+     * Find by passport PIN (PINFL)
+     */
+    Optional<DoctoralStudent> findByPassportPin(String passportPin);
 
-    Optional<DoctoralStudent> findByStudent(UUID studentId);
+    /**
+     * Find by passport number
+     */
+    Optional<DoctoralStudent> findByPassportNumber(String passportNumber);
 
-    Page<DoctoralStudent> findByUniversity(String universityCode, Pageable pageable);
+    /**
+     * Find by student ID number
+     */
+    Optional<DoctoralStudent> findByStudentIdNumber(String studentIdNumber);
 
-    List<DoctoralStudent> findByUniversity(String universityCode);
+    /**
+     * Find by legacy U_ID
+     */
+    @Query("SELECT d FROM DoctoralStudent d WHERE d.uId = :uId")
+    Optional<DoctoralStudent> findByLegacyUId(@Param("uId") Integer uId);
 
-    Page<DoctoralStudent> findByDepartment(UUID departmentId, Pageable pageable);
+    /**
+     * Find by university code with pagination
+     */
+    Page<DoctoralStudent> findByUniversity(String university, Pageable pageable);
 
-    List<DoctoralStudent> findByScientificAdvisor(UUID advisorId);
+    /**
+     * Find all by university code
+     */
+    List<DoctoralStudent> findByUniversity(String university);
 
-    @Query("SELECT d FROM DoctoralStudent d WHERE d.university = :universityCode AND d.defenseStatus = :status")
+    /**
+     * Find by department code with pagination
+     */
+    Page<DoctoralStudent> findByDepartment(String department, Pageable pageable);
+
+    /**
+     * Find by doctoral student type
+     */
+    List<DoctoralStudent> findByDoctoralStudentType(String doctoralStudentType);
+
+    /**
+     * Find by doctorate student status
+     */
+    List<DoctoralStudent> findByDoctorateStudentStatus(String doctorateStudentStatus);
+
+    /**
+     * Find active doctoral students by university
+     */
+    @Query("SELECT d FROM DoctoralStudent d WHERE d.university = :university AND d.active = true")
+    List<DoctoralStudent> findActiveByUniversity(@Param("university") String university);
+
+    /**
+     * Count active doctoral students by university
+     */
+    @Query("SELECT COUNT(d) FROM DoctoralStudent d WHERE d.university = :university AND d.active = true")
+    long countActiveByUniversity(@Param("university") String university);
+
+    /**
+     * Find by university and status
+     */
+    @Query("SELECT d FROM DoctoralStudent d WHERE d.university = :university AND d.doctorateStudentStatus = :status")
     Page<DoctoralStudent> findByUniversityAndStatus(
-            @Param("universityCode") String universityCode,
+            @Param("university") String university,
             @Param("status") String status,
             Pageable pageable
     );
 
-    @Query("SELECT d FROM DoctoralStudent d WHERE d.university = :universityCode AND d.isActive = true")
-    List<DoctoralStudent> findActiveByUniversity(@Param("universityCode") String universityCode);
+    /**
+     * Check if passport PIN exists
+     */
+    boolean existsByPassportPin(String passportPin);
 
-    @Query("SELECT COUNT(d) FROM DoctoralStudent d WHERE d.university = :universityCode AND d.isActive = true")
-    long countActiveByUniversity(@Param("universityCode") String universityCode);
-
-    boolean existsByDoctoralCode(String doctoralCode);
+    /**
+     * Check if student ID number exists
+     */
+    boolean existsByStudentIdNumber(String studentIdNumber);
 
     // NO DELETE METHODS (NDG - Non-Deletion Guarantee)
 }

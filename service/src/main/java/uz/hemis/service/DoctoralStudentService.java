@@ -20,6 +20,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Service for DoctoralStudent entity operations
+ *
+ * Table: hemishe_e_doctorate_student
+ * All methods match actual entity fields from ministry.sql
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -36,16 +42,23 @@ public class DoctoralStudentService {
         return doctoralStudentMapper.toDto(doctoralStudent);
     }
 
-    @Cacheable(value = "doctoralStudents", key = "'code:' + #code", unless = "#result == null")
-    public DoctoralStudentDto findByCode(String code) {
-        DoctoralStudent doctoralStudent = doctoralStudentRepository.findByDoctoralCode(code)
-                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "code", code));
+    /**
+     * Find by student ID number
+     */
+    @Cacheable(value = "doctoralStudents", key = "'studentIdNumber:' + #studentIdNumber", unless = "#result == null")
+    public DoctoralStudentDto findByStudentIdNumber(String studentIdNumber) {
+        DoctoralStudent doctoralStudent = doctoralStudentRepository.findByStudentIdNumber(studentIdNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "studentIdNumber", studentIdNumber));
         return doctoralStudentMapper.toDto(doctoralStudent);
     }
 
-    public DoctoralStudentDto findByStudent(UUID studentId) {
-        DoctoralStudent doctoralStudent = doctoralStudentRepository.findByStudent(studentId)
-                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "studentId", studentId));
+    /**
+     * Find by passport PIN (PINFL)
+     */
+    @Cacheable(value = "doctoralStudents", key = "'passportPin:' + #passportPin", unless = "#result == null")
+    public DoctoralStudentDto findByPassportPin(String passportPin) {
+        DoctoralStudent doctoralStudent = doctoralStudentRepository.findByPassportPin(passportPin)
+                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "passportPin", passportPin));
         return doctoralStudentMapper.toDto(doctoralStudent);
     }
 
@@ -53,30 +66,46 @@ public class DoctoralStudentService {
         return doctoralStudentRepository.findAll(pageable).map(doctoralStudentMapper::toDto);
     }
 
-    public Page<DoctoralStudentDto> findByUniversity(String universityCode, Pageable pageable) {
-        return doctoralStudentRepository.findByUniversity(universityCode, pageable).map(doctoralStudentMapper::toDto);
+    public Page<DoctoralStudentDto> findByUniversity(String university, Pageable pageable) {
+        return doctoralStudentRepository.findByUniversity(university, pageable).map(doctoralStudentMapper::toDto);
     }
 
-    public List<DoctoralStudentDto> findActiveByUniversity(String universityCode) {
-        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findActiveByUniversity(universityCode));
+    public List<DoctoralStudentDto> findActiveByUniversity(String university) {
+        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findActiveByUniversity(university));
     }
 
-    public List<DoctoralStudentDto> findByScientificAdvisor(UUID advisorId) {
-        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findByScientificAdvisor(advisorId));
+    /**
+     * Find by doctoral student type
+     */
+    public List<DoctoralStudentDto> findByDoctoralStudentType(String doctoralStudentType) {
+        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findByDoctoralStudentType(doctoralStudentType));
     }
 
-    public long countActiveByUniversity(String universityCode) {
-        return doctoralStudentRepository.countActiveByUniversity(universityCode);
+    /**
+     * Find by doctorate student status
+     */
+    public List<DoctoralStudentDto> findByDoctorateStudentStatus(String doctorateStudentStatus) {
+        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findByDoctorateStudentStatus(doctorateStudentStatus));
+    }
+
+    public long countActiveByUniversity(String university) {
+        return doctoralStudentRepository.countActiveByUniversity(university);
     }
 
     @Transactional
     @CachePut(value = "doctoralStudents", key = "#result.id")
     public DoctoralStudentDto create(DoctoralStudentDto doctoralStudentDto) {
-        log.info("Creating doctoral student: {}", doctoralStudentDto.getDoctoralCode());
+        log.info("Creating doctoral student");
 
-        if (doctoralStudentDto.getDoctoralCode() != null &&
-                doctoralStudentRepository.existsByDoctoralCode(doctoralStudentDto.getDoctoralCode())) {
-            throw new ValidationException("Doctoral student with this code already exists", "code", "Code must be unique");
+        // Validate unique constraints
+        if (doctoralStudentDto.getPassportPin() != null &&
+                doctoralStudentRepository.existsByPassportPin(doctoralStudentDto.getPassportPin())) {
+            throw new ValidationException("Doctoral student with this passport PIN already exists", "passportPin", "Passport PIN must be unique");
+        }
+
+        if (doctoralStudentDto.getStudentIdNumber() != null &&
+                doctoralStudentRepository.existsByStudentIdNumber(doctoralStudentDto.getStudentIdNumber())) {
+            throw new ValidationException("Doctoral student with this student ID number already exists", "studentIdNumber", "Student ID number must be unique");
         }
 
         DoctoralStudent doctoralStudent = doctoralStudentMapper.toEntity(doctoralStudentDto);

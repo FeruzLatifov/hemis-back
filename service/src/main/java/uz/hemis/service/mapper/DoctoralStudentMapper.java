@@ -6,6 +6,12 @@ import uz.hemis.domain.entity.DoctoralStudent;
 
 import java.util.List;
 
+/**
+ * Mapper for DoctoralStudent entity
+ *
+ * Table: hemishe_e_doctorate_student
+ * All mappings match actual entity fields from ministry.sql
+ */
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DoctoralStudentMapper {
 

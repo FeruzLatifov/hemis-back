@@ -191,7 +191,7 @@
         <!-- Header -->
         <div class="text-center text-white mb-4">
             <h1><i class="fas fa-server"></i> HEMIS API Comparison Tester</h1>
-            <p class="lead">🆕 Yangi Hemis-Back vs 🏛️ Old-Hemis • <span id="totalEndpointCount">40</span> endpoint solishtirish</p>
+            <p class="lead">🆕 Yangi Hemis-Back vs 🏛️ Old-Hemis • <span id="totalEndpointCount">80</span> endpoint solishtirish</p>
         </div>
 
         <!-- CORS Warning (shown only if file:// protocol) -->
@@ -3191,1808 +3191,601 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>⚠️ Eslatma:</b> Avval #2 orqali test OTM yarating, keyin shu endpoint orqali o'chiring!`,
                 ported: true
             },
-            {
-                id: 1,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "Barcha OTM xodim kategoriyalari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "OTM xodimlari kategoriyalari klassifikatori: 10=Boshqa, 11=Administrativ-boshqaruv, 12=Professor-o'qituvchi, 13=O'quv-yordamchi va texnik, 14=Xizmat ko'rsatuvchi",
-                ported: true,
-                storeFirstId: "employeeTypeCode"
-            },
-            {
-                id: 2,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "OTM xodim kategoriyasini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Tur kodi (10, 11, 12, 13, 14)",
-                        type: "text",
-                        default: "12",
-                        required: true,
-                        useStoredId: "employeeTypeCode"
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta OTM xodim kategoriyasini kod bo'yicha olish. Kodlar: 10=Boshqa, 11=Administrativ, 12=Professor, 13=Texnik, 14=Xizmat",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 3,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "OTM xodim kategoriyasini yangilash (PUT)",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Tur kodi (10, 11, 12, 13, 14)",
-                        type: "text",
-                        default: "12",
-                        required: true,
-                        useStoredId: "employeeTypeCode"
-                    },
-                    name: {
-                        label: "Nomi (O'zbekcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    active: {
-                        label: "Faol",
-                        type: "select",
-                        options: [{value: "", label: "O'zgartirmaslik"}, {value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["name", "nameEn", "nameRu", "active"],
-                description: "OTM xodim kategoriyasini yangilash. Faqat yuborilgan fieldlar yangilanadi.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 4,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "OTM xodim kategoriyasini o'chirish (DELETE)",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Tur kodi (10, 11, 12, 13, 14)",
-                        type: "text",
-                        default: "10",
-                        required: true,
-                        useStoredId: "employeeTypeCode"
-                    }
-                },
-                description: "OTM xodim kategoriyasini o'chirish (soft delete). ⚠️ Diqqat: Ma'lumot bazadan o'chirilmaydi, faqat deleteTs belgilanadi.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 5,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "Yangi OTM xodim kategoriyasini yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType",
-                requiresAuth: true,
-                inputFields: {
-                    code: {
-                        label: "Tur kodi (unique)",
-                        type: "text",
-                        default: "15",
-                        required: true
-                    },
-                    name: {
-                        label: "Nomi (O'zbekcha)",
-                        type: "text",
-                        default: "Yangi xodim turi",
-                        required: true
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    active: {
-                        label: "Faol",
-                        type: "select",
-                        options: [{value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "true",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["code", "name", "nameEn", "nameRu", "active"],
-                description: "Yangi OTM xodim kategoriyasini yaratish. code va name majburiy.",
-                ported: true
-            },
-            {
-                id: 6,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "OTM xodim kategoriyalarini qidirish (GET /search)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "CUBA Filter (JSON)",
-                        type: "textarea",
-                        default: '{"conditions":[]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"active","operator":"=","value":true}]}'
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "CUBA filter formatida OTM xodim kategoriyalarini qidirish. filter parametri URL encoded JSON formatida.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 7,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "OTM xodim kategoriyalarini qidirish (POST /search)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "CUBA Filter (JSON)",
-                        type: "textarea",
-                        default: '{"conditions":[]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"active","operator":"=","value":true}]}'
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "CUBA filter formatida OTM xodim kategoriyalarini qidirish. Filter body da JSON formatida yuboriladi.",
-                dependsOn: 1,
-                ported: true
-            },
-            // =====================================================
-            // 10.Talaba holati - Talaba holatlari klassifikatori
-            // =====================================================
-            {
-                id: 1,
-                category: "10.Talaba holati",
-                name: "Barcha talaba holatlari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HStudentStatusType",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Talaba holatlari klassifikatori: 10=Boshqa, 11=O'qimoqda, 12=Chetlashgan, 13=Akademik ta'til, 14=Bitirgan",
-                ported: true,
-                storeFirstId: "studentStatusCode"
-            },
-            {
-                id: 2,
-                category: "10.Talaba holati",
-                name: "Talaba holatini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HStudentStatusType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Holat kodi (10-14)",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        placeholder: "11"
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Kod bo'yicha talaba holatini olish. Holatlar: 10=Boshqa, 11=O'qimoqda, 12=Chetlashgan, 13=Akademik ta'til, 14=Bitirgan",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 3,
-                category: "10.Talaba holati",
-                name: "Talaba holatini yangilash (PUT)",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_HStudentStatusType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Holat kodi",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        placeholder: "11"
-                    },
-                    name: {
-                        label: "Nomi (O'zbekcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    active: {
-                        label: "Faol",
-                        type: "select",
-                        options: [{value: "", label: "O'zgartirmaslik"}, {value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["name", "nameEn", "nameRu", "active"],
-                description: "Talaba holatini yangilash. Faqat yuborilgan maydonlar yangilanadi.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 4,
-                category: "10.Talaba holati",
-                name: "Yangi talaba holatini yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HStudentStatusType",
-                requiresAuth: true,
-                inputFields: {
-                    code: {
-                        label: "Kod (unique)",
-                        type: "text",
-                        default: "99",
-                        required: true,
-                        placeholder: "99"
-                    },
-                    name: {
-                        label: "Nomi (O'zbekcha)",
-                        type: "text",
-                        default: "Test holati",
-                        required: true
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    active: {
-                        label: "Faol",
-                        type: "select",
-                        options: [{value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "true",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["code", "name", "nameEn", "nameRu", "active"],
-                description: "Yangi talaba holati yaratish. CUBA Platform kabi upsert qiladi - mavjud bo'lsa yangilaydi.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 5,
-                category: "10.Talaba holati",
-                name: "Talaba holatini o'chirish (DELETE)",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_HStudentStatusType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Holat kodi",
-                        type: "text",
-                        default: "99",
-                        required: true,
-                        placeholder: "99"
-                    }
-                },
-                description: "Talaba holatini o'chirish (soft delete). Faqat test uchun yaratilgan yozuvlarni o'chiring!",
-                dependsOn: 4,
-                ported: true
-            },
-            {
-                id: 6,
-                category: "10.Talaba holati",
-                name: "Talaba holatlarini qidirish (GET /search)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HStudentStatusType/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "CUBA Filter (JSON)",
-                        type: "textarea",
-                        default: '{"conditions":[]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"active","operator":"=","value":true}]}'
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "CUBA filter formatida talaba holatlarini qidirish. filter parametri URL encoded JSON formatida.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 7,
-                category: "10.Talaba holati",
-                name: "Talaba holatlarini qidirish (POST /search)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HStudentStatusType/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "CUBA Filter (JSON)",
-                        type: "textarea",
-                        default: '{"conditions":[]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"active","operator":"=","value":true}]}'
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["filter"],
-                description: "CUBA filter formatida talaba holatlarini qidirish. Filter body da JSON formatida yuboriladi.",
-                dependsOn: 1,
-                ported: true
-            },
-            // =====================================================
-            // 11.Fuqarolik holatlari - Fuqarolik klassifikatori
-            // =====================================================
-            {
-                id: 1,
-                category: "11.Fuqarolik holatlari",
-                name: "Barcha fuqarolik holatlari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HCitizenship",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Fuqarolik holatlari klassifikatori: 11=O'zbekiston fuqarosi, 12=Xorijiy fuqaro, 13=Fuqaroligi yo'q",
-                ported: true,
-                storeFirstId: "citizenshipCode"
-            },
-            {
-                id: 2,
-                category: "11.Fuqarolik holatlari",
-                name: "Fuqarolik holatini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HCitizenship/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Fuqarolik kodi (11-13)",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        placeholder: "11"
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Kod bo'yicha fuqarolik holatini olish. 11=O'zbekiston, 12=Xorijiy, 13=Fuqaroligi yo'q",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 3,
-                category: "11.Fuqarolik holatlari",
-                name: "Fuqarolik holatini yangilash (PUT)",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_HCitizenship/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Fuqarolik kodi",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        placeholder: "11"
-                    },
-                    name: {
-                        label: "Nomi (O'zbekcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    active: {
-                        label: "Faol",
-                        type: "select",
-                        options: [{value: "", label: "O'zgartirmaslik"}, {value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["name", "nameEn", "nameRu", "active"],
-                description: "Fuqarolik holatini yangilash. Faqat yuborilgan maydonlar yangilanadi.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 4,
-                category: "11.Fuqarolik holatlari",
-                name: "Yangi fuqarolik holatini yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HCitizenship",
-                requiresAuth: true,
-                inputFields: {
-                    code: {
-                        label: "Kod (unique)",
-                        type: "text",
-                        default: "99",
-                        required: true,
-                        placeholder: "99"
-                    },
-                    name: {
-                        label: "Nomi (O'zbekcha)",
-                        type: "text",
-                        default: "Test fuqarolik",
-                        required: true
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    active: {
-                        label: "Faol",
-                        type: "select",
-                        options: [{value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "true",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["code", "name", "nameEn", "nameRu", "active"],
-                description: "Yangi fuqarolik holati yaratish. CUBA Platform kabi upsert qiladi.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 5,
-                category: "11.Fuqarolik holatlari",
-                name: "Fuqarolik holatini o'chirish (DELETE)",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_HCitizenship/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Fuqarolik kodi",
-                        type: "text",
-                        default: "99",
-                        required: true,
-                        placeholder: "99"
-                    }
-                },
-                description: "Fuqarolik holatini o'chirish (soft delete). Faqat test uchun yaratilgan yozuvlarni o'chiring!",
-                dependsOn: 4,
-                ported: true
-            },
-            {
-                id: 6,
-                category: "11.Fuqarolik holatlari",
-                name: "Fuqarolik holatlarini qidirish (GET /search)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HCitizenship/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "CUBA Filter (JSON)",
-                        type: "textarea",
-                        default: '{"conditions":[]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"active","operator":"=","value":true}]}'
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "CUBA filter formatida fuqarolik holatlarini qidirish.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 7,
-                category: "11.Fuqarolik holatlari",
-                name: "Fuqarolik holatlarini qidirish (POST /search)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HCitizenship/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "CUBA Filter (JSON)",
-                        type: "textarea",
-                        default: '{"conditions":[]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"active","operator":"=","value":true}]}'
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["filter"],
-                description: "CUBA filter formatida fuqarolik holatlarini qidirish. Filter body da JSON.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 8,
-                category: "06.Xodim lavozimlari",
-                name: "Barcha xodim stavkalari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Xodim mehnat stavkalari klassifikatori: 11=1,00, 12=0,75, 13=0,50, 14=0,25, 15=0,30, 16=0,20, 17=0,15, 18=0,10, 19=0,05",
-                ported: true,
-                storeFirstId: "employeeRateCode"
-            },
-            {
-                id: 9,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim stavkasini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Stavka kodi (11-19)",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        useStoredId: "employeeRateCode"
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta stavkani kod bo'yicha olish. Kodlar: 11=1,00, 12=0,75, 13=0,50, 14=0,25, 15=0,30, 16=0,20, 17=0,15, 18=0,10, 19=0,05",
-                dependsOn: 8,
-                ported: true
-            },
-            {
-                id: 10,
-                category: "06.Xodim lavozimlari",
-                name: "Barcha xodim lavozimlari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HTeacherPositionType",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Xodim lavozimlari klassifikatori (227 ta): 11=Stajer-o'qituvchi, 12=O'qituvchi, 13=Katta o'qituvchi, 14=Dotsent, 15=Professor va boshqalar",
-                ported: true,
-                storeFirstId: "positionTypeCode"
-            },
-            {
-                id: 11,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim lavozimini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HTeacherPositionType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Lavozim kodi",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        useStoredId: "positionTypeCode"
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta lavozimni kod bo'yicha olish. Masalan: 11=Stajer-o'qituvchi, 14=Dotsent, 15=Professor",
-                dependsOn: 10,
-                ported: true
-            },
-            {
-                id: 12,
-                category: "06.Xodim lavozimlari",
-                name: "Barcha xodim ish joylari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJob",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    view: {
-                        label: "View",
-                        type: "text",
-                        default: "eEmployeeJob-view",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Xodimlarning ish joylari (lavozim, OTM, bo'lim, stavka, shakl, holat). UUID asosida.",
-                ported: true,
-                storeFirstId: "employeeJobId"
-            },
-            {
-                id: 13,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Ish joyi UUID",
-                        type: "text",
-                        default: "",
-                        required: true,
-                        useStoredId: "employeeJobId"
-                    },
-                    view: {
-                        label: "View",
-                        type: "text",
-                        default: "eEmployeeJob-view",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta xodim ish joyini UUID bo'yicha olish. Ma'lumotlar: lavozim, OTM, bo'lim, stavka, shartnoma.",
-                dependsOn: 12,
-                ported: true
-            },
-            {
-                id: 14,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJobs",
-                requiresAuth: true,
-                inputFields: {
-                    _employee: {
-                        label: "Xodim UUID (Employee #2)",
-                        type: "text",
-                        default: "bf9ac27a-4b88-aa2a-ec12-1983afb59a8b",
-                        required: true
-                    },
-                    _university: {
-                        label: "OTM kodi",
-                        type: "text",
-                        default: "305",
-                        required: true
-                    },
-                    _department: {
-                        label: "Bo'lim kodi",
-                        type: "text",
-                        default: "305-212",
-                        required: false
-                    },
-                    _employeeType: {
-                        label: "Xodim turi kodi (12=Professor-o'qituvchi)",
-                        type: "text",
-                        default: "12",
-                        required: false
-                    },
-                    _employeePosition: {
-                        label: "Lavozim kodi (14=Dotsent)",
-                        type: "text",
-                        default: "14",
-                        required: false
-                    },
-                    _employeeRate: {
-                        label: "Stavka kodi (11=1.00 stavka)",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    _employeeForm: {
-                        label: "Ish shakli kodi",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    _employeeStatus: {
-                        label: "Holat kodi (11=Ishlamoqda)",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    jobStartDate: {
-                        label: "Ish boshlash sanasi",
-                        type: "text",
-                        default: "2025-01-01",
-                        required: false
-                    },
-                    contractNumber: {
-                        label: "Shartnoma raqami",
-                        type: "text",
-                        default: "TEST-001",
-                        required: false
-                    },
-                    decreeNumber: {
-                        label: "Buyruq raqami",
-                        type: "text",
-                        default: "TEST-D001",
-                        required: false
-                    }
-                },
-                description: "Yangi xodim ish joyini yaratish. _employee (UUID), OTM, bo'lim, lavozim, stavka va boshqa ma'lumotlar.",
-                ported: true,
-                storeFirstId: "createdEmployeeJobId",
-                bodyTemplate: {
-                    "_employee": {"id": "{_employee}"},
-                    "_university": {"code": "{_university}"},
-                    "_department": {"code": "{{_department}}"},
-                    "_employeeType": {"code": "{{_employeeType}}"},
-                    "_teacherPositionType": {"code": "{{_employeePosition}}"},
-                    "_employeeRate": {"code": "{{_employeeRate}}"},
-                    "_employmentForm": {"code": "{{_employeeForm}}"},
-                    "_employeeStatus": {"code": "{{_employeeStatus}}"},
-                    "jobStartDate": "{{jobStartDate}}",
-                    "contractNumber": "{{contractNumber}}",
-                    "decreeNumber": "{{decreeNumber}}"
-                }
-            },
-            {
-                id: 15,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini yangilash (PUT)",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJobs/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Ish joyi UUID (Employee #1 - boshqa xodim)",
-                        type: "text",
-                        default: "bd5f40d5-771e-62eb-db48-c67d5317e429",
-                        required: true,
-                        useStoredId: "createdEmployeeJobId"
-                    },
-                    _employeeStatus: {
-                        label: "Xodim holati kodi (11=Ishlayapti, 12=Bo'shatilgan)",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    _employeeRate: {
-                        label: "Stavka kodi (11=1.0, 12=0.75, 13=0.5, 14=0.25)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    jobEndDate: {
-                        label: "Ish tugash sanasi (YYYY-MM-DD)",
-                        type: "text",
-                        default: "2025-12-31",
-                        required: false
-                    },
-                    contractNumber: {
-                        label: "Shartnoma raqami",
-                        type: "text",
-                        default: "UPD-001",
-                        required: false
-                    }
-                },
-                description: "Mavjud xodim ish joyini yangilash (partial update). entityId #14 POST dan avtomatik olinadi. Faqat o'zgartirmoqchi bo'lgan maydonlarni yuboring.",
-                dependsOn: 14,
-                ported: true,
-                bodyTemplate: {
-                    "_employeeStatus": {"code": "{{_employeeStatus}}"},
-                    "_employeeRate": {"code": "{{_employeeRate}}"},
-                    "jobEndDate": "{{jobEndDate}}",
-                    "contractNumber": "{{contractNumber}}"
-                }
-            },
-            {
-                id: 16,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini yaratish - YANGI (Service API)",
-                method: "POST",
-                url: "/app/rest/v2/services/teacher/addJob",
-                requiresAuth: true,
-                inputFields: {
-                    employeeId: {
-                        label: "Xodim UUID",
-                        type: "text",
-                        default: "b2a51826-9870-4b2b-e633-94c6d9958fa9",
-                        required: true,
-                        placeholder: "Xodim (ETeacher) UUID si"
-                    },
-                    universityCode: {
-                        label: "Universitet kodi",
-                        type: "text",
-                        default: "401",
-                        required: true,
-                        placeholder: "401"
-                    },
-                    departmentCode: {
-                        label: "Bo'lim kodi",
-                        type: "text",
-                        default: "401-102",
-                        required: true,
-                        placeholder: "401-102"
-                    },
-                    employeeFormCode: {
-                        label: "Shtat shakli kodi (11=asosiy, 12=ichki, 13=tashqi, 14=soatbay)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    employeeStatusCode: {
-                        label: "Ish holati kodi (11=ishlamoqda, 12=ta'tilda, 13=bo'shatilgan)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    employeeTypeCode: {
-                        label: "Xodim turi kodi (11=administrativ, 12=professor, 13=texnik)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    employeeRateCode: {
-                        label: "Stavka kodi (11=1.0, 12=0.75, 13=0.5, 14=0.25)",
-                        type: "text",
-                        default: "13",
-                        required: true
-                    },
-                    employeePositionCode: {
-                        label: "Lavozim kodi (11=Stajer-o'qituvchi, 12=O'qituvchi, 14=Dotsent, 15=Professor)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    jobStartDate: {
-                        label: "Ish boshlash sanasi (YYYY-MM-DD)",
-                        type: "text",
-                        default: "2020-01-06",
-                        required: true
-                    },
-                    jobEndDate: {
-                        label: "Ish tugash sanasi (YYYY-MM-DD)",
-                        type: "text",
-                        default: "2025-12-31",
-                        required: false
-                    }
-                },
-                description: "Xodimga yangi lavozim qo'shish (Service API). Agar xodim asosiy shtatda ishlayotgan bo'lsa va yangi job ham asosiy shtat bo'lsa - xato qaytadi.",
-                ported: true,
-                bodyTemplate: {
-                    "job": {
-                        "employee": {"id": "{{employeeId}}"},
-                        "university": {"code": "{{universityCode}}"},
-                        "department": {"code": "{{departmentCode}}"},
-                        "employeeForm": {"code": "{{employeeFormCode}}"},
-                        "employeeStatus": {"code": "{{employeeStatusCode}}"},
-                        "employeeType": {"code": "{{employeeTypeCode}}"},
-                        "employeeRate": {"code": "{{employeeRateCode}}"},
-                        "employeePosition": {"code": "{{employeePositionCode}}"},
-                        "jobStartDate": "{{jobStartDate}}",
-                        "jobEndDate": "{{jobEndDate}}"
-                    }
-                }
-            },
-            {
-                id: 17,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini o'chirish - YANGI (DELETE)",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJobs/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Ish joyi UUID (o'chirish uchun)",
-                        type: "text",
-                        default: "",
-                        required: true,
-                        placeholder: "UUID - avval #1 dan oling",
-                        useStoredId: "employeeJobId"
-                    }
-                },
-                description: "Xodim ish joyini o'chirish (soft delete). O'chirilgan yozuv bazadan o'chirilmaydi, faqat delete_ts belgilanadi. 200=muvaffaqiyatli (bo'sh response), 404=topilmadi.",
-                ported: true
-            },
             // ============================================
-            // 07.OTM bo'linmalari (Entity API)
+            // 16.Doktarant talabalari (3 endpoint)
+            // Tartib: POST (yaratish), PUT (o'zgartirish), GET (olish)
             // ============================================
             {
                 id: 1,
-                category: "07.OTM bo'linmalari",
-                name: "Bo'linmani ID (code) bo'yicha olish (GET)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EUniversityDepartment/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Bo'linma kodi",
-                        type: "text",
-                        default: "401-102-08",
-                        required: true,
-                        placeholder: "Yangi:401-102-08, Eski:351-118"
-                    },
-                    view: {
-                        label: "View nomi",
-                        type: "text",
-                        default: "",
-                        required: false,
-                        placeholder: "eUniversityDepartment-view (ixtiyoriy)"
-                    },
-                    returnNulls: {
-                        label: "null qiymatlarni qaytarish",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "OTM bo'linmasi (fakultet, kafedra, bo'lim) ma'lumotlarini kod bo'yicha olish. ID = code (String), UUID emas! Masalan: '305-10' (fakultet), '305-10-01' (kafedra). Response: _entityName, _instanceName, code, nameUz, nameRu, university, deparmentType, parent, status.",
-                ported: true,
-                storeFirstId: "departmentCode"
-            },
-            {
-                id: 2,
-                category: "07.OTM bo'linmalari",
-                name: "Barcha bo'linmalarni olish (GET)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EUniversityDepartment",
-                requiresAuth: true,
-                inputFields: {
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: "0",
-                        required: false
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: "10",
-                        required: false
-                    },
-                    sort: {
-                        label: "Sort",
-                        type: "text",
-                        default: "",
-                        required: false,
-                        placeholder: "code-asc yoki nameUz-desc"
-                    },
-                    view: {
-                        label: "View nomi",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "null qiymatlarni qaytarish",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Barcha OTM bo'linmalarini pagination bilan olish. Foydalanuvchi faqat o'z OTM bo'linmalarini ko'radi. Sort formati: field-direction (masalan: code-asc, nameUz-desc).",
-                ported: true
-            },
-            {
-                id: 3,
-                category: "07.OTM bo'linmalari",
-                name: "Bo'linmalarni qidirish (GET /search)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EUniversityDepartment/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "Filter (CUBA format JSON)",
-                        type: "textarea",
-                        default: JSON.stringify({
-                            filter: {
-                                conditions: [
-                                    { property: "status", operator: "=", value: true }
-                                ]
-                            }
-                        }),
-                        required: false,
-                        placeholder: '{"filter":{"conditions":[{"property":"code","operator":"=","value":"401-102-08"}]}}',
-                        rows: 4,
-                        helpText: `<b>CUBA Filter formati:</b><br>
-<pre>{"filter":{"conditions":[
-  {"property":"...", "operator":"=", "value":"..."}
-]}}</pre>
-<b>Qo'llab-quvvatlanadigan operatorlar:</b> =, <>, like, startsWith, endsWith, in, isNull, notNull<br>
-<b>Filtrlash mumkin maydonlar:</b> code, nameUz, nameRu, university.code, deparmentType.code, status`
-                    },
-                    view: {
-                        label: "View nomi",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "null qiymatlarni qaytarish",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bo'linmalarni URL parametrlari orqali qidirish. CUBA filter format: {\"filter\":{\"conditions\":[{\"property\":\"...\",\"operator\":\"=\",\"value\":\"...\"}]}}",
-                ported: true
-            },
-            {
-                id: 4,
-                category: "07.OTM bo'linmalari",
-                name: "Bo'linmalarni qidirish (POST /search)",
+                category: "16.Doktarant talabalari",
+                name: "Doktorant Talaba yaratish",
                 method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EUniversityDepartment/search",
+                url: "/app/rest/v2/entities/hemishe_EDoctorateStudent",
                 requiresAuth: true,
                 contentType: "json",
                 inputFields: {
-                    returnNulls: {
-                        label: "null qiymatlarni qaytarish",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                requestBody: {
-                    filter: {
-                        conditions: [
-                            { property: "status", operator: "=", value: true }
-                        ]
-                    },
-                    view: "eUniversityDepartment-view"
-                },
-                description: `Bo'linmalarni JSON filter orqali qidirish.
-
-<b>CUBA Filter formati:</b>
-<pre>{"filter":{"conditions":[
-  {"property":"code", "operator":"=", "value":"401-102-08"},
-  {"property":"status", "operator":"=", "value":true}
-]}, "view":"..."}</pre>
-
-<b>Qo'llab-quvvatlanadigan operatorlar:</b> =, <>, like, startsWith, endsWith, in, isNull, notNull
-<b>Filtrlash mumkin maydonlar:</b> code, nameUz, nameRu, university.code, deparmentType.code, status`,
-                ported: true
-            },
-            {
-                id: 5,
-                category: "07.OTM bo'linmalari",
-                name: "Yangi bo'linma yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EUniversityDepartment",
-                requiresAuth: true,
-                contentType: "json",
-                inputFields: {
-                    body_id: {
-                        label: "id (code)",
+                    body_firstName: {
+                        label: "firstName (Ism)",
                         type: "text",
-                        default: "401-99-TEST",
+                        defaultNew: "TEST_ISM_NEW",
+                        defaultOld: "TEST_ISM_OLD",
                         required: true,
-                        placeholder: "Yangi: 401-xx-xx, Eski: 351-xx-xx",
-                        bodyField: "id"
+                        bodyField: "firstName"
                     },
-                    body_nameUz: {
-                        label: "nameUz",
+                    body_secondName: {
+                        label: "secondName (Familiya)",
                         type: "text",
-                        default: "Test bo'lim",
+                        defaultNew: "TEST_FAMILIYA_NEW",
+                        defaultOld: "TEST_FAMILIYA_OLD",
                         required: true,
-                        placeholder: "O'zbekcha nomi",
-                        bodyField: "nameUz"
+                        bodyField: "secondName"
                     },
-                    body_nameRu: {
-                        label: "nameRu",
+                    body_thirdName: {
+                        label: "thirdName (Otasining ismi)",
                         type: "text",
-                        default: "Тестовый отдел",
+                        defaultNew: "TEST_OTASI_NEW",
+                        defaultOld: "TEST_OTASI_OLD",
                         required: false,
-                        placeholder: "Ruscha nomi",
-                        bodyField: "nameRu"
+                        bodyField: "thirdName"
                     },
-                    body_status: {
-                        label: "status",
-                        type: "select",
-                        options: [{value: "true", label: "true (faol)"}, {value: "false", label: "false (nofaol)"}],
-                        default: "true",
+                    body_dirthDate: {
+                        label: "dirthDate (Tug'ilgan sana)",
+                        type: "text",
+                        defaultNew: "1990-01-15",
+                        defaultOld: "1985-05-21",
                         required: false,
-                        bodyField: "status",
-                        parseAs: "boolean"
+                        bodyField: "dirthDate",
+                        placeholder: "YYYY-MM-DD"
                     },
-                    body_university_code: {
-                        label: "university.code",
+                    body_dissertationTheme: {
+                        label: "dissertationTheme (Dissertatsiya mavzusi)",
                         type: "text",
-                        default: "401",
-                        required: true,
-                        placeholder: "Yangi Hemis: 401, Eski Hemis: 351",
-                        bodyField: "university.code"
+                        defaultNew: "Test dissertatsiya mavzusi NEW",
+                        defaultOld: "Test dissertatsiya mavzusi OLD",
+                        required: false,
+                        bodyField: "dissertationTheme"
                     },
-                    body_deparmentType_code: {
-                        label: "deparmentType.code",
+                    body_homeAddress: {
+                        label: "homeAddress (Manzil)",
                         type: "text",
-                        default: "12",
-                        required: true,
-                        placeholder: "10=fakultet, 11=kafedra, 12=bo'lim",
-                        bodyField: "deparmentType.code"
+                        defaultNew: "Toshkent NEW",
+                        defaultOld: "Toshkent OLD",
+                        required: false,
+                        bodyField: "homeAddress"
                     },
-                    returnNulls: {
-                        label: "null qiymatlarni qaytarish",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
+                    body_acceptedDate: {
+                        label: "acceptedDate (Qabul sanasi)",
+                        type: "text",
+                        defaultNew: "2024-09-01",
+                        defaultOld: "2019-09-09",
+                        required: false,
+                        bodyField: "acceptedDate",
+                        placeholder: "YYYY-MM-DD"
+                    },
+                    body_paymentForm: {
+                        label: "paymentForm.code (To'lov shakli)",
+                        type: "text",
+                        defaultNew: "11",
+                        defaultOld: "11",
+                        required: false,
+                        bodyField: "paymentForm"
+                    },
+                    body_gender: {
+                        label: "gender.code (Jinsi)",
+                        type: "text",
+                        defaultNew: "11",
+                        defaultOld: "11",
+                        required: false,
+                        bodyField: "gender"
+                    },
+                    body_doctoralStudentType: {
+                        label: "doctoralStudentType.code (Turi)",
+                        type: "text",
+                        defaultNew: "11",
+                        defaultOld: "11",
+                        required: false,
+                        bodyField: "doctoralStudentType"
+                    },
+                    body_doctorateStudentStatus: {
+                        label: "doctorateStudentStatus.code (Status)",
+                        type: "text",
+                        defaultNew: "11",
+                        defaultOld: "11",
+                        required: false,
+                        bodyField: "doctorateStudentStatus"
+                    },
+                    body_level: {
+                        label: "level (Daraja)",
+                        type: "text",
+                        defaultNew: "1",
+                        defaultOld: "1",
+                        required: false,
+                        bodyField: "level"
                     }
                 },
                 bodyGenerator: (inputs) => ({
-                    id: inputs.body_id,
-                    nameUz: inputs.body_nameUz,
-                    nameRu: inputs.body_nameRu || null,
-                    status: inputs.body_status === 'true',
-                    university: { code: inputs.body_university_code },
-                    deparmentType: { code: inputs.body_deparmentType_code }
+                    firstName: inputs.body_firstName,
+                    secondName: inputs.body_secondName,
+                    thirdName: inputs.body_thirdName,
+                    dirthDate: inputs.body_dirthDate,
+                    dissertationTheme: inputs.body_dissertationTheme,
+                    homeAddress: inputs.body_homeAddress,
+                    acceptedDate: inputs.body_acceptedDate,
+                    paymentForm: inputs.body_paymentForm ? { code: inputs.body_paymentForm } : undefined,
+                    gender: inputs.body_gender ? { code: inputs.body_gender } : undefined,
+                    doctoralStudentType: inputs.body_doctoralStudentType ? { code: inputs.body_doctoralStudentType } : undefined,
+                    doctorateStudentStatus: inputs.body_doctorateStudentStatus ? { code: inputs.body_doctorateStudentStatus } : undefined,
+                    level: inputs.body_level
                 }),
-                description: `Yangi bo'linma yaratish yoki mavjudini yangilash (UPSERT).
+                description: `**Doktorant Talaba yaratish** (POST)
 
-**🧪 Test uchun:**
-- 🆕 **Yangi Hemis:** id=401-99-TEST, university.code=401
-- 🏛️ **Eski Hemis:** id=351-99-TEST, university.code=351
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EDoctorateStudent
 
-**CUBA UPSERT Behavior:**
-- Agar entity mavjud bo'lsa → YANGILASH
-- Agar entity mavjud bo'lmasa → YARATISH
+<b>Request Body (OLD-HEMIS format):</b>
+<pre>{
+  "firstName": "MARDONBEK",
+  "secondName": "ALIYEV",
+  "thirdName": "KARIMOVICH",
+  "dirthDate": "1985-05-21",
+  "dissertationTheme": "Dissertatsiya mavzusi",
+  "homeAddress": "Toshkent",
+  "acceptedDate": "2019-09-09",
+  "paymentForm": { "code": "11" },
+  "gender": { "code": "11" },
+  "doctoralStudentType": { "code": "11" },
+  "doctorateStudentStatus": { "code": "11" },
+  "level": "1"
+}</pre>
 
-**Maydonlar:**
-- id: Bo'linma kodi (String, unique, required)
-- nameUz: O'zbekcha nomi (required)
-- nameRu: Ruscha nomi (optional)
-- status: true/false
-- university.code: Universitet kodi
-- deparmentType.code: Bo'linma turi (10=fakultet, 11=kafedra, 12=bo'lim)
+<b>Response (OLD-HEMIS format):</b>
+<pre>{
+  "_entityName": "hemishe_EDoctorateStudent",
+  "_instanceName": "ALIYEV MARDONBEK",
+  "id": "uuid-here"
+}</pre>
 
-**Eslatma:** Server xavfsizlik uchun university.code ni foydalanuvchi kontekstidan oladi.`,
+<b>⚠️ Eslatma:</b> dirthDate - OLD-HEMIS dagi typo (birthDate emas!)`,
                 ported: true,
-                storeFirstId: "createdDepartmentCode"
+                storeFirstId: "createdDoctoralStudentId"
             },
             {
-                id: 6,
-                category: "07.OTM bo'linmalari",
-                name: "Bo'linmani yangilash (PUT)",
+                id: 2,
+                category: "16.Doktarant talabalari",
+                name: "Doktorant Talaba ma'lumotlarini o'zgartirish",
                 method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_EUniversityDepartment/{entityId}",
+                url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
                 requiresAuth: true,
                 contentType: "json",
                 inputFields: {
                     entityId: {
-                        label: "Bo'linma kodi",
+                        label: "Doktorant ID (UUID)",
                         type: "text",
-                        default: "401-102-08",
+                        placeholder: "Doktorant UUID",
+                        defaultNew: "5660512d-4c19-1909-4987-8c01aefd4006",
+                        defaultOld: "5660512d-4c19-1909-4987-8c01aefd4006",
                         required: true,
-                        placeholder: "Yangilash uchun kod",
-                        useStoredId: "departmentCode"
-                    },
-                    returnNulls: {
-                        label: "null qiymatlarni qaytarish",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                requestBody: {
-                    nameUz: "Yangilangan nom",
-                    nameRu: "Обновленное название",
-                    status: true
-                },
-                description: "Mavjud bo'linmani yangilash. Faqat o'z OTM bo'linmalarini yangilash mumkin.",
-                ported: true
-            },
-            {
-                id: 7,
-                category: "07.OTM bo'linmalari",
-                name: "Bo'linmani o'chirish (DELETE)",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_EUniversityDepartment/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Bo'linma kodi (o'chirish uchun)",
-                        type: "text",
-                        default: "",
-                        required: true,
-                        placeholder: "Avval yaratilgan kod",
-                        useStoredId: "createdDepartmentCode"
-                    }
-                },
-                description: "Bo'linmani soft delete qilish. delete_ts belgilanadi, bazadan o'chirilmaydi. Faqat o'z OTM bo'linmalarini o'chirish mumkin.",
-                ported: true
-            },
-            // ============================================
-            // 12.Diplomlar - Talaba diplomlari (EStudentDiploma)
-            // Tartib: 1.POST → 2.PUT → 3.DELETE → 4.GET by ID → 5.GET all → 6-7.Search
-            // ============================================
-            {
-                id: 1,
-                category: "12.Diplomlar",
-                name: "Yangi diploma yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EStudentDiploma",
-                requiresAuth: true,
-                inputFields: {
-                    diplomaNumber: {
-                        label: "Diploma raqami",
-                        type: "text",
-                        defaultNew: "NEW-" + Date.now(),
-                        defaultOld: "OLD-" + Date.now(),
-                        required: true,
-                        placeholder: "AA-1234567"
-                    },
-                    university: {
-                        label: "OTM kodi",
-                        type: "text",
-                        defaultNew: "401",
-                        defaultOld: "351",
-                        required: true,
-                        placeholder: "OTM code (401 yoki 351)",
-                        cubaForeignKey: true
-                    },
-                    student: {
-                        label: "Talaba UUID",
-                        type: "text",
-                        defaultNew: "0d738e89-a9a9-9b9c-22d7-19912228b063",
-                        defaultOld: "ad0ee8cc-b5a6-3192-61a4-d4ee911a7912",
-                        required: true,
-                        placeholder: "Talaba entity UUID",
-                        cubaForeignKey: true
-                    },
-                    speciality: {
-                        label: "Mutaxassislik UUID",
-                        type: "text",
-                        defaultNew: "4c991851-7287-4330-a003-0b8362542439",
-                        defaultOld: "83b9d50f-b49d-d5b5-327c-adcef0a51e2d",
-                        required: true,
-                        placeholder: "Mutaxassislik UUID (oddiy string)"
-                    },
-                    active: {
-                        label: "Active",
-                        type: "select",
-                        options: [{value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "true",
-                        required: false
+                        isPathParam: true
                     },
                     returnNulls: {
                         label: "Return Nulls",
                         type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
+                        options: [
+                            { value: "false", label: "false (null emas)" },
+                            { value: "true", label: "true (null qiymatlar)" }
+                        ],
+                        default: "false",
                         required: false
                     }
                 },
-                hasBody: true,
-                bodyFields: ["diplomaNumber", "university", "student", "speciality", "active"],
-                description: "1️⃣ Yangi diploma yaratish. Yaratilgan ID avtomatik PUT va DELETE ga o'tadi.",
-                ported: true,
-                storeResultId: "createdDiplomaId"
-            },
-            {
-                id: 2,
-                category: "12.Diplomlar",
-                name: "Diplomni yangilash (PUT)",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_EStudentDiploma/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Diploma ID (UUID)",
-                        type: "text",
-                        defaultNew: "",
-                        defaultOld: "",
-                        required: true,
-                        placeholder: "POST ishga tushsa avtomatik to'ldiriladi",
-                        useStoredId: "createdDiplomaId"
-                    },
-                    diplomaNumber: {
-                        label: "Yangi diploma raqami",
-                        type: "text",
-                        defaultNew: "UPDATED-NEW-" + Date.now(),
-                        defaultOld: "UPDATED-OLD-" + Date.now(),
-                        required: false,
-                        placeholder: "Yangilanadigan raqam"
-                    },
-                    registerNumber: {
-                        label: "Registr raqami",
-                        type: "text",
-                        default: "99999",
-                        required: false,
-                        placeholder: "12345"
-                    },
-                    active: {
-                        label: "Active",
-                        type: "select",
-                        options: [{value: "", label: "-- tanlang --"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "true",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["diplomaNumber", "registerNumber", "active"],
-                description: "2️⃣ POST da yaratilgan diplomni yangilash. entityId avtomatik to'ldiriladi.",
+                bodyGenerator: (values, system) => ({
+                    firstName: "YANGILANGAN_ISM",
+                    secondName: "YANGILANGAN_FAMILIYA",
+                    thirdName: "YANGILANGAN_SHARIF",
+                    birthDate: "1990-01-15",
+                    dissertationTheme: "Yangilangan dissertatsiya mavzusi",
+                    homeAddress: "Yangilangan manzil",
+                    passportNumber: "AB1234567",
+                    passportPin: "12345678901234",
+                    active: true
+                }),
+                description: `**Doktorant Talaba ma'lumotlarini o'zgartirish** (PUT)
+
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}
+
+<b>Parametrlar:</b>
+- <code>entityId</code>: Doktorant UUID (path parameter)
+- <code>returnNulls</code>: true/false
+
+<b>Request Body (OLD-HEMIS format):</b>
+<pre>{
+  "firstName": "YANGILANGAN_ISM",
+  "secondName": "YANGILANGAN_FAMILIYA",
+  "thirdName": "YANGILANGAN_SHARIF",
+  "birthDate": "1990-01-15",
+  "dissertationTheme": "Yangilangan dissertatsiya mavzusi",
+  "homeAddress": "Yangilangan manzil",
+  "passportNumber": "AB1234567",
+  "passportPin": "12345678901234",
+  "active": true
+}</pre>
+
+<b>Response (OLD-HEMIS format):</b>
+<pre>{
+  "_entityName": "hemishe_EDoctorateStudent",
+  "_instanceName": "YANGILANGAN_FAMILIYA YANGILANGAN_ISM",
+  "id": "uuid-here"
+}</pre>
+
+<b>404 Response:</b>
+<pre>{
+  "error": "Entity not found",
+  "details": "Entity hemishe_EDoctorateStudent with id ... not found"
+}</pre>`,
                 ported: true
             },
             {
                 id: 3,
-                category: "12.Diplomlar",
-                name: "Diplomni o'chirish (DELETE)",
+                category: "16.Doktarant talabalari",
+                name: "Bitta doktorant ma'lumotlarini olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
+                requiresAuth: true,
+                params: {
+                    dynamicAttributes: "false",
+                    returnNulls: "false"
+                },
+                inputFields: {
+                    entityId: {
+                        label: "Doktorant ID (UUID)",
+                        type: "text",
+                        placeholder: "Doktorant UUID",
+                        defaultNew: "5660512d-4c19-1909-4987-8c01aefd4006",
+                        defaultOld: "5660512d-4c19-1909-4987-8c01aefd4006",
+                        required: true
+                    },
+                    dynamicAttributes: {
+                        label: "Dynamic Attributes",
+                        type: "select",
+                        options: [
+                            { value: "false", label: "false (yo'q)" },
+                            { value: "true", label: "true (bor)" }
+                        ],
+                        default: "false",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [
+                            { value: "false", label: "false (null emas)" },
+                            { value: "true", label: "true (null ham)" }
+                        ],
+                        default: "false",
+                        required: false
+                    }
+                },
+                description: `**Doktorant talaba ma'lumotlarini olish** (GET by ID)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}
+
+<b>Parametrlar:</b>
+- <code>entityId</code>: Doktorant UUID (path parameter)
+- <code>dynamicAttributes</code>: true/false
+- <code>returnNulls</code>: true/false
+
+<b>Response (OLD-HEMIS format):</b>
+<pre>{
+  "_entityName": "hemishe_EDoctorateStudent",
+  "_instanceName": "NAZAROV XUMOYUN ALISHEROVICH",
+  "id": "5660512d-4c19-1909-4987-8c01aefd4006",
+  "firstName": "XUMOYUN",
+  "secondName": "NAZAROV",
+  "thirdName": "ALISHEROVICH",
+  ...
+}</pre>
+
+<b>404 Response:</b>
+<pre>{
+  "error": "Entity not found",
+  "details": "Entity hemishe_EDoctorateStudent with id ... not found"
+}</pre>`,
+                ported: true
+            },
+            // ============================================
+            // 17.Dissertasiya himoyalari (4 endpoint)
+            // Tartib: POST (yaratish), DELETE (o'chirish), GET by ID, GET list
+            // ============================================
+            {
+                id: 1,
+                category: "17.Dissertasiya himoyalari",
+                name: "Dissertasiya himoyasi yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EDissertationDefense",
+                requiresAuth: true,
+                contentType: "json",
+                inputFields: {
+                    body_defenseDate: {
+                        label: "defenseDate (Himoya sanasi)",
+                        type: "text",
+                        defaultNew: "2024-06-15",
+                        defaultOld: "2021-02-10",
+                        required: true,
+                        bodyField: "defenseDate",
+                        placeholder: "YYYY-MM-DD"
+                    },
+                    body_defense_place: {
+                        label: "defense_place (Himoya joyi)",
+                        type: "text",
+                        defaultNew: "Toshkent Davlat Texnika Universiteti",
+                        defaultOld: "Toshkent",
+                        required: true,
+                        bodyField: "defense_place"
+                    },
+                    body_approvedDate: {
+                        label: "approvedDate (Tasdiqlangan sana)",
+                        type: "text",
+                        defaultNew: "2024-07-01",
+                        defaultOld: "2021-02-26",
+                        required: false,
+                        bodyField: "approvedDate",
+                        placeholder: "YYYY-MM-DD"
+                    },
+                    body_diplomaNumber: {
+                        label: "diplomaNumber (Diplom raqami)",
+                        type: "text",
+                        defaultNew: "01 № 123456",
+                        defaultOld: "01 № 232321",
+                        required: false,
+                        bodyField: "diplomaNumber"
+                    },
+                    body_diplomaGivenDate: {
+                        label: "diplomaGivenDate (Diplom berilgan sana)",
+                        type: "text",
+                        defaultNew: "2024-07-15",
+                        defaultOld: "",
+                        required: false,
+                        bodyField: "diplomaGivenDate",
+                        placeholder: "YYYY-MM-DD"
+                    },
+                    body_diplomaGivenByWhom: {
+                        label: "diplomaGivenByWhom (Kim tomonidan berilgan)",
+                        type: "text",
+                        defaultNew: "TDTU",
+                        defaultOld: "TATU",
+                        required: false,
+                        bodyField: "diplomaGivenByWhom"
+                    },
+                    body_registerNumber: {
+                        label: "registerNumber (Ro'yxat raqami)",
+                        type: "text",
+                        defaultNew: "12345",
+                        defaultOld: "23232",
+                        required: false,
+                        bodyField: "registerNumber"
+                    },
+                    body_active: {
+                        label: "active (Faol)",
+                        type: "select",
+                        options: [
+                            { value: "true", label: "true (Ha)" },
+                            { value: "false", label: "false (Yo'q)" }
+                        ],
+                        default: "true",
+                        required: false,
+                        bodyField: "active"
+                    }
+                },
+                bodyGenerator: (inputs) => ({
+                    defenseDate: inputs.body_defenseDate,
+                    defense_place: inputs.body_defense_place,
+                    approvedDate: inputs.body_approvedDate || undefined,
+                    diplomaNumber: inputs.body_diplomaNumber || undefined,
+                    diplomaGivenDate: inputs.body_diplomaGivenDate || undefined,
+                    diplomaGivenByWhom: inputs.body_diplomaGivenByWhom || undefined,
+                    registerNumber: inputs.body_registerNumber || undefined,
+                    active: inputs.body_active === 'true'
+                }),
+                description: `**Dissertasiya himoyasi yaratish** (POST)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EDissertationDefense
+
+<b>Request Body (OLD-HEMIS format):</b>
+<pre>{
+  "defenseDate": "2024-06-15",
+  "defense_place": "Toshkent Davlat Texnika Universiteti",
+  "approvedDate": "2024-07-01",
+  "diplomaNumber": "01 № 123456",
+  "diplomaGivenDate": "2024-07-15",
+  "diplomaGivenByWhom": "TDTU",
+  "registerNumber": "12345",
+  "active": true
+}</pre>
+
+<b>Response (OLD-HEMIS format):</b>
+<pre>{
+  "_entityName": "hemishe_EDissertationDefense",
+  "_instanceName": "com.company.hemishe.entity.EDissertationDefense-uuid [detached]",
+  "id": "uuid-here"
+}</pre>
+
+<b>⚠️ Eslatma:</b> defense_place - OLD-HEMIS da snake_case formatida!`,
+                ported: true,
+                storeFirstId: "createdDissertationDefenseId"
+            },
+            {
+                id: 2,
+                category: "17.Dissertasiya himoyalari",
+                name: "Dissertasiya himoyasini o'chirish",
                 method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_EStudentDiploma/{entityId}",
+                url: "/app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}",
                 requiresAuth: true,
                 inputFields: {
                     entityId: {
-                        label: "Diploma ID (o'chirish uchun)",
+                        label: "Dissertasiya himoyasi ID (UUID)",
                         type: "text",
-                        defaultNew: "",
-                        defaultOld: "",
-                        required: true,
-                        placeholder: "POST ishga tushsa avtomatik to'ldiriladi",
-                        useStoredId: "createdDiplomaId"
+                        placeholder: "Dissertasiya himoyasi UUID",
+                        defaultNew: "d5480757-8405-4aa4-60ed-15a07cf7dd46",
+                        defaultOld: "d5480757-8405-4aa4-60ed-15a07cf7dd46",
+                        required: true
                     }
                 },
-                description: "3️⃣ POST da yaratilgan diplomni o'chirish. entityId avtomatik to'ldiriladi.",
+                description: `**Dissertasiya himoyasini o'chirish** (DELETE)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}
+
+<b>Parametrlar:</b>
+- <code>entityId</code>: Dissertasiya himoyasi UUID (path parameter)
+
+<b>Response:</b>
+- <b>200 OK</b> - Muvaffaqiyatli o'chirildi (bo'sh body)
+- <b>404 Not Found</b> - Topilmadi
+
+<b>404 Response:</b>
+<pre>{
+  "error": "Entity not found",
+  "details": "Entity hemishe_EDissertationDefense with id ... not found"
+}</pre>
+
+<b>⚠️ Eslatma:</b> Bu soft delete - delete_ts ustuni belgilanadi, ma'lumot o'chirilmaydi!`,
+                ported: true
+            },
+            {
+                id: 3,
+                category: "17.Dissertasiya himoyalari",
+                name: "Dissertasiya himoyasini olish (view=eDissertationDefense-view)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Dissertasiya himoyasi ID (UUID)",
+                        type: "text",
+                        placeholder: "Dissertasiya himoyasi UUID",
+                        defaultNew: "74649688-aef2-0171-da92-6eac77730bd2",
+                        defaultOld: "74649688-aef2-0171-da92-6eac77730bd2",
+                        required: true
+                    },
+                    view: {
+                        label: "View nomi",
+                        type: "text",
+                        default: "eDissertationDefense-view",
+                        required: true
+                    }
+                },
+                description: `**Dissertasiya himoyasini olish** (GET by ID with view)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}?view=eDissertationDefense-view
+
+<b>Parametrlar:</b>
+- <code>entityId</code>: Dissertasiya himoyasi UUID (path parameter)
+- <code>view</code>: CUBA view nomi - <b>eDissertationDefense-view</b> (query parameter)
+
+<b>Response (view=eDissertationDefense-view):</b>
+<pre>{
+  "_entityName": "hemishe_EDissertationDefense",
+  "_instanceName": "com.company.hemishe.entity.EDissertationDefense-uuid [detached]",
+  "id": "74649688-aef2-0171-da92-6eac77730bd2",
+  "active": true,
+  "defenseDate": "2021-02-10",
+  "doctorateStudent": {
+    "_entityName": "hemishe_EDoctorateStudent",
+    "_instanceName": "XAMDAMOVA DILFUZA",
+    "id": "89b75740-feea-1dca-215c-5b0031e5e700",
+    "thirdName": "TURDIBEKOVNA",
+    "secondName": "XAMDAMOVA",
+    "firstName": "DILFUZA"
+  },
+  "approvedDate": "2021-02-26",
+  "diplomaNumber": "01 № 232321",
+  "speciality": {
+    "_entityName": "hemishe_HSpecialityDoctoral",
+    "_instanceName": "Hisoblash mashinalari...",
+    "id": "a05c4c16-a204-44b3-b6f3-cebd8172e37a",
+    "name": "Hisoblash mashinalari, majmualari..."
+  },
+  "defense_place": "Toshkent",
+  "registerNumber": "23232",
+  "diplomaGivenByWhom": "TATU"
+}</pre>
+
+<b>⚠️ Muhim:</b>
+- <code>view=eDissertationDefense-view</code> parametr bilan to'liq nested objectlar qaytariladi
+- <code>doctorateStudent</code>: _entityName, _instanceName, id, thirdName, secondName, firstName
+- <code>speciality</code>: _entityName, _instanceName, id, name
+- <code>defense_place</code>: snake_case formatida (OLD-HEMIS compatible)`,
                 ported: true
             },
             {
                 id: 4,
-                category: "12.Diplomlar",
-                name: "Diplomni olish (GET by ID)",
+                category: "17.Dissertasiya himoyalari",
+                name: "Dissertasiya himoyalari ro'yxati (view=eDissertationDefense-view)",
                 method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EStudentDiploma/{entityId}",
+                url: "/app/rest/v2/entities/hemishe_EDissertationDefense",
                 requiresAuth: true,
                 inputFields: {
-                    entityId: {
-                        label: "Diploma ID (UUID)",
-                        type: "text",
-                        defaultNew: "d2adcec7-92eb-2936-2e97-4860c802ff03",
-                        defaultOld: "de11c5a1-2943-4a9d-016f-f0a160e0af00",
-                        required: true,
-                        placeholder: "UUID formatda diploma ID (401: B00844218, 351: B00781880)"
-                    },
                     view: {
-                        label: "View",
+                        label: "View nomi",
                         type: "text",
-                        default: "eStudentDiploma-view",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta diplomni UUID bo'yicha olish. view parametri bilan bog'liq entity ma'lumotlari ham qaytariladi.",
-                ported: true
-            },
-            {
-                id: 5,
-                category: "12.Diplomlar",
-                name: "Barcha diplomlar (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EStudentDiploma",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "Filter (JSON)",
-                        type: "textarea",
-                        defaultNew: '{"conditions":[{"property":"diplomaNumber","operator":"=","value":"B00844218"}]}',
-                        defaultOld: '{"conditions":[{"property":"diplomaNumber","operator":"=","value":"B00781880"}]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"diplomaNumber","operator":"=","value":"..."}]}'
-                    },
-                    view: {
-                        label: "View",
-                        type: "text",
-                        default: "eStudentDiploma-view",
-                        required: false
+                        default: "eDissertationDefense-view",
+                        required: true
                     },
                     limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 10,
+                        label: "Limit (sahifadagi yozuvlar)",
+                        type: "text",
+                        default: "10",
                         required: false
                     },
                     offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Haqiqiy diplomlarni solishtirish. Filter: 401→B00844218, 351→B00781880. view parametri bilan nested object qaytariladi.",
-                ported: true,
-                storeFirstId: "diplomaId"
-            },
-            {
-                id: 6,
-                category: "12.Diplomlar",
-                name: "Diplomlarni qidirish (GET /search)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EStudentDiploma/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "Filter (diploma raqami)",
+                        label: "Offset (boshlang'ich pozitsiya)",
                         type: "text",
-                        default: "",
-                        required: false,
-                        placeholder: "AA-123"
-                    },
-                    view: {
-                        label: "View",
-                        type: "text",
-                        default: "eStudentDiploma-view",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
+                        default: "0",
                         required: false
                     }
                 },
-                description: "URL parametrlar orqali diplomlarni qidirish. filter parametri diploma raqami bo'yicha qidiradi.",
-                ported: true
-            },
-            {
-                id: 7,
-                category: "12.Diplomlar",
-                name: "Diplomlarni qidirish (POST /search)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EStudentDiploma/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "CUBA Filter (JSON)",
-                        type: "textarea",
-                        default: '{"conditions":[]}',
-                        required: false,
-                        placeholder: '{"conditions":[{"property":"active","operator":"=","value":true}]}'
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                hasBody: true,
-                bodyFields: ["filter", "limit", "offset"],
-                description: "CUBA filter formatida diplomlarni qidirish. Filter body da JSON sifatida jo'natiladi.",
+                description: `**Dissertasiya himoyalari ro'yxati** (GET list with view)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EDissertationDefense?view=eDissertationDefense-view&limit=10
+
+<b>Parametrlar:</b>
+- <code>view</code>: CUBA view nomi - <b>eDissertationDefense-view</b> (query parameter)
+- <code>limit</code>: Sahifadagi yozuvlar soni (default: barcha)
+- <code>offset</code>: Boshlang'ich pozitsiya (default: 0)
+
+<b>Response (massiv, to'liq nested objectlar bilan):</b>
+<pre>[
+  {
+    "_entityName": "hemishe_EDissertationDefense",
+    "_instanceName": "com.company.hemishe.entity.EDissertationDefense-uuid [detached]",
+    "id": "74649688-aef2-0171-da92-6eac77730bd2",
+    "active": true,
+    "defenseDate": "2021-02-10",
+    "doctorateStudent": {
+      "_entityName": "hemishe_EDoctorateStudent",
+      "_instanceName": "XAMDAMOVA DILFUZA",
+      "id": "89b75740-feea-1dca-215c-5b0031e5e700",
+      "thirdName": "TURDIBEKOVNA",
+      "secondName": "XAMDAMOVA",
+      "firstName": "DILFUZA"
+    },
+    "approvedDate": "2021-02-26",
+    "diplomaNumber": "01 № 232321",
+    "speciality": {
+      "_entityName": "hemishe_HSpecialityDoctoral",
+      "_instanceName": "Hisoblash mashinalari...",
+      "id": "a05c4c16-a204-44b3-b6f3-cebd8172e37a",
+      "name": "Hisoblash mashinalari..."
+    },
+    "defense_place": "Toshkent",
+    "registerNumber": "23232",
+    "diplomaGivenByWhom": "TATU"
+  },
+  ...
+]</pre>
+
+<b>⚠️ Muhim:</b>
+- <code>view=eDissertationDefense-view</code> bilan to'liq nested objectlar qaytariladi
+- Massiv formatida qaytariladi
+- <code>defense_place</code>: snake_case (OLD-HEMIS compatible)`,
                 ported: true
             },
         ];
