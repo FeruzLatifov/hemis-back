@@ -534,7 +534,8 @@ public class DoctoralStudentEntityController {
             entity.setLevel(getStringValue(map.get("level")));
         }
         if (map.containsKey("university")) {
-            entity.setUniversity(getStringValue(map.get("university")));
+            // OLD-HEMIS: university {code: "401"} formatda keladi - extractCode bilan olish kerak
+            entity.setUniversity(extractCode(map.get("university")));
         }
         if (map.containsKey("department")) {
             entity.setDepartment(getStringValue(map.get("department")));

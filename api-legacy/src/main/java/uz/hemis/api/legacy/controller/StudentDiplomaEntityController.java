@@ -363,9 +363,10 @@ public class StudentDiplomaEntityController {
 
     // =============================================
     // 6. GET /search - Qidirish (URL params)
+    // Old Hemis bilan bir xil: CUBA JSON filter qabul qiladi
     // =============================================
     @GetMapping("/search")
-    @Operation(summary = "Diplomlarni qidirish (GET)", description = "Filter bo'yicha diplomlarni qidiradi")
+    @Operation(summary = "Diplomlarni qidirish (GET)", description = "CUBA filter formatida diplomlarni qidiradi")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean returnNulls,
@@ -378,12 +379,48 @@ public class StudentDiplomaEntityController {
         List<StudentDiploma> result;
 
         if (filter != null && !filter.isEmpty()) {
-            // Simple text search in diplomaNumber
-            result = repository.findByDiplomaNumberContainingIgnoreCase(filter);
-            // Apply pagination to filtered results
-            int start = Math.min(offset, result.size());
-            int end = Math.min(start + limit, result.size());
-            result = result.subList(start, end);
+            // CUBA JSON filter parse qilish (Old Hemis bilan bir xil)
+            try {
+                Map<String, Object> filterMap = objectMapper.readValue(filter, new TypeReference<>() {});
+
+                if (filterMap.containsKey("conditions")) {
+                    @SuppressWarnings("unchecked")
+                    List<Map<String, Object>> conditions = (List<Map<String, Object>>) filterMap.get("conditions");
+
+                    // Database filtering (POST /search bilan bir xil logic)
+                    result = applyDatabaseFiltering(conditions, limit, offset);
+                    if (result != null) {
+                        return ResponseEntity.ok(
+                                result.stream()
+                                        .map(e -> toMap(e, returnNulls, view))
+                                        .collect(Collectors.toList())
+                        );
+                    }
+
+                    // Fallback: Memory filtering
+                    int page = offset / Math.max(limit, 1);
+                    PageRequest pageRequest = PageRequest.of(page, limit * 10, Sort.by(Sort.Direction.DESC, "createTs"));
+                    Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
+                    result = applyConditions(resultPage.getContent(), conditions);
+
+                    int start = Math.min(offset, result.size());
+                    int end = Math.min(start + limit, result.size());
+                    result = result.subList(start, end);
+                } else {
+                    // conditions yo'q - oddiy text search
+                    result = repository.findByDiplomaNumberContainingIgnoreCase(filter);
+                    int start = Math.min(offset, result.size());
+                    int end = Math.min(start + limit, result.size());
+                    result = result.subList(start, end);
+                }
+            } catch (Exception e) {
+                // JSON parse xatosi - oddiy text search
+                log.debug("Filter is not JSON, using text search: {}", filter);
+                result = repository.findByDiplomaNumberContainingIgnoreCase(filter);
+                int start = Math.min(offset, result.size());
+                int end = Math.min(start + limit, result.size());
+                result = result.subList(start, end);
+            }
         } else {
             // Use paginated query instead of findAll() to prevent OOM
             int page = offset / Math.max(limit, 1);

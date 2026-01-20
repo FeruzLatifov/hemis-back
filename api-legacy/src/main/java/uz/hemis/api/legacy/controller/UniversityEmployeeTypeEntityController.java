@@ -298,7 +298,12 @@ public class UniversityEmployeeTypeEntityController {
         log.info("POST UniversityEmployeeType - data: {}", entityData);
 
         // Validate required fields
-        String code = (String) entityData.get("code");
+        // CUBA compatibility: accept both "code" and "id" fields
+        Object codeObj = entityData.get("code");
+        if (codeObj == null) {
+            codeObj = entityData.get("id"); // CUBA uses "id" field
+        }
+        String code = codeObj != null ? String.valueOf(codeObj) : null;
         String name = (String) entityData.get("name");
 
         if (code == null || code.isBlank()) {
