@@ -3253,113 +3253,99 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             {
                 id: 3,
                 category: "09.OTM xodimlari kategoriyasi",
-                name: "OTM xodim kategoriyasini yangilash (PUT)",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/{entityId}",
+                name: "Yangi OTM xodim kategoriyasini yaratish (POST)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType",
                 requiresAuth: true,
+                separateInputs: true,
                 inputFields: {
-                    entityId: {
-                        label: "Tur kodi (10, 11, 12, 13, 14)",
-                        type: "text",
-                        default: "12",
+                    id: {
+                        label: "Tur kodi (unique)",
+                        type: "number",
+                        default: 991,
+                        defaultOld: 992,
                         required: true,
-                        useStoredId: "employeeTypeCode"
+                        hint: "Yangi: 991, Eski: 992 (turli kodlar - bitta baza)"
                     },
                     name: {
                         label: "Nomi (O'zbekcha)",
                         type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
-                        required: false
+                        default: "Test xodim turi (NEW)",
+                        defaultOld: "Test xodim turi (OLD)",
+                        required: true
                     },
                     active: {
                         label: "Faol",
                         type: "select",
-                        options: [{value: "", label: "O'zgartirmaslik"}, {value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "",
+                        options: [{value: true, label: "Ha"}, {value: false, label: "Yo'q"}],
+                        default: true,
                         required: false
                     }
                 },
                 hasBody: true,
-                bodyFields: ["name", "nameEn", "nameRu", "active"],
-                description: "OTM xodim kategoriyasini yangilash. Faqat yuborilgan fieldlar yangilanadi.",
-                dependsOn: 1,
+                bodyFields: ["id", "name", "active"],
+                description: "Yangi OTM xodim kategoriyasini yaratish. id (code) va name majburiy. ⚠️ Yangi va Eski uchun turli kodlar kiriting!",
+                storeFirstId: "newEmployeeTypeId",
                 ported: true
             },
             {
                 id: 4,
                 category: "09.OTM xodimlari kategoriyasi",
-                name: "OTM xodim kategoriyasini o'chirish (DELETE)",
-                method: "DELETE",
+                name: "OTM xodim kategoriyasini yangilash (PUT)",
+                method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/{entityId}",
                 requiresAuth: true,
+                separateInputs: true,
                 inputFields: {
                     entityId: {
-                        label: "Tur kodi (10, 11, 12, 13, 14)",
-                        type: "text",
-                        default: "10",
+                        label: "Tur kodi",
+                        type: "number",
+                        default: 991,
+                        defaultOld: 992,
                         required: true,
-                        useStoredId: "employeeTypeCode"
-                    }
-                },
-                description: "OTM xodim kategoriyasini o'chirish (soft delete). ⚠️ Diqqat: Ma'lumot bazadan o'chirilmaydi, faqat deleteTs belgilanadi.",
-                dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 5,
-                category: "09.OTM xodimlari kategoriyasi",
-                name: "Yangi OTM xodim kategoriyasini yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType",
-                requiresAuth: true,
-                inputFields: {
-                    code: {
-                        label: "Tur kodi (unique)",
-                        type: "text",
-                        default: "15",
-                        required: true
+                        hint: "#3 da yaratilgan kodni kiriting"
                     },
                     name: {
-                        label: "Nomi (O'zbekcha)",
+                        label: "Yangi nomi (O'zbekcha)",
                         type: "text",
-                        default: "Yangi xodim turi",
-                        required: true
-                    },
-                    nameEn: {
-                        label: "Nomi (Inglizcha)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    nameRu: {
-                        label: "Nomi (Ruscha)",
-                        type: "text",
-                        default: "",
+                        default: "Yangilangan nom (NEW)",
+                        defaultOld: "Yangilangan nom (OLD)",
                         required: false
                     },
                     active: {
                         label: "Faol",
                         type: "select",
-                        options: [{value: "true", label: "Ha"}, {value: "false", label: "Yo'q"}],
-                        default: "true",
+                        options: [{value: "", label: "O'zgartirmaslik"}, {value: true, label: "Ha"}, {value: false, label: "Yo'q"}],
+                        default: "",
                         required: false
                     }
                 },
                 hasBody: true,
-                bodyFields: ["code", "name", "nameEn", "nameRu", "active"],
-                description: "Yangi OTM xodim kategoriyasini yaratish. code va name majburiy.",
+                bodyFields: ["name", "active"],
+                description: "OTM xodim kategoriyasini yangilash. Avval #3 orqali yarating, keyin shu yerda yangilang.",
+                dependsOn: 3,
+                ported: true
+            },
+            {
+                id: 5,
+                category: "09.OTM xodimlari kategoriyasi",
+                name: "OTM xodim kategoriyasini o'chirish (DELETE)",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeType/{entityId}",
+                requiresAuth: true,
+                separateInputs: true,
+                inputFields: {
+                    entityId: {
+                        label: "Tur kodi",
+                        type: "number",
+                        default: 991,
+                        defaultOld: 992,
+                        required: true,
+                        hint: "#3 da yaratilgan kodni kiriting"
+                    }
+                },
+                description: "OTM xodim kategoriyasini o'chirish (soft delete). Avval #3 da yarating → #4 da yangilang → #5 da o'chiring.",
+                dependsOn: 3,
                 ported: true
             },
             {
@@ -5775,8 +5761,33 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     console.log(`[${system.toUpperCase()}] Generated body:`, options.body);
                 }
 
-                // Query params for PUT/DELETE from inputFields
-                if ((endpoint.method === 'PUT' || endpoint.method === 'DELETE') && endpoint.inputFields) {
+                // Body for POST/PUT with bodyFields array (dynamic body from input fields)
+                if ((endpoint.method === 'PUT' || endpoint.method === 'POST') && endpoint.hasBody && endpoint.bodyFields && !endpoint.bodyTemplate && !endpoint.requestBody && !endpoint.bodyGenerator) {
+                    options.headers['Content-Type'] = 'application/json';
+                    const bodyObj = {};
+                    endpoint.bodyFields.forEach(fieldName => {
+                        const inputElement = document.getElementById(`input-${system}-${uniqueId}-${fieldName}`);
+                        if (inputElement) {
+                            let val = inputElement.value;
+                            // Bo'sh qiymatlarni o'tkazib yuborish (PUT uchun partial update)
+                            if (val === '' || val === undefined || val === null) return;
+                            // Number type uchun raqamga aylantirish
+                            const fieldConfig = endpoint.inputFields[fieldName];
+                            if (fieldConfig && fieldConfig.type === 'number') {
+                                val = parseInt(val, 10);
+                            }
+                            // Boolean uchun (select dan kelgan "true"/"false")
+                            if (val === 'true') val = true;
+                            if (val === 'false') val = false;
+                            bodyObj[fieldName] = val;
+                        }
+                    });
+                    options.body = JSON.stringify(bodyObj);
+                    console.log(`[${system.toUpperCase()}] Body fields JSON:`, options.body);
+                }
+
+                // Query params for PUT/DELETE from inputFields (faqat bodyFields bo'lmasa)
+                if ((endpoint.method === 'PUT' || endpoint.method === 'DELETE') && endpoint.inputFields && !endpoint.bodyFields) {
                     const params = new URLSearchParams();
                     Object.entries(endpoint.inputFields).forEach(([key, field]) => {
                         // Skip entityId (already replaced in URL path)
