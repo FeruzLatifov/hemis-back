@@ -198,4 +198,62 @@ public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID
      */
     @Query("SELECT e FROM EmployeeJobs e WHERE e.employee = :employeeId")
     List<EmployeeJobs> findByEmployeeId(@Param("employeeId") UUID employeeId);
+
+    // =====================================================
+    // UPSERT Support (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Xodim va ish shakli bo'yicha mavjud AKTIV yozuvni topish (UPSERT uchun)
+     *
+     * <p><strong>OLD-HEMIS Compatible:</strong> POST endpoint'da UPSERT mantiqini qo'llash uchun.
+     * Agar (_employee, _employee_form) kombinatsiyasi mavjud bo'lsa, yangi yozuv yaratish o'rniga
+     * mavjud yozuvni yangilash kerak.</p>
+     *
+     * <p><strong>Unique Constraint:</strong> employee_jobs_main_form_unique_constraint</p>
+     * <p><strong>MUHIM:</strong> Faqat o'chirilmagan yozuvlarni qaytaradi (delete_ts IS NULL)</p>
+     *
+     * @param employeeId xodim UUID
+     * @param employeeForm ish shakli kodi (11=asosiy, 12=qo'shimcha)
+     * @return Optional EmployeeJobs agar topilsa (birinchi aktiv yozuv)
+     */
+    @Query("SELECT e FROM EmployeeJobs e WHERE e.employee = :employeeId AND e.employeeForm = :employeeForm AND e.deleteTs IS NULL ORDER BY e.createTs DESC")
+    List<EmployeeJobs> findByEmployeeAndEmployeeFormActive(
+            @Param("employeeId") UUID employeeId,
+            @Param("employeeForm") String employeeForm
+    );
+
+    /**
+     * Xodim va ish shakli bo'yicha BARCHA yozuvlarni topish (soft-deleted ham)
+     *
+     * @param employeeId xodim UUID
+     * @param employeeForm ish shakli kodi
+     * @return Barcha yozuvlar (soft-deleted ham)
+     */
+    @Query("SELECT e FROM EmployeeJobs e WHERE e.employee = :employeeId AND e.employeeForm = :employeeForm")
+    List<EmployeeJobs> findAllByEmployeeAndEmployeeForm(
+            @Param("employeeId") UUID employeeId,
+            @Param("employeeForm") String employeeForm
+    );
+
+    /**
+     * Xodim, ish shakli va status bo'yicha aktiv yozuvlarni topish
+     *
+     * <p><strong>Constraint uchun:</strong> UNIQUE (_employee, _employee_form)
+     * WHERE _employee_form = '11' AND _employee_status = '11'</p>
+     *
+     * <p>Yangi yozuv yaratishdan oldin bu constraint'ni buzmasligi uchun
+     * eski yozuvlarning statusini o'zgartirish kerak.</p>
+     *
+     * @param employeeId xodim UUID
+     * @param employeeForm ish shakli kodi (11=asosiy)
+     * @param employeeStatus holat kodi (11=ishlamoqda)
+     * @return Constraint shartlariga mos yozuvlar
+     */
+    @Query("SELECT e FROM EmployeeJobs e WHERE e.employee = :employeeId AND e.employeeForm = :employeeForm AND e.employeeStatus = :employeeStatus AND e.deleteTs IS NULL")
+    List<EmployeeJobs> findByEmployeeAndFormAndStatus(
+            @Param("employeeId") UUID employeeId,
+            @Param("employeeForm") String employeeForm,
+            @Param("employeeStatus") String employeeStatus
+    );
 }

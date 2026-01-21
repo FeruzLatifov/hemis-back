@@ -72,50 +72,65 @@ public class StudentGpaService {
      * @return Created GPA record in CUBA format
      */
     @Transactional
+    @SuppressWarnings("unchecked")
     public Map<String, Object> create(Map<String, Object> requestBody) {
-        log.info("Creating new GPA record: {}", requestBody);
+        log.info("Creating/Upserting GPA record: {}", requestBody);
 
-        StudentGpa gpa = new StudentGpa();
-
-        // Generate new UUID
-        gpa.setId(UUID.randomUUID());
-
-        // Parse studentId (can be nested object or direct UUID string)
+        // Parse studentId first (can be nested object or direct UUID string)
+        UUID studentId = null;
         Object studentIdObj = requestBody.get("studentId");
         if (studentIdObj != null) {
             if (studentIdObj instanceof Map) {
-                @SuppressWarnings("unchecked")
                 Map<String, Object> studentMap = (Map<String, Object>) studentIdObj;
                 Object idValue = studentMap.get("id");
                 if (idValue != null) {
-                    gpa.setStudentId(UUID.fromString(idValue.toString()));
+                    studentId = UUID.fromString(idValue.toString());
                 }
             } else {
-                gpa.setStudentId(UUID.fromString(studentIdObj.toString()));
+                studentId = UUID.fromString(studentIdObj.toString());
             }
         }
 
-        // Parse educationYear (can be nested object with code or direct code string)
+        // Parse educationYear first (can be nested object with code or direct code string)
+        String educationYearCode = null;
         Object educationYearObj = requestBody.get("educationYear");
         if (educationYearObj != null) {
             if (educationYearObj instanceof Map) {
-                @SuppressWarnings("unchecked")
                 Map<String, Object> yearMap = (Map<String, Object>) educationYearObj;
                 Object codeValue = yearMap.get("code");
                 if (codeValue == null) codeValue = yearMap.get("id");
                 if (codeValue != null) {
-                    gpa.setEducationYearCode(codeValue.toString());
+                    educationYearCode = codeValue.toString();
                 }
             } else {
-                gpa.setEducationYearCode(educationYearObj.toString());
+                educationYearCode = educationYearObj.toString();
             }
         }
+
+        // OLD-HEMIS UPSERT Logic: Check if GPA exists for (studentId + educationYear)
+        // If exists, delete it first, then create new record
+        final UUID finalStudentId = studentId;
+        final String finalEducationYearCode = educationYearCode;
+        if (finalStudentId != null && finalEducationYearCode != null) {
+            studentGpaRepository.findByStudentIdAndEducationYearCode(finalStudentId, finalEducationYearCode)
+                    .ifPresent(existingGpa -> {
+                        log.info("Deleting existing GPA record for UPSERT: id={}, studentId={}, educationYear={}",
+                                existingGpa.getId(), finalStudentId, finalEducationYearCode);
+                        studentGpaRepository.delete(existingGpa);
+                        studentGpaRepository.flush(); // Ensure delete is executed before insert
+                    });
+        }
+
+        // Create new GPA record
+        StudentGpa gpa = new StudentGpa();
+        gpa.setId(UUID.randomUUID());
+        gpa.setStudentId(studentId);
+        gpa.setEducationYearCode(educationYearCode);
 
         // Parse level (can be nested object with code or direct code string)
         Object levelObj = requestBody.get("level");
         if (levelObj != null) {
             if (levelObj instanceof Map) {
-                @SuppressWarnings("unchecked")
                 Map<String, Object> levelMap = (Map<String, Object>) levelObj;
                 Object codeValue = levelMap.get("code");
                 if (codeValue == null) codeValue = levelMap.get("id");

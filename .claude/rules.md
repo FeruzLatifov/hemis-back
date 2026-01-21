@@ -153,6 +153,10 @@ These rules apply across all modules and MUST be followed at all times:
 
 - **Documentation:** See `SWAGGER_GUIDE.md` for required Swagger annotations and examples.
 - **Testing:** See `TESTING_GUIDE.md` for mandatory unit and integration testing practices.
+- **Test Credentials:** API test uchun login/parol `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` faylidan olinadi:
+  - **New HEMIS:** `newUsername` va `newPassword` input qiymatlari (masalan: `otm401` / `XCZDAb7qvGTXxz`)
+  - **Old HEMIS:** `oldUsername` va `oldPassword` input qiymatlari (masalan: `otm351` / `XCZDAb7qvGTXxz`)
+  - Token olish: `POST /app/rest/v2/oauth/token` + Basic Auth `client:secret`
 - **Migrations:** See `LIQUIBASE_GUIDE.md` for detailed database migration instructions.
 - **Architecture & Context:** See `architecture.md` and `context.md` for system design and project background.
 

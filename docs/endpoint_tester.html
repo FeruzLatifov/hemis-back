@@ -655,7 +655,9 @@
             // ============================================
             // 04.Talaba (Entity API - CRUD ketma-ketligi)
             // ============================================
-            // 1️⃣ POST (yaratish) → 2️⃣ GET (olish) → 3️⃣ PUT (yangilash) → 4️⃣ DELETE (o'chirish)
+            // TEST OQIMI: 1️⃣ POST (yaratish) → 2️⃣ GET (olish) → 3️⃣ PUT (yangilash) →
+            //             4️⃣-17️⃣ Boshqa operatsiyalar → 18️⃣ DELETE (o'chirish - OXIRIDA!)
+            // ⚠️ MUHIM: DELETE ni faqat barcha testlar tugagandan keyin ishga tushiring!
             // ============================================
             {
                 id: 1,
@@ -830,7 +832,7 @@
                         required: false
                     }
                 },
-                description: "POST da yaratilgan talabani ID bo'yicha olish. view=_local bilan OLD-HEMIS compatible",
+                description: "POST da yaratilgan talabani ID bo'yicha olish. view=_local bilan OLD-HEMIS compatible. ⚠️ MUHIM: Solishtirishda OLD va NEW HEMIS uchun bir xil studentId ishlatilishi kerak!",
                 dependsOn: 1,
                 ported: true
             },
@@ -887,33 +889,11 @@
                 dependsOn: 1,
                 ported: true
             },
+            // ============================================
+            // Qo'shimcha Talaba endpointlari (4-18)
+            // ============================================
             {
                 id: 4,
-                category: "04.Talaba",
-                name: "Talabani o'chirish (DELETE)",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_EStudent/{entityId}",
-                requiresAuth: true,
-                params: {},
-                inputFields: {
-                    entityId: {
-                        label: "Talaba ID (UUID)",
-                        type: "text",
-                        placeholder: "POST dan avtomatik to'ldiriladi",
-                        default: "",
-                        useStoredId: "createdStudentId",
-                        required: true
-                    }
-                },
-                description: "POST da yaratilgan talabani soft delete qilish. delete_ts belgilanadi, ma'lumot bazadan o'chirilmaydi.",
-                dependsOn: 1,
-                ported: true
-            },
-            // ============================================
-            // Qo'shimcha Talaba endpointlari
-            // ============================================
-            {
-                id: 5,
                 category: "04.Talaba",
                 name: "Barcha talabalar ro'yxati",
                 method: "GET",
@@ -957,7 +937,7 @@
                 ported: true
             },
             {
-                id: 6,
+                id: 5,
                 category: "04.Talaba",
                 name: "Talaba ID sini olish (Service)",
                 method: "POST",
@@ -1037,7 +1017,7 @@
                 ported: true
             },
             {
-                id: 7,
+                id: 6,
                 category: "04.Talaba",
                 name: "Talabani transfer qilish (Service)",
                 method: "POST",
@@ -1075,16 +1055,16 @@
                 bodyTemplate: {
                     student: {
                         id: "{student_id}",
-                        _university: "{university_code}",
-                        _student_status: "{student_status}"
+                        university: {code: "{university_code}"},
+                        studentStatus: {code: "{student_status}"}
                     }
                 },
-                description: "Talabani boshqa universitetga o'tkazish (transfer). Flat format: _university, _student_status",
+                description: "Talabani boshqa universitetga o'tkazish (transfer). OLD HEMIS nested format: university.code, studentStatus.code",
                 dependsOn: 1,
                 ported: true
             },
             {
-                id: 8,
+                id: 7,
                 category: "04.Talaba",
                 name: "Talaba statusini tekshirish (Passport seriya)",
                 method: "GET",
@@ -1106,7 +1086,7 @@
                 ported: true  // ✅ Controller ported - StudentServiceController.java
             },
             {
-                id: 9,
+                id: 8,
                 category: "04.Talaba",
                 name: "Talaba tasdiqlash (DTM verification)",
                 method: "GET",
@@ -1128,7 +1108,7 @@
                 ported: true  // ✅ Controller ported - StudentServiceController.java + VerificationService.java
             },
             {
-                id: 10,
+                id: 9,
                 category: "04.Talaba",
                 name: "Talaba GPA (O'rtacha baho)",
                 method: "GET",
@@ -1167,7 +1147,7 @@
                 ported: true  // ✅ Controller ported - StudentGpaEntityController.java
             },
             {
-                id: 11,
+                id: 10,
                 category: "04.Talaba",
                 name: "Talaba GPA yaratish",
                 method: "POST",
@@ -1178,15 +1158,16 @@
                     studentId: {
                         label: "Talaba ID (UUID)",
                         type: "text",
-                        placeholder: "Talaba UUID",
-                        default: "",
+                        placeholder: "Talaba UUID (Talaba yaratish dan olinadi)",
+                        default: "fb08e7eb-49ef-4240-a2d9-99d09f02ac6a",
+                        useStoredId: "createdStudentId",
                         required: true
                     },
                     educationYearCode: {
                         label: "Ta'lim yili kodi",
                         type: "text",
-                        placeholder: "2023",
-                        default: "2023",
+                        placeholder: "2024",
+                        default: "2024",
                         required: false
                     },
                     levelCode: {
@@ -1232,12 +1213,12 @@
                         required: false
                     }
                 },
-                bodyBuilder: function(inputs) {
-                    // TODO: OLD HEMIS dan tekshirib, to'g'ri field nomlarini aniqlash
+                bodyGenerator: function(inputs) {
+                    // OLD HEMIS format: nested objects for references
                     return {
-                        studentId: inputs.studentId,
-                        educationYear: inputs.educationYearCode,
-                        level: inputs.levelCode,
+                        studentId: { id: inputs.studentId },
+                        educationYear: { code: inputs.educationYearCode },
+                        level: { code: inputs.levelCode },
                         gpa: inputs.gpa,
                         method: inputs.method,
                         creditSum: inputs.creditSum,
@@ -1245,12 +1226,12 @@
                         debtSubjects: parseInt(inputs.debtSubjects) || 0
                     };
                 },
-                description: "Yangi GPA yozuvini yaratish. Request body: studentId (UUID), educationYear (code), level (code), gpa, method, creditSum, subjects, debtSubjects. Response: yaratilgan GPA yozuvi CUBA formatda.",
+                description: "Yangi GPA yozuvini yaratish. studentId #1 Talaba yaratish dan avtomatik olinadi. Request: studentId, educationYear, level, gpa, method, creditSum, subjects, debtSubjects.",
                 dependsOn: 1,
                 ported: true  // ✅ Controller ported - StudentGpaEntityController.java
             },
             {
-                id: 12,
+                id: 11,
                 category: "04.Talaba",
                 name: "Talaba GPA servis (UPSERT)",
                 method: "POST",
@@ -1261,15 +1242,16 @@
                     studentId: {
                         label: "Talaba ID (UUID)",
                         type: "text",
-                        placeholder: "Talaba UUID",
-                        default: "",
+                        placeholder: "Talaba UUID (#1 dan olinadi)",
+                        default: "fb08e7eb-49ef-4240-a2d9-99d09f02ac6a",
+                        useStoredId: "createdStudentId",
                         required: true
                     },
                     educationYearCode: {
                         label: "Ta'lim yili kodi",
                         type: "text",
-                        placeholder: "2023",
-                        default: "2023",
+                        placeholder: "2024",
+                        default: "2024",
                         required: false
                     },
                     levelCode: {
@@ -1315,13 +1297,13 @@
                         required: false
                     }
                 },
-                bodyBuilder: function(inputs) {
-                    // Service format: {"gpa": {...}} wrapper bilan
+                bodyGenerator: function(inputs) {
+                    // Service format: {"gpa": {...}} wrapper bilan (Entity POST dan farqli)
                     return {
                         gpa: {
-                            studentId: {id: inputs.studentId},
-                            educationYear: {code: inputs.educationYearCode},
-                            level: {code: inputs.levelCode},
+                            studentId: { id: inputs.studentId },
+                            educationYear: { code: inputs.educationYearCode },
+                            level: { code: inputs.levelCode },
                             gpa: inputs.gpa,
                             method: inputs.method,
                             creditSum: inputs.creditSum,
@@ -1330,12 +1312,12 @@
                         }
                     };
                 },
-                description: "Talaba GPA servis (UPSERT). Mavjud bo'lsa yangilaydi, bo'lmasa yaratadi. Request: {gpa: {studentId, educationYear, level, gpa, method, creditSum, subjects, debtSubjects}}. Farqi: Entity POST dan farqli ravishda 'gpa' wrapper bilan yuboriladi.",
+                description: "Talaba GPA servis (UPSERT). studentId #1 dan olinadi. Mavjud bo'lsa yangilaydi, bo'lmasa yaratadi. Request: {gpa: {...}} wrapper bilan.",
                 dependsOn: 1,
                 ported: true  // ✅ Controller ported - StudentServiceController.java
             },
             {
-                id: 13,
+                id: 12,
                 category: "04.Talaba",
                 name: "Talaba shartnoma ma'lumotlari (Contract Info)",
                 method: "GET",
@@ -1362,7 +1344,7 @@
             // 04.Talaba - StudentMeta Entity (hemishe_EStudentMeta)
             // =====================================================
             {
-                id: 14,
+                id: 13,
                 category: "04.Talaba",
                 name: "Talaba Meta - Ro'yxat (GET)",
                 method: "GET",
@@ -1378,7 +1360,7 @@
                 ported: true  // ✅ Controller ported - StudentMetaEntityController.java
             },
             {
-                id: 15,
+                id: 14,
                 category: "04.Talaba",
                 name: "Talaba Meta - Bitta olish (GET by ID)",
                 method: "GET",
@@ -1388,8 +1370,10 @@
                     entityId: {
                         label: "Entity ID (UUID)",
                         type: "text",
-                        placeholder: "Talaba Meta UUID",
-                        default: "",
+                        placeholder: "POST dan avtomatik to'ldiriladi",
+                        defaultNew: "4c453de6-5386-9d8e-a298-4bd3166a7ded",
+                        defaultOld: "4c453de6-5386-9d8e-a298-4bd3166a7ded",
+                        useStoredId: "createdStudentMetaId",
                         required: true
                     }
                 },
@@ -1398,28 +1382,108 @@
                 ported: true  // ✅ Controller ported - StudentMetaEntityController.java
             },
             {
-                id: 16,
+                id: 15,
                 category: "04.Talaba",
                 name: "Talaba Meta - Yaratish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EStudentMeta",
                 requiresAuth: true,
-                body: {
-                    "_university": "401",
-                    "_student": null,
-                    "_education_type": "11",
-                    "_education_form": "11",
-                    "_education_year": "2024",
-                    "_student_status": "11",
-                    "groupName": "Test guruh",
-                    "active": true
+                inputFields: {
+                    university: {
+                        label: "Universitet kodi",
+                        type: "text",
+                        placeholder: "401=Yangi, 351=Eski",
+                        defaultNew: "401",
+                        defaultOld: "351",
+                        required: true
+                    },
+                    studentId: {
+                        label: "Talaba ID (UUID)",
+                        type: "text",
+                        placeholder: "#1 POST dan avtomatik to'ldiriladi",
+                        default: "",
+                        useStoredId: "createdStudentId",
+                        required: false
+                    },
+                    education_type: {
+                        label: "Ta'lim turi",
+                        type: "select",
+                        options: [
+                            {value: "11", label: "11 - Bakalavr"},
+                            {value: "12", label: "12 - Magistr"},
+                            {value: "13", label: "13 - Doktorant"}
+                        ],
+                        default: "11",
+                        required: true
+                    },
+                    education_form: {
+                        label: "Ta'lim shakli",
+                        type: "select",
+                        options: [
+                            {value: "11", label: "11 - Kunduzgi"},
+                            {value: "12", label: "12 - Sirtqi"},
+                            {value: "13", label: "13 - Kechki"}
+                        ],
+                        default: "11",
+                        required: true
+                    },
+                    education_year: {
+                        label: "Ta'lim yili",
+                        type: "select",
+                        options: [
+                            {value: "2024", label: "2024-2025"},
+                            {value: "2023", label: "2023-2024"},
+                            {value: "2022", label: "2022-2023"}
+                        ],
+                        default: "2024",
+                        required: true
+                    },
+                    student_status: {
+                        label: "Talaba holati",
+                        type: "select",
+                        options: [
+                            {value: "11", label: "11 - Faol"},
+                            {value: "12", label: "12 - Chetlashgan"},
+                            {value: "10", label: "10 - Boshqa"}
+                        ],
+                        default: "11",
+                        required: true
+                    },
+                    groupName: {
+                        label: "Guruh nomi",
+                        type: "text",
+                        placeholder: "Test guruh",
+                        default: "Test guruh",
+                        required: false
+                    },
+                    active: {
+                        label: "Faol",
+                        type: "select",
+                        options: [
+                            {value: "true", label: "Ha"},
+                            {value: "false", label: "Yo'q"}
+                        ],
+                        default: "true",
+                        required: false
+                    }
+                },
+                bodyTemplate: {
+                    _university: "{university}",
+                    _student: "{studentId}",
+                    _education_type: "{education_type}",
+                    _education_form: "{education_form}",
+                    _education_year: "{education_year}",
+                    _student_status: "{student_status}",
+                    groupName: "{groupName}",
+                    active: true
                 },
                 description: "Yangi talaba meta yaratish. CUBA Platform REST API compatible endpoint. uId avtomatik generatsiya qilinadi.",
                 dependsOn: 1,
-                ported: true  // ✅ Controller ported - StudentMetaEntityController.java
+                ported: true,  // ✅ Controller ported - StudentMetaEntityController.java
+                storeResultId: "createdStudentMetaId"
             },
             {
-                id: 17,
+                id: 16,
                 category: "04.Talaba",
                 name: "Talaba Meta - Yangilash (PUT)",
                 method: "PUT",
@@ -1429,21 +1493,40 @@
                     entityId: {
                         label: "Entity ID (UUID)",
                         type: "text",
-                        placeholder: "Talaba Meta UUID",
-                        default: "",
+                        placeholder: "POST dan avtomatik to'ldiriladi",
+                        defaultNew: "4c453de6-5386-9d8e-a298-4bd3166a7ded",
+                        defaultOld: "4c453de6-5386-9d8e-a298-4bd3166a7ded",
+                        useStoredId: "createdStudentMetaId",
                         required: true
+                    },
+                    groupName: {
+                        label: "Guruh nomi",
+                        type: "text",
+                        placeholder: "Yangilangan guruh",
+                        default: "Yangilangan guruh",
+                        required: false
+                    },
+                    active: {
+                        label: "Faol",
+                        type: "select",
+                        options: [
+                            {value: "true", label: "Ha"},
+                            {value: "false", label: "Yo'q"}
+                        ],
+                        default: "true",
+                        required: false
                     }
                 },
-                body: {
-                    "groupName": "Yangilangan guruh",
-                    "active": true
+                bodyTemplate: {
+                    groupName: "{groupName}",
+                    active: true
                 },
                 description: "Talaba meta ma'lumotlarini yangilash (partial update). CUBA Platform REST API compatible endpoint.",
                 dependsOn: 1,
                 ported: true  // ✅ Controller ported - StudentMetaEntityController.java
             },
             {
-                id: 18,
+                id: 17,
                 category: "04.Talaba",
                 name: "Talaba Meta - O'chirish (DELETE)",
                 method: "DELETE",
@@ -1453,14 +1536,41 @@
                     entityId: {
                         label: "Entity ID (UUID)",
                         type: "text",
-                        placeholder: "Talaba Meta UUID",
-                        default: "",
+                        placeholder: "POST dan avtomatik to'ldiriladi",
+                        defaultNew: "4c453de6-5386-9d8e-a298-4bd3166a7ded",
+                        defaultOld: "4c453de6-5386-9d8e-a298-4bd3166a7ded",
+                        useStoredId: "createdStudentMetaId",
                         required: true
                     }
                 },
                 description: "Talaba meta ma'lumotlarini o'chirish (soft delete). CUBA Platform REST API compatible endpoint. Faqat deleteTs o'rnatiladi, fizik o'chirish bo'lmaydi.",
                 dependsOn: 1,
                 ported: true  // ✅ Controller ported - StudentMetaEntityController.java
+            },
+            // ============================================
+            // 🗑️ OXIRGI QADAM - Test talabani o'chirish
+            // ============================================
+            {
+                id: 18,
+                category: "04.Talaba",
+                name: "🗑️ TEST YAKUNLASH - Talabani o'chirish (DELETE)",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_EStudent/{entityId}",
+                requiresAuth: true,
+                params: {},
+                inputFields: {
+                    entityId: {
+                        label: "Talaba ID (UUID)",
+                        type: "text",
+                        placeholder: "POST da yaratilgan talaba ID",
+                        default: "",
+                        useStoredId: "createdStudentId",
+                        required: true
+                    }
+                },
+                description: "⚠️ DIQQAT: Bu oxirgi qadam! POST (#1) da yaratilgan test talabani o'chirish. Soft delete - faqat delete_ts belgilanadi, ma'lumot bazadan fizik o'chirilmaydi. Barcha testlar tugagandan keyin ishlating!",
+                dependsOn: 1,
+                ported: true
             },
 
             // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -2885,13 +2995,45 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 requiresAuth: true,
                 dependsOn: 1,
                 contentType: "json",
-                requestBody: {
-                    code: "99",
-                    name: "Test bo'linma turi",
-                    nameRu: "Тестовый тип подразделения",
-                    nameEn: "Test department type"
+                inputFields: {
+                    code: {
+                        label: "Kod",
+                        type: "text",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        placeholder: "NEW=98, OLD=99",
+                        helpText: "🆕 Yangi Hemis: 98 | 🏛️ Eski Hemis: 99"
+                    },
+                    name: {
+                        label: "Nomi (O'zbekcha)",
+                        type: "text",
+                        defaultNew: "Test turi (Yangi Hemis)",
+                        defaultOld: "Test turi (Eski Hemis)",
+                        required: true
+                    },
+                    nameRu: {
+                        label: "Nomi (Ruscha)",
+                        type: "text",
+                        defaultNew: "Тестовый тип (Новый Hemis)",
+                        defaultOld: "Тестовый тип (Старый Hemis)",
+                        required: false
+                    },
+                    nameEn: {
+                        label: "Nomi (Inglizcha)",
+                        type: "text",
+                        defaultNew: "Test type (New Hemis)",
+                        defaultOld: "Test type (Old Hemis)",
+                        required: false
+                    }
                 },
-                description: "Yangi bo'linma turi yaratish",
+                bodyTemplate: {
+                    code: "{code}",
+                    name: "{name}",
+                    nameRu: "{{nameRu}}",
+                    nameEn: "{{nameEn}}"
+                },
+                description: "Yangi bo'linma turi yaratish. 🆕 NEW=98, 🏛️ OLD=99 - alohida test ma'lumotlari",
                 ported: true
             },
             {
@@ -2907,16 +3049,32 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     entityId: {
                         label: "Bo'linma turi kodi",
                         type: "text",
-                        default: "99",
+                        defaultNew: "98",
+                        defaultOld: "99",
                         required: true,
-                        placeholder: "Yangilash uchun kod"
+                        placeholder: "NEW=98, OLD=99",
+                        helpText: "🆕 Yangi Hemis: 98 | 🏛️ Eski Hemis: 99 (avval #5 da yaratilgan)"
+                    },
+                    name: {
+                        label: "Yangi nom (O'zbekcha)",
+                        type: "text",
+                        defaultNew: "Yangilangan (Yangi Hemis)",
+                        defaultOld: "Yangilangan (Eski Hemis)",
+                        required: true
+                    },
+                    nameRu: {
+                        label: "Yangi nom (Ruscha)",
+                        type: "text",
+                        defaultNew: "Обновлено (Новый Hemis)",
+                        defaultOld: "Обновлено (Старый Hemis)",
+                        required: false
                     }
                 },
-                requestBody: {
-                    name: "Yangilangan nom",
-                    nameRu: "Обновленное название"
+                bodyTemplate: {
+                    name: "{name}",
+                    nameRu: "{{nameRu}}"
                 },
-                description: "Mavjud bo'linma turini yangilash",
+                description: "Mavjud bo'linma turini yangilash. Avval #5 da yaratilgan yozuvni yangilaydi",
                 ported: true
             },
             {
@@ -2931,12 +3089,14 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     entityId: {
                         label: "Bo'linma turi kodi",
                         type: "text",
-                        default: "99",
+                        defaultNew: "98",
+                        defaultOld: "99",
                         required: true,
-                        placeholder: "O'chirish uchun kod"
+                        placeholder: "NEW=98, OLD=99",
+                        helpText: "🆕 Yangi Hemis: 98 | 🏛️ Eski Hemis: 99 (avval #5 da yaratilgan)"
                     }
                 },
-                description: "Bo'linma turini soft delete qilish",
+                description: "Bo'linma turini soft delete qilish. Test ketma-ketligi: #5 yaratish → #6 yangilash → #7 o'chirish",
                 ported: true
             },
 
@@ -3961,446 +4121,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 bodyFields: ["filter"],
                 description: "CUBA filter formatida fuqarolik holatlarini qidirish. Filter body da JSON.",
                 dependsOn: 1,
-                ported: true
-            },
-            {
-                id: 108,
-                category: "06.Xodim lavozimlari",
-                name: "Barcha xodim stavkalari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Xodim mehnat stavkalari klassifikatori: 11=1,00, 12=0,75, 13=0,50, 14=0,25, 15=0,30, 16=0,20, 17=0,15, 18=0,10, 19=0,05",
-                ported: true,
-                storeFirstId: "employeeRateCode"
-            },
-            {
-                id: 109,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim stavkasini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Stavka kodi (11-19)",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        useStoredId: "employeeRateCode"
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta stavkani kod bo'yicha olish. Kodlar: 11=1,00, 12=0,75, 13=0,50, 14=0,25, 15=0,30, 16=0,20, 17=0,15, 18=0,10, 19=0,05",
-                dependsOn: 8,
-                ported: true
-            },
-            {
-                id: 110,
-                category: "06.Xodim lavozimlari",
-                name: "Barcha xodim lavozimlari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HTeacherPositionType",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Xodim lavozimlari klassifikatori (227 ta): 11=Stajer-o'qituvchi, 12=O'qituvchi, 13=Katta o'qituvchi, 14=Dotsent, 15=Professor va boshqalar",
-                ported: true,
-                storeFirstId: "positionTypeCode"
-            },
-            {
-                id: 111,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim lavozimini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HTeacherPositionType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Lavozim kodi",
-                        type: "text",
-                        default: "11",
-                        required: true,
-                        useStoredId: "positionTypeCode"
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta lavozimni kod bo'yicha olish. Masalan: 11=Stajer-o'qituvchi, 14=Dotsent, 15=Professor",
-                dependsOn: 10,
-                ported: true
-            },
-            {
-                id: 112,
-                category: "06.Xodim lavozimlari",
-                name: "Barcha xodim ish joylari (GET all)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJob",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        default: 50,
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        default: 0,
-                        required: false
-                    },
-                    view: {
-                        label: "View",
-                        type: "text",
-                        default: "eEmployeeJob-view",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Xodimlarning ish joylari (lavozim, OTM, bo'lim, stavka, shakl, holat). UUID asosida.",
-                ported: true,
-                storeFirstId: "employeeJobId"
-            },
-            {
-                id: 113,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini olish (GET by ID)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Ish joyi UUID",
-                        type: "text",
-                        default: "",
-                        required: true,
-                        useStoredId: "employeeJobId"
-                    },
-                    view: {
-                        label: "View",
-                        type: "text",
-                        default: "eEmployeeJob-view",
-                        required: false
-                    },
-                    returnNulls: {
-                        label: "Return Nulls",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        default: "",
-                        required: false
-                    }
-                },
-                description: "Bitta xodim ish joyini UUID bo'yicha olish. Ma'lumotlar: lavozim, OTM, bo'lim, stavka, shartnoma.",
-                dependsOn: 12,
-                ported: true
-            },
-            {
-                id: 114,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini yaratish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJobs",
-                requiresAuth: true,
-                inputFields: {
-                    _employee: {
-                        label: "Xodim UUID (Employee #2)",
-                        type: "text",
-                        default: "bf9ac27a-4b88-aa2a-ec12-1983afb59a8b",
-                        required: true
-                    },
-                    _university: {
-                        label: "OTM kodi",
-                        type: "text",
-                        default: "305",
-                        required: true
-                    },
-                    _department: {
-                        label: "Bo'lim kodi",
-                        type: "text",
-                        default: "305-212",
-                        required: false
-                    },
-                    _employeeType: {
-                        label: "Xodim turi kodi (12=Professor-o'qituvchi)",
-                        type: "text",
-                        default: "12",
-                        required: false
-                    },
-                    _employeePosition: {
-                        label: "Lavozim kodi (14=Dotsent)",
-                        type: "text",
-                        default: "14",
-                        required: false
-                    },
-                    _employeeRate: {
-                        label: "Stavka kodi (11=1.00 stavka)",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    _employeeForm: {
-                        label: "Ish shakli kodi",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    _employeeStatus: {
-                        label: "Holat kodi (11=Ishlamoqda)",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    jobStartDate: {
-                        label: "Ish boshlash sanasi",
-                        type: "text",
-                        default: "2025-01-01",
-                        required: false
-                    },
-                    contractNumber: {
-                        label: "Shartnoma raqami",
-                        type: "text",
-                        default: "TEST-001",
-                        required: false
-                    },
-                    decreeNumber: {
-                        label: "Buyruq raqami",
-                        type: "text",
-                        default: "TEST-D001",
-                        required: false
-                    }
-                },
-                description: "Yangi xodim ish joyini yaratish. _employee (UUID), OTM, bo'lim, lavozim, stavka va boshqa ma'lumotlar.",
-                ported: true,
-                storeFirstId: "createdEmployeeJobId",
-                bodyTemplate: {
-                    "_employee": {"id": "{_employee}"},
-                    "_university": {"code": "{_university}"},
-                    "_department": {"code": "{{_department}}"},
-                    "_employeeType": {"code": "{{_employeeType}}"},
-                    "_teacherPositionType": {"code": "{{_employeePosition}}"},
-                    "_employeeRate": {"code": "{{_employeeRate}}"},
-                    "_employmentForm": {"code": "{{_employeeForm}}"},
-                    "_employeeStatus": {"code": "{{_employeeStatus}}"},
-                    "jobStartDate": "{{jobStartDate}}",
-                    "contractNumber": "{{contractNumber}}",
-                    "decreeNumber": "{{decreeNumber}}"
-                }
-            },
-            {
-                id: 115,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini yangilash (PUT)",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJobs/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Ish joyi UUID (Employee #1 - boshqa xodim)",
-                        type: "text",
-                        default: "bd5f40d5-771e-62eb-db48-c67d5317e429",
-                        required: true,
-                        useStoredId: "createdEmployeeJobId"
-                    },
-                    _employeeStatus: {
-                        label: "Xodim holati kodi (11=Ishlayapti, 12=Bo'shatilgan)",
-                        type: "text",
-                        default: "11",
-                        required: false
-                    },
-                    _employeeRate: {
-                        label: "Stavka kodi (11=1.0, 12=0.75, 13=0.5, 14=0.25)",
-                        type: "text",
-                        default: "",
-                        required: false
-                    },
-                    jobEndDate: {
-                        label: "Ish tugash sanasi (YYYY-MM-DD)",
-                        type: "text",
-                        default: "2025-12-31",
-                        required: false
-                    },
-                    contractNumber: {
-                        label: "Shartnoma raqami",
-                        type: "text",
-                        default: "UPD-001",
-                        required: false
-                    }
-                },
-                description: "Mavjud xodim ish joyini yangilash (partial update). entityId #14 POST dan avtomatik olinadi. Faqat o'zgartirmoqchi bo'lgan maydonlarni yuboring.",
-                dependsOn: 14,
-                ported: true,
-                bodyTemplate: {
-                    "_employeeStatus": {"code": "{{_employeeStatus}}"},
-                    "_employeeRate": {"code": "{{_employeeRate}}"},
-                    "jobEndDate": "{{jobEndDate}}",
-                    "contractNumber": "{{contractNumber}}"
-                }
-            },
-            {
-                id: 116,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini yaratish - YANGI (Service API)",
-                method: "POST",
-                url: "/app/rest/v2/services/teacher/addJob",
-                requiresAuth: true,
-                inputFields: {
-                    employeeId: {
-                        label: "Xodim UUID",
-                        type: "text",
-                        default: "b2a51826-9870-4b2b-e633-94c6d9958fa9",
-                        required: true,
-                        placeholder: "Xodim (ETeacher) UUID si"
-                    },
-                    universityCode: {
-                        label: "Universitet kodi",
-                        type: "text",
-                        default: "401",
-                        required: true,
-                        placeholder: "401"
-                    },
-                    departmentCode: {
-                        label: "Bo'lim kodi",
-                        type: "text",
-                        default: "401-102",
-                        required: true,
-                        placeholder: "401-102"
-                    },
-                    employeeFormCode: {
-                        label: "Shtat shakli kodi (11=asosiy, 12=ichki, 13=tashqi, 14=soatbay)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    employeeStatusCode: {
-                        label: "Ish holati kodi (11=ishlamoqda, 12=ta'tilda, 13=bo'shatilgan)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    employeeTypeCode: {
-                        label: "Xodim turi kodi (11=administrativ, 12=professor, 13=texnik)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    employeeRateCode: {
-                        label: "Stavka kodi (11=1.0, 12=0.75, 13=0.5, 14=0.25)",
-                        type: "text",
-                        default: "13",
-                        required: true
-                    },
-                    employeePositionCode: {
-                        label: "Lavozim kodi (11=Stajer-o'qituvchi, 12=O'qituvchi, 14=Dotsent, 15=Professor)",
-                        type: "text",
-                        default: "11",
-                        required: true
-                    },
-                    jobStartDate: {
-                        label: "Ish boshlash sanasi (YYYY-MM-DD)",
-                        type: "text",
-                        default: "2020-01-06",
-                        required: true
-                    },
-                    jobEndDate: {
-                        label: "Ish tugash sanasi (YYYY-MM-DD)",
-                        type: "text",
-                        default: "2025-12-31",
-                        required: false
-                    }
-                },
-                description: "Xodimga yangi lavozim qo'shish (Service API). Agar xodim asosiy shtatda ishlayotgan bo'lsa va yangi job ham asosiy shtat bo'lsa - xato qaytadi.",
-                ported: true,
-                bodyTemplate: {
-                    "job": {
-                        "employee": {"id": "{{employeeId}}"},
-                        "university": {"code": "{{universityCode}}"},
-                        "department": {"code": "{{departmentCode}}"},
-                        "employeeForm": {"code": "{{employeeFormCode}}"},
-                        "employeeStatus": {"code": "{{employeeStatusCode}}"},
-                        "employeeType": {"code": "{{employeeTypeCode}}"},
-                        "employeeRate": {"code": "{{employeeRateCode}}"},
-                        "employeePosition": {"code": "{{employeePositionCode}}"},
-                        "jobStartDate": "{{jobStartDate}}",
-                        "jobEndDate": "{{jobEndDate}}"
-                    }
-                }
-            },
-            {
-                id: 117,
-                category: "06.Xodim lavozimlari",
-                name: "Xodim ish joyini o'chirish - YANGI (DELETE)",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_EEmployeeJobs/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Ish joyi UUID (o'chirish uchun)",
-                        type: "text",
-                        default: "",
-                        required: true,
-                        placeholder: "UUID - avval #1 dan oling",
-                        useStoredId: "employeeJobId"
-                    }
-                },
-                description: "Xodim ish joyini o'chirish (soft delete). O'chirilgan yozuv bazadan o'chirilmaydi, faqat delete_ts belgilanadi. 200=muvaffaqiyatli (bo'sh response), 404=topilmadi.",
                 ported: true
             },
             // ============================================
@@ -7650,7 +7370,8 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     }
 
                     // 2. Add params from inputFields (new format) - entityId excluded (already in URL path)
-                    if (endpoint.inputFields) {
+                    // Skip if bodyTemplate exists (inputFields will be used in body, not URL)
+                    if (endpoint.inputFields && !endpoint.bodyTemplate) {
                         Object.entries(endpoint.inputFields).forEach(([key, field]) => {
                             // Skip entityId (already replaced in URL path) and already added params
                             if (key === 'entityId' || (endpoint.params && endpoint.params[key])) {
@@ -7776,6 +7497,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 
                 // Body for PUT/POST with bodyTemplate (JSON)
                 if ((endpoint.method === 'PUT' || endpoint.method === 'POST') && endpoint.bodyTemplate) {
+                    console.log(`[${system.toUpperCase()}] Using bodyTemplate for ${endpoint.method}:`, JSON.stringify(endpoint.bodyTemplate));
                     // Recursive function to replace placeholders in nested objects
                     function replacePlaceholders(obj) {
                         if (typeof obj === 'string') {

@@ -66,11 +66,12 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      *
      * <p><strong>CRITICAL:</strong> Returns only the master record (isDuplicate = true)</p>
      * <p>Use this for student lookup by PINFL in most cases</p>
+     * <p><strong>Note:</strong> Uses native query with LIMIT 1 to handle multiple masters (data inconsistency)</p>
      *
      * @param pinfl personal identification number
-     * @return master student record if exists
+     * @return master student record if exists (newest by create_ts if multiple exist)
      */
-    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl AND s.isDuplicate = true")
+    @Query(value = "SELECT * FROM hemishe_e_student WHERE pinfl = :pinfl AND is_duplicate = true AND delete_ts IS NULL ORDER BY create_ts DESC LIMIT 1", nativeQuery = true)
     Optional<Student> findMasterByPinfl(@Param("pinfl") String pinfl);
 
     /**
@@ -320,16 +321,24 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      * Find active student by PINFL
      * Used for duplicate detection when generating student ID
      *
-     * OLD-HEMIS logic: student is "active" if:
-     * - studentStatus IN ('10', '11', '13', '15') (not expelled/graduated)
-     * - active = true
+     * OLD-HEMIS logic: Student is "active" if NOT expelled/graduated
+     * - studentStatus NOT IN ('16') where '16' = Bitirgan (graduated)
+     * - Also checks that student is not soft-deleted (deleteTs IS NULL implied by JPA)
+     *
+     * Status codes:
+     *   - '10' = Boshqa (Other) - ACTIVE
+     *   - '11' = O'qimoqda (Active) - ACTIVE
+     *   - '12' = Ta'tilda (On leave) - ACTIVE
+     *   - '13' = Akademik ta'til - ACTIVE
+     *   - '14' = Harbiy xizmat - ACTIVE
+     *   - '15' = Tibbiy ta'til - ACTIVE
+     *   - '16' = Bitirgan (Graduated) - NOT ACTIVE
      *
      * @param pinfl PINFL raqami
      * @return aktiv talaba yoki empty
      */
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
-           "AND s.studentStatus IN ('10', '11', '13', '15') " +
-           "AND s.active = true")
+           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15')")
     Optional<Student> findActiveByPinfl(@Param("pinfl") String pinfl);
 
     /**
@@ -345,8 +354,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      */
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
            "AND s.isDuplicate = :isDuplicate " +
-           "AND s.studentStatus IN ('10', '11', '13', '15') " +
-           "AND s.active = true")
+           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15')")
     Optional<Student> findActiveByPinflAndDuplicate(
             @Param("pinfl") String pinfl,
             @Param("isDuplicate") Boolean isDuplicate);
@@ -354,16 +362,13 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     /**
      * Find active student by serial number (for foreign citizens)
      *
-     * OLD-HEMIS logic: student is "active" if:
-     * - studentStatus IN ('10', '11', '13', '15') (not expelled/graduated)
-     * - active = true
+     * OLD-HEMIS logic: Student is "active" if NOT graduated ('16')
      *
      * @param serialNumber passport serial number
      * @return aktiv talaba yoki empty
      */
     @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber " +
-           "AND s.studentStatus IN ('10', '11', '13', '15') " +
-           "AND s.active = true")
+           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15')")
     Optional<Student> findActiveBySerialNumber(@Param("serialNumber") String serialNumber);
 
     /**
@@ -472,6 +477,61 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     Optional<Student> findStudentForTransfer(
             @Param("studentId") UUID studentId,
             @Param("targetUniversity") String targetUniversityCode);
+
+    // =====================================================
+    // OLD-HEMIS Compatible: Duplicate Management
+    // =====================================================
+
+    /**
+     * Find existing MASTER student by PINFL with active status (OLD-HEMIS compatible)
+     *
+     * <p><strong>OLD-HEMIS Logic (Step 1):</strong></p>
+     * <p>Search for isDuplicate=TRUE active student (master record)</p>
+     * <p>If found, student has transferred - return existing master</p>
+     *
+     * @param pinfl PINFL raqami
+     * @return aktiv master talaba yoki empty
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
+           "AND s.isDuplicate = true " +
+           "AND s.studentStatus IN ('10', '11', '13', '15')")
+    Optional<Student> findActiveMasterByPinfl(@Param("pinfl") String pinfl);
+
+    /**
+     * Find existing student by PINFL + educationType + educationYear (OLD-HEMIS compatible)
+     *
+     * <p><strong>OLD-HEMIS Logic (Step 2):</strong></p>
+     * <p>Search for isDuplicate=FALSE student with same PINFL, educationType, educationYear</p>
+     * <p>If found, return existing (cannot create duplicate in same program)</p>
+     *
+     * @param pinfl PINFL raqami
+     * @param educationType ta'lim turi kodi
+     * @param educationYear ta'lim yili kodi
+     * @return talaba yoki empty
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
+           "AND s.educationType = :educationType " +
+           "AND s.educationYear = :educationYear " +
+           "AND s.studentStatus <> '12' " +
+           "AND s.isDuplicate = false")
+    Optional<Student> findExistingStudentForDuplicateCheck(
+            @Param("pinfl") String pinfl,
+            @Param("educationType") String educationType,
+            @Param("educationYear") String educationYear);
+
+    /**
+     * Update all previous masters to isDuplicate=false (OLD-HEMIS compatible)
+     *
+     * <p><strong>OLD-HEMIS Logic:</strong></p>
+     * <p>When creating new master, mark all previous masters as duplicates</p>
+     * <p>Query: UPDATE hemishe_EStudent SET isDuplicate=false WHERE pinfl=:pinfl AND isDuplicate=true</p>
+     *
+     * @param pinfl PINFL raqami
+     * @return updated count
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Student s SET s.isDuplicate = false WHERE s.pinfl = :pinfl AND s.isDuplicate = true")
+    int markPreviousMastersAsDuplicates(@Param("pinfl") String pinfl);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

@@ -85,8 +85,25 @@ public class StudentMetaEntityController {
     }
 
     // =====================================================
-    // GET BY ID
+    // GET BY ID (or LIST if empty)
     // =====================================================
+
+    /**
+     * Bo'sh entityId bilan so'rov - ro'yxatga redirect (OLD-HEMIS compatible)
+     * URL: /app/rest/v2/entities/hemishe_EStudentMeta/ (trailing slash)
+     */
+    @GetMapping("/")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<Map<String, Object>>> getWithTrailingSlash(
+            @RequestParam(defaultValue = "100") int limit,
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
+        // OLD-HEMIS behavior: bo'sh ID = ro'yxat qaytarish
+        log.debug("GET student meta with trailing slash - returning list (OLD-HEMIS compatible)");
+        return getAll(limit, offset, sort, returnNulls, view);
+    }
 
     /**
      * Bitta talaba meta ma'lumotlarini olish
@@ -221,7 +238,7 @@ public class StudentMetaEntityController {
             **Endpoint:** POST /app/rest/v2/entities/hemishe_EStudentMeta
             **Auth:** Bearer token (required)
 
-            **Request body:** StudentMeta JSON object
+            **Request body:** StudentMeta JSON object (CUBA format with underscore prefixes supported)
             **Response:** Yaratilgan entity (CUBA Map format)
             """
     )
@@ -232,13 +249,16 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
         @ApiResponse(responseCode = "409", description = "Konflikt - (uId, university) kombinatsiyasi mavjud")
     })
-    @Transactional
     public ResponseEntity<Map<String, Object>> create(
-            @RequestBody StudentMetaDto dto,
+            @RequestBody Map<String, Object> body,
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("POST create student meta: university={}", dto.getUniversity());
+        log.debug("POST create student meta: body={}", body);
+
+        // Convert CUBA Map to DTO (handles _university -> university, etc.)
+        StudentMetaDto dto = adapter.fromMap(body, StudentMetaDto.class);
+        log.debug("Converted DTO: university={}, student={}", dto.getUniversity(), dto.getStudent());
 
         StudentMetaDto created = studentMetaService.create(dto);
         Map<String, Object> cubaMap = adapter.toMap(created, ENTITY_NAME, returnNulls);
@@ -246,9 +266,32 @@ public class StudentMetaEntityController {
         return ResponseEntity.status(201).body(cubaMap);
     }
 
+    /**
+     * POST with trailing slash - delegates to create (OLD-HEMIS compatible)
+     */
+    @PostMapping("/")
+    public ResponseEntity<Map<String, Object>> createWithTrailingSlash(
+            @RequestBody Map<String, Object> body,
+            @RequestParam(required = false) Boolean returnNulls) {
+        log.debug("POST student meta with trailing slash - delegating to create");
+        return create(body, returnNulls);
+    }
+
     // =====================================================
     // UPDATE (PUT)
     // =====================================================
+
+    /**
+     * Bo'sh entityId bilan PUT - 500 Server Error (OLD-HEMIS compatible)
+     */
+    @PutMapping("/")
+    public ResponseEntity<Map<String, Object>> updateWithTrailingSlash(@RequestBody(required = false) Map<String, Object> body) {
+        log.debug("PUT student meta with trailing slash - returning 500 (OLD-HEMIS compatible)");
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("error", "Server error");
+        error.put("details", "");
+        return ResponseEntity.status(500).body(error);
+    }
 
     /**
      * Talaba meta ma'lumotlarini yangilash
@@ -264,7 +307,7 @@ public class StudentMetaEntityController {
             **Endpoint:** PUT /app/rest/v2/entities/hemishe_EStudentMeta/{entityId}
             **Auth:** Bearer token (required)
 
-            **Request body:** Yangilanadigan maydonlar (partial update)
+            **Request body:** Yangilanadigan maydonlar (partial update, CUBA format supported)
             **Response:** Yangilangan entity (CUBA Map format)
             """
     )
@@ -276,17 +319,19 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi"),
         @ApiResponse(responseCode = "409", description = "Konflikt - (uId, university) kombinatsiyasi mavjud")
     })
-    @Transactional
     public ResponseEntity<Map<String, Object>> update(
             @Parameter(description = "Talaba meta UUID identifikatori")
             @PathVariable UUID entityId,
-            @RequestBody StudentMetaDto dto,
+            @RequestBody Map<String, Object> body,
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("PUT update student meta: {}", entityId);
+        log.debug("PUT update student meta: {}, body: {}", entityId, body);
 
         try {
+            // Convert CUBA Map to DTO (handles _university -> university, etc.)
+            StudentMetaDto dto = adapter.fromMap(body, StudentMetaDto.class);
+
             StudentMetaDto updated = studentMetaService.partialUpdate(entityId, dto);
             Map<String, Object> cubaMap = adapter.toMap(updated, ENTITY_NAME, returnNulls);
             return ResponseEntity.ok(cubaMap);
@@ -302,43 +347,51 @@ public class StudentMetaEntityController {
     // =====================================================
 
     /**
-     * Talaba meta ma'lumotlarini o'chirish (soft delete)
+     * Bo'sh entityId bilan DELETE - 403 Forbidden (OLD-HEMIS compatible)
+     * StudentMeta uchun DELETE butunlay taqiqlangan
+     */
+    @DeleteMapping("/")
+    public ResponseEntity<Map<String, Object>> deleteWithTrailingSlash() {
+        log.debug("DELETE student meta with trailing slash - returning 403 Forbidden (OLD-HEMIS compatible)");
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("error", "Deletion forbidden");
+        error.put("details", "Deletion of the hemishe_EStudentMeta is forbidden");
+        return ResponseEntity.status(403).body(error);
+    }
+
+    /**
+     * Talaba meta ma'lumotlarini o'chirish - TAQIQLANGAN (OLD-HEMIS compatible)
+     *
+     * OLD-HEMIS da hemishe_EStudentMeta entity uchun DELETE operatsiyasi
+     * butunlay taqiqlangan va 403 Forbidden qaytaradi.
      */
     @DeleteMapping("/{entityId}")
     @Operation(
-        summary = "Talaba meta ma'lumotlarini o'chirish (soft delete)",
+        summary = "Talaba meta ma'lumotlarini o'chirish (TAQIQLANGAN)",
         description = """
-            ID bo'yicha talaba meta ma'lumotlarini o'chirish.
-
-            **CRITICAL:** Faqat soft delete! Fizik o'chirish amalga oshirilmaydi.
-            deleteTs maydoni joriy vaqtga o'rnatiladi.
+            **TAQIQLANGAN** - OLD-HEMIS da bu operatsiya ruxsat etilmagan.
 
             **OLD-HEMIS Compatible** - 100% backward compatibility
 
             **Endpoint:** DELETE /app/rest/v2/entities/hemishe_EStudentMeta/{entityId}
             **Auth:** Bearer token (required)
+
+            **Javob:** 403 Forbidden - "Deletion forbidden"
             """
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Muvaffaqiyatli o'chirildi (soft delete)"),
-        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
-        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
-        @ApiResponse(responseCode = "404", description = "Topilmadi")
+        @ApiResponse(responseCode = "403", description = "O'chirish taqiqlangan - OLD-HEMIS compatible")
     })
-    @Transactional
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<Map<String, Object>> delete(
             @Parameter(description = "Talaba meta UUID identifikatori")
             @PathVariable UUID entityId) {
 
-        log.debug("DELETE (soft) student meta: {}", entityId);
+        log.debug("DELETE student meta: {} - returning 403 Forbidden (OLD-HEMIS compatible)", entityId);
 
-        try {
-            studentMetaService.softDelete(entityId);
-            return ResponseEntity.noContent().build();
-
-        } catch (ResourceNotFoundException e) {
-            log.debug("Student meta not found: {}", entityId);
-            return ResponseEntity.notFound().build();
-        }
+        // OLD-HEMIS compatible: DELETE operatsiyasi taqiqlangan
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("error", "Deletion forbidden");
+        error.put("details", "Deletion of the hemishe_EStudentMeta is forbidden");
+        return ResponseEntity.status(403).body(error);
     }
 }

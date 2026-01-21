@@ -73,6 +73,20 @@ public class EmployeeJobsEntityController {
 
     private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
+    /**
+     * OLD-HEMIS Compatible: Constraint xatolikda HTTP 500 qaytarish
+     * Format: {"error":"Server error","details":""}
+     */
+    @org.springframework.web.bind.annotation.ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException e) {
+        log.error("Constraint violation: {}", e.getMessage());
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("error", "Server error");
+        errorResponse.put("details", "");
+        return ResponseEntity.status(500).body(errorResponse);
+    }
+
     @GetMapping("/{entityId}")
     @Transactional(readOnly = true)
     @Operation(
@@ -86,6 +100,9 @@ public class EmployeeJobsEntityController {
             **Auth:** Bearer token (required)
             **Database:** Replica (read-only)
 
+            **Note:** OLD-HEMIS da universitet tekshiruvi yo'q - har qanday entity ko'rilishi mumkin.
+            Bu xatti-harakat saqlab qolingan.
+
             **View Support:**
             - view=eEmployeeJob-view: Returns nested objects (university, department, etc.)
             - No view: Returns flat IDs only
@@ -96,24 +113,41 @@ public class EmployeeJobsEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
-    public ResponseEntity<Map<String, Object>> getById(
+    public ResponseEntity<?> getById(
             @Parameter(description = "Xodim ish joyi UUID", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable UUID entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        String universityCode = getUniversityCodeFromContext();
-        log.debug("GET EmployeeJobs by id: {}, university: {}, view: {}", entityId, universityCode, view);
+        log.debug("GET EmployeeJobs by id: {}, view: {}", entityId, view);
 
-        // Security: Faqat o'z universitetining lavozimlarini ko'rish
-        Optional<EmployeeJobs> entity = repository.findByIdAndUniversity(entityId, universityCode);
+        // OLD-HEMIS Compatible: Universitet tekshiruvi yo'q - ID bo'yicha topish
+        Optional<EmployeeJobs> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            log.warn("EmployeeJob not found or access denied: id={}, university={}", entityId, universityCode);
-            return ResponseEntity.notFound().build();
+            log.warn("EmployeeJob not found: id={}", entityId);
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id=" + entityId + " is not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         return ResponseEntity.ok(toMap(entity.get(), returnNulls, view));
+    }
+
+    /**
+     * OLD-HEMIS Compatible: Bo'sh entityId bilan PUT so'rov
+     * CUBA platformasi bunday so'rovda 500 Server error qaytaradi
+     */
+    @PutMapping({"", "/"})
+    @Operation(hidden = true)
+    public ResponseEntity<Map<String, Object>> updateWithoutId(@RequestBody Map<String, Object> body) {
+        log.warn("PUT without entityId - returning OLD-HEMIS compatible error");
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("error", "Server error");
+        errorResponse.put("details", "");
+        return ResponseEntity.status(500).body(errorResponse);
     }
 
     /**
@@ -139,6 +173,9 @@ public class EmployeeJobsEntityController {
 
                 **Endpoint:** PUT /app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}
                 **Auth:** Bearer token (required)
+
+                **Note:** OLD-HEMIS da universitet tekshiruvi yo'q - har qanday entity yangilanishi mumkin.
+                Bu xatti-harakat saqlab qolingan.
 
                 **Qo'llab-quvvatlanadigan maydonlar:**
                 - `_employee`: Xodim UUID
@@ -190,13 +227,12 @@ public class EmployeeJobsEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        String universityCode = getUniversityCodeFromContext();
-        log.info("PUT /app/rest/v2/entities/hemishe_EEmployeeJob/{} - university: {}", entityId, universityCode);
+        log.info("PUT /app/rest/v2/entities/hemishe_EEmployeeJob/{}", entityId);
 
-        // Security: Faqat o'z universitetining lavozimlarini yangilash
-        Optional<EmployeeJobs> existingOpt = repository.findByIdAndUniversity(entityId, universityCode);
+        // OLD-HEMIS Compatible: Universitet tekshiruvi yo'q - ID bo'yicha topish
+        Optional<EmployeeJobs> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
-            log.warn("EmployeeJob not found or access denied: id={}, university={}", entityId, universityCode);
+            log.warn("EmployeeJob not found: id={}", entityId);
             return ResponseEntity.notFound().build();
         }
 
@@ -206,6 +242,20 @@ public class EmployeeJobsEntityController {
         EmployeeJobs saved = repository.save(entity);
         log.info("EmployeeJob updated successfully: {}", entityId);
         return ResponseEntity.ok(toMap(saved, returnNulls, view));
+    }
+
+    /**
+     * OLD-HEMIS Compatible: Bo'sh entityId bilan DELETE so'rov
+     * CUBA platformasi bunday so'rovda 500 Server error qaytaradi
+     */
+    @DeleteMapping({"", "/"})
+    @Operation(hidden = true)
+    public ResponseEntity<Map<String, Object>> deleteWithoutId() {
+        log.warn("DELETE without entityId - returning OLD-HEMIS compatible error");
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("error", "Server error");
+        errorResponse.put("details", "");
+        return ResponseEntity.status(500).body(errorResponse);
     }
 
     /**
@@ -232,13 +282,16 @@ public class EmployeeJobsEntityController {
                 **Endpoint:** DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{entityId}
                 **Auth:** Bearer token (required)
 
+                **Note:** OLD-HEMIS da universitet tekshiruvi yo'q - har qanday entity o'chirilishi mumkin.
+                Bu xatti-harakat saqlab qolingan.
+
                 **Soft Delete:** Ma'lumot bazadan o'chirilmaydi, faqat `delete_ts` va `deleted_by`
                 maydonlari belgilanadi. Keyinchalik `@Where(clause = "delete_ts IS NULL")` orqali
                 o'chirilgan yozuvlar avtomatik filtrlanadi.
 
                 **Response:**
                 - `200 OK` - Muvaffaqiyatli o'chirildi (OLD-HEMIS compatible)
-                - `404 Not Found` - Lavozim topilmadi
+                - `404 Not Found` - Lavozim topilmadi (OLD-HEMIS format: {"error": "...", "details": "..."})
                 """
     )
     @ApiResponses({
@@ -247,18 +300,21 @@ public class EmployeeJobsEntityController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
             @ApiResponse(responseCode = "404", description = "Lavozim topilmadi")
     })
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<?> delete(
             @Parameter(description = "Lavozim UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable UUID entityId) {
 
-        String universityCode = getUniversityCodeFromContext();
-        log.info("DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{} - university: {}", entityId, universityCode);
+        log.info("DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{}", entityId);
 
-        // Security: Faqat o'z universitetining lavozimlarini o'chirish
-        Optional<EmployeeJobs> entity = repository.findByIdAndUniversity(entityId, universityCode);
+        // OLD-HEMIS Compatible: Universitet tekshiruvi yo'q - ID bo'yicha topish
+        Optional<EmployeeJobs> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            log.warn("EmployeeJob not found or access denied for deletion: id={}, university={}", entityId, universityCode);
-            return ResponseEntity.notFound().build();
+            log.warn("EmployeeJob not found for deletion: id={}", entityId);
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id=" + entityId + " is not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         repository.delete(entity.get());
@@ -583,42 +639,80 @@ public class EmployeeJobsEntityController {
 
             **Endpoint:** POST /app/rest/v2/entities/hemishe_EEmployeeJob
             **Auth:** Bearer token (required)
+
+            **Note:** OLD-HEMIS da universitet tekshiruvi yo'q - har qanday OTM uchun
+            yozuv yaratish mumkin. Bu xatti-harakat saqlab qolingan.
+
+            **MUHIM:** OLD-HEMIS da POST = oddiy INSERT. Agar constraint buzilsa,
+            xatolik qaytaradi. Pre-validation yoki UPSERT logikasi YO'Q.
             """
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi"),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
-        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "500", description = "Constraint xatoligi (duplicate key)")
     })
-    public ResponseEntity<Map<String, Object>> create(
+    public ResponseEntity<?> create(
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        String universityCode = getUniversityCodeFromContext();
-        log.debug("POST create new EmployeeJobs - university: {}", universityCode);
+        log.debug("POST create EmployeeJobs - body: {}", body);
 
+        // OLD-HEMIS Compatible: Oddiy INSERT qilish (UPSERT emas)
+        // Agar constraint buzilsa, xatolik qaytariladi (OLD-HEMIS singari)
         EmployeeJobs entity = new EmployeeJobs();
         updateFromMap(entity, body);
 
-        // Security: Avtomatik ravishda joriy foydalanuvchining universitetini belgilash
-        // Agar so'rovda universitet ko'rsatilmagan bo'lsa
+        // OLD-HEMIS Compatible: Universitet tekshiruvi yo'q
+        // Foydalanuvchi har qanday OTM uchun yozuv yarata oladi
+        // Agar universitet ko'rsatilmagan bo'lsa, joriy foydalanuvchining OTM sini belgilash
         if (entity.getUniversity() == null || entity.getUniversity().isEmpty()) {
+            String universityCode = getUniversityCodeFromContext();
             entity.setUniversity(universityCode);
             log.debug("Auto-set university to: {}", universityCode);
-        } else if (!entity.getUniversity().equals(universityCode)) {
-            // Boshqa universitetga yozib bo'lmaydi
-            log.warn("Attempted to create job for different university: requested={}, user={}",
-                    entity.getUniversity(), universityCode);
-            Map<String, Object> error = new LinkedHashMap<>();
-            error.put("success", false);
-            error.put("error", "Cannot create job for different university");
-            return ResponseEntity.badRequest().body(error);
         }
 
-        EmployeeJobs saved = repository.save(entity);
-        log.info("EmployeeJob created successfully: id={}, university={}", saved.getId(), universityCode);
-        return ResponseEntity.ok(toMap(saved, returnNulls, view));
+        try {
+            // saveAndFlush() - darhol bazaga yozish (try-catch ishlashi uchun)
+            EmployeeJobs saved = repository.saveAndFlush(entity);
+            log.info("EmployeeJob created successfully: id={}, university={}", saved.getId(), saved.getUniversity());
+
+            // OLD-HEMIS Compatible: HTTP 201 + minimal response
+            // OLD-HEMIS qaytaradi: {"_entityName":"...","_instanceName":"...","id":"..."}
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("_entityName", ENTITY_NAME);
+            response.put("_instanceName", getEmployeeFullName(saved.getEmployee()));
+            response.put("id", saved.getId().toString());
+            return ResponseEntity.status(201).body(response);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // OLD-HEMIS Compatible: Constraint xatolikda HTTP 500 qaytarish
+            log.error("Constraint violation on EmployeeJob create: {}", e.getMessage());
+            String details = extractConstraintDetails(e);
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Server Error");
+            errorResponse.put("details", details);
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * DataIntegrityViolationException dan constraint details ni ajratib olish
+     */
+    private String extractConstraintDetails(org.springframework.dao.DataIntegrityViolationException e) {
+        String message = e.getMostSpecificCause().getMessage();
+        if (message != null && message.contains("duplicate key")) {
+            // PostgreSQL duplicate key xabari
+            if (message.contains("employee_jobs_main_form_unique_constraint")) {
+                return "Xodim allaqachon asosiy shtat birligida ishlamoqda";
+            }
+            if (message.contains("hemishe_e_employee_jobs__employee__university__department___key")) {
+                return "Xodimda bunday lavozim allaqachon mavjud";
+            }
+            return "Duplicate key: " + message.substring(message.indexOf("Detail:"));
+        }
+        return message != null ? message : "Database constraint violation";
     }
 
     /**
@@ -1025,68 +1119,70 @@ public class EmployeeJobsEntityController {
      * @param map So'rov body (CUBA format)
      */
     private void updateFromMap(EmployeeJobs entity, Map<String, Object> map) {
-        // UUID field: _employee (supports both String and nested object)
-        if (map.containsKey("_employee")) {
-            UUID value = parseUuid(map.get("_employee"));
+        // OLD-HEMIS Compatible: CUBA format - underscore prefix EMAS
+        // CUBA platformasi "employee", "university" kutadi, "_employee", "_university" ni e'tiborsiz qoldiradi
+
+        // UUID field: employee (CUBA format - nested object {"id": "uuid"})
+        if (map.containsKey("employee")) {
+            UUID value = parseUuid(map.get("employee"));
             if (value != null) {
                 entity.setEmployee(value);
             }
         }
 
-        // String fields (reference codes) - supports both flat and nested
-        // Only update if value is not null/empty (partial update semantics)
-        if (map.containsKey("_university")) {
-            String value = parseCode(map.get("_university"));
+        // String fields (reference codes) - CUBA format: {"code": "..."} yoki {"id": "..."}
+        if (map.containsKey("university")) {
+            String value = parseCode(map.get("university"));
             if (value != null) {
                 entity.setUniversity(value);
             }
         }
-        if (map.containsKey("_department")) {
-            String value = parseCode(map.get("_department"));
+        if (map.containsKey("department")) {
+            String value = parseCode(map.get("department"));
             if (value != null) {
                 entity.setDepartment(value);
             }
         }
-        if (map.containsKey("_employeeType")) {
-            String value = parseCode(map.get("_employeeType"));
+        if (map.containsKey("employeeType")) {
+            String value = parseCode(map.get("employeeType"));
             if (value != null) {
                 entity.setEmployeeType(value);
             }
         }
-        // Support both _employeePosition and _teacherPositionType
-        if (map.containsKey("_employeePosition")) {
-            String value = parseCode(map.get("_employeePosition"));
+        // Support both employeePosition and teacherPositionType
+        if (map.containsKey("employeePosition")) {
+            String value = parseCode(map.get("employeePosition"));
             if (value != null) {
                 entity.setEmployeePosition(value);
             }
         }
-        if (map.containsKey("_teacherPositionType")) {
-            String value = parseCode(map.get("_teacherPositionType"));
+        if (map.containsKey("teacherPositionType")) {
+            String value = parseCode(map.get("teacherPositionType"));
             if (value != null) {
                 entity.setEmployeePosition(value);
             }
         }
-        if (map.containsKey("_employeeRate")) {
-            String value = parseCode(map.get("_employeeRate"));
+        if (map.containsKey("employeeRate")) {
+            String value = parseCode(map.get("employeeRate"));
             if (value != null) {
                 entity.setEmployeeRate(value);
             }
         }
-        // Support both _employeeForm and _employmentForm
-        if (map.containsKey("_employeeForm")) {
-            String value = parseCode(map.get("_employeeForm"));
+        // Support both employeeForm and employmentForm
+        if (map.containsKey("employeeForm")) {
+            String value = parseCode(map.get("employeeForm"));
             if (value != null) {
                 entity.setEmployeeForm(value);
             }
         }
-        if (map.containsKey("_employmentForm")) {
-            String value = parseCode(map.get("_employmentForm"));
+        if (map.containsKey("employmentForm")) {
+            String value = parseCode(map.get("employmentForm"));
             if (value != null) {
                 entity.setEmployeeForm(value);
             }
         }
-        if (map.containsKey("_employeeStatus")) {
-            String value = parseCode(map.get("_employeeStatus"));
+        if (map.containsKey("employeeStatus")) {
+            String value = parseCode(map.get("employeeStatus"));
             if (value != null) {
                 entity.setEmployeeStatus(value);
             }

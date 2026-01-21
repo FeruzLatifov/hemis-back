@@ -150,9 +150,38 @@ public class HemisApiService {
             log.info("[HEMIS API] Contract info retrieved successfully for PINFL: {}", pinfl);
             return result;
 
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            // OLD-HEMIS compatible: return api.hemis.uz error response directly
+            log.error("[HEMIS API] HTTP error getting contract info for PINFL: {} - {}", pinfl, e.getStatusCode());
+            try {
+                // Parse the error body from api.hemis.uz and return it as-is
+                String errorBody = e.getResponseBodyAsString();
+                if (errorBody != null && !errorBody.isEmpty()) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> errorMap = objectMapper.readValue(errorBody, LinkedHashMap.class);
+                    // Remove "object" field if it's null (OLD-HEMIS compatible)
+                    if (errorMap.containsKey("object") && errorMap.get("object") == null) {
+                        errorMap.remove("object");
+                    }
+                    return errorMap;
+                }
+            } catch (Exception parseEx) {
+                log.debug("[HEMIS API] Could not parse error response: {}", parseEx.getMessage());
+            }
+            // Fallback: OLD-HEMIS style error
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("statusCode", e.getStatusCode().value());
+            error.put("message", e.getStatusText());
+            error.put("timeStamp", LocalDateTime.now().toString());
+            return error;
         } catch (Exception e) {
             log.error("[HEMIS API] Error getting contract info for PINFL: {} - {}", pinfl, e.getMessage(), e);
-            return errorResponse("api_error", e.getMessage());
+            // OLD-HEMIS style error response
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("statusCode", 500);
+            error.put("message", e.getMessage());
+            error.put("timeStamp", LocalDateTime.now().toString());
+            return error;
         }
     }
 

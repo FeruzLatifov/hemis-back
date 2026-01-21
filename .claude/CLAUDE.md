@@ -31,6 +31,14 @@ layers for API, service, domain and security and preserves backwards compatibili
 - Apply migrations: `./gradlew :domain:liquibaseUpdate`
 - Check migration status: `./gradlew :domain:liquibaseStatus`
 
+### Test Credentials (API Testing)
+
+API endpointlarni test qilish uchun login/parol ma'lumotlari:
+- **Manba fayl:** `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html`
+- **New HEMIS credentials:** `newUsername` va `newPassword` input qiymatlari (default: `otm401` / `XCZDAb7qvGTXxz`)
+- **Old HEMIS credentials:** `oldUsername` va `oldPassword` input qiymatlari (default: `otm351` / `XCZDAb7qvGTXxz`)
+- **Token olish:** `POST /app/rest/v2/oauth/token` + `Authorization: Basic Y2xpZW50OnNlY3JldA==` (client:secret)
+
 ### Environment & Runtime
 
 The application reads its configuration from environment variables (optionally loaded via a `.env` file).  Key settings:

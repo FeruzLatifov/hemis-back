@@ -145,6 +145,8 @@ public class LegacyEntityAdapter {
     public <T> T fromMap(Map<String, Object> map, Class<T> dtoClass) {
         if (map == null || map.isEmpty()) return null;
 
+        log.debug("fromMap called with map keys: {}", map.keySet());
+
         try {
             T dto = dtoClass.getDeclaredConstructor().newInstance();
 
@@ -163,26 +165,61 @@ public class LegacyEntityAdapter {
                 // Get JSON property name from @JsonProperty annotation
                 String jsonName = getJsonPropertyName(field);
 
-                // Try JSON property name first, then fall back to field name
+                // Try multiple key formats for CUBA compatibility:
+                // 1. JSON property name (e.g., "university")
+                // 2. Field name (e.g., "university")
+                // 3. CUBA underscore prefix (e.g., "_university")
+                // 4. CUBA snake_case (e.g., "_education_type" for "educationType")
                 Object value = null;
                 if (cleanMap.containsKey(jsonName)) {
                     value = cleanMap.get(jsonName);
                 } else if (cleanMap.containsKey(field.getName())) {
                     value = cleanMap.get(field.getName());
+                } else if (cleanMap.containsKey("_" + jsonName)) {
+                    // CUBA format: _university, _student, etc.
+                    value = cleanMap.get("_" + jsonName);
+                } else if (cleanMap.containsKey("_" + field.getName())) {
+                    value = cleanMap.get("_" + field.getName());
+                } else {
+                    // Try CUBA snake_case: _education_type for educationType
+                    String snakeCase = "_" + camelToSnake(jsonName);
+                    if (cleanMap.containsKey(snakeCase)) {
+                        value = cleanMap.get(snakeCase);
+                    }
                 }
 
                 if (value == null) continue;
 
                 Object convertedValue = convertValue(value, field.getType());
+                log.trace("Setting field {} (json: {}) = {} (type: {})",
+                         field.getName(), jsonName, convertedValue, field.getType().getSimpleName());
                 field.set(dto, convertedValue);
             }
 
+            log.debug("fromMap completed successfully for {}", dtoClass.getSimpleName());
             return dto;
 
         } catch (Exception e) {
-            log.error("Error converting map to DTO: {}", dtoClass.getName(), e);
+            log.error("Error converting map to DTO: {} - {}", dtoClass.getName(), e.getMessage(), e);
             throw new RuntimeException("Failed to convert CUBA map to DTO", e);
         }
+    }
+
+    /**
+     * Convert camelCase to snake_case
+     * Example: educationType -> education_type
+     */
+    private String camelToSnake(String camelCase) {
+        if (camelCase == null || camelCase.isEmpty()) return camelCase;
+        StringBuilder result = new StringBuilder();
+        for (char c : camelCase.toCharArray()) {
+            if (Character.isUpperCase(c)) {
+                result.append('_').append(Character.toLowerCase(c));
+            } else {
+                result.append(c);
+            }
+        }
+        return result.toString();
     }
 
     private String getInstanceName(Object dto) {

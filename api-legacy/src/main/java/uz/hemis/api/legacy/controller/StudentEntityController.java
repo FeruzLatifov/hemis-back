@@ -90,6 +90,22 @@ public class StudentEntityController {
     }
 
     /**
+     * Bo'sh entityId bilan GET - ro'yxatga redirect (OLD-HEMIS compatible)
+     */
+    @GetMapping("/")
+    public ResponseEntity<List<Map<String, Object>>> getWithTrailingSlash(
+            @RequestParam(required = false) Boolean returnCount,
+            @RequestParam(defaultValue = "0") Integer offset,
+            @RequestParam(defaultValue = "50") Integer limit,
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Boolean dynamicAttributes,
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
+        log.debug("GET student with trailing slash - returning list (OLD-HEMIS compatible)");
+        return getAll(returnCount, offset, limit, sort, dynamicAttributes, returnNulls, view);
+    }
+
+    /**
      * Bitta talaba ma'lumotlarini olish
      *
      * ✅ REFACTORED: Uses service layer
@@ -157,6 +173,19 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Accepts CUBA Map format
      * ✅ CUBA PATTERN: PUT = partial update (only fields in JSON body are changed)
      */
+
+    /**
+     * Bo'sh entityId bilan PUT - 500 Server Error (OLD-HEMIS compatible)
+     */
+    @PutMapping("/")
+    public ResponseEntity<Map<String, Object>> updateWithTrailingSlash(@RequestBody(required = false) Map<String, Object> body) {
+        log.debug("PUT student with trailing slash - returning 500 (OLD-HEMIS compatible)");
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("error", "Server error");
+        error.put("details", "");
+        return ResponseEntity.status(500).body(error);
+    }
+
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Talaba ma'lumotlarini o'zgartirish",
@@ -240,6 +269,18 @@ public class StudentEntityController {
     }
 
     /**
+     * Bo'sh entityId bilan DELETE - 500 Server Error (OLD-HEMIS compatible)
+     */
+    @DeleteMapping("/")
+    public ResponseEntity<Map<String, Object>> deleteWithTrailingSlash() {
+        log.debug("DELETE student with trailing slash - returning 500 (OLD-HEMIS compatible)");
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("error", "Server error");
+        error.put("details", "");
+        return ResponseEntity.status(500).body(error);
+    }
+
+    /**
      * Talabani o'chirish (SOFT DELETE ONLY)
      *
      * ✅ REFACTORED: Uses service.softDelete() - NO PHYSICAL DELETE
@@ -320,12 +361,17 @@ public class StudentEntityController {
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
             @Parameter(description = "CUBA view nomi")
-            @RequestParam(required = false) String view) {
+            @RequestParam(required = false) String view,
+            @Parameter(description = "Boshlang'ich pozitsiya")
+            @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Sahifadagi yozuvlar soni")
+            @RequestParam(defaultValue = "50") Integer limit) {
 
-        log.debug("GET search students with filter: {}, view: {}", filter, view);
+        log.debug("GET search students with filter: {}, view: {}, limit: {}", filter, view, limit);
 
-        // For now, return all (pagination can be added later)
-        List<StudentDto> dtos = studentService.findAll(Pageable.unpaged()).getContent();
+        // Use pagination to avoid OutOfMemory
+        PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit);
+        List<StudentDto> dtos = studentService.findAll(pageRequest).getContent();
 
         // Convert to CUBA format with view support
         List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls, view);
@@ -365,8 +411,22 @@ public class StudentEntityController {
 
         log.debug("POST search students with filter: {}, view: {}", filter, view);
 
-        // For now, return all (complex filtering can be added later)
-        List<StudentDto> dtos = studentService.findAll(Pageable.unpaged()).getContent();
+        // Extract pagination from filter body (OLD-HEMIS compatible)
+        int offset = 0;
+        int limit = 50; // default limit to avoid OutOfMemory
+
+        if (filter != null) {
+            if (filter.containsKey("offset")) {
+                offset = ((Number) filter.get("offset")).intValue();
+            }
+            if (filter.containsKey("limit")) {
+                limit = ((Number) filter.get("limit")).intValue();
+            }
+        }
+
+        // Use pagination to avoid OutOfMemory
+        PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit);
+        List<StudentDto> dtos = studentService.findAll(pageRequest).getContent();
 
         // Convert to CUBA format with view support
         List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls, view);
@@ -505,22 +565,29 @@ public class StudentEntityController {
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("POST create student (via service layer)");
+        log.info("POST create student - request body: {}", body);
 
-        // Convert CUBA Map to DTO
-        StudentDto dto = adapter.fromMap(body, StudentDto.class);
+        try {
+            // Convert CUBA Map to DTO
+            StudentDto dto = adapter.fromMap(body, StudentDto.class);
+            log.info("Converted DTO: code={}, pinfl={}, university={}, educationType={}",
+                     dto.getCode(), dto.getPinfl(), dto.getUniversity(), dto.getEducationType());
 
-        // Service layer - with validation, cache, audit
-        StudentDto created = studentService.create(dto);
+            // Service layer - with validation, cache, audit
+            StudentDto created = studentService.create(dto);
 
-        // OLD-HEMIS COMPATIBLE: Return minimal response (only _entityName, _instanceName, id)
-        // Old-hemis POST response format: {"_entityName":"hemishe_EStudent","_instanceName":"...","id":"..."}
-        Map<String, Object> minimalResponse = new LinkedHashMap<>();
-        minimalResponse.put("_entityName", ENTITY_NAME);
-        minimalResponse.put("_instanceName", buildInstanceName(created));
-        minimalResponse.put("id", created.getId().toString());
+            // OLD-HEMIS COMPATIBLE: Return minimal response (only _entityName, _instanceName, id)
+            // Old-hemis POST response format: {"_entityName":"hemishe_EStudent","_instanceName":"...","id":"..."}
+            Map<String, Object> minimalResponse = new LinkedHashMap<>();
+            minimalResponse.put("_entityName", ENTITY_NAME);
+            minimalResponse.put("_instanceName", buildInstanceName(created));
+            minimalResponse.put("id", created.getId().toString());
 
-        log.info("Student created successfully with id: {}", created.getId());
-        return ResponseEntity.ok(minimalResponse);
+            log.info("Student created successfully with id: {}", created.getId());
+            return ResponseEntity.ok(minimalResponse);
+        } catch (Exception e) {
+            log.error("Error creating student: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 }

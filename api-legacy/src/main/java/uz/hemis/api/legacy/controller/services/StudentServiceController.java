@@ -554,19 +554,33 @@ public class StudentServiceController {
     }
 
     /**
-     * Update student information
+     * Update student information (transfer)
      *
      * <p><strong>URL:</strong> {@code POST /services/student/update}</p>
      *
-     * @param request Student update request
-     * @return Success status
+     * <p><strong>OLD-HEMIS Compatible:</strong></p>
+     * <ul>
+     *   <li>Request format: {"student": {"id": "...", "university": {"code": "..."}, "studentStatus": {"code": "..."}}}</li>
+     *   <li>Returns 204 No Content when no transfer conditions met</li>
+     *   <li>Returns transferred student entity when transfer successful</li>
+     * </ul>
+     *
+     * @param request Student update request (OLD HEMIS nested format)
+     * @return Transferred student or 204 No Content
      */
     @PostMapping("/update")
     @Transactional
-    @Operation(summary = "Talabani o'zgartirish", description = "Talaba ma'lumotlarini yangilash")
+    @Operation(summary = "Talabani o'zgartirish", description = "Talaba ma'lumotlarini yangilash (transfer)")
     public ResponseEntity<?> update(@RequestBody Map<String, Object> request) {
         log.info("[CUBA Service] student/update: request={}", request);
-        return ResponseEntity.ok(studentService.updateStudent(request));
+        Object result = studentService.updateStudent(request);
+
+        // OLD-HEMIS returns 200 OK with empty body when no transfer conditions met
+        // (NOT 204 No Content - that breaks compatibility!)
+        if (result == null) {
+            return ResponseEntity.ok().build();
+        }
+        return ResponseEntity.ok(result);
     }
 
     /**

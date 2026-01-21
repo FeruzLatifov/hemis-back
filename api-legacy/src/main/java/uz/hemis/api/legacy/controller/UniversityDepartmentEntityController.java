@@ -78,6 +78,19 @@ public class UniversityDepartmentEntityController {
 
     private static final String ENTITY_NAME = "hemishe_EUniversityDepartment";
 
+    /**
+     * OLD-HEMIS Compatible: Constraint xatolikda HTTP 500 qaytarish
+     */
+    @org.springframework.web.bind.annotation.ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataIntegrityViolation(
+            org.springframework.dao.DataIntegrityViolationException e) {
+        log.error("Constraint violation: {}", e.getMessage());
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("error", "Server error");
+        errorResponse.put("details", "");
+        return ResponseEntity.status(500).body(errorResponse);
+    }
+
     // ==================== GET BY ID ====================
 
     /**
@@ -167,6 +180,19 @@ public class UniversityDepartmentEntityController {
     // ==================== UPDATE ====================
 
     /**
+     * OLD-HEMIS Compatible: Bo'sh entityId bilan PUT so'rov
+     */
+    @PutMapping({"", "/"})
+    @Operation(hidden = true)
+    public ResponseEntity<Map<String, Object>> updateWithoutId(@RequestBody Map<String, Object> body) {
+        log.warn("PUT without entityId - returning OLD-HEMIS compatible error");
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("error", "Server error");
+        errorResponse.put("details", "");
+        return ResponseEntity.status(500).body(errorResponse);
+    }
+
+    /**
      * Bo'linmani yangilash
      *
      * @param entityId Bo'linma kodi
@@ -223,6 +249,19 @@ public class UniversityDepartmentEntityController {
     }
 
     // ==================== DELETE ====================
+
+    /**
+     * OLD-HEMIS Compatible: Bo'sh entityId bilan DELETE so'rov
+     */
+    @DeleteMapping({"", "/"})
+    @Operation(hidden = true)
+    public ResponseEntity<Map<String, Object>> deleteWithoutId() {
+        log.warn("DELETE without entityId - returning OLD-HEMIS compatible error");
+        Map<String, Object> errorResponse = new LinkedHashMap<>();
+        errorResponse.put("error", "Server error");
+        errorResponse.put("details", "");
+        return ResponseEntity.status(500).body(errorResponse);
+    }
 
     /**
      * Bo'linmani o'chirish (soft delete)
@@ -315,29 +354,19 @@ public class UniversityDepartmentEntityController {
             @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        String universityCode = getUniversityCodeFromContext();
-        log.debug("GET search UniversityDepartment - university: {}, filter: {}", universityCode, filter);
+        log.debug("GET search UniversityDepartment - filter: {}", filter);
 
         // Parse filter from URL-encoded JSON string
         Map<String, Object> filterMap = parseFilterFromString(filter);
 
-        // ✅ OLD-HEMIS COMPATIBLE: Filter dan university.code ni olish
-        // Agar filterda university.code bo'lsa - shu bo'yicha filtrlash (OLD-HEMIS behavior)
-        // Agar yo'q bo'lsa - user kontekstidan olish (xavfsizlik uchun)
-        String filterUniversityCode = extractUniversityCodeFromFilter(filterMap);
-        String effectiveUniversityCode = filterUniversityCode != null ? filterUniversityCode : universityCode;
+        // ✅ OLD-HEMIS COMPATIBLE: university.code filter'ni E'TIBORSIZ QOLDIRISH
+        // OLD-HEMIS da /search endpoint BARCHA universitetlardan natija qaytaradi
+        // Faqat status va boshqa filterlar qo'llaniladi
+        List<UniversityDepartment> entities = repository.findAll();
+        log.debug("OLD-HEMIS compatible: returning all departments, filter will be applied");
 
-        List<UniversityDepartment> entities;
-        if (effectiveUniversityCode != null) {
-            entities = repository.findByUniversityCode(effectiveUniversityCode);
-            log.debug("Filtering by university code: {} (from {})",
-                    effectiveUniversityCode, filterUniversityCode != null ? "filter" : "context");
-        } else {
-            entities = repository.findAll();
-            log.debug("No university filter - returning all");
-        }
-
-        // Apply CUBA filter conditions (university.code dan boshqa filterlar)
+        // Apply CUBA filter conditions (status va boshqa filterlar)
+        // university.code filter ham qo'llaniladi agar kerak bo'lsa
         List<UniversityDepartment> filtered = applyFilter(entities, filterMap);
 
         Boolean returnNullsBool = parseBoolean(returnNulls);
@@ -417,26 +446,14 @@ public class UniversityDepartmentEntityController {
             @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        String universityCode = getUniversityCodeFromContext();
-        log.debug("POST search UniversityDepartment - university: {}, body: {}", universityCode, body);
+        log.debug("POST search UniversityDepartment - body: {}", body);
 
-        // ✅ OLD-HEMIS COMPATIBLE: Filter dan university.code ni olish
-        // Agar filterda university.code bo'lsa - shu bo'yicha filtrlash (OLD-HEMIS behavior)
-        // Agar yo'q bo'lsa - user kontekstidan olish (xavfsizlik uchun)
-        String filterUniversityCode = extractUniversityCodeFromFilter(body);
-        String effectiveUniversityCode = filterUniversityCode != null ? filterUniversityCode : universityCode;
+        // ✅ OLD-HEMIS COMPATIBLE: university.code filter'ni E'TIBORSIZ QOLDIRISH
+        // OLD-HEMIS da /search endpoint BARCHA universitetlardan natija qaytaradi
+        List<UniversityDepartment> entities = repository.findAll();
+        log.debug("OLD-HEMIS compatible: returning all departments, filter will be applied");
 
-        List<UniversityDepartment> entities;
-        if (effectiveUniversityCode != null) {
-            entities = repository.findByUniversityCode(effectiveUniversityCode);
-            log.debug("Filtering by university code: {} (from {})",
-                    effectiveUniversityCode, filterUniversityCode != null ? "filter" : "context");
-        } else {
-            entities = repository.findAll();
-            log.debug("No university filter - returning all");
-        }
-
-        // Apply CUBA filter conditions from request body (university.code dan boshqa filterlar)
+        // Apply CUBA filter conditions from request body (university.code e'tiborsiz qoldiriladi)
         List<UniversityDepartment> filtered = applyFilter(entities, body);
 
         // Extract view from body if not in query param
@@ -1026,6 +1043,13 @@ public class UniversityDepartmentEntityController {
 
         if (property == null || operator == null) {
             return true; // Skip invalid conditions
+        }
+
+        // ✅ OLD-HEMIS COMPATIBLE: university.code filter'ni E'TIBORSIZ QOLDIRISH
+        // OLD-HEMIS da /search endpoint university.code bo'yicha filtrlash qilmaydi
+        if ("university.code".equals(property) || "universityCode".equals(property)) {
+            log.trace("Skipping university.code filter (OLD-HEMIS compatible)");
+            return true; // Skip university filter - OLD-HEMIS behavior
         }
 
         // Entity dan property qiymatini olish

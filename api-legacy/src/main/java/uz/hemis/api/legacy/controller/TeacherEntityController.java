@@ -423,7 +423,7 @@ public class TeacherEntityController {
             putIfNotNull(map, "phone", entity.getPhone(), returnNulls);
             putIfNotNull(map, "employeeYear", entity.getEmployeeYear(), returnNulls);
         } else {
-            // Default view - barcha fieldlar
+            // Default view - OLD-HEMIS compatible (underscore-prefixed fields excluded)
             putIfNotNull(map, "pinfl", entity.getPinfl(), returnNulls);
             putIfNotNull(map, "birthday", entity.getBirthDate(), returnNulls);
             putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);
@@ -435,11 +435,9 @@ public class TeacherEntityController {
             putIfNotNull(map, "address", entity.getAddress(), returnNulls);
             putIfNotNull(map, "phone", entity.getPhone(), returnNulls);
             putIfNotNull(map, "employeeYear", entity.getEmployeeYear(), returnNulls);
-            putIfNotNull(map, "citizenship", entity.getCitizenship(), returnNulls);
-            putIfNotNull(map, "_gender", entity.getGender(), returnNulls);
-            putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-            putIfNotNull(map, "_academic_degree", entity.getAcademicDegree(), returnNulls);
-            putIfNotNull(map, "_academic_rank", entity.getAcademicRank(), returnNulls);
+            // OLD-HEMIS compatible: fullname and version included in default view
+            putIfNotNull(map, "fullname", entity.getFullName(), returnNulls);
+            putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         }
 
         return map;

@@ -181,90 +181,194 @@ public class StudentService {
     // =====================================================
 
     /**
-     * Create new student with old-HEMIS duplicate detection logic
+     * Create new student with OLD-HEMIS 100% compatible logic
      *
-     * <p><strong>CRITICAL - Duplicate Detection (old-HEMIS compatible):</strong></p>
-     * <ul>
-     *   <li>PINFL is NOT UNIQUE! Multiple students can have same PINFL</li>
-     *   <li>isDuplicate flag manages master vs duplicate records</li>
-     *   <li>Only ONE student per PINFL can have isDuplicate=true (master)</li>
-     *   <li>If master exists, returns existing master (old-HEMIS behavior)</li>
-     *   <li>If no master exists, creates new master with isDuplicate=true</li>
-     * </ul>
+     * <p><strong>OLD-HEMIS Algorithm (StudentServiceBean.java):</strong></p>
+     * <ol>
+     *   <li><strong>Step 1:</strong> Check for existing MASTER (isDuplicate=TRUE) with active status</li>
+     *   <li><strong>Step 2:</strong> Check for existing student with same PINFL + educationType + educationYear</li>
+     *   <li><strong>Step 3:</strong> If neither found, create NEW student:
+     *     <ul>
+     *       <li>Generate code: {universityCode}{YY}{educationType}{sequence}</li>
+     *       <li>Mark all previous masters as isDuplicate=FALSE</li>
+     *       <li>Create new student with isDuplicate=FALSE (OLD-HEMIS default)</li>
+     *     </ul>
+     *   </li>
+     * </ol>
      *
-     * <p><strong>Business Validations:</strong></p>
+     * <p><strong>ID Format:</strong> UUU + YY + CC + NNNNN</p>
      * <ul>
-     *   <li>Code must be unique (not PINFL!)</li>
-     *   <li>Required fields must be present</li>
+     *   <li>UUU = University code (3+ digits)</li>
+     *   <li>YY = Last 2 digits of education year</li>
+     *   <li>CC = Education type code (2 digits)</li>
+     *   <li>NNNNN = Sequence number (5 digits, zero-padded)</li>
      * </ul>
      *
      * @param studentDto student data
-     * @return created student DTO (or existing master if PINFL duplicate)
+     * @return created student DTO (or existing if duplicate detected)
      * @throws ValidationException if validation fails
      */
     @Transactional
     @CachePut(value = "students", key = "#result.id")
     public StudentDto create(StudentDto studentDto) {
-        log.info("Creating new student with PINFL: {}", studentDto.getPinfl());
+        log.info("Creating new student (OLD-HEMIS compatible) - PINFL: {}, University: {}, EducationType: {}, Year: {}",
+                studentDto.getPinfl(), studentDto.getUniversity(), studentDto.getEducationType(), studentDto.getEducationYear());
 
         // =====================================================
-        // STEP 1: Duplicate Detection (Old-HEMIS Logic)
-        // =====================================================
-        // If PINFL provided, check for existing MASTER record
-        // If master exists, return it (old-HEMIS compatibility)
+        // STEP 1: Check for existing MASTER (isDuplicate=TRUE)
+        // OLD-HEMIS: If master exists with active status, return it
         // =====================================================
         if (studentDto.getPinfl() != null && !studentDto.getPinfl().isEmpty()) {
-            var existingMaster = studentRepository.findMasterByPinfl(studentDto.getPinfl());
+            var existingMaster = studentRepository.findActiveMasterByPinfl(studentDto.getPinfl());
 
             if (existingMaster.isPresent()) {
-                log.warn("Master student already exists for PINFL: {}. Returning existing master (old-HEMIS behavior)",
+                log.info("OLD-HEMIS Step 1: Found existing MASTER for PINFL: {}. Returning existing.",
                         studentDto.getPinfl());
-                log.warn("Existing master ID: {}, Code: {}",
+                log.info("Existing master - ID: {}, Code: {}, Status: {}",
                         existingMaster.get().getId(),
-                        existingMaster.get().getCode());
+                        existingMaster.get().getCode(),
+                        existingMaster.get().getStudentStatus());
 
-                // Return existing master (old-HEMIS behavior)
-                // Alternative: Throw exception if you want to enforce uniqueness
                 return studentMapper.toDto(existingMaster.get());
             }
         }
 
         // =====================================================
-        // STEP 2: Validate Business Key (CODE is unique)
+        // STEP 2: Check for existing student with same PINFL + educationType + educationYear
+        // OLD-HEMIS: Cannot create duplicate in same education program
         // =====================================================
-        // Note: CODE is the true unique identifier, NOT PINFL!
-        // =====================================================
-        if (studentDto.getCode() != null && studentRepository.findByCode(studentDto.getCode()).isPresent()) {
-            throw new ValidationException(
-                    "Student with this CODE already exists",
-                    "code",
-                    "Student code must be unique"
-            );
+        if (studentDto.getPinfl() != null && !studentDto.getPinfl().isEmpty()
+                && studentDto.getEducationType() != null && studentDto.getEducationYear() != null) {
+
+            var existingInProgram = studentRepository.findExistingStudentForDuplicateCheck(
+                    studentDto.getPinfl(),
+                    studentDto.getEducationType(),
+                    studentDto.getEducationYear());
+
+            if (existingInProgram.isPresent()) {
+                log.info("OLD-HEMIS Step 2: Found existing student in same program. PINFL: {}, Type: {}, Year: {}",
+                        studentDto.getPinfl(), studentDto.getEducationType(), studentDto.getEducationYear());
+                log.info("Existing student - ID: {}, Code: {}",
+                        existingInProgram.get().getId(),
+                        existingInProgram.get().getCode());
+
+                return studentMapper.toDto(existingInProgram.get());
+            }
         }
 
         // =====================================================
-        // STEP 3: Create New Master Student
+        // STEP 3: Create NEW Student (OLD-HEMIS compatible)
         // =====================================================
-        // Convert DTO to Entity
+
+        // 3a: Generate unique CODE in OLD-HEMIS format
+        String generatedCode = studentDto.getCode();
+        if (generatedCode == null || generatedCode.isEmpty()) {
+            // Generate code: {universityCode}{YY}{educationType}{sequence}
+            generatedCode = generateOldHemisCode(
+                    studentDto.getUniversity(),
+                    studentDto.getEducationYear(),
+                    studentDto.getEducationType()
+            );
+            log.info("Generated OLD-HEMIS format code: {}", generatedCode);
+        } else {
+            // Validate provided code is unique
+            if (studentRepository.existsByCode(generatedCode)) {
+                throw new ValidationException(
+                        "Student with this CODE already exists",
+                        "code",
+                        "Student code must be unique: " + generatedCode
+                );
+            }
+        }
+
+        // 3b: Mark all previous masters as isDuplicate=FALSE
+        // OLD-HEMIS: "2-OTMga ruxsat berilganlarni ruxsatini bekor qilish"
+        if (studentDto.getPinfl() != null && !studentDto.getPinfl().isEmpty()) {
+            int updatedCount = studentRepository.markPreviousMastersAsDuplicates(studentDto.getPinfl());
+            if (updatedCount > 0) {
+                log.info("OLD-HEMIS: Marked {} previous master(s) as isDuplicate=FALSE for PINFL: {}",
+                        updatedCount, studentDto.getPinfl());
+            }
+        }
+
+        // 3c: Create new student entity
         Student student = studentMapper.toEntity(studentDto);
+        student.setCode(generatedCode);
 
-        // Mark as MASTER record (critical for duplicate detection)
-        student.setIsDuplicate(true);
+        // OLD-HEMIS: New students have isDuplicate=FALSE by default
+        // (only after transfer does isDuplicate become TRUE on master)
+        student.setIsDuplicate(false);
 
-        log.info("Creating NEW master student for PINFL: {}", studentDto.getPinfl());
+        // Set default status if not provided
+        if (student.getStudentStatus() == null) {
+            student.setStudentStatus("10"); // "Boshqa" - default status
+        }
 
-        // ID will be generated by @PrePersist
-        // Audit fields (createTs, createdBy) set by @PrePersist
+        log.info("Creating NEW student (OLD-HEMIS compatible) - Code: {}, PINFL: {}, isDuplicate: FALSE",
+                generatedCode, studentDto.getPinfl());
 
         // Save
         Student saved = studentRepository.save(student);
 
-        log.info("Master student created successfully - ID: {}, Code: {}, PINFL: {}",
+        log.info("Student created successfully - ID: {}, Code: {}, PINFL: {}",
                 saved.getId(),
                 saved.getCode(),
                 saved.getPinfl());
 
         return studentMapper.toDto(saved);
+    }
+
+    /**
+     * Generate student code in OLD-HEMIS format
+     *
+     * <p><strong>Format:</strong> {universityCode}{YY}{educationType}{sequence}</p>
+     * <p><strong>Example:</strong> 401242311234 = OTM 401, Year 24, Type 23, Seq 11234</p>
+     *
+     * @param universityCode university code (e.g., "401")
+     * @param educationYear education year (e.g., "2024" or "24")
+     * @param educationType education type code (e.g., "23")
+     * @return unique student code
+     */
+    private String generateOldHemisCode(String universityCode, String educationYear, String educationType) {
+        // Validate required fields
+        if (universityCode == null || universityCode.isEmpty()) {
+            throw new ValidationException("University code is required for ID generation", "university", "University code cannot be null");
+        }
+        if (educationYear == null || educationYear.isEmpty()) {
+            throw new ValidationException("Education year is required for ID generation", "educationYear", "Education year cannot be null");
+        }
+        if (educationType == null || educationType.isEmpty()) {
+            throw new ValidationException("Education type is required for ID generation", "educationType", "Education type cannot be null");
+        }
+
+        // Get last 2 digits of year (e.g., "2024" -> "24", "24" -> "24")
+        String yearSuffix = educationYear.length() >= 2
+                ? educationYear.substring(educationYear.length() - 2)
+                : educationYear;
+
+        // Get current count for this university/year/type combination
+        long count = studentRepository.countForIdGeneration(universityCode, educationType, educationYear) + 1;
+
+        String uniqueCode;
+        int iterations = 0;
+        final int MAX_ITERATIONS = 1000;
+
+        // Generate unique code with collision check (OLD-HEMIS do-while pattern)
+        do {
+            String sequence = String.format("%05d", count);
+            uniqueCode = universityCode + yearSuffix + educationType + sequence;
+            count++;
+            iterations++;
+
+            if (iterations > MAX_ITERATIONS) {
+                // Fallback: timestamp-based suffix
+                uniqueCode = universityCode + yearSuffix + educationType + "_" + System.currentTimeMillis();
+                log.warn("Max iterations reached for code generation. Using fallback: {}", uniqueCode);
+                break;
+            }
+        } while (studentRepository.existsByCode(uniqueCode));
+
+        return uniqueCode;
     }
 
     /**
@@ -646,7 +750,8 @@ public class StudentService {
             return Map.of("success", false, "error", "Invalid student ID format");
         }
 
-        // Extract university code
+        // Extract university code (OLD HEMIS nested format only):
+        // {"university": {"code": "999"}}
         String targetUniversityCode = null;
         Object universityObj = studentData.get("university");
         if (universityObj instanceof Map) {
@@ -655,7 +760,8 @@ public class StudentService {
             targetUniversityCode = (String) universityObj;
         }
 
-        // Extract student status code
+        // Extract student status code (OLD HEMIS nested format only):
+        // {"studentStatus": {"code": "12"}}
         String statusCode = null;
         Object statusObj = studentData.get("studentStatus");
         if (statusObj instanceof Map) {
@@ -681,13 +787,13 @@ public class StudentService {
                 // Create new student record (transfer copy)
                 Student transferredStudent = copyStudentForTransfer(originalStudent, targetUniversityCode, statusCode);
 
-                // Save and return the transferred student
+                // Save the transferred student
                 Student saved = studentRepository.save(transferredStudent);
                 log.info("Student transferred successfully - new ID: {}, new code: {}",
                         saved.getId(), saved.getCode());
 
-                // Return in OLD-HEMIS format (entity with _entityName)
-                return studentLegacyMapper.toLegacyMap(saved);
+                // OLD-HEMIS returns 204 No Content even on successful transfer
+                return null;
             } else {
                 log.debug("No valid transfer candidate found for student ID: {}", studentId);
             }
