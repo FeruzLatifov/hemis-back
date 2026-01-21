@@ -6011,45 +6011,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         required: false,
                         bodyField: "endDate",
                         placeholder: "YYYY-MM-DD"
-            // ============================================================
-            // 20.Loyiha meta ma'lumotlari - Project Meta Entity API
-            // ============================================================
-            {
-                id: 1,
-                category: "20.Loyiha meta ma'lumotlari",
-                name: "Loyiha meta yaratish",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EProjectMeta",
-                requiresAuth: true,
-                contentType: "json",
-                hasBody: true,
-                bodyFields: ["body_fiscalYear", "body_budget", "body_quantityMembers", "body_active"],
-                inputFields: {
-                    body_fiscalYear: {
-                        label: "fiscalYear (Moliyaviy yil)",
-                        type: "text",
-                        defaultNew: "2025",
-                        defaultOld: "2024",
-                        required: true,
-                        bodyField: "fiscalYear",
-                        placeholder: "2024"
-                    },
-                    body_budget: {
-                        label: "budget (Byudjet)",
-                        type: "text",
-                        defaultNew: "50000000.0",
-                        defaultOld: "30000000.0",
-                        required: true,
-                        bodyField: "budget",
-                        placeholder: "50000000.0"
-                    },
-                    body_quantityMembers: {
-                        label: "quantityMembers (A'zolar soni)",
-                        type: "text",
-                        defaultNew: "5",
-                        defaultOld: "3",
-                        required: true,
-                        bodyField: "quantityMembers"
                     },
                     body_active: {
                         label: "active (Faol)",
@@ -6063,6 +6024,8 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         bodyField: "active"
                     }
                 },
+                hasBody: true,
+                bodyFields: ["body_outsider", "body_startDate", "body_endDate", "body_active"],
                 bodyGenerator: (inputs) => ({
                     outsider: inputs.body_outsider || undefined,
                     startDate: inputs.body_startDate || undefined,
@@ -6127,13 +6090,64 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 - returnNulls - null qiymatlarni qaytarish (default: true)
 
 <b>Response:</b> Loyiha ijrochisi to'liq ma'lumotlari`,
-                        options: [{value: "true", label: "true"}, {value: "false", label: "false"}],
-                        defaultNew: "true",
-                        defaultOld: "true",
+                ported: true
+            },
+
+            // ============================================================
+            // 20.Loyiha meta ma'lumotlari - Project Meta Entity API
+            // ============================================================
+            {
+                id: 1,
+                category: "20.Loyiha meta ma'lumotlari",
+                name: "Loyiha meta yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EProjectMeta",
+                requiresAuth: true,
+                contentType: "json",
+                hasBody: true,
+                bodyFields: ["body_fiscalYear", "body_budget", "body_quantityMembers", "body_active"],
+                inputFields: {
+                    body_fiscalYear: {
+                        label: "fiscalYear (Moliyaviy yil)",
+                        type: "text",
+                        defaultNew: "2025",
+                        defaultOld: "2024",
                         required: true,
+                        bodyField: "fiscalYear",
+                        placeholder: "2024"
+                    },
+                    body_budget: {
+                        label: "budget (Byudjet)",
+                        type: "text",
+                        defaultNew: "50000000.0",
+                        defaultOld: "30000000.0",
+                        required: true,
+                        bodyField: "budget",
+                        placeholder: "50000000.0"
+                    },
+                    body_quantityMembers: {
+                        label: "quantityMembers (A'zolar soni)",
+                        type: "text",
+                        defaultNew: "5",
+                        defaultOld: "3",
+                        required: true,
+                        bodyField: "quantityMembers"
+                    },
+                    body_active: {
+                        label: "active (Faol)",
+                        type: "select",
+                        options: [{value: "true", label: "true (Ha)"}, {value: "false", label: "false (Yo'q)"}],
+                        default: "true",
+                        required: false,
                         bodyField: "active"
                     }
                 },
+                bodyGenerator: (inputs) => ({
+                    fiscalYear: parseInt(inputs.body_fiscalYear) || 2025,
+                    budget: parseFloat(inputs.body_budget) || 50000000.0,
+                    quantityMembers: parseInt(inputs.body_quantityMembers) || 5,
+                    active: inputs.body_active === 'true'
+                }),
                 description: `**Loyiha meta yaratish** (POST)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EProjectMeta
@@ -6409,10 +6423,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "21.Loyiha ijrochilari",
-                name: "Loyiha ijrochilari ro'yxati",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
                 category: "22.Ilmiy nashrlar",
                 name: "Ilmiy nashrlar ro'yxati",
                 method: "GET",
@@ -6479,27 +6489,10 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 
 <b>Path Parameters:</b>
 - entityId - Loyiha ijrochisi UUID (required)
-                        default: "0",
-                        required: false
-                    }
-                },
-                description: `**Ilmiy nashrlar ro'yxati** (GET all)
 
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationScientific
+<b>Response:</b> 200 OK (empty body)
 
-<b>Response format:</b>
-<pre>[
-  {
-    "_entityName": "hemishe_EPublicationScientific",
-    "_instanceName": "com.company.hemishe.entity.EPublicationScientific-{id} [detached]",
-    "id": "uuid",
-    "name": "Ilmiy maqola nomi",
-    "authors": "Mualliflar",
-    "authorCounts": 2,
-    "issueYear": 2024,
-    "active": true
-  }
-]</pre>`,
+<b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
                 ported: true
             },
             {
