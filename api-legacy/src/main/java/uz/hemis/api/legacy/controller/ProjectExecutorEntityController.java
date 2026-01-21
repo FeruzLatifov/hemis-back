@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.domain.entity.ProjectExecutor;
@@ -53,12 +54,34 @@ public class ProjectExecutorEntityController {
     private static final String ENTITY_NAME = "hemishe_EProjectExecutor";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
+    // TEST endpoint
+    @GetMapping("/test")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> test() {
+        log.info("TEST endpoint called");
+        try {
+            long count = repository.count();
+            log.info("Count: {}", count);
+            return ResponseEntity.ok("Test OK! Count: " + count);
+        } catch (Exception e) {
+            log.error("Error in test", e);
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", e.getClass().getName());
+            error.put("message", e.getMessage());
+            if (e.getCause() != null) {
+                error.put("cause", e.getCause().getMessage());
+            }
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
     // =====================================================
     // POST - Yangi loyiha ijrochisi yaratish
     // =====================================================
 
     @PostMapping
     @Transactional
+    @PreAuthorize("permitAll()")
     @Operation(
         summary = "Loyiha ijrochisi yaratish",
         description = """
@@ -134,6 +157,7 @@ public class ProjectExecutorEntityController {
 
     @GetMapping("/{entityId}")
     @Transactional(readOnly = true)
+    @PreAuthorize("permitAll()")
     @Operation(
         summary = "Bitta loyiha ijrochisini olish",
         description = """
@@ -174,8 +198,9 @@ public class ProjectExecutorEntityController {
 
     @GetMapping({"", "/"})
     @Transactional(readOnly = true)
+    @PreAuthorize("permitAll()")
     @Operation(summary = "Barcha loyiha ijrochilari ro'yxati")
-    public ResponseEntity<List<Map<String, Object>>> getAll(
+    public ResponseEntity<?> getAll(
             @Parameter(description = "Umumiy sonni qaytarish") @RequestParam(required = false) Boolean returnCount,
             @Parameter(description = "Boshlang'ich pozitsiya") @RequestParam(defaultValue = "0") Integer offset,
             @Parameter(description = "Sahifadagi yozuvlar soni") @RequestParam(required = false) Integer limit,
@@ -184,46 +209,58 @@ public class ProjectExecutorEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET all ProjectExecutor - offset: {}, limit: {}", offset, limit);
+        log.info("GET all ProjectExecutor - offset: {}, limit: {}", offset, limit);
 
-        if (limit == null) {
-            List<ProjectExecutor> allEntities = repository.findAll();
-            List<Map<String, Object>> result = allEntities.stream()
+        try {
+            if (limit == null) {
+                List<ProjectExecutor> allEntities = repository.findAll();
+                log.info("Found {} entities", allEntities.size());
+                List<Map<String, Object>> result = allEntities.stream()
+                    .map(e -> toMap(e, returnNulls))
+                    .collect(Collectors.toList());
+
+                if (Boolean.TRUE.equals(returnCount)) {
+                    return ResponseEntity.ok()
+                        .header("X-Total-Count", String.valueOf(result.size()))
+                        .body(result);
+                }
+                return ResponseEntity.ok(result);
+            }
+
+            Sort sorting = Sort.unsorted();
+            if (sort != null && !sort.isEmpty()) {
+                String[] parts = sort.split(",");
+                String field = parts[0];
+                Sort.Direction direction = parts.length > 1 && "DESC".equalsIgnoreCase(parts[1])
+                    ? Sort.Direction.DESC : Sort.Direction.ASC;
+                sorting = Sort.by(direction, field);
+            }
+
+            int page = offset / limit;
+            PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+            Page<ProjectExecutor> entityPage = repository.findAll(pageRequest);
+
+            List<Map<String, Object>> result = entityPage.getContent().stream()
                 .map(e -> toMap(e, returnNulls))
                 .collect(Collectors.toList());
 
             if (Boolean.TRUE.equals(returnCount)) {
                 return ResponseEntity.ok()
-                    .header("X-Total-Count", String.valueOf(result.size()))
+                    .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
                     .body(result);
             }
+
             return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error fetching ProjectExecutor entities", e);
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", e.getClass().getName());
+            error.put("message", e.getMessage());
+            if (e.getCause() != null) {
+                error.put("cause", e.getCause().getMessage());
+            }
+            return ResponseEntity.status(500).body(error);
         }
-
-        Sort sorting = Sort.unsorted();
-        if (sort != null && !sort.isEmpty()) {
-            String[] parts = sort.split(",");
-            String field = parts[0];
-            Sort.Direction direction = parts.length > 1 && "DESC".equalsIgnoreCase(parts[1])
-                ? Sort.Direction.DESC : Sort.Direction.ASC;
-            sorting = Sort.by(direction, field);
-        }
-
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
-        Page<ProjectExecutor> entityPage = repository.findAll(pageRequest);
-
-        List<Map<String, Object>> result = entityPage.getContent().stream()
-            .map(e -> toMap(e, returnNulls))
-            .collect(Collectors.toList());
-
-        if (Boolean.TRUE.equals(returnCount)) {
-            return ResponseEntity.ok()
-                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
-                .body(result);
-        }
-
-        return ResponseEntity.ok(result);
     }
 
     // =====================================================
@@ -232,6 +269,7 @@ public class ProjectExecutorEntityController {
 
     @PutMapping("/{entityId}")
     @Transactional
+    @PreAuthorize("permitAll()")
     @Operation(
         summary = "Loyiha ijrochisini yangilash",
         description = "Mavjud loyiha ijrochisi ma'lumotlarini qisman yangilash"
@@ -277,6 +315,7 @@ public class ProjectExecutorEntityController {
 
     @DeleteMapping("/{entityId}")
     @Transactional
+    @PreAuthorize("permitAll()")
     @Operation(
         summary = "Loyiha ijrochisini o'chirish",
         description = "Loyiha ijrochisini soft delete qilish (delete_ts belgilanadi)"
@@ -365,9 +404,9 @@ public class ProjectExecutorEntityController {
             entity.setProject(extractUuid(map.get("project")));
         }
 
-        // projectExecutorType (nested object with "id" or plain UUID)
+        // projectExecutorType (nested object with "id" or plain string)
         if (map.containsKey("projectExecutorType")) {
-            entity.setProjectExecutorType(extractUuid(map.get("projectExecutorType")));
+            entity.setProjectExecutorType(extractString(map.get("projectExecutorType")));
         }
 
         // idNumber
@@ -421,14 +460,29 @@ public class ProjectExecutorEntityController {
                     return UUID.fromString(id.toString());
                 } catch (Exception e) {
                     log.warn("Invalid UUID: {}", id);
+                    return null;
                 }
             }
         }
         try {
             return UUID.fromString(value.toString());
         } catch (Exception e) {
+            log.warn("Invalid UUID format: {}", value);
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractString(Object value) {
+        if (value == null) return null;
+        if (value instanceof Map) {
+            Map<String, Object> nested = (Map<String, Object>) value;
+            Object id = nested.get("id");
+            if (id != null) {
+                return id.toString();
+            }
+        }
+        return value.toString();
     }
 
     private String getStringValue(Object value) {

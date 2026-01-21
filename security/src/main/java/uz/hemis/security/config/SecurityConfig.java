@@ -202,6 +202,10 @@ public class SecurityConfig {
                         // Admin endpoints (requires ROLE_ADMIN)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
+                        // TEST: ProjectExecutor endpoint (temporarily public for testing)
+                        .requestMatchers("/app/rest/v2/entities/hemishe_EProjectExecutor/**").permitAll()
+                        .requestMatchers("/app/rest/v2/entities/hemishe_EProjectExecutor").permitAll()
+
                         // University API endpoints (JWT required)
                         // Note: Universities send JWT in Authorization header
                         .requestMatchers("/app/rest/v2/**").authenticated()
