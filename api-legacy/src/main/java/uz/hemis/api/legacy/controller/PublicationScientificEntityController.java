@@ -140,7 +140,7 @@ public class PublicationScientificEntityController {
     @Transactional
     @Operation(
         summary = "Ilmiy nashrni o'chirish",
-        description = "Soft delete - delete_ts ni belgilaydi"
+        description = "Soft delete - delete_ts ni belgilaydi (CUBA pattern)"
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli o'chirildi"),
@@ -149,13 +149,18 @@ public class PublicationScientificEntityController {
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {
         log.info("DELETE PublicationScientific id: {}", entityId);
 
-        Optional<PublicationScientific> entity = repository.findById(entityId);
-        if (entity.isEmpty()) {
+        Optional<PublicationScientific> entityOpt = repository.findById(entityId);
+        if (entityOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        repository.delete(entity.get());
-        log.info("DELETE /entities/hemishe_EPublicationScientific/{} - muvaffaqiyatli", entityId);
+        // SOFT DELETE: delete_ts o'rnatish (CUBA pattern)
+        // Hard delete QILINMAYDI - foreign key constraint xatosi bo'lmasligi uchun
+        PublicationScientific entity = entityOpt.get();
+        entity.setDeleteTs(LocalDateTime.now());
+        repository.save(entity);
+
+        log.info("DELETE /entities/hemishe_EPublicationScientific/{} - soft delete muvaffaqiyatli", entityId);
 
         // OLD-HEMIS: 200 OK (not 204)
         return ResponseEntity.ok().build();
@@ -219,12 +224,13 @@ public class PublicationScientificEntityController {
 
         log.debug("GET all PublicationScientific - offset: {}, limit: {}", offset, limit);
 
-        // Agar limit null bo'lsa, barcha yozuvlarni qaytarish
-        if (limit == null) {
-            List<PublicationScientific> allEntities = repository.findAll();
-            return ResponseEntity.ok(allEntities.stream()
-                .map(e -> toMap(e, returnNulls))
-                .collect(Collectors.toList()));
+        // Default limit - xavfsizlik uchun (browser qotib qolmasligi uchun)
+        if (limit == null || limit <= 0) {
+            limit = 100;
+        }
+        // Maksimal limit - juda katta response oldini olish
+        if (limit > 1000) {
+            limit = 1000;
         }
 
         Sort sorting = Sort.unsorted();
