@@ -32,7 +32,7 @@ public class GenericLegacyEntityJdbcController {
             // Entities
             // hemishe_EStudentGpa - maxsus StudentGpaEntityController.java da
             // hemishe_EStudentDiploma - maxsus StudentDiplomaEntityController.java da
-            Map.entry("/app/rest/v2/entities/hemishe_EPublicationCriteria", "hemishe_e_publication_criteria"),
+            // hemishe_EPublicationCriteria - maxsus PublicationCriteriaEntityController.java da
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicGroup", "hemishe_r_academic_group"),
             Map.entry("/app/rest/v2/entities/hemishe_RExpel", "hemishe_r_expel"),
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicAttendance", "hemishe_r_academic_attendance"),
@@ -83,7 +83,6 @@ public class GenericLegacyEntityJdbcController {
     // GET by ID
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_EPublicationCriteria/{id}",
             "/app/rest/v2/entities/hemishe_RAcademicGroup/{id}",
             "/app/rest/v2/entities/hemishe_RExpel/{id}",
             "/app/rest/v2/entities/hemishe_RAcademicAttendance/{id}",
@@ -116,7 +115,6 @@ public class GenericLegacyEntityJdbcController {
     // LIST (paginated)
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_EPublicationCriteria",
             "/app/rest/v2/entities/hemishe_RAcademicGroup",
             "/app/rest/v2/entities/hemishe_RExpel",
             "/app/rest/v2/entities/hemishe_RAcademicAttendance",
@@ -154,7 +152,6 @@ public class GenericLegacyEntityJdbcController {
     // SEARCH (best-effort by code/name)
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_EPublicationCriteria/search",
             "/app/rest/v2/entities/hemishe_RAcademicGroup/search",
             "/app/rest/v2/entities/hemishe_RExpel/search",
             "/app/rest/v2/entities/hemishe_RAcademicAttendance/search",
