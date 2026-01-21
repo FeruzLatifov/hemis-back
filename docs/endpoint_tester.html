@@ -6011,6 +6011,45 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         required: false,
                         bodyField: "endDate",
                         placeholder: "YYYY-MM-DD"
+            // ============================================================
+            // 20.Loyiha meta ma'lumotlari - Project Meta Entity API
+            // ============================================================
+            {
+                id: 1,
+                category: "20.Loyiha meta ma'lumotlari",
+                name: "Loyiha meta yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EProjectMeta",
+                requiresAuth: true,
+                contentType: "json",
+                hasBody: true,
+                bodyFields: ["body_fiscalYear", "body_budget", "body_quantityMembers", "body_active"],
+                inputFields: {
+                    body_fiscalYear: {
+                        label: "fiscalYear (Moliyaviy yil)",
+                        type: "text",
+                        defaultNew: "2025",
+                        defaultOld: "2024",
+                        required: true,
+                        bodyField: "fiscalYear",
+                        placeholder: "2024"
+                    },
+                    body_budget: {
+                        label: "budget (Byudjet)",
+                        type: "text",
+                        defaultNew: "50000000.0",
+                        defaultOld: "30000000.0",
+                        required: true,
+                        bodyField: "budget",
+                        placeholder: "50000000.0"
+                    },
+                    body_quantityMembers: {
+                        label: "quantityMembers (A'zolar soni)",
+                        type: "text",
+                        defaultNew: "5",
+                        defaultOld: "3",
+                        required: true,
+                        bodyField: "quantityMembers"
                     },
                     body_active: {
                         label: "active (Faol)",
@@ -6088,6 +6127,284 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 - returnNulls - null qiymatlarni qaytarish (default: true)
 
 <b>Response:</b> Loyiha ijrochisi to'liq ma'lumotlari`,
+                        options: [{value: "true", label: "true"}, {value: "false", label: "false"}],
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: true,
+                        bodyField: "active"
+                    }
+                },
+                description: `**Loyiha meta yaratish** (POST)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EProjectMeta
+
+<b>Request body:</b>
+<pre>{
+  "fiscalYear": 2025,
+  "budget": 50000000.0,
+  "quantityMembers": 5,
+  "active": true
+}</pre>
+
+<b>Response:</b>
+<pre>{
+  "_entityName": "hemishe_EProjectMeta",
+  "_instanceName": "com.company.hemishe.entity.EProjectMeta-{id} [detached]",
+  "id": "yangi_uuid"
+}</pre>`,
+                ported: true,
+                storeResultId: "projectMetaId"
+            },
+            {
+                id: 2,
+                category: "20.Loyiha meta ma'lumotlari",
+                name: "Loyiha meta olish (ID bo'yicha)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Loyiha meta ID (UUID)",
+                        type: "text",
+                        placeholder: "UUID formatda ID",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "projectMetaId"
+                    }
+                },
+                description: `**Loyiha meta olish** (GET by ID)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EProjectMeta/{entityId}
+
+<b>Response:</b> Bitta loyiha meta ma'lumotlari`,
+                ported: true
+            },
+            {
+                id: 3,
+                category: "20.Loyiha meta ma'lumotlari",
+                name: "Loyiha meta ro'yxati",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EProjectMeta",
+                requiresAuth: true,
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "text",
+                        default: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "text",
+                        default: "0",
+                        required: false
+                    }
+                },
+                description: `**Loyiha meta ma'lumotlari ro'yxati** (GET all)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EProjectMeta
+
+<b>Response format:</b>
+<pre>[
+  {
+    "_entityName": "hemishe_EProjectMeta",
+    "_instanceName": "com.company.hemishe.entity.EProjectMeta-{id} [detached]",
+    "id": "uuid",
+    "quantityMembers": 4,
+    "active": true,
+    "version": 1,
+    "fiscalYear": 2018,
+    "budget": 10000000.0
+  }
+]</pre>`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "20.Loyiha meta ma'lumotlari",
+                name: "Loyiha meta yangilash",
+                method: "PUT",
+                url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
+                requiresAuth: true,
+                contentType: "json",
+                hasBody: true,
+                bodyFields: ["budget", "quantityMembers"],
+                inputFields: {
+                    entityId: {
+                        label: "Loyiha meta ID (UUID)",
+                        type: "text",
+                        placeholder: "UUID formatda ID",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "projectMetaId"
+                    },
+                    body_budget: {
+                        label: "budget (yangi qiymat)",
+                        type: "text",
+                        defaultNew: "75000000.0",
+                        defaultOld: "60000000.0",
+                        required: true,
+                        bodyField: "budget"
+                    },
+                    body_quantityMembers: {
+                        label: "quantityMembers (yangi qiymat)",
+                        type: "text",
+                        defaultNew: "10",
+                        defaultOld: "8",
+                        required: true,
+                        bodyField: "quantityMembers"
+                    }
+                },
+                description: `**Loyiha meta yangilash** (PUT)
+
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_EProjectMeta/{entityId}
+
+<b>Response:</b> Minimal response - _entityName, _instanceName, id`,
+                ported: true
+            },
+            {
+                id: 5,
+                category: "20.Loyiha meta ma'lumotlari",
+                name: "Loyiha meta o'chirish",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Loyiha meta ID (UUID)",
+                        type: "text",
+                        placeholder: "UUID formatda ID",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "projectMetaId"
+                    }
+                },
+                description: `**Loyiha meta o'chirish** (DELETE)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_EProjectMeta/{entityId}
+
+<b>Response:</b> 200 OK (empty body)
+
+<b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
+                ported: true
+            },
+
+            // ============================================================
+            // 22.Ilmiy nashrlar - Publication Scientific Entity API
+            // ============================================================
+            {
+                id: 1,
+                category: "22.Ilmiy nashrlar",
+                name: "Ilmiy nashr yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EPublicationScientific",
+                requiresAuth: true,
+                contentType: "json",
+                hasBody: true,
+                bodyFields: ["body_name", "body_authors", "body_authorCounts", "body_issueYear", "body_doi", "body_active"],
+                inputFields: {
+                    body_name: {
+                        label: "name (Nashr nomi)",
+                        type: "text",
+                        defaultNew: "Quantum Computing in Medicine - NEW",
+                        defaultOld: "Quantum Computing in Medicine - OLD",
+                        required: true,
+                        bodyField: "name",
+                        placeholder: "Ilmiy nashr nomi"
+                    },
+                    body_authors: {
+                        label: "authors (Mualliflar)",
+                        type: "text",
+                        defaultNew: "Aliyev A., Karimov B.",
+                        defaultOld: "Aliyev A., Karimov B.",
+                        required: true,
+                        bodyField: "authors",
+                        placeholder: "Aliyev A., Karimov B."
+                    },
+                    body_authorCounts: {
+                        label: "authorCounts (Mualliflar soni)",
+                        type: "text",
+                        defaultNew: "2",
+                        defaultOld: "2",
+                        required: true,
+                        bodyField: "authorCounts"
+                    },
+                    body_issueYear: {
+                        label: "issueYear (Nashr yili)",
+                        type: "text",
+                        defaultNew: "2025",
+                        defaultOld: "2024",
+                        required: true,
+                        bodyField: "issueYear"
+                    },
+                    body_doi: {
+                        label: "doi (DOI)",
+                        type: "text",
+                        defaultNew: "10.1234/example.2025",
+                        defaultOld: "10.1234/example.2024",
+                        required: false,
+                        bodyField: "doi",
+                        placeholder: "10.1234/example.2024"
+                    },
+                    body_active: {
+                        label: "active (Faol)",
+                        type: "select",
+                        options: [{value: "true", label: "true"}, {value: "false", label: "false"}],
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: true,
+                        bodyField: "active"
+                    }
+                },
+                description: `**Ilmiy nashr yaratish** (POST)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EPublicationScientific
+
+<b>Request body:</b>
+<pre>{
+  "name": "Quantum Computing in Medicine",
+  "authors": "Aliyev A., Karimov B.",
+  "authorCounts": 2,
+  "issueYear": 2024,
+  "doi": "10.1234/example.2024",
+  "active": true
+}</pre>
+
+<b>Response:</b>
+<pre>{
+  "_entityName": "hemishe_EPublicationScientific",
+  "_instanceName": "com.company.hemishe.entity.EPublicationScientific-{id} [detached]",
+  "id": "yangi_uuid"
+}</pre>`,
+                ported: true,
+                storeResultId: "publicationScientificId"
+            },
+            {
+                id: 2,
+                category: "22.Ilmiy nashrlar",
+                name: "Ilmiy nashr olish (ID bo'yicha)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EPublicationScientific/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Ilmiy nashr ID (UUID)",
+                        type: "text",
+                        placeholder: "UUID formatda ID",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "publicationScientificId"
+                    }
+                },
+                description: `**Ilmiy nashr olish** (GET by ID)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationScientific/{entityId}
+
+<b>Response:</b> Bitta ilmiy nashr ma'lumotlari`,
                 ported: true
             },
             {
@@ -6096,6 +6413,10 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 name: "Loyiha ijrochilari ro'yxati",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
+                category: "22.Ilmiy nashrlar",
+                name: "Ilmiy nashrlar ro'yxati",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EPublicationScientific",
                 requiresAuth: true,
                 inputFields: {
                     limit: {
@@ -6103,6 +6424,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         type: "text",
                         defaultNew: "10",
                         defaultOld: "10",
+                        default: "10",
                         required: false
                     },
                     offset: {
@@ -6157,6 +6479,94 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 
 <b>Path Parameters:</b>
 - entityId - Loyiha ijrochisi UUID (required)
+                        default: "0",
+                        required: false
+                    }
+                },
+                description: `**Ilmiy nashrlar ro'yxati** (GET all)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationScientific
+
+<b>Response format:</b>
+<pre>[
+  {
+    "_entityName": "hemishe_EPublicationScientific",
+    "_instanceName": "com.company.hemishe.entity.EPublicationScientific-{id} [detached]",
+    "id": "uuid",
+    "name": "Ilmiy maqola nomi",
+    "authors": "Mualliflar",
+    "authorCounts": 2,
+    "issueYear": 2024,
+    "active": true
+  }
+]</pre>`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "22.Ilmiy nashrlar",
+                name: "Ilmiy nashr yangilash",
+                method: "PUT",
+                url: "/app/rest/v2/entities/hemishe_EPublicationScientific/{entityId}",
+                requiresAuth: true,
+                contentType: "json",
+                hasBody: true,
+                bodyFields: ["body_name", "body_authorCounts"],
+                inputFields: {
+                    entityId: {
+                        label: "Ilmiy nashr ID (UUID)",
+                        type: "text",
+                        placeholder: "UUID formatda ID",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "publicationScientificId"
+                    },
+                    body_name: {
+                        label: "name (yangi qiymat)",
+                        type: "text",
+                        defaultNew: "Updated Scientific Publication - NEW",
+                        defaultOld: "Updated Scientific Publication - OLD",
+                        required: true,
+                        bodyField: "name"
+                    },
+                    body_authorCounts: {
+                        label: "authorCounts (yangi qiymat)",
+                        type: "text",
+                        defaultNew: "5",
+                        defaultOld: "4",
+                        required: true,
+                        bodyField: "authorCounts"
+                    }
+                },
+                description: `**Ilmiy nashr yangilash** (PUT)
+
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_EPublicationScientific/{entityId}
+
+<b>Response:</b> Minimal response - _entityName, _instanceName, id`,
+                ported: true
+            },
+            {
+                id: 5,
+                category: "22.Ilmiy nashrlar",
+                name: "Ilmiy nashr o'chirish",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_EPublicationScientific/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Ilmiy nashr ID (UUID)",
+                        type: "text",
+                        placeholder: "UUID formatda ID",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "publicationScientificId"
+                    }
+                },
+                description: `**Ilmiy nashr o'chirish** (DELETE)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_EPublicationScientific/{entityId}
 
 <b>Response:</b> 200 OK (empty body)
 
@@ -6790,12 +7200,15 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                             if (val === 'true') val = true;
                             if (val === 'false') val = false;
 
+                            // JSON body uchun kalit nomi - bodyField mavjud bo'lsa uni ishlatish
+                            const jsonKey = (fieldConfig && fieldConfig.bodyField) ? fieldConfig.bodyField : fieldName;
+
                             // CUBA foreign key uchun {"id": "value"} formatiga o'tkazish
                             // Faqat Eski Hemis (old) uchun - Yangi Hemis plain values ni qabul qiladi
                             if (fieldConfig && fieldConfig.cubaForeignKey && system === 'old') {
-                                bodyObj[fieldName] = { id: val };
+                                bodyObj[jsonKey] = { id: val };
                             } else {
-                                bodyObj[fieldName] = val;
+                                bodyObj[jsonKey] = val;
                             }
                         }
                     });

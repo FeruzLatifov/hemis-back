@@ -32,7 +32,6 @@ public class ProjectMeta extends BaseEntity {
     @Column(name = "active")
     private Boolean active;
 
-    @Lob
-    @Column(name = "translations")
+    @Column(name = "_translations", columnDefinition = "TEXT")
     private String translations;
 }
