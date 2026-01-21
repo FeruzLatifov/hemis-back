@@ -552,8 +552,7 @@ public class PublicationScientificEntityController {
     }
 
     /**
-     * Foreign key dan ID ni String sifatida olish
-     * Input: {"id": "uuid"} yoki "uuid" string
+     * CUBA format: {"id": "uuid"} - faqat Map qabul qiladi
      */
     @SuppressWarnings("unchecked")
     private String extractStringId(Object value) {
@@ -563,6 +562,6 @@ public class PublicationScientificEntityController {
             Object id = nested.get("id");
             return id != null ? id.toString() : null;
         }
-        return value.toString();
+        return null;
     }
 }

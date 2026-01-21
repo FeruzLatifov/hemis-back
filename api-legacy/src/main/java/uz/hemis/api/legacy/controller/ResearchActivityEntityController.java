@@ -458,7 +458,7 @@ public class ResearchActivityEntityController {
     }
 
     /**
-     * Extract code from nested object {code: "xxx"} or plain string
+     * CUBA format: {"code": "xxx"} yoki {"id": "xxx"} - faqat Map qabul qiladi
      */
     @SuppressWarnings("unchecked")
     private String extractCode(Object value) {
@@ -475,7 +475,6 @@ public class ResearchActivityEntityController {
                 return id.toString();
             }
         }
-        // Plain string value
-        return value.toString();
+        return null;
     }
 }

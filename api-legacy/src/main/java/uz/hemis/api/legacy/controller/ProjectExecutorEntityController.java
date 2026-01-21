@@ -449,40 +449,39 @@ public class ProjectExecutorEntityController {
     // Utility Methods
     // =====================================================
 
+    /**
+     * CUBA format: {"id": "uuid-string"} - faqat Map qabul qiladi
+     */
     @SuppressWarnings("unchecked")
     private UUID extractUuid(Object value) {
         if (value == null) return null;
+        if (value instanceof UUID) return (UUID) value;
         if (value instanceof Map) {
             Map<String, Object> nested = (Map<String, Object>) value;
             Object id = nested.get("id");
-            if (id != null) {
+            if (id instanceof String str && !str.isEmpty()) {
                 try {
-                    return UUID.fromString(id.toString());
-                } catch (Exception e) {
-                    log.warn("Invalid UUID: {}", id);
+                    return UUID.fromString(str);
+                } catch (IllegalArgumentException e) {
                     return null;
                 }
             }
         }
-        try {
-            return UUID.fromString(value.toString());
-        } catch (Exception e) {
-            log.warn("Invalid UUID format: {}", value);
-            return null;
-        }
+        return null;
     }
 
+    /**
+     * CUBA format: {"id": "string"} - faqat Map qabul qiladi
+     */
     @SuppressWarnings("unchecked")
     private String extractString(Object value) {
         if (value == null) return null;
         if (value instanceof Map) {
             Map<String, Object> nested = (Map<String, Object>) value;
             Object id = nested.get("id");
-            if (id != null) {
-                return id.toString();
-            }
+            return id != null ? id.toString() : null;
         }
-        return value.toString();
+        return null;
     }
 
     private String getStringValue(Object value) {

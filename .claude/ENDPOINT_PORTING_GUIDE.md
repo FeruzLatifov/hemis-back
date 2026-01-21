@@ -1091,6 +1091,149 @@ result.put("student", dto);
 
 ---
 
+## 🔗 CUBA FOREIGN KEY FORMAT (MUHIM!)
+
+### ⚠️ QATTIQ QOIDA: Faqat CUBA Map Format Qabul Qilish!
+
+**Foreign key maydonlari (masalan: `_employee`, `_university`, `_department`)** faqat CUBA nested object formatda qabul qilinadi. **HECH QACHON** flat string qabul qilmaslik!
+
+### ✅ TO'G'RI Format (Faqat shu!)
+
+```json
+// UUID foreign key (masalan: _employee)
+{
+  "_employee": {"id": "6b3c0dfc-e269-3df5-894e-85b8c2386e9d"}
+}
+
+// Code foreign key (masalan: _university)
+{
+  "_university": {"code": "401"}
+}
+```
+
+### ❌ NOTO'G'RI Format (Qabul qilmaslik!)
+
+```json
+// ❌ Flat string - QABUL QILINMAYDI!
+{
+  "_employee": "6b3c0dfc-e269-3df5-894e-85b8c2386e9d",
+  "_university": "401"
+}
+```
+
+### 📋 extractUuid / extractString Metodlari
+
+**QOIDA:** Bu metodlarda if-else bilan flat string qabul qilish MUMKIN EMAS!
+
+```java
+// ✅ TO'G'RI - Faqat Map qabul qiladi
+/**
+ * CUBA format: {"id": "uuid-string"} - faqat Map qabul qiladi
+ */
+@SuppressWarnings("unchecked")
+private UUID extractUuid(Object value) {
+    if (value == null) return null;
+    if (value instanceof UUID) return (UUID) value;
+    if (value instanceof Map) {
+        Map<String, Object> nested = (Map<String, Object>) value;
+        Object id = nested.get("id");
+        if (id instanceof String str && !str.isEmpty()) {
+            try {
+                return UUID.fromString(str);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+    }
+    return null;  // ← Flat string uchun null qaytaradi
+}
+
+// ❌ NOTO'G'RI - if-else bilan flat string qabul qilish
+private UUID extractUuid(Object value) {
+    if (value == null) return null;
+    if (value instanceof Map) {
+        // ... Map dan olish
+    }
+    // ❌ BU QATORLAR BO'LMASLIGI KERAK!
+    try {
+        return UUID.fromString(value.toString());  // ← NOTO'G'RI!
+    } catch (Exception e) {
+        return null;
+    }
+}
+```
+
+### 📋 extractStringId / extractCode Metodlari
+
+```java
+// ✅ TO'G'RI - Faqat Map qabul qiladi
+/**
+ * CUBA format: {"id": "string"} yoki {"code": "string"} - faqat Map qabul qiladi
+ */
+@SuppressWarnings("unchecked")
+private String extractStringId(Object value) {
+    if (value == null) return null;
+    if (value instanceof Map) {
+        Map<String, Object> nested = (Map<String, Object>) value;
+        Object id = nested.get("id");
+        return id != null ? id.toString() : null;
+    }
+    return null;  // ← Flat string uchun null qaytaradi
+}
+
+// ❌ NOTO'G'RI - value.toString() bilan flat string qabul qilish
+private String extractStringId(Object value) {
+    if (value == null) return null;
+    if (value instanceof Map) {
+        // ... Map dan olish
+    }
+    return value.toString();  // ← NOTO'G'RI! Bu qatorni O'CHIRISH kerak!
+}
+```
+
+### 📋 endpoint_tester.html da CUBA Format
+
+**Qoida:** endpoint_tester.html da ham foreign key maydonlari CUBA formatda yuborilishi SHART!
+
+```javascript
+// ✅ TO'G'RI - body yoki bodyTemplate da CUBA format
+body: {
+    "_university": {"code": "{_university}"},
+    "_employee": {"id": "{_employee}"},
+    "name": "{name}"
+}
+
+// ✅ TO'G'RI - bodyGenerator da CUBA format
+bodyGenerator: (inputs) => ({
+    university: { id: inputs.university },
+    student: { id: inputs.student },
+    active: inputs.active === 'true'
+})
+
+// ❌ NOTO'G'RI - flat string yuborish
+body: {
+    "_university": "{_university}",  // ← NOTO'G'RI!
+    "_employee": "{_employee}"       // ← NOTO'G'RI!
+}
+```
+
+### 🤔 Nima Uchun Bu Qoida?
+
+1. **OLD-HEMIS va NEW-HEMIS bir xil format** - userlar uchun o'zgartirish kerak emas
+2. **Tizimga kam nagruzka** - if-else tekshiruvlari yo'q
+3. **Xavfsizlik** - noto'g'ri format yuborilsa null qaytadi, xato emas
+4. **Backward compatibility** - CUBA platformasi shu formatda ishlaydi
+
+### 📊 Foreign Key Turlari
+
+| Maydon turi | CUBA format | Key field |
+|-------------|-------------|-----------|
+| UUID (employee, student) | `{"id": "uuid-string"}` | `id` |
+| Code (university, department) | `{"code": "value"}` | `code` |
+| Nested reference | `{"id": "uuid", "_entityName": "..."}` | `id` |
+
+---
+
 ## 🔒 UNIVERSITY FILTERING (SECURITY IMPROVEMENT)
 
 ### ⚠️ MUHIM: OLD-HEMIS vs NEW-HEMIS Security Farqi
