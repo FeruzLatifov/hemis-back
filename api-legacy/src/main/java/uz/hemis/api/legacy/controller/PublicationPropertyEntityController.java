@@ -481,8 +481,23 @@ public class PublicationPropertyEntityController {
         }
     }
 
+    /**
+     * Extracts string value from various formats:
+     * - Simple string: "401" -> "401"
+     * - Nested object (CUBA format): {"_entityName": "...", "id": "401"} -> "401"
+     * - Nested object with code: {"code": "401"} -> "401"
+     */
     private String extractString(Object value) {
         if (value == null) return null;
+        if (value instanceof String) return (String) value;
+        if (value instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> nested = (Map<String, Object>) value;
+            Object id = nested.get("id");
+            if (id != null) return extractString(id);
+            Object code = nested.get("code");
+            if (code != null) return extractString(code);
+        }
         return value.toString();
     }
 
