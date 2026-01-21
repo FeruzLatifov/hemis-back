@@ -14,11 +14,11 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public interface PublicationPropertyRepository extends JpaRepository<PublicationProperty, UUID> {
 
-    List<PublicationProperty> findByUniversity(UUID university);
+    List<PublicationProperty> findByUniversity(String university);
 
-    List<PublicationProperty> findByUniversityAndEducationYear(UUID university, UUID educationYear);
+    List<PublicationProperty> findByUniversityAndEducationYear(String university, String educationYear);
 
-    Page<PublicationProperty> findByUniversityAndEducationYear(UUID university, UUID educationYear, Pageable pageable);
+    Page<PublicationProperty> findByUniversityAndEducationYear(String university, String educationYear, Pageable pageable);
 
-    long countByUniversityAndEducationYear(UUID university, UUID educationYear);
+    long countByUniversityAndEducationYear(String university, String educationYear);
 }

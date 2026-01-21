@@ -20,46 +20,42 @@ public class PublicationProperty extends BaseEntity {
     private Integer uId;
 
     @Column(name = "_university")
-    private UUID university;
+    private String university;
 
-    @Lob
-    @Column(name = "name")
+    @Column(name = "name", columnDefinition = "TEXT")
     private String name;
 
     @Column(name = "numbers")
     private String numbers;
 
-    @Lob
-    @Column(name = "authors")
+    @Column(name = "authors", columnDefinition = "TEXT")
     private String authors;
 
     @Column(name = "author_counts")
     private Integer authorCounts;
 
-    @Lob
-    @Column(name = "parameter")
+    @Column(name = "parameter", columnDefinition = "TEXT")
     private String parameter;
 
     @Column(name = "property_date")
     private LocalDate propertyDate;
 
     @Column(name = "_patent_type")
-    private UUID patentType;
+    private String patentType;
 
     @Column(name = "_publication_database")
-    private UUID publicationDatabase;
+    private String publicationDatabase;
 
     @Column(name = "_locality")
-    private UUID locality;
+    private String locality;
 
     @Column(name = "_country")
-    private UUID country;
+    private String country;
 
     @Column(name = "_employee")
     private UUID employee;
 
-    @Lob
-    @Column(name = "filename")
+    @Column(name = "filename", columnDefinition = "TEXT")
     private String filename;
 
     @Column(name = "position")
@@ -68,8 +64,7 @@ public class PublicationProperty extends BaseEntity {
     @Column(name = "active")
     private Boolean active;
 
-    @Lob
-    @Column(name = "translations")
+    @Column(name = "_translations", columnDefinition = "TEXT")
     private String translations;
 
     @Column(name = "is_checked")
@@ -79,5 +74,5 @@ public class PublicationProperty extends BaseEntity {
     private LocalDateTime isCheckedDate;
 
     @Column(name = "_education_year")
-    private UUID educationYear;
+    private String educationYear;
 }
