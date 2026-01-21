@@ -314,29 +314,18 @@ public class StudentDiplomaEntityController {
     }
 
     /**
-     * Extract ID from value - supports both plain values and CUBA object format
-     * CUBA format: {"id": "value", "_entityName": "..."}
-     * Plain format: "value" or UUID
+     * CUBA format: {"id": "value"} - faqat Map qabul qiladi
      */
     @SuppressWarnings("unchecked")
     private String extractIdAsString(Object val) {
-        if (val == null) {
-            return null;
-        }
-        if (val instanceof String) {
-            return (String) val;
-        }
-        if (val instanceof UUID) {
-            return val.toString();
-        }
+        if (val == null) return null;
+        if (val instanceof UUID) return val.toString();
         if (val instanceof Map) {
             Map<String, Object> objMap = (Map<String, Object>) val;
             Object id = objMap.get("id");
-            if (id != null) {
-                return id.toString();
-            }
+            return id != null ? id.toString() : null;
         }
-        return val.toString();
+        return null;
     }
 
     // =============================================

@@ -580,6 +580,9 @@ public class DoctoralStudentEntityController {
         }
     }
 
+    /**
+     * CUBA format: {"code": "string"} - faqat Map qabul qiladi
+     */
     @SuppressWarnings("unchecked")
     private String extractCode(Object value) {
         if (value == null) return null;
@@ -588,20 +591,24 @@ public class DoctoralStudentEntityController {
             Object code = nested.get("code");
             return code != null ? code.toString() : null;
         }
-        return value.toString();
+        return null;
     }
 
+    /**
+     * CUBA format: {"id": "uuid-string"} - faqat Map qabul qiladi
+     */
     @SuppressWarnings("unchecked")
     private UUID extractUuid(Object value) {
         if (value == null) return null;
+        if (value instanceof UUID) return (UUID) value;
         if (value instanceof Map) {
             Map<String, Object> nested = (Map<String, Object>) value;
             Object id = nested.get("id");
-            if (id != null) {
+            if (id instanceof String str && !str.isEmpty()) {
                 try {
-                    return UUID.fromString(id.toString());
-                } catch (Exception e) {
-                    log.warn("Invalid UUID: {}", id);
+                    return UUID.fromString(str);
+                } catch (IllegalArgumentException e) {
+                    return null;
                 }
             }
         }

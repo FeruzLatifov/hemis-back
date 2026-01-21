@@ -45,9 +45,9 @@ public class PublicationAuthorMeta extends BaseEntity {
     private Boolean active;
 
     @Lob
-    @Column(name = "translations")
+    @Column(name = "_translations")
     private String translations;
 
     @Column(name = "_university")
-    private UUID university;
+    private String university;
 }

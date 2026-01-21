@@ -313,20 +313,18 @@ public class PublicationMethodicalEntityController {
     private UUID extractUuid(Object value) {
         if (value == null) return null;
         if (value instanceof UUID) return (UUID) value;
-        if (value instanceof String) {
-            String str = (String) value;
-            if (str.isEmpty()) return null;
-            try {
-                return UUID.fromString(str);
-            } catch (IllegalArgumentException e) {
-                return null;
-            }
-        }
+        // CUBA format: {"id": "uuid-string"}
         if (value instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> nested = (Map<String, Object>) value;
             Object id = nested.get("id");
-            if (id != null) return extractUuid(id);
+            if (id instanceof String str && !str.isEmpty()) {
+                try {
+                    return UUID.fromString(str);
+                } catch (IllegalArgumentException e) {
+                    return null;
+                }
+            }
         }
         return null;
     }

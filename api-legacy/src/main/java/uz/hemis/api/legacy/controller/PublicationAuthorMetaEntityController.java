@@ -2,6 +2,10 @@ package uz.hemis.api.legacy.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -9,17 +13,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.PublicationAuthorMeta;
-import uz.hemis.domain.repository.PublicationAuthorMetaRepository;
+import uz.hemis.domain.entity.*;
+import uz.hemis.domain.repository.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * PublicationAuthorMeta Entity Controller (CUBA Pattern)
- * Tag 57: Publications - Author Meta (Entity API)
+ * Tag 25: Nashr mualliflari meta ma'lumotlari
  *
  * CUBA Platform REST API compatible controller
  * Entity: hemishe_EPublicationAuthorMeta
@@ -28,18 +35,17 @@ import java.util.stream.Collectors;
  * - Preserves exact CUBA entity API pattern
  * - URL: /app/rest/v2/entities/hemishe_EPublicationAuthorMeta
  * - Response format: CUBA Map structure with _entityName, _instanceName
- * - Parameters: returnNulls, view, dynamicAttributes (CUBA-compatible)
+ * - Nested objects for university, employee, publications
  *
  * Endpoints:
+ * - GET    /app/rest/v2/entities/hemishe_EPublicationAuthorMeta           - List all with pagination
  * - GET    /app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{id}      - Get by ID
+ * - POST   /app/rest/v2/entities/hemishe_EPublicationAuthorMeta           - Create new
  * - PUT    /app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{id}      - Update
  * - DELETE /app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{id}      - Soft delete
- * - GET    /app/rest/v2/entities/hemishe_EPublicationAuthorMeta/search    - Search (URL params)
- * - POST   /app/rest/v2/entities/hemishe_EPublicationAuthorMeta/search    - Search (JSON filter)
- * - GET    /app/rest/v2/entities/hemishe_EPublicationAuthorMeta           - List all with pagination
- * - POST   /app/rest/v2/entities/hemishe_EPublicationAuthorMeta           - Create new
  */
-@Tag(name = "Publication Authors")
+@Tag(name = "25.Nashr mualliflari meta ma'lumotlari",
+     description = "Nashr mualliflari meta ma'lumotlarini boshqarish - ilmiy, metodik va patent nashrlar mualliflarini ro'yxatga olish")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EPublicationAuthorMeta")
 @RequiredArgsConstructor
@@ -48,98 +54,27 @@ import java.util.stream.Collectors;
 public class PublicationAuthorMetaEntityController {
 
     private final PublicationAuthorMetaRepository repository;
+
     private static final String ENTITY_NAME = "hemishe_EPublicationAuthorMeta";
 
-    @GetMapping("/{entityId}")
-    @Operation(summary = "Get PublicationAuthorMeta by ID", description = "Returns a single PublicationAuthorMeta by UUID")
-    public ResponseEntity<Map<String, Object>> getById(
-            @PathVariable UUID entityId,
-            @RequestParam(required = false) Boolean dynamicAttributes,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
-
-        log.debug("GET PublicationAuthorMeta by id: {}", entityId);
-
-        Optional<PublicationAuthorMeta> entity = repository.findById(entityId);
-        if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        return ResponseEntity.ok(toMap(entity.get(), returnNulls));
-    }
-
-    @PutMapping("/{entityId}")
-    @Operation(summary = "Update PublicationAuthorMeta", description = "Updates an existing PublicationAuthorMeta")
-    public ResponseEntity<Map<String, Object>> update(
-            @PathVariable UUID entityId,
-            @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
-
-        log.debug("PUT PublicationAuthorMeta id: {}", entityId);
-
-        Optional<PublicationAuthorMeta> existingOpt = repository.findById(entityId);
-        if (existingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        PublicationAuthorMeta entity = existingOpt.get();
-        updateFromMap(entity, body);
-
-        PublicationAuthorMeta saved = repository.save(entity);
-        return ResponseEntity.ok(toMap(saved, returnNulls));
-    }
-
-    @DeleteMapping("/{entityId}")
-    @Operation(summary = "Delete PublicationAuthorMeta", description = "Soft deletes an PublicationAuthorMeta")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
-        log.debug("DELETE PublicationAuthorMeta id: {}", entityId);
-
-        Optional<PublicationAuthorMeta> entity = repository.findById(entityId);
-        if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        repository.delete(entity.get());
-        return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/search")
-    @Operation(summary = "Search PublicationAuthorMeta (GET)", description = "Search using URL parameters")
-    public ResponseEntity<List<Map<String, Object>>> searchGet(
-            @RequestParam(required = false) String filter,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
-
-        log.debug("GET search PublicationAuthorMeta with filter: {}", filter);
-
-        List<PublicationAuthorMeta> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
-            .collect(Collectors.toList()));
-    }
-
-    @PostMapping("/search")
-    @Operation(summary = "Search PublicationAuthorMeta (POST)", description = "Search using JSON filter")
-    public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
-
-        log.debug("POST search PublicationAuthorMeta with filter: {}", filter);
-
-        List<PublicationAuthorMeta> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
-            .map(e -> toMap(e, returnNulls))
-            .collect(Collectors.toList()));
-    }
-
+    // =====================================================
+    // GET - List all with pagination
+    // =====================================================
     @GetMapping
-    @Operation(summary = "Get all PublicationAuthorMeta", description = "Returns paginated list")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Barcha nashr mualliflari ro'yxati",
+               description = "Paginatsiya bilan barcha nashr mualliflari meta ma'lumotlarini olish")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
+    })
     public ResponseEntity<List<Map<String, Object>>> getAll(
-            @Parameter(description = "Return total count") @RequestParam(required = false) Boolean returnCount,
-            @Parameter(description = "Offset for pagination") @RequestParam(defaultValue = "0") Integer offset,
-            @Parameter(description = "Limit per page") @RequestParam(defaultValue = "50") Integer limit,
-            @Parameter(description = "Sort") @RequestParam(required = false) String sort,
+            @Parameter(description = "Offset - boshlanish pozitsiyasi")
+            @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit - maksimal yozuvlar soni")
+            @RequestParam(defaultValue = "100") Integer limit,
+            @Parameter(description = "Saralash: field-asc yoki field-desc")
+            @RequestParam(required = false) String sort,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
@@ -155,7 +90,7 @@ public class PublicationAuthorMetaEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
+        int page = offset / Math.max(limit, 1);
         PageRequest pageRequest = PageRequest.of(page, limit, sorting);
         Page<PublicationAuthorMeta> entityPage = repository.findAll(pageRequest);
 
@@ -164,64 +99,265 @@ public class PublicationAuthorMetaEntityController {
             .collect(Collectors.toList()));
     }
 
+    // =====================================================
+    // GET - Get by ID
+    // =====================================================
+    @GetMapping("/{entityId}")
+    @Transactional(readOnly = true)
+    @Operation(summary = "ID bo'yicha nashr muallifi olish",
+               description = "UUID orqali bitta nashr muallifi meta ma'lumotini olish")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "404", description = "Topilmadi")
+    })
+    public ResponseEntity<Map<String, Object>> getById(
+            @Parameter(description = "Entity UUID") @PathVariable UUID entityId,
+            @RequestParam(required = false) Boolean dynamicAttributes,
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
+
+        log.debug("GET PublicationAuthorMeta by id: {}", entityId);
+
+        Optional<PublicationAuthorMeta> entity = repository.findById(entityId);
+        if (entity.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(toMap(entity.get(), returnNulls));
+    }
+
+    // =====================================================
+    // POST - Create new
+    // =====================================================
     @PostMapping
-    @Operation(summary = "Create PublicationAuthorMeta", description = "Creates a new PublicationAuthorMeta")
+    @Transactional
+    @Operation(summary = "Yangi nashr muallifi yaratish",
+               description = "Yangi nashr muallifi meta ma'lumotini yaratish")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Muvaffaqiyatli yaratildi"),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
+    })
     public ResponseEntity<Map<String, Object>> create(
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("POST create new PublicationAuthorMeta");
+        log.debug("POST create new PublicationAuthorMeta: {}", body);
 
         PublicationAuthorMeta entity = new PublicationAuthorMeta();
         updateFromMap(entity, body);
+
         PublicationAuthorMeta saved = repository.save(entity);
 
+        // OLD-HEMIS POST da faqat minimal response qaytaradi
+        return ResponseEntity.status(HttpStatus.CREATED).body(toMinimalMap(saved));
+    }
+
+    // =====================================================
+    // PUT - Update existing
+    // =====================================================
+    @PutMapping("/{entityId}")
+    @Transactional
+    @Operation(summary = "Nashr muallifini yangilash",
+               description = "Mavjud nashr muallifi meta ma'lumotini yangilash")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yangilandi"),
+        @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "404", description = "Topilmadi")
+    })
+    public ResponseEntity<Map<String, Object>> update(
+            @Parameter(description = "Entity UUID") @PathVariable UUID entityId,
+            @RequestBody Map<String, Object> body,
+            @RequestParam(required = false) Boolean returnNulls) {
+
+        log.debug("PUT PublicationAuthorMeta id: {}, body: {}", entityId, body);
+
+        Optional<PublicationAuthorMeta> existingOpt = repository.findById(entityId);
+        if (existingOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        PublicationAuthorMeta entity = existingOpt.get();
+        updateFromMap(entity, body);
+
+        PublicationAuthorMeta saved = repository.save(entity);
         return ResponseEntity.ok(toMap(saved, returnNulls));
     }
 
+    // =====================================================
+    // DELETE - Soft delete
+    // =====================================================
+    @DeleteMapping("/{entityId}")
+    @Transactional
+    @Operation(summary = "Nashr muallifini o'chirish",
+               description = "Nashr muallifi meta ma'lumotini soft delete qilish (delete_ts o'rnatiladi)")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli o'chirildi"),
+        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+        @ApiResponse(responseCode = "404", description = "Topilmadi")
+    })
+    public ResponseEntity<?> delete(@Parameter(description = "Entity UUID") @PathVariable UUID entityId) {
+        log.debug("DELETE PublicationAuthorMeta id: {}", entityId);
+
+        Optional<PublicationAuthorMeta> entityOpt = repository.findById(entityId);
+        if (entityOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // SOFT DELETE: delete_ts o'rnatish (CUBA pattern)
+        PublicationAuthorMeta entity = entityOpt.get();
+        entity.setDeleteTs(LocalDateTime.now());
+        repository.save(entity);
+
+        return ResponseEntity.ok().build();
+    }
+
+    // =====================================================
+    // toMap - OLD-HEMIS formatiga 100% mos
+    // OLD-HEMIS nested objectlar qaytarmaydi, faqat flat fieldlar
+    // =====================================================
     private Map<String, Object> toMap(PublicationAuthorMeta entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
+
+        // CUBA standard fields - OLD-HEMIS tartibi
         map.put("_entityName", ENTITY_NAME);
+        map.put("_instanceName", "com.company.hemishe.entity.EPublicationAuthorMeta-" + entity.getId() + " [detached]");
+        map.put("id", entity.getId() != null ? entity.getId().toString() : null);
 
-        // Instance name
-        String instanceName = "PublicationAuthorMeta-" + entity.getId();
-        map.put("_instanceName", instanceName);
+        // isCheckedByAuthor
+        putIfNotNull(map, "isCheckedByAuthor", entity.getIsCheckedByAuthor(), returnNulls);
 
-        map.put("id", entity.getId());
-
-        // Add entity-specific fields
-        putIfNotNull(map, "u_id", entity.getUId(), returnNulls);
-        putIfNotNull(map, "_employee", entity.getEmployee(), returnNulls);
-        putIfNotNull(map, "is_main_author", entity.getIsMainAuthor(), returnNulls);
-        putIfNotNull(map, "publication_type_table", entity.getPublicationTypeTable(), returnNulls);
-        putIfNotNull(map, "_publication_methodical", entity.getPublicationMethodical(), returnNulls);
-        putIfNotNull(map, "_publication_scientific", entity.getPublicationScientific(), returnNulls);
-        putIfNotNull(map, "_publication_property", entity.getPublicationProperty(), returnNulls);
-        putIfNotNull(map, "is_checked_by_author", entity.getIsCheckedByAuthor(), returnNulls);
-        putIfNotNull(map, "position", entity.getPosition(), returnNulls);
+        // active
         putIfNotNull(map, "active", entity.getActive(), returnNulls);
-        putIfNotNull(map, "translations", entity.getTranslations(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
 
-        // BaseEntity audit fields
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        // version - OLD-HEMIS da bor
+        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+
+        // publicationTypeTable
+        putIfNotNull(map, "publicationTypeTable", entity.getPublicationTypeTable(), returnNulls);
+
+        // isMainAuthor
+        putIfNotNull(map, "isMainAuthor", entity.getIsMainAuthor(), returnNulls);
+
+        // NOTE: OLD-HEMIS nested objectlar qaytarmaydi (university, employee, publication*)
 
         return map;
     }
 
+    // =====================================================
+    // updateFromMap - Request body dan entity yangilash
+    // =====================================================
+    @SuppressWarnings("unchecked")
     private void updateFromMap(PublicationAuthorMeta entity, Map<String, Object> map) {
-        // TODO: Add specific field mappings based on entity properties
-        // For now, minimal implementation
+        // isCheckedByAuthor - Boolean yoki String bo'lishi mumkin
+        if (map.containsKey("isCheckedByAuthor")) {
+            Object val = map.get("isCheckedByAuthor");
+            if (val instanceof Boolean) {
+                entity.setIsCheckedByAuthor((Boolean) val);
+            } else if (val instanceof String) {
+                entity.setIsCheckedByAuthor(Boolean.parseBoolean((String) val));
+            }
+        }
+
+        // active - Boolean yoki String bo'lishi mumkin
+        if (map.containsKey("active")) {
+            Object val = map.get("active");
+            if (val instanceof Boolean) {
+                entity.setActive((Boolean) val);
+            } else if (val instanceof String) {
+                entity.setActive(Boolean.parseBoolean((String) val));
+            }
+        }
+
+        // isMainAuthor - Number yoki String bo'lishi mumkin
+        if (map.containsKey("isMainAuthor")) {
+            Object val = map.get("isMainAuthor");
+            if (val instanceof Number) {
+                entity.setIsMainAuthor(((Number) val).intValue());
+            } else if (val instanceof String) {
+                entity.setIsMainAuthor(Integer.parseInt((String) val));
+            }
+        }
+
+        // publicationTypeTable
+        if (map.containsKey("publicationTypeTable")) {
+            entity.setPublicationTypeTable((String) map.get("publicationTypeTable"));
+        }
+
+        // position
+        if (map.containsKey("position")) {
+            Object val = map.get("position");
+            if (val instanceof Number) {
+                entity.setPosition(((Number) val).intValue());
+            }
+        }
+
+        // university - CUBA nested object format: {"code": "401"}
+        if (map.containsKey("university")) {
+            Object universityVal = map.get("university");
+            if (universityVal instanceof Map) {
+                Map<String, Object> universityMap = (Map<String, Object>) universityVal;
+                entity.setUniversity((String) universityMap.getOrDefault("code", universityMap.get("id")));
+            }
+        }
+
+        // employee - CUBA nested object format: {"id": "uuid"}
+        if (map.containsKey("employee")) {
+            Object employeeVal = map.get("employee");
+            if (employeeVal instanceof Map) {
+                Map<String, Object> employeeMap = (Map<String, Object>) employeeVal;
+                entity.setEmployee(UUID.fromString((String) employeeMap.get("id")));
+            }
+        }
+
+        // publicationScientific - CUBA nested object format: {"id": "uuid"}
+        if (map.containsKey("publicationScientific")) {
+            Object pubVal = map.get("publicationScientific");
+            if (pubVal instanceof Map) {
+                Map<String, Object> pubMap = (Map<String, Object>) pubVal;
+                entity.setPublicationScientific(UUID.fromString((String) pubMap.get("id")));
+            }
+        }
+
+        // publicationProperty - CUBA nested object format: {"id": "uuid"}
+        if (map.containsKey("publicationProperty")) {
+            Object pubVal = map.get("publicationProperty");
+            if (pubVal instanceof Map) {
+                Map<String, Object> pubMap = (Map<String, Object>) pubVal;
+                entity.setPublicationProperty(UUID.fromString((String) pubMap.get("id")));
+            }
+        }
+
+        // publicationMethodical - CUBA nested object format: {"id": "uuid"}
+        if (map.containsKey("publicationMethodical")) {
+            Object pubVal = map.get("publicationMethodical");
+            if (pubVal instanceof Map) {
+                Map<String, Object> pubMap = (Map<String, Object>) pubVal;
+                entity.setPublicationMethodical(UUID.fromString((String) pubMap.get("id")));
+            }
+        }
     }
 
+    // =====================================================
+    // Helper methods
+    // =====================================================
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
         if (value != null || Boolean.TRUE.equals(returnNulls)) {
             map.put(key, value);
         }
+    }
+
+    /**
+     * OLD-HEMIS POST response format - faqat minimal fieldlar
+     * _entityName, _instanceName, id
+     */
+    private Map<String, Object> toMinimalMap(PublicationAuthorMeta entity) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("_entityName", ENTITY_NAME);
+        map.put("_instanceName", "com.company.hemishe.entity.EPublicationAuthorMeta-" + entity.getId() + " [detached]");
+        map.put("id", entity.getId() != null ? entity.getId().toString() : null);
+        return map;
     }
 }

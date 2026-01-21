@@ -536,6 +536,9 @@ public class PublicationPropertyEntityController {
         return null;
     }
 
+    /**
+     * CUBA format: {"id": "uuid"} - faqat Map qabul qiladi
+     */
     @SuppressWarnings("unchecked")
     private String extractStringId(Object value) {
         if (value == null) return null;
@@ -544,6 +547,6 @@ public class PublicationPropertyEntityController {
             Object id = nested.get("id");
             return id != null ? id.toString() : null;
         }
-        return value.toString();
+        return null;
     }
 }

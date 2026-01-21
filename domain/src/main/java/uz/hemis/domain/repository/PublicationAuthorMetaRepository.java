@@ -8,17 +8,24 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.PublicationAuthorMeta;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 @Transactional(readOnly = true)
 public interface PublicationAuthorMetaRepository extends JpaRepository<PublicationAuthorMeta, UUID> {
 
-    List<PublicationAuthorMeta> findByUniversity(UUID university);
+    List<PublicationAuthorMeta> findByUniversity(String university);
 
-    List<PublicationAuthorMeta> findByUniversityAndEmployee(UUID university, UUID employee);
+    Page<PublicationAuthorMeta> findByUniversity(String university, Pageable pageable);
 
-    Page<PublicationAuthorMeta> findByUniversityAndEmployee(UUID university, UUID employee, Pageable pageable);
+    List<PublicationAuthorMeta> findByUniversityAndEmployee(String university, UUID employee);
 
-    long countByUniversityAndEmployee(UUID university, UUID employee);
+    Page<PublicationAuthorMeta> findByUniversityAndEmployee(String university, UUID employee, Pageable pageable);
+
+    long countByUniversity(String university);
+
+    long countByUniversityAndEmployee(String university, UUID employee);
+
+    Optional<PublicationAuthorMeta> findByIdAndUniversity(UUID id, String university);
 }
