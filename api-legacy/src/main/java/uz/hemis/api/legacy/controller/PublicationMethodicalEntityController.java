@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_EPublicationMethodical           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_EPublicationMethodical           - Create new
  */
-@Tag(name = "25.Uslubiy nashlar")
+@Tag(name = "24.Uslubiy nashlar")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EPublicationMethodical")
 @RequiredArgsConstructor
