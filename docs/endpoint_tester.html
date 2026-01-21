@@ -6566,10 +6566,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
                 ported: true
             },
-            // 23.Ilmiy ishlanmalar - Publication Property Entity API
+            // ============================================
+            // 23.Ilmiy ishlanmalar (Patent, Ixtiro, Foydali model)
             // Entity: hemishe_EPublicationProperty
-            // Intellektual mulk (patentlar, guvohnomalar, ixtirolar)
-            // Ketma-ketlik: 1.POST(yaratish) → 2.GET list → 3.GET by ID → 4.PUT → 5.DELETE
+            // Ketma-ketlik: POST → GET list → GET by ID → PUT → DELETE
+            // ============================================
             {
                 id: 1,
                 category: "23.Ilmiy ishlanmalar",
@@ -6577,35 +6578,14 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty",
                 requiresAuth: true,
-                hasBody: true,
-                bodyFields: ["name", "numbers", "authors", "authorCounts", "active"],
-                inputFields: {
-            // ============================================
-            // 24.Ilmiy ishlanmalar (Patent, Ixtiro, Foydali model)
-            // ============================================
-            {
-                id: 1,
-                category: "24.Ilmiy ishlanmalar",
-                name: "Yangi ilmiy ishlanma yaratish",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_EPublicationProperty",
-                requiresAuth: true,
                 contentType: "json",
                 inputFields: {
-                    _university: {
-                        label: "Universitet kodi",
-                        type: "text",
-                        placeholder: "401 yoki 351",
-                        defaultNew: "401",
-                        defaultOld: "351",
-                        required: true
-                    },
                     name: {
                         label: "Nomi",
                         type: "text",
                         placeholder: "Ilmiy ishlanma nomi",
-                        defaultNew: "Test ilmiy ishlanma",
-                        defaultOld: "Test ilmiy ishlanma",
+                        defaultNew: "Test ilmiy ishlanma (Yangi)",
+                        defaultOld: "Test ilmiy ishlanma (Eski)",
                         required: true
                     },
                     numbers: {
@@ -6614,16 +6594,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         placeholder: "FAP 00123",
                         defaultNew: "FAP 00123",
                         defaultOld: "FAP 00123",
-                        defaultNew: "Test ilmiy ishlanma (Yangi Hemis)",
-                        defaultOld: "Test ilmiy ishlanma (Eski Hemis)",
-                        required: true
-                    },
-                    numbers: {
-                        label: "Raqami (Patent/Guvohnoma)",
-                        type: "text",
-                        placeholder: "IAP 2024/001",
-                        defaultNew: "IAP 2024/NEW001",
-                        defaultOld: "IAP 2024/OLD001",
                         required: false
                     },
                     authors: {
@@ -6640,25 +6610,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         placeholder: "2",
                         defaultNew: "1",
                         defaultOld: "1",
-                        placeholder: "Familiya I.O., Familiya I.O.",
-                        defaultNew: "Test A.B., Namuna C.D.",
-                        defaultOld: "Test A.B., Namuna C.D.",
-                        required: false
-                    },
-                    author_counts: {
-                        label: "Mualliflar soni",
-                        type: "number",
-                        placeholder: "2",
-                        defaultNew: "2",
-                        defaultOld: "2",
-                        required: false
-                    },
-                    property_date: {
-                        label: "Sana",
-                        type: "date",
-                        placeholder: "2024-01-15",
-                        defaultNew: "2024-01-15",
-                        defaultOld: "2024-01-15",
                         required: false
                     },
                     active: {
@@ -6673,23 +6624,15 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         required: false
                     }
                 },
-                storeResultId: "publicationPropertyId",
-                        type: "checkbox",
-                        defaultNew: true,
-                        defaultOld: true,
-                        required: false
-                    }
-                },
                 body: {
-                    _university: "{_university}",
                     name: "{name}",
                     numbers: "{numbers}",
                     authors: "{authors}",
-                    author_counts: "{author_counts}",
-                    property_date: "{property_date}",
+                    authorCounts: "{authorCounts}",
                     active: "{active}"
                 },
-                description: `**Yangi ilmiy ishlanma yaratish** (POST)
+                storeResultId: "publicationPropertyId",
+                description: `**Ilmiy ishlanma yaratish** (POST)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EPublicationProperty
 
@@ -6711,26 +6654,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 id: 2,
                 category: "23.Ilmiy ishlanmalar",
                 name: "Barcha ilmiy ishlanmalar",
-<b>Ma'lumotlar:</b>
-- _university: OTM kodi (401=Yangi, 351=Eski)
-- name: Ilmiy ishlanma nomi
-- numbers: Patent/guvohnoma raqami
-- authors: Mualliflar ro'yxati
-- author_counts: Mualliflar soni
-- property_date: Berilgan sana
-- _patent_type: Patent turi kodi
-- _employee: Xodim UUID
-- _education_year: O'quv yili kodi
-- active: Faol holati
-
-<b>Response:</b> Yaratilgan entity CUBA formatda`,
-                ported: true,
-                storeResultId: "publicationPropertyId"
-            },
-            {
-                id: 2,
-                category: "24.Ilmiy ishlanmalar",
-                name: "Ilmiy ishlanmalarni ro'yxatini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty",
                 requiresAuth: true,
@@ -6738,7 +6661,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     limit: {
                         label: "Limit",
                         type: "number",
-                        placeholder: "50",
+                        placeholder: "10",
                         defaultNew: "10",
                         defaultOld: "10",
                         required: false
@@ -6750,15 +6673,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         defaultNew: "0",
                         defaultOld: "0",
                         required: false
-                    },
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        placeholder: "10",
-                        defaultNew: "10",
-                        defaultOld: "10",
-                        required: false
                     }
+                },
+                params: {
+                    limit: "{limit}",
+                    offset: "{offset}"
                 },
                 storeFirstId: "publicationPropertyId",
                 description: `**Barcha ilmiy ishlanmalar ro'yxati** (GET list)
@@ -6766,31 +6685,12 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty?offset=0&limit=10
 
 <b>Response:</b> Ro'yxat (array of entities)`,
-                    }
-                },
-                params: {
-                    limit: "{limit}",
-                    offset: "{offset}"
-                },
-                description: `**Ilmiy ishlanmalar ro'yxati** (GET)
-
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty
-
-<b>Parametrlar:</b>
-- limit: Natijalar soni (default: 50)
-- offset: Boshlang'ich pozitsiya
-- returnNulls: Null qiymatlarni qaytarish
-- view: Ko'rinish nomi
-
-<b>Response:</b> Ilmiy ishlanmalar massivi`,
                 ported: true
             },
             {
                 id: 3,
                 category: "23.Ilmiy ishlanmalar",
                 name: "Ilmiy ishlanmani olish",
-                category: "24.Ilmiy ishlanmalar",
-                name: "Ilmiy ishlanmani ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}",
                 requiresAuth: true,
@@ -6809,24 +6709,16 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
 
-<b>Response:</b> To'liq entity ma'lumotlari - _entityName, _instanceName, barcha fieldlar`,
-                description: `**Ilmiy ishlanmani ID bo'yicha olish** (GET)
-
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
-
-<b>Response:</b> Ilmiy ishlanma ma'lumotlari CUBA formatda`,
+<b>Response:</b> To'liq entity ma'lumotlari`,
                 ported: true
             },
             {
                 id: 4,
                 category: "23.Ilmiy ishlanmalar",
-                category: "24.Ilmiy ishlanmalar",
                 name: "Ilmiy ishlanmani yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}",
                 requiresAuth: true,
-                hasBody: true,
-                bodyFields: ["name", "active"],
                 contentType: "json",
                 inputFields: {
                     entityId: {
@@ -6839,16 +6731,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         useStoredId: "publicationPropertyId"
                     },
                     name: {
-                        label: "Nomi (yangilash)",
+                        label: "Yangi nom",
                         type: "text",
                         placeholder: "Yangilangan nom",
                         defaultNew: "Yangilangan test ishlanma",
                         defaultOld: "Yangilangan test ishlanma",
-                        label: "Yangi nom",
-                        type: "text",
-                        placeholder: "Ilmiy ishlanma nomi",
-                        defaultNew: "Yangilangan ilmiy ishlanma",
-                        defaultOld: "Yangilangan ilmiy ishlanma",
                         required: false
                     },
                     active: {
@@ -6860,12 +6747,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         ],
                         defaultNew: "true",
                         defaultOld: "true",
-                        required: false
-                    }
-                },
-                        type: "checkbox",
-                        defaultNew: true,
-                        defaultOld: true,
                         required: false
                     }
                 },
@@ -6886,17 +6767,12 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 \`\`\`
 
 <b>Response:</b> Minimal response - _entityName, _instanceName, id`,
-<b>Body:</b> O'zgartiriladigan maydonlar JSON formatda
-
-<b>Response:</b> Yangilangan entity CUBA formatda`,
                 ported: true
             },
             {
                 id: 5,
                 category: "23.Ilmiy ishlanmalar",
                 name: "Ilmiy ishlanma o'chirish",
-                category: "24.Ilmiy ishlanmalar",
-                name: "Ilmiy ishlanmani o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}",
                 requiresAuth: true,
@@ -6912,7 +6788,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     }
                 },
                 description: `**Ilmiy ishlanma o'chirish** (DELETE)
-                description: `**Ilmiy ishlanmani o'chirish** (DELETE)
 
 <b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
 

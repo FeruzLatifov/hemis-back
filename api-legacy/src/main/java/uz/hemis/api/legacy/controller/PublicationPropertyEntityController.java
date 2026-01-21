@@ -3,6 +3,7 @@ package uz.hemis.api.legacy.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -43,7 +44,6 @@ import java.util.stream.Collectors;
  * @since 2.0.0
  */
 @Tag(name = "23.Ilmiy ishlanmalar", description = "Ilmiy ishlanmalar (intellektual mulk) entity API - CUBA Platform REST API compatible")
-@Tag(name = "24.Ilmiy ishlanmalar")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EPublicationProperty")
 @RequiredArgsConstructor
@@ -53,7 +53,6 @@ public class PublicationPropertyEntityController {
 
     private final PublicationPropertyRepository repository;
     private static final String ENTITY_NAME = "hemishe_EPublicationProperty";
-    private static final String CUBA_ENTITY_CLASS = "com.company.hemishe.entity.EPublicationProperty";
 
     // =====================================================
     // GET /{entityId} - Bitta ilmiy ishlanmani olish
@@ -63,13 +62,7 @@ public class PublicationPropertyEntityController {
     @Transactional(readOnly = true)
     @Operation(
         summary = "Ilmiy ishlanmani olish",
-        description = """
-            ID bo'yicha ilmiy ishlanma (intellektual mulk) ma'lumotlarini olish.
-
-            **OLD-HEMIS Compatible** - 100% backward compatibility
-
-            **Endpoint:** GET /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
-            """
+        description = "ID bo'yicha ilmiy ishlanma (intellektual mulk) ma'lumotlarini olish"
     )
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli"),
@@ -125,7 +118,6 @@ public class PublicationPropertyEntityController {
 
         PublicationProperty saved = repository.save(entity);
 
-        // OLD-HEMIS: minimal response
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("_entityName", ENTITY_NAME);
         response.put("_instanceName", buildInstanceName(saved));
@@ -157,16 +149,11 @@ public class PublicationPropertyEntityController {
         }
 
         // SOFT DELETE: delete_ts o'rnatish (CUBA pattern)
-        // Hard delete QILINMAYDI - foreign key constraint xatosi bo'lmasligi uchun
         PublicationProperty entity = entityOpt.get();
         entity.setDeleteTs(LocalDateTime.now());
         repository.save(entity);
 
         log.info("DELETE /entities/hemishe_EPublicationProperty/{} - soft delete muvaffaqiyatli", entityId);
-
-        // OLD-HEMIS: 200 OK (not 204)
-        repository.delete(entity.get());
-        // Return 200 OK for backward compatibility with old HEMIS (not 204 No Content)
         return ResponseEntity.ok().build();
     }
 
@@ -228,11 +215,10 @@ public class PublicationPropertyEntityController {
 
         log.debug("GET all PublicationProperty - offset: {}, limit: {}", offset, limit);
 
-        // Default limit - xavfsizlik uchun (browser qotib qolmasligi uchun)
+        // Default limit
         if (limit == null || limit <= 0) {
             limit = 100;
         }
-        // Maksimal limit - juda katta response oldini olish
         if (limit > 1000) {
             limit = 1000;
         }
@@ -263,70 +249,27 @@ public class PublicationPropertyEntityController {
     @Transactional
     @Operation(
         summary = "Ilmiy ishlanma yaratish",
-        description = """
-            Yangi ilmiy ishlanma (intellektual mulk) yaratish (CUBA Entity API).
-
-            **OLD-HEMIS Compatible** - 100% backward compatibility
-
-            **Endpoint:** POST /app/rest/v2/entities/hemishe_EPublicationProperty
-
-            **Misol request body:**
-            ```json
-            {
-                "name": "Yangi ixtiro nomi",
-                "numbers": "FAP 00123",
-                "authors": "Aliyev A., Karimov B.",
-                "authorCounts": 2,
-                "propertyDate": "2024-01-15",
-                "active": true
-            }
-            ```
-            """
+        description = "Yangi ilmiy ishlanma (patent, ixtiro, foydali model) yaratish"
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi",
-            content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"_entityName\":\"hemishe_EPublicationProperty\",\"_instanceName\":\"com.company.hemishe.entity.EPublicationProperty-uuid [detached]\",\"id\":\"uuid\"}"))),
+        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi"),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov")
-    @Operation(
-        summary = "Yangi ilmiy ishlanma yaratish",
-        description = "Yangi ilmiy ishlanma (patent, ixtiro, foydali model) yaratish. " +
-                      "Ma'lumotlar JSON formatida body orqali yuboriladi. " +
-                      "Yaratilgan entity CUBA formatida qaytariladi."
-    )
-    @io.swagger.v3.oas.annotations.responses.ApiResponses({
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "200",
-            description = "Ilmiy ishlanma muvaffaqiyatli yaratildi"
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "400",
-            description = "Noto'g'ri so'rov ma'lumotlari"
-        ),
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "401",
-            description = "Autentifikatsiya talab qilinadi"
-        )
     })
     public ResponseEntity<Map<String, Object>> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Ilmiy ishlanma ma'lumotlari",
                 required = true,
-                content = @io.swagger.v3.oas.annotations.media.Content(
+                content = @Content(
                     mediaType = "application/json",
-                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
+                    examples = @ExampleObject(
                         name = "Yangi patent",
                         value = """
                             {
                               "name": "Yangi innovatsion texnologiya",
                               "numbers": "IAP 2024/001",
                               "authors": "Karimov A.B., Sodiqov D.E.",
-                              "author_counts": 2,
-                              "property_date": "2024-01-15",
-                              "_patent_type": "uuid-patent-type-id",
-                              "_university": "uuid-university-id",
-                              "_employee": "uuid-employee-id",
-                              "_education_year": "uuid-education-year-id",
+                              "authorCounts": 2,
+                              "propertyDate": "2024-01-15",
                               "active": true
                             }
                             """
@@ -341,7 +284,6 @@ public class PublicationPropertyEntityController {
 
         PublicationProperty entity = new PublicationProperty();
 
-        // Agar id berilgan bo'lsa, ishlatish (OLD-HEMIS pattern)
         if (body.containsKey("id")) {
             try {
                 entity.setId(UUID.fromString(body.get("id").toString()));
@@ -351,15 +293,12 @@ public class PublicationPropertyEntityController {
         }
 
         updateFromMap(entity, body);
-
-        // Version va timestamps
         entity.setVersion(1);
         entity.setCreateTs(LocalDateTime.now());
 
         PublicationProperty saved = repository.save(entity);
         log.info("PublicationProperty created with id: {}", saved.getId());
 
-        // OLD-HEMIS: minimal response (faqat _entityName, _instanceName, id)
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("_entityName", ENTITY_NAME);
         response.put("_instanceName", buildInstanceName(saved));
@@ -372,251 +311,173 @@ public class PublicationPropertyEntityController {
     // Helper Methods
     // =====================================================
 
-    /**
-     * OLD-HEMIS format: _instanceName = name qiymati
-     */
     private String buildInstanceName(PublicationProperty entity) {
-        // OLD-HEMIS: _instanceName = entity nomi (name field)
         return entity.getName() != null ? entity.getName() : "";
     }
 
-    /**
-     * Entity -> OLD-HEMIS Map formatiga o'girish
-     * OLD-HEMIS default view - faqat asosiy fieldlar, foreign keys va audit fields yo'q
-     */
     private Map<String, Object> toMap(PublicationProperty entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("_entityName", ENTITY_NAME);
 
-        // Instance name - use entity name like CUBA does
-        String instanceName = entity.getName() != null ? entity.getName() : "PublicationProperty-" + entity.getId();
-        map.put("_instanceName", instanceName);
-
-        // OLD-HEMIS exact field order (default view)
         map.put("_entityName", ENTITY_NAME);
         map.put("_instanceName", buildInstanceName(entity));
         map.put("id", entity.getId() != null ? entity.getId().toString() : null);
 
-        // Fields in OLD-HEMIS exact order
-        // Version field (CUBA compatibility)
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-
-        // Add entity-specific fields
-        putIfNotNull(map, "u_id", entity.getUId(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "name", entity.getName(), returnNulls);
         putIfNotNull(map, "numbers", entity.getNumbers(), returnNulls);
         putIfNotNull(map, "propertyDate", entity.getPropertyDate(), returnNulls);
         putIfNotNull(map, "authorCounts", entity.getAuthorCounts(), returnNulls);
         putIfNotNull(map, "parameter", entity.getParameter(), returnNulls);
         map.put("active", entity.getActive());
-        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         putIfNotNull(map, "isChecked", entity.getIsChecked(), returnNulls);
         putIfNotNull(map, "filename", entity.getFilename(), returnNulls);
         putIfNotNull(map, "name", entity.getName(), returnNulls);
         putIfNotNull(map, "authors", entity.getAuthors(), returnNulls);
 
-        // OLD-HEMIS default view da foreign keys va audit fields QAYTARILMAYDI!
-        // Faqat view=_local yoki view=full bo'lganda qaytariladi
-
         return map;
     }
 
-    /**
-     * OLD-HEMIS Map -> Entity ga o'girish
-     */
     private void updateFromMap(PublicationProperty entity, Map<String, Object> map) {
         // uId
         if (map.containsKey("uId")) {
-            Object val = map.get("uId");
-            if (val != null) {
-                entity.setUId(Integer.parseInt(val.toString()));
-            }
-        }
-
-        // name
-        if (map.containsKey("name")) {
-            Object val = map.get("name");
-            entity.setName(val != null ? val.toString() : null);
-        }
-
-        // numbers
-        if (map.containsKey("numbers")) {
-            Object val = map.get("numbers");
-            entity.setNumbers(val != null ? val.toString() : null);
-        }
-
-        // authors
-        if (map.containsKey("authors")) {
-            Object val = map.get("authors");
-            entity.setAuthors(val != null ? val.toString() : null);
-        }
-
-        // authorCounts
-        if (map.containsKey("authorCounts")) {
-            Object val = map.get("authorCounts");
-            if (val != null) {
-                entity.setAuthorCounts(Integer.parseInt(val.toString()));
-            }
-        }
-
-        // parameter
-        if (map.containsKey("parameter")) {
-            Object val = map.get("parameter");
-            entity.setParameter(val != null ? val.toString() : null);
-        }
-
-        // propertyDate
-        if (map.containsKey("propertyDate")) {
-            Object val = map.get("propertyDate");
-            if (val != null) {
-                try {
-                    entity.setPropertyDate(LocalDate.parse(val.toString()));
-                } catch (Exception e) {
-                    log.warn("Invalid date format for propertyDate: {}", val);
-                }
-            }
-        }
-
-        // filename
-        if (map.containsKey("filename")) {
-            Object val = map.get("filename");
-            entity.setFilename(val != null ? val.toString() : null);
-        }
-
-        // position
-        if (map.containsKey("position")) {
-            Object val = map.get("position");
-            if (val != null) {
-                entity.setPosition(Integer.parseInt(val.toString()));
-            }
-        }
-
-        // active
-        if (map.containsKey("active")) {
-            Object val = map.get("active");
-            if (val instanceof Boolean) {
-                entity.setActive((Boolean) val);
-            } else if (val != null) {
-                entity.setActive(Boolean.valueOf(val.toString()));
-            }
-        }
-
-        // translations
-        if (map.containsKey("translations")) {
-            Object val = map.get("translations");
-            entity.setTranslations(val != null ? val.toString() : null);
-        }
-
-        // isChecked
-        if (map.containsKey("isChecked")) {
-            Object val = map.get("isChecked");
-            if (val instanceof Boolean) {
-                entity.setIsChecked((Boolean) val);
-            } else if (val != null) {
-                entity.setIsChecked(Boolean.valueOf(val.toString()));
-            }
-        }
-
-        // isCheckedDate
-        if (map.containsKey("isCheckedDate")) {
-            Object val = map.get("isCheckedDate");
-            if (val != null) {
-                try {
-                    entity.setIsCheckedDate(LocalDateTime.parse(val.toString()));
-                } catch (Exception e) {
-                    log.warn("Invalid date format for isCheckedDate: {}", val);
-                }
-            }
-        }
-
-        // Foreign key references (String - bazaga CAST(? AS uuid) bilan yoziladi)
-        if (map.containsKey("university")) {
-            entity.setUniversity(extractStringId(map.get("university")));
-        }
-
-        if (map.containsKey("patentType")) {
-            entity.setPatentType(extractStringId(map.get("patentType")));
-        }
-
-        if (map.containsKey("publicationDatabase")) {
-            entity.setPublicationDatabase(extractStringId(map.get("publicationDatabase")));
-        }
-
-        if (map.containsKey("locality")) {
-            entity.setLocality(extractStringId(map.get("locality")));
-        }
-
-        if (map.containsKey("country")) {
-            entity.setCountry(extractStringId(map.get("country")));
-        }
-
-        if (map.containsKey("employee")) {
-            entity.setEmployee(extractStringId(map.get("employee")));
-        }
-
-        if (map.containsKey("educationYear")) {
-            entity.setEducationYear(extractStringId(map.get("educationYear")));
+            entity.setUId(extractInteger(map.get("uId")));
         }
         if (map.containsKey("u_id")) {
             entity.setUId(extractInteger(map.get("u_id")));
         }
-        if (map.containsKey("_university")) {
-            entity.setUniversity(extractString(map.get("_university")));
-        }
+
+        // name
         if (map.containsKey("name")) {
             entity.setName(extractString(map.get("name")));
         }
+
+        // numbers
         if (map.containsKey("numbers")) {
             entity.setNumbers(extractString(map.get("numbers")));
         }
+
+        // authors
         if (map.containsKey("authors")) {
             entity.setAuthors(extractString(map.get("authors")));
+        }
+
+        // authorCounts
+        if (map.containsKey("authorCounts")) {
+            entity.setAuthorCounts(extractInteger(map.get("authorCounts")));
         }
         if (map.containsKey("author_counts")) {
             entity.setAuthorCounts(extractInteger(map.get("author_counts")));
         }
+
+        // parameter
         if (map.containsKey("parameter")) {
             entity.setParameter(extractString(map.get("parameter")));
+        }
+
+        // propertyDate
+        if (map.containsKey("propertyDate")) {
+            entity.setPropertyDate(extractLocalDate(map.get("propertyDate")));
         }
         if (map.containsKey("property_date")) {
             entity.setPropertyDate(extractLocalDate(map.get("property_date")));
         }
-        if (map.containsKey("_patent_type")) {
-            entity.setPatentType(extractString(map.get("_patent_type")));
-        }
-        if (map.containsKey("_publication_database")) {
-            entity.setPublicationDatabase(extractString(map.get("_publication_database")));
-        }
-        if (map.containsKey("_locality")) {
-            entity.setLocality(extractString(map.get("_locality")));
-        }
-        if (map.containsKey("_country")) {
-            entity.setCountry(extractString(map.get("_country")));
-        }
-        if (map.containsKey("_employee")) {
-            entity.setEmployee(extractUuid(map.get("_employee")));
-        }
+
+        // filename
         if (map.containsKey("filename")) {
             entity.setFilename(extractString(map.get("filename")));
         }
+
+        // position
         if (map.containsKey("position")) {
             entity.setPosition(extractInteger(map.get("position")));
         }
+
+        // active
         if (map.containsKey("active")) {
             entity.setActive(extractBoolean(map.get("active")));
         }
+
+        // translations
         if (map.containsKey("translations")) {
             entity.setTranslations(extractString(map.get("translations")));
+        }
+
+        // isChecked
+        if (map.containsKey("isChecked")) {
+            entity.setIsChecked(extractBoolean(map.get("isChecked")));
         }
         if (map.containsKey("is_checked")) {
             entity.setIsChecked(extractBoolean(map.get("is_checked")));
         }
+
+        // isCheckedDate
+        if (map.containsKey("isCheckedDate")) {
+            entity.setIsCheckedDate(extractLocalDateTime(map.get("isCheckedDate")));
+        }
         if (map.containsKey("is_checked_date")) {
             entity.setIsCheckedDate(extractLocalDateTime(map.get("is_checked_date")));
         }
+
+        // Foreign keys (camelCase va snake_case)
+        if (map.containsKey("university")) {
+            entity.setUniversity(extractString(map.get("university")));
+        }
+        if (map.containsKey("_university")) {
+            entity.setUniversity(extractString(map.get("_university")));
+        }
+
+        if (map.containsKey("patentType")) {
+            entity.setPatentType(extractString(map.get("patentType")));
+        }
+        if (map.containsKey("_patent_type")) {
+            entity.setPatentType(extractString(map.get("_patent_type")));
+        }
+
+        if (map.containsKey("publicationDatabase")) {
+            entity.setPublicationDatabase(extractString(map.get("publicationDatabase")));
+        }
+        if (map.containsKey("_publication_database")) {
+            entity.setPublicationDatabase(extractString(map.get("_publication_database")));
+        }
+
+        if (map.containsKey("locality")) {
+            entity.setLocality(extractString(map.get("locality")));
+        }
+        if (map.containsKey("_locality")) {
+            entity.setLocality(extractString(map.get("_locality")));
+        }
+
+        if (map.containsKey("country")) {
+            entity.setCountry(extractString(map.get("country")));
+        }
+        if (map.containsKey("_country")) {
+            entity.setCountry(extractString(map.get("_country")));
+        }
+
+        // employee - UUID (faqat shu field UUID)
+        if (map.containsKey("employee")) {
+            entity.setEmployee(extractStringId(map.get("employee")));
+        }
+        if (map.containsKey("_employee")) {
+            entity.setEmployee(extractStringId(map.get("_employee")));
+        }
+
+        if (map.containsKey("educationYear")) {
+            entity.setEducationYear(extractString(map.get("educationYear")));
+        }
         if (map.containsKey("_education_year")) {
             entity.setEducationYear(extractString(map.get("_education_year")));
+        }
+    }
+
+    // =====================================================
+    // Utility Methods
+    // =====================================================
+
+    private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
+        if (value != null) {
+            map.put(key, value);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            map.put(key, null);
         }
     }
 
@@ -641,35 +502,14 @@ public class PublicationPropertyEntityController {
         return Boolean.parseBoolean(value.toString());
     }
 
-    private UUID extractUuid(Object value) {
+    private LocalDate extractLocalDate(Object value) {
         if (value == null) return null;
-        if (value instanceof UUID) return (UUID) value;
+        if (value instanceof LocalDate) return (LocalDate) value;
         if (value instanceof String) {
             String str = (String) value;
             if (str.isEmpty()) return null;
             try {
-                return UUID.fromString(str);
-            } catch (IllegalArgumentException e) {
-                return null;
-            }
-        }
-        if (value instanceof Map) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> nested = (Map<String, Object>) value;
-            Object id = nested.get("id");
-            if (id != null) return extractUuid(id);
-        }
-        return null;
-    }
-
-    private java.time.LocalDate extractLocalDate(Object value) {
-        if (value == null) return null;
-        if (value instanceof java.time.LocalDate) return (java.time.LocalDate) value;
-        if (value instanceof String) {
-            String str = (String) value;
-            if (str.isEmpty()) return null;
-            try {
-                return java.time.LocalDate.parse(str);
+                return LocalDate.parse(str);
             } catch (Exception e) {
                 return null;
             }
@@ -677,17 +517,17 @@ public class PublicationPropertyEntityController {
         return null;
     }
 
-    private java.time.LocalDateTime extractLocalDateTime(Object value) {
+    private LocalDateTime extractLocalDateTime(Object value) {
         if (value == null) return null;
-        if (value instanceof java.time.LocalDateTime) return (java.time.LocalDateTime) value;
+        if (value instanceof LocalDateTime) return (LocalDateTime) value;
         if (value instanceof String) {
             String str = (String) value;
             if (str.isEmpty()) return null;
             try {
-                return java.time.LocalDateTime.parse(str);
+                return LocalDateTime.parse(str);
             } catch (Exception e) {
                 try {
-                    return java.time.LocalDate.parse(str).atStartOfDay();
+                    return LocalDate.parse(str).atStartOfDay();
                 } catch (Exception e2) {
                     return null;
                 }
@@ -696,36 +536,6 @@ public class PublicationPropertyEntityController {
         return null;
     }
 
-    // =====================================================
-    // Utility Methods
-    // =====================================================
-
-    private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
-        if (value != null) {
-            map.put(key, value);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put(key, null);
-        }
-    }
-
-    /**
-     * Foreign key uchun OLD-HEMIS formatida qaytarish (String)
-     * OLD-HEMIS nested object qaytaradi: {"id": "uuid"}
-     */
-    private void putForeignKey(Map<String, Object> map, String key, String value, Boolean returnNulls) {
-        if (value != null) {
-            Map<String, Object> ref = new LinkedHashMap<>();
-            ref.put("id", value);
-            map.put(key, ref);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put(key, null);
-        }
-    }
-
-    /**
-     * Foreign key dan ID ni String sifatida olish
-     * Input: {"id": "uuid"} yoki "uuid" string
-     */
     @SuppressWarnings("unchecked")
     private String extractStringId(Object value) {
         if (value == null) return null;
