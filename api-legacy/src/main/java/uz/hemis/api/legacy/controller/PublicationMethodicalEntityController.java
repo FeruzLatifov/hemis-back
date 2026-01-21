@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_EPublicationMethodical           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_EPublicationMethodical           - Create new
  */
-@Tag(name = "Publications - Methodical")
+@Tag(name = "25.Uslubiy nashlar")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EPublicationMethodical")
 @RequiredArgsConstructor
@@ -100,7 +100,7 @@ public class PublicationMethodicalEntityController {
         }
 
         repository.delete(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -183,31 +183,33 @@ public class PublicationMethodicalEntityController {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ENTITY_NAME);
 
-        // Instance name
-        String instanceName = "PublicationMethodical-" + entity.getId();
+        // Instance name - use entity name if available
+        String instanceName = entity.getName() != null ? entity.getName() : "PublicationMethodical-" + entity.getId();
         map.put("_instanceName", instanceName);
 
         map.put("id", entity.getId());
+        map.put("version", entity.getVersion());
 
-        // Add entity-specific fields
-        putIfNotNull(map, "u_id", entity.getUId(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "authors", entity.getAuthors(), returnNulls);
-        putIfNotNull(map, "author_counts", entity.getAuthorCounts(), returnNulls);
-        putIfNotNull(map, "publisher", entity.getPublisher(), returnNulls);
-        putIfNotNull(map, "issue_year", entity.getIssueYear(), returnNulls);
-        putIfNotNull(map, "source_name", entity.getSourceName(), returnNulls);
+        // Add entity-specific fields (camelCase like Old Hemis CUBA format)
+        putIfNotNull(map, "authorCounts", entity.getAuthorCounts(), returnNulls);
         putIfNotNull(map, "parameter", entity.getParameter(), returnNulls);
+        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "isChecked", entity.getIsChecked(), returnNulls);
+        putIfNotNull(map, "issueYear", entity.getIssueYear(), returnNulls);
+        putIfNotNull(map, "filename", entity.getFilename(), returnNulls);
+        putIfNotNull(map, "name", entity.getName(), returnNulls);
+        putIfNotNull(map, "publisher", entity.getPublisher(), returnNulls);
+        putIfNotNull(map, "authors", entity.getAuthors(), returnNulls);
+        // Additional fields (not in Old Hemis default view but needed for full data)
+        putIfNotNull(map, "uId", entity.getUId(), returnNulls);
+        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
+        putIfNotNull(map, "sourceName", entity.getSourceName(), returnNulls);
         putIfNotNull(map, "_methodical_publication_type", entity.getMethodicalPublicationType(), returnNulls);
         putIfNotNull(map, "_publication_database", entity.getPublicationDatabase(), returnNulls);
         putIfNotNull(map, "_employee", entity.getEmployee(), returnNulls);
-        putIfNotNull(map, "filename", entity.getFilename(), returnNulls);
         putIfNotNull(map, "position", entity.getPosition(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
-        putIfNotNull(map, "translations", entity.getTranslations(), returnNulls);
-        putIfNotNull(map, "is_checked", entity.getIsChecked(), returnNulls);
-        putIfNotNull(map, "is_checked_date", entity.getIsCheckedDate(), returnNulls);
+        putIfNotNull(map, "_translations", entity.getTranslations(), returnNulls);
+        putIfNotNull(map, "isCheckedDate", entity.getIsCheckedDate(), returnNulls);
         putIfNotNull(map, "_education_year", entity.getEducationYear(), returnNulls);
 
         // BaseEntity audit fields
@@ -222,8 +224,126 @@ public class PublicationMethodicalEntityController {
     }
 
     private void updateFromMap(PublicationMethodical entity, Map<String, Object> map) {
-        // TODO: Add specific field mappings based on entity properties
-        // For now, minimal implementation
+        // uId - support both formats
+        if (map.containsKey("u_id") || map.containsKey("uId")) {
+            entity.setUId(extractInteger(map.getOrDefault("uId", map.get("u_id"))));
+        }
+        if (map.containsKey("_university")) {
+            entity.setUniversity(extractString(map.get("_university")));
+        }
+        if (map.containsKey("name")) {
+            entity.setName(extractString(map.get("name")));
+        }
+        if (map.containsKey("authors")) {
+            entity.setAuthors(extractString(map.get("authors")));
+        }
+        // authorCounts - support both camelCase and snake_case
+        if (map.containsKey("author_counts") || map.containsKey("authorCounts")) {
+            entity.setAuthorCounts(extractInteger(map.getOrDefault("authorCounts", map.get("author_counts"))));
+        }
+        if (map.containsKey("publisher")) {
+            entity.setPublisher(extractString(map.get("publisher")));
+        }
+        // issueYear - support both formats
+        if (map.containsKey("issue_year") || map.containsKey("issueYear")) {
+            entity.setIssueYear(extractInteger(map.getOrDefault("issueYear", map.get("issue_year"))));
+        }
+        // sourceName - support both formats
+        if (map.containsKey("source_name") || map.containsKey("sourceName")) {
+            entity.setSourceName(extractString(map.getOrDefault("sourceName", map.get("source_name"))));
+        }
+        if (map.containsKey("parameter")) {
+            entity.setParameter(extractString(map.get("parameter")));
+        }
+        if (map.containsKey("_methodical_publication_type")) {
+            entity.setMethodicalPublicationType(extractString(map.get("_methodical_publication_type")));
+        }
+        if (map.containsKey("_publication_database")) {
+            entity.setPublicationDatabase(extractString(map.get("_publication_database")));
+        }
+        if (map.containsKey("_employee")) {
+            entity.setEmployee(extractUuid(map.get("_employee")));
+        }
+        if (map.containsKey("filename")) {
+            entity.setFilename(extractString(map.get("filename")));
+        }
+        if (map.containsKey("position")) {
+            entity.setPosition(extractInteger(map.get("position")));
+        }
+        if (map.containsKey("active")) {
+            entity.setActive(extractBoolean(map.get("active")));
+        }
+        if (map.containsKey("_translations")) {
+            entity.setTranslations(extractString(map.get("_translations")));
+        }
+        // isChecked - support both formats
+        if (map.containsKey("is_checked") || map.containsKey("isChecked")) {
+            entity.setIsChecked(extractBoolean(map.getOrDefault("isChecked", map.get("is_checked"))));
+        }
+        // isCheckedDate - support both formats
+        if (map.containsKey("is_checked_date") || map.containsKey("isCheckedDate")) {
+            entity.setIsCheckedDate(extractLocalDateTime(map.getOrDefault("isCheckedDate", map.get("is_checked_date"))));
+        }
+        if (map.containsKey("_education_year")) {
+            entity.setEducationYear(extractString(map.get("_education_year")));
+        }
+    }
+
+    private String extractString(Object value) {
+        if (value == null) return null;
+        return value.toString();
+    }
+
+    private Integer extractInteger(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number) return ((Number) value).intValue();
+        try {
+            return Integer.parseInt(value.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Boolean extractBoolean(Object value) {
+        if (value == null) return null;
+        if (value instanceof Boolean) return (Boolean) value;
+        return Boolean.parseBoolean(value.toString());
+    }
+
+    private UUID extractUuid(Object value) {
+        if (value == null) return null;
+        if (value instanceof UUID) return (UUID) value;
+        if (value instanceof String) {
+            String str = (String) value;
+            if (str.isEmpty()) return null;
+            try {
+                return UUID.fromString(str);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }
+        if (value instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> nested = (Map<String, Object>) value;
+            Object id = nested.get("id");
+            if (id != null) return extractUuid(id);
+        }
+        return null;
+    }
+
+    private java.time.LocalDateTime extractLocalDateTime(Object value) {
+        if (value == null) return null;
+        if (value instanceof java.time.LocalDateTime) return (java.time.LocalDateTime) value;
+        if (value instanceof String) {
+            String str = (String) value;
+            if (str.isEmpty()) return null;
+            try {
+                return java.time.LocalDateTime.parse(str);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
