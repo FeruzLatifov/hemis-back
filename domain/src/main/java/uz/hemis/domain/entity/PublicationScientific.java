@@ -3,6 +3,7 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
@@ -19,51 +20,52 @@ public class PublicationScientific extends BaseEntity {
     private Integer uId;
 
     @Column(name = "_university")
-    private UUID university;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String university;
 
-    @Lob
-    @Column(name = "name")
+    @Column(name = "name", columnDefinition = "TEXT")
     private String name;
 
-    @Lob
-    @Column(name = "keywords")
+    @Column(name = "keywords", columnDefinition = "TEXT")
     private String keywords;
 
-    @Lob
-    @Column(name = "authors")
+    @Column(name = "authors", columnDefinition = "TEXT")
     private String authors;
 
     @Column(name = "author_counts")
     private Integer authorCounts;
 
-    @Lob
-    @Column(name = "source_name")
+    @Column(name = "source_name", columnDefinition = "TEXT")
     private String sourceName;
 
     @Column(name = "issue_year")
     private Integer issueYear;
 
-    @Lob
-    @Column(name = "parameter")
+    @Column(name = "parameter", columnDefinition = "TEXT")
     private String parameter;
 
     @Column(name = "doi")
     private String doi;
 
     @Column(name = "_scientific_publication_type")
-    private UUID scientificPublicationType;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String scientificPublicationType;
 
     @Column(name = "_publication_database")
-    private UUID publicationDatabase;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String publicationDatabase;
 
     @Column(name = "_locality")
-    private UUID locality;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String locality;
 
     @Column(name = "_country")
-    private UUID country;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String country;
 
     @Column(name = "_employee")
-    private UUID employee;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String employee;
 
     @Column(name = "filename")
     private String filename;
@@ -74,8 +76,7 @@ public class PublicationScientific extends BaseEntity {
     @Column(name = "active")
     private Boolean active;
 
-    @Lob
-    @Column(name = "translations")
+    @Column(name = "_translations", columnDefinition = "TEXT")
     private String translations;
 
     @Column(name = "is_checked")
@@ -85,5 +86,6 @@ public class PublicationScientific extends BaseEntity {
     private LocalDateTime isCheckedDate;
 
     @Column(name = "_education_year")
-    private UUID educationYear;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String educationYear;
 }
