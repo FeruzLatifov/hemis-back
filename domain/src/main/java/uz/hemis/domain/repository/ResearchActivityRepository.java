@@ -10,15 +10,21 @@ import uz.hemis.domain.entity.ResearchActivity;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Research Activity repository.
+ *
+ * Note: university, educationYear, scholarDatabase are String (VARCHAR) codes,
+ * not UUIDs. They are foreign keys to their respective tables' "code" columns.
+ */
 @Repository
 @Transactional(readOnly = true)
 public interface ResearchActivityRepository extends JpaRepository<ResearchActivity, UUID> {
 
-    List<ResearchActivity> findByUniversity(UUID university);
+    List<ResearchActivity> findByUniversity(String university);
 
-    List<ResearchActivity> findByUniversityAndEducationYear(UUID university, UUID educationYear);
+    List<ResearchActivity> findByUniversityAndEducationYear(String university, String educationYear);
 
-    Page<ResearchActivity> findByUniversityAndEducationYear(UUID university, UUID educationYear, Pageable pageable);
+    Page<ResearchActivity> findByUniversityAndEducationYear(String university, String educationYear, Pageable pageable);
 
-    long countByUniversityAndEducationYear(UUID university, UUID educationYear);
+    long countByUniversityAndEducationYear(String university, String educationYear);
 }
