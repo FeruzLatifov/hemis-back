@@ -10,15 +10,21 @@ import uz.hemis.domain.entity.Project;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Project Repository
+ *
+ * Note: university and department fields are String (classifier codes),
+ * not UUID. This matches the legacy database schema.
+ */
 @Repository
 @Transactional(readOnly = true)
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
-    List<Project> findByUniversity(UUID university);
+    List<Project> findByUniversity(String university);
 
-    List<Project> findByUniversityAndDepartment(UUID university, UUID department);
+    List<Project> findByUniversityAndDepartment(String university, String department);
 
-    Page<Project> findByUniversityAndDepartment(UUID university, UUID department, Pageable pageable);
+    Page<Project> findByUniversityAndDepartment(String university, String department, Pageable pageable);
 
-    long countByUniversityAndDepartment(UUID university, UUID department);
+    long countByUniversityAndDepartment(String university, String department);
 }

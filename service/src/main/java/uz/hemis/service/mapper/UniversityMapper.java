@@ -74,6 +74,8 @@ public interface UniversityMapper {
     @Mapping(target = "deleteTs", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "oneId", ignore = true)
+    @Mapping(target = "gradingSystem", ignore = true)
     University toEntity(UniversityDto dto);
 
     /**
@@ -106,6 +108,8 @@ public interface UniversityMapper {
     @Mapping(target = "deleteTs", ignore = true)
     @Mapping(target = "deletedBy", ignore = true)
     @Mapping(target = "version", ignore = true)
+    @Mapping(target = "oneId", ignore = true)
+    @Mapping(target = "gradingSystem", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(UniversityDto dto, @MappingTarget University university);
 }

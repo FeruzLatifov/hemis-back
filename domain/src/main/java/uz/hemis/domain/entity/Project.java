@@ -6,8 +6,23 @@ import org.hibernate.annotations.SQLRestriction;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import java.util.UUID;
 
+/**
+ * Project Entity
+ *
+ * Table: hemishe_e_project
+ * Purpose: Loyihalar (Projects) management
+ *
+ * CRITICAL - Legacy Table Mapping:
+ * - Table: hemishe_e_project (ministry.sql)
+ * - All column names preserved from OLD-HEMIS
+ * - Soft delete: @SQLRestriction("delete_ts IS NULL")
+ * - Classifier columns (_university, _department, etc.) are VARCHAR, not UUID
+ *
+ * NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
+ *
+ * @since 2.0.0
+ */
 @Getter
 @Setter
 @Entity
@@ -18,27 +33,46 @@ public class Project extends BaseEntity {
     @Column(name = "u_id")
     private Integer uId;
 
-    @Lob
     @Column(name = "name")
     private String name;
 
     @Column(name = "project_number")
     private String projectNumber;
 
-    @Column(name = "_university")
-    private UUID university;
+    /**
+     * University code (classifier reference)
+     * Column: _university VARCHAR(255)
+     */
+    @Column(name = "_university", length = 255)
+    private String university;
 
-    @Column(name = "_department")
-    private UUID department;
+    /**
+     * Department code (classifier reference)
+     * Column: _department VARCHAR(255)
+     */
+    @Column(name = "_department", length = 255)
+    private String department;
 
-    @Column(name = "_project_type")
-    private UUID projectType;
+    /**
+     * Project type code (classifier reference)
+     * Column: _project_type VARCHAR(255)
+     */
+    @Column(name = "_project_type", length = 255)
+    private String projectType;
 
-    @Column(name = "_locality")
-    private UUID locality;
+    /**
+     * Locality code (classifier reference)
+     * Column: _locality VARCHAR(255)
+     */
+    @Column(name = "_locality", length = 255)
+    private String locality;
 
-    @Column(name = "_project_currency")
-    private UUID projectCurrency;
+    /**
+     * Project currency code (classifier reference)
+     * Column: _project_currency VARCHAR(255)
+     */
+    @Column(name = "_project_currency", length = 255)
+    private String projectCurrency;
 
     @Column(name = "contract_number")
     private String contractNumber;
@@ -58,7 +92,6 @@ public class Project extends BaseEntity {
     @Column(name = "active")
     private Boolean active;
 
-    @Lob
-    @Column(name = "translations")
+    @Column(name = "_translations")
     private String translations;
 }
