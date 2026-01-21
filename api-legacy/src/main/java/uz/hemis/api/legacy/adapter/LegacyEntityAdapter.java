@@ -45,13 +45,14 @@ public class LegacyEntityAdapter {
      * @param dto The DTO object to convert
      * @param entityName CUBA entity name (e.g., "hemishe_EStudent")
      * @param returnNulls Whether to include null values
-     * @param view CUBA view name (_local excludes underscore-prefixed fields)
+     * @param view CUBA view name (_local or null excludes underscore-prefixed fields)
      */
     public Map<String, Object> toMap(Object dto, String entityName, Boolean returnNulls, String view) {
         if (dto == null) return null;
 
-        // Check if _local view - exclude underscore-prefixed reference fields
-        boolean isLocalView = VIEW_LOCAL.equals(view);
+        // OLD-HEMIS COMPATIBILITY: Default view (null) and _local view exclude underscore-prefixed reference fields
+        // Only specific views like "eStudent-full" should include reference fields
+        boolean isLocalView = view == null || VIEW_LOCAL.equals(view);
 
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", entityName);
@@ -77,8 +78,9 @@ public class LegacyEntityAdapter {
                     continue;
                 }
 
-                // For _local view: skip version and fullname fields (not in OLD-hemis _local response)
-                if (isLocalView && ("version".equals(jsonName) || "fullname".equals(jsonName))) {
+                // For explicit _local view ONLY: skip version and fullname fields (not in OLD-hemis _local response)
+                // Note: default view (null) SHOULD include version and fullname - only _local excludes them
+                if (VIEW_LOCAL.equals(view) && ("version".equals(jsonName) || "fullname".equals(jsonName))) {
                     continue;
                 }
 
@@ -107,8 +109,8 @@ public class LegacyEntityAdapter {
         }
 
         // Add computed fields from methods with @JsonProperty(access = READ_ONLY)
-        // Skip for _local view
-        if (!isLocalView) {
+        // Skip ONLY for explicit _local view - default view (null) should include computed fields like 'fullname'
+        if (!VIEW_LOCAL.equals(view)) {
             addComputedFields(dto, map, returnNulls);
         }
 
@@ -145,26 +147,38 @@ public class LegacyEntityAdapter {
 
         try {
             T dto = dtoClass.getDeclaredConstructor().newInstance();
-            
+
             Map<String, Object> cleanMap = new HashMap<>(map);
             cleanMap.remove("_entityName");
             cleanMap.remove("_instanceName");
-            
+
             for (Field field : dtoClass.getDeclaredFields()) {
+                // Skip static fields
+                if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                    continue;
+                }
+
                 field.setAccessible(true);
-                String fieldName = field.getName();
-                
-                if (!cleanMap.containsKey(fieldName)) continue;
-                
-                Object value = cleanMap.get(fieldName);
+
+                // Get JSON property name from @JsonProperty annotation
+                String jsonName = getJsonPropertyName(field);
+
+                // Try JSON property name first, then fall back to field name
+                Object value = null;
+                if (cleanMap.containsKey(jsonName)) {
+                    value = cleanMap.get(jsonName);
+                } else if (cleanMap.containsKey(field.getName())) {
+                    value = cleanMap.get(field.getName());
+                }
+
                 if (value == null) continue;
-                
+
                 Object convertedValue = convertValue(value, field.getType());
                 field.set(dto, convertedValue);
             }
-            
+
             return dto;
-            
+
         } catch (Exception e) {
             log.error("Error converting map to DTO: {}", dtoClass.getName(), e);
             throw new RuntimeException("Failed to convert CUBA map to DTO", e);
@@ -239,6 +253,22 @@ public class LegacyEntityAdapter {
 
     private Object convertValue(Object value, Class<?> targetType) {
         if (value == null || targetType.isInstance(value)) return value;
+
+        // Handle nested objects if present - extract code/id value
+        // Format depends on what OLD HEMIS accepts - verify before changing!
+        if (value instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> mapValue = (Map<String, Object>) value;
+            // Try to extract "code" or "id" from nested object
+            if (mapValue.containsKey("code")) {
+                value = mapValue.get("code");
+            } else if (mapValue.containsKey("id")) {
+                value = mapValue.get("id");
+            } else {
+                log.warn("Nested object has no 'code' or 'id': {}", mapValue.keySet());
+                return null;
+            }
+        }
 
         if (targetType == UUID.class && value instanceof String) {
             return UUID.fromString((String) value);

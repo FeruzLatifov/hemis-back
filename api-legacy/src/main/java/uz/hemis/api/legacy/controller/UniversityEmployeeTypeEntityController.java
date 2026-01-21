@@ -526,7 +526,9 @@ public class UniversityEmployeeTypeEntityController {
                 "conditions": [
                   {"property": "code", "operator": "=", "value": "12"}
                 ]
-              }
+              },
+              "limit": 50,
+              "offset": 0
             }
             ```
 
@@ -543,11 +545,35 @@ public class UniversityEmployeeTypeEntityController {
         List<UniversityEmployeeType> entities = repository.findAll(Sort.by(Sort.Direction.ASC, "code"));
 
         // Apply CUBA filter if present
+        // OLD-HEMIS CUBA format: {"filter": {"conditions": [...]}, "limit": 50, "offset": 0}
         if (requestBody != null && requestBody.containsKey("filter")) {
             entities = applyCubaFilter(entities, requestBody.get("filter"));
         }
 
-        List<Map<String, Object>> result = entities.stream()
+        // Apply limit and offset from request body (OLD-HEMIS CUBA format)
+        int limit = 50; // default
+        int offset = 0; // default
+        if (requestBody != null) {
+            if (requestBody.containsKey("limit")) {
+                Object limitObj = requestBody.get("limit");
+                if (limitObj instanceof Number) {
+                    limit = ((Number) limitObj).intValue();
+                }
+            }
+            if (requestBody.containsKey("offset")) {
+                Object offsetObj = requestBody.get("offset");
+                if (offsetObj instanceof Number) {
+                    offset = ((Number) offsetObj).intValue();
+                }
+            }
+        }
+
+        // Apply pagination
+        int fromIndex = Math.min(offset, entities.size());
+        int toIndex = Math.min(offset + limit, entities.size());
+        List<UniversityEmployeeType> paginatedEntities = entities.subList(fromIndex, toIndex);
+
+        List<Map<String, Object>> result = paginatedEntities.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList());
 

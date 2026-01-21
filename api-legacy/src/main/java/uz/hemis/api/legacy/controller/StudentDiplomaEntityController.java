@@ -478,53 +478,34 @@ public class StudentDiplomaEntityController {
         List<StudentDiploma> result;
 
         // Check if filter is present
+        // OLD-HEMIS CUBA format: {"filter": {"conditions": [...]}}
         if (requestBody != null && requestBody.containsKey("filter")) {
             Object filterObj = requestBody.get("filter");
-            Map<String, Object> filterMap = null;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> filterMap = (Map<String, Object>) filterObj;
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> conditions = (List<Map<String, Object>>) filterMap.get("conditions");
 
-            if (filterObj instanceof String) {
-                try {
-                    filterMap = objectMapper.readValue((String) filterObj, new TypeReference<>() {});
-                } catch (Exception e) {
-                    log.warn("Failed to parse filter JSON: {}", e.getMessage());
-                }
-            } else if (filterObj instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> castMap = (Map<String, Object>) filterObj;
-                filterMap = castMap;
+            // Try to use database-level filtering for known conditions
+            result = applyDatabaseFiltering(conditions, effectiveLimit, effectiveOffset);
+            if (result != null) {
+                return ResponseEntity.ok(
+                        result.stream()
+                                .map(e -> toMap(e, returnNulls, view))
+                                .collect(Collectors.toList())
+                );
             }
 
-            if (filterMap != null && filterMap.containsKey("conditions")) {
-                @SuppressWarnings("unchecked")
-                List<Map<String, Object>> conditions = (List<Map<String, Object>>) filterMap.get("conditions");
+            // Fallback: Use paginated findAll and filter in memory
+            int page = effectiveOffset / Math.max(effectiveLimit, 1);
+            PageRequest pageRequest = PageRequest.of(page, effectiveLimit * 10, Sort.by(Sort.Direction.DESC, "createTs"));
+            Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
+            result = applyConditions(resultPage.getContent(), conditions);
 
-                // Try to use database-level filtering for known conditions
-                result = applyDatabaseFiltering(conditions, effectiveLimit, effectiveOffset);
-                if (result != null) {
-                    return ResponseEntity.ok(
-                            result.stream()
-                                    .map(e -> toMap(e, returnNulls, view))
-                                    .collect(Collectors.toList())
-                    );
-                }
-
-                // Fallback: Use paginated findAll and filter in memory
-                int page = effectiveOffset / Math.max(effectiveLimit, 1);
-                PageRequest pageRequest = PageRequest.of(page, effectiveLimit * 10, Sort.by(Sort.Direction.DESC, "createTs"));
-                Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
-                result = applyConditions(resultPage.getContent(), conditions);
-
-                // Apply pagination to filtered results
-                int start = Math.min(effectiveOffset, result.size());
-                int end = Math.min(start + effectiveLimit, result.size());
-                result = result.subList(start, end);
-            } else {
-                // No valid conditions, use paginated query
-                int page = effectiveOffset / Math.max(effectiveLimit, 1);
-                PageRequest pageRequest = PageRequest.of(page, effectiveLimit, Sort.by(Sort.Direction.DESC, "createTs"));
-                Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
-                result = resultPage.getContent();
-            }
+            // Apply pagination to filtered results
+            int start = Math.min(effectiveOffset, result.size());
+            int end = Math.min(start + effectiveLimit, result.size());
+            result = result.subList(start, end);
         } else {
             // No filter, use paginated query instead of findAll() to prevent OOM
             int page = effectiveOffset / Math.max(effectiveLimit, 1);

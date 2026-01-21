@@ -383,7 +383,24 @@ public class CitizenshipEntityController {
     @Transactional(readOnly = true)
     @Operation(
         summary = "Fuqarolik holatlarini qidirish (POST)",
-        description = "JSON filter orqali qidirish."
+        description = """
+            JSON filter orqali qidirish.
+
+            **OLD-HEMIS Compatible** - 100% backward compatibility
+
+            **CUBA Filter Format:**
+            ```json
+            {
+              "filter": {
+                "conditions": [
+                  {"property": "code", "operator": "=", "value": "860"}
+                ]
+              },
+              "limit": 50,
+              "offset": 0
+            }
+            ```
+            """
     )
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> requestBody,
@@ -394,11 +411,35 @@ public class CitizenshipEntityController {
 
         List<Citizenship> entities = repository.findAll(Sort.by(Sort.Direction.ASC, "code"));
 
+        // OLD-HEMIS CUBA format: {"filter": {"conditions": [...]}, "limit": 50, "offset": 0}
         if (requestBody != null && requestBody.containsKey("filter")) {
             entities = applyCubaFilter(entities, requestBody.get("filter"));
         }
 
-        List<Map<String, Object>> result = entities.stream()
+        // Apply limit and offset from request body (OLD-HEMIS CUBA format)
+        int limit = 50; // default
+        int offset = 0; // default
+        if (requestBody != null) {
+            if (requestBody.containsKey("limit")) {
+                Object limitObj = requestBody.get("limit");
+                if (limitObj instanceof Number) {
+                    limit = ((Number) limitObj).intValue();
+                }
+            }
+            if (requestBody.containsKey("offset")) {
+                Object offsetObj = requestBody.get("offset");
+                if (offsetObj instanceof Number) {
+                    offset = ((Number) offsetObj).intValue();
+                }
+            }
+        }
+
+        // Apply pagination
+        int fromIndex = Math.min(offset, entities.size());
+        int toIndex = Math.min(offset + limit, entities.size());
+        List<Citizenship> paginatedEntities = entities.subList(fromIndex, toIndex);
+
+        List<Map<String, Object>> result = paginatedEntities.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList());
 

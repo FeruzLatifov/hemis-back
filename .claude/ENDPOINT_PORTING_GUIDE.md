@@ -3,6 +3,47 @@
 
 ## ⚠️ MUHIM QOIDALAR
 
+### 🔴 ASOSIY QOIDA: 100% BACKWARD COMPATIBILITY
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│  YANGI HEMIS = OLD HEMIS (100% bir xil)                                  │
+├──────────────────────────────────────────────────────────────────────────┤
+│  ✅ OLD HEMIS qabul qilgan FORMAT = YANGI HEMIS qabul qilishi kerak      │
+│  ✅ OLD HEMIS qaytargan RESPONSE = YANGI HEMIS qaytarishi kerak          │
+│  ✅ OLD HEMIS rad qilgan FORMAT = YANGI HEMIS ham rad qilishi kerak      │
+│                                                                           │
+│  ❌ YANGI HEMIS o'ziga xos format qabul qilishi MUMKIN EMAS              │
+│  ❌ YANGI HEMIS boshqacha response qaytarishi MUMKIN EMAS                │
+│  ❌ YANGI HEMIS OLD HEMIS rad qilgan formatni qabul qilishi MUMKIN EMAS  │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+**Sabab:** 200+ universitet OLD HEMIS API bilan ishlaydi. Agar format o'zgarsa, hamma integratsiyalar buziladi!
+
+### 📋 HAR BIR ENDPOINT UCHUN TEKSHIRISH TARTIBI
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  ENDPOINT PORTING WORKFLOW                                               │
+├─────────────────────────────────────────────────────────────────────────┤
+│  1️⃣ OLD HEMIS ga so'rov yuborish (curl/Postman/endpoint_tester)         │
+│     → Qanday FORMAT qabul qilishini aniqlash                            │
+│     → Qanday RESPONSE qaytarishini saqlash                              │
+│                                                                          │
+│  2️⃣ YANGI HEMIS ni aynan shu formatga moslashtirish                     │
+│     → Request body field nomlari BIR XIL                                │
+│     → Response field nomlari va qiymatlari BIR XIL                      │
+│                                                                          │
+│  3️⃣ endpoint_tester.html da SOLISHTIRISH                                │
+│     → "Farq yo'q" bo'lguncha tuzatish                                   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**⚠️ MUHIM:** Hech qachon OLD HEMIS dan tekshirmasdan format o'zgartirmaslik!
+
+---
+
 **1. Faqat user endpoint berganda ishlayman!**
 
 **2. 🎯 AVVAL OLD-HEMIS DAN RESPONSE OLISH - KEYIN CONTROLLER YOZISH!**

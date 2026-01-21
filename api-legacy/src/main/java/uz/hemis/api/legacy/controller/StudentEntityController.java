@@ -15,7 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.LegacyEntityAdapter;
 import uz.hemis.common.dto.StudentDto;
@@ -97,7 +96,6 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format (CUBA Map)
      */
     @GetMapping("/{entityId}")
-    @Transactional(readOnly = true)
     @Operation(
         summary = "Bitta talaba ma'lumotlarini olish",
         description = """
@@ -160,7 +158,6 @@ public class StudentEntityController {
      * ✅ CUBA PATTERN: PUT = partial update (only fields in JSON body are changed)
      */
     @PutMapping("/{entityId}")
-    @Transactional
     @Operation(
         summary = "Talaba ma'lumotlarini o'zgartirish",
         description = """
@@ -252,7 +249,6 @@ public class StudentEntityController {
      * Physical DELETE is blocked at service and database level.
      */
     @DeleteMapping("/{entityId}")
-    @Transactional
     @Operation(
         summary = "Talabani o'chirish",
         description = """
@@ -302,7 +298,6 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format (List of CUBA Maps)
      */
     @GetMapping("/search")
-    @Transactional(readOnly = true)
     @Operation(
         summary = "Talabalarni qidirish (GET)",
         description = """
@@ -345,7 +340,6 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format
      */
     @PostMapping("/search")
-    @Transactional(readOnly = true)
     @Operation(
         summary = "Talabalarni qidirish (POST)",
         description = """
@@ -387,7 +381,6 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Same response format and parameters
      */
     @GetMapping
-    @Transactional(readOnly = true)
     @Operation(
         summary = "Barcha talabalar ro'yxati",
         description = """
@@ -461,7 +454,6 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Accepts CUBA Map format
      */
     @PostMapping
-    @Transactional
     @Operation(
         summary = "Talaba yaratish",
         description = """
