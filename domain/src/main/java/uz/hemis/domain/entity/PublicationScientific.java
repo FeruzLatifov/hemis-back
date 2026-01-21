@@ -7,7 +7,6 @@ import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -20,7 +19,6 @@ public class PublicationScientific extends BaseEntity {
     private Integer uId;
 
     @Column(name = "_university")
-    @ColumnTransformer(write = "CAST(? AS uuid)")
     private String university;
 
     @Column(name = "name", columnDefinition = "TEXT")
@@ -48,19 +46,15 @@ public class PublicationScientific extends BaseEntity {
     private String doi;
 
     @Column(name = "_scientific_publication_type")
-    @ColumnTransformer(write = "CAST(? AS uuid)")
     private String scientificPublicationType;
 
     @Column(name = "_publication_database")
-    @ColumnTransformer(write = "CAST(? AS uuid)")
     private String publicationDatabase;
 
     @Column(name = "_locality")
-    @ColumnTransformer(write = "CAST(? AS uuid)")
     private String locality;
 
     @Column(name = "_country")
-    @ColumnTransformer(write = "CAST(? AS uuid)")
     private String country;
 
     @Column(name = "_employee")
@@ -86,6 +80,5 @@ public class PublicationScientific extends BaseEntity {
     private LocalDateTime isCheckedDate;
 
     @Column(name = "_education_year")
-    @ColumnTransformer(write = "CAST(? AS uuid)")
     private String educationYear;
 }

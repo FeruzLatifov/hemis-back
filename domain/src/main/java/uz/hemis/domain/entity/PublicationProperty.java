@@ -3,11 +3,11 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -53,7 +53,8 @@ public class PublicationProperty extends BaseEntity {
     private String country;
 
     @Column(name = "_employee")
-    private UUID employee;
+    @ColumnTransformer(write = "CAST(? AS uuid)")
+    private String employee;
 
     @Column(name = "filename", columnDefinition = "TEXT")
     private String filename;
