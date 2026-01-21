@@ -16,9 +16,9 @@ public interface ProjectExecutorRepository extends JpaRepository<ProjectExecutor
 
     List<ProjectExecutor> findByProject(UUID project);
 
-    List<ProjectExecutor> findByProjectAndProjectExecutorType(UUID project, UUID projectExecutorType);
+    List<ProjectExecutor> findByProjectAndProjectExecutorType(UUID project, String projectExecutorType);
 
-    Page<ProjectExecutor> findByProjectAndProjectExecutorType(UUID project, UUID projectExecutorType, Pageable pageable);
+    Page<ProjectExecutor> findByProjectAndProjectExecutorType(UUID project, String projectExecutorType, Pageable pageable);
 
-    long countByProjectAndProjectExecutorType(UUID project, UUID projectExecutorType);
+    long countByProjectAndProjectExecutorType(UUID project, String projectExecutorType);
 }

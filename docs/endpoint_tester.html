@@ -5973,6 +5973,126 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
 
+            // ============================================
+            // 21.Loyiha ijrochilari (4 endpoint)
+            // Tartib: POST (yaratish), GET by ID, GET list, DELETE (o'chirish)
+            // ============================================
+            {
+                id: 1,
+                category: "21.Loyiha ijrochilari",
+                name: "Loyiha ijrochisi yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
+                requiresAuth: true,
+                contentType: "json",
+                inputFields: {
+                    body_outsider: {
+                        label: "outsider (Tashqi ijrochi nomi)",
+                        type: "text",
+                        defaultNew: "Test Ijrochi - Yangi HEMIS",
+                        defaultOld: "Test Ijrochi - Eski HEMIS",
+                        required: false,
+                        bodyField: "outsider"
+                    },
+                    body_startDate: {
+                        label: "startDate (Boshlanish sanasi)",
+                        type: "text",
+                        defaultNew: "2024-01-01",
+                        defaultOld: "2024-01-01",
+                        required: false,
+                        bodyField: "startDate",
+                        placeholder: "YYYY-MM-DD"
+                    },
+                    body_endDate: {
+                        label: "endDate (Tugash sanasi)",
+                        type: "text",
+                        defaultNew: "2024-12-31",
+                        defaultOld: "2024-12-31",
+                        required: false,
+                        bodyField: "endDate",
+                        placeholder: "YYYY-MM-DD"
+                    },
+                    body_active: {
+                        label: "active (Faol)",
+                        type: "select",
+                        options: [
+                            { value: "true", label: "true (Ha)" },
+                            { value: "false", label: "false (Yo'q)" }
+                        ],
+                        default: "true",
+                        required: false,
+                        bodyField: "active"
+                    }
+                },
+                hasBody: true,
+                bodyFields: ["body_outsider", "body_startDate", "body_endDate", "body_active"],
+                bodyGenerator: (inputs) => ({
+                    outsider: inputs.body_outsider || undefined,
+                    startDate: inputs.body_startDate || undefined,
+                    endDate: inputs.body_endDate || undefined,
+                    active: inputs.body_active === 'true'
+                }),
+                description: `**Yangi loyiha ijrochisi yaratish** (POST create)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EProjectExecutor
+
+<b>Request Body:</b>
+- outsider - Tashqi ijrochi nomi (String)
+- project - Loyiha {id: "uuid"} (UUID, optional)
+- projectExecutorType - Ijrochi turi {id: "uuid"} (UUID, optional)
+- startDate - Boshlanish sanasi (YYYY-MM-DD)
+- endDate - Tugash sanasi (YYYY-MM-DD)
+- active - Faol holati (Boolean)
+
+<b>Response (OLD-HEMIS format):</b>
+<pre>{
+  "_entityName": "hemishe_EProjectExecutor",
+  "_instanceName": "com.company.hemishe.entity.EProjectExecutor-uuid [detached]",
+  "id": "uuid-here"
+}</pre>`,
+                ported: true,
+                storeResultId: "createdProjectExecutorId"
+            },
+            {
+                id: 2,
+                category: "21.Loyiha ijrochilari",
+                name: "Loyiha ijrochisini olish (ID bo'yicha)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Entity ID (UUID)",
+                        type: "text",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        placeholder: "UUID yoki {createdProjectExecutorId}",
+                        useStoredId: "createdProjectExecutorId"
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "text",
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: false
+                    }
+                },
+                queryParamsFromInputs: ["returnNulls"],
+                description: `**Loyiha ijrochisini ID bo'yicha olish** (GET by ID)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}?returnNulls=true
+
+<b>Path Parameters:</b>
+- entityId - Loyiha ijrochisi UUID (required)
+
+<b>Query Parameters:</b>
+- returnNulls - null qiymatlarni qaytarish (default: true)
+
+<b>Response:</b> Loyiha ijrochisi to'liq ma'lumotlari`,
+                ported: true
+            },
+
             // ============================================================
             // 20.Loyiha meta ma'lumotlari - Project Meta Entity API
             // ============================================================
@@ -6016,13 +6136,18 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     body_active: {
                         label: "active (Faol)",
                         type: "select",
-                        options: [{value: "true", label: "true"}, {value: "false", label: "false"}],
-                        defaultNew: "true",
-                        defaultOld: "true",
-                        required: true,
+                        options: [{value: "true", label: "true (Ha)"}, {value: "false", label: "false (Yo'q)"}],
+                        default: "true",
+                        required: false,
                         bodyField: "active"
                     }
                 },
+                bodyGenerator: (inputs) => ({
+                    fiscalYear: parseInt(inputs.body_fiscalYear) || 2025,
+                    budget: parseFloat(inputs.body_budget) || 50000000.0,
+                    quantityMembers: parseInt(inputs.body_quantityMembers) || 5,
+                    active: inputs.body_active === 'true'
+                }),
                 description: `**Loyiha meta yaratish** (POST)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EProjectMeta
@@ -6307,33 +6432,67 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     limit: {
                         label: "Limit",
                         type: "text",
+                        defaultNew: "10",
+                        defaultOld: "10",
                         default: "10",
                         required: false
                     },
                     offset: {
                         label: "Offset",
                         type: "text",
-                        default: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "text",
+                        defaultNew: "true",
+                        defaultOld: "true",
                         required: false
                     }
                 },
-                description: `**Ilmiy nashrlar ro'yxati** (GET all)
+                queryParamsFromInputs: ["limit", "offset", "returnNulls"],
+                description: `**Loyiha ijrochilari ro'yxati** (GET list)
 
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationScientific
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EProjectExecutor?limit=10&offset=0
 
-<b>Response format:</b>
-<pre>[
-  {
-    "_entityName": "hemishe_EPublicationScientific",
-    "_instanceName": "com.company.hemishe.entity.EPublicationScientific-{id} [detached]",
-    "id": "uuid",
-    "name": "Ilmiy maqola nomi",
-    "authors": "Mualliflar",
-    "authorCounts": 2,
-    "issueYear": 2024,
-    "active": true
-  }
-]</pre>`,
+<b>Query Parameters:</b>
+- limit - Qaytariladigan yozuvlar soni (default: 10)
+- offset - O'tkazib yuboriladigan yozuvlar (default: 0)
+- returnNulls - null qiymatlarni qaytarish (default: true)
+
+<b>Response:</b> Massiv formatida loyiha ijrochilari ro'yxati`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "21.Loyiha ijrochilari",
+                name: "Loyiha ijrochisini o'chirish",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Entity ID (UUID)",
+                        type: "text",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        placeholder: "UUID yoki {createdProjectExecutorId}",
+                        useStoredId: "createdProjectExecutorId"
+                    }
+                },
+                description: `**Loyiha ijrochisini o'chirish** (DELETE - Soft delete)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}
+
+<b>Path Parameters:</b>
+- entityId - Loyiha ijrochisi UUID (required)
+
+<b>Response:</b> 200 OK (empty body)
+
+<b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
                 ported: true
             },
             {
@@ -6421,6 +6580,26 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 hasBody: true,
                 bodyFields: ["name", "numbers", "authors", "authorCounts", "active"],
                 inputFields: {
+            // ============================================
+            // 24.Ilmiy ishlanmalar (Patent, Ixtiro, Foydali model)
+            // ============================================
+            {
+                id: 1,
+                category: "24.Ilmiy ishlanmalar",
+                name: "Yangi ilmiy ishlanma yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EPublicationProperty",
+                requiresAuth: true,
+                contentType: "json",
+                inputFields: {
+                    _university: {
+                        label: "Universitet kodi",
+                        type: "text",
+                        placeholder: "401 yoki 351",
+                        defaultNew: "401",
+                        defaultOld: "351",
+                        required: true
+                    },
                     name: {
                         label: "Nomi",
                         type: "text",
@@ -6435,6 +6614,16 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         placeholder: "FAP 00123",
                         defaultNew: "FAP 00123",
                         defaultOld: "FAP 00123",
+                        defaultNew: "Test ilmiy ishlanma (Yangi Hemis)",
+                        defaultOld: "Test ilmiy ishlanma (Eski Hemis)",
+                        required: true
+                    },
+                    numbers: {
+                        label: "Raqami (Patent/Guvohnoma)",
+                        type: "text",
+                        placeholder: "IAP 2024/001",
+                        defaultNew: "IAP 2024/NEW001",
+                        defaultOld: "IAP 2024/OLD001",
                         required: false
                     },
                     authors: {
@@ -6451,6 +6640,25 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         placeholder: "2",
                         defaultNew: "1",
                         defaultOld: "1",
+                        placeholder: "Familiya I.O., Familiya I.O.",
+                        defaultNew: "Test A.B., Namuna C.D.",
+                        defaultOld: "Test A.B., Namuna C.D.",
+                        required: false
+                    },
+                    author_counts: {
+                        label: "Mualliflar soni",
+                        type: "number",
+                        placeholder: "2",
+                        defaultNew: "2",
+                        defaultOld: "2",
+                        required: false
+                    },
+                    property_date: {
+                        label: "Sana",
+                        type: "date",
+                        placeholder: "2024-01-15",
+                        defaultNew: "2024-01-15",
+                        defaultOld: "2024-01-15",
                         required: false
                     },
                     active: {
@@ -6466,6 +6674,21 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     }
                 },
                 storeResultId: "publicationPropertyId",
+                        type: "checkbox",
+                        defaultNew: true,
+                        defaultOld: true,
+                        required: false
+                    }
+                },
+                body: {
+                    _university: "{_university}",
+                    name: "{name}",
+                    numbers: "{numbers}",
+                    authors: "{authors}",
+                    author_counts: "{author_counts}",
+                    property_date: "{property_date}",
+                    active: "{active}"
+                },
                 description: `**Yangi ilmiy ishlanma yaratish** (POST)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EPublicationProperty
@@ -6488,10 +6711,38 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 id: 2,
                 category: "23.Ilmiy ishlanmalar",
                 name: "Barcha ilmiy ishlanmalar",
+<b>Ma'lumotlar:</b>
+- _university: OTM kodi (401=Yangi, 351=Eski)
+- name: Ilmiy ishlanma nomi
+- numbers: Patent/guvohnoma raqami
+- authors: Mualliflar ro'yxati
+- author_counts: Mualliflar soni
+- property_date: Berilgan sana
+- _patent_type: Patent turi kodi
+- _employee: Xodim UUID
+- _education_year: O'quv yili kodi
+- active: Faol holati
+
+<b>Response:</b> Yaratilgan entity CUBA formatda`,
+                ported: true,
+                storeResultId: "publicationPropertyId"
+            },
+            {
+                id: 2,
+                category: "24.Ilmiy ishlanmalar",
+                name: "Ilmiy ishlanmalarni ro'yxatini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty",
                 requiresAuth: true,
                 inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
                     offset: {
                         label: "Offset",
                         type: "number",
@@ -6515,12 +6766,31 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty?offset=0&limit=10
 
 <b>Response:</b> Ro'yxat (array of entities)`,
+                    }
+                },
+                params: {
+                    limit: "{limit}",
+                    offset: "{offset}"
+                },
+                description: `**Ilmiy ishlanmalar ro'yxati** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty
+
+<b>Parametrlar:</b>
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
+- returnNulls: Null qiymatlarni qaytarish
+- view: Ko'rinish nomi
+
+<b>Response:</b> Ilmiy ishlanmalar massivi`,
                 ported: true
             },
             {
                 id: 3,
                 category: "23.Ilmiy ishlanmalar",
                 name: "Ilmiy ishlanmani olish",
+                category: "24.Ilmiy ishlanmalar",
+                name: "Ilmiy ishlanmani ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}",
                 requiresAuth: true,
@@ -6540,17 +6810,24 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
 
 <b>Response:</b> To'liq entity ma'lumotlari - _entityName, _instanceName, barcha fieldlar`,
+                description: `**Ilmiy ishlanmani ID bo'yicha olish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
+
+<b>Response:</b> Ilmiy ishlanma ma'lumotlari CUBA formatda`,
                 ported: true
             },
             {
                 id: 4,
                 category: "23.Ilmiy ishlanmalar",
+                category: "24.Ilmiy ishlanmalar",
                 name: "Ilmiy ishlanmani yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}",
                 requiresAuth: true,
                 hasBody: true,
                 bodyFields: ["name", "active"],
+                contentType: "json",
                 inputFields: {
                     entityId: {
                         label: "Ilmiy ishlanma ID (UUID)",
@@ -6567,6 +6844,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         placeholder: "Yangilangan nom",
                         defaultNew: "Yangilangan test ishlanma",
                         defaultOld: "Yangilangan test ishlanma",
+                        label: "Yangi nom",
+                        type: "text",
+                        placeholder: "Ilmiy ishlanma nomi",
+                        defaultNew: "Yangilangan ilmiy ishlanma",
+                        defaultOld: "Yangilangan ilmiy ishlanma",
                         required: false
                     },
                     active: {
@@ -6581,6 +6863,16 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         required: false
                     }
                 },
+                        type: "checkbox",
+                        defaultNew: true,
+                        defaultOld: true,
+                        required: false
+                    }
+                },
+                body: {
+                    name: "{name}",
+                    active: "{active}"
+                },
                 description: `**Ilmiy ishlanmani yangilash** (PUT)
 
 <b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
@@ -6594,12 +6886,17 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 \`\`\`
 
 <b>Response:</b> Minimal response - _entityName, _instanceName, id`,
+<b>Body:</b> O'zgartiriladigan maydonlar JSON formatda
+
+<b>Response:</b> Yangilangan entity CUBA formatda`,
                 ported: true
             },
             {
                 id: 5,
                 category: "23.Ilmiy ishlanmalar",
                 name: "Ilmiy ishlanma o'chirish",
+                category: "24.Ilmiy ishlanmalar",
+                name: "Ilmiy ishlanmani o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}",
                 requiresAuth: true,
@@ -6615,6 +6912,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     }
                 },
                 description: `**Ilmiy ishlanma o'chirish** (DELETE)
+                description: `**Ilmiy ishlanmani o'chirish** (DELETE)
 
 <b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_EPublicationProperty/{entityId}
 
@@ -7130,17 +7428,87 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     options.headers['Authorization'] = `Bearer ${tokens.access}`;
                 }
 
-                // Body for POST (form data)
+                // Body for POST (form data OR JSON based on contentType)
                 if (endpoint.method === 'POST' && endpoint.body) {
-                    const formData = new FormData();
+                    if (endpoint.contentType === 'json') {
+                        // JSON body - replace placeholders with actual values from inputs
+                        options.headers['Content-Type'] = 'application/json';
+                        const jsonBody = {};
+                        Object.entries(endpoint.body).forEach(([key, value]) => {
+                            let val = value;
+                            // Replace placeholders like "{fieldName}" with actual input values
+                            if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
+                                const fieldName = value.slice(1, -1);
+                                const inputElement = document.getElementById(`input-${system}-${uniqueId}-${fieldName}`);
+                                if (inputElement) {
+                                    val = inputElement.value;
+                                    // Convert types based on field config
+                                    const fieldConfig = endpoint.inputFields && endpoint.inputFields[fieldName];
+                                    if (fieldConfig) {
+                                        if (fieldConfig.type === 'number' && val !== '') {
+                                            val = parseInt(val, 10);
+                                        } else if (fieldConfig.type === 'checkbox') {
+                                            val = inputElement.checked;
+                                        }
+                                    }
+                                } else {
+                                    val = ''; // Default empty if no input found
+                                }
+                            }
+                            // Special placeholders
+                            if (value === '{username}') val = username;
+                            if (value === '{password}') val = password;
+                            if (value === '{refresh_token}') val = tokens.refresh || '';
+                            // Only include non-empty values
+                            if (val !== '' && val !== null && val !== undefined) {
+                                jsonBody[key] = val;
+                            }
+                        });
+                        options.body = JSON.stringify(jsonBody);
+                        console.log(`[${system.toUpperCase()}] JSON body from endpoint.body:`, options.body);
+                    } else {
+                        // FormData (multipart/form-data) - original behavior
+                        const formData = new FormData();
+                        Object.entries(endpoint.body).forEach(([key, value]) => {
+                            let val = value;
+                            if (value === '{username}') val = username;
+                            if (value === '{password}') val = password;
+                            if (value === '{refresh_token}') val = tokens.refresh || '';
+                            formData.append(key, val);
+                        });
+                        options.body = formData;
+                    }
+                }
+
+                // Body for PUT with body and contentType: "json"
+                if (endpoint.method === 'PUT' && endpoint.body && endpoint.contentType === 'json' && !endpoint.bodyTemplate) {
+                    options.headers['Content-Type'] = 'application/json';
+                    const jsonBody = {};
                     Object.entries(endpoint.body).forEach(([key, value]) => {
                         let val = value;
-                        if (value === '{username}') val = username;
-                        if (value === '{password}') val = password;
-                        if (value === '{refresh_token}') val = tokens.refresh || '';
-                        formData.append(key, val);
+                        if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
+                            const fieldName = value.slice(1, -1);
+                            const inputElement = document.getElementById(`input-${system}-${uniqueId}-${fieldName}`);
+                            if (inputElement) {
+                                val = inputElement.value;
+                                const fieldConfig = endpoint.inputFields && endpoint.inputFields[fieldName];
+                                if (fieldConfig) {
+                                    if (fieldConfig.type === 'number' && val !== '') {
+                                        val = parseInt(val, 10);
+                                    } else if (fieldConfig.type === 'checkbox') {
+                                        val = inputElement.checked;
+                                    }
+                                }
+                            } else {
+                                val = '';
+                            }
+                        }
+                        if (val !== '' && val !== null && val !== undefined) {
+                            jsonBody[key] = val;
+                        }
                     });
-                    options.body = formData;
+                    options.body = JSON.stringify(jsonBody);
+                    console.log(`[${system.toUpperCase()}] PUT JSON body from endpoint.body:`, options.body);
                 }
 
                 // Body for PUT/POST with bodyTemplate (JSON)

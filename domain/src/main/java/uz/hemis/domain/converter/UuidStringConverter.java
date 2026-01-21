@@ -2,7 +2,6 @@ package uz.hemis.domain.converter;
 
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
-
 import java.util.UUID;
 
 /**
