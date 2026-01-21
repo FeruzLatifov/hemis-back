@@ -5973,6 +5973,44 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
 
+            // ============================================
+            // 21.Loyiha ijrochilari (4 endpoint)
+            // Tartib: POST (yaratish), GET by ID, GET list, DELETE (o'chirish)
+            // ============================================
+            {
+                id: 1,
+                category: "21.Loyiha ijrochilari",
+                name: "Loyiha ijrochisi yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
+                requiresAuth: true,
+                contentType: "json",
+                inputFields: {
+                    body_outsider: {
+                        label: "outsider (Tashqi ijrochi nomi)",
+                        type: "text",
+                        defaultNew: "Test Ijrochi - Yangi HEMIS",
+                        defaultOld: "Test Ijrochi - Eski HEMIS",
+                        required: false,
+                        bodyField: "outsider"
+                    },
+                    body_startDate: {
+                        label: "startDate (Boshlanish sanasi)",
+                        type: "text",
+                        defaultNew: "2024-01-01",
+                        defaultOld: "2024-01-01",
+                        required: false,
+                        bodyField: "startDate",
+                        placeholder: "YYYY-MM-DD"
+                    },
+                    body_endDate: {
+                        label: "endDate (Tugash sanasi)",
+                        type: "text",
+                        defaultNew: "2024-12-31",
+                        defaultOld: "2024-12-31",
+                        required: false,
+                        bodyField: "endDate",
+                        placeholder: "YYYY-MM-DD"
             // ============================================================
             // 20.Loyiha meta ma'lumotlari - Project Meta Entity API
             // ============================================================
@@ -6016,6 +6054,79 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     body_active: {
                         label: "active (Faol)",
                         type: "select",
+                        options: [
+                            { value: "true", label: "true (Ha)" },
+                            { value: "false", label: "false (Yo'q)" }
+                        ],
+                        default: "true",
+                        required: false,
+                        bodyField: "active"
+                    }
+                },
+                bodyGenerator: (inputs) => ({
+                    outsider: inputs.body_outsider || undefined,
+                    startDate: inputs.body_startDate || undefined,
+                    endDate: inputs.body_endDate || undefined,
+                    active: inputs.body_active === 'true'
+                }),
+                description: `**Yangi loyiha ijrochisi yaratish** (POST create)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_EProjectExecutor
+
+<b>Request Body:</b>
+- outsider - Tashqi ijrochi nomi (String)
+- project - Loyiha {id: "uuid"} (UUID, optional)
+- projectExecutorType - Ijrochi turi {id: "uuid"} (UUID, optional)
+- startDate - Boshlanish sanasi (YYYY-MM-DD)
+- endDate - Tugash sanasi (YYYY-MM-DD)
+- active - Faol holati (Boolean)
+
+<b>Response (OLD-HEMIS format):</b>
+<pre>{
+  "_entityName": "hemishe_EProjectExecutor",
+  "_instanceName": "com.company.hemishe.entity.EProjectExecutor-uuid [detached]",
+  "id": "uuid-here"
+}</pre>`,
+                ported: true,
+                storeResultId: "createdProjectExecutorId"
+            },
+            {
+                id: 2,
+                category: "21.Loyiha ijrochilari",
+                name: "Loyiha ijrochisini olish (ID bo'yicha)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Entity ID (UUID)",
+                        type: "text",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        placeholder: "UUID yoki {createdProjectExecutorId}",
+                        useStoredId: "createdProjectExecutorId"
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "text",
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: false
+                    }
+                },
+                queryParamsFromInputs: ["returnNulls"],
+                description: `**Loyiha ijrochisini ID bo'yicha olish** (GET by ID)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}?returnNulls=true
+
+<b>Path Parameters:</b>
+- entityId - Loyiha ijrochisi UUID (required)
+
+<b>Query Parameters:</b>
+- returnNulls - null qiymatlarni qaytarish (default: true)
+
+<b>Response:</b> Loyiha ijrochisi to'liq ma'lumotlari`,
                         options: [{value: "true", label: "true"}, {value: "false", label: "false"}],
                         defaultNew: "true",
                         defaultOld: "true",
@@ -6298,6 +6409,10 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
+                category: "21.Loyiha ijrochilari",
+                name: "Loyiha ijrochilari ro'yxati",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
                 category: "22.Ilmiy nashrlar",
                 name: "Ilmiy nashrlar ro'yxati",
                 method: "GET",
@@ -6307,12 +6422,63 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     limit: {
                         label: "Limit",
                         type: "text",
+                        defaultNew: "10",
+                        defaultOld: "10",
                         default: "10",
                         required: false
                     },
                     offset: {
                         label: "Offset",
                         type: "text",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "text",
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: false
+                    }
+                },
+                queryParamsFromInputs: ["limit", "offset", "returnNulls"],
+                description: `**Loyiha ijrochilari ro'yxati** (GET list)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_EProjectExecutor?limit=10&offset=0
+
+<b>Query Parameters:</b>
+- limit - Qaytariladigan yozuvlar soni (default: 10)
+- offset - O'tkazib yuboriladigan yozuvlar (default: 0)
+- returnNulls - null qiymatlarni qaytarish (default: true)
+
+<b>Response:</b> Massiv formatida loyiha ijrochilari ro'yxati`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "21.Loyiha ijrochilari",
+                name: "Loyiha ijrochisini o'chirish",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Entity ID (UUID)",
+                        type: "text",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        placeholder: "UUID yoki {createdProjectExecutorId}",
+                        useStoredId: "createdProjectExecutorId"
+                    }
+                },
+                description: `**Loyiha ijrochisini o'chirish** (DELETE - Soft delete)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}
+
+<b>Path Parameters:</b>
+- entityId - Loyiha ijrochisi UUID (required)
                         default: "0",
                         required: false
                     }

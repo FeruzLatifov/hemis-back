@@ -18,10 +18,10 @@ public class ProjectExecutor extends BaseEntity {
     @Column(name = "_project")
     private UUID project;
 
-    @Column(name = "_project_executor_type")
-    private UUID projectExecutorType;
+    @Column(name = "_project_executor_type", length = 32)
+    private String projectExecutorType;
 
-    @Column(name = "id_number")
+    @Column(name = "_id_number")
     private Integer idNumber;
 
     @Column(name = "outsider")
@@ -40,6 +40,6 @@ public class ProjectExecutor extends BaseEntity {
     private Boolean active;
 
     @Lob
-    @Column(name = "translations")
+    @Column(name = "_translations")
     private String translations;
 }
