@@ -363,18 +363,26 @@ public class MethodicalPublicationTypeEntityController {
     }
 
     /**
-     * OLD-HEMIS GET list format: barcha fieldlar + deletedBy (agar mavjud bo'lsa)
+     * OLD-HEMIS GET list format: barcha fieldlar (nameRu, nameEn, deletedBy agar mavjud bo'lsa)
      */
     private Map<String, Object> toMapForList(MethodicalPublicationType entity) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ENTITY_NAME);
         map.put("_instanceName", entity.getCode() + " " + (entity.getName() != null ? entity.getName() : ""));
         map.put("id", entity.getCode());
+        // OLD-HEMIS: nameRu id dan keyin keladi
+        if (entity.getNameRu() != null) {
+            map.put("nameRu", entity.getNameRu());
+        }
         map.put("code", entity.getCode());
         map.put("name", entity.getName());
         map.put("active", entity.getActive() != null ? entity.getActive() : true);
+        // OLD-HEMIS: nameEn active dan keyin keladi
+        if (entity.getNameEn() != null) {
+            map.put("nameEn", entity.getNameEn());
+        }
         map.put("version", entity.getVersion() != null ? entity.getVersion() : 1);
-        // OLD-HEMIS responseda deletedBy ham qaytariladi (agar mavjud bo'lsa)
+        // OLD-HEMIS: deletedBy version dan keyin keladi
         if (entity.getDeletedBy() != null) {
             map.put("deletedBy", entity.getDeletedBy());
         }
@@ -382,22 +390,11 @@ public class MethodicalPublicationTypeEntityController {
     }
 
     /**
-     * OLD-HEMIS search response format: deletedBy ham qaytariladi
+     * OLD-HEMIS search response format: toMapForList bilan bir xil
      */
     private Map<String, Object> toMapForSearch(MethodicalPublicationType entity) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("_entityName", ENTITY_NAME);
-        map.put("_instanceName", entity.getCode() + " " + (entity.getName() != null ? entity.getName() : ""));
-        map.put("id", entity.getCode());
-        map.put("code", entity.getCode());
-        map.put("name", entity.getName());
-        map.put("active", entity.getActive() != null ? entity.getActive() : true);
-        map.put("version", entity.getVersion() != null ? entity.getVersion() : 1);
-        // OLD-HEMIS search responseda deletedBy ham qaytariladi (agar mavjud bo'lsa)
-        if (entity.getDeletedBy() != null) {
-            map.put("deletedBy", entity.getDeletedBy());
-        }
-        return map;
+        // Search va list bir xil format qaytaradi
+        return toMapForList(entity);
     }
 
     /**
