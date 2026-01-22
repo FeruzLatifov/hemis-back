@@ -363,7 +363,7 @@ public class MethodicalPublicationTypeEntityController {
     }
 
     /**
-     * OLD-HEMIS GET list format: barcha fieldlar
+     * OLD-HEMIS GET list format: barcha fieldlar + deletedBy (agar mavjud bo'lsa)
      */
     private Map<String, Object> toMapForList(MethodicalPublicationType entity) {
         Map<String, Object> map = new LinkedHashMap<>();
@@ -374,6 +374,10 @@ public class MethodicalPublicationTypeEntityController {
         map.put("name", entity.getName());
         map.put("active", entity.getActive() != null ? entity.getActive() : true);
         map.put("version", entity.getVersion() != null ? entity.getVersion() : 1);
+        // OLD-HEMIS responseda deletedBy ham qaytariladi (agar mavjud bo'lsa)
+        if (entity.getDeletedBy() != null) {
+            map.put("deletedBy", entity.getDeletedBy());
+        }
         return map;
     }
 
