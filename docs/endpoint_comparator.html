@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEMIS Endpoint Comparator - Old vs New</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f5f5; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: #1a202c; margin-bottom: 20px; }
+
+        .config-panel {
+            background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .config-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px; }
+        .config-item { flex: 1; min-width: 200px; }
+        .config-item label { display: block; font-weight: 600; margin-bottom: 5px; color: #4a5568; }
+        .config-item input { width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 4px; }
+
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-primary { background: #3182ce; color: white; }
+        .btn-primary:hover { background: #2c5282; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-success { background: #38a169; color: white; }
+
+        .results { margin-top: 20px; }
+        .result-card {
+            background: white; border-radius: 8px; margin-bottom: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .result-header {
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; border-bottom: 1px solid #e2e8f0;
+        }
+        .result-header:hover { background: #f7fafc; }
+        .result-title { font-weight: 600; }
+        .result-status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-match { background: #c6f6d5; color: #22543d; }
+        .status-diff { background: #fed7d7; color: #822727; }
+        .status-error { background: #feebc8; color: #744210; }
+        .status-pending { background: #e2e8f0; color: #4a5568; }
+
+        .result-body { padding: 20px; display: none; }
+        .result-body.open { display: block; }
+
+        .diff-section { margin-bottom: 20px; }
+        .diff-title { font-weight: 600; margin-bottom: 10px; color: #2d3748; }
+        .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .diff-box { background: #f7fafc; border-radius: 6px; padding: 15px; }
+        .diff-box h4 { margin-bottom: 10px; font-size: 14px; color: #718096; }
+        .diff-box pre {
+            background: #1a202c; color: #e2e8f0; padding: 12px; border-radius: 4px;
+            overflow-x: auto; font-size: 12px; max-height: 300px; overflow-y: auto;
+        }
+
+        .diff-highlight { background: #fc8181; color: #1a202c; padding: 0 2px; }
+        .match-highlight { background: #68d391; color: #1a202c; padding: 0 2px; }
+
+        .summary-panel {
+            background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .summary-stats { display: flex; gap: 30px; flex-wrap: wrap; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 32px; font-weight: 700; }
+        .stat-label { color: #718096; font-size: 14px; }
+        .stat-match .stat-value { color: #38a169; }
+        .stat-diff .stat-value { color: #e53e3e; }
+        .stat-error .stat-value { color: #dd6b20; }
+
+        .progress-bar {
+            height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin: 15px 0;
+        }
+        .progress-fill { height: 100%; background: #3182ce; transition: width 0.3s; }
+
+        .filter-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .filter-tab {
+            padding: 8px 16px; border: 1px solid #e2e8f0; border-radius: 6px;
+            cursor: pointer; background: white;
+        }
+        .filter-tab.active { background: #3182ce; color: white; border-color: #3182ce; }
+
+        .category-group { margin-bottom: 30px; }
+        .category-title {
+            font-size: 18px; font-weight: 600; color: #2d3748;
+            padding: 10px 0; border-bottom: 2px solid #3182ce; margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HEMIS Endpoint Comparator</h1>
+        <p style="color: #718096; margin-bottom: 20px;">Old-hemis va Yangi hemis orasidagi request/response farqlarini aniqlash</p>
+
+        <div class="config-panel">
+            <div class="config-row">
+                <div class="config-item">
+                    <label>Yangi HEMIS URL</label>
+                    <input type="text" id="newBaseUrl" value="http://localhost:8081">
+                </div>
+                <div class="config-item">
+                    <label>Eski HEMIS URL</label>
+                    <input type="text" id="oldBaseUrl" value="http://localhost:8082">
+                </div>
+            </div>
+            <div class="config-row">
+                <div class="config-item">
+                    <label>Yangi HEMIS Username</label>
+                    <input type="text" id="newUsername" value="otm401">
+                </div>
+                <div class="config-item">
+                    <label>Yangi HEMIS Password</label>
+                    <input type="password" id="newPassword" value="1">
+                </div>
+                <div class="config-item">
+                    <label>Eski HEMIS Username</label>
+                    <input type="text" id="oldUsername" value="otm351">
+                </div>
+                <div class="config-item">
+                    <label>Eski HEMIS Password</label>
+                    <input type="password" id="oldPassword" value="1">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="authenticate()">1. Autentifikatsiya</button>
+                <button class="btn btn-success" onclick="runComparison()" id="runBtn" disabled>2. Taqqoslashni boshlash</button>
+                <button class="btn btn-danger" onclick="stopComparison()">To'xtatish</button>
+                <button class="btn" onclick="exportReport()">Hisobotni yuklab olish</button>
+            </div>
+            <div class="progress-bar" style="display: none;" id="progressBar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div id="authStatus" style="margin-top: 10px; color: #718096;"></div>
+        </div>
+
+        <div class="summary-panel" id="summaryPanel" style="display: none;">
+            <h3 style="margin-bottom: 15px;">Natijalar xulosasi</h3>
+            <div class="summary-stats">
+                <div class="stat-item stat-match">
+                    <div class="stat-value" id="statMatch">0</div>
+                    <div class="stat-label">Mos keladi</div>
+                </div>
+                <div class="stat-item stat-diff">
+                    <div class="stat-value" id="statDiff">0</div>
+                    <div class="stat-label">Farq bor</div>
+                </div>
+                <div class="stat-item stat-error">
+                    <div class="stat-value" id="statError">0</div>
+                    <div class="stat-label">Xatolik</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">Jami</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-tabs">
+            <div class="filter-tab active" onclick="filterResults('all')">Barchasi</div>
+            <div class="filter-tab" onclick="filterResults('diff')">Farq bor</div>
+            <div class="filter-tab" onclick="filterResults('match')">Mos</div>
+            <div class="filter-tab" onclick="filterResults('error')">Xatolik</div>
+        </div>
+
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        // Endpoint definitions (from endpoint_tester.html)
+        const endpoints = [
+            // 23.Ilmiy ishlanmalar
+            {
+                category: "23.Ilmiy ishlanmalar",
+                name: "Ro'yxat olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EPublicationProperty",
+                params: { limit: 5, offset: 0 }
+            },
+            {
+                category: "23.Ilmiy ishlanmalar",
+                name: "Yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EPublicationProperty",
+                body: {
+                    _university: "{university}",
+                    name: "Test ilmiy ishlanma",
+                    authors: "Test A.B.",
+                    author_counts: 1,
+                    active: true
+                }
+            },
+            // 24.Uslubiy nashlar
+            {
+                category: "24.Uslubiy nashlar",
+                name: "Ro'yxat olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EPublicationMethodical",
+                params: { limit: 5, offset: 0 }
+            },
+            {
+                category: "24.Uslubiy nashlar",
+                name: "Yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EPublicationMethodical",
+                body: {
+                    _university: "{university}",
+                    name: "Test uslubiy nashr",
+                    authors: "Test A.B.",
+                    author_counts: 1,
+                    active: true
+                }
+            },
+            // 26.Nashrlarni baholash mezonlari
+            {
+                category: "26.Nashrlarni baholash mezonlari",
+                name: "Ro'yxat olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EPublicationCriteria",
+                params: { limit: 5, offset: 0 }
+            },
+            {
+                category: "26.Nashrlarni baholash mezonlari",
+                name: "Yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_EPublicationCriteria",
+                body: {
+                    _university: "{university}",
+                    _education_year: "2024",
+                    markValue: 10,
+                    active: true
+                }
+            },
+            // 21.Loyiha ijrochilari
+            {
+                category: "21.Loyiha ijrochilari",
+                name: "Ro'yxat olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
+                params: { limit: 5, offset: 0 }
+            },
+            // 22.Ilmiy nashrlar
+            {
+                category: "22.Ilmiy nashrlar",
+                name: "Ro'yxat olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_EPublicationScientific",
+                params: { limit: 5, offset: 0 }
+            },
+        ];
+
+        let newToken = null;
+        let oldToken = null;
+        let isRunning = false;
+        let results = [];
+
+        async function authenticate() {
+            const status = document.getElementById('authStatus');
+            status.innerHTML = 'Autentifikatsiya...';
+
+            try {
+                // Yangi HEMIS
+                const newRes = await fetch(`${document.getElementById('newBaseUrl').value}/api/v1/auth/oauth/token`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `grant_type=password&username=${document.getElementById('newUsername').value}&password=${document.getElementById('newPassword').value}`
+                });
+                const newData = await newRes.json();
+                newToken = newData.access_token;
+
+                // Eski HEMIS
+                const oldRes = await fetch(`${document.getElementById('oldBaseUrl').value}/app/rest/v2/oauth/token`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='
+                    },
+                    body: `grant_type=password&username=${document.getElementById('oldUsername').value}&password=${document.getElementById('oldPassword').value}`
+                });
+                const oldData = await oldRes.json();
+                oldToken = oldData.access_token;
+
+                if (newToken && oldToken) {
+                    status.innerHTML = '<span style="color: #38a169;">✅ Ikkala tizimga ham muvaffaqiyatli ulandi!</span>';
+                    document.getElementById('runBtn').disabled = false;
+                } else {
+                    status.innerHTML = '<span style="color: #e53e3e;">❌ Token olishda xatolik</span>';
+                }
+            } catch (e) {
+                status.innerHTML = `<span style="color: #e53e3e;">❌ Xatolik: ${e.message}</span>`;
+            }
+        }
+
+        async function runComparison() {
+            if (!newToken || !oldToken) {
+                alert('Avval autentifikatsiya qiling!');
+                return;
+            }
+
+            isRunning = true;
+            results = [];
+            document.getElementById('progressBar').style.display = 'block';
+            document.getElementById('summaryPanel').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+
+            const newBase = document.getElementById('newBaseUrl').value;
+            const oldBase = document.getElementById('oldBaseUrl').value;
+            const newUniv = document.getElementById('newUsername').value.replace('otm', '');
+            const oldUniv = document.getElementById('oldUsername').value.replace('otm', '');
+
+            let matchCount = 0, diffCount = 0, errorCount = 0;
+
+            for (let i = 0; i < endpoints.length && isRunning; i++) {
+                const ep = endpoints[i];
+                const progress = ((i + 1) / endpoints.length) * 100;
+                document.getElementById('progressFill').style.width = progress + '%';
+
+                try {
+                    // Prepare body with university codes
+                    let newBody = ep.body ? JSON.parse(JSON.stringify(ep.body).replace('{university}', newUniv)) : null;
+                    let oldBody = ep.body ? JSON.parse(JSON.stringify(ep.body).replace('{university}', oldUniv)) : null;
+
+                    // Build URL with params
+                    let newUrl = newBase + ep.url;
+                    let oldUrl = oldBase + ep.url;
+                    if (ep.params) {
+                        const params = new URLSearchParams(ep.params).toString();
+                        newUrl += '?' + params;
+                        oldUrl += '?' + params;
+                    }
+
+                    // Make requests
+                    const [newRes, oldRes] = await Promise.all([
+                        makeRequest(newUrl, ep.method, newBody, newToken),
+                        makeRequest(oldUrl, ep.method, oldBody, oldToken)
+                    ]);
+
+                    // Compare structures
+                    const comparison = compareResponses(newRes, oldRes);
+
+                    const result = {
+                        endpoint: ep,
+                        newResponse: newRes,
+                        oldResponse: oldRes,
+                        comparison: comparison,
+                        status: comparison.isMatch ? 'match' : 'diff'
+                    };
+
+                    if (comparison.isMatch) matchCount++;
+                    else diffCount++;
+
+                    results.push(result);
+                    renderResult(result, i);
+
+                } catch (e) {
+                    errorCount++;
+                    results.push({
+                        endpoint: ep,
+                        error: e.message,
+                        status: 'error'
+                    });
+                    renderResult({ endpoint: ep, error: e.message, status: 'error' }, i);
+                }
+
+                updateStats(matchCount, diffCount, errorCount, i + 1);
+                await sleep(100); // Rate limiting
+            }
+
+            isRunning = false;
+        }
+
+        async function makeRequest(url, method, body, token) {
+            const options = {
+                method: method,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+            if (body && (method === 'POST' || method === 'PUT')) {
+                options.body = JSON.stringify(body);
+            }
+
+            const res = await fetch(url, options);
+            const data = await res.json().catch(() => ({}));
+            return { status: res.status, data: data };
+        }
+
+        function compareResponses(newRes, oldRes) {
+            const differences = [];
+
+            // Compare status codes
+            if (newRes.status !== oldRes.status) {
+                differences.push({
+                    type: 'status',
+                    path: 'HTTP Status',
+                    newValue: newRes.status,
+                    oldValue: oldRes.status
+                });
+            }
+
+            // Compare response structure
+            const newData = Array.isArray(newRes.data) ? (newRes.data[0] || {}) : newRes.data;
+            const oldData = Array.isArray(oldRes.data) ? (oldRes.data[0] || {}) : oldRes.data;
+
+            // Get all keys
+            const newKeys = new Set(Object.keys(newData));
+            const oldKeys = new Set(Object.keys(oldData));
+
+            // Keys in new but not in old
+            for (const key of newKeys) {
+                if (!oldKeys.has(key)) {
+                    differences.push({
+                        type: 'extra_new',
+                        path: key,
+                        newValue: typeof newData[key],
+                        oldValue: 'N/A'
+                    });
+                }
+            }
+
+            // Keys in old but not in new
+            for (const key of oldKeys) {
+                if (!newKeys.has(key)) {
+                    differences.push({
+                        type: 'missing_new',
+                        path: key,
+                        newValue: 'N/A',
+                        oldValue: typeof oldData[key]
+                    });
+                }
+            }
+
+            // Compare value types for common keys
+            for (const key of newKeys) {
+                if (oldKeys.has(key)) {
+                    const newType = getValueType(newData[key]);
+                    const oldType = getValueType(oldData[key]);
+                    if (newType !== oldType) {
+                        differences.push({
+                            type: 'type_mismatch',
+                            path: key,
+                            newValue: newType,
+                            oldValue: oldType
+                        });
+                    }
+                }
+            }
+
+            return {
+                isMatch: differences.length === 0,
+                differences: differences,
+                newKeys: Array.from(newKeys).sort(),
+                oldKeys: Array.from(oldKeys).sort()
+            };
+        }
+
+        function getValueType(val) {
+            if (val === null) return 'null';
+            if (Array.isArray(val)) return 'array';
+            return typeof val;
+        }
+
+        function renderResult(result, index) {
+            const container = document.getElementById('results');
+            const ep = result.endpoint;
+
+            const statusClass = result.status === 'match' ? 'status-match' :
+                               result.status === 'diff' ? 'status-diff' : 'status-error';
+            const statusText = result.status === 'match' ? '✅ Mos' :
+                              result.status === 'diff' ? '⚠️ Farq bor' : '❌ Xatolik';
+
+            let diffHtml = '';
+            if (result.comparison && result.comparison.differences.length > 0) {
+                diffHtml = `
+                    <div class="diff-section">
+                        <div class="diff-title">Topilgan farqlar:</div>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <tr style="background: #f7fafc;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Turi</th>
+                                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Maydon</th>
+                                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Yangi HEMIS</th>
+                                <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Eski HEMIS</th>
+                            </tr>
+                            ${result.comparison.differences.map(d => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">
+                                        ${d.type === 'extra_new' ? '🆕 Yangi maydon' :
+                                          d.type === 'missing_new' ? '❌ Yo\'q maydon' :
+                                          d.type === 'type_mismatch' ? '🔄 Tur farqi' : d.type}
+                                    </td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0; font-family: monospace;">${d.path}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${d.newValue}</td>
+                                    <td style="padding: 8px; border: 1px solid #e2e8f0;">${d.oldValue}</td>
+                                </tr>
+                            `).join('')}
+                        </table>
+                    </div>
+                `;
+            }
+
+            const html = `
+                <div class="result-card" data-status="${result.status}" data-category="${ep.category}">
+                    <div class="result-header" onclick="toggleResult(${index})">
+                        <div>
+                            <span class="result-title">${ep.category} - ${ep.name}</span>
+                            <span style="color: #718096; margin-left: 10px;">${ep.method} ${ep.url}</span>
+                        </div>
+                        <span class="result-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="result-body" id="body-${index}">
+                        ${result.error ? `<div style="color: #e53e3e;">Xatolik: ${result.error}</div>` : ''}
+                        ${diffHtml}
+                        <div class="diff-grid">
+                            <div class="diff-box">
+                                <h4>🆕 Yangi HEMIS Response</h4>
+                                <pre>${result.newResponse ? JSON.stringify(result.newResponse.data, null, 2) : 'N/A'}</pre>
+                            </div>
+                            <div class="diff-box">
+                                <h4>🏛️ Eski HEMIS Response</h4>
+                                <pre>${result.oldResponse ? JSON.stringify(result.oldResponse.data, null, 2) : 'N/A'}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function toggleResult(index) {
+            const body = document.getElementById(`body-${index}`);
+            body.classList.toggle('open');
+        }
+
+        function updateStats(match, diff, error, total) {
+            document.getElementById('statMatch').textContent = match;
+            document.getElementById('statDiff').textContent = diff;
+            document.getElementById('statError').textContent = error;
+            document.getElementById('statTotal').textContent = total;
+        }
+
+        function filterResults(type) {
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.result-card').forEach(card => {
+                const status = card.dataset.status;
+                if (type === 'all' || status === type) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function stopComparison() {
+            isRunning = false;
+        }
+
+        function exportReport() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                summary: {
+                    match: parseInt(document.getElementById('statMatch').textContent),
+                    diff: parseInt(document.getElementById('statDiff').textContent),
+                    error: parseInt(document.getElementById('statError').textContent),
+                    total: parseInt(document.getElementById('statTotal').textContent)
+                },
+                results: results.map(r => ({
+                    category: r.endpoint.category,
+                    name: r.endpoint.name,
+                    method: r.endpoint.method,
+                    url: r.endpoint.url,
+                    status: r.status,
+                    differences: r.comparison?.differences || [],
+                    error: r.error || null
+                }))
+            };
+
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hemis-comparison-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
