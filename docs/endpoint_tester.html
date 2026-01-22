@@ -6923,20 +6923,67 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
                 ported: true
             },
-
-            // 27.Uslubiy nashr turlari (Entity CRUD)
+            // ============================================
+            // 27.Uslubiy nashr turlari (7 endpoint)
             // ============================================
             {
                 id: 1,
                 category: "27.Uslubiy nashr turlari",
-                name: "Yangi uslubiy nashr turi yaratish",
+                name: "Barcha turlarni olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
+                requiresAuth: true,
+                params: {
+                    limit: "50",
+                    offset: "0"
+                },
+                description: `**Barcha uslubiy nashr turlarini olish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType
+
+<b>Parameters:</b>
+- limit: Sahifa hajmi (default: 50)
+- offset: Boshlang'ich pozitsiya (default: 0)
+
+<b>Response:</b> Uslubiy nashr turlari ro'yxati CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 2,
+                category: "27.Uslubiy nashr turlari",
+                name: "Tur ma'lumotini olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Tur kodi",
+                        type: "text",
+                        placeholder: "98 yoki 99",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true
+                    }
+                },
+                description: `**Uslubiy nashr turi ma'lumotini olish** (GET by ID)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}
+
+<b>Response:</b> Tur ma'lumotlari CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 3,
+                category: "27.Uslubiy nashr turlari",
+                name: "Yangi tur yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
                 requiresAuth: true,
-                contentType: "json",
+                hasBody: true,
+                bodyFields: ["code", "name", "nameRu", "nameEn"],
                 inputFields: {
-                    body_code: {
-                        label: "Kod (ID)",
+                    code: {
+                        label: "Kod (unique)",
                         type: "text",
                         placeholder: "98 yoki 99",
                         defaultNew: "98",
@@ -6944,146 +6991,87 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         required: true,
                         bodyField: "code"
                     },
-                    body_name: {
-                        label: "Nomi",
+                    name: {
+                        label: "Nomi (O'zbekcha)",
                         type: "text",
-                        placeholder: "Test nashr turi",
-                        defaultNew: "Test yangi hemis",
-                        defaultOld: "Test eski hemis",
+                        placeholder: "Tur nomi",
+                        defaultNew: "Test Turi NEW",
+                        defaultOld: "Test Turi OLD",
                         required: true,
                         bodyField: "name"
                     },
-                    body_active: {
-                        label: "Faol",
-                        type: "select",
-                        options: [
-                            { value: "true", label: "Ha" },
-                            { value: "false", label: "Yo'q" }
-                        ],
-                        defaultNew: "true",
-                        defaultOld: "true",
+                    nameRu: {
+                        label: "Nomi (Ruscha)",
+                        type: "text",
+                        placeholder: "Tur nomi (ruscha)",
+                        defaultNew: "Тестовый тип NEW",
+                        defaultOld: "Тестовый тип OLD",
                         required: false,
-                        bodyField: "active"
+                        bodyField: "nameRu"
+                    },
+                    nameEn: {
+                        label: "Nomi (Inglizcha)",
+                        type: "text",
+                        placeholder: "Tur nomi (inglizcha)",
+                        defaultNew: "Test Type NEW",
+                        defaultOld: "Test Type OLD",
+                        required: false,
+                        bodyField: "nameEn"
                     }
                 },
-                hasBody: true,
-                bodyFields: ["body_code", "body_name", "body_active"],
                 description: `**Yangi uslubiy nashr turi yaratish** (POST)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HMethodicalPublicationType
 
-<b>Ma'lumotlar:</b>
-- code: Uslubiy nashr turi kodi (ID sifatida ishlatiladi)
-- name: Nomi
-- active: Faol holati (true/false)
+<b>Body:</b> JSON formatda tur ma'lumotlari
 
-<b>Response:</b> {_entityName, _instanceName, id} CUBA formatda`,
-                ported: true,
-                storeFirstId: "methodicalPublicationTypeCode"
-            },
-            {
-                id: 2,
-                category: "27.Uslubiy nashr turlari",
-                name: "Uslubiy nashr turlarini olish",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
-                requiresAuth: true,
-                inputFields: {
-                    limit: {
-                        label: "Limit",
-                        type: "number",
-                        placeholder: "50",
-                        defaultNew: "10",
-                        defaultOld: "10",
-                        required: false
-                    },
-                    offset: {
-                        label: "Offset",
-                        type: "number",
-                        placeholder: "0",
-                        defaultNew: "0",
-                        defaultOld: "0",
-                        required: false
-                    }
-                },
-                queryParamsFromInputs: ["limit", "offset"],
-                description: `**Uslubiy nashr turlari ro'yxati** (GET)
-
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType
-
-<b>Parametrlar:</b>
-- limit: Natijalar soni (default: 50)
-- offset: Boshlang'ich pozitsiya
-
-<b>Response:</b> Uslubiy nashr turlari massivi`,
-                ported: true,
-                storeFirstId: "methodicalPublicationTypeCode"
-            },
-            {
-                id: 3,
-                category: "27.Uslubiy nashr turlari",
-                name: "Uslubiy nashr turini ID bo'yicha olish",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Uslubiy nashr turi kodi (11, 12, ...)",
-                        type: "text",
-                        placeholder: "98 yoki 99",
-                        defaultNew: "98",
-                        defaultOld: "99",
-                        required: true,
-                        useStoredId: "methodicalPublicationTypeCode"
-                    }
-                },
-                description: `**Uslubiy nashr turini ID bo'yicha olish** (GET)
-
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}
-
-<b>Response:</b> Uslubiy nashr turi ma'lumotlari CUBA formatda`,
+<b>Response:</b> Yaratilgan tur CUBA formatda`,
                 ported: true
             },
             {
                 id: 4,
                 category: "27.Uslubiy nashr turlari",
-                name: "Uslubiy nashr turini yangilash",
+                name: "Turni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
                 requiresAuth: true,
-                contentType: "json",
                 hasBody: true,
-                bodyFields: ["body_name", "body_active"],
+                bodyFields: ["name", "nameRu", "nameEn"],
                 inputFields: {
                     entityId: {
-                        label: "Uslubiy nashr turi kodi",
+                        label: "Tur kodi",
                         type: "text",
                         placeholder: "98 yoki 99",
                         defaultNew: "98",
                         defaultOld: "99",
-                        required: true,
-                        useStoredId: "methodicalPublicationTypeCode"
+                        required: true
                     },
-                    body_name: {
-                        label: "Yangi nom",
+                    name: {
+                        label: "Nomi (O'zbekcha)",
                         type: "text",
-                        placeholder: "Yangilangan nom",
-                        defaultNew: "Yangilangan yangi hemis",
-                        defaultOld: "Yangilangan eski hemis",
+                        placeholder: "Yangi nom",
+                        defaultNew: "Test Turi Updated NEW",
+                        defaultOld: "Test Turi Updated OLD",
                         required: false,
                         bodyField: "name"
                     },
-                    body_active: {
-                        label: "Faol holati",
-                        type: "select",
-                        options: [
-                            { value: "true", label: "Ha" },
-                            { value: "false", label: "Yo'q" }
-                        ],
-                        defaultNew: "true",
-                        defaultOld: "true",
+                    nameRu: {
+                        label: "Nomi (Ruscha)",
+                        type: "text",
+                        placeholder: "Yangi nom (ruscha)",
+                        defaultNew: "Обновленный тип NEW",
+                        defaultOld: "Обновленный тип OLD",
                         required: false,
-                        bodyField: "active"
+                        bodyField: "nameRu"
+                    },
+                    nameEn: {
+                        label: "Nomi (Inglizcha)",
+                        type: "text",
+                        placeholder: "Yangi nom (inglizcha)",
+                        defaultNew: "Updated Type NEW",
+                        defaultOld: "Updated Type OLD",
+                        required: false,
+                        bodyField: "nameEn"
                     }
                 },
                 description: `**Uslubiy nashr turini yangilash** (PUT)
@@ -7092,25 +7080,24 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 
 <b>Body:</b> O'zgartiriladigan maydonlar JSON formatda
 
-<b>Response:</b> Yangilangan entity CUBA formatda`,
+<b>Response:</b> Yangilangan tur CUBA formatda`,
                 ported: true
             },
             {
                 id: 5,
                 category: "27.Uslubiy nashr turlari",
-                name: "Uslubiy nashr turini o'chirish",
+                name: "Turni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
                 requiresAuth: true,
                 inputFields: {
                     entityId: {
-                        label: "Uslubiy nashr turi kodi",
+                        label: "Tur kodi",
                         type: "text",
                         placeholder: "98 yoki 99",
                         defaultNew: "98",
                         defaultOld: "99",
-                        required: true,
-                        useStoredId: "methodicalPublicationTypeCode"
+                        required: true
                     }
                 },
                 description: `**Uslubiy nashr turini o'chirish** (DELETE)
@@ -7212,6 +7199,532 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 - offset: Boshlang'ich pozitsiya
 
 <b>Response:</b> Filter shartlariga mos entitylar massivi`,
+                ported: true
+            },
+            // ============================================
+            // 28.Doktorantura talabalari statusi (7 endpoint)
+            // ============================================
+            {
+                id: 1,
+                category: "28.Doktorantura talabalari statusi",
+                name: "Barcha statuslarni olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
+                requiresAuth: true,
+                params: {
+                    limit: "50",
+                    offset: "0",
+                    returnNulls: "false"
+                },
+                description: `**Barcha doktorantura talabasi statuslarini olish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus
+
+<b>Parameters:</b>
+- limit: Sahifa hajmi (default: 50)
+- offset: Boshlang'ich pozitsiya (default: 0)
+- returnNulls: Null qiymatlarni qaytarish (default: false)
+
+<b>Response:</b> Status ro'yxati CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 2,
+                category: "28.Doktorantura talabalari statusi",
+                name: "Status olish (ID bo'yicha)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Status kodi",
+                        type: "text",
+                        placeholder: "Status kodi (masalan: 11)",
+                        defaultNew: "11",
+                        defaultOld: "11",
+                        required: true,
+                        useStoredId: "doctoralStudentStatusCode"
+                    }
+                },
+                description: `**Status ID bo'yicha olish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}
+
+<b>Parameters:</b>
+- entityId: Status kodi (code field - String)
+
+<b>Response:</b> Status CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 3,
+                category: "28.Doktorantura talabalari statusi",
+                name: "Yangi status yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
+                requiresAuth: true,
+                hasBody: true,
+                bodyFields: ["code", "name", "nameRu", "nameEn"],
+                inputFields: {
+                    code: {
+                        label: "Status kodi",
+                        type: "text",
+                        placeholder: "Status kodi (masalan: 98 yoki 99)",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        bodyField: "code"
+                    },
+                    name: {
+                        label: "Nomi (O'zbekcha)",
+                        type: "text",
+                        placeholder: "Status nomi",
+                        defaultNew: "Test Status",
+                        defaultOld: "Test Status",
+                        required: true,
+                        bodyField: "name"
+                    },
+                    nameRu: {
+                        label: "Nomi (Ruscha)",
+                        type: "text",
+                        placeholder: "Status nomi (ruscha)",
+                        defaultNew: "Тестовый статус",
+                        defaultOld: "Тестовый статус",
+                        required: false,
+                        bodyField: "nameRu"
+                    },
+                    nameEn: {
+                        label: "Nomi (Inglizcha)",
+                        type: "text",
+                        placeholder: "Status nomi (inglizcha)",
+                        defaultNew: "Test Status",
+                        defaultOld: "Test Status",
+                        required: false,
+                        bodyField: "nameEn"
+                    }
+                },
+                storeIdAs: "doctoralStudentStatusCode",
+                storeIdField: "code",
+                description: `**Yangi doktorantura talabasi statusi yaratish** (POST)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentStatus
+
+<b>Body:</b> JSON formatda status ma'lumotlari
+
+<b>Response:</b> Yaratilgan status CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "28.Doktorantura talabalari statusi",
+                name: "Statusni yangilash",
+                method: "PUT",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
+                requiresAuth: true,
+                hasBody: true,
+                bodyFields: ["name", "nameRu", "nameEn", "active"],
+                inputFields: {
+                    entityId: {
+                        label: "Status kodi",
+                        type: "text",
+                        placeholder: "Status kodi (98 yoki 99)",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        useStoredId: "doctoralStudentStatusCode"
+                    },
+                    name: {
+                        label: "Nomi (O'zbekcha)",
+                        type: "text",
+                        placeholder: "Yangi nom",
+                        defaultNew: "Test Status Updated",
+                        defaultOld: "Test Status Updated",
+                        required: false,
+                        bodyField: "name"
+                    },
+                    nameRu: {
+                        label: "Nomi (Ruscha)",
+                        type: "text",
+                        placeholder: "Yangi nom (ruscha)",
+                        defaultNew: "Обновленный статус",
+                        defaultOld: "Обновленный статус",
+                        required: false,
+                        bodyField: "nameRu"
+                    },
+                    nameEn: {
+                        label: "Nomi (Inglizcha)",
+                        type: "text",
+                        placeholder: "Yangi nom (inglizcha)",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: false,
+                        bodyField: "nameEn"
+                    },
+                    active: {
+                        label: "Faolmi?",
+                        type: "select",
+                        options: [
+                            { value: "true", label: "Ha" },
+                            { value: "false", label: "Yo'q" }
+                        ],
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: false,
+                        bodyField: "active"
+                    }
+                },
+                description: `**Statusni yangilash** (PUT)
+
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}
+
+<b>Body:</b> O'zgartiriladigan maydonlar JSON formatda
+
+<b>Response:</b> Yangilangan status CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 5,
+                category: "28.Doktorantura talabalari statusi",
+                name: "Statusni o'chirish",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Status kodi",
+                        type: "text",
+                        placeholder: "Status kodi (98 yoki 99)",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        useStoredId: "doctoralStudentStatusCode"
+                    }
+                },
+                description: `**Statusni o'chirish** (DELETE)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}
+
+<b>Response:</b> 200 OK (empty body)
+
+<b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
+                ported: true
+            },
+            {
+                id: 6,
+                category: "28.Doktorantura talabalari statusi",
+                name: "Statuslarni qidirish (GET)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (CUBA JSON)",
+                        type: "text",
+                        placeholder: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        defaultNew: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        defaultOld: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        required: true
+                    }
+                },
+                description: `**Statuslarni qidirish** (GET /search)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search
+
+<b>Parameters:</b>
+- filter: CUBA JSON format (ikkala tizim uchun bir xil)
+
+<b>Response:</b> Filter shartiga mos statuslar`,
+                ported: true
+            },
+            {
+                id: 7,
+                category: "28.Doktorantura talabalari statusi",
+                name: "Statuslarni qidirish (POST)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
+                requiresAuth: true,
+                contentType: "json",
+                body: {
+                    filter: {
+                        conditions: [
+                            {
+                                property: "code",
+                                operator: "notEmpty"
+                            }
+                        ]
+                    }
+                },
+                description: `**Statuslarni qidirish** (POST /search)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search
+
+<b>Body:</b> CUBA format filter JSON
+<pre>{"filter":{"conditions":[{"property":"code","operator":"notEmpty"}]}}</pre>
+
+<b>Response:</b> Filter shartiga mos statuslar`,
+                ported: true
+            },
+            // ============================================
+            // 29.Doktorantura talabalari turlari (7 endpoint)
+            // ============================================
+            {
+                id: 1,
+                category: "29.Doktorantura talabalari turlari",
+                name: "Barcha turlarni olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
+                requiresAuth: true,
+                params: {
+                    limit: "50",
+                    offset: "0",
+                    returnNulls: "false"
+                },
+                description: `**Barcha doktorantura talabasi turlarini olish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType
+
+<b>Parameters:</b>
+- limit: Sahifa hajmi (default: 50)
+- offset: Boshlang'ich pozitsiya (default: 0)
+- returnNulls: Null qiymatlarni qaytarish (default: false)
+
+<b>Response:</b> Tur ro'yxati CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 2,
+                category: "29.Doktorantura talabalari turlari",
+                name: "Tur olish (ID bo'yicha)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Tur kodi",
+                        type: "text",
+                        placeholder: "Tur kodi (masalan: 11)",
+                        defaultNew: "11",
+                        defaultOld: "11",
+                        required: true,
+                        useStoredId: "doctoralStudentTypeCode"
+                    }
+                },
+                description: `**Tur ID bo'yicha olish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}
+
+<b>Parameters:</b>
+- entityId: Tur kodi (code field - String)
+
+<b>Response:</b> Tur CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 3,
+                category: "29.Doktorantura talabalari turlari",
+                name: "Yangi tur yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
+                requiresAuth: true,
+                hasBody: true,
+                bodyFields: ["code", "name", "nameRu", "nameEn"],
+                inputFields: {
+                    code: {
+                        label: "Tur kodi",
+                        type: "text",
+                        placeholder: "Tur kodi (masalan: 98 yoki 99)",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        bodyField: "code"
+                    },
+                    name: {
+                        label: "Nomi (O'zbekcha)",
+                        type: "text",
+                        placeholder: "Tur nomi",
+                        defaultNew: "Test Tur",
+                        defaultOld: "Test Tur",
+                        required: true,
+                        bodyField: "name"
+                    },
+                    nameRu: {
+                        label: "Nomi (Ruscha)",
+                        type: "text",
+                        placeholder: "Tur nomi (ruscha)",
+                        defaultNew: "Тестовый тип",
+                        defaultOld: "Тестовый тип",
+                        required: false,
+                        bodyField: "nameRu"
+                    },
+                    nameEn: {
+                        label: "Nomi (Inglizcha)",
+                        type: "text",
+                        placeholder: "Tur nomi (inglizcha)",
+                        defaultNew: "Test Type",
+                        defaultOld: "Test Type",
+                        required: false,
+                        bodyField: "nameEn"
+                    }
+                },
+                storeIdAs: "doctoralStudentTypeCode",
+                storeIdField: "code",
+                description: `**Yangi doktorantura talabasi turi yaratish** (POST)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentType
+
+<b>Body:</b> JSON formatda tur ma'lumotlari
+
+<b>Response:</b> Yaratilgan tur CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "29.Doktorantura talabalari turlari",
+                name: "Turni yangilash",
+                method: "PUT",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
+                requiresAuth: true,
+                hasBody: true,
+                bodyFields: ["name", "nameRu", "nameEn", "active"],
+                inputFields: {
+                    entityId: {
+                        label: "Tur kodi",
+                        type: "text",
+                        placeholder: "Tur kodi (98 yoki 99)",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        useStoredId: "doctoralStudentTypeCode"
+                    },
+                    name: {
+                        label: "Nomi (O'zbekcha)",
+                        type: "text",
+                        placeholder: "Yangi nom",
+                        defaultNew: "Test Tur Updated",
+                        defaultOld: "Test Tur Updated",
+                        required: false,
+                        bodyField: "name"
+                    },
+                    nameRu: {
+                        label: "Nomi (Ruscha)",
+                        type: "text",
+                        placeholder: "Yangi nom (ruscha)",
+                        defaultNew: "Обновленный тип",
+                        defaultOld: "Обновленный тип",
+                        required: false,
+                        bodyField: "nameRu"
+                    },
+                    nameEn: {
+                        label: "Nomi (Inglizcha)",
+                        type: "text",
+                        placeholder: "Yangi nom (inglizcha)",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: false,
+                        bodyField: "nameEn"
+                    },
+                    active: {
+                        label: "Faolmi?",
+                        type: "select",
+                        options: [
+                            { value: "true", label: "Ha" },
+                            { value: "false", label: "Yo'q" }
+                        ],
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: false,
+                        bodyField: "active"
+                    }
+                },
+                description: `**Turni yangilash** (PUT)
+
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}
+
+<b>Body:</b> O'zgartiriladigan maydonlar JSON formatda
+
+<b>Response:</b> Yangilangan tur CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 5,
+                category: "29.Doktorantura talabalari turlari",
+                name: "Turni o'chirish",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Tur kodi",
+                        type: "text",
+                        placeholder: "Tur kodi (98 yoki 99)",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        useStoredId: "doctoralStudentTypeCode"
+                    }
+                },
+                description: `**Turni o'chirish** (DELETE)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}
+
+<b>Response:</b> 200 OK (empty body)
+
+<b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
+                ported: true
+            },
+            {
+                id: 6,
+                category: "29.Doktorantura talabalari turlari",
+                name: "Turlarni qidirish (GET)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (CUBA JSON)",
+                        type: "text",
+                        placeholder: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        defaultNew: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        defaultOld: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        required: true
+                    }
+                },
+                description: `**Turlarni qidirish** (GET /search)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType/search
+
+<b>Parameters:</b>
+- filter: CUBA JSON format (ikkala tizim uchun bir xil)
+
+<b>Response:</b> Filter shartiga mos turlar`,
+                ported: true
+            },
+            {
+                id: 7,
+                category: "29.Doktorantura talabalari turlari",
+                name: "Turlarni qidirish (POST)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
+                requiresAuth: true,
+                contentType: "json",
+                body: {
+                    filter: {
+                        conditions: [
+                            {
+                                property: "code",
+                                operator: "notEmpty"
+                            }
+                        ]
+                    }
+                },
+                description: `**Turlarni qidirish** (POST /search)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentType/search
+
+<b>Body:</b> CUBA format filter JSON
+<pre>{"filter":{"conditions":[{"property":"code","operator":"notEmpty"}]}}</pre>
+
+<b>Response:</b> Filter shartiga mos turlar`,
                 ported: true
             },
         ];
@@ -7406,7 +7919,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                                     });
                                     paramsHtml += `</select>`;
                                 } else if (field.type === 'textarea') {
-                                    // TEXTAREA type uchun
+                                    // TEXTAREA type uchun (JSON va special characters uchun escape)
                                     const rows = field.rows || 3;
                                     paramsHtml += `<textarea class="form-control form-control-sm" id="input-old-${uniqueId}-${key}" placeholder="${escapeHtmlAttr(field.placeholder || '')}" rows="${rows}" style="font-family: monospace; font-size: 11px;">${escapeHtmlAttr(defaultValue || '')}</textarea>`;
                                 } else {
@@ -7550,6 +8063,17 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
         function makeUniqueId(category, id) {
             // Replace special characters with safe alternatives
             return `${category.replace(/[^a-zA-Z0-9]/g, '_')}_${id}`;
+        }
+
+        // Helper function to escape HTML special characters in attribute values
+        function escapeHtmlAttr(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
         }
 
         // Toggle details visibility
