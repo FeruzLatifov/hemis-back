@@ -34,8 +34,8 @@ public class GenericLegacyEntityJdbcController {
             // hemishe_EStudentDiploma - maxsus StudentDiplomaEntityController.java da
             // hemishe_EPublicationCriteria - maxsus PublicationCriteriaEntityController.java da
             // hemishe_HDoctoralStudentStatus - maxsus DoctoralStudentStatusEntityController.java da
+            // hemishe_RExpel - maxsus ExpelEntityController.java da
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicGroup", "hemishe_r_academic_group"),
-            Map.entry("/app/rest/v2/entities/hemishe_RExpel", "hemishe_r_expel"),
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicAttendance", "hemishe_r_academic_attendance"),
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicSubjects", "hemishe_r_academic_subjects"),
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicScore", "hemishe_r_academic_score"),
@@ -84,7 +84,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicGroup/{id}",
-            "/app/rest/v2/entities/hemishe_RExpel/{id}",
             "/app/rest/v2/entities/hemishe_RAcademicAttendance/{id}",
             "/app/rest/v2/entities/hemishe_RAcademicSubjects/{id}",
             "/app/rest/v2/entities/hemishe_RAcademicScore/{id}",
@@ -112,7 +111,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicGroup",
-            "/app/rest/v2/entities/hemishe_RExpel",
             "/app/rest/v2/entities/hemishe_RAcademicAttendance",
             "/app/rest/v2/entities/hemishe_RAcademicSubjects",
             "/app/rest/v2/entities/hemishe_RAcademicScore",
@@ -145,7 +143,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicGroup/search",
-            "/app/rest/v2/entities/hemishe_RExpel/search",
             "/app/rest/v2/entities/hemishe_RAcademicAttendance/search",
             "/app/rest/v2/entities/hemishe_RAcademicSubjects/search",
             "/app/rest/v2/entities/hemishe_RAcademicScore/search",
