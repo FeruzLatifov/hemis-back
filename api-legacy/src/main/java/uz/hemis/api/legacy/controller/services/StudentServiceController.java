@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.StudentIdRequest;
 import uz.hemis.domain.repository.UserRepository;
+import uz.hemis.service.ContractStatisticsService;
 import uz.hemis.service.StudentGpaService;
 import uz.hemis.service.StudentService;
 import uz.hemis.service.VerificationService;
@@ -60,6 +61,7 @@ public class StudentServiceController {
     private final VerificationService verificationService;
     private final UserRepository userRepository;
     private final HemisApiService hemisApiService;
+    private final ContractStatisticsService contractStatisticsService;
 
     /**
      * Talaba tasdiqlash ballarini olish (DTM verification)
@@ -819,6 +821,7 @@ public class StudentServiceController {
     @Operation(summary = "Shartnoma statistikasini yuborish", description = "Shartnoma statistika ma'lumotlarini tashqi tizimga yuborish")
     public ResponseEntity<?> contractStatistics(@RequestBody Map<String, Object> request) {
         log.info("[CUBA Service] student/contractStatistics: request={}", request);
-        return ResponseEntity.ok(studentService.submitContractStatistics(request));
+        String username = getCurrentUsername();
+        return ResponseEntity.ok(contractStatisticsService.submitContractStatistics(request, username));
     }
 }
