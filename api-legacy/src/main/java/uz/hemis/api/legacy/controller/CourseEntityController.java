@@ -18,14 +18,14 @@ import java.util.stream.Collectors;
 
 @Tag(name = "Courses")
 @RestController
-@RequestMapping("/app/rest/v2/entities/hemishe_RAcademicSubjects")
+@RequestMapping("/app/rest/v2/entities/hemishe_ECourse")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
 public class CourseEntityController {
 
     private final CourseRepository repository;
-    private static final String ENTITY_NAME = "hemishe_RAcademicSubjects";
+    private static final String ENTITY_NAME = "hemishe_ECourse";
 
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
