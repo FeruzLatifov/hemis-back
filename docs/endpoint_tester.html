@@ -7211,11 +7211,36 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
                 requiresAuth: true,
-                params: {
-                    limit: "50",
-                    offset: "0",
-                    returnNulls: "false"
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "50",
+                        defaultOld: "50",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [
+                            { value: "false", label: "false (default)" },
+                            { value: "true", label: "true" }
+                        ],
+                        defaultNew: "false",
+                        defaultOld: "false",
+                        required: false
+                    }
                 },
+                queryParamsFromInputs: ["limit", "offset", "returnNulls"],
                 description: `**Barcha doktorantura talabasi statuslarini olish** (GET)
 
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus
@@ -7418,20 +7443,39 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 requiresAuth: true,
                 inputFields: {
                     filter: {
-                        label: "Filter (CUBA JSON)",
+                        label: "Filter JSON (majburiy)",
                         type: "text",
-                        placeholder: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
-                        defaultNew: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
-                        defaultOld: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        placeholder: '{"conditions":[]}',
+                        defaultNew: '{"conditions":[]}',
+                        defaultOld: '{"conditions":[]}',
                         required: true
+                    },
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
                     }
                 },
+                queryParamsFromInputs: ["filter", "limit", "offset"],
                 description: `**Statuslarni qidirish** (GET /search)
 
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search
 
-<b>Parameters:</b>
-- filter: CUBA JSON format (ikkala tizim uchun bir xil)
+<b>Parametrlar:</b>
+- filter: JSON filter (majburiy) - {"conditions":[]}
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
 
 <b>Response:</b> Filter shartiga mos statuslar`,
                 ported: true
@@ -7444,22 +7488,40 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
                 requiresAuth: true,
                 contentType: "json",
-                body: {
-                    filter: {
-                        conditions: [
-                            {
-                                property: "code",
-                                operator: "notEmpty"
-                            }
-                        ]
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
                     }
                 },
+                hasBody: true,
+                bodyTemplate: {
+                    "filter": {
+                        "conditions": []
+                    }
+                },
+                queryParamsFromInputs: ["limit", "offset"],
                 description: `**Statuslarni qidirish** (POST /search)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search
 
-<b>Body:</b> CUBA format filter JSON
-<pre>{"filter":{"conditions":[{"property":"code","operator":"notEmpty"}]}}</pre>
+<b>Body:</b> {"filter":{"conditions":[]}} formatida
+
+<b>Parametrlar:</b>
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
 
 <b>Response:</b> Filter shartiga mos statuslar`,
                 ported: true
@@ -7474,11 +7536,36 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
                 requiresAuth: true,
-                params: {
-                    limit: "50",
-                    offset: "0",
-                    returnNulls: "false"
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "50",
+                        defaultOld: "50",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [
+                            { value: "false", label: "false (default)" },
+                            { value: "true", label: "true" }
+                        ],
+                        defaultNew: "false",
+                        defaultOld: "false",
+                        required: false
+                    }
                 },
+                queryParamsFromInputs: ["limit", "offset", "returnNulls"],
                 description: `**Barcha doktorantura talabasi turlarini olish** (GET)
 
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType
@@ -7681,20 +7768,39 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 requiresAuth: true,
                 inputFields: {
                     filter: {
-                        label: "Filter (CUBA JSON)",
+                        label: "Filter JSON (majburiy)",
                         type: "text",
-                        placeholder: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
-                        defaultNew: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
-                        defaultOld: '{"conditions":[{"property":"name","operator":"contains","value":"a"}]}',
+                        placeholder: '{"conditions":[]}',
+                        defaultNew: '{"conditions":[]}',
+                        defaultOld: '{"conditions":[]}',
                         required: true
+                    },
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
                     }
                 },
+                queryParamsFromInputs: ["filter", "limit", "offset"],
                 description: `**Turlarni qidirish** (GET /search)
 
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType/search
 
-<b>Parameters:</b>
-- filter: CUBA JSON format (ikkala tizim uchun bir xil)
+<b>Parametrlar:</b>
+- filter: JSON filter (majburiy) - {"conditions":[]}
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
 
 <b>Response:</b> Filter shartiga mos turlar`,
                 ported: true
@@ -7707,22 +7813,40 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
                 requiresAuth: true,
                 contentType: "json",
-                body: {
-                    filter: {
-                        conditions: [
-                            {
-                                property: "code",
-                                operator: "notEmpty"
-                            }
-                        ]
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
                     }
                 },
+                hasBody: true,
+                bodyTemplate: {
+                    "filter": {
+                        "conditions": []
+                    }
+                },
+                queryParamsFromInputs: ["limit", "offset"],
                 description: `**Turlarni qidirish** (POST /search)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentType/search
 
-<b>Body:</b> CUBA format filter JSON
-<pre>{"filter":{"conditions":[{"property":"code","operator":"notEmpty"}]}}</pre>
+<b>Body:</b> {"filter":{"conditions":[]}} formatida
+
+<b>Parametrlar:</b>
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
 
 <b>Response:</b> Filter shartiga mos turlar`,
                 ported: true
