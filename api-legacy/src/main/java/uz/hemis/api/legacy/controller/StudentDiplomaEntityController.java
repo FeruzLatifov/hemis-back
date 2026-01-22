@@ -122,7 +122,7 @@ public class StudentDiplomaEntityController {
                         }
 
                         // university filter
-                        if (("university".equals(property) || "_university".equals(property)) && value != null) {
+                        if ("university".equals(property) && value != null) {
                             List<StudentDiploma> filtered = repository.findByUniversity(String.valueOf(value));
 
                             int start = Math.min(offset, filtered.size());
@@ -137,7 +137,7 @@ public class StudentDiplomaEntityController {
                         }
 
                         // student filter
-                        if (("student".equals(property) || "_student".equals(property)) && value != null) {
+                        if ("student".equals(property) && value != null) {
                             UUID studentId = UUID.fromString(String.valueOf(value));
                             List<StudentDiploma> filtered = repository.findByStudent(studentId);
 
@@ -212,6 +212,14 @@ public class StudentDiplomaEntityController {
 
         log.debug("PUT diploma id: {}", entityId);
 
+        // OLD-HEMIS format: _entityName majburiy
+        if (!body.containsKey("_entityName") || !"hemishe_EStudentDiploma".equals(body.get("_entityName"))) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Cannot deserialize an entity from JSON",
+                    "details", "_entityName must be 'hemishe_EStudentDiploma'"
+            ));
+        }
+
         Optional<StudentDiploma> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -222,7 +230,14 @@ public class StudentDiplomaEntityController {
         entity.setUpdateTs(LocalDateTime.now());
 
         StudentDiploma saved = repository.save(entity);
-        return ResponseEntity.ok(toMap(saved, returnNulls, null));
+
+        // OLD-HEMIS format: minimal response
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("_entityName", ENTITY_NAME);
+        response.put("_instanceName", "com.company.hemishe.entity.EStudentDiploma-" + saved.getId() + " [detached]");
+        response.put("id", saved.getId().toString());
+
+        return ResponseEntity.ok(response);
     }
 
     // =============================================
@@ -237,33 +252,46 @@ public class StudentDiplomaEntityController {
 
         log.debug("POST create diploma");
 
-        // Majburiy maydonlarni tekshirish (old-hemis format)
+        // OLD-HEMIS format validation (STRICT)
+        // Required: _entityName, university{_entityName,id}, student{_entityName,id}, speciality(string), diplomaNumber
         List<Map<String, Object>> validationErrors = new ArrayList<>();
-        if (!hasValue(body, "university", "_university")) {
+
+        // _entityName majburiy
+        if (!body.containsKey("_entityName") || !"hemishe_EStudentDiploma".equals(body.get("_entityName"))) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Cannot deserialize an entity from JSON",
+                    "details", "_entityName must be 'hemishe_EStudentDiploma'"
+            ));
+        }
+
+        // university: {"_entityName": "hemishe_EUniversity", "id": "..."}
+        if (!isValidNestedRef(body.get("university"), "hemishe_EUniversity")) {
             validationErrors.add(createValidationError("university"));
         }
-        if (!hasValue(body, "student", "_student")) {
+
+        // student: {"_entityName": "hemishe_EStudent", "id": "..."}
+        if (!isValidNestedRef(body.get("student"), "hemishe_EStudent")) {
             validationErrors.add(createValidationError("student"));
         }
-        if (!hasValue(body, "speciality", "_speciality")) {
+
+        // speciality: oddiy string (nested emas!)
+        Object specialityVal = body.get("speciality");
+        if (!(specialityVal instanceof String) || ((String) specialityVal).isEmpty()) {
             validationErrors.add(createValidationError("speciality"));
         }
-        if (!hasValue(body, "diplomaNumber")) {
+
+        // diplomaNumber majburiy
+        if (!body.containsKey("diplomaNumber") || body.get("diplomaNumber") == null ||
+                body.get("diplomaNumber").toString().isEmpty()) {
             validationErrors.add(createValidationError("diplomaNumber"));
         }
 
         if (!validationErrors.isEmpty()) {
-            // Old-hemis formati uchun invalidValue: null ni qo'shish kerak
-            try {
-                com.fasterxml.jackson.databind.ObjectMapper validationMapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                validationMapper.setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS);
-                String jsonResponse = validationMapper.writeValueAsString(validationErrors);
-                return ResponseEntity.badRequest()
-                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-                        .body(jsonResponse);
-            } catch (Exception e) {
-                return ResponseEntity.badRequest().body(validationErrors);
-            }
+            // OLD-HEMIS format: {"error": "Cannot deserialize an entity from JSON", "details": ""}
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Cannot deserialize an entity from JSON",
+                    "details", ""
+            ));
         }
 
         StudentDiploma entity = new StudentDiploma();
@@ -281,23 +309,51 @@ public class StudentDiplomaEntityController {
         entityManager.persist(entity);
         entityManager.flush();
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(toMap(entity, returnNulls, null));
+        // OLD-HEMIS format: minimal response
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("_entityName", ENTITY_NAME);
+        response.put("_instanceName", "com.company.hemishe.entity.EStudentDiploma-" + entity.getId() + " [detached]");
+        response.put("id", entity.getId().toString());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    /**
+     * OLD-HEMIS format tekshirish:
+     * - university/student: nested object {"_entityName": "...", "id": "..."}
+     * - speciality: oddiy string
+     */
     @SuppressWarnings("unchecked")
     private boolean hasValue(Map<String, Object> map, String... keys) {
         for (String key : keys) {
             Object val = map.get(key);
             if (val == null) continue;
 
-            // CUBA object format: {"id": "value"}
-            if (val instanceof Map) {
-                Map<String, Object> objMap = (Map<String, Object>) val;
-                Object id = objMap.get("id");
-                if (id != null && !id.toString().isEmpty()) {
+            // university, student uchun: nested object {"_entityName": "...", "id": "..."}
+            if ("university".equals(key) || "student".equals(key)) {
+                if (val instanceof Map) {
+                    Map<String, Object> objMap = (Map<String, Object>) val;
+                    // _entityName va id bo'lishi shart
+                    Object entityName = objMap.get("_entityName");
+                    Object id = objMap.get("id");
+                    if (entityName != null && id != null && !id.toString().isEmpty()) {
+                        return true;
+                    }
+                }
+                // Nested object bo'lmasa - xato
+                continue;
+            }
+
+            // speciality uchun: oddiy string
+            if ("speciality".equals(key)) {
+                if (val instanceof String && !((String) val).isEmpty()) {
                     return true;
                 }
-            } else if (!val.toString().isEmpty()) {
+                continue;
+            }
+
+            // Boshqa maydonlar uchun oddiy tekshirish
+            if (!val.toString().isEmpty()) {
                 return true;
             }
         }
@@ -314,14 +370,38 @@ public class StudentDiplomaEntityController {
     }
 
     /**
-     * CUBA format: {"id": "value"} - faqat Map qabul qiladi
+     * OLD-HEMIS format: nested reference must be {"_entityName": "expectedEntity", "id": "..."}
+     */
+    @SuppressWarnings("unchecked")
+    private boolean isValidNestedRef(Object val, String expectedEntityName) {
+        if (val == null || !(val instanceof Map)) {
+            return false;
+        }
+        Map<String, Object> objMap = (Map<String, Object>) val;
+
+        // _entityName majburiy va to'g'ri bo'lishi kerak
+        Object entityName = objMap.get("_entityName");
+        if (entityName == null || !expectedEntityName.equals(entityName.toString())) {
+            return false;
+        }
+
+        // id majburiy
+        Object id = objMap.get("id");
+        return id != null && !id.toString().isEmpty();
+    }
+
+    /**
+     * OLD-HEMIS format: nested object {"_entityName": "...", "id": "..."} dan id olish
+     * yoki oddiy string qiymat
      */
     @SuppressWarnings("unchecked")
     private String extractIdAsString(Object val) {
         if (val == null) return null;
         if (val instanceof UUID) return val.toString();
+        if (val instanceof String) return (String) val;
         if (val instanceof Map) {
             Map<String, Object> objMap = (Map<String, Object>) val;
+            // OLD-HEMIS format: {"_entityName": "...", "id": "..."}
             Object id = objMap.get("id");
             return id != null ? id.toString() : null;
         }
@@ -551,7 +631,7 @@ public class StudentDiplomaEntityController {
             }
 
             // university filter
-            if ("university".equals(property) || "_university".equals(property)) {
+            if ("university".equals(property)) {
                 List<StudentDiploma> filtered = repository.findByUniversity(String.valueOf(value));
                 int start = Math.min(offset, filtered.size());
                 int end = Math.min(start + limit, filtered.size());
@@ -559,7 +639,7 @@ public class StudentDiplomaEntityController {
             }
 
             // student filter
-            if ("student".equals(property) || "_student".equals(property)) {
+            if ("student".equals(property)) {
                 UUID studentId = UUID.fromString(String.valueOf(value));
                 List<StudentDiploma> filtered = repository.findByStudent(studentId);
                 int start = Math.min(offset, filtered.size());
@@ -616,13 +696,13 @@ public class StudentDiplomaEntityController {
     private Object getFieldValue(StudentDiploma entity, String property) {
         return switch (property) {
             case "diplomaNumber" -> entity.getDiplomaNumber();
-            case "university", "_university" -> entity.getUniversity();
-            case "student", "_student" -> entity.getStudent();
-            case "speciality", "_speciality" -> entity.getSpeciality();
+            case "university" -> entity.getUniversity();
+            case "student" -> entity.getStudent();
+            case "speciality" -> entity.getSpeciality();
             case "active" -> entity.getActive();
-            case "educationType", "_education_type" -> entity.getEducationType();
-            case "educationYear", "_education_year" -> entity.getEducationYear();
-            case "department", "_department" -> entity.getDepartment();
+            case "educationType" -> entity.getEducationType();
+            case "educationYear" -> entity.getEducationYear();
+            case "department" -> entity.getDepartment();
             default -> null;
         };
     }
@@ -634,10 +714,10 @@ public class StudentDiplomaEntityController {
     private Map<String, Object> toMap(StudentDiploma entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
 
-        // CUBA standard fields
+        // CUBA standard fields (OLD-HEMIS format)
         map.put("_entityName", ENTITY_NAME);
-        map.put("_instanceName", entity.getDiplomaNumber());
-        map.put("id", entity.getId());
+        map.put("_instanceName", "com.company.hemishe.entity.EStudentDiploma-" + entity.getId() + " [detached]");
+        map.put("id", entity.getId().toString());
 
         boolean useNestedObjects = view != null && !view.isEmpty();
 
@@ -857,23 +937,22 @@ public class StudentDiplomaEntityController {
 
     /**
      * Update entity from Map
-     * Supports both plain values and CUBA object format: {"id": "value"}
+     * OLD-HEMIS format: underscore'siz maydonlar (university, student, speciality)
+     * Supports nested object format: {"id": "value"}
      */
     private void updateFromMap(StudentDiploma entity, Map<String, Object> map) {
-        if (map.containsKey("university") || map.containsKey("_university")) {
-            Object val = map.getOrDefault("university", map.get("_university"));
-            entity.setUniversity(extractIdAsString(val));
+        // OLD-HEMIS format: underscore'siz maydonlar
+        if (map.containsKey("university")) {
+            entity.setUniversity(extractIdAsString(map.get("university")));
         }
-        if (map.containsKey("student") || map.containsKey("_student")) {
-            Object val = map.getOrDefault("student", map.get("_student"));
-            String idStr = extractIdAsString(val);
+        if (map.containsKey("student")) {
+            String idStr = extractIdAsString(map.get("student"));
             if (idStr != null) {
                 entity.setStudent(UUID.fromString(idStr));
             }
         }
-        if (map.containsKey("speciality") || map.containsKey("_speciality")) {
-            Object val = map.getOrDefault("speciality", map.get("_speciality"));
-            entity.setSpeciality(extractIdAsString(val));
+        if (map.containsKey("speciality")) {
+            entity.setSpeciality(extractIdAsString(map.get("speciality")));
         }
         if (map.containsKey("diplomaNumber")) {
             entity.setDiplomaNumber((String) map.get("diplomaNumber"));
@@ -896,8 +975,8 @@ public class StudentDiplomaEntityController {
         if (map.containsKey("active")) {
             entity.setActive((Boolean) map.get("active"));
         }
-        if (map.containsKey("department") || map.containsKey("_department")) {
-            entity.setDepartment((String) map.getOrDefault("department", map.get("_department")));
+        if (map.containsKey("department")) {
+            entity.setDepartment(extractIdAsString(map.get("department")));
         }
         if (map.containsKey("totalAcload")) {
             entity.setTotalAcload((String) map.get("totalAcload"));
@@ -908,14 +987,14 @@ public class StudentDiplomaEntityController {
         if (map.containsKey("specialityName")) {
             entity.setSpecialityName((String) map.get("specialityName"));
         }
-        if (map.containsKey("diplomCategory") || map.containsKey("_diplom_category")) {
-            entity.setDiplomCategory((String) map.getOrDefault("diplomCategory", map.get("_diplom_category")));
+        if (map.containsKey("diplomCategory")) {
+            entity.setDiplomCategory(extractIdAsString(map.get("diplomCategory")));
         }
-        if (map.containsKey("educationYear") || map.containsKey("_education_year")) {
-            entity.setEducationYear((String) map.getOrDefault("educationYear", map.get("_education_year")));
+        if (map.containsKey("educationYear")) {
+            entity.setEducationYear(extractIdAsString(map.get("educationYear")));
         }
-        if (map.containsKey("educationType") || map.containsKey("_education_type")) {
-            entity.setEducationType((String) map.getOrDefault("educationType", map.get("_education_type")));
+        if (map.containsKey("educationType")) {
+            entity.setEducationType(extractIdAsString(map.get("educationType")));
         }
         if (map.containsKey("totalCredit")) {
             entity.setTotalCredit((String) map.get("totalCredit"));
@@ -947,8 +1026,8 @@ public class StudentDiplomaEntityController {
                 entity.setGraduationDate(LocalDate.parse((String) val));
             }
         }
-        if (map.containsKey("admissionYear") || map.containsKey("_admission_year")) {
-            entity.setAdmissionYear((String) map.getOrDefault("admissionYear", map.get("_admission_year")));
+        if (map.containsKey("admissionYear")) {
+            entity.setAdmissionYear(extractIdAsString(map.get("admissionYear")));
         }
     }
 

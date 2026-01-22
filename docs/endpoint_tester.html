@@ -4184,12 +4184,13 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     }
                 },
                 hasBody: true,
-                // CUBA format: FK maydonlari nested formatda {code: "val"} yoki {id: "uuid"}
+                // OLD-HEMIS format: _entityName + nested refs with _entityName, speciality is plain string
                 bodyGenerator: (inputs) => ({
+                    _entityName: "hemishe_EStudentDiploma",
+                    university: {_entityName: "hemishe_EUniversity", id: inputs.university},
+                    student: {_entityName: "hemishe_EStudent", id: inputs.student},
+                    speciality: inputs.speciality,
                     diplomaNumber: inputs.diplomaNumber,
-                    university: {code: inputs.university},
-                    student: {id: inputs.student},
-                    speciality: {code: inputs.speciality},
                     active: inputs.active === 'true'
                 }),
                 description: "Yangi diploma yaratish. Yaratilgan ID avtomatik PUT va DELETE ga o'tadi. CUBA format.",
@@ -4244,7 +4245,14 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     }
                 },
                 hasBody: true,
-                bodyFields: ["diplomaNumber", "registerNumber", "active"],
+                // OLD-HEMIS format: _entityName + update fields
+                bodyGenerator: (inputs) => {
+                    const body = {_entityName: "hemishe_EStudentDiploma"};
+                    if (inputs.diplomaNumber) body.diplomaNumber = inputs.diplomaNumber;
+                    if (inputs.registerNumber) body.registerNumber = inputs.registerNumber;
+                    if (inputs.active === 'true' || inputs.active === 'false') body.active = inputs.active === 'true';
+                    return body;
+                },
                 description: "2️⃣ POST da yaratilgan diplomni yangilash. entityId avtomatik to'ldiriladi.",
                 ported: true
             },

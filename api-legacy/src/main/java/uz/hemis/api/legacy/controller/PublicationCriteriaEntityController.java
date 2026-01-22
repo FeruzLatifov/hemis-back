@@ -58,7 +58,11 @@ public class PublicationCriteriaEntityController {
 
         Optional<PublicationCriteria> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: error va details fieldlari
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         return ResponseEntity.ok(toMap(entity.get(), returnNulls));
@@ -75,7 +79,11 @@ public class PublicationCriteriaEntityController {
 
         Optional<PublicationCriteria> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: error va details fieldlari
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         PublicationCriteria entity = existingOpt.get();
@@ -87,12 +95,16 @@ public class PublicationCriteriaEntityController {
 
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Baholash mezonini o'chirish", description = "Baholash mezonini soft delete qiladi")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
+    public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID entityId) {
         log.debug("DELETE PublicationCriteria id: {}", entityId);
 
         Optional<PublicationCriteria> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: error va details fieldlari
+            Map<String, Object> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         repository.delete(entity.get());
@@ -204,27 +216,13 @@ public class PublicationCriteriaEntityController {
         map.put("id", entity.getId());
         map.put("version", entity.getVersion());
 
-        // Fields in camelCase (CUBA format)
-        putIfNotNull(map, "uId", entity.getUId(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "_education_year", entity.getEducationYear(), returnNulls);
-        putIfNotNull(map, "_publication_type_table", entity.getPublicationTypeTable(), returnNulls);
-        putIfNotNull(map, "_publication_methodical_type", entity.getPublicationMethodicalType(), returnNulls);
-        putIfNotNull(map, "_publication_scientific_type", entity.getPublicationScientificType(), returnNulls);
-        putIfNotNull(map, "_publication_property_type", entity.getPublicationPropertyType(), returnNulls);
-        putIfNotNull(map, "inPublicationDatabase", entity.getInPublicationDatabase(), returnNulls);
-        putIfNotNull(map, "markValue", entity.getMarkValue(), returnNulls);
-        putIfNotNull(map, "position", entity.getPosition(), returnNulls);
+        // Fields in camelCase (OLD-HEMIS CUBA format)
+        // OLD-HEMIS faqat: active, version, publicationTypeTable, markValue qaytaradi
         putIfNotNull(map, "active", entity.getActive(), returnNulls);
-        putIfNotNull(map, "_translations", entity.getTranslations(), returnNulls);
+        putIfNotNull(map, "publicationTypeTable", entity.getPublicationTypeTable(), returnNulls);
+        putIfNotNull(map, "markValue", entity.getMarkValue(), returnNulls);
 
-        // BaseEntity audit fields
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        // OLD-HEMIS format: audit fields yo'q
 
         return map;
     }

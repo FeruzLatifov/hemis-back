@@ -152,9 +152,9 @@ public class ClassifierServicesController {
             // Count va max version olish
             String countSql;
             if (hasVersion && hasDeleteTs) {
-                countSql = "SELECT COUNT(*), COALESCE(MAX(version), 0) FROM " + tableName + " WHERE delete_ts IS NULL";
+                countSql = "SELECT COUNT(*), COALESCE(SUM(version), 0) FROM " + tableName + " WHERE delete_ts IS NULL";
             } else if (hasVersion) {
-                countSql = "SELECT COUNT(*), COALESCE(MAX(version), 0) FROM " + tableName;
+                countSql = "SELECT COUNT(*), COALESCE(SUM(version), 0) FROM " + tableName;
             } else if (hasDeleteTs) {
                 countSql = "SELECT COUNT(*), 0 FROM " + tableName + " WHERE delete_ts IS NULL";
             } else {
@@ -166,6 +166,9 @@ public class ClassifierServicesController {
             int maxVersion = ((Number) countResult[1]).intValue();
 
             // Items olish - dinamik ustunlar
+            // OLD-HEMIS format: active field bor, audit fields yo'q
+            boolean hasActive = checkColumnExists(tableName, "active");
+
             StringBuilder selectColumns = new StringBuilder(pkColumn);
             if (hasName) selectColumns.append(", name");
             else if (hasNameUz) selectColumns.append(", name_uz as name");
@@ -174,12 +177,15 @@ public class ClassifierServicesController {
             if (hasVersion) selectColumns.append(", version");
             else selectColumns.append(", 0 as version");
 
+            if (hasActive) selectColumns.append(", active");
+            else selectColumns.append(", true as active");
+
             String whereClause = hasDeleteTs ? " WHERE delete_ts IS NULL" : "";
             String itemsSql = "SELECT " + selectColumns + " FROM " + tableName + whereClause + " ORDER BY " + pkColumn;
 
             List<Object[]> itemsResult = entityManager.createNativeQuery(itemsSql).getResultList();
 
-            // Items list yaratish
+            // Items list yaratish - OLD-HEMIS format (audit fields yo'q)
             final String finalEntityName = entityName;
             List<Map<String, Object>> items = itemsResult.stream()
                     .map(row -> {
@@ -188,6 +194,7 @@ public class ClassifierServicesController {
                         item.put("id", String.valueOf(row[0]));
                         item.put("code", String.valueOf(row[0]));
                         item.put("name", row[1] != null ? String.valueOf(row[1]) : "");
+                        item.put("active", row[3] != null ? row[3] : true);
                         item.put("version", row[2] != null ? ((Number) row[2]).intValue() : 0);
                         return item;
                     })
@@ -306,9 +313,9 @@ public class ClassifierServicesController {
             // Count va max version olish (dinamik SQL)
             String countSql;
             if (hasVersionColumn && hasDeleteTs) {
-                countSql = "SELECT COUNT(*), COALESCE(MAX(version), 0) FROM " + tableName + " WHERE delete_ts IS NULL";
+                countSql = "SELECT COUNT(*), COALESCE(SUM(version), 0) FROM " + tableName + " WHERE delete_ts IS NULL";
             } else if (hasVersionColumn) {
-                countSql = "SELECT COUNT(*), COALESCE(MAX(version), 0) FROM " + tableName;
+                countSql = "SELECT COUNT(*), COALESCE(SUM(version), 0) FROM " + tableName;
             } else if (hasDeleteTs) {
                 countSql = "SELECT COUNT(*), 0 FROM " + tableName + " WHERE delete_ts IS NULL";
             } else {
@@ -517,7 +524,7 @@ public class ClassifierServicesController {
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("title", "Oliy ta'lim muassasalari ro'yxati");
-        result.put("version", calculateMaxVersion(universities));
+        result.put("version", calculateSumVersion(universities));
         result.put("count", universities.size());
 
         List<Map<String, Object>> items = universities.stream()
@@ -530,6 +537,7 @@ public class ClassifierServicesController {
 
     /**
      * University entityni OLD-HEMIS formatiga o'girish
+     * OLD-HEMIS format: audit fields yo'q, nested objects bor (universityType, versionType, universityContractCategory)
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> mapUniversityToItem(University u) {
@@ -539,10 +547,8 @@ public class ClassifierServicesController {
 
         if (u.getStudentUrl() != null) item.put("studentUrl", u.getStudentUrl());
         item.put("code", u.getCode());
-        if (u.getAddress() != null) item.put("address", u.getAddress());
-        if (u.getUpdatedBy() != null) item.put("updatedBy", u.getUpdatedBy());
 
-        // SOATO ma'lumotlarini olish
+        // SOATO ma'lumotlarini olish (audit fields'siz)
         if (u.getSoato() != null) {
             Map<String, Object> soatoObj = loadSoatoObject(u.getSoato());
             if (soatoObj != null) {
@@ -550,32 +556,113 @@ public class ClassifierServicesController {
             }
         }
 
-        item.put("active", u.getActive() != null ? u.getActive() : false);
-        item.put("version", u.getVersion() != null ? u.getVersion() : 1);
-        if (u.getTeacherUrl() != null) item.put("teacherUrl", u.getTeacherUrl());
-        if (u.getCreatedBy() != null) item.put("createdBy", u.getCreatedBy());
+        // universityType nested object
+        if (u.getUniversityType() != null) {
+            item.put("universityType", loadClassifierObject("hemishe_h_university_type", "HUniversityType", u.getUniversityType()));
+        }
+
         if (u.getTin() != null) item.put("tin", u.getTin());
+
+        // versionType nested object (DB dan olish - entity'da yo'q)
+        String versionTypeCode = getUniversityVersionType(u.getCode());
+        if (versionTypeCode != null) {
+            item.put("versionType", loadClassifierObject("hemishe_h_hemis_version_type", "HHemisVersionType", versionTypeCode));
+        }
+
+        // addStudent boolean
+        item.put("addStudent", u.getAddStudent() != null ? u.getAddStudent() : true);
+
+        if (u.getAddress() != null) item.put("address", u.getAddress());
+
+        // accreditationEdit boolean
+        item.put("accreditationEdit", u.getAccreditationEdit() != null ? u.getAccreditationEdit() : false);
+
+        item.put("active", u.getActive() != null ? u.getActive() : false);
+
+        // universityContractCategory nested object
+        if (u.getUniversityContractCategory() != null) {
+            item.put("universityContractCategory", loadClassifierObject("hemishe_h_university_contract_category", "HUniversityContractCategory", u.getUniversityContractCategory()));
+        }
+
+        item.put("version", u.getVersion() != null ? u.getVersion() : 1);
+
+        // oneId boolean
+        item.put("oneId", u.getOneId() != null ? u.getOneId() : true);
+
+        // allowGrouping boolean
+        item.put("allowGrouping", u.getAllowGrouping() != null ? u.getAllowGrouping() : true);
+
+        if (u.getTeacherUrl() != null) item.put("teacherUrl", u.getTeacherUrl());
+
+        // allowTransferOutside boolean
+        item.put("allowTransferOutside", u.getAllowTransferOutside() != null ? u.getAllowTransferOutside() : true);
+
         item.put("name", u.getName());
         item.put("gpaEdit", u.getGpaEdit() != null ? u.getGpaEdit() : false);
 
-        if (u.getCreateTs() != null) {
-            item.put("createTs", u.getCreateTs().format(CUBA_DATE_FORMAT));
-        }
-        if (u.getUpdateTs() != null) {
-            item.put("updateTs", u.getUpdateTs().format(CUBA_DATE_FORMAT));
-        }
+        // OLD-HEMIS format: audit fields yo'q (createTs, updateTs, createdBy, updatedBy)
 
         return item;
     }
 
     /**
-     * SOATO ob'ektini yuklash
+     * University uchun version_type ni bazadan olish
+     * OLD-HEMIS: versionType field -> _UNIVERSITY_VERSION ustuni (HHemisVersionType ga reference)
+     */
+    @SuppressWarnings("unchecked")
+    private String getUniversityVersionType(String universityCode) {
+        try {
+            List<Object> results = entityManager.createNativeQuery(
+                    "SELECT _university_version FROM hemishe_e_university WHERE code = :code AND delete_ts IS NULL")
+                    .setParameter("code", universityCode)
+                    .getResultList();
+            if (!results.isEmpty() && results.get(0) != null) {
+                return String.valueOf(results.get(0));
+            }
+        } catch (Exception e) {
+            log.debug("versionType olishda xatolik (code={}): {}", universityCode, e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Klassifikator ob'ektini yuklash (audit fields'siz)
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadClassifierObject(String tableName, String entityName, String code) {
+        try {
+            String sql = "SELECT code, name, active, version FROM " + tableName + " WHERE code = :code AND delete_ts IS NULL";
+            List<Object[]> results = entityManager.createNativeQuery(sql)
+                    .setParameter("code", code)
+                    .getResultList();
+
+            if (results.isEmpty()) {
+                return null;
+            }
+
+            Object[] row = results.get(0);
+            Map<String, Object> obj = new LinkedHashMap<>();
+            obj.put("_entityName", "hemishe_" + entityName);
+            obj.put("id", String.valueOf(row[0]));
+            obj.put("code", String.valueOf(row[0]));
+            obj.put("name", row[1] != null ? String.valueOf(row[1]) : "");
+            obj.put("active", row[2] != null ? row[2] : true);
+            obj.put("version", row[3] != null ? ((Number) row[3]).intValue() : 1);
+            return obj;
+        } catch (Exception e) {
+            log.debug("Klassifikator yuklashda xatolik ({}, code={}): {}", tableName, code, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * SOATO ob'ektini yuklash (OLD-HEMIS format: audit fields yo'q)
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> loadSoatoObject(String soatoCode) {
         try {
             List<Object[]> results = entityManager.createNativeQuery(
-                    "SELECT code, name_uz, name_ru, active, version, created_by, create_ts, updated_by, update_ts " +
+                    "SELECT code, name_uz, name_ru, active, version " +
                     "FROM hemishe_h_soato WHERE code = :code AND delete_ts IS NULL")
                     .setParameter("code", soatoCode)
                     .getResultList();
@@ -589,20 +676,11 @@ public class ClassifierServicesController {
             soato.put("_entityName", "hemishe_HSoato");
             soato.put("id", row[0]);
             soato.put("code", row[0]);
-            if (row[3] != null) soato.put("active", row[3]);
-            if (row[4] != null) soato.put("version", row[4]);
-            if (row[1] != null) soato.put("name_uz", row[1]);
-            if (row[2] != null) soato.put("name_ru", row[2]);
-            if (row[5] != null) soato.put("createdBy", row[5]);
-            if (row[6] != null) {
-                java.sql.Timestamp ts = (java.sql.Timestamp) row[6];
-                soato.put("createTs", ts.toLocalDateTime().format(CUBA_DATE_FORMAT));
-            }
-            if (row[7] != null) soato.put("updatedBy", row[7]);
-            if (row[8] != null) {
-                java.sql.Timestamp ts = (java.sql.Timestamp) row[8];
-                soato.put("updateTs", ts.toLocalDateTime().format(CUBA_DATE_FORMAT));
-            }
+            soato.put("active", row[3] != null ? row[3] : true);
+            soato.put("version", row[4] != null ? ((Number) row[4]).intValue() : 1);
+            soato.put("name_ru", row[2] != null ? String.valueOf(row[2]) : "");
+            soato.put("name_uz", row[1] != null ? String.valueOf(row[1]) : "");
+            // OLD-HEMIS format: audit fields yo'q (createTs, updateTs, createdBy, updatedBy)
 
             return soato;
         } catch (Exception e) {
@@ -614,12 +692,14 @@ public class ClassifierServicesController {
     /**
      * Maksimal versiyani hisoblash
      */
-    private int calculateMaxVersion(List<University> universities) {
+    /**
+     * OLD-HEMIS format: SUM(version) - barcha versiyalar yig'indisi
+     */
+    private int calculateSumVersion(List<University> universities) {
         return universities.stream()
                 .filter(u -> u.getVersion() != null)
                 .mapToInt(University::getVersion)
-                .max()
-                .orElse(1);
+                .sum();
     }
 
     /**
@@ -679,16 +759,14 @@ public class ClassifierServicesController {
             final String finalEntityName = entityName;
 
             // Mavjud ustunlarni tekshirish
+            // OLD-HEMIS format: active field bor, audit fields yo'q
             boolean hasName = checkColumnExists(tableName, "name");
             boolean hasNameUz = checkColumnExists(tableName, "name_uz");
             boolean hasVersion = checkColumnExists(tableName, "version");
             boolean hasDeleteTs = checkColumnExists(tableName, "delete_ts");
-            boolean hasCreateTs = checkColumnExists(tableName, "create_ts");
-            boolean hasUpdateTs = checkColumnExists(tableName, "update_ts");
-            boolean hasCreatedBy = checkColumnExists(tableName, "created_by");
-            boolean hasUpdatedBy = checkColumnExists(tableName, "updated_by");
+            boolean hasActive = checkColumnExists(tableName, "active");
 
-            // Dinamik SQL yaratish
+            // Dinamik SQL yaratish - OLD-HEMIS format (audit fields yo'q)
             StringBuilder selectColumns = new StringBuilder("code");
             if (hasName) selectColumns.append(", name");
             else if (hasNameUz) selectColumns.append(", name_uz as name");
@@ -697,17 +775,8 @@ public class ClassifierServicesController {
             if (hasVersion) selectColumns.append(", version");
             else selectColumns.append(", 0 as version");
 
-            if (hasCreateTs) selectColumns.append(", create_ts");
-            else selectColumns.append(", null as create_ts");
-
-            if (hasUpdateTs) selectColumns.append(", update_ts");
-            else selectColumns.append(", null as update_ts");
-
-            if (hasCreatedBy) selectColumns.append(", created_by");
-            else selectColumns.append(", null as created_by");
-
-            if (hasUpdatedBy) selectColumns.append(", updated_by");
-            else selectColumns.append(", null as updated_by");
+            if (hasActive) selectColumns.append(", active");
+            else selectColumns.append(", true as active");
 
             String whereClause = hasDeleteTs ? " WHERE delete_ts IS NULL" : "";
             String sql = "SELECT " + selectColumns + " FROM " + finalTableName + whereClause + " ORDER BY code";
@@ -717,16 +786,16 @@ public class ClassifierServicesController {
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("title", getClassifierTitle(classifier));
 
-            // Maksimal versiyani topamiz
-            int maxVersion = results.stream()
+            // OLD-HEMIS format: SUM(version) - barcha versiyalar yig'indisi
+            int sumVersion = results.stream()
                     .filter(row -> row[2] != null)
                     .mapToInt(row -> ((Number) row[2]).intValue())
-                    .max()
-                    .orElse(0);
+                    .sum();
 
-            result.put("version", maxVersion);
+            result.put("version", sumVersion);
             result.put("count", results.size());
 
+            // OLD-HEMIS format: active bor, audit fields yo'q
             List<Map<String, Object>> items = results.stream()
                     .map(row -> {
                         Map<String, Object> item = new LinkedHashMap<>();
@@ -734,19 +803,8 @@ public class ClassifierServicesController {
                         item.put("id", String.valueOf(row[0]));
                         item.put("code", String.valueOf(row[0]));
                         item.put("name", row[1] != null ? String.valueOf(row[1]) : "");
+                        item.put("active", row[3] != null ? row[3] : true);
                         item.put("version", row[2] != null ? ((Number) row[2]).intValue() : 0);
-
-                        if (row[3] != null) {
-                            java.sql.Timestamp ts = (java.sql.Timestamp) row[3];
-                            item.put("createTs", ts.toLocalDateTime().format(CUBA_DATE_FORMAT));
-                        }
-                        if (row[4] != null) {
-                            java.sql.Timestamp ts = (java.sql.Timestamp) row[4];
-                            item.put("updateTs", ts.toLocalDateTime().format(CUBA_DATE_FORMAT));
-                        }
-                        if (row[5] != null) item.put("createdBy", row[5]);
-                        if (row[6] != null) item.put("updatedBy", row[6]);
-
                         return item;
                     })
                     .collect(Collectors.toList());
