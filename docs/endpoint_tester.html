@@ -6933,10 +6933,36 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
                 requiresAuth: true,
-                params: {
-                    limit: "50",
-                    offset: "0"
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "50",
+                        defaultOld: "50",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [
+                            { value: "false", label: "false (default)" },
+                            { value: "true", label: "true" }
+                        ],
+                        defaultNew: "false",
+                        defaultOld: "false",
+                        required: false
+                    }
                 },
+                queryParamsFromInputs: ["limit", "offset", "returnNulls"],
                 description: `**Barcha uslubiy nashr turlarini olish** (GET)
 
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType
@@ -6944,6 +6970,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>Parameters:</b>
 - limit: Sahifa hajmi (default: 50)
 - offset: Boshlang'ich pozitsiya (default: 0)
+- returnNulls: Null qiymatlarni qaytarish (default: false)
 
 <b>Response:</b> Uslubiy nashr turlari ro'yxati CUBA formatda`,
                 ported: true
