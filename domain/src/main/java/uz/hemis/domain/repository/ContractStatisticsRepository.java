@@ -45,7 +45,8 @@ public interface ContractStatisticsRepository extends JpaRepository<ContractStat
             String university, String educationYear);
 
     /**
-     * Find by all key fields (for duplicate check)
+     * Find first by all key fields (for duplicate check)
+     * Uses findFirst to handle duplicate records in database
      *
      * @param university university code
      * @param educationYear education year code
@@ -57,7 +58,7 @@ public interface ContractStatisticsRepository extends JpaRepository<ContractStat
      * @param date statistics date
      * @return existing contract statistics if found
      */
-    Optional<ContractStatistics> findByUniversityAndEducationYearAndEducationTypeAndEducationFormAndFacultyAndCourseAndSemesterAndDateAndDeleteTsIsNull(
+    Optional<ContractStatistics> findFirstByUniversityAndEducationYearAndEducationTypeAndEducationFormAndFacultyAndCourseAndSemesterAndDateAndDeleteTsIsNull(
             String university, String educationYear, String educationType, String educationForm,
             String faculty, String course, String semester, LocalDate date);
 }
