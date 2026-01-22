@@ -120,7 +120,6 @@ public class ExpelEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
     @PutMapping("/{entityId}")
-    @Transactional
     public ResponseEntity<?> update(
             @PathVariable String entityId,
             @RequestBody Map<String, Object> entityData) {
@@ -165,7 +164,6 @@ public class ExpelEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
     @DeleteMapping("/{entityId}")
-    @Transactional
     public ResponseEntity<?> delete(@PathVariable String entityId) {
 
         log.info("DELETE hemishe_RExpel: {}", entityId);
@@ -234,7 +232,11 @@ public class ExpelEntityController {
         log.info("SEARCH hemishe_RExpel (POST) - filter: {}", filterBody);
 
         String filterStr = null;
+        Integer bodyOffset = offset;
+        Integer bodyLimit = limit;
+
         if (filterBody != null) {
+            // Filter ni olish
             Object filterObj = filterBody.get("filter");
             if (filterObj != null) {
                 try {
@@ -244,8 +246,31 @@ public class ExpelEntityController {
                     filterStr = filterObj.toString();
                 }
             }
+
+            // Body dan offset va limit ni olish (agar query param da bo'lmasa)
+            if (bodyOffset == null && filterBody.containsKey("offset")) {
+                Object offsetObj = filterBody.get("offset");
+                if (offsetObj instanceof Number) {
+                    bodyOffset = ((Number) offsetObj).intValue();
+                } else if (offsetObj != null) {
+                    try {
+                        bodyOffset = Integer.parseInt(offsetObj.toString());
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+
+            if (bodyLimit == null && filterBody.containsKey("limit")) {
+                Object limitObj = filterBody.get("limit");
+                if (limitObj instanceof Number) {
+                    bodyLimit = ((Number) limitObj).intValue();
+                } else if (limitObj != null) {
+                    try {
+                        bodyLimit = Integer.parseInt(limitObj.toString());
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
         }
-        return search(filterStr, offset, limit, returnCount, returnNulls);
+        return search(filterStr, bodyOffset, bodyLimit, returnCount, returnNulls);
     }
 
     // =====================================================
@@ -256,7 +281,7 @@ public class ExpelEntityController {
         summary = "Barcha chetlashgan talabalar yozuvlarini olish",
         description = "Sahifalangan ro'yxat."
     )
-    @GetMapping
+    @GetMapping({"", "/"})
     @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> listAll(
             @RequestParam(required = false) Boolean returnCount,
@@ -296,8 +321,7 @@ public class ExpelEntityController {
         summary = "Yangi chetlashgan talaba yozuvi yaratish",
         description = "Yangi yozuv yaratadi."
     )
-    @PostMapping
-    @Transactional
+    @PostMapping({"", "/"})
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
 
         log.info("CREATE hemishe_RExpel: {}", entityData);
@@ -305,16 +329,13 @@ public class ExpelEntityController {
         try {
             Expel entity = new Expel();
 
-            // ID - agar berilgan bo'lsa ishlatamiz, aks holda yangi generatsiya qilamiz
+            // ID - agar berilgan bo'lsa ishlatamiz, aks holda @PrePersist da generatsiya qilinadi
             if (entityData.containsKey("id") && entityData.get("id") != null) {
                 entity.setId(UUID.fromString(entityData.get("id").toString()));
-            } else {
-                entity.setId(UUID.randomUUID());
             }
 
             updateEntityFromMap(entity, entityData);
-            entity.setVersion(1);
-            entity.setCreateTs(LocalDateTime.now());
+            // version va createTs @PrePersist da avtomatik set qilinadi
 
             Expel saved = repository.save(entity);
             return ResponseEntity.ok(toMap(saved, false));

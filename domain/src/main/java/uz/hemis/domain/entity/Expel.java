@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
+import org.springframework.data.domain.Persistable;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -25,7 +26,7 @@ import java.util.UUID;
 @SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class Expel implements Serializable {
+public class Expel implements Serializable, Persistable<UUID> {
 
     private static final long serialVersionUID = 1L;
 
@@ -103,8 +104,22 @@ public class Expel implements Serializable {
     @Column(name = "deleted_by", length = 50)
     private String deletedBy;
 
+    @Transient
+    private boolean isNew = true;
+
     public boolean isDeleted() {
         return deleteTs != null;
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;
+    }
+
+    @PostLoad
+    @PostPersist
+    protected void markNotNew() {
+        this.isNew = false;
     }
 
     @PrePersist
