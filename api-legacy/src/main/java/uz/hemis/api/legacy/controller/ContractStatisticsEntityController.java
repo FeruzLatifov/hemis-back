@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 
 /**
  * Contract Statistics Entity Controller (CUBA Pattern)
- * Tag 37: Shartnoma statistikasi (Entity API)
+ * Tag 36: Shartnoma statistikasi (Entity API)
  *
  * CUBA Platform REST API compatible controller
  * Entity: hemishe_RContractStatistics
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  *
  * @since 1.0.0
  */
-@Tag(name = "37.Shartnoma statistikasi", description = "Shartnoma statistikasi entity ma'lumotlari API - CUBA Platform REST API compatible")
+@Tag(name = "36.Shartnoma statistikasi", description = "Shartnoma statistikasi entity ma'lumotlari API - CUBA Platform REST API compatible")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RContractStatistics")
 @RequiredArgsConstructor
