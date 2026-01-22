@@ -380,6 +380,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // HTML attribute uchun escape funksiyasi (double quotes va boshqa special characters)
+        function escapeHtmlAttr(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        }
+
         // Endpoint konfiguratsiyasi (01.Token + 02.Passport ma'lumotlari)
         const endpoints = [
             // ============================================
@@ -6912,6 +6923,297 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 <b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
                 ported: true
             },
+
+            // 27.Uslubiy nashr turlari (Entity CRUD)
+            // ============================================
+            {
+                id: 1,
+                category: "27.Uslubiy nashr turlari",
+                name: "Yangi uslubiy nashr turi yaratish",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
+                requiresAuth: true,
+                contentType: "json",
+                inputFields: {
+                    body_code: {
+                        label: "Kod (ID)",
+                        type: "text",
+                        placeholder: "98 yoki 99",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        bodyField: "code"
+                    },
+                    body_name: {
+                        label: "Nomi",
+                        type: "text",
+                        placeholder: "Test nashr turi",
+                        defaultNew: "Test yangi hemis",
+                        defaultOld: "Test eski hemis",
+                        required: true,
+                        bodyField: "name"
+                    },
+                    body_active: {
+                        label: "Faol",
+                        type: "select",
+                        options: [
+                            { value: "true", label: "Ha" },
+                            { value: "false", label: "Yo'q" }
+                        ],
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: false,
+                        bodyField: "active"
+                    }
+                },
+                hasBody: true,
+                bodyFields: ["body_code", "body_name", "body_active"],
+                description: `**Yangi uslubiy nashr turi yaratish** (POST)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HMethodicalPublicationType
+
+<b>Ma'lumotlar:</b>
+- code: Uslubiy nashr turi kodi (ID sifatida ishlatiladi)
+- name: Nomi
+- active: Faol holati (true/false)
+
+<b>Response:</b> {_entityName, _instanceName, id} CUBA formatda`,
+                ported: true,
+                storeFirstId: "methodicalPublicationTypeCode"
+            },
+            {
+                id: 2,
+                category: "27.Uslubiy nashr turlari",
+                name: "Uslubiy nashr turlarini olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
+                requiresAuth: true,
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    }
+                },
+                queryParamsFromInputs: ["limit", "offset"],
+                description: `**Uslubiy nashr turlari ro'yxati** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType
+
+<b>Parametrlar:</b>
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
+
+<b>Response:</b> Uslubiy nashr turlari massivi`,
+                ported: true,
+                storeFirstId: "methodicalPublicationTypeCode"
+            },
+            {
+                id: 3,
+                category: "27.Uslubiy nashr turlari",
+                name: "Uslubiy nashr turini ID bo'yicha olish",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Uslubiy nashr turi kodi (11, 12, ...)",
+                        type: "text",
+                        placeholder: "98 yoki 99",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        useStoredId: "methodicalPublicationTypeCode"
+                    }
+                },
+                description: `**Uslubiy nashr turini ID bo'yicha olish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}
+
+<b>Response:</b> Uslubiy nashr turi ma'lumotlari CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "27.Uslubiy nashr turlari",
+                name: "Uslubiy nashr turini yangilash",
+                method: "PUT",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
+                requiresAuth: true,
+                contentType: "json",
+                hasBody: true,
+                bodyFields: ["body_name", "body_active"],
+                inputFields: {
+                    entityId: {
+                        label: "Uslubiy nashr turi kodi",
+                        type: "text",
+                        placeholder: "98 yoki 99",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        useStoredId: "methodicalPublicationTypeCode"
+                    },
+                    body_name: {
+                        label: "Yangi nom",
+                        type: "text",
+                        placeholder: "Yangilangan nom",
+                        defaultNew: "Yangilangan yangi hemis",
+                        defaultOld: "Yangilangan eski hemis",
+                        required: false,
+                        bodyField: "name"
+                    },
+                    body_active: {
+                        label: "Faol holati",
+                        type: "select",
+                        options: [
+                            { value: "true", label: "Ha" },
+                            { value: "false", label: "Yo'q" }
+                        ],
+                        defaultNew: "true",
+                        defaultOld: "true",
+                        required: false,
+                        bodyField: "active"
+                    }
+                },
+                description: `**Uslubiy nashr turini yangilash** (PUT)
+
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}
+
+<b>Body:</b> O'zgartiriladigan maydonlar JSON formatda
+
+<b>Response:</b> Yangilangan entity CUBA formatda`,
+                ported: true
+            },
+            {
+                id: 5,
+                category: "27.Uslubiy nashr turlari",
+                name: "Uslubiy nashr turini o'chirish",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Uslubiy nashr turi kodi",
+                        type: "text",
+                        placeholder: "98 yoki 99",
+                        defaultNew: "98",
+                        defaultOld: "99",
+                        required: true,
+                        useStoredId: "methodicalPublicationTypeCode"
+                    }
+                },
+                description: `**Uslubiy nashr turini o'chirish** (DELETE)
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}
+
+<b>Response:</b> 200 OK (empty body)
+
+<b>⚠️ Eslatma:</b> Soft delete - delete_ts ustuni belgilanadi!`,
+                ported: true
+            },
+            {
+                id: 6,
+                category: "27.Uslubiy nashr turlari",
+                name: "Filter bo'yicha qidirish (GET)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter JSON (majburiy)",
+                        type: "text",
+                        placeholder: '{"conditions":[]}',
+                        defaultNew: '{"conditions":[]}',
+                        defaultOld: '{"conditions":[]}',
+                        required: true
+                    },
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    }
+                },
+                queryParamsFromInputs: ["filter", "limit", "offset"],
+                description: `**Filter bo'yicha qidirish** (GET)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HMethodicalPublicationType/search
+
+<b>Parametrlar:</b>
+- filter: JSON filter (majburiy) - {"conditions":[]}
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
+
+<b>Response:</b> Filter shartlariga mos entitylar massivi`,
+                ported: true
+            },
+            {
+                id: 7,
+                category: "27.Uslubiy nashr turlari",
+                name: "Filter bo'yicha qidirish (POST)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/search",
+                requiresAuth: true,
+                contentType: "json",
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        defaultNew: "10",
+                        defaultOld: "10",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    }
+                },
+                hasBody: true,
+                bodyTemplate: {
+                    "filter": {
+                        "conditions": []
+                    }
+                },
+                queryParamsFromInputs: ["limit", "offset"],
+                description: `**Filter bo'yicha qidirish** (POST)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HMethodicalPublicationType/search
+
+<b>Body:</b> {"filter":{"conditions":[]}} formatida
+
+<b>Parametrlar:</b>
+- limit: Natijalar soni (default: 50)
+- offset: Boshlang'ich pozitsiya
+
+<b>Response:</b> Filter shartlariga mos entitylar massivi`,
+                ported: true
+            },
         ];
 
         // Separate results for both systems
@@ -7032,11 +7334,12 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                                     });
                                     paramsHtml += `</select>`;
                                 } else if (field.type === 'textarea') {
-                                    // TEXTAREA type uchun
+                                    // TEXTAREA type uchun (JSON va special characters uchun escape)
                                     const rows = field.rows || 3;
-                                    paramsHtml += `<textarea class="form-control form-control-sm" id="input-new-${uniqueId}-${key}" placeholder="${field.placeholder || ''}" rows="${rows}" style="font-family: monospace; font-size: 11px;">${defaultValue || ''}</textarea>`;
+                                    paramsHtml += `<textarea class="form-control form-control-sm" id="input-new-${uniqueId}-${key}" placeholder="${escapeHtmlAttr(field.placeholder || '')}" rows="${rows}" style="font-family: monospace; font-size: 11px;">${escapeHtmlAttr(defaultValue || '')}</textarea>`;
                                 } else {
-                                    paramsHtml += `<input type="${field.type}" class="form-control form-control-sm" id="input-new-${uniqueId}-${key}" placeholder="${field.placeholder || ''}" value="${defaultValue || ''}">`;
+                                    // 🔧 JSON va boshqa special characters uchun HTML escape
+                                    paramsHtml += `<input type="${field.type}" class="form-control form-control-sm" id="input-new-${uniqueId}-${key}" placeholder="${escapeHtmlAttr(field.placeholder || '')}" value="${escapeHtmlAttr(defaultValue || '')}">`;
                                 }
                             }
 
@@ -7105,9 +7408,10 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                                 } else if (field.type === 'textarea') {
                                     // TEXTAREA type uchun
                                     const rows = field.rows || 3;
-                                    paramsHtml += `<textarea class="form-control form-control-sm" id="input-old-${uniqueId}-${key}" placeholder="${field.placeholder || ''}" rows="${rows}" style="font-family: monospace; font-size: 11px;">${defaultValue || ''}</textarea>`;
+                                    paramsHtml += `<textarea class="form-control form-control-sm" id="input-old-${uniqueId}-${key}" placeholder="${escapeHtmlAttr(field.placeholder || '')}" rows="${rows}" style="font-family: monospace; font-size: 11px;">${escapeHtmlAttr(defaultValue || '')}</textarea>`;
                                 } else {
-                                    paramsHtml += `<input type="${field.type}" class="form-control form-control-sm" id="input-old-${uniqueId}-${key}" placeholder="${field.placeholder || ''}" value="${defaultValue || ''}">`;
+                                    // 🔧 JSON va boshqa special characters uchun HTML escape
+                                    paramsHtml += `<input type="${field.type}" class="form-control form-control-sm" id="input-old-${uniqueId}-${key}" placeholder="${escapeHtmlAttr(field.placeholder || '')}" value="${escapeHtmlAttr(defaultValue || '')}">`;
                                 }
                             }
 

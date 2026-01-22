@@ -42,7 +42,7 @@ public class GenericLegacyEntityJdbcController {
             // Classifiers (H-*)
             Map.entry("/app/rest/v2/entities/hemishe_HDoctoralStudentStatus", "hemishe_h_doctoral_student_status"),
             Map.entry("/app/rest/v2/entities/hemishe_HDoctoralStudentType", "hemishe_h_doctoral_student_type"),
-            Map.entry("/app/rest/v2/entities/hemishe_HMethodicalPublicationType", "hemishe_h_methodical_publication_type"),
+            // hemishe_HMethodicalPublicationType - moved to dedicated MethodicalPublicationTypeEntityController
             Map.entry("/app/rest/v2/entities/hemishe_HPublicationLocality", "hemishe_h_publication_locality"),
             Map.entry("/app/rest/v2/entities/hemishe_HUniversityEmployeeForm", "hemishe_h_university_employee_form")
             // hemishe_HUniversityEmployeeStatusType - moved to dedicated UniversityEmployeeStatusTypeEntityController
@@ -91,7 +91,6 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_REmployment/{id}",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{id}",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{id}",
-            "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{id}",
             "/app/rest/v2/entities/hemishe_HPublicationLocality/{id}",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/{id}"
     })
@@ -123,7 +122,6 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_REmployment",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
-            "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
             "/app/rest/v2/entities/hemishe_HPublicationLocality",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm"
     })
@@ -160,7 +158,6 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_REmployment/search",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
-            "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/search",
             "/app/rest/v2/entities/hemishe_HPublicationLocality/search",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search"
     })
