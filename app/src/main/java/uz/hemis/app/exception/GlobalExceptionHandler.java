@@ -291,18 +291,26 @@ public class GlobalExceptionHandler {
      * Handle HttpMessageNotReadableException
      *
      * <p>Thrown when request body is malformed JSON</p>
-     * <p>HTTP Status: 400 BAD REQUEST</p>
+     * <p>HTTP Status: 400 BAD REQUEST (or 500 for legacy endpoints)</p>
      *
      * @param ex exception
      * @param request HTTP request
      * @return error response
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+    public ResponseEntity<?> handleHttpMessageNotReadable(
             HttpMessageNotReadableException ex,
             HttpServletRequest request
     ) {
         log.error("Malformed JSON request: {}", ex.getMessage());
+
+        // OLD-HEMIS format for legacy endpoints
+        if (isLegacyEndpoint(request)) {
+            java.util.Map<String, String> legacyError = new java.util.LinkedHashMap<>();
+            legacyError.put("error", "Server error");
+            legacyError.put("details", "");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(legacyError);
+        }
 
         ErrorResponse error = ErrorResponse.of(
                 HttpStatus.BAD_REQUEST.value(),
@@ -398,11 +406,20 @@ public class GlobalExceptionHandler {
      * @return error response
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGenericException(
+    public ResponseEntity<?> handleGenericException(
             Exception ex,
             HttpServletRequest request
     ) {
-        log.error("Unhandled exception", ex);
+        log.error("Unhandled exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+
+        // OLD-HEMIS format for legacy endpoints
+        if (isLegacyEndpoint(request)) {
+            java.util.Map<String, String> legacyError = new java.util.LinkedHashMap<>();
+            legacyError.put("error", "Server error");
+            // DEBUG: xatolik tafsilotlari
+            legacyError.put("details", ex.getClass().getSimpleName() + ": " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(legacyError);
+        }
 
         // Capture to Sentry (auto-captures if enabled)
         String eventId = Sentry.captureException(ex).toString();
@@ -450,5 +467,19 @@ public class GlobalExceptionHandler {
         String propertyPath = violation.getPropertyPath().toString();
         String[] parts = propertyPath.split("\\.");
         return parts[parts.length - 1];
+    }
+
+    /**
+     * Check if request is for legacy CUBA endpoints
+     *
+     * @param request HTTP request
+     * @return true if legacy endpoint
+     */
+    private boolean isLegacyEndpoint(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        return uri != null && (
+            uri.startsWith("/app/rest/v2/") ||
+            uri.startsWith("/rest/v2/")
+        );
     }
 }

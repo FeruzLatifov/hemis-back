@@ -33,6 +33,7 @@ public class GenericLegacyEntityJdbcController {
             // hemishe_EStudentGpa - maxsus StudentGpaEntityController.java da
             // hemishe_EStudentDiploma - maxsus StudentDiplomaEntityController.java da
             // hemishe_EPublicationCriteria - maxsus PublicationCriteriaEntityController.java da
+            // hemishe_HDoctoralStudentStatus - maxsus DoctoralStudentStatusEntityController.java da
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicGroup", "hemishe_r_academic_group"),
             Map.entry("/app/rest/v2/entities/hemishe_RExpel", "hemishe_r_expel"),
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicAttendance", "hemishe_r_academic_attendance"),
@@ -40,7 +41,6 @@ public class GenericLegacyEntityJdbcController {
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicScore", "hemishe_r_academic_score"),
             Map.entry("/app/rest/v2/entities/hemishe_REmployment", "hemishe_r_employment"),
             // Classifiers (H-*)
-            Map.entry("/app/rest/v2/entities/hemishe_HDoctoralStudentStatus", "hemishe_h_doctoral_student_status"),
             Map.entry("/app/rest/v2/entities/hemishe_HDoctoralStudentType", "hemishe_h_doctoral_student_type"),
             Map.entry("/app/rest/v2/entities/hemishe_HMethodicalPublicationType", "hemishe_h_methodical_publication_type"),
             Map.entry("/app/rest/v2/entities/hemishe_HPublicationLocality", "hemishe_h_publication_locality"),
@@ -89,7 +89,6 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_RAcademicSubjects/{id}",
             "/app/rest/v2/entities/hemishe_RAcademicScore/{id}",
             "/app/rest/v2/entities/hemishe_REmployment/{id}",
-            "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{id}",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{id}",
             "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{id}",
             "/app/rest/v2/entities/hemishe_HPublicationLocality/{id}",
@@ -121,7 +120,6 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_RAcademicSubjects",
             "/app/rest/v2/entities/hemishe_RAcademicScore",
             "/app/rest/v2/entities/hemishe_REmployment",
-            "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
             "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
             "/app/rest/v2/entities/hemishe_HPublicationLocality",
@@ -158,7 +156,6 @@ public class GenericLegacyEntityJdbcController {
             "/app/rest/v2/entities/hemishe_RAcademicSubjects/search",
             "/app/rest/v2/entities/hemishe_RAcademicScore/search",
             "/app/rest/v2/entities/hemishe_REmployment/search",
-            "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
             "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
             "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/search",
             "/app/rest/v2/entities/hemishe_HPublicationLocality/search",
