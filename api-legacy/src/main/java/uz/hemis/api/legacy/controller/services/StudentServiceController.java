@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.StudentIdRequest;
 import uz.hemis.domain.repository.UserRepository;
+import uz.hemis.service.ContractStatisticsService;
 import uz.hemis.service.StudentGpaService;
 import uz.hemis.service.StudentService;
 import uz.hemis.service.VerificationService;
@@ -60,6 +61,7 @@ public class StudentServiceController {
     private final VerificationService verificationService;
     private final UserRepository userRepository;
     private final HemisApiService hemisApiService;
+    private final ContractStatisticsService contractStatisticsService;
 
     /**
      * Talaba tasdiqlash ballarini olish (DTM verification)
@@ -808,17 +810,117 @@ public class StudentServiceController {
     }
 
     /**
-     * Submit contract statistics
+     * Shartnoma statistikasini yuborish (OLD-HEMIS Compatible)
      *
-     * <p><strong>URL:</strong> {@code POST /services/student/contractStatistics}</p>
+     * <p><strong>URL:</strong> {@code POST /app/rest/v2/services/student/contractStatistics}</p>
+     *
+     * <p><strong>OLD-HEMIS Compatible</strong> - 100% backward compatibility</p>
+     *
+     * <p><strong>Request format:</strong></p>
+     * <pre>
+     * {
+     *   "contractStatistics": {
+     *     "university": {"code": "999"},
+     *     "educationYear": {"code": "2021"},
+     *     "educationType": {"code": "12"},
+     *     "educationForm": {"code": "11"},
+     *     "faculty": {"code": "999-192"},
+     *     "course": {"code": "11"},
+     *     "semester": {"code": "11"},
+     *     "date": "2021-09-08",
+     *     "dailyCount": 5,
+     *     "total": 5
+     *   }
+     * }
+     * </pre>
+     *
+     * <p><strong>Response format:</strong></p>
+     * <pre>
+     * {
+     *   "success": true,
+     *   "message": "Successfully created!",
+     *   "data": {
+     *     "_entityName": "hemishe_RContractStatistics",
+     *     "id": "...",
+     *     "date": "2021-09-08",
+     *     "educationType": {"_entityName": "hemishe_HEducationType", "id": "12", "code": "12"},
+     *     ...
+     *   }
+     * }
+     * </pre>
      *
      * @param request Contract statistics request
-     * @return Success status
+     * @return OLD-HEMIS compatible response
      */
     @PostMapping("/contractStatistics")
-    @Operation(summary = "Shartnoma statistikasini yuborish", description = "Shartnoma statistika ma'lumotlarini tashqi tizimga yuborish")
+    @Transactional
+    @Operation(
+            summary = "Shartnoma statistikasini yuborish",
+            description = """
+                Shartnoma statistika ma'lumotlarini bazaga saqlash.
+
+                **OLD-HEMIS Compatible** - 100% backward compatibility
+
+                **Endpoint:** POST /app/rest/v2/services/student/contractStatistics
+                **Auth:** Bearer token (required)
+                **Content-Type:** application/json
+
+                **Request Body:**
+                - contractStatistics.university.code: OTM kodi (required)
+                - contractStatistics.educationYear.code: Ta'lim yili kodi (masalan: "2021")
+                - contractStatistics.educationType.code: Ta'lim turi kodi
+                - contractStatistics.educationForm.code: Ta'lim shakli kodi
+                - contractStatistics.faculty.code: Fakultet kodi
+                - contractStatistics.course.code: Kurs kodi
+                - contractStatistics.semester.code: Semestr kodi
+                - contractStatistics.date: Sana (YYYY-MM-DD)
+                - contractStatistics.dailyCount: Kunlik soni
+                - contractStatistics.total: Jami soni
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Muvaffaqiyatli - Statistika saqlandi",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "Saqlangan statistika",
+                                    value = """
+                                        {
+                                          "success": true,
+                                          "message": "Successfully created!",
+                                          "data": {
+                                            "_entityName": "hemishe_RContractStatistics",
+                                            "id": "35458c9b-1534-1977-79f0-0cfd9289e3e8",
+                                            "date": "2021-09-08",
+                                            "educationType": {
+                                              "_entityName": "hemishe_HEducationType",
+                                              "id": "12",
+                                              "code": "12"
+                                            },
+                                            "university": {
+                                              "_entityName": "hemishe_EUniversity",
+                                              "id": "999",
+                                              "code": "999"
+                                            },
+                                            "version": 1,
+                                            "dailyCount": 5,
+                                            "total": 5,
+                                            "createdBy": "otm351"
+                                          }
+                                        }
+                                        """
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Noto'g'ri request format"),
+            @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
+            @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
+    })
     public ResponseEntity<?> contractStatistics(@RequestBody Map<String, Object> request) {
         log.info("[CUBA Service] student/contractStatistics: request={}", request);
-        return ResponseEntity.ok(studentService.submitContractStatistics(request));
+        String username = getCurrentUsername();
+        return ResponseEntity.ok(contractStatisticsService.submitContractStatistics(request, username));
     }
 }
