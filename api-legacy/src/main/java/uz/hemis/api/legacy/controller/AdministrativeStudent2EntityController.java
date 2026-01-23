@@ -414,14 +414,14 @@ public class AdministrativeStudent2EntityController {
     // =============================
 
     private void updateEntityFromMap(AdministrativeStudent2 entity, Map<String, Object> body) {
-        // _university - UUID (CUBA format: {"id": "uuid"})
+        // _university - String (CUBA format: {"id": "string"} yoki to'g'ridan-to'g'ri string)
         if (body.containsKey("_university")) {
-            entity.setUniversity(extractUuid(body.get("_university")));
+            entity.setUniversity(extractId(body.get("_university")));
         }
 
-        // _education_year - UUID
+        // _education_year - String
         if (body.containsKey("_education_year")) {
-            entity.setEducationYear(extractUuid(body.get("_education_year")));
+            entity.setEducationYear(extractId(body.get("_education_year")));
         }
 
         // exchange_document - String
@@ -436,9 +436,9 @@ public class AdministrativeStudent2EntityController {
             entity.setStudentFullname(val != null ? val.toString() : null);
         }
 
-        // _country - UUID
+        // _country - String
         if (body.containsKey("_country")) {
-            entity.setCountry(extractUuid(body.get("_country")));
+            entity.setCountry(extractId(body.get("_country")));
         }
 
         // exchange_university_name - String
@@ -447,11 +447,11 @@ public class AdministrativeStudent2EntityController {
             entity.setExchangeUniversityName(val != null ? val.toString() : null);
         }
 
-        // education_type - UUID (underscore-siz ham qo'llab-quvvatlash)
+        // education_type - String (underscore-siz ham qo'llab-quvvatlash)
         if (body.containsKey("education_type")) {
-            entity.setEducationType(extractUuid(body.get("education_type")));
+            entity.setEducationType(extractId(body.get("education_type")));
         } else if (body.containsKey("_education_type")) {
-            entity.setEducationType(extractUuid(body.get("_education_type")));
+            entity.setEducationType(extractId(body.get("_education_type")));
         }
 
         // speciality_code - String
@@ -474,31 +474,23 @@ public class AdministrativeStudent2EntityController {
     }
 
     /**
-     * CUBA format: {"id": "uuid-string"} - faqat Map qabul qiladi
+     * CUBA format: {"id": "string"} yoki to'g'ridan-to'g'ri string
+     * OLD-HEMIS VARCHAR ustunlar uchun
      */
     @SuppressWarnings("unchecked")
-    private UUID extractUuid(Object value) {
+    private String extractId(Object value) {
         if (value == null) return null;
-        if (value instanceof UUID) return (UUID) value;
-        if (value instanceof String str && !str.isEmpty()) {
-            try {
-                return UUID.fromString(str);
-            } catch (IllegalArgumentException e) {
-                return null;
-            }
+        if (value instanceof String str) {
+            return str.isEmpty() ? null : str;
         }
         if (value instanceof Map) {
             Map<String, Object> nested = (Map<String, Object>) value;
             Object id = nested.get("id");
-            if (id instanceof String str && !str.isEmpty()) {
-                try {
-                    return UUID.fromString(str);
-                } catch (IllegalArgumentException e) {
-                    return null;
-                }
+            if (id != null) {
+                return id.toString();
             }
         }
-        return null;
+        return value.toString();
     }
 
     private Map<String, Object> toMap(AdministrativeStudent2 entity, Boolean returnNulls) {

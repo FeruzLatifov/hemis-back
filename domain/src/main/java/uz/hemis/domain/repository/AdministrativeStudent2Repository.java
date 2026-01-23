@@ -16,28 +16,31 @@ import java.util.UUID;
  * Administrative Student2 Repository
  *
  * Foreign university academic exchange programs (by students)
+ *
+ * Note: university and educationYear fields are VARCHAR in old-hemis database, not UUID.
+ * Repository uses String for these fields to match Entity definition.
  */
 @Repository
 @Transactional(readOnly = true)
 public interface AdministrativeStudent2Repository extends JpaRepository<AdministrativeStudent2, UUID> {
 
     /**
-     * Find by university
+     * Find by university (String - VARCHAR in database)
      */
-    List<AdministrativeStudent2> findByUniversity(UUID university);
+    List<AdministrativeStudent2> findByUniversity(String university);
 
     /**
-     * Find by university and education year
+     * Find by university and education year (String - VARCHAR in database)
      */
-    List<AdministrativeStudent2> findByUniversityAndEducationYear(UUID university, UUID educationYear);
+    List<AdministrativeStudent2> findByUniversityAndEducationYear(String university, String educationYear);
 
     /**
      * Find by university and education year (paginated)
      */
-    Page<AdministrativeStudent2> findByUniversityAndEducationYear(UUID university, UUID educationYear, Pageable pageable);
+    Page<AdministrativeStudent2> findByUniversityAndEducationYear(String university, String educationYear, Pageable pageable);
 
     /**
      * Count by university and education year
      */
-    long countByUniversityAndEducationYear(UUID university, UUID educationYear);
+    long countByUniversityAndEducationYear(String university, String educationYear);
 }
