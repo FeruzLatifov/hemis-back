@@ -9,30 +9,24 @@ import java.util.UUID;
  *
  * PostgreSQL JDBC driver sometimes returns UUID columns as String.
  * This converter handles both cases:
- * - Reading: String/UUID -> UUID
- * - Writing: UUID -> UUID (JDBC driver handles the rest)
+ * - Reading: String -> UUID
+ * - Writing: UUID -> String (for proper null handling)
  */
 @Converter
-public class UuidStringConverter implements AttributeConverter<UUID, Object> {
+public class UuidStringConverter implements AttributeConverter<UUID, String> {
 
     @Override
-    public Object convertToDatabaseColumn(UUID uuid) {
-        return uuid; // Return UUID object - JDBC driver will cast to uuid type
+    public String convertToDatabaseColumn(UUID uuid) {
+        return uuid != null ? uuid.toString() : null;
     }
 
     @Override
-    public UUID convertToEntityAttribute(Object dbData) {
-        if (dbData == null) return null;
-        if (dbData instanceof UUID) return (UUID) dbData;
-        if (dbData instanceof String) {
-            String str = (String) dbData;
-            if (str.isEmpty()) return null;
-            try {
-                return UUID.fromString(str);
-            } catch (IllegalArgumentException e) {
-                return null;
-            }
+    public UUID convertToEntityAttribute(String dbData) {
+        if (dbData == null || dbData.isEmpty()) return null;
+        try {
+            return UUID.fromString(dbData);
+        } catch (IllegalArgumentException e) {
+            return null;
         }
-        return null;
     }
 }

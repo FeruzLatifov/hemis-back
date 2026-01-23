@@ -77,8 +77,14 @@ const endpoints = [
     ...endpoints_36,
     // 37.Bandlik statistikasi (7 endpoint)
     ...endpoints_37,
-    // 39.Inspeksiya administrative student (7 endpoint)
-    ...endpoints_39,
+    // 41.Inspeksiya administrative student2 - Akademik almashinuv (7 endpoint)
+    ...endpoints_41,
+    // 42.Inspeksiya administrative student3 - Bitiruvchilar band bo'lishi (7 endpoint)
+    ...endpoints_42,
+    // 43.Inspeksiya administrative student4 - Talaba olimpiadalari (7 endpoint)
+    ...endpoints_43,
+    // 44.Inspeksiya administrative StudentSport - Talaba sport yutuqlari (7 endpoint)
+    ...endpoints_44,
 ];
 
-console.log('Endpoints loaded:', endpoints.length, 'endpoints from 38 categories');
+console.log('Endpoints loaded:', endpoints.length, 'endpoints from 41 categories');
