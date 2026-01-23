@@ -68,7 +68,7 @@ const endpoints_39 = [
         dependsOn: 1,
         description: "Akademik almashinuv yozuvini UUID bo'yicha olish",
         inputFields: [
-            { name: "entityId", label: "Entity UUID", type: "text", required: true, placeholder: "00000000-0000-0000-0000-000000000000", defaultValue: "" }
+            { name: "entityId", label: "Entity UUID", type: "text", required: true, placeholder: "00000000-0000-0000-0000-000000000000", defaultValue: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" }
         ],
         queryParams: [
             { name: "returnNulls", label: "Null qiymatlarni qaytarish", defaultValue: "false" }
@@ -85,7 +85,7 @@ const endpoints_39 = [
         dependsOn: 1,
         description: "Mavjud akademik almashinuv yozuvini yangilash",
         inputFields: [
-            { name: "entityId", label: "Entity UUID", type: "text", required: true, placeholder: "00000000-0000-0000-0000-000000000000", defaultValue: "" },
+            { name: "entityId", label: "Entity UUID", type: "text", required: true, placeholder: "00000000-0000-0000-0000-000000000000", defaultValue: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" },
             { name: "student_fullname", label: "Talaba FIO", type: "text", required: false, placeholder: "Familiya Ism Otasining ismi", defaultValue: "Yangilangan Test Talaba" },
             { name: "exchange_university_name", label: "Xorij OTM nomi", type: "text", required: false, placeholder: "Harvard University", defaultValue: "MIT" },
             { name: "exchange_document", label: "Shartnoma/Hujjat", type: "text", required: false, placeholder: "Shartnoma raqami", defaultValue: "SH-2024-002" },
@@ -115,7 +115,7 @@ const endpoints_39 = [
         dependsOn: 1,
         description: "Akademik almashinuv yozuvini o'chirish (soft delete)",
         inputFields: [
-            { name: "entityId", label: "Entity UUID", type: "text", required: true, placeholder: "00000000-0000-0000-0000-000000000000", defaultValue: "" }
+            { name: "entityId", label: "Entity UUID", type: "text", required: true, placeholder: "00000000-0000-0000-0000-000000000000", defaultValue: "a1b2c3d4-e5f6-7890-abcd-ef1234567890" }
         ],
         ported: true
     },
