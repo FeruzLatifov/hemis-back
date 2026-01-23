@@ -52,12 +52,42 @@ const endpoints_39 = [
         dependsOn: 1,
         description: "Barcha akademik almashinuv yozuvlarini olish (paginated). Qaytgan javobdan random ID tanlab GET/PUT/DELETE inputlariga qo'yadi.",
         storeFirstId: "administrativeStudent2EntityId", // Qaytgan massivdan random ID ni saqlash
-        queryParams: [
-            { name: "limit", label: "Limit", defaultValue: "50" },
-            { name: "offset", label: "Offset", defaultValue: "0" },
-            { name: "returnCount", label: "Jami sonni qaytarish", defaultValue: "true" },
-            { name: "returnNulls", label: "Null qiymatlarni qaytarish", defaultValue: "false" }
-        ],
+        inputFields: {
+            limit: {
+                label: "Limit (nechta yozuv)",
+                type: "number",
+                required: false,
+                placeholder: "50",
+                default: "50"
+            },
+            offset: {
+                label: "Offset (qayerdan boshlash)",
+                type: "number",
+                required: false,
+                placeholder: "0",
+                default: "0"
+            },
+            returnCount: {
+                label: "Jami sonni qaytarish",
+                type: "select",
+                options: [
+                    { value: "true", label: "Ha (true)" },
+                    { value: "false", label: "Yo'q (false)" }
+                ],
+                default: "true",
+                required: false
+            },
+            returnNulls: {
+                label: "Null qiymatlarni qaytarish",
+                type: "select",
+                options: [
+                    { value: "false", label: "Yo'q (false)" },
+                    { value: "true", label: "Ha (true)" }
+                ],
+                default: "false",
+                required: false
+            }
+        },
         ported: true
     },
     {
