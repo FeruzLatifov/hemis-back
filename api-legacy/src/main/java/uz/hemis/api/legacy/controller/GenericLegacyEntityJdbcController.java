@@ -38,8 +38,8 @@ public class GenericLegacyEntityJdbcController {
             // hemishe_RAcademicGroup - maxsus AcademicGroupEntityController.java da
             // hemishe_RAcademicSubjects - maxsus AcademicSubjectsEntityController.java da
             // hemishe_RAcademicAttendance - maxsus RAcademicAttendanceEntityController.java da
+            // hemishe_REmployment - maxsus REmploymentEntityController.java da
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicScore", "hemishe_r_academic_score"),
-            Map.entry("/app/rest/v2/entities/hemishe_REmployment", "hemishe_r_employment"),
             // Classifiers (H-*)
             // hemishe_HDoctoralStudentType - maxsus DoctoralStudentTypeEntityController.java da
             // hemishe_HMethodicalPublicationType - maxsus MethodicalPublicationTypeEntityController.java da
@@ -84,7 +84,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicScore/{id}",
-            "/app/rest/v2/entities/hemishe_REmployment/{id}",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/{id}"
     })
     @Operation(summary = "Get entity by ID (legacy CUBA format)")
@@ -108,7 +107,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicScore",
-            "/app/rest/v2/entities/hemishe_REmployment",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm"
     })
     @Operation(summary = "List entities (legacy CUBA list)")
@@ -137,7 +135,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicScore/search",
-            "/app/rest/v2/entities/hemishe_REmployment/search",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search"
     })
     @Operation(summary = "Search entities by code/name (best-effort)")
