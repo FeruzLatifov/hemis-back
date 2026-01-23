@@ -1,0 +1,82 @@
+// Barcha endpoint kategoriyalarini birlashtiruvchi fayl
+// Auto-generated - DO NOT EDIT DIRECTLY
+// Jami: 37 kategoriya, 224 endpoint
+
+const endpoints = [
+    // 01.Token (3 endpoint)
+    ...endpoints_01,
+    // 02.Captcha (2 endpoint)
+    ...endpoints_02,
+    // 03.Passport ma'lumotlari (4 endpoint)
+    ...endpoints_03,
+    // 04.Talaba (18 endpoint)
+    ...endpoints_04,
+    // 05.O'qituvchi (5 endpoint)
+    ...endpoints_05,
+    // 06.Xodim lavozimlari (18 endpoint)
+    ...endpoints_06,
+    // 07.OTM bo'linmalari (7 endpoint)
+    ...endpoints_07,
+    // 08.OTM bo'linma turlari (7 endpoint)
+    ...endpoints_08,
+    // 09.OTM xodimlari kategoriyasi (7 endpoint)
+    ...endpoints_09,
+    // 10.Talaba holati (7 endpoint)
+    ...endpoints_10,
+    // 11.Fuqarolik holatlari (7 endpoint)
+    ...endpoints_11,
+    // 12.Diplomlar (6 endpoint)
+    ...endpoints_12,
+    // 13.Klassifikatorlar (3 endpoint)
+    ...endpoints_13,
+    // 14.Tarjima (2 endpoint)
+    ...endpoints_14,
+    // 15.OTM (3 endpoint)
+    ...endpoints_15,
+    // 16.Doktorant talabalari (7 endpoint)
+    ...endpoints_16,
+    // 17.Dissertasiya himoyalari (4 endpoint)
+    ...endpoints_17,
+    // 18.Ilmiy faollik (5 endpoint)
+    ...endpoints_18,
+    // 19.Loyihalar (4 endpoint)
+    ...endpoints_19,
+    // 20.Loyiha meta ma'lumotlari (5 endpoint)
+    ...endpoints_20,
+    // 21.Loyiha ijrochilari (3 endpoint)
+    ...endpoints_21,
+    // 22.Ilmiy nashrlar (5 endpoint)
+    ...endpoints_22,
+    // 23.Ilmiy ishlanmalar (5 endpoint)
+    ...endpoints_23,
+    // 24.Uslubiy nashlar (5 endpoint)
+    ...endpoints_24,
+    // 25.Nashr mualliflari meta ma'lumotlari (5 endpoint)
+    ...endpoints_25,
+    // 26.Nashrlarni baholash mezonlari (5 endpoint)
+    ...endpoints_26,
+    // 27.Uslubiy nashr turlari (7 endpoint)
+    ...endpoints_27,
+    // 28.Doktorantura talabalari statusi (7 endpoint)
+    ...endpoints_28,
+    // 29.Doktorantura talabalari turlari (7 endpoint)
+    ...endpoints_29,
+    // 30.Nashr etish hududlari turlari (7 endpoint)
+    ...endpoints_30,
+    // 31.Chetlashgan talabalar (7 endpoint)
+    ...endpoints_31,
+    // 32.Akademik guruhlar (7 endpoint)
+    ...endpoints_32,
+    // 33.Fanlar (7 endpoint)
+    ...endpoints_33,
+    // 34.Akademik hisobotlar o'zlashtirish (7 endpoint)
+    ...endpoints_34,
+    // 35.Akademik hisobotlar davomat (7 endpoint)
+    ...endpoints_35,
+    // 36.Shartnoma statistikasi (2 endpoint)
+    ...endpoints_36,
+    // 37.Bandlik statistikasi (7 endpoint)
+    ...endpoints_37,
+];
+
+console.log('Endpoints loaded:', endpoints.length, 'endpoints from 37 categories');
