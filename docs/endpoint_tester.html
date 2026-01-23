@@ -9495,40 +9495,23 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
 
+            // =====================================================
             // 34.Akademik hisobotlar o'zlashtirish (7 endpoint)
             // Entity: hemishe_RAcademicScore
             // Table: hemishe_r_academic_score
-            // KETMA-KETLIK: POST → GET by ID → PUT → DELETE → GET all → Search
-            // Shu tartibda test qilish tavsiya etiladi:
-            // 1. POST bilan yaratish → ID olish
-            // 2. GET bilan tekshirish
-            // 3. PUT bilan yangilash
-            // 4. DELETE bilan o'chirish
+            // Ketma-ketlik: POST → GET by ID → PUT → DELETE → GET all → Search (GET/POST)
+            // =====================================================
             {
                 id: 1,
                 category: "34.Akademik hisobotlar o'zlashtirish",
                 name: "Yangi o'zlashtirish yozuvi yaratish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RAcademicScore",
-            // =====================================================
-            // 35.Akademik hisobotlar davomat (7 endpoint)
-            // Entity: hemishe_RAcademicAttendance
-            // Table: hemishe_r_academic_attendance
-            // Ketma-ketlik: POST → GET by ID → PUT → GET list → DELETE → SEARCH
-            // =====================================================
-            {
-                id: 1,
-                category: "35.Akademik hisobotlar davomat",
-                name: "Yangi davomat yozuvi yaratish",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance",
                 requiresAuth: true,
                 inputFields: {
                     universityCode: {
                         label: "Universitet kodi",
                         type: "text",
-                        defaultNew: "311",
-                        defaultOld: "313",
                         defaultNew: "401",
                         defaultOld: "351",
                         required: false
@@ -9536,17 +9519,13 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     universityName: {
                         label: "Universitet nomi",
                         type: "text",
-                        defaultNew: "Namangan muhandislik-texnologiya instituti",
-                        defaultOld: "Samarqand davlat arxitektura-qurilish universiteti",
-                        defaultNew: "Toshkent axborot texnologiyalari universiteti",
-                        defaultOld: "Buxoro davlat universiteti",
+                        defaultNew: "TATU",
+                        defaultOld: "BuxDU",
                         required: false
                     },
                     facultyCode: {
                         label: "Fakultet kodi",
                         type: "text",
-                        defaultNew: "311-101",
-                        defaultOld: "313-101",
                         defaultNew: "401-01",
                         defaultOld: "351-01",
                         required: false
@@ -9554,10 +9533,8 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     facultyName: {
                         label: "Fakultet nomi",
                         type: "text",
-                        defaultNew: "Kompyuter injiniringi",
-                        defaultOld: "Axborot texnologiyalari",
-                        defaultNew: "Axborot texnologiyalari fakulteti",
-                        defaultOld: "Fizika-matematika fakulteti",
+                        defaultNew: "Dasturiy injiniring",
+                        defaultOld: "Fizika-matematika",
                         required: false
                     },
                     educationTypeCode: {
@@ -9579,7 +9556,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         type: "text",
                         defaultNew: "2024",
                         defaultOld: "2023",
-                        defaultOld: "2021",
                         required: false
                     },
                     educationYearName: {
@@ -9590,39 +9566,22 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         required: false
                     },
                     semesterTypeCode: {
-                        label: "Semestr turi kodi",
-                        type: "text",
-                        defaultNew: "11",
-                        defaultOld: "11",
-                        required: false
-                    },
-                    semesterTypeName: {
-                        label: "Semestr turi nomi",
-                        type: "text",
-                        defaultNew: "Kuzgi",
-                        defaultOld: "Kuzgi",
-                        defaultOld: "2021-2022",
-                        required: false
-                    },
-                    semesterTypeCode: {
-                        label: "Semester turi kodi",
+                        label: "Semestr kodi",
                         type: "text",
                         defaultNew: "1",
                         defaultOld: "1",
                         required: false
                     },
                     semesterTypeName: {
-                        label: "Semester turi nomi",
+                        label: "Semestr nomi",
                         type: "text",
-                        defaultNew: "Kuzgi semester",
-                        defaultOld: "Kuzgi semester",
+                        defaultNew: "1-semestr",
+                        defaultOld: "1-semestr",
                         required: false
                     },
                     courseCode: {
                         label: "Kurs kodi",
                         type: "text",
-                        defaultNew: "11",
-                        defaultOld: "11",
                         defaultNew: "1",
                         defaultOld: "1",
                         required: false
@@ -9637,15 +9596,8 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     tableType: {
                         label: "Jadval turi",
                         type: "text",
-                        defaultNew: "score",
-                        defaultOld: "score",
-                        required: false
-                    },
-                    scoreType: {
-                        label: "Baho turi",
-                        type: "text",
-                        defaultNew: "final",
-                        defaultOld: "final",
+                        defaultNew: "o'zlashtirish ko'rsatkichlari",
+                        defaultOld: "o'zlashtirish ko'rsatkichlari",
                         required: false
                     },
                     scorePercent: {
@@ -9655,61 +9607,38 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         defaultOld: "78.3",
                         required: false
                     },
+                    scoreType: {
+                        label: "Baho turi",
+                        type: "text",
+                        defaultNew: "yaxshi",
+                        defaultOld: "qoniqarli",
+                        required: false
+                    },
                     debitorCount: {
                         label: "Qarzdorlar soni",
                         type: "number",
-                        defaultNew: "12",
-                        defaultOld: "18",
-                        required: false
-                    },
-                    updateDate: {
-                        label: "Yangilangan sana",
-                        type: "date",
-                        defaultNew: new Date().toISOString().split('T')[0],
-                        defaultOld: new Date().toISOString().split('T')[0],
-                    attendancePercent: {
-                        label: "Davomat foizi",
-                        type: "number",
-                        defaultNew: "85.5",
-                        defaultOld: "85.5",
-                        required: false
-                    },
-                    badAttendanceStudentCount: {
-                        label: "Yomon davomatli talabalar soni",
-                        type: "number",
-                        defaultNew: "10",
+                        defaultNew: "5",
                         defaultOld: "10",
                         required: false
                     },
                     updateDate: {
-                        label: "Yangilash sanasi",
+                        label: "Yangilangan sana",
                         type: "text",
                         placeholder: "YYYY-MM-DD",
                         defaultNew: "2024-01-15",
-                        defaultOld: "2021-01-15",
+                        defaultOld: "2023-01-15",
                         required: false
                     }
                 },
                 hasBody: true,
-                bodyFields: ["universityCode", "universityName", "facultyCode", "facultyName", "educationTypeCode", "educationTypeName", "educationYearCode", "educationYearName", "semesterTypeCode", "semesterTypeName", "courseCode", "courseName", "tableType", "scoreType", "scorePercent", "debitorCount", "updateDate"],
+                bodyFields: ["universityCode", "universityName", "facultyCode", "facultyName", "educationTypeCode", "educationTypeName", "educationYearCode", "educationYearName", "semesterTypeCode", "semesterTypeName", "courseCode", "courseName", "tableType", "scorePercent", "scoreType", "debitorCount", "updateDate"],
                 description: `**Yangi o'zlashtirish yozuvi yaratish**
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_RAcademicScore
 
-<b>Workflow:</b> Bu test zanjirining BIRINCHI qadami. Yaratilgan ID ni keyingi testlarda ishlatish uchun nusxalang.
-
-<b>Body:</b>
-<pre>{
-  "universityCode": "311",
-  "universityName": "Namangan muhandislik-texnologiya instituti",
-  "facultyCode": "311-101",
-  "facultyName": "Kompyuter injiniringi",
-  ...
-}</pre>
-
 <b>Response:</b> 201 Created - Yaratilgan yozuv (ID avtomatik keyingi testlarga o'tadi)`,
                 ported: true,
-                storeResultId: "academicScoreId"  // POST dan qaytgan ID ni saqlash
+                storeResultId: "academicScoreId"
             },
             {
                 id: 2,
@@ -9720,49 +9649,13 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 requiresAuth: true,
                 inputFields: {
                     entityId: {
-                        label: "Entity ID (UUID) - #1 POST dan avtomatik",
-                storeResultId: "createdRAcademicAttendanceId",
-                bodyFields: ["universityCode", "universityName", "facultyCode", "facultyName",
-                             "educationTypeCode", "educationTypeName", "educationYearCode", "educationYearName",
-                             "semesterTypeCode", "semesterTypeName", "courseCode", "courseName",
-                             "attendancePercent", "badAttendanceStudentCount", "updateDate"],
-                description: `**Yangi davomat yozuvi yaratish** (POST /)
-
-<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_RAcademicAttendance
-
-<b>Body:</b> JSON formatida davomat ma'lumotlari
-<pre>{
-  "universityCode": "401",
-  "universityName": "Toshkent axborot texnologiyalari universiteti",
-  "facultyCode": "401-01",
-  "facultyName": "Axborot texnologiyalari fakulteti",
-  "educationTypeCode": "11",
-  "educationTypeName": "Bakalavr",
-  "attendancePercent": 85.5,
-  "badAttendanceStudentCount": 10
-}</pre>
-
-<b>Response:</b> Yaratilgan davomat yozuvi`,
-                ported: true
-            },
-            {
-                id: 2,
-                category: "35.Akademik hisobotlar davomat",
-                name: "Davomat yozuvini ID bo'yicha olish",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
                         label: "Entity ID (UUID)",
                         type: "text",
                         placeholder: "POST dan avtomatik to'ldiriladi",
                         defaultNew: "",
                         defaultOld: "",
                         required: true,
-                        useStoredId: "academicScoreId"  // POST dan olingan ID avtomatik qo'yiladi
-                        useStoredId: "createdRAcademicAttendanceId",
-                        required: true
+                        useStoredId: "academicScoreId"
                     },
                     returnNulls: {
                         label: "Null qiymatlarni qaytarish",
@@ -9783,13 +9676,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 - entityId: #1 POST dan olingan UUID
 
 <b>Response:</b> 200 OK - Topilgan yozuv yoki 404 Not Found`,
-                description: `**Davomat yozuvini ID bo'yicha olish** (GET /{entityId})
-
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}
-
-<b>Path param:</b> entityId - UUID formatida yozuv identifikatori
-
-<b>Response:</b> Topilgan davomat yozuvi yoki 404`,
                 ported: true
             },
             {
@@ -9801,21 +9687,13 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 requiresAuth: true,
                 inputFields: {
                     entityId: {
-                        label: "Entity ID (UUID) - #1 POST dan avtomatik",
-                category: "35.Akademik hisobotlar davomat",
-                name: "Davomat yozuvini yangilash",
-                method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
                         label: "Entity ID (UUID)",
                         type: "text",
                         placeholder: "POST dan avtomatik to'ldiriladi",
                         defaultNew: "",
                         defaultOld: "",
                         required: true,
-                        useStoredId: "academicScoreId"  // POST dan olingan ID avtomatik qo'yiladi
+                        useStoredId: "academicScoreId"
                     },
                     scorePercent: {
                         label: "O'zlashtirish foizi (yangi qiymat)",
@@ -9827,23 +9705,8 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     debitorCount: {
                         label: "Qarzdorlar soni (yangi qiymat)",
                         type: "number",
-                        defaultNew: "5",
-                        defaultOld: "10",
-                        useStoredId: "createdRAcademicAttendanceId",
-                        required: true
-                    },
-                    attendancePercent: {
-                        label: "Davomat foizi",
-                        type: "number",
-                        defaultNew: "90.0",
-                        defaultOld: "90.0",
-                        required: false
-                    },
-                    badAttendanceStudentCount: {
-                        label: "Yomon davomatli talabalar soni",
-                        type: "number",
-                        defaultNew: "5",
-                        defaultOld: "5",
+                        defaultNew: "3",
+                        defaultOld: "8",
                         required: false
                     }
                 },
@@ -9853,27 +9716,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 
 <b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_RAcademicScore/{entityId}
 
-<b>Workflow:</b> #1 POST dan yaratilgan ID avtomatik qo'yiladi.
-
-<b>Body:</b>
-<pre>{
-  "scorePercent": 95.0,
-  "debitorCount": 5
-}</pre>
-
 <b>Response:</b> 200 OK - Yangilangan yozuv yoki 404 Not Found`,
-                bodyFields: ["attendancePercent", "badAttendanceStudentCount"],
-                description: `**Davomat yozuvini yangilash** (PUT /{entityId})
-
-<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}
-
-<b>Body:</b> JSON formatida yangilanadigan maydonlar
-<pre>{
-  "attendancePercent": 90.0,
-  "badAttendanceStudentCount": 5
-}</pre>
-
-<b>Response:</b> Yangilangan davomat yozuvi yoki 404`,
                 ported: true
             },
             {
@@ -9885,25 +9728,20 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 requiresAuth: true,
                 inputFields: {
                     entityId: {
-                        label: "Entity ID (UUID) - #1 POST dan avtomatik",
+                        label: "Entity ID (UUID)",
                         type: "text",
                         placeholder: "POST dan avtomatik to'ldiriladi",
                         defaultNew: "",
                         defaultOld: "",
                         required: true,
-                        useStoredId: "academicScoreId"  // POST dan olingan ID avtomatik qo'yiladi
+                        useStoredId: "academicScoreId"
                     }
                 },
                 description: `**O'zlashtirish yozuvini o'chirish (soft delete)**
 
 <b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_RAcademicScore/{entityId}
 
-<b>Workflow:</b> #1 POST dan yaratilgan ID avtomatik qo'yiladi.
-
-<b>Parameters:</b>
-- entityId: #1 POST dan avtomatik
-
-<b>Response:</b> 204 No Content yoki 404 Not Found
+<b>Response:</b> 200 OK yoki 404 Not Found
 
 <b>Note:</b> Soft delete - yozuv o'chirilmaydi, faqat delete_ts qo'yiladi`,
                 ported: true
@@ -9914,10 +9752,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 name: "Barcha o'zlashtirish yozuvlarini olish (GET all)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RAcademicScore",
-                category: "35.Akademik hisobotlar davomat",
-                name: "Barcha davomat yozuvlarini olish",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance",
                 requiresAuth: true,
                 inputFields: {
                     limit: {
@@ -9962,45 +9796,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 - returnNulls: Null qiymatlarni ham qaytarish
 
 <b>Response:</b> Sahifalangan o'zlashtirish hisobotlari ro'yxati`,
-                description: `**Akademik davomat hisobotlari** (GET /)
-
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RAcademicAttendance
-
-<b>Tavsif:</b> Universitet, fakultet, ta'lim turi, kurs bo'yicha davomat statistikasi
-
-<b>Query params:</b>
-- limit, offset: Sahifalash
-- returnCount: X-Total-Count headerda umumiy sonni qaytarish
-- returnNulls: Null qiymatlarni ham qaytarish
-
-<b>Response:</b> Sahifalangan davomat yozuvlari ro'yxati`,
-                ported: true
-            },
-            {
-                id: 5,
-                category: "35.Akademik hisobotlar davomat",
-                name: "Davomat yozuvini o'chirish",
-                method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}",
-                requiresAuth: true,
-                inputFields: {
-                    entityId: {
-                        label: "Entity ID (UUID)",
-                        type: "text",
-                        placeholder: "POST dan avtomatik to'ldiriladi",
-                        defaultNew: "",
-                        defaultOld: "",
-                        useStoredId: "createdRAcademicAttendanceId",
-                        required: true
-                    }
-                },
-                description: `**Davomat yozuvini o'chirish** (DELETE /{entityId})
-
-<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}
-
-<b>Path param:</b> entityId - UUID formatida yozuv identifikatori
-
-<b>Note:</b> Soft delete - yozuv o'chirilmaydi, faqat delete_ts qo'yiladi`,
                 ported: true
             },
             {
@@ -10014,29 +9809,17 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                     filter: {
                         label: "Filter (CUBA JSON)",
                         type: "textarea",
-                        placeholder: '{"conditions":[{"property":"universityCode","operator":"=","value":"311"}]}',
-                        defaultNew: '{"conditions":[{"property":"universityCode","operator":"=","value":"311"}]}',
-                        defaultOld: '{"conditions":[{"property":"universityCode","operator":"=","value":"313"}]}',
-                category: "35.Akademik hisobotlar davomat",
-                name: "Davomat yozuvlarini qidirish (GET)",
-                method: "GET",
-                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/search",
-                requiresAuth: true,
-                inputFields: {
-                    filter: {
-                        label: "Filter (CUBA JSON yoki text)",
-                        type: "textarea",
-                        placeholder: '{"conditions":[{"property":"universityCode","operator":"=","value":"401"}]}',
-                        defaultNew: '{"conditions":[{"property":"universityCode","operator":"notEmpty"}]}',
-                        defaultOld: '{"conditions":[{"property":"universityCode","operator":"notEmpty"}]}',
-                        required: true,
+                        placeholder: '{"conditions":[{"property":"universityCode","operator":"=","value":"351"}]}',
+                        defaultNew: '{"conditions":[{"property":"universityCode","operator":"=","value":"351"}]}',
+                        defaultOld: '{"conditions":[{"property":"universityCode","operator":"=","value":"351"}]}',
+                        required: false,
                         rows: 3
                     },
                     limit: {
                         label: "Limit",
                         type: "number",
-                        defaultNew: "50",
-                        defaultOld: "50",
+                        defaultNew: "2",
+                        defaultOld: "2",
                         required: false
                     },
                     offset: {
@@ -10044,14 +9827,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                         type: "number",
                         defaultNew: "0",
                         defaultOld: "0",
-                        required: false
-                    },
-                    returnCount: {
-                        label: "Umumiy sonni qaytarish",
-                        type: "select",
-                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
-                        defaultNew: "",
-                        defaultOld: "",
                         required: false
                     },
                     returnNulls: {
@@ -10067,21 +9842,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
 
 <b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RAcademicScore/search
 
-<b>Parameters:</b>
-- filter: CUBA format filter JSON (URL encoded)
-- limit, offset: Sahifalash
-
-                description: `**Davomat yozuvlarini qidirish** (GET /search)
-
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RAcademicAttendance/search
-
-<b>Query params:</b>
-- filter: CUBA JSON format yoki oddiy matn
-- limit, offset: Sahifalash
-
-<b>CUBA Filter misoli:</b>
-<pre>{"conditions":[{"property":"universityCode","operator":"=","value":"401"}]}</pre>
-
 <b>Response:</b> Filter shartiga mos yozuvlar`,
                 ported: true
             },
@@ -10091,10 +9851,6 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 name: "O'zlashtirish yozuvlarini qidirish (POST /search)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RAcademicScore/search",
-                category: "35.Akademik hisobotlar davomat",
-                name: "Davomat yozuvlarini qidirish (POST)",
-                method: "POST",
-                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/search",
                 requiresAuth: true,
                 inputFields: {
                     filter: {
@@ -10134,17 +9890,354 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 description: `**O'zlashtirish yozuvlarini qidirish** (POST /search)
 
 <b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_RAcademicScore/search
-                description: `**Davomat yozuvlarini qidirish** (POST /search)
-
-<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_RAcademicAttendance/search
-
-<b>Body:</b> CUBA format filter JSON
-<pre>{"filter":{"conditions":[{"property":"universityCode","operator":"notEmpty"}]}}</pre>
 
 <b>Response:</b> Filter shartiga mos yozuvlar`,
                 ported: true
             },
 
+            // =====================================================
+            // 35.Akademik hisobotlar davomat (7 endpoint)
+            // Entity: hemishe_RAcademicAttendance
+            // =====================================================
+            {
+                id: 1,
+                category: "35.Akademik hisobotlar davomat",
+                name: "Yangi davomat yozuvi yaratish (POST)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance",
+                requiresAuth: true,
+                inputFields: {
+                    universityCode: {
+                        label: "Universitet kodi",
+                        type: "text",
+                        defaultNew: "401",
+                        defaultOld: "351",
+                        required: false
+                    },
+                    universityName: {
+                        label: "Universitet nomi",
+                        type: "text",
+                        defaultNew: "TATU",
+                        defaultOld: "BuxDU",
+                        required: false
+                    },
+                    facultyCode: {
+                        label: "Fakultet kodi",
+                        type: "text",
+                        defaultNew: "401-01",
+                        defaultOld: "351-01",
+                        required: false
+                    },
+                    facultyName: {
+                        label: "Fakultet nomi",
+                        type: "text",
+                        defaultNew: "Dasturiy injiniring",
+                        defaultOld: "Fizika-matematika",
+                        required: false
+                    },
+                    educationTypeCode: {
+                        label: "Ta'lim turi kodi",
+                        type: "text",
+                        defaultNew: "11",
+                        defaultOld: "11",
+                        required: false
+                    },
+                    educationTypeName: {
+                        label: "Ta'lim turi nomi",
+                        type: "text",
+                        defaultNew: "Bakalavr",
+                        defaultOld: "Bakalavr",
+                        required: false
+                    },
+                    educationYearCode: {
+                        label: "O'quv yili kodi",
+                        type: "text",
+                        defaultNew: "2024",
+                        defaultOld: "2023",
+                        required: false
+                    },
+                    semesterTypeCode: {
+                        label: "Semestr kodi",
+                        type: "text",
+                        defaultNew: "1",
+                        defaultOld: "1",
+                        required: false
+                    },
+                    courseCode: {
+                        label: "Kurs kodi",
+                        type: "text",
+                        defaultNew: "1",
+                        defaultOld: "1",
+                        required: false
+                    },
+                    attendancePercent: {
+                        label: "Davomat foizi",
+                        type: "number",
+                        defaultNew: "85.5",
+                        defaultOld: "78.3",
+                        required: false
+                    },
+                    badAttendanceStudentCount: {
+                        label: "Yomon davomatli talabalar soni",
+                        type: "number",
+                        defaultNew: "10",
+                        defaultOld: "15",
+                        required: false
+                    },
+                    updateDate: {
+                        label: "Yangilangan sana",
+                        type: "text",
+                        placeholder: "YYYY-MM-DD",
+                        defaultNew: "2024-01-15",
+                        defaultOld: "2023-01-15",
+                        required: false
+                    }
+                },
+                hasBody: true,
+                bodyFields: ["universityCode", "universityName", "facultyCode", "facultyName", "educationTypeCode", "educationTypeName", "educationYearCode", "semesterTypeCode", "courseCode", "attendancePercent", "badAttendanceStudentCount", "updateDate"],
+                description: `**Yangi davomat yozuvi yaratish**
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_RAcademicAttendance
+
+<b>Response:</b> 201 Created`,
+                ported: true,
+                storeResultId: "academicAttendanceId"
+            },
+            {
+                id: 2,
+                category: "35.Akademik hisobotlar davomat",
+                name: "Davomat yozuvini ID bo'yicha olish (GET)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Entity ID (UUID)",
+                        type: "text",
+                        placeholder: "POST dan avtomatik",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "academicAttendanceId"
+                    },
+                    returnNulls: {
+                        label: "Null qiymatlarni qaytarish",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: false
+                    }
+                },
+                description: `**Davomat yozuvini ID bo'yicha olish**
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}
+
+<b>Response:</b> 200 OK yoki 404 Not Found`,
+                ported: true
+            },
+            {
+                id: 3,
+                category: "35.Akademik hisobotlar davomat",
+                name: "Davomat yozuvini yangilash (PUT)",
+                method: "PUT",
+                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Entity ID (UUID)",
+                        type: "text",
+                        placeholder: "POST dan avtomatik",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "academicAttendanceId"
+                    },
+                    attendancePercent: {
+                        label: "Davomat foizi (yangi)",
+                        type: "number",
+                        defaultNew: "92.0",
+                        defaultOld: "85.0",
+                        required: false
+                    },
+                    badAttendanceStudentCount: {
+                        label: "Yomon davomatli talabalar (yangi)",
+                        type: "number",
+                        defaultNew: "5",
+                        defaultOld: "10",
+                        required: false
+                    }
+                },
+                hasBody: true,
+                bodyFields: ["attendancePercent", "badAttendanceStudentCount"],
+                description: `**Davomat yozuvini yangilash**
+
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}
+
+<b>Response:</b> 200 OK yoki 404 Not Found`,
+                ported: true
+            },
+            {
+                id: 4,
+                category: "35.Akademik hisobotlar davomat",
+                name: "Davomat yozuvini o'chirish (DELETE)",
+                method: "DELETE",
+                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Entity ID (UUID)",
+                        type: "text",
+                        placeholder: "POST dan avtomatik",
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: true,
+                        useStoredId: "academicAttendanceId"
+                    }
+                },
+                description: `**Davomat yozuvini o'chirish (soft delete)**
+
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_RAcademicAttendance/{entityId}
+
+<b>Response:</b> 200 OK yoki 404 Not Found`,
+                ported: true
+            },
+            {
+                id: 5,
+                category: "35.Akademik hisobotlar davomat",
+                name: "Barcha davomat yozuvlarini olish (GET all)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance",
+                requiresAuth: true,
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        defaultNew: "50",
+                        defaultOld: "50",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Null qiymatlarni qaytarish",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: false
+                    }
+                },
+                description: `**Barcha davomat yozuvlarini olish**
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RAcademicAttendance
+
+<b>Response:</b> Sahifalangan davomat ro'yxati`,
+                ported: true
+            },
+            {
+                id: 6,
+                category: "35.Akademik hisobotlar davomat",
+                name: "Davomat yozuvlarini qidirish (GET /search)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (CUBA JSON)",
+                        type: "textarea",
+                        placeholder: '{"conditions":[{"property":"universityCode","operator":"=","value":"351"}]}',
+                        defaultNew: '{"conditions":[{"property":"universityCode","operator":"=","value":"351"}]}',
+                        defaultOld: '{"conditions":[{"property":"universityCode","operator":"=","value":"351"}]}',
+                        required: false,
+                        rows: 3
+                    },
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        defaultNew: "2",
+                        defaultOld: "2",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Null qiymatlarni qaytarish",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: false
+                    }
+                },
+                description: `**Davomat yozuvlarini qidirish** (GET /search)
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RAcademicAttendance/search
+
+<b>Response:</b> Filter shartiga mos yozuvlar`,
+                ported: true
+            },
+            {
+                id: 7,
+                category: "35.Akademik hisobotlar davomat",
+                name: "Davomat yozuvlarini qidirish (POST /search)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_RAcademicAttendance/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (CUBA JSON)",
+                        type: "textarea",
+                        placeholder: '{"conditions":[{"property":"universityCode","operator":"notEmpty"}]}',
+                        defaultNew: '{"conditions":[{"property":"universityCode","operator":"notEmpty"}]}',
+                        defaultOld: '{"conditions":[{"property":"universityCode","operator":"notEmpty"}]}',
+                        required: false,
+                        rows: 3
+                    },
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        defaultNew: "50",
+                        defaultOld: "50",
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        defaultNew: "0",
+                        defaultOld: "0",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Null qiymatlarni qaytarish",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        defaultNew: "",
+                        defaultOld: "",
+                        required: false
+                    }
+                },
+                hasBody: true,
+                bodyFields: ["filter", "limit", "offset"],
+                description: `**Davomat yozuvlarini qidirish** (POST /search)
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_RAcademicAttendance/search
+
+<b>Response:</b> Filter shartiga mos yozuvlar`,
+                ported: true
+            },
+
+            // =====================================================
             // 36.Shartnoma statistikasi
             // =====================================================
             {
