@@ -63,11 +63,11 @@ const endpoints = [
     ...endpoints_29,
     // 30.Ilmiy nashr etish hududlari turlari (7 endpoint)
     ...endpoints_30,
-    // 31.Chetlashgan talabalar (7 endpoint)
+    // 31.Akademik hisobotlar chetlashgan talabalar (7 endpoint)
     ...endpoints_31,
-    // 32.Akademik guruhlar (7 endpoint)
+    // 32.Akademik hisobotlar akademik guruhlar (7 endpoint)
     ...endpoints_32,
-    // 33.Fanlar (7 endpoint)
+    // 33.Akademik hisobotlar fanlar (7 endpoint)
     ...endpoints_33,
     // 34.Akademik hisobotlar o'zlashtirish (7 endpoint)
     ...endpoints_34,

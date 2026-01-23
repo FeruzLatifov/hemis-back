@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "32.Akademik guruhlar", description = "Akademik guruhlar hisobotlarini boshqarish API")
+@Tag(name = "32.Akademik hisobotlar akademik guruhlar", description = "Akademik guruhlar hisobotlarini boshqarish API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RAcademicGroup")
 @RequiredArgsConstructor

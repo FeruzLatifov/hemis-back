@@ -1,14 +1,14 @@
-// 32.Akademik guruhlar endpoints
+// 32.Akademik hisobotlar akademik guruhlar endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_32 = [
     // ============================================
-    // 32.Akademik guruhlar (7 endpoint)
+    // 32.Akademik hisobotlar akademik guruhlar (7 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "32.Akademik guruhlar",
+                category: "32.Akademik hisobotlar akademik guruhlar",
                 name: "Barcha akademik guruhlar yozuvlarini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RAcademicGroup",
@@ -60,7 +60,7 @@ const endpoints_32 = [
             },
     {
                 id: 2,
-                category: "32.Akademik guruhlar",
+                category: "32.Akademik hisobotlar akademik guruhlar",
                 name: "Akademik guruh yozuvini ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RAcademicGroup/{entityId}",
@@ -96,7 +96,7 @@ const endpoints_32 = [
             },
     {
                 id: 3,
-                category: "32.Akademik guruhlar",
+                category: "32.Akademik hisobotlar akademik guruhlar",
                 name: "Yangi akademik guruh yozuvi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RAcademicGroup",
@@ -198,7 +198,7 @@ const endpoints_32 = [
             },
     {
                 id: 4,
-                category: "32.Akademik guruhlar",
+                category: "32.Akademik hisobotlar akademik guruhlar",
                 name: "Akademik guruh yozuvini yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_RAcademicGroup/{entityId}",
@@ -255,7 +255,7 @@ const endpoints_32 = [
             },
     {
                 id: 5,
-                category: "32.Akademik guruhlar",
+                category: "32.Akademik hisobotlar akademik guruhlar",
                 name: "Akademik guruh yozuvini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_RAcademicGroup/{entityId}",
@@ -284,7 +284,7 @@ const endpoints_32 = [
             },
     {
                 id: 6,
-                category: "32.Akademik guruhlar",
+                category: "32.Akademik hisobotlar akademik guruhlar",
                 name: "Akademik guruhlarni qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RAcademicGroup/search",
@@ -343,7 +343,7 @@ const endpoints_32 = [
             },
     {
                 id: 7,
-                category: "32.Akademik guruhlar",
+                category: "32.Akademik hisobotlar akademik guruhlar",
                 name: "Akademik guruhlarni qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RAcademicGroup/search",

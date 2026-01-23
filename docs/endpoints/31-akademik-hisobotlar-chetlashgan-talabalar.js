@@ -1,14 +1,14 @@
-// 31.Chetlashgan talabalar endpoints
+// 31.Akademik hisobotlar chetlashgan talabalar endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_31 = [
     // ============================================
-    // 31.Chetlashgan talabalar (7 endpoint)
+    // 31.Akademik hisobotlar chetlashgan talabalar (7 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "31.Chetlashgan talabalar",
+                category: "31.Akademik hisobotlar chetlashgan talabalar",
                 name: "Barcha chetlashgan talabalar yozuvlarini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RExpel",
@@ -50,7 +50,7 @@ const endpoints_31 = [
             },
     {
                 id: 2,
-                category: "31.Chetlashgan talabalar",
+                category: "31.Akademik hisobotlar chetlashgan talabalar",
                 name: "Chetlashgan talaba yozuvini olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RExpel/{entityId}",
@@ -85,7 +85,7 @@ const endpoints_31 = [
             },
     {
                 id: 3,
-                category: "31.Chetlashgan talabalar",
+                category: "31.Akademik hisobotlar chetlashgan talabalar",
                 name: "Yangi chetlashgan talaba yozuvi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RExpel",
@@ -236,7 +236,7 @@ const endpoints_31 = [
             },
     {
                 id: 4,
-                category: "31.Chetlashgan talabalar",
+                category: "31.Akademik hisobotlar chetlashgan talabalar",
                 name: "Chetlashgan talaba yozuvini yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_RExpel/{entityId}",
@@ -387,7 +387,7 @@ const endpoints_31 = [
             },
     {
                 id: 5,
-                category: "31.Chetlashgan talabalar",
+                category: "31.Akademik hisobotlar chetlashgan talabalar",
                 name: "Chetlashgan talaba yozuvini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_RExpel/{entityId}",
@@ -414,7 +414,7 @@ const endpoints_31 = [
             },
     {
                 id: 6,
-                category: "31.Chetlashgan talabalar",
+                category: "31.Akademik hisobotlar chetlashgan talabalar",
                 name: "Chetlashgan talabalarni qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RExpel/search",
@@ -465,7 +465,7 @@ const endpoints_31 = [
             },
     {
                 id: 7,
-                category: "31.Chetlashgan talabalar",
+                category: "31.Akademik hisobotlar chetlashgan talabalar",
                 name: "Chetlashgan talabalarni qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RExpel/search",

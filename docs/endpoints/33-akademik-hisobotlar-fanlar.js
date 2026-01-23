@@ -1,14 +1,14 @@
-// 33.Fanlar endpoints
+// 33.Akademik hisobotlar fanlar endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_33 = [
     // ============================================
-    // 33.Fanlar (7 endpoint)
+    // 33.Akademik hisobotlar fanlar (7 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "33.Fanlar",
+                category: "33.Akademik hisobotlar fanlar",
                 name: "Barcha fanlar yozuvlarini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RAcademicSubjects",
@@ -60,7 +60,7 @@ const endpoints_33 = [
             },
     {
                 id: 2,
-                category: "33.Fanlar",
+                category: "33.Akademik hisobotlar fanlar",
                 name: "Fan yozuvini ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RAcademicSubjects/{entityId}",
@@ -96,7 +96,7 @@ const endpoints_33 = [
             },
     {
                 id: 3,
-                category: "33.Fanlar",
+                category: "33.Akademik hisobotlar fanlar",
                 name: "Yangi fan yozuvi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RAcademicSubjects",
@@ -214,7 +214,7 @@ const endpoints_33 = [
             },
     {
                 id: 4,
-                category: "33.Fanlar",
+                category: "33.Akademik hisobotlar fanlar",
                 name: "Fan yozuvini yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_RAcademicSubjects/{entityId}",
@@ -271,7 +271,7 @@ const endpoints_33 = [
             },
     {
                 id: 5,
-                category: "33.Fanlar",
+                category: "33.Akademik hisobotlar fanlar",
                 name: "Fan yozuvini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_RAcademicSubjects/{entityId}",
@@ -300,7 +300,7 @@ const endpoints_33 = [
             },
     {
                 id: 6,
-                category: "33.Fanlar",
+                category: "33.Akademik hisobotlar fanlar",
                 name: "Fanlarni qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_RAcademicSubjects/search",
@@ -359,7 +359,7 @@ const endpoints_33 = [
             },
     {
                 id: 7,
-                category: "33.Fanlar",
+                category: "33.Akademik hisobotlar fanlar",
                 name: "Fanlarni qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_RAcademicSubjects/search",

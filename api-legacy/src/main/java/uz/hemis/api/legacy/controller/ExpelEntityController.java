@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "31.Chetlashgan talabalar", description = "Chetlashgan talabalar hisobotlarini boshqarish API")
+@Tag(name = "31.Akademik hisobotlar chetlashgan talabalar", description = "Chetlashgan talabalar hisobotlarini boshqarish API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RExpel")
 @RequiredArgsConstructor
