@@ -33,6 +33,14 @@ public class LegacyEntityAdapter {
     private static final String VIEW_LOCAL = "_local";
 
     /**
+     * CUBA audit fields - excluded from default and _local views
+     * These are StandardEntity fields that old-hemis doesn't return in _local view
+     */
+    private static final Set<String> CUBA_AUDIT_FIELDS = Set.of(
+        "createTs", "createdBy", "updateTs", "updatedBy", "deleteTs", "deletedBy"
+    );
+
+    /**
      * Convert DTO to CUBA Map format with view support
      */
     public Map<String, Object> toMap(Object dto, String entityName, Boolean returnNulls) {
@@ -56,7 +64,7 @@ public class LegacyEntityAdapter {
 
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", entityName);
-        map.put("_instanceName", getInstanceName(dto));
+        map.put("_instanceName", getCubaInstanceName(dto, entityName));
 
         Field[] fields = dto.getClass().getDeclaredFields();
         for (Field field : fields) {
@@ -81,6 +89,12 @@ public class LegacyEntityAdapter {
                 // For explicit _local view ONLY: skip version and fullname fields (not in OLD-hemis _local response)
                 // Note: default view (null) SHOULD include version and fullname - only _local excludes them
                 if (VIEW_LOCAL.equals(view) && ("version".equals(jsonName) || "fullname".equals(jsonName))) {
+                    continue;
+                }
+
+                // For _local view and default view: skip CUBA audit fields
+                // Old-hemis doesn't return createTs, createdBy, updateTs, updatedBy in _local view
+                if (isLocalView && CUBA_AUDIT_FIELDS.contains(jsonName)) {
                     continue;
                 }
 
@@ -222,6 +236,44 @@ public class LegacyEntityAdapter {
         return result.toString();
     }
 
+    /**
+     * Generate CUBA-style _instanceName
+     * Format: "com.company.hemishe.entity.<EntityClass>-<UUID> [detached]"
+     *
+     * @param dto The DTO object
+     * @param entityName CUBA entity name (e.g., "hemishe_RAcademicScore")
+     * @return CUBA formatted instance name
+     */
+    private String getCubaInstanceName(Object dto, String entityName) {
+        try {
+            // Extract entity class name from CUBA entity name
+            // hemishe_RAcademicScore -> RAcademicScore
+            // hemishe_EStudent -> EStudent
+            String entityClass = entityName;
+            if (entityName != null && entityName.startsWith("hemishe_")) {
+                entityClass = entityName.substring("hemishe_".length());
+            }
+
+            // Get UUID from DTO
+            Field idField = findField(dto.getClass(), "id");
+            String idValue = "unknown";
+            if (idField != null) {
+                idField.setAccessible(true);
+                Object id = idField.get(dto);
+                if (id != null) {
+                    idValue = id.toString();
+                }
+            }
+
+            // CUBA format: com.company.hemishe.entity.RAcademicScore-UUID [detached]
+            return "com.company.hemishe.entity." + entityClass + "-" + idValue + " [detached]";
+
+        } catch (Exception e) {
+            log.warn("Failed to generate CUBA instance name: {}", e.getMessage());
+            return entityName + " [detached]";
+        }
+    }
+
     private String getInstanceName(Object dto) {
         try {
             // First try to call getFullname() method (for StudentDto)
@@ -338,6 +390,18 @@ public class LegacyEntityAdapter {
         if (targetType == Long.class || targetType == long.class) {
             if (value instanceof Number) return ((Number) value).longValue();
             if (value instanceof String) return Long.parseLong((String) value);
+        }
+
+        // Double konversiyasi - Integer -> Double uchun
+        if (targetType == Double.class || targetType == double.class) {
+            if (value instanceof Number) return ((Number) value).doubleValue();
+            if (value instanceof String) return Double.parseDouble((String) value);
+        }
+
+        // Float konversiyasi
+        if (targetType == Float.class || targetType == float.class) {
+            if (value instanceof Number) return ((Number) value).floatValue();
+            if (value instanceof String) return Float.parseFloat((String) value);
         }
 
         if ((targetType == Boolean.class || targetType == boolean.class) && value instanceof String) {
