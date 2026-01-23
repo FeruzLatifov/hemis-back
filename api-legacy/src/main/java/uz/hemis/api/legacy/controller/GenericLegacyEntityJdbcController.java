@@ -37,8 +37,8 @@ public class GenericLegacyEntityJdbcController {
             // hemishe_RExpel - maxsus ExpelEntityController.java da
             // hemishe_RAcademicGroup - maxsus AcademicGroupEntityController.java da
             // hemishe_RAcademicSubjects - maxsus AcademicSubjectsEntityController.java da
+            // hemishe_RAcademicScore - maxsus AcademicScoreEntityController.java da
             Map.entry("/app/rest/v2/entities/hemishe_RAcademicAttendance", "hemishe_r_academic_attendance"),
-            Map.entry("/app/rest/v2/entities/hemishe_RAcademicScore", "hemishe_r_academic_score"),
             Map.entry("/app/rest/v2/entities/hemishe_REmployment", "hemishe_r_employment"),
             // Classifiers (H-*)
             // hemishe_HDoctoralStudentType - maxsus DoctoralStudentTypeEntityController.java da
@@ -84,7 +84,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicAttendance/{id}",
-            "/app/rest/v2/entities/hemishe_RAcademicScore/{id}",
             "/app/rest/v2/entities/hemishe_REmployment/{id}",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/{id}"
     })
@@ -109,7 +108,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicAttendance",
-            "/app/rest/v2/entities/hemishe_RAcademicScore",
             "/app/rest/v2/entities/hemishe_REmployment",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm"
     })
@@ -139,7 +137,6 @@ public class GenericLegacyEntityJdbcController {
     // =============================
     @GetMapping({
             "/app/rest/v2/entities/hemishe_RAcademicAttendance/search",
-            "/app/rest/v2/entities/hemishe_RAcademicScore/search",
             "/app/rest/v2/entities/hemishe_REmployment/search",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search"
     })
