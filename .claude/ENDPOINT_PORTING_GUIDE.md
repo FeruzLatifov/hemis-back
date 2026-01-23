@@ -700,6 +700,201 @@ Men quyidagi jadvaldan foydalanaman:
 
 ---
 
+## 📁 MODULAR ENDPOINT FAYL STRUKTURASI (MUHIM!)
+
+### ⚠️ QATTIQ QOIDA: Endpoint fayllar modular!
+
+`endpoint_tester.html` endpointlari **alohida kategoriya fayllarida** saqlanadi - **HTML ichida EMAS!**
+
+### 📂 Fayl Strukturasi
+
+```
+docs/
+├── endpoint_tester.html          # Asosiy HTML (faqat UI kodi)
+└── endpoints/
+    ├── 01-token.js               # 01.Token kategoriyasi
+    ├── 02-captcha.js             # 02.Captcha kategoriyasi
+    ├── 03-passport-malumotlari.js
+    ├── 04-talaba.js
+    ├── ...
+    ├── 37-bandlik-statistikasi.js
+    ├── 38-yangi-kategoriya.js    # Yangi kategoriya qo'shilganda
+    ├── _index.js                 # Barcha kategoriyalarni birlashtiradi
+    └── all-endpoints.js          # Backup/source fayl
+```
+
+### 📋 Kategoriya Fayl Formati
+
+Har bir kategoriya fayli quyidagi strukturada:
+
+```javascript
+// XX-kategoriya-nomi.js
+// 01.Token endpoints
+// Auto-generated - DO NOT EDIT DIRECTLY
+// Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
+
+const endpoints_01 = [
+    // ============================================
+    // 01.Token (3 endpoint)
+    // ============================================
+    {
+        id: 1,
+        category: "01.Token",
+        name: "Token olish (Password Grant)",
+        method: "POST",
+        url: "/app/rest/v2/oauth/token",
+        requiresAuth: false,
+        auth: "basic",
+        // ... boshqa maydonlar
+    },
+    {
+        id: 2,
+        category: "01.Token",
+        // ...
+    }
+];
+
+// Export for module bundler (optional)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = endpoints_01;
+}
+```
+
+### ✅ MAVJUD KATEGORIYAGA ENDPOINT QO'SHISH
+
+**1️⃣ Tegishli kategoriya faylini toping:**
+```bash
+ls docs/endpoints/
+# 01-token.js, 02-captcha.js, ... 37-bandlik-statistikasi.js
+```
+
+**2️⃣ Fayl oxiriga yangi endpoint qo'shing:**
+```javascript
+// docs/endpoints/37-bandlik-statistikasi.js
+
+const endpoints_37 = [
+    // ... mavjud endpointlar ...
+
+    // ↓ YANGI ENDPOINT QO'SHISH ↓
+    {
+        id: 8,  // Kategoriya ichidagi keyingi ID
+        category: "37.Bandlik statistikasi",
+        name: "Yangi endpoint nomi",
+        method: "POST",
+        url: "/app/rest/v2/entities/hemishe_NewEntity",
+        requiresAuth: true,
+        dependsOn: 1,
+        description: "Endpoint tavsifi",
+        ported: true
+    }
+];
+```
+
+**3️⃣ `_index.js` ni yangilash SHART EMAS** - u avtomatik `...endpoints_XX` ni ishlatadi.
+
+### ✅ YANGI KATEGORIYA YARATISH (39, 40, ... )
+
+**1️⃣ Yangi kategoriya fayli yarating:**
+```bash
+touch docs/endpoints/39-inspeksiya-administrative-student.js
+```
+
+**2️⃣ Fayl contentini yozing:**
+```javascript
+// 39.Inspeksiya administrative student endpoints
+// Auto-generated - DO NOT EDIT DIRECTLY
+
+const endpoints_39 = [
+    // ============================================
+    // 39.Inspeksiya administrative student (X endpoint)
+    // ============================================
+    {
+        id: 1,
+        category: "39.Inspeksiya administrative student",
+        name: "Yangi yozuv yaratish",
+        method: "POST",
+        url: "/app/rest/v2/entities/hemishe_RIAdministrativeStudent2",
+        requiresAuth: true,
+        dependsOn: 1,
+        // ... boshqa maydonlar
+        ported: true
+    }
+];
+
+// Export for module bundler (optional)
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = endpoints_39;
+}
+```
+
+**3️⃣ `_index.js` ga kategoriyani qo'shing:**
+```javascript
+// docs/endpoints/_index.js
+
+const endpoints = [
+    // ... mavjud kategoriyalar ...
+    // 37.Bandlik statistikasi (7 endpoint)
+    ...endpoints_37,
+    // 38.Yangi kategoriya (X endpoint)  ← YANGI
+    ...endpoints_38,
+    // 39.Inspeksiya administrative student (X endpoint)  ← YANGI
+    ...endpoints_39,
+];
+```
+
+**4️⃣ `endpoint_tester.html` ga script tag qo'shing:**
+```html
+<!-- docs/endpoint_tester.html - <head> yoki </body> oldida -->
+
+<!-- Kategoriyalar bo'yicha endpoint fayllar -->
+<script src="endpoints/01-token.js"></script>
+<script src="endpoints/02-captcha.js"></script>
+<!-- ... mavjud fayllar ... -->
+<script src="endpoints/37-bandlik-statistikasi.js"></script>
+<script src="endpoints/38-yangi-kategoriya.js"></script>      <!-- YANGI -->
+<script src="endpoints/39-inspeksiya-administrative-student.js"></script>  <!-- YANGI -->
+<!-- Barcha kategoriyalarni birlashtiruvchi index -->
+<script src="endpoints/_index.js"></script>
+```
+
+### ⚠️ MUHIM QOIDALAR
+
+| Qoida | Tavsif |
+|-------|--------|
+| **Fayl nomi** | `XX-kategoriya-nomi.js` (kebab-case, raqam bilan boshlanadi) |
+| **O'zgaruvchi nomi** | `endpoints_XX` (raqam bilan, underscore) |
+| **Category field** | `"XX.Kategoriya nomi"` (nuqta bilan ajratilgan) |
+| **ID raqamlash** | Har kategoriya ichida 1 dan boshlanadi |
+| **Script tag tartibi** | Raqam bo'yicha o'sib boruvchi tartibda |
+| **_index.js** | Oxirgi script tag bo'lishi SHART |
+
+### 📊 Fayl Nomlash Konventsiyasi
+
+| Kategoriya | Fayl nomi | O'zgaruvchi |
+|------------|-----------|-------------|
+| 01.Token | `01-token.js` | `endpoints_01` |
+| 02.Captcha | `02-captcha.js` | `endpoints_02` |
+| 37.Bandlik statistikasi | `37-bandlik-statistikasi.js` | `endpoints_37` |
+| 39.Inspeksiya administrative student | `39-inspeksiya-administrative-student.js` | `endpoints_39` |
+
+### 🔄 Qayta Generatsiya (Zarur bo'lsa)
+
+Agar `all-endpoints.js` ni qayta kategoriyalarga ajratish kerak bo'lsa:
+
+```bash
+cd /home/adm1n/startup/hemis-back/docs
+python3 split_endpoints_v4.py
+```
+
+Bu skript:
+- `all-endpoints.js` dan barcha endpointlarni o'qiydi
+- `category` field bo'yicha guruhlaydi
+- Har bir kategoriya uchun alohida fayl yaratadi
+- `_index.js` ni yangilaydi
+- HTML uchun script tag ro'yxatini chiqaradi
+
+---
+
 ## ENDPOINT_TESTER.HTML STRUKTURA ✅ IMPLEMENTED
 
 ### ✅ Dual Config Panel (Yangi vs Eski)
