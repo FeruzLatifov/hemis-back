@@ -1,14 +1,14 @@
-// 21.Loyiha ijrochilari endpoints
+// 21.Ilmiy loyiha ijrochilari endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_21 = [
     // ============================================
-    // 21.Loyiha ijrochilari (3 endpoint)
+    // 21.Ilmiy loyiha ijrochilari (3 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "21.Loyiha ijrochilari",
+                category: "21.Ilmiy loyiha ijrochilari",
                 name: "Loyiha ijrochisi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
@@ -84,7 +84,7 @@ const endpoints_21 = [
             },
     {
                 id: 2,
-                category: "21.Loyiha ijrochilari",
+                category: "21.Ilmiy loyiha ijrochilari",
                 name: "Loyiha ijrochisini olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",
@@ -123,7 +123,7 @@ const endpoints_21 = [
             },
     {
                 id: 4,
-                category: "21.Loyiha ijrochilari",
+                category: "21.Ilmiy loyiha ijrochilari",
                 name: "Loyiha ijrochisini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",

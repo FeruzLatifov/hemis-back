@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 /**
  * Dissertation Defense Entity Controller (CUBA Pattern)
- * Tag: 17.Dissertasiya himoyalari
+ * Tag: 17.Ilmiy dissertasiya himoyalari
  * Entity: hemishe_EDissertationDefense
  *
  * CUBA Platform REST API compatible controller
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "17.Dissertasiya himoyalari", description = "Dissertasiya himoyalari entity API - CUBA Platform REST API compatible")
+@Tag(name = "17.Ilmiy dissertasiya himoyalari", description = "Dissertasiya himoyalari entity API - CUBA Platform REST API compatible")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EDissertationDefense")
 @RequiredArgsConstructor

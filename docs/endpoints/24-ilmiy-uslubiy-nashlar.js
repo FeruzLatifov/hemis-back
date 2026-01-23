@@ -1,14 +1,14 @@
-// 24.Uslubiy nashlar endpoints
+// 24.Ilmiy uslubiy nashlar endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_24 = [
     // ============================================
-    // 24.Uslubiy nashlar (5 endpoint)
+    // 24.Ilmiy uslubiy nashlar (5 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Yangi uslubiy nashr yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical",
@@ -104,7 +104,7 @@ const endpoints_24 = [
             },
     {
                 id: 2,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrlar ro'yxatini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical",
@@ -146,7 +146,7 @@ const endpoints_24 = [
             },
     {
                 id: 3,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrni ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical/{entityId}",
@@ -171,7 +171,7 @@ const endpoints_24 = [
             },
     {
                 id: 4,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical/{entityId}",
@@ -218,7 +218,7 @@ const endpoints_24 = [
             },
     {
                 id: 5,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical/{entityId}",

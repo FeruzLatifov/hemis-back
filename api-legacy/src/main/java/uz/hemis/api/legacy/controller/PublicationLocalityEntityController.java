@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "30.Nashr etish hududlari turlari", description = "Ilmiy loyiha va ilmiy nashrlarning joylarini boshqarish API (Respublika, MDH, Xorijiy va h.k.)")
+@Tag(name = "30.Ilmiy nashr etish hududlari turlari", description = "Ilmiy loyiha va ilmiy nashrlarning joylarini boshqarish API (Respublika, MDH, Xorijiy va h.k.)")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_HPublicationLocality")
 @RequiredArgsConstructor

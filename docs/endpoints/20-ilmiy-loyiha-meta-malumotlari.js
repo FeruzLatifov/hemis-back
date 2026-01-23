@@ -1,14 +1,14 @@
-// 20.Loyiha meta ma'lumotlari endpoints
+// 20.Ilmiy loyiha meta ma'lumotlari endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_20 = [
     // ============================================
-    // 20.Loyiha meta ma'lumotlari (5 endpoint)
+    // 20.Ilmiy loyiha meta ma'lumotlari (5 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta",
@@ -81,7 +81,7 @@ const endpoints_20 = [
             },
     {
                 id: 2,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
@@ -106,7 +106,7 @@ const endpoints_20 = [
             },
     {
                 id: 3,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta ro'yxati",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta",
@@ -146,7 +146,7 @@ const endpoints_20 = [
             },
     {
                 id: 4,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
@@ -190,7 +190,7 @@ const endpoints_20 = [
             },
     {
                 id: 5,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",

@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "29.Doktorantura talabalari turlari", description = "Doktorantura talabasi turlarini boshqarish API (Asosiy doktorant, Tayanch doktorant, Mustaqil tadqiqotchi va h.k.)")
+@Tag(name = "29.Ilmiy doktorantura talabalari turlari", description = "Doktorantura talabasi turlarini boshqarish API (Asosiy doktorant, Tayanch doktorant, Mustaqil tadqiqotchi va h.k.)")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_HDoctoralStudentType")
 @RequiredArgsConstructor

@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * - PUT    /app/rest/v2/entities/hemishe_HMethodicalPublicationType/{id}      - Update
  * - DELETE /app/rest/v2/entities/hemishe_HMethodicalPublicationType/{id}      - Soft delete
  */
-@Tag(name = "27.Uslubiy nashr turlari", description = "Uslubiy nashr turlari klassifikatori (darslik, o'quv qo'llanma, metodik qo'llanma va boshqalar)")
+@Tag(name = "27.Ilmiy uslubiy nashr turlari", description = "Uslubiy nashr turlari klassifikatori (darslik, o'quv qo'llanma, metodik qo'llanma va boshqalar)")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_HMethodicalPublicationType")
 @RequiredArgsConstructor

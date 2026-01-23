@@ -1,14 +1,14 @@
-// 26.Nashrlarni baholash mezonlari endpoints
+// 26.Ilmiy nashrlarni baholash mezonlari endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_26 = [
     // ============================================
-    // 26.Nashrlarni baholash mezonlari (5 endpoint)
+    // 26.Ilmiy nashrlarni baholash mezonlari (5 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Yangi baholash mezoni yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria",
@@ -84,7 +84,7 @@ const endpoints_26 = [
             },
     {
                 id: 2,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonlari ro'yxatini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria",
@@ -124,7 +124,7 @@ const endpoints_26 = [
             },
     {
                 id: 3,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonini ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria/{entityId}",
@@ -149,7 +149,7 @@ const endpoints_26 = [
             },
     {
                 id: 4,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonini yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria/{entityId}",
@@ -196,7 +196,7 @@ const endpoints_26 = [
             },
     {
                 id: 5,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria/{entityId}",

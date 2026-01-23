@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 
 /**
  * Doctoral Student Entity Controller (CUBA Pattern)
- * Tag: 16.Doktarant talabalari
+ * Tag: 16.Ilmiy doktorant talabalari
  * Entity: hemishe_EDoctorateStudent
  *
  * CUBA Platform REST API compatible controller
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "16.Doktarant talabalari", description = "Doktorant talabalar entity API - CUBA Platform REST API compatible")
+@Tag(name = "16.Ilmiy doktorant talabalari", description = "Doktorant talabalar entity API - CUBA Platform REST API compatible")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EDoctorateStudent")
 @RequiredArgsConstructor

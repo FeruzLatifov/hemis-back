@@ -1,14 +1,14 @@
-// 19.Loyihalar endpoints
+// 19.Ilmiy loyihalar endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_19 = [
     // ============================================
-    // 19.Loyihalar (4 endpoint)
+    // 19.Ilmiy loyihalar (4 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyiha yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EProject",
@@ -121,7 +121,7 @@ const endpoints_19 = [
             },
     {
                 id: 2,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyihani olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProject/{entityId}",
@@ -160,7 +160,7 @@ const endpoints_19 = [
             },
     {
                 id: 3,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyihalar ro'yxati",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProject",
@@ -203,7 +203,7 @@ const endpoints_19 = [
             },
     {
                 id: 4,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyihani o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EProject/{entityId}",

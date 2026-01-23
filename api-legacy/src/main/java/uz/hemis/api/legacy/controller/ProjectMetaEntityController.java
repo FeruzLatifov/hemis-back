@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 /**
  * Loyiha meta ma'lumotlari Entity Controller (CUBA Pattern)
- * Tag: 20.Loyiha meta ma'lumotlari
+ * Tag: 20.Ilmiy loyiha meta ma'lumotlari
  * Entity: hemishe_EProjectMeta
  *
  * CUBA Platform REST API compatible controller
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "20.Loyiha meta ma'lumotlari", description = "Loyiha meta ma'lumotlari entity API - CUBA Platform REST API compatible")
+@Tag(name = "20.Ilmiy loyiha meta ma'lumotlari", description = "Loyiha meta ma'lumotlari entity API - CUBA Platform REST API compatible")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EProjectMeta")
 @RequiredArgsConstructor

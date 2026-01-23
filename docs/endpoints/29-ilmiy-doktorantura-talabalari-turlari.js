@@ -1,17 +1,17 @@
-// 28.Doktorantura talabalari statusi endpoints
+// 29.Ilmiy doktorantura talabalari turlari endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
-const endpoints_28 = [
+const endpoints_29 = [
     // ============================================
-    // 28.Doktorantura talabalari statusi (7 endpoint)
+    // 29.Ilmiy doktorantura talabalari turlari (7 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "28.Doktorantura talabalari statusi",
-                name: "Barcha statuslarni olish",
+                category: "29.Ilmiy doktorantura talabalari turlari",
+                name: "Barcha turlarni olish",
                 method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
                 requiresAuth: true,
                 inputFields: {
                     limit: {
@@ -43,60 +43,60 @@ const endpoints_28 = [
                     }
                 },
                 queryParamsFromInputs: ["limit", "offset", "returnNulls"],
-                description: `**Barcha doktorantura talabasi statuslarini olish** (GET)
+                description: `**Barcha doktorantura talabasi turlarini olish** (GET)
 
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType
 
 <b>Parameters:</b>
 - limit: Sahifa hajmi (default: 50)
 - offset: Boshlang'ich pozitsiya (default: 0)
 - returnNulls: Null qiymatlarni qaytarish (default: false)
 
-<b>Response:</b> Status ro'yxati CUBA formatda`,
+<b>Response:</b> Tur ro'yxati CUBA formatda`,
                 ported: true
             },
     {
                 id: 2,
-                category: "28.Doktorantura talabalari statusi",
-                name: "Status olish (ID bo'yicha)",
+                category: "29.Ilmiy doktorantura talabalari turlari",
+                name: "Tur olish (ID bo'yicha)",
                 method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
                 requiresAuth: true,
                 inputFields: {
                     entityId: {
-                        label: "Status kodi",
+                        label: "Tur kodi",
                         type: "text",
-                        placeholder: "Status kodi (masalan: 11)",
+                        placeholder: "Tur kodi (masalan: 11)",
                         defaultNew: "11",
                         defaultOld: "11",
                         required: true,
-                        useStoredId: "doctoralStudentStatusCode"
+                        useStoredId: "doctoralStudentTypeCode"
                     }
                 },
-                description: `**Status ID bo'yicha olish** (GET)
+                description: `**Tur ID bo'yicha olish** (GET)
 
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}
 
 <b>Parameters:</b>
-- entityId: Status kodi (code field - String)
+- entityId: Tur kodi (code field - String)
 
-<b>Response:</b> Status CUBA formatda`,
+<b>Response:</b> Tur CUBA formatda`,
                 ported: true
             },
     {
                 id: 3,
-                category: "28.Doktorantura talabalari statusi",
-                name: "Yangi status yaratish",
+                category: "29.Ilmiy doktorantura talabalari turlari",
+                name: "Yangi tur yaratish",
                 method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
                 requiresAuth: true,
                 hasBody: true,
                 bodyFields: ["code", "name", "nameRu", "nameEn"],
                 inputFields: {
                     code: {
-                        label: "Status kodi",
+                        label: "Tur kodi",
                         type: "text",
-                        placeholder: "Status kodi (masalan: 98 yoki 99)",
+                        placeholder: "Tur kodi (masalan: 98 yoki 99)",
                         defaultNew: "98",
                         defaultOld: "99",
                         required: true,
@@ -105,67 +105,67 @@ const endpoints_28 = [
                     name: {
                         label: "Nomi (O'zbekcha)",
                         type: "text",
-                        placeholder: "Status nomi",
-                        defaultNew: "Test Status",
-                        defaultOld: "Test Status",
+                        placeholder: "Tur nomi",
+                        defaultNew: "Test Tur",
+                        defaultOld: "Test Tur",
                         required: true,
                         bodyField: "name"
                     },
                     nameRu: {
                         label: "Nomi (Ruscha)",
                         type: "text",
-                        placeholder: "Status nomi (ruscha)",
-                        defaultNew: "Тестовый статус",
-                        defaultOld: "Тестовый статус",
+                        placeholder: "Tur nomi (ruscha)",
+                        defaultNew: "Тестовый тип",
+                        defaultOld: "Тестовый тип",
                         required: false,
                         bodyField: "nameRu"
                     },
                     nameEn: {
                         label: "Nomi (Inglizcha)",
                         type: "text",
-                        placeholder: "Status nomi (inglizcha)",
-                        defaultNew: "Test Status",
-                        defaultOld: "Test Status",
+                        placeholder: "Tur nomi (inglizcha)",
+                        defaultNew: "Test Type",
+                        defaultOld: "Test Type",
                         required: false,
                         bodyField: "nameEn"
                     }
                 },
-                storeResultId: "doctoralStudentStatusCode",
+                storeResultId: "doctoralStudentTypeCode",
                 storeIdField: "code",
-                description: `**Yangi doktorantura talabasi statusi yaratish** (POST)
+                description: `**Yangi doktorantura talabasi turi yaratish** (POST)
 
-<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentStatus
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentType
 
-<b>Body:</b> JSON formatda status ma'lumotlari
+<b>Body:</b> JSON formatda tur ma'lumotlari
 
-<b>Response:</b> Yaratilgan status CUBA formatda`,
+<b>Response:</b> Yaratilgan tur CUBA formatda`,
                 ported: true
             },
     {
                 id: 4,
-                category: "28.Doktorantura talabalari statusi",
-                name: "Statusni yangilash",
+                category: "29.Ilmiy doktorantura talabalari turlari",
+                name: "Turni yangilash",
                 method: "PUT",
-                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
                 requiresAuth: true,
                 hasBody: true,
                 bodyFields: ["name", "nameRu", "nameEn", "active"],
                 inputFields: {
                     entityId: {
-                        label: "Status kodi",
+                        label: "Tur kodi",
                         type: "text",
-                        placeholder: "Status kodi (98 yoki 99)",
+                        placeholder: "Tur kodi (98 yoki 99)",
                         defaultNew: "98",
                         defaultOld: "99",
                         required: true,
-                        useStoredId: "doctoralStudentStatusCode"
+                        useStoredId: "doctoralStudentTypeCode"
                     },
                     name: {
                         label: "Nomi (O'zbekcha)",
                         type: "text",
                         placeholder: "Yangi nom",
-                        defaultNew: "Test Status Updated",
-                        defaultOld: "Test Status Updated",
+                        defaultNew: "Test Tur Updated",
+                        defaultOld: "Test Tur Updated",
                         required: false,
                         bodyField: "name"
                     },
@@ -173,8 +173,8 @@ const endpoints_28 = [
                         label: "Nomi (Ruscha)",
                         type: "text",
                         placeholder: "Yangi nom (ruscha)",
-                        defaultNew: "Обновленный статус",
-                        defaultOld: "Обновленный статус",
+                        defaultNew: "Обновленный тип",
+                        defaultOld: "Обновленный тип",
                         required: false,
                         bodyField: "nameRu"
                     },
@@ -200,36 +200,36 @@ const endpoints_28 = [
                         bodyField: "active"
                     }
                 },
-                description: `**Statusni yangilash** (PUT)
+                description: `**Turni yangilash** (PUT)
 
-<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}
+<b>Endpoint:</b> PUT /app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}
 
 <b>Body:</b> O'zgartiriladigan maydonlar JSON formatda
 
-<b>Response:</b> Yangilangan status CUBA formatda`,
+<b>Response:</b> Yangilangan tur CUBA formatda`,
                 ported: true
             },
     {
                 id: 5,
-                category: "28.Doktorantura talabalari statusi",
-                name: "Statusni o'chirish",
+                category: "29.Ilmiy doktorantura talabalari turlari",
+                name: "Turni o'chirish",
                 method: "DELETE",
-                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
                 requiresAuth: true,
                 inputFields: {
                     entityId: {
-                        label: "Status kodi",
+                        label: "Tur kodi",
                         type: "text",
-                        placeholder: "Status kodi (98 yoki 99)",
+                        placeholder: "Tur kodi (98 yoki 99)",
                         defaultNew: "98",
                         defaultOld: "99",
                         required: true,
-                        useStoredId: "doctoralStudentStatusCode"
+                        useStoredId: "doctoralStudentTypeCode"
                     }
                 },
-                description: `**Statusni o'chirish** (DELETE)
+                description: `**Turni o'chirish** (DELETE)
 
-<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}
+<b>Endpoint:</b> DELETE /app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}
 
 <b>Response:</b> 200 OK (empty body)
 
@@ -238,10 +238,10 @@ const endpoints_28 = [
             },
     {
                 id: 6,
-                category: "28.Doktorantura talabalari statusi",
-                name: "Statuslarni qidirish (GET)",
+                category: "29.Ilmiy doktorantura talabalari turlari",
+                name: "Turlarni qidirish (GET)",
                 method: "GET",
-                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
                 requiresAuth: true,
                 inputFields: {
                     filter: {
@@ -270,24 +270,24 @@ const endpoints_28 = [
                     }
                 },
                 queryParamsFromInputs: ["filter", "limit", "offset"],
-                description: `**Statuslarni qidirish** (GET /search)
+                description: `**Turlarni qidirish** (GET /search)
 
-<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_HDoctoralStudentType/search
 
 <b>Parametrlar:</b>
 - filter: JSON filter (majburiy) - {"conditions":[]}
 - limit: Natijalar soni (default: 50)
 - offset: Boshlang'ich pozitsiya
 
-<b>Response:</b> Filter shartiga mos statuslar`,
+<b>Response:</b> Filter shartiga mos turlar`,
                 ported: true
             },
     {
                 id: 7,
-                category: "28.Doktorantura talabalari statusi",
-                name: "Statuslarni qidirish (POST)",
+                category: "29.Ilmiy doktorantura talabalari turlari",
+                name: "Turlarni qidirish (POST)",
                 method: "POST",
-                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
+                url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
                 requiresAuth: true,
                 contentType: "json",
                 inputFields: {
@@ -315,9 +315,9 @@ const endpoints_28 = [
                     }
                 },
                 queryParamsFromInputs: ["limit", "offset"],
-                description: `**Statuslarni qidirish** (POST /search)
+                description: `**Turlarni qidirish** (POST /search)
 
-<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_HDoctoralStudentType/search
 
 <b>Body:</b> {"filter":{"conditions":[]}} formatida
 
@@ -325,12 +325,12 @@ const endpoints_28 = [
 - limit: Natijalar soni (default: 50)
 - offset: Boshlang'ich pozitsiya
 
-<b>Response:</b> Filter shartiga mos statuslar`,
+<b>Response:</b> Filter shartiga mos turlar`,
                 ported: true
             }
 ];
 
 // Export for module bundler (optional)
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = endpoints_28;
+    module.exports = endpoints_29;
 }

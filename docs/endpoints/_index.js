@@ -33,35 +33,35 @@ const endpoints = [
     ...endpoints_14,
     // 15.OTM (3 endpoint)
     ...endpoints_15,
-    // 16.Doktorant talabalari (7 endpoint)
+    // 16.Ilmiy doktorant talabalari (7 endpoint)
     ...endpoints_16,
-    // 17.Dissertasiya himoyalari (4 endpoint)
+    // 17.Ilmiy dissertasiya himoyalari (4 endpoint)
     ...endpoints_17,
     // 18.Ilmiy faollik (5 endpoint)
     ...endpoints_18,
-    // 19.Loyihalar (4 endpoint)
+    // 19.Ilmiy loyihalar (4 endpoint)
     ...endpoints_19,
-    // 20.Loyiha meta ma'lumotlari (5 endpoint)
+    // 20.Ilmiy loyiha meta ma'lumotlari (5 endpoint)
     ...endpoints_20,
-    // 21.Loyiha ijrochilari (3 endpoint)
+    // 21.Ilmiy loyiha ijrochilari (3 endpoint)
     ...endpoints_21,
     // 22.Ilmiy nashrlar (5 endpoint)
     ...endpoints_22,
     // 23.Ilmiy ishlanmalar (5 endpoint)
     ...endpoints_23,
-    // 24.Uslubiy nashlar (5 endpoint)
+    // 24.Ilmiy uslubiy nashlar (5 endpoint)
     ...endpoints_24,
-    // 25.Nashr mualliflari meta ma'lumotlari (5 endpoint)
+    // 25.Ilmiy nashr mualliflari meta ma'lumotlari (5 endpoint)
     ...endpoints_25,
-    // 26.Nashrlarni baholash mezonlari (5 endpoint)
+    // 26.Ilmiy nashrlarni baholash mezonlari (5 endpoint)
     ...endpoints_26,
-    // 27.Uslubiy nashr turlari (7 endpoint)
+    // 27.Ilmiy uslubiy nashr turlari (7 endpoint)
     ...endpoints_27,
-    // 28.Doktorantura talabalari statusi (7 endpoint)
+    // 28.Ilmiy doktorantura talabalari statusi (7 endpoint)
     ...endpoints_28,
-    // 29.Doktorantura talabalari turlari (7 endpoint)
+    // 29.Ilmiy doktorantura talabalari turlari (7 endpoint)
     ...endpoints_29,
-    // 30.Nashr etish hududlari turlari (7 endpoint)
+    // 30.Ilmiy nashr etish hududlari turlari (7 endpoint)
     ...endpoints_30,
     // 31.Chetlashgan talabalar (7 endpoint)
     ...endpoints_31,

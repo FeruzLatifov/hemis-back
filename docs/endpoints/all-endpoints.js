@@ -4075,13 +4075,13 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 16.Doktorant talabalari (7 endpoint)
+            // 16.Ilmiy doktorant talabalari (7 endpoint)
             // Entity: hemishe_EDoctorateStudent
             // Tartib: POST (yaratish), PUT (yangilash), DELETE, GET by ID, GET all, GET/POST search
             // ============================================
             {
                 id: 1,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorant yaratish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent",
@@ -4144,7 +4144,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantni yangilash (PUT)",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
@@ -4182,7 +4182,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantni o'chirish (DELETE)",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
@@ -4204,7 +4204,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorant olish (GET by ID)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
@@ -4238,7 +4238,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Barcha doktorantlar (GET all)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent",
@@ -4275,7 +4275,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 6,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantlarni qidirish (GET /search)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/search",
@@ -4314,7 +4314,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 7,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantlarni qidirish (POST /search)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/search",
@@ -4356,12 +4356,12 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 17.Dissertasiya himoyalari (4 endpoint)
+            // 17.Ilmiy dissertasiya himoyalari (4 endpoint)
             // Tartib: POST (yaratish), DELETE (o'chirish), GET by ID, GET list
             // ============================================
             {
                 id: 1,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyasi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense",
@@ -4436,7 +4436,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyasini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}",
@@ -4464,7 +4464,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyasini olish (view=eDissertationDefense-view)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}",
@@ -4511,7 +4511,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyalari ro'yxati (view=eDissertationDefense-view)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense",
@@ -4776,12 +4776,12 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
 
             // ============================================
-            // 19.Loyihalar (4 endpoint)
+            // 19.Ilmiy loyihalar (4 endpoint)
             // Tartib: POST (yaratish), GET by ID, GET list, DELETE (o'chirish)
             // ============================================
             {
                 id: 1,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyiha yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EProject",
@@ -4894,7 +4894,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyihani olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProject/{entityId}",
@@ -4933,7 +4933,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyihalar ro'yxati",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProject",
@@ -4976,7 +4976,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "19.Loyihalar",
+                category: "19.Ilmiy loyihalar",
                 name: "Loyihani o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EProject/{entityId}",
@@ -5006,12 +5006,12 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
 
             // ============================================
-            // 21.Loyiha ijrochilari (4 endpoint)
+            // 21.Ilmiy loyiha ijrochilari (4 endpoint)
             // Tartib: POST (yaratish), GET by ID, GET list, DELETE (o'chirish)
             // ============================================
             {
                 id: 1,
-                category: "21.Loyiha ijrochilari",
+                category: "21.Ilmiy loyiha ijrochilari",
                 name: "Loyiha ijrochisi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EProjectExecutor",
@@ -5087,7 +5087,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "21.Loyiha ijrochilari",
+                category: "21.Ilmiy loyiha ijrochilari",
                 name: "Loyiha ijrochisini olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",
@@ -5126,11 +5126,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
 
             // ============================================================
-            // 20.Loyiha meta ma'lumotlari - Project Meta Entity API
+            // 20.Ilmiy loyiha meta ma'lumotlari - Project Meta Entity API
             // ============================================================
             {
                 id: 1,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta",
@@ -5203,7 +5203,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
@@ -5228,7 +5228,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta ro'yxati",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta",
@@ -5268,7 +5268,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
@@ -5312,7 +5312,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "20.Loyiha meta ma'lumotlari",
+                category: "20.Ilmiy loyiha meta ma'lumotlari",
                 name: "Loyiha meta o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EProjectMeta/{entityId}",
@@ -5499,7 +5499,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "21.Loyiha ijrochilari",
+                category: "21.Ilmiy loyiha ijrochilari",
                 name: "Loyiha ijrochisini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EProjectExecutor/{entityId}",
@@ -5829,11 +5829,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 24.Uslubiy nashlar (Methodical Publications)
+            // 24.Ilmiy uslubiy nashlar (Methodical Publications)
             // ============================================
             {
                 id: 1,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Yangi uslubiy nashr yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical",
@@ -5929,7 +5929,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrlar ro'yxatini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical",
@@ -5971,7 +5971,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrni ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical/{entityId}",
@@ -5996,7 +5996,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical/{entityId}",
@@ -6043,7 +6043,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "24.Uslubiy nashlar",
+                category: "24.Ilmiy uslubiy nashlar",
                 name: "Uslubiy nashrni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EPublicationMethodical/{entityId}",
@@ -6069,13 +6069,13 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 25.Nashr mualliflari meta ma'lumotlari
+            // 25.Ilmiy nashr mualliflari meta ma'lumotlari
             // Entity: hemishe_EPublicationAuthorMeta
             // Ketma-ketlik: POST → GET list → GET by ID → PUT → DELETE
             // ============================================
             {
                 id: 1,
-                category: "25.Nashr mualliflari meta ma'lumotlari",
+                category: "25.Ilmiy nashr mualliflari meta ma'lumotlari",
                 name: "Nashr muallifi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EPublicationAuthorMeta",
@@ -6177,7 +6177,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "25.Nashr mualliflari meta ma'lumotlari",
+                category: "25.Ilmiy nashr mualliflari meta ma'lumotlari",
                 name: "Nashr mualliflari ro'yxati",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationAuthorMeta",
@@ -6203,11 +6203,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
 
-            // 26.Nashrlarni baholash mezonlari (Publication Criteria)
+            // 26.Ilmiy nashrlarni baholash mezonlari (Publication Criteria)
             // ============================================
             {
                 id: 1,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Yangi baholash mezoni yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria",
@@ -6283,7 +6283,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonlari ro'yxatini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria",
@@ -6323,7 +6323,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonini ID bo'yicha olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria/{entityId}",
@@ -6348,7 +6348,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonini yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria/{entityId}",
@@ -6395,7 +6395,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "26.Nashrlarni baholash mezonlari",
+                category: "26.Ilmiy nashrlarni baholash mezonlari",
                 name: "Baholash mezonini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EPublicationCriteria/{entityId}",
@@ -6421,11 +6421,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
 
-            // 25.Nashr mualliflari meta ma'lumotlari - qo'shimcha endpointlar
+            // 25.Ilmiy nashr mualliflari meta ma'lumotlari - qo'shimcha endpointlar
             // ============================================
             {
                 id: 3,
-                category: "25.Nashr mualliflari meta ma'lumotlari",
+                category: "25.Ilmiy nashr mualliflari meta ma'lumotlari",
                 name: "Nashr muallifi olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{entityId}",
@@ -6450,7 +6450,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "25.Nashr mualliflari meta ma'lumotlari",
+                category: "25.Ilmiy nashr mualliflari meta ma'lumotlari",
                 name: "Nashr muallifini yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{entityId}",
@@ -6504,7 +6504,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "25.Nashr mualliflari meta ma'lumotlari",
+                category: "25.Ilmiy nashr mualliflari meta ma'lumotlari",
                 name: "Nashr muallifini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{entityId}",
@@ -6530,11 +6530,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 27.Uslubiy nashr turlari (7 endpoint)
+            // 27.Ilmiy uslubiy nashr turlari (7 endpoint)
             // ============================================
             {
                 id: 1,
-                category: "27.Uslubiy nashr turlari",
+                category: "27.Ilmiy uslubiy nashr turlari",
                 name: "Barcha turlarni olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
@@ -6583,7 +6583,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "27.Uslubiy nashr turlari",
+                category: "27.Ilmiy uslubiy nashr turlari",
                 name: "Tur ma'lumotini olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
@@ -6607,7 +6607,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "27.Uslubiy nashr turlari",
+                category: "27.Ilmiy uslubiy nashr turlari",
                 name: "Yangi tur yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType",
@@ -6663,7 +6663,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "27.Uslubiy nashr turlari",
+                category: "27.Ilmiy uslubiy nashr turlari",
                 name: "Turni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
@@ -6718,7 +6718,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "27.Uslubiy nashr turlari",
+                category: "27.Ilmiy uslubiy nashr turlari",
                 name: "Turni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/{entityId}",
@@ -6744,7 +6744,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 6,
-                category: "27.Uslubiy nashr turlari",
+                category: "27.Ilmiy uslubiy nashr turlari",
                 name: "Filter bo'yicha qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/search",
@@ -6790,7 +6790,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 7,
-                category: "27.Uslubiy nashr turlari",
+                category: "27.Ilmiy uslubiy nashr turlari",
                 name: "Filter bo'yicha qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HMethodicalPublicationType/search",
@@ -6835,11 +6835,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 28.Doktorantura talabalari statusi (7 endpoint)
+            // 28.Ilmiy doktorantura talabalari statusi (7 endpoint)
             // ============================================
             {
                 id: 1,
-                category: "28.Doktorantura talabalari statusi",
+                category: "28.Ilmiy doktorantura talabalari statusi",
                 name: "Barcha statuslarni olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
@@ -6888,7 +6888,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "28.Doktorantura talabalari statusi",
+                category: "28.Ilmiy doktorantura talabalari statusi",
                 name: "Status olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
@@ -6916,7 +6916,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "28.Doktorantura talabalari statusi",
+                category: "28.Ilmiy doktorantura talabalari statusi",
                 name: "Yangi status yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus",
@@ -6974,7 +6974,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "28.Doktorantura talabalari statusi",
+                category: "28.Ilmiy doktorantura talabalari statusi",
                 name: "Statusni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
@@ -7042,7 +7042,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "28.Doktorantura talabalari statusi",
+                category: "28.Ilmiy doktorantura talabalari statusi",
                 name: "Statusni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/{entityId}",
@@ -7069,7 +7069,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 6,
-                category: "28.Doktorantura talabalari statusi",
+                category: "28.Ilmiy doktorantura talabalari statusi",
                 name: "Statuslarni qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
@@ -7115,7 +7115,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 7,
-                category: "28.Doktorantura talabalari statusi",
+                category: "28.Ilmiy doktorantura talabalari statusi",
                 name: "Statuslarni qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentStatus/search",
@@ -7160,11 +7160,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 29.Doktorantura talabalari turlari (7 endpoint)
+            // 29.Ilmiy doktorantura talabalari turlari (7 endpoint)
             // ============================================
             {
                 id: 1,
-                category: "29.Doktorantura talabalari turlari",
+                category: "29.Ilmiy doktorantura talabalari turlari",
                 name: "Barcha turlarni olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
@@ -7213,7 +7213,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "29.Doktorantura talabalari turlari",
+                category: "29.Ilmiy doktorantura talabalari turlari",
                 name: "Tur olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
@@ -7241,7 +7241,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "29.Doktorantura talabalari turlari",
+                category: "29.Ilmiy doktorantura talabalari turlari",
                 name: "Yangi tur yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType",
@@ -7299,7 +7299,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "29.Doktorantura talabalari turlari",
+                category: "29.Ilmiy doktorantura talabalari turlari",
                 name: "Turni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
@@ -7367,7 +7367,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "29.Doktorantura talabalari turlari",
+                category: "29.Ilmiy doktorantura talabalari turlari",
                 name: "Turni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/{entityId}",
@@ -7394,7 +7394,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 6,
-                category: "29.Doktorantura talabalari turlari",
+                category: "29.Ilmiy doktorantura talabalari turlari",
                 name: "Turlarni qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
@@ -7440,7 +7440,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 7,
-                category: "29.Doktorantura talabalari turlari",
+                category: "29.Ilmiy doktorantura talabalari turlari",
                 name: "Turlarni qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HDoctoralStudentType/search",
@@ -7485,11 +7485,11 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
                 ported: true
             },
             // ============================================
-            // 30.Nashr etish hududlari turlari (7 endpoint)
+            // 30.Ilmiy nashr etish hududlari turlari (7 endpoint)
             // ============================================
             {
                 id: 1,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Barcha hududlarni olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality",
@@ -7532,7 +7532,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 2,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hudud olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/{entityId}",
@@ -7560,7 +7560,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 3,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Yangi hudud yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality",
@@ -7618,7 +7618,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 4,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/{entityId}",
@@ -7686,7 +7686,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 5,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/{entityId}",
@@ -7713,7 +7713,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 6,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududlarni qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/search",
@@ -7740,7 +7740,7 @@ Avval #5 orqali bo'linma yarating, keyin shu endpoint orqali o'chiring.`,
             },
             {
                 id: 7,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududlarni qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/search",

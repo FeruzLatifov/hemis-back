@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "28.Doktorantura talabalari statusi", description = "Doktorantura talabasi statuslarini boshqarish API (Faol, Tugatgan, Chiqarilgan va h.k.)")
+@Tag(name = "28.Ilmiy doktorantura talabalari statusi", description = "Doktorantura talabasi statuslarini boshqarish API (Faol, Tugatgan, Chiqarilgan va h.k.)")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_HDoctoralStudentStatus")
 @RequiredArgsConstructor

@@ -1,14 +1,14 @@
-// 16.Doktorant talabalari endpoints
+// 16.Ilmiy doktorant talabalari endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_16 = [
     // ============================================
-    // 16.Doktorant talabalari (7 endpoint)
+    // 16.Ilmiy doktorant talabalari (7 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorant yaratish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent",
@@ -71,7 +71,7 @@ const endpoints_16 = [
             },
     {
                 id: 2,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantni yangilash (PUT)",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
@@ -109,7 +109,7 @@ const endpoints_16 = [
             },
     {
                 id: 3,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantni o'chirish (DELETE)",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
@@ -131,7 +131,7 @@ const endpoints_16 = [
             },
     {
                 id: 4,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorant olish (GET by ID)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/{entityId}",
@@ -165,7 +165,7 @@ const endpoints_16 = [
             },
     {
                 id: 5,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Barcha doktorantlar (GET all)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent",
@@ -202,7 +202,7 @@ const endpoints_16 = [
             },
     {
                 id: 6,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantlarni qidirish (GET /search)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/search",
@@ -241,7 +241,7 @@ const endpoints_16 = [
             },
     {
                 id: 7,
-                category: "16.Doktorant talabalari",
+                category: "16.Ilmiy doktorant talabalari",
                 name: "Doktorantlarni qidirish (POST /search)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EDoctorateStudent/search",

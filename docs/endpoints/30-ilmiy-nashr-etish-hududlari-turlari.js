@@ -1,14 +1,14 @@
-// 30.Nashr etish hududlari turlari endpoints
+// 30.Ilmiy nashr etish hududlari turlari endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_30 = [
     // ============================================
-    // 30.Nashr etish hududlari turlari (7 endpoint)
+    // 30.Ilmiy nashr etish hududlari turlari (7 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Barcha hududlarni olish",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality",
@@ -51,7 +51,7 @@ const endpoints_30 = [
             },
     {
                 id: 2,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hudud olish (ID bo'yicha)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/{entityId}",
@@ -79,7 +79,7 @@ const endpoints_30 = [
             },
     {
                 id: 3,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Yangi hudud yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality",
@@ -137,7 +137,7 @@ const endpoints_30 = [
             },
     {
                 id: 4,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududni yangilash",
                 method: "PUT",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/{entityId}",
@@ -205,7 +205,7 @@ const endpoints_30 = [
             },
     {
                 id: 5,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududni o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/{entityId}",
@@ -232,7 +232,7 @@ const endpoints_30 = [
             },
     {
                 id: 6,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududlarni qidirish (GET)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/search",
@@ -259,7 +259,7 @@ const endpoints_30 = [
             },
     {
                 id: 7,
-                category: "30.Nashr etish hududlari turlari",
+                category: "30.Ilmiy nashr etish hududlari turlari",
                 name: "Hududlarni qidirish (POST)",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_HPublicationLocality/search",

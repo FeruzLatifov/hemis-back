@@ -1,14 +1,14 @@
-// 17.Dissertasiya himoyalari endpoints
+// 17.Ilmiy dissertasiya himoyalari endpoints
 // Auto-generated - DO NOT EDIT DIRECTLY
 // Bu faylni o'zgartirganingizda endpoint_tester.html ni yangilang
 
 const endpoints_17 = [
     // ============================================
-    // 17.Dissertasiya himoyalari (4 endpoint)
+    // 17.Ilmiy dissertasiya himoyalari (4 endpoint)
     // ============================================
     {
                 id: 1,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyasi yaratish",
                 method: "POST",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense",
@@ -83,7 +83,7 @@ const endpoints_17 = [
             },
     {
                 id: 2,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyasini o'chirish",
                 method: "DELETE",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}",
@@ -111,7 +111,7 @@ const endpoints_17 = [
             },
     {
                 id: 3,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyasini olish (view=eDissertationDefense-view)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense/{entityId}",
@@ -158,7 +158,7 @@ const endpoints_17 = [
             },
     {
                 id: 4,
-                category: "17.Dissertasiya himoyalari",
+                category: "17.Ilmiy dissertasiya himoyalari",
                 name: "Dissertasiya himoyalari ro'yxati (view=eDissertationDefense-view)",
                 method: "GET",
                 url: "/app/rest/v2/entities/hemishe_EDissertationDefense",

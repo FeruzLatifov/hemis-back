@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  * ProjectExecutor Entity Controller (CUBA Pattern)
- * Tag: 21.Loyiha ijrochilari
+ * Tag: 21.Ilmiy loyiha ijrochilari
  * Entity: hemishe_EProjectExecutor
  *
  * CUBA Platform REST API compatible controller
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "21.Loyiha ijrochilari", description = "Loyiha ijrochilari entity API - CUBA Platform REST API compatible")
+@Tag(name = "21.Ilmiy loyiha ijrochilari", description = "Loyiha ijrochilari entity API - CUBA Platform REST API compatible")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EProjectExecutor")
 @RequiredArgsConstructor

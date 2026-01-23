@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_EPublicationCriteria           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_EPublicationCriteria           - Create new
  */
-@Tag(name = "26.Nashrlarni baholash mezonlari")
+@Tag(name = "26.Ilmiy nashrlarni baholash mezonlari")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EPublicationCriteria")
 @RequiredArgsConstructor

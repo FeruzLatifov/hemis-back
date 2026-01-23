@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  * - PUT    /app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{id}      - Update
  * - DELETE /app/rest/v2/entities/hemishe_EPublicationAuthorMeta/{id}      - Soft delete
  */
-@Tag(name = "25.Nashr mualliflari meta ma'lumotlari",
+@Tag(name = "25.Ilmiy nashr mualliflari meta ma'lumotlari",
      description = "Nashr mualliflari meta ma'lumotlarini boshqarish - ilmiy, metodik va patent nashrlar mualliflarini ro'yxatga olish")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EPublicationAuthorMeta")
