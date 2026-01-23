@@ -327,14 +327,8 @@ public class RAcademicAttendanceEntityController {
 
         try {
             RAcademicAttendance entity = new RAcademicAttendance();
-
-            // ID - agar berilgan bo'lsa ishlatamiz, aks holda @PrePersist da generatsiya qilinadi
-            if (entityData.containsKey("id") && entityData.get("id") != null) {
-                entity.setId(UUID.fromString(entityData.get("id").toString()));
-            }
-
+            // ID, version va createTs @PrePersist da avtomatik generatsiya qilinadi
             updateEntityFromMap(entity, entityData);
-            // version va createTs @PrePersist da avtomatik set qilinadi
 
             RAcademicAttendance saved = repository.save(entity);
             return ResponseEntity.ok(toMap(saved, false));

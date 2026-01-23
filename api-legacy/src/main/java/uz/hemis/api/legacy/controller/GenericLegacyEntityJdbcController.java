@@ -39,7 +39,7 @@ public class GenericLegacyEntityJdbcController {
             // hemishe_RAcademicSubjects - maxsus AcademicSubjectsEntityController.java da
             // hemishe_RAcademicScore - maxsus GradeEntityController.java da
             // hemishe_RAcademicAttendance - maxsus RAcademicAttendanceEntityController.java da
-            Map.entry("/app/rest/v2/entities/hemishe_REmployment", "hemishe_r_employment"),
+            // hemishe_REmployment - maxsus REmploymentEntityController.java da
             // Classifiers (H-*)
             // hemishe_HDoctoralStudentType - maxsus DoctoralStudentTypeEntityController.java da
             // hemishe_HMethodicalPublicationType - maxsus MethodicalPublicationTypeEntityController.java da
@@ -83,7 +83,6 @@ public class GenericLegacyEntityJdbcController {
     // GET by ID
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_REmployment/{id}",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/{id}"
     })
     @Operation(summary = "Get entity by ID (legacy CUBA format)")
@@ -106,10 +105,9 @@ public class GenericLegacyEntityJdbcController {
     // LIST (paginated)
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_REmployment",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm"
     })
-    @Operation(summary = "List entities (legacy CUBA list)")
+    @Operation(summary = "List entities (legacy CUDA list)")
     public ResponseEntity<List<Map<String, Object>>> list(
             @RequestParam(value = "limit", required = false, defaultValue = "50") int limit,
             @RequestParam(value = "offset", required = false, defaultValue = "0") int offset,
@@ -134,7 +132,6 @@ public class GenericLegacyEntityJdbcController {
     // SEARCH (best-effort by code/name)
     // =============================
     @GetMapping({
-            "/app/rest/v2/entities/hemishe_REmployment/search",
             "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search"
     })
     @Operation(summary = "Search entities by code/name (best-effort)")
