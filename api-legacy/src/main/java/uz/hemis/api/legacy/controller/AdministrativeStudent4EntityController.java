@@ -91,16 +91,21 @@ public class AdministrativeStudent4EntityController {
 
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete AdministrativeStudent4", description = "Soft deletes an AdministrativeStudent4")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
+    public ResponseEntity<?> delete(@PathVariable UUID entityId) {
         log.debug("DELETE AdministrativeStudent4 id: {}", entityId);
 
         Optional<AdministrativeStudent4> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
+            Map<String, String> errorResponse = new LinkedHashMap<>();
+            errorResponse.put("error", "Entity not found");
+            errorResponse.put("details", "Entity hemishe_RIAdministrativeStudent4 with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(errorResponse);
         }
 
         repository.delete(entity.get());
-        return ResponseEntity.noContent().build();
+        // OLD-HEMIS returns 200 OK with empty response (not 204)
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -108,12 +113,27 @@ public class AdministrativeStudent4EntityController {
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @RequestParam(required = false) String view,
+            @RequestParam(defaultValue = "0") Integer offset,
+            @RequestParam(defaultValue = "50") Integer limit,
+            @RequestParam(required = false) String sort) {
 
-        log.debug("GET search AdministrativeStudent4 with filter: {}", filter);
+        log.debug("GET search AdministrativeStudent4 with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
-        List<AdministrativeStudent4> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        Sort sorting = Sort.unsorted();
+        if (sort != null && !sort.isEmpty()) {
+            String[] parts = sort.split("-");
+            String field = parts[0];
+            Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sorting = Sort.by(direction, field);
+        }
+
+        int page = offset / Math.max(limit, 1);
+        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        Page<AdministrativeStudent4> entityPage = repository.findAll(pageRequest);
+
+        return ResponseEntity.ok(entityPage.getContent().stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }
@@ -121,14 +141,35 @@ public class AdministrativeStudent4EntityController {
     @PostMapping("/search")
     @Operation(summary = "Search AdministrativeStudent4 (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
+            @RequestParam(required = false) String view,
+            @RequestParam(required = false) Integer offset,
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String sort) {
 
-        log.debug("POST search AdministrativeStudent4 with filter: {}", filter);
+        // CUBA format: limit/offset query param yoki body ichida kelishi mumkin
+        int effectiveLimit = limit != null ? limit :
+            (body != null && body.get("limit") != null ? ((Number) body.get("limit")).intValue() : 50);
+        int effectiveOffset = offset != null ? offset :
+            (body != null && body.get("offset") != null ? ((Number) body.get("offset")).intValue() : 0);
 
-        List<AdministrativeStudent4> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        log.debug("POST search AdministrativeStudent4 with body: {}, offset: {}, limit: {}", body, effectiveOffset, effectiveLimit);
+
+        Sort sorting = Sort.unsorted();
+        if (sort != null && !sort.isEmpty()) {
+            String[] parts = sort.split("-");
+            String field = parts[0];
+            Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
+                ? Sort.Direction.DESC : Sort.Direction.ASC;
+            sorting = Sort.by(direction, field);
+        }
+
+        int page = effectiveOffset / Math.max(effectiveLimit, 1);
+        PageRequest pageRequest = PageRequest.of(page, effectiveLimit, sorting);
+        Page<AdministrativeStudent4> entityPage = repository.findAll(pageRequest);
+
+        return ResponseEntity.ok(entityPage.getContent().stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }
@@ -181,43 +222,142 @@ public class AdministrativeStudent4EntityController {
 
     private Map<String, Object> toMap(AdministrativeStudent4 entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
+
+        // OLD-HEMIS CUBA format
         map.put("_entityName", ENTITY_NAME);
-
-        // Instance name
-        String instanceName = "AdministrativeStudent4-" + entity.getId();
-        map.put("_instanceName", instanceName);
-
+        map.put("_instanceName", buildInstanceName(entity));
         map.put("id", entity.getId());
 
-        // Add entity-specific fields
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "_education_year", entity.getEducationYear(), returnNulls);
-        putIfNotNull(map, "_country", entity.getCountry(), returnNulls);
-        putIfNotNull(map, "_student", entity.getStudent(), returnNulls);
-        putIfNotNull(map, "olimpiada_type", entity.getOlimpiadaType(), returnNulls);
-        putIfNotNull(map, "olimpiada_place", entity.getOlimpiadaPlace(), returnNulls);
-        putIfNotNull(map, "olimpiada_name", entity.getOlimpiadaName(), returnNulls);
-        putIfNotNull(map, "olimpiada_section_name", entity.getOlimpiadaSectionName(), returnNulls);
-        putIfNotNull(map, "olimpiada_place_date", entity.getOlimpiadaPlaceDate(), returnNulls);
-        putIfNotNull(map, "olimpiada_subject", entity.getOlimpiadaSubject(), returnNulls);
-        putIfNotNull(map, "taken_position", entity.getTakenPosition(), returnNulls);
-        putIfNotNull(map, "diploma_serial", entity.getDiplomaSerial(), returnNulls);
-        putIfNotNull(map, "diploma_number", entity.getDiplomaNumber(), returnNulls);
-
-        // BaseEntity audit fields
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        // Entity-specific fields (OLD-HEMIS tartibida)
+        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+        putIfNotNull(map, "olimpiadaType", entity.getOlimpiadaType(), returnNulls);
+        putIfNotNull(map, "olimpiadaPlace", entity.getOlimpiadaPlace(), returnNulls);
+        putIfNotNull(map, "olimpiadaName", entity.getOlimpiadaName(), returnNulls);
+        putIfNotNull(map, "olimpiadaSectionName", entity.getOlimpiadaSectionName(), returnNulls);
+        putIfNotNull(map, "olimpiadaPlaceDate", entity.getOlimpiadaPlaceDate(), returnNulls);
+        putIfNotNull(map, "olimpiadaSubject", entity.getOlimpiadaSubject(), returnNulls);
+        putIfNotNull(map, "takenPosition", entity.getTakenPosition(), returnNulls);
+        putIfNotNull(map, "diplomaSerial", entity.getDiplomaSerial(), returnNulls);
+        putIfNotNull(map, "diplomaNumber", entity.getDiplomaNumber(), returnNulls);
 
         return map;
     }
 
-    private void updateFromMap(AdministrativeStudent4 entity, Map<String, Object> map) {
-        // TODO: Add specific field mappings based on entity properties
-        // For now, minimal implementation
+    private String buildInstanceName(AdministrativeStudent4 entity) {
+        // OLD-HEMIS CUBA format: com.company.hemishe.entity.RIAdministrativeStudent4-UUID [detached]
+        return "com.company.hemishe.entity.RIAdministrativeStudent4-" + entity.getId() + " [detached]";
+    }
+
+    private void updateFromMap(AdministrativeStudent4 entity, Map<String, Object> body) {
+        // OLD-HEMIS CUBA format - {"id": "..."} va camelCase field nomlari
+
+        // university: {"id": "UUID"}
+        if (body.containsKey("university")) {
+            entity.setUniversity(extractUuid(body.get("university")));
+        }
+
+        // educationYear: {"id": "UUID"}
+        if (body.containsKey("educationYear")) {
+            entity.setEducationYear(extractUuid(body.get("educationYear")));
+        }
+
+        // country: {"id": "UUID"}
+        if (body.containsKey("country")) {
+            entity.setCountry(extractUuid(body.get("country")));
+        }
+
+        // student: {"id": "UUID"}
+        if (body.containsKey("student")) {
+            entity.setStudent(extractUuid(body.get("student")));
+        }
+
+        // olimpiadaType - oddiy string
+        if (body.containsKey("olimpiadaType")) {
+            Object val = body.get("olimpiadaType");
+            entity.setOlimpiadaType(val != null ? val.toString() : null);
+        }
+
+        // olimpiadaPlace - oddiy string
+        if (body.containsKey("olimpiadaPlace")) {
+            Object val = body.get("olimpiadaPlace");
+            entity.setOlimpiadaPlace(val != null ? val.toString() : null);
+        }
+
+        // olimpiadaName - oddiy string
+        if (body.containsKey("olimpiadaName")) {
+            Object val = body.get("olimpiadaName");
+            entity.setOlimpiadaName(val != null ? val.toString() : null);
+        }
+
+        // olimpiadaSectionName - oddiy string
+        if (body.containsKey("olimpiadaSectionName")) {
+            Object val = body.get("olimpiadaSectionName");
+            entity.setOlimpiadaSectionName(val != null ? val.toString() : null);
+        }
+
+        // olimpiadaPlaceDate - oddiy string
+        if (body.containsKey("olimpiadaPlaceDate")) {
+            Object val = body.get("olimpiadaPlaceDate");
+            entity.setOlimpiadaPlaceDate(val != null ? val.toString() : null);
+        }
+
+        // olimpiadaSubject - oddiy string
+        if (body.containsKey("olimpiadaSubject")) {
+            Object val = body.get("olimpiadaSubject");
+            entity.setOlimpiadaSubject(val != null ? val.toString() : null);
+        }
+
+        // takenPosition - oddiy string
+        if (body.containsKey("takenPosition")) {
+            Object val = body.get("takenPosition");
+            entity.setTakenPosition(val != null ? val.toString() : null);
+        }
+
+        // diplomaSerial - oddiy string
+        if (body.containsKey("diplomaSerial")) {
+            Object val = body.get("diplomaSerial");
+            entity.setDiplomaSerial(val != null ? val.toString() : null);
+        }
+
+        // diplomaNumber - oddiy string
+        if (body.containsKey("diplomaNumber")) {
+            Object val = body.get("diplomaNumber");
+            entity.setDiplomaNumber(val != null ? val.toString() : null);
+        }
+    }
+
+    /**
+     * OLD-HEMIS CUBA format: {"id": "UUID"} yoki to'g'ridan-to'g'ri string
+     * Entity FK lar uchun - UUID ga convert qiladi
+     */
+    @SuppressWarnings("unchecked")
+    private java.util.UUID extractUuid(Object value) {
+        if (value == null) return null;
+        String strValue = null;
+        if (value instanceof String str) {
+            strValue = str.isEmpty() ? null : str;
+        } else if (value instanceof Map) {
+            Map<String, Object> nested = (Map<String, Object>) value;
+            Object id = nested.get("id");
+            if (id != null) {
+                strValue = id.toString();
+            } else {
+                Object code = nested.get("code");
+                if (code != null) {
+                    strValue = code.toString();
+                }
+            }
+        } else {
+            strValue = value.toString();
+        }
+
+        if (strValue == null || strValue.isEmpty()) return null;
+        try {
+            return java.util.UUID.fromString(strValue);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid UUID format: {}", strValue);
+            return null;
+        }
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.Type;
+import uz.hemis.domain.type.StringToUuidType;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -22,16 +24,21 @@ import java.util.UUID;
 @Setter
 public class AdministrativeStudentSport extends BaseEntity {
 
+    // FK fields - Custom type handles String<->UUID conversion for PostgreSQL
     @Column(name = "_university", nullable = false)
+    @Type(StringToUuidType.class)
     private UUID university;
 
     @Column(name = "_education_year", nullable = false)
+    @Type(StringToUuidType.class)
     private UUID educationYear;
 
     @Column(name = "_student")
+    @Type(StringToUuidType.class)
     private UUID student;
 
     @Column(name = "_sport_type")
+    @Type(StringToUuidType.class)
     private UUID sportType;
 
     @Column(name = "sport_date")
