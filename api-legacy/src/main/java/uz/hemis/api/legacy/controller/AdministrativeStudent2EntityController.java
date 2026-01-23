@@ -80,7 +80,7 @@ public class AdministrativeStudent2EntityController {
             @ApiResponse(responseCode = "404", description = "Yozuv topilmadi")
     })
     @Transactional(readOnly = true)
-    public ResponseEntity<Map<String, Object>> getById(
+    public ResponseEntity<?> getById(
             @Parameter(description = "Entity UUID", example = "00000000-0000-0000-0000-000000000000")
             @PathVariable("entityId") UUID entityId,
             @Parameter(description = "Null qiymatlarni qaytarish")
@@ -90,7 +90,11 @@ public class AdministrativeStudent2EntityController {
 
         Optional<AdministrativeStudent2> entity = repository.findById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS compatible 404 format
+            Map<String, String> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         return ResponseEntity.ok(toMap(entity.get(), returnNulls));
@@ -113,7 +117,7 @@ public class AdministrativeStudent2EntityController {
             @ApiResponse(responseCode = "404", description = "Yozuv topilmadi")
     })
     @Transactional
-    public ResponseEntity<Map<String, Object>> update(
+    public ResponseEntity<?> update(
             @Parameter(description = "Entity UUID")
             @PathVariable("entityId") UUID entityId,
             @RequestBody Map<String, Object> body,
@@ -124,7 +128,11 @@ public class AdministrativeStudent2EntityController {
 
         Optional<AdministrativeStudent2> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS compatible 404 format
+            Map<String, String> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         AdministrativeStudent2 entity = existingOpt.get();
@@ -152,7 +160,7 @@ public class AdministrativeStudent2EntityController {
             @ApiResponse(responseCode = "404", description = "Yozuv topilmadi")
     })
     @Transactional
-    public ResponseEntity<Void> delete(
+    public ResponseEntity<?> delete(
             @Parameter(description = "Entity UUID")
             @PathVariable("entityId") UUID entityId) {
 
@@ -160,7 +168,11 @@ public class AdministrativeStudent2EntityController {
 
         Optional<AdministrativeStudent2> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            // OLD-HEMIS compatible 404 format
+            Map<String, String> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         repository.delete(existingOpt.get());
@@ -414,77 +426,83 @@ public class AdministrativeStudent2EntityController {
     // =============================
 
     private void updateEntityFromMap(AdministrativeStudent2 entity, Map<String, Object> body) {
-        // _university - String (CUBA format: {"id": "string"} yoki to'g'ridan-to'g'ri string)
-        if (body.containsKey("_university")) {
-            entity.setUniversity(extractId(body.get("_university")));
+        // OLD-HEMIS CUBA format - {"code": "..."} va camelCase field nomlari
+
+        // university: {"code": "301"}
+        if (body.containsKey("university")) {
+            entity.setUniversity(extractCode(body.get("university")));
         }
 
-        // _education_year - String
-        if (body.containsKey("_education_year")) {
-            entity.setEducationYear(extractId(body.get("_education_year")));
+        // educationYear: {"code": "2021"}
+        if (body.containsKey("educationYear")) {
+            entity.setEducationYear(extractCode(body.get("educationYear")));
         }
 
-        // exchange_document - String
-        if (body.containsKey("exchange_document")) {
-            Object val = body.get("exchange_document");
+        // country: {"code": "AF"}
+        if (body.containsKey("country")) {
+            entity.setCountry(extractCode(body.get("country")));
+        }
+
+        // educationType: {"code": "11"}
+        if (body.containsKey("educationType")) {
+            entity.setEducationType(extractCode(body.get("educationType")));
+        }
+
+        // exchangeDocument - oddiy string
+        if (body.containsKey("exchangeDocument")) {
+            Object val = body.get("exchangeDocument");
             entity.setExchangeDocument(val != null ? val.toString() : null);
         }
 
-        // student_fullname - String
-        if (body.containsKey("student_fullname")) {
-            Object val = body.get("student_fullname");
+        // exchangeType - oddiy string (income/outcome)
+        if (body.containsKey("exchangeType")) {
+            Object val = body.get("exchangeType");
+            entity.setExchangeType(val != null ? val.toString() : null);
+        }
+
+        // studentFullname - oddiy string
+        if (body.containsKey("studentFullname")) {
+            Object val = body.get("studentFullname");
             entity.setStudentFullname(val != null ? val.toString() : null);
         }
 
-        // _country - String
-        if (body.containsKey("_country")) {
-            entity.setCountry(extractId(body.get("_country")));
-        }
-
-        // exchange_university_name - String
-        if (body.containsKey("exchange_university_name")) {
-            Object val = body.get("exchange_university_name");
+        // exchangeUniversityName - oddiy string
+        if (body.containsKey("exchangeUniversityName")) {
+            Object val = body.get("exchangeUniversityName");
             entity.setExchangeUniversityName(val != null ? val.toString() : null);
         }
 
-        // education_type - String (underscore-siz ham qo'llab-quvvatlash)
-        if (body.containsKey("education_type")) {
-            entity.setEducationType(extractId(body.get("education_type")));
-        } else if (body.containsKey("_education_type")) {
-            entity.setEducationType(extractId(body.get("_education_type")));
-        }
-
-        // speciality_code - String
-        if (body.containsKey("speciality_code")) {
-            Object val = body.get("speciality_code");
-            entity.setSpecialityCode(val != null ? val.toString() : null);
-        }
-
-        // speciality_name - String
-        if (body.containsKey("speciality_name")) {
-            Object val = body.get("speciality_name");
+        // specialityName - oddiy string
+        if (body.containsKey("specialityName")) {
+            Object val = body.get("specialityName");
             entity.setSpecialityName(val != null ? val.toString() : null);
         }
 
-        // exchange_type - String
-        if (body.containsKey("exchange_type")) {
-            Object val = body.get("exchange_type");
-            entity.setExchangeType(val != null ? val.toString() : null);
+        // specialityCode - oddiy string
+        if (body.containsKey("specialityCode")) {
+            Object val = body.get("specialityCode");
+            entity.setSpecialityCode(val != null ? val.toString() : null);
         }
     }
 
     /**
-     * CUBA format: {"id": "string"} yoki to'g'ridan-to'g'ri string
-     * OLD-HEMIS VARCHAR ustunlar uchun
+     * OLD-HEMIS CUBA format: {"code": "string"} yoki to'g'ridan-to'g'ri string
+     * Entity FK lar uchun (university, educationYear, country, educationType)
      */
     @SuppressWarnings("unchecked")
-    private String extractId(Object value) {
+    private String extractCode(Object value) {
         if (value == null) return null;
         if (value instanceof String str) {
             return str.isEmpty() ? null : str;
         }
         if (value instanceof Map) {
             Map<String, Object> nested = (Map<String, Object>) value;
+            // Avval "code" ni tekshir (OLD-HEMIS formati)
+            Object code = nested.get("code");
+            if (code != null) {
+                return code.toString();
+            }
+            // Keyin "id" ni tekshir (alternativ format)
             Object id = nested.get("id");
             if (id != null) {
                 return id.toString();
@@ -496,46 +514,26 @@ public class AdministrativeStudent2EntityController {
     private Map<String, Object> toMap(AdministrativeStudent2 entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
 
+        // OLD-HEMIS CUBA format - faqat shu maydonlar qaytariladi
         map.put("_entityName", ENTITY_NAME);
         map.put("_instanceName", buildInstanceName(entity));
         map.put("id", entity.getId());
 
-        // Entity-specific fields
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "_education_year", entity.getEducationYear(), returnNulls);
-        putIfNotNull(map, "exchange_document", entity.getExchangeDocument(), returnNulls);
-        putIfNotNull(map, "student_fullname", entity.getStudentFullname(), returnNulls);
-        putIfNotNull(map, "_country", entity.getCountry(), returnNulls);
-        putIfNotNull(map, "exchange_university_name", entity.getExchangeUniversityName(), returnNulls);
-        putIfNotNull(map, "education_type", entity.getEducationType(), returnNulls);
-        putIfNotNull(map, "speciality_code", entity.getSpecialityCode(), returnNulls);
-        putIfNotNull(map, "speciality_name", entity.getSpecialityName(), returnNulls);
-        putIfNotNull(map, "exchange_type", entity.getExchangeType(), returnNulls);
-
-        // BaseEntity audit fields
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        // OLD-HEMIS response format - FK fieldlar QAYTARILMAYDI (default view)
+        // Faqat oddiy string maydonlar qaytariladi
+        putIfNotNull(map, "exchangeDocument", entity.getExchangeDocument(), returnNulls);
+        putIfNotNull(map, "exchangeType", entity.getExchangeType(), returnNulls);
+        putIfNotNull(map, "studentFullname", entity.getStudentFullname(), returnNulls);
+        putIfNotNull(map, "version", 1, returnNulls); // CUBA version field
+        putIfNotNull(map, "exchangeUniversityName", entity.getExchangeUniversityName(), returnNulls);
+        putIfNotNull(map, "specialityName", entity.getSpecialityName(), returnNulls);
 
         return map;
     }
 
     private String buildInstanceName(AdministrativeStudent2 entity) {
-        StringBuilder sb = new StringBuilder();
-        if (entity.getStudentFullname() != null) {
-            sb.append(entity.getStudentFullname());
-        }
-        if (entity.getExchangeUniversityName() != null) {
-            if (sb.length() > 0) sb.append(" - ");
-            sb.append(entity.getExchangeUniversityName());
-        }
-        if (sb.length() == 0) {
-            sb.append("AdministrativeStudent2-").append(entity.getId());
-        }
-        return sb.toString();
+        // OLD-HEMIS CUBA format: "com.company.hemishe.entity.RIAdministrativeStudent2-{id} [detached]"
+        return "com.company.hemishe.entity.RIAdministrativeStudent2-" + entity.getId() + " [detached]";
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

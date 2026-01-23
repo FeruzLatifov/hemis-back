@@ -14,32 +14,114 @@ const endpoints_39 = [
         url: "/app/rest/v2/entities/hemishe_RIAdministrativeStudent2",
         requiresAuth: true,
         dependsOn: 1,
-        description: "Xorij OTMlari bilan akademik almashinuv - yangi talaba yozuvi yaratish",
-        storeResultId: "administrativeStudent2EntityId", // Yaratilgan yozuv ID sini saqlash
-        inputFields: [
-            { name: "_university", label: "OTM (UUID)", type: "text", required: true, placeholder: "OTM UUID", defaultValue: "7d9fd8ab-cb16-4b95-a41d-57ca5dc44a02" },
-            { name: "_education_year", label: "O'quv yili (UUID)", type: "text", required: true, placeholder: "O'quv yili UUID", defaultValue: "7576c6c7-da47-4fee-9a9d-1b2e75e7393f" },
-            { name: "student_fullname", label: "Talaba FIO", type: "text", required: true, placeholder: "Familiya Ism Otasining ismi", defaultValue: "Testov Test Testovich" },
-            { name: "_country", label: "Davlat (UUID)", type: "text", required: false, placeholder: "Davlat UUID", defaultValue: "b5c88aec-71d9-4fa1-8c33-f5b8d8e1c0a3" },
-            { name: "exchange_university_name", label: "Xorij OTM nomi", type: "text", required: false, placeholder: "Harvard University", defaultValue: "Harvard University" },
-            { name: "exchange_document", label: "Shartnoma/Hujjat", type: "text", required: false, placeholder: "Shartnoma raqami", defaultValue: "SH-2024-001" },
-            { name: "education_type", label: "Ta'lim turi (UUID)", type: "text", required: false, placeholder: "Ta'lim turi UUID", defaultValue: "11" },
-            { name: "speciality_code", label: "Mutaxassislik kodi", type: "text", required: false, placeholder: "5110100", defaultValue: "5110100" },
-            { name: "speciality_name", label: "Mutaxassislik nomi", type: "text", required: false, placeholder: "Informatika va AT", defaultValue: "Informatika va axborot texnologiyalari" },
-            { name: "exchange_type", label: "Almashinuv turi", type: "text", required: false, placeholder: "Bir semestr / To'liq kurs", defaultValue: "Bir semestr" }
-        ],
-        bodyGenerator: (fields) => ({
-            "_university": fields._university ? { "id": fields._university } : null,
-            "_education_year": fields._education_year ? { "id": fields._education_year } : null,
-            "student_fullname": fields.student_fullname || null,
-            "_country": fields._country ? { "id": fields._country } : null,
-            "exchange_university_name": fields.exchange_university_name || null,
-            "exchange_document": fields.exchange_document || null,
-            "education_type": fields.education_type ? { "id": fields.education_type } : null,
-            "speciality_code": fields.speciality_code || null,
-            "speciality_name": fields.speciality_name || null,
-            "exchange_type": fields.exchange_type || null
-        }),
+        description: "Xorij OTMlari bilan akademik almashinuv - yangi talaba yozuvi yaratish (OLD-HEMIS CUBA format)",
+        storeResultId: "administrativeStudent2EntityId",
+        inputFields: {
+            university: {
+                label: "Universitet kodi",
+                type: "text",
+                required: false,
+                placeholder: "301",
+                defaultNew: "301",
+                defaultOld: "301",
+                helpText: "OTM kodi (masalan: 301). Request body: {\"code\": \"301\"}"
+            },
+            educationYear: {
+                label: "O'quv yili",
+                type: "text",
+                required: false,
+                placeholder: "2024",
+                defaultNew: "2024",
+                defaultOld: "2024",
+                helpText: "O'quv yili kodi (masalan: 2024). Request body: {\"code\": \"2024\"}"
+            },
+            country: {
+                label: "Davlat kodi",
+                type: "text",
+                required: false,
+                placeholder: "US",
+                defaultNew: "US",
+                defaultOld: "US",
+                helpText: "ISO country code (masalan: US, GB, DE). Request body: {\"code\": \"US\"}"
+            },
+            educationType: {
+                label: "Ta'lim turi kodi",
+                type: "text",
+                required: false,
+                placeholder: "11",
+                defaultNew: "11",
+                defaultOld: "11",
+                helpText: "Ta'lim turi kodi. Request body: {\"code\": \"11\"}"
+            },
+            exchangeDocument: {
+                label: "Shartnoma/Hujjat",
+                type: "text",
+                required: false,
+                placeholder: "Shartnoma raqami",
+                defaultNew: "SH-2024-NEW",
+                defaultOld: "SH-2024-OLD"
+            },
+            exchangeType: {
+                label: "Almashinuv turi",
+                type: "text",
+                required: false,
+                placeholder: "outcome / income",
+                defaultNew: "outcome",
+                defaultOld: "outcome"
+            },
+            studentFullname: {
+                label: "Talaba FIO",
+                type: "text",
+                required: true,
+                placeholder: "Familiya Ism Otasining ismi",
+                defaultNew: "Yangi Talaba Testovich",
+                defaultOld: "Eski Talaba Testovich"
+            },
+            exchangeUniversityName: {
+                label: "Xorij OTM nomi",
+                type: "text",
+                required: false,
+                placeholder: "Harvard University",
+                defaultNew: "Harvard University",
+                defaultOld: "Harvard University"
+            },
+            specialityName: {
+                label: "Mutaxassislik nomi",
+                type: "text",
+                required: false,
+                placeholder: "Informatika va AT",
+                defaultNew: "Informatika va AT (NEW)",
+                defaultOld: "Informatika va AT (OLD)"
+            },
+            specialityCode: {
+                label: "Mutaxassislik kodi",
+                type: "text",
+                required: false,
+                placeholder: "5110100",
+                defaultNew: "5110100",
+                defaultOld: "5110100"
+            }
+        },
+        bodyGenerator: (fields) => {
+            // OLD-HEMIS CUBA format: FK fields use {"code": "..."} format
+            const body = {};
+
+            // FK fields - {"code": "..."} format
+            if (fields.university) body.university = { code: fields.university };
+            if (fields.educationYear) body.educationYear = { code: fields.educationYear };
+            if (fields.country) body.country = { code: fields.country };
+            if (fields.educationType) body.educationType = { code: fields.educationType };
+
+            // Simple string fields
+            if (fields.exchangeDocument) body.exchangeDocument = fields.exchangeDocument;
+            if (fields.exchangeType) body.exchangeType = fields.exchangeType;
+            if (fields.studentFullname) body.studentFullname = fields.studentFullname;
+            if (fields.exchangeUniversityName) body.exchangeUniversityName = fields.exchangeUniversityName;
+            if (fields.specialityName) body.specialityName = fields.specialityName;
+            if (fields.specialityCode) body.specialityCode = fields.specialityCode;
+
+            return body;
+        },
         ported: true
     },
     {
@@ -51,7 +133,7 @@ const endpoints_39 = [
         requiresAuth: true,
         dependsOn: 1,
         description: "Barcha akademik almashinuv yozuvlarini olish (paginated). Qaytgan javobdan random ID tanlab GET/PUT/DELETE inputlariga qo'yadi.",
-        storeFirstId: "administrativeStudent2EntityId", // Qaytgan massivdan random ID ni saqlash
+        storeFirstId: "administrativeStudent2EntityId",
         inputFields: {
             limit: {
                 label: "Limit (nechta yozuv)",
@@ -104,8 +186,8 @@ const endpoints_39 = [
                 label: "Entity UUID",
                 type: "text",
                 required: true,
-                placeholder: "Avval GET All yoki POST ishlatib ID oling",
-                useStoredId: "administrativeStudent2EntityId" // GET all dan avtomatik oladi
+                placeholder: "Avval GET All ishlatib ID oling",
+                useStoredId: "administrativeStudent2EntityId"
             }
         },
         queryParams: [
@@ -121,66 +203,118 @@ const endpoints_39 = [
         url: "/app/rest/v2/entities/hemishe_RIAdministrativeStudent2/{entityId}",
         requiresAuth: true,
         dependsOn: 1,
-        description: "Mavjud akademik almashinuv yozuvini yangilash",
+        description: "Mavjud akademik almashinuv yozuvini yangilash (OLD-HEMIS CUBA format)",
         inputFields: {
             entityId: {
                 label: "Entity UUID",
                 type: "text",
                 required: true,
-                placeholder: "Avval GET All yoki POST ishlatib ID oling",
-                useStoredId: "administrativeStudent2EntityId" // GET all dan avtomatik oladi
+                placeholder: "Avval GET All ishlatib ID oling",
+                useStoredId: "administrativeStudent2EntityId"
             },
-            student_fullname: {
+            university: {
+                label: "Universitet kodi",
+                type: "text",
+                required: false,
+                placeholder: "301",
+                defaultNew: "",
+                defaultOld: "",
+                helpText: "OTM kodi (masalan: 301). Request body: {\"code\": \"301\"}"
+            },
+            educationYear: {
+                label: "O'quv yili",
+                type: "text",
+                required: false,
+                placeholder: "2024",
+                defaultNew: "",
+                defaultOld: "",
+                helpText: "O'quv yili kodi (masalan: 2024). Request body: {\"code\": \"2024\"}"
+            },
+            country: {
+                label: "Davlat kodi",
+                type: "text",
+                required: false,
+                placeholder: "US",
+                defaultNew: "",
+                defaultOld: "",
+                helpText: "ISO country code (masalan: US, GB, DE). Request body: {\"code\": \"US\"}"
+            },
+            educationType: {
+                label: "Ta'lim turi kodi",
+                type: "text",
+                required: false,
+                placeholder: "11",
+                defaultNew: "",
+                defaultOld: "",
+                helpText: "Ta'lim turi kodi. Request body: {\"code\": \"11\"}"
+            },
+            studentFullname: {
                 label: "Talaba FIO",
                 type: "text",
                 required: false,
                 placeholder: "Familiya Ism Otasining ismi",
-                default: "Yangilangan Test Talaba"
+                defaultNew: "Yangilangan NEW Talaba",
+                defaultOld: "Yangilangan OLD Talaba"
             },
-            exchange_university_name: {
+            exchangeUniversityName: {
                 label: "Xorij OTM nomi",
                 type: "text",
                 required: false,
                 placeholder: "Harvard University",
-                default: "MIT"
+                defaultNew: "MIT",
+                defaultOld: "MIT"
             },
-            exchange_document: {
+            exchangeDocument: {
                 label: "Shartnoma/Hujjat",
                 type: "text",
                 required: false,
                 placeholder: "Shartnoma raqami",
-                default: "SH-2024-002"
+                defaultNew: "SH-2024-UPD-NEW",
+                defaultOld: "SH-2024-UPD-OLD"
             },
-            speciality_code: {
+            specialityCode: {
                 label: "Mutaxassislik kodi",
                 type: "text",
                 required: false,
                 placeholder: "5110100",
-                default: "5110200"
+                defaultNew: "5110200",
+                defaultOld: "5110200"
             },
-            speciality_name: {
+            specialityName: {
                 label: "Mutaxassislik nomi",
                 type: "text",
                 required: false,
                 placeholder: "Informatika va AT",
-                default: "Kompyuter muhandisligi"
+                defaultNew: "Kompyuter muhandisligi (NEW)",
+                defaultOld: "Kompyuter muhandisligi (OLD)"
             },
-            exchange_type: {
+            exchangeType: {
                 label: "Almashinuv turi",
                 type: "text",
                 required: false,
-                placeholder: "Bir semestr / To'liq kurs",
-                default: "To'liq kurs"
+                placeholder: "outcome / income",
+                defaultNew: "income",
+                defaultOld: "income"
             }
         },
         bodyGenerator: (fields) => {
+            // OLD-HEMIS CUBA format: FK fields use {"code": "..."} format
             const body = {};
-            if (fields.student_fullname) body.student_fullname = fields.student_fullname;
-            if (fields.exchange_university_name) body.exchange_university_name = fields.exchange_university_name;
-            if (fields.exchange_document) body.exchange_document = fields.exchange_document;
-            if (fields.speciality_code) body.speciality_code = fields.speciality_code;
-            if (fields.speciality_name) body.speciality_name = fields.speciality_name;
-            if (fields.exchange_type) body.exchange_type = fields.exchange_type;
+
+            // FK fields - {"code": "..."} format
+            if (fields.university) body.university = { code: fields.university };
+            if (fields.educationYear) body.educationYear = { code: fields.educationYear };
+            if (fields.country) body.country = { code: fields.country };
+            if (fields.educationType) body.educationType = { code: fields.educationType };
+
+            // Simple string fields
+            if (fields.studentFullname) body.studentFullname = fields.studentFullname;
+            if (fields.exchangeUniversityName) body.exchangeUniversityName = fields.exchangeUniversityName;
+            if (fields.exchangeDocument) body.exchangeDocument = fields.exchangeDocument;
+            if (fields.specialityCode) body.specialityCode = fields.specialityCode;
+            if (fields.specialityName) body.specialityName = fields.specialityName;
+            if (fields.exchangeType) body.exchangeType = fields.exchangeType;
+
             return body;
         },
         ported: true
@@ -199,8 +333,8 @@ const endpoints_39 = [
                 label: "Entity UUID",
                 type: "text",
                 required: true,
-                placeholder: "Avval GET All yoki POST ishlatib ID oling",
-                useStoredId: "administrativeStudent2EntityId" // GET all dan avtomatik oladi
+                placeholder: "Avval GET All ishlatib ID oling",
+                useStoredId: "administrativeStudent2EntityId"
             }
         },
         ported: true
@@ -213,13 +347,72 @@ const endpoints_39 = [
         url: "/app/rest/v2/entities/hemishe_RIAdministrativeStudent2/search",
         requiresAuth: true,
         dependsOn: 1,
-        description: "Akademik almashinuv yozuvlarini qidirish (GET parametrlar bilan)",
-        queryParams: [
-            { name: "filter", label: "CUBA JSON filter", defaultValue: "" },
-            { name: "limit", label: "Limit", defaultValue: "50" },
-            { name: "offset", label: "Offset", defaultValue: "0" },
-            { name: "returnNulls", label: "Null qiymatlarni qaytarish", defaultValue: "false" }
-        ],
+        inputFields: {
+            filter: {
+                label: "CUBA JSON filter (ixtiyoriy)",
+                type: "textarea",
+                rows: 3,
+                placeholder: 'Bo\'sh qoldiring yoki: {"conditions":[...]}',
+                defaultNew: '',
+                defaultOld: '',
+                required: false,
+                helpText: 'Bo\'sh qoldiring - barcha yozuvlar qaytadi. Yoki CUBA filter: {"conditions":[{"property":"exchangeType","operator":"=","value":"outcome"}]}'
+            },
+            limit: {
+                label: "Limit",
+                type: "number",
+                placeholder: "50",
+                defaultNew: "10",
+                defaultOld: "10",
+                required: false
+            },
+            offset: {
+                label: "Offset",
+                type: "number",
+                placeholder: "0",
+                defaultNew: "0",
+                defaultOld: "0",
+                required: false
+            },
+            returnNulls: {
+                label: "Null qiymatlarni qaytarish",
+                type: "select",
+                options: [
+                    { value: "", label: "default" },
+                    { value: "true", label: "true" },
+                    { value: "false", label: "false" }
+                ],
+                defaultNew: "",
+                defaultOld: "",
+                required: false
+            }
+        },
+        urlBuilder: function(fields) {
+            let params = [];
+            // Filter: CUBA format - {"conditions":[...]}
+            // Bo'sh bo'lsa {"conditions":[]} yuborish kerak (aks holda 500 xato)
+            if (fields.filter && fields.filter.trim()) {
+                params.push("filter=" + encodeURIComponent(fields.filter.trim()));
+            } else {
+                // Bo'sh filter = {"conditions":[]} yuborish kerak
+                params.push("filter=" + encodeURIComponent('{"conditions":[]}'));
+            }
+            if (fields.limit) params.push("limit=" + encodeURIComponent(fields.limit));
+            if (fields.offset) params.push("offset=" + encodeURIComponent(fields.offset));
+            if (fields.returnNulls) params.push("returnNulls=" + encodeURIComponent(fields.returnNulls));
+            return this.url + (params.length > 0 ? "?" + params.join("&") : "");
+        },
+        description: `**Akademik almashinuv yozuvlarini qidirish (GET)**
+
+<b>Endpoint:</b> GET /app/rest/v2/entities/hemishe_RIAdministrativeStudent2/search
+
+<b>Parametrlar:</b>
+- filter: CUBA JSON filter (masalan: {"conditions":[{"property":"exchangeType","operator":"=","value":"outcome"}]})
+- limit: Natijalar soni (default: 50)
+- offset: Boshlanish indeksi (default: 0)
+- returnNulls: Null qiymatlarni qaytarish
+
+<b>Response:</b> Filtrlangan yozuvlar ro'yxati`,
         ported: true
     },
     {
@@ -230,29 +423,65 @@ const endpoints_39 = [
         url: "/app/rest/v2/entities/hemishe_RIAdministrativeStudent2/search",
         requiresAuth: true,
         dependsOn: 1,
-        description: "Akademik almashinuv yozuvlarini qidirish (POST body bilan)",
         inputFields: {
+            filter: {
+                label: "CUBA JSON filter",
+                type: "textarea",
+                rows: 3,
+                placeholder: '{"conditions":[{"property":"exchangeType","operator":"=","value":"outcome"}]}',
+                defaultNew: '',
+                defaultOld: '',
+                required: false,
+                helpText: 'CUBA filter formati: {"conditions":[{"property":"field","operator":"=","value":"qiymat"}]}'
+            },
             limit: {
                 label: "Limit",
                 type: "number",
-                required: false,
                 placeholder: "50",
-                default: "50"
+                defaultNew: "50",
+                defaultOld: "50",
+                required: false
             },
             offset: {
                 label: "Offset",
                 type: "number",
-                required: false,
                 placeholder: "0",
-                default: "0"
+                defaultNew: "0",
+                defaultOld: "0",
+                required: false
             }
         },
-        bodyFields: ["filter", "limit", "offset"],
-        bodyGenerator: (fields) => ({
-            "filter": {},
-            "limit": parseInt(fields.limit) || 50,
-            "offset": parseInt(fields.offset) || 0
-        }),
+        bodyGenerator: (fields) => {
+            // CUBA POST search formati: {"filter": {...}, "limit": N, "offset": N}
+            // Hammasi BODY da bo'lishi kerak!
+            const body = {
+                limit: parseInt(fields.limit) || 50,
+                offset: parseInt(fields.offset) || 0
+            };
+            if (fields.filter && fields.filter.trim()) {
+                try {
+                    body.filter = JSON.parse(fields.filter);
+                } catch (e) {
+                    body.filter = { conditions: [] };
+                }
+            } else {
+                // Bo'sh filter = {"conditions":[]} (CUBA talabi)
+                body.filter = { conditions: [] };
+            }
+            return body;
+        },
+        description: `**Akademik almashinuv yozuvlarini qidirish (POST)**
+
+<b>Endpoint:</b> POST /app/rest/v2/entities/hemishe_RIAdministrativeStudent2/search
+
+<b>CUBA Format (hammasi body da):</b>
+{
+  "filter": {"conditions": [...]},
+  "limit": 50,
+  "offset": 0
+}
+
+<b>Response:</b> Filtrlangan yozuvlar ro'yxati`,
         ported: true
     }
 ];
