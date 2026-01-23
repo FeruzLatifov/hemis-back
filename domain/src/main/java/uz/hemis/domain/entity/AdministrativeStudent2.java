@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.util.UUID;
-
 /**
  * Administrative Student 2 Entity
  *
@@ -14,6 +12,8 @@ import java.util.UUID;
  *
  * Рейтинг аниқланаётган йилда хорижий олий таълим муассасалари билан
  * академик алмашув дастурлари (талабалар томонидан) тўғрисида маълумот
+ *
+ * Note: FK fields are VARCHAR in old-hemis database, not UUID
  */
 @Entity
 @Table(name = "hemishe_ri_administrative_student2")
@@ -23,10 +23,10 @@ import java.util.UUID;
 public class AdministrativeStudent2 extends BaseEntity {
 
     @Column(name = "_university", nullable = false)
-    private UUID university;
+    private String university;
 
     @Column(name = "_education_year", nullable = false)
-    private UUID educationYear;
+    private String educationYear;
 
     @Column(name = "exchange_document")
     private String exchangeDocument;
@@ -35,13 +35,13 @@ public class AdministrativeStudent2 extends BaseEntity {
     private String studentFullname;
 
     @Column(name = "_country")
-    private UUID country;
+    private String country;
 
     @Column(name = "exchange_university_name")
     private String exchangeUniversityName;
 
     @Column(name = "_education_type")
-    private UUID educationType;
+    private String educationType;
 
     @Column(name = "speciality_code")
     private String specialityCode;

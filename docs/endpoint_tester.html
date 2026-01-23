@@ -433,6 +433,7 @@
     <script src="endpoints/35-akademik-hisobotlar-davomat.js"></script>
     <script src="endpoints/36-shartnoma-statistikasi.js"></script>
     <script src="endpoints/37-bandlik-statistikasi.js"></script>
+    <script src="endpoints/39-inspeksiya-administrative-student.js"></script>
     <!-- Barcha kategoriyalarni birlashtiruvchi index -->
     <script src="endpoints/_index.js"></script>
     <script>
@@ -892,49 +893,64 @@
 
                 // Replace placeholders and add query params for GET
                 if (endpoint.method === 'GET') {
-                    const params = new URLSearchParams();
-
-                    // 1. Add params from endpoint.params (legacy format)
-                    if (endpoint.params) {
-                        Object.entries(endpoint.params).forEach(([key, value]) => {
-                            let val = value;
-
-                            // If endpoint has inputFields, get value from system-specific input element
-                            if (endpoint.inputFields && endpoint.inputFields[key]) {
+                    // Check if endpoint has custom urlBuilder function
+                    if (endpoint.urlBuilder && typeof endpoint.urlBuilder === 'function') {
+                        // Collect field values for urlBuilder
+                        const fields = {};
+                        if (endpoint.inputFields) {
+                            Object.entries(endpoint.inputFields).forEach(([key, field]) => {
                                 const inputElement = document.getElementById(`input-${system}-${uniqueId}-${key}`);
-                                val = inputElement ? inputElement.value : value;
-                            } else {
-                                // Use placeholder replacement
-                                if (value === '{pinfl}') val = pinfl;
-                            }
+                                fields[key] = inputElement ? inputElement.value : (field.default || '');
+                            });
+                        }
+                        // Use custom urlBuilder - it returns full URL with params
+                        url = baseUrl + endpoint.urlBuilder.call(endpoint, fields);
+                    } else {
+                        // Default URL building logic
+                        const params = new URLSearchParams();
 
-                            params.append(key, val);
-                        });
-                    }
+                        // 1. Add params from endpoint.params (legacy format)
+                        if (endpoint.params) {
+                            Object.entries(endpoint.params).forEach(([key, value]) => {
+                                let val = value;
 
-                    // 2. Add params from inputFields (new format) - entityId excluded (already in URL path)
-                    // Skip if bodyTemplate exists (inputFields will be used in body, not URL)
-                    if (endpoint.inputFields && !endpoint.bodyTemplate) {
-                        Object.entries(endpoint.inputFields).forEach(([key, field]) => {
-                            // Skip entityId (already replaced in URL path) and already added params
-                            if (key === 'entityId' || (endpoint.params && endpoint.params[key])) {
-                                return;
-                            }
+                                // If endpoint has inputFields, get value from system-specific input element
+                                if (endpoint.inputFields && endpoint.inputFields[key]) {
+                                    const inputElement = document.getElementById(`input-${system}-${uniqueId}-${key}`);
+                                    val = inputElement ? inputElement.value : value;
+                                } else {
+                                    // Use placeholder replacement
+                                    if (value === '{pinfl}') val = pinfl;
+                                }
 
-                            const inputElement = document.getElementById(`input-${system}-${uniqueId}-${key}`);
-                            const val = inputElement ? inputElement.value : (field.default || '');
-
-                            // Only add non-empty values
-                            if (val && val.trim() !== '') {
                                 params.append(key, val);
-                            }
-                        });
-                    }
+                            });
+                        }
 
-                    // Add params to URL if any exist
-                    const paramsString = params.toString();
-                    if (paramsString) {
-                        url += '?' + paramsString;
+                        // 2. Add params from inputFields (new format) - entityId excluded (already in URL path)
+                        // Skip if bodyTemplate exists (inputFields will be used in body, not URL)
+                        if (endpoint.inputFields && !endpoint.bodyTemplate) {
+                            Object.entries(endpoint.inputFields).forEach(([key, field]) => {
+                                // Skip entityId (already replaced in URL path) and already added params
+                                if (key === 'entityId' || (endpoint.params && endpoint.params[key])) {
+                                    return;
+                                }
+
+                                const inputElement = document.getElementById(`input-${system}-${uniqueId}-${key}`);
+                                const val = inputElement ? inputElement.value : (field.default || '');
+
+                                // Only add non-empty values
+                                if (val && val.trim() !== '') {
+                                    params.append(key, val);
+                                }
+                            });
+                        }
+
+                        // Add params to URL if any exist
+                        const paramsString = params.toString();
+                        if (paramsString) {
+                            url += '?' + paramsString;
+                        }
                     }
                 }
 
@@ -1111,8 +1127,12 @@
                     options.body = JSON.stringify(generatedBody);
                     console.log(`[${system.toUpperCase()}] Generated body:`, options.body);
 
+                    // urlBuilder: POST/PUT uchun custom URL builder (query params)
+                    if (endpoint.urlBuilder && typeof endpoint.urlBuilder === 'function') {
+                        url = baseUrl + endpoint.urlBuilder.call(endpoint, inputs);
+                    }
                     // queryParamsFromInputs: POST/PUT uchun ba'zi input fieldlarni query param sifatida yuborish
-                    if (endpoint.queryParamsFromInputs && endpoint.queryParamsFromInputs.length > 0) {
+                    else if (endpoint.queryParamsFromInputs && endpoint.queryParamsFromInputs.length > 0) {
                         const queryParams = new URLSearchParams();
                         endpoint.queryParamsFromInputs.forEach(fieldName => {
                             const val = inputs[fieldName];
