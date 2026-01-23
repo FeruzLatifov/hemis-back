@@ -77,6 +77,8 @@ const endpoints = [
     ...endpoints_36,
     // 37.Bandlik statistikasi (7 endpoint)
     ...endpoints_37,
+    // 39.Inspeksiya administrative student (7 endpoint)
+    ...endpoints_39,
 ];
 
-console.log('Endpoints loaded:', endpoints.length, 'endpoints from 37 categories');
+console.log('Endpoints loaded:', endpoints.length, 'endpoints from 38 categories');
