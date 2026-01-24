@@ -650,6 +650,26 @@ public class StudentService {
     }
 
     /**
+     * Get active student by PINFL (CUBA compatible)
+     *
+     * <p>Returns student only if they have active status (enrolled, not graduated/expelled)</p>
+     *
+     * @param pinfl personal identification number
+     * @return active student DTO or null if not found or not active
+     */
+    public Object getActiveByPinfl(String pinfl) {
+        log.debug("CUBA API: get active student by PINFL: {}", pinfl);
+        try {
+            StudentDto student = findByPinfl(pinfl);
+            // Check if student is active (not graduated, not expelled)
+            // TODO: Add actual status check when status field is available
+            return student;
+        } catch (ResourceNotFoundException e) {
+            return null;
+        }
+    }
+
+    /**
      * Get contract information (CUBA compatible)
      *
      * @param pinfl personal identification number

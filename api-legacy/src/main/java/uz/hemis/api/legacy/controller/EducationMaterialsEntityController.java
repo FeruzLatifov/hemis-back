@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_REducationMaterials           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_REducationMaterials           - Create new
  */
-@Tag(name = "Education Materials")
+@Tag(name = "65.Xo'jalik hisobot", description = "O'quv materiallari darajasi")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_REducationMaterials")
 @RequiredArgsConstructor

@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "UzASBO Integration")
+@Tag(name = "58.UzASBO", description = "UzASBO integratsiyasi")
 @RestController
 @RequestMapping("/app/rest/v2/integrations/uzasbo")
 @RequiredArgsConstructor

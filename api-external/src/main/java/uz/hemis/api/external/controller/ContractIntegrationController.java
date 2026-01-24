@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Contract Integration")
+@Tag(name = "57.Contract", description = "Shartnoma integratsiyasi")
 @RestController
 @RequestMapping("/app/rest/v2/integrations/contracts")
 @RequiredArgsConstructor

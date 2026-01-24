@@ -10,7 +10,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Services")
+@Tag(name = "70.Qo'shimcha xizmatlar", description = "Xizmatlar API")
 @RestController
 @RequestMapping("/app/rest/v2/services-api")
 @RequiredArgsConstructor

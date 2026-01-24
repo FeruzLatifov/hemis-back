@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Tag(name = "Certificates")
+@Tag(name = "68.Sertifikat", description = "Talaba sertifikatlari")
 @RestController
 @RequestMapping("/app/rest/v2/student-certificates")
 @RequiredArgsConstructor

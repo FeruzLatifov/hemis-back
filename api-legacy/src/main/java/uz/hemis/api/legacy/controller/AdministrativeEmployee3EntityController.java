@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_RIAdministrativeEmployee3           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_RIAdministrativeEmployee3           - Create new
  */
-@Tag(name = "Administrative Reports - Employees")
+@Tag(name = "40.OTMda xorijiy o'qituvchilar", description = "OTMda faoliyat olib borayotgan xorijiy o'qituvchilar")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RIAdministrativeEmployee3")
 @RequiredArgsConstructor

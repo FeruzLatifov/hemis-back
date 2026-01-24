@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "University Additional")
+@Tag(name = "15.OTM", description = "OTM qo'shimcha ma'lumotlari")
 @RestController
 @RequestMapping("/app/rest/v2/university-additional")
 @RequiredArgsConstructor

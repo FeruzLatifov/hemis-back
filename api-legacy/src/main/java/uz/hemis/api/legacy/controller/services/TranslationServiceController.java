@@ -287,7 +287,7 @@ public class TranslationServiceController {
     /**
      * Transkript ariza
      */
-    @Tag(name = "15.Transkript", description = "Transkript va o'quv natijalari")
+    @Tag(name = "54.Transkript", description = "Transkript va o'quv natijalari")
     @GetMapping("/transcript/get")
     @Operation(
         summary = "Transkript ariza",

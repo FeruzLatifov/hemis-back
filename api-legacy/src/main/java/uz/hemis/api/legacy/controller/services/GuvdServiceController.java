@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/services/guvd")
-@Tag(name = "GUVD Service API", description = "CUBA compatible GUVD integration service endpoints")
+@Tag(name = "70.Qo'shimcha xizmatlar", description = "CUBA compatible GUVD integration service endpoints")
 @RequiredArgsConstructor
 @Slf4j
 public class GuvdServiceController {

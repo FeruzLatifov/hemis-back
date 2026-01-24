@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Mail")
+@Tag(name = "52.Mail", description = "Email xizmatlari")
 @RestController
 @RequestMapping("/app/rest/v2/mail")
 @RequiredArgsConstructor

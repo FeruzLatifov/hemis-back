@@ -53,7 +53,7 @@ import java.util.UUID;
  *
  * @since 1.0.0
  */
-@Tag(name = "Students")
+@Tag(name = "04.Talaba", description = "Talabalar boshqaruvi")
 @RestController
 @RequestMapping("/app/rest/v2/students")
 @RequiredArgsConstructor

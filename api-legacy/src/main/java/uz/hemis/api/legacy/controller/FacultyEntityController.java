@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * Faculty Entity Controller (CUBA Pattern)
  * CUBA Platform REST API compatible controller
  */
-@Tag(name = "Faculty")
+@Tag(name = "49.Fakultetlar", description = "Fakultetlar entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EFaculty")
 @RequiredArgsConstructor

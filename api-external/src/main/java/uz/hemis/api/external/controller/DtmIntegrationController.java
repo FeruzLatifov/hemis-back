@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "DTM Integration")
+@Tag(name = "55.DTM", description = "DTM integratsiyasi")
 @RestController
 @RequestMapping("/app/rest/v2/integrations/dtm")
 @RequiredArgsConstructor

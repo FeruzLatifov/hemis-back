@@ -19,7 +19,7 @@ import uz.hemis.service.DepartmentService;
  */
 @RestController
 @RequestMapping("/services/cathedra")
-@Tag(name = "Cathedra Service API", description = "CUBA compatible cathedra (department) service endpoints")
+@Tag(name = "07.OTM bo'linmalari", description = "CUBA compatible cathedra (department) service endpoints")
 @RequiredArgsConstructor
 @Slf4j
 public class CathedraServiceController {

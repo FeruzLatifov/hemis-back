@@ -51,7 +51,7 @@ import java.util.*;
  *
  * @since 1.0.0
  */
-@Tag(name = "39.Inspeksiya administrative student", description = "Xorij OTMlari bilan akademik almashinuv dasturlari - talabalar (hemishe_RIAdministrativeStudent2)")
+@Tag(name = "41.Inspeksiya administrative student2 - Akademik almashinuv", description = "Xorij OTMlari bilan akademik almashinuv dasturlari")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RIAdministrativeStudent2")
 @RequiredArgsConstructor

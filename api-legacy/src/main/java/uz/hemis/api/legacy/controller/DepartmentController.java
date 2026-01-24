@@ -47,7 +47,7 @@ import java.util.UUID;
  *
  * @since 1.0.0
  */
-@Tag(name = "Departments")
+@Tag(name = "07.OTM bo'linmalari", description = "Kafedralar va bo'limlar")
 @RestController
 @RequestMapping("/app/rest/v2/departments")
 @RequiredArgsConstructor

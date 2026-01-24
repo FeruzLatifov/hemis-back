@@ -55,7 +55,7 @@ import java.util.UUID;
  *
  * @since 1.0.0
  */
-@Tag(name = "Teachers")
+@Tag(name = "05.O'qituvchi", description = "O'qituvchilar boshqaruvi")
 @RestController
 @RequestMapping("/app/rest/v2/teachers")
 @RequiredArgsConstructor

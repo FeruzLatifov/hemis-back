@@ -1,6 +1,6 @@
 // Barcha endpoint kategoriyalarini birlashtiruvchi fayl
 // Auto-generated - DO NOT EDIT DIRECTLY
-// Jami: 47 kategoriya
+// Jami: 70 kategoriya
 
 const endpoints = [
     // 01.Token (3 endpoint)
@@ -97,6 +97,52 @@ const endpoints = [
     ...endpoints_46,
     // 47.Akademik O'quv ishlari (7 endpoint)
     ...endpoints_47,
+    // 48.Mehnat (1 endpoint)
+    ...endpoints_48,
+    // 49.Fakultetlar (1 endpoint)
+    ...endpoints_49,
+    // 50.Mutaxassisliklar (2 endpoint)
+    ...endpoints_50,
+    // 51.Guruhlar (2 endpoint)
+    ...endpoints_51,
+    // 52.Mail (2 endpoint)
+    ...endpoints_52,
+    // 53.Healthcheck (1 endpoint)
+    ...endpoints_53,
+    // 54.Transkript (1 endpoint)
+    ...endpoints_54,
+    // 55.DTM (1 endpoint)
+    ...endpoints_55,
+    // 56.OAK (1 endpoint)
+    ...endpoints_56,
+    // 57.Contract (1 endpoint)
+    ...endpoints_57,
+    // 58.UzASBO (3 endpoint)
+    ...endpoints_58,
+    // 59.Test (1 endpoint)
+    ...endpoints_59,
+    // 60.Soliq (1 endpoint)
+    ...endpoints_60,
+    // 61.Ijtimoiy himoya (5 endpoint)
+    ...endpoints_61,
+    // 62.Stipendiya (3 endpoint)
+    ...endpoints_62,
+    // 63.Billing (2 endpoint)
+    ...endpoints_63,
+    // 64.OTM (3 endpoint)
+    ...endpoints_64,
+    // 65.Xo'jalik hisobot (3 endpoint)
+    ...endpoints_65,
+    // 66.BIMM (5 endpoint)
+    ...endpoints_66,
+    // 67.OTM Config (1 endpoint)
+    ...endpoints_67,
+    // 68.Sertifikat (2 endpoint)
+    ...endpoints_68,
+    // 69.Amaliyot (1 endpoint)
+    ...endpoints_69,
+    // 70.Qo'shimcha xizmatlar (4 endpoint)
+    ...endpoints_70,
 ];
 
-console.log('Endpoints loaded:', endpoints.length, 'endpoints from 47 categories');
+console.log('Endpoints loaded:', endpoints.length, 'endpoints from 70 categories');

@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Tag(name = "Transcripts")
+@Tag(name = "54.Transkript", description = "Transkriptlar boshqaruvi")
 @RestController
 @RequestMapping("/app/rest/v2/transcripts")
 @RequiredArgsConstructor

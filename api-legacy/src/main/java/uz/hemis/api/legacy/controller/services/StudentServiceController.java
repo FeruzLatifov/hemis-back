@@ -173,6 +173,23 @@ public class StudentServiceController {
     }
 
     /**
+     * Get active student by PINFL
+     *
+     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/getActive}</p>
+     *
+     * <p>Returns student data only if student has active status (enrolled, not graduated/expelled)</p>
+     *
+     * @param pinfl Student PINFL
+     * @return Active student data or empty if not active
+     */
+    @GetMapping("/getActive")
+    @Operation(summary = "Get active student", description = "Get student by PINFL only if currently active (enrolled)")
+    public ResponseEntity<?> getActive(@RequestParam String pinfl) {
+        log.info("[CUBA Service] student/getActive: pinfl={}", pinfl);
+        return ResponseEntity.ok(studentService.getActiveByPinfl(pinfl));
+    }
+
+    /**
      * Talaba shartnoma ma'lumotlarini olish (api.hemis.uz proxy)
      *
      * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/contractInfo}</p>

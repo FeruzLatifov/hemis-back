@@ -12,7 +12,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Labor Statistics")
+@Tag(name = "48.Mehnat", description = "Mehnat statistikasi")
 @RestController
 @RequestMapping("/app/rest/v2/labor-statistics")
 @RequiredArgsConstructor

@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "University Settings")
+@Tag(name = "67.OTM Config", description = "OTM sozlamalari")
 @RestController
 @RequestMapping("/app/rest/v2/university-settings")
 @RequiredArgsConstructor

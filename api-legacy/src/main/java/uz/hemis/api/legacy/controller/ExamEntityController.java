@@ -17,7 +17,7 @@ import uz.hemis.domain.repository.ExamRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Tag(name = "Exams")
+@Tag(name = "10.Imtihonlar", description = "Imtihonlar entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EExam")
 @RequiredArgsConstructor

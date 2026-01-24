@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EStudentCertificate")
 @RequiredArgsConstructor
-@Tag(name = "Certificates")
+@Tag(name = "68.Sertifikat", description = "Talaba sertifikatlari")
 public class StudentCertificateEntityController {
 
     private final StudentCertificateRepository studentCertificateRepository;

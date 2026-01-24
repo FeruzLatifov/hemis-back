@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * Read-only: GET by id, GET list, optional GET /search (best-effort by code/name columns if exist).
  * Tables follow legacy naming convention (lowercase with underscores) and include soft-delete column delete_ts.
  */
-@Tag(name = "Legacy Operations")
+@Tag(name = "70.Qo'shimcha xizmatlar", description = "Legacy JDBC operatsiyalari")
 @RestController
 @RequiredArgsConstructor
 @Slf4j

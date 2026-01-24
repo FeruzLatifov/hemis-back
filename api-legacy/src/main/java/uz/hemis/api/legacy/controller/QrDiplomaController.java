@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Tag(name = "QR Diplomas")
+@Tag(name = "70.Qo'shimcha xizmatlar", description = "QR Diplomalar")
 @RestController
 @RequestMapping("/app/rest/v2/qr-diploma")
 @RequiredArgsConstructor

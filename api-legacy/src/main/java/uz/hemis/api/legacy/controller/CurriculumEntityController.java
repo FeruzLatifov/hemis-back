@@ -17,7 +17,7 @@ import uz.hemis.domain.repository.CurriculumRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Tag(name = "Curriculum")
+@Tag(name = "08.O'quv reja", description = "O'quv reja entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_ECurriculum")
 @RequiredArgsConstructor
