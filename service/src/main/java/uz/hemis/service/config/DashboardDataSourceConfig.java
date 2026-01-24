@@ -44,7 +44,7 @@ public class DashboardDataSourceConfig {
         
         // Connection config from .env
         dataSource.setJdbcUrl(String.format(
-            "jdbc:postgresql://%s:%s/%s",
+            "jdbc:postgresql://%s:%s/%s?stringtype=unspecified",
             System.getenv().get("DB_REPLICA_HOST") != null ? System.getenv().get("DB_REPLICA_HOST") : System.getenv().get("DB_MASTER_HOST"),
             System.getenv().get("DB_REPLICA_PORT") != null ? System.getenv().get("DB_REPLICA_PORT") : System.getenv().get("DB_MASTER_PORT"),
             System.getenv().get("DB_REPLICA_NAME") != null ? System.getenv().get("DB_REPLICA_NAME") : System.getenv().get("DB_MASTER_NAME")
