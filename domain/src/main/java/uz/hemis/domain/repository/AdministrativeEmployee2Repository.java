@@ -16,6 +16,7 @@ import java.util.UUID;
  * Administrative Employee2 Repository
  *
  * Professor internships
+ * Note: university, educationYear - bazada VARCHAR sifatida saqlangan (OLD-HEMIS compatibility)
  */
 @Repository
 @Transactional(readOnly = true)
@@ -24,20 +25,20 @@ public interface AdministrativeEmployee2Repository extends JpaRepository<Adminis
     /**
      * Find by university
      */
-    List<AdministrativeEmployee2> findByUniversity(UUID university);
+    List<AdministrativeEmployee2> findByUniversity(String university);
 
     /**
      * Find by university and education year
      */
-    List<AdministrativeEmployee2> findByUniversityAndEducationYear(UUID university, UUID educationYear);
+    List<AdministrativeEmployee2> findByUniversityAndEducationYear(String university, String educationYear);
 
     /**
      * Find by university and education year (paginated)
      */
-    Page<AdministrativeEmployee2> findByUniversityAndEducationYear(UUID university, UUID educationYear, Pageable pageable);
+    Page<AdministrativeEmployee2> findByUniversityAndEducationYear(String university, String educationYear, Pageable pageable);
 
     /**
      * Count by university and education year
      */
-    long countByUniversityAndEducationYear(UUID university, UUID educationYear);
+    long countByUniversityAndEducationYear(String university, String educationYear);
 }

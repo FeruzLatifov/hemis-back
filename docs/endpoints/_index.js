@@ -1,6 +1,6 @@
 // Barcha endpoint kategoriyalarini birlashtiruvchi fayl
 // Auto-generated - DO NOT EDIT DIRECTLY
-// Jami: 37 kategoriya, 224 endpoint
+// Jami: 40 kategoriya, 245 endpoint
 
 const endpoints = [
     // 01.Token (3 endpoint)
@@ -77,6 +77,12 @@ const endpoints = [
     ...endpoints_36,
     // 37.Bandlik statistikasi (7 endpoint)
     ...endpoints_37,
+    // 38.Inspeksiya administrative teacher (7 endpoint)
+    ...endpoints_38,
+    // 39.Xorijiy OTMda malaka oshirish (7 endpoint)
+    ...endpoints_39,
+    // 40.OTMda xorijiy o'qituvchilar (7 endpoint)
+    ...endpoints_40,
 ];
 
-console.log('Endpoints loaded:', endpoints.length, 'endpoints from 37 categories');
+console.log('Endpoints loaded:', endpoints.length, 'endpoints from 40 categories');

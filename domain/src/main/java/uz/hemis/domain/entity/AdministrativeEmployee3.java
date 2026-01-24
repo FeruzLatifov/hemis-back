@@ -23,14 +23,15 @@ import java.util.UUID;
 @Setter
 public class AdministrativeEmployee3 extends BaseEntity {
 
-    @Column(name = "_university", nullable = false)
-    private UUID university;
+    // Foreign keys - bazada VARCHAR sifatida saqlangan (OLD-HEMIS compatibility)
+    @Column(name = "_university")
+    private String university;
 
-    @Column(name = "_education_year", nullable = false)
-    private UUID educationYear;
+    @Column(name = "_education_year")
+    private String educationYear;
 
     @Column(name = "_country")
-    private UUID country;
+    private String country;
 
     @Column(name = "fullname")
     private String fullname;
@@ -51,10 +52,10 @@ public class AdministrativeEmployee3 extends BaseEntity {
     private UUID employee;
 
     @Column(name = "_employee_form")
-    private UUID employeeForm;
+    private String employeeForm;
 
     @Column(name = "_condution_form")
-    private UUID condutionForm;
+    private String condutionForm;
 
     @Column(name = "arrival_date")
     private LocalDate arrivalDate;

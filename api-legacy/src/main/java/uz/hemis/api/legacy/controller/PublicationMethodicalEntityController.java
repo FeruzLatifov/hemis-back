@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.domain.entity.PublicationMethodical;
 import uz.hemis.domain.repository.PublicationMethodicalRepository;
 
+import uz.hemis.api.legacy.util.CubaFilterHelper;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,6 +50,7 @@ import java.util.stream.Collectors;
 public class PublicationMethodicalEntityController {
 
     private final PublicationMethodicalRepository repository;
+    private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_EPublicationMethodical";
 
     @GetMapping("/{entityId}")
@@ -107,13 +110,20 @@ public class PublicationMethodicalEntityController {
     @Operation(summary = "Search PublicationMethodical (GET)", description = "Search using URL parameters")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search PublicationMethodical with filter: {}", filter);
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
-        List<PublicationMethodical> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        List<PublicationMethodical> allEntities = repository.findAll();
+        List<PublicationMethodical> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }
@@ -121,14 +131,25 @@ public class PublicationMethodicalEntityController {
     @PostMapping("/search")
     @Operation(summary = "Search PublicationMethodical (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search PublicationMethodical with filter: {}", filter);
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
 
-        List<PublicationMethodical> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<PublicationMethodical> allEntities = repository.findAll();
+        List<PublicationMethodical> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }

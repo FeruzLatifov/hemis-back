@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.domain.entity.Department;
 import uz.hemis.domain.repository.DepartmentRepository;
 
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 public class DepartmentEntityController {
 
     private final DepartmentRepository repository;
+    private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_EUniversityDepartment";
 
     @GetMapping("/{entityId}")
@@ -93,13 +95,20 @@ public class DepartmentEntityController {
     @Operation(summary = "Search departments (GET)", description = "Search using URL parameters")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search departments with filter: {}", filter);
-        
-        List<Department> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
+
+        List<Department> allEntities = repository.findAll();
+        List<Department> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }
@@ -107,14 +116,25 @@ public class DepartmentEntityController {
     @PostMapping("/search")
     @Operation(summary = "Search departments (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search departments with filter: {}", filter);
-        
-        List<Department> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
+
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<Department> allEntities = repository.findAll();
+        List<Department> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }

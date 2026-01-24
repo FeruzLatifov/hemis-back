@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.domain.entity.DissertationDefense;
 import uz.hemis.domain.entity.DoctoralStudent;
 import uz.hemis.domain.repository.DissertationDefenseRepository;
@@ -57,6 +58,7 @@ public class DissertationDefenseEntityController {
     private final DissertationDefenseRepository repository;
     private final DoctoralStudentRepository doctoralStudentRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final CubaFilterHelper filterHelper;
 
     private static final String ENTITY_NAME = "hemishe_EDissertationDefense";
     private static final String DOCTORAL_STUDENT_ENTITY_NAME = "hemishe_EDoctorateStudent";
@@ -211,13 +213,20 @@ public class DissertationDefenseEntityController {
     )
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search dissertation defense with filter: {}", filter);
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
-        List<DissertationDefense> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        List<DissertationDefense> allEntities = repository.findAll();
+        List<DissertationDefense> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
@@ -233,14 +242,25 @@ public class DissertationDefenseEntityController {
         description = "JSON filter orqali dissertasiya himoyalarini qidirish"
     )
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search dissertation defense with filter: {}", filter);
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
 
-        List<DissertationDefense> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<DissertationDefense> allEntities = repository.findAll();
+        List<DissertationDefense> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }

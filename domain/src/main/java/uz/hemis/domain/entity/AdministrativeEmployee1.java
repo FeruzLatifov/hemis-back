@@ -23,26 +23,26 @@ import java.util.UUID;
 @Setter
 public class AdministrativeEmployee1 extends BaseEntity {
 
-    @Column(name = "_university", nullable = false)
-    private UUID university;
+    @Column(name = "_university")
+    private String university;
 
-    @Column(name = "_education_year", nullable = false)
-    private UUID educationYear;
+    @Column(name = "_education_year", length = 32)
+    private String educationYear;
 
     @Column(name = "_employee")
     private UUID employee;
 
-    @Column(name = "_country")
-    private UUID country;
+    @Column(name = "_country", length = 32)
+    private String country;
 
     @Column(name = "foreign_university", length = 1024)
     private String foreignUniversity;
 
-    @Column(name = "_degree")
-    private UUID degree;
+    @Column(name = "_degree", length = 32)
+    private String degree;
 
-    @Column(name = "_rank")
-    private UUID rank;
+    @Column(name = "_rank", length = 32)
+    private String rank;
 
     @Column(name = "diploma_type")
     private String diplomaType;

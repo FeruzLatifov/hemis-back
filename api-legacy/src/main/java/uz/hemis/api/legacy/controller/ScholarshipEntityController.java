@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.domain.entity.Scholarship;
 import uz.hemis.domain.repository.ScholarshipRepository;
 
+import uz.hemis.api.legacy.util.CubaFilterHelper;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 public class ScholarshipEntityController {
 
     private final ScholarshipRepository repository;
+    private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_EStudentScholarshipFull";
 
     @GetMapping("/{entityId}")
@@ -68,21 +71,47 @@ public class ScholarshipEntityController {
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
-        log.debug("GET search scholarships with filter: {}", filter);
-        List<Scholarship> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream().map(e -> toMap(e, returnNulls)).collect(Collectors.toList()));
+
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
+
+        List<Scholarship> allEntities = repository.findAll();
+        List<Scholarship> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
+            .map(e -> toMap(e, returnNulls))
+            .collect(Collectors.toList()));
     }
 
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
-        log.debug("POST search scholarships with filter: {}", filter);
-        List<Scholarship> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream().map(e -> toMap(e, returnNulls)).collect(Collectors.toList()));
+
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
+
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<Scholarship> allEntities = repository.findAll();
+        List<Scholarship> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
+            .map(e -> toMap(e, returnNulls))
+            .collect(Collectors.toList()));
     }
 
     @GetMapping

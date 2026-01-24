@@ -28,6 +28,8 @@ import uz.hemis.domain.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import uz.hemis.api.legacy.util.CubaFilterHelper;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -72,6 +74,7 @@ public class UniversityDepartmentEntityController {
 
     private final UniversityDepartmentRepository repository;
     private final UserRepository userRepository;
+    private final CubaFilterHelper filterHelper;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -349,12 +352,14 @@ public class UniversityDepartmentEntityController {
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @Parameter(description = "Filter (CUBA format JSON)")
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @Parameter(description = "null qiymatlarni ham qaytarish")
             @RequestParam(required = false) String returnNulls,
             @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search UniversityDepartment - filter: {}", filter);
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
         // Parse filter from URL-encoded JSON string
         Map<String, Object> filterMap = parseFilterFromString(filter);
@@ -362,15 +367,18 @@ public class UniversityDepartmentEntityController {
         // ✅ OLD-HEMIS COMPATIBLE: university.code filter'ni E'TIBORSIZ QOLDIRISH
         // OLD-HEMIS da /search endpoint BARCHA universitetlardan natija qaytaradi
         // Faqat status va boshqa filterlar qo'llaniladi
-        List<UniversityDepartment> entities = repository.findAll();
+        List<UniversityDepartment> allEntities = repository.findAll();
         log.debug("OLD-HEMIS compatible: returning all departments, filter will be applied");
 
         // Apply CUBA filter conditions (status va boshqa filterlar)
         // university.code filter ham qo'llaniladi agar kerak bo'lsa
-        List<UniversityDepartment> filtered = applyFilter(entities, filterMap);
+        List<UniversityDepartment> filtered = applyFilter(allEntities, filterMap);
+
+        // Apply pagination
+        List<UniversityDepartment> result = filterHelper.applyPagination(filtered, offset, limit);
 
         Boolean returnNullsBool = parseBoolean(returnNulls);
-        return ResponseEntity.ok(filtered.stream()
+        return ResponseEntity.ok(result.stream()
                 .map(e -> toMap(e, returnNullsBool, view))
                 .collect(Collectors.toList()));
     }
@@ -441,20 +449,28 @@ public class UniversityDepartmentEntityController {
     )
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @Parameter(description = "null qiymatlarni ham qaytarish")
             @RequestParam(required = false) String returnNulls,
             @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search UniversityDepartment - body: {}", body);
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+
+        log.debug("POST search - offset: {}, limit: {}, body: {}", effectiveOffset, effectiveLimit, body);
 
         // ✅ OLD-HEMIS COMPATIBLE: university.code filter'ni E'TIBORSIZ QOLDIRISH
         // OLD-HEMIS da /search endpoint BARCHA universitetlardan natija qaytaradi
-        List<UniversityDepartment> entities = repository.findAll();
+        List<UniversityDepartment> allEntities = repository.findAll();
         log.debug("OLD-HEMIS compatible: returning all departments, filter will be applied");
 
         // Apply CUBA filter conditions from request body (university.code e'tiborsiz qoldiriladi)
-        List<UniversityDepartment> filtered = applyFilter(entities, body);
+        List<UniversityDepartment> filtered = applyFilter(allEntities, body);
+
+        // Apply pagination
+        List<UniversityDepartment> result = filterHelper.applyPagination(filtered, effectiveOffset, effectiveLimit);
 
         // Extract view from body if not in query param
         final String effectiveView;
@@ -467,7 +483,7 @@ public class UniversityDepartmentEntityController {
         }
 
         Boolean returnNullsBool = parseBoolean(returnNulls);
-        return ResponseEntity.ok(filtered.stream()
+        return ResponseEntity.ok(result.stream()
                 .map(e -> toMap(e, returnNullsBool, effectiveView))
                 .collect(Collectors.toList()));
     }

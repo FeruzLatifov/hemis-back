@@ -17,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.domain.entity.ContractStatistics;
 import uz.hemis.domain.entity.University;
 import uz.hemis.domain.entity.UniversityDepartment;
@@ -59,6 +60,7 @@ public class ContractStatisticsEntityController {
     private final UniversityRepository universityRepository;
     private final UniversityDepartmentRepository universityDepartmentRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final CubaFilterHelper filterHelper;
 
     private static final String ENTITY_NAME = "hemishe_RContractStatistics";
 
@@ -197,15 +199,22 @@ public class ContractStatisticsEntityController {
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @Parameter(description = "CUBA filter expression")
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
             @Parameter(description = "CUBA view nomi")
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search contract statistics with filter: {}", filter);
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
-        List<ContractStatistics> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        List<ContractStatistics> allEntities = repository.findAll();
+        List<ContractStatistics> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
                 .map(e -> toMap(e, returnNulls))
                 .collect(Collectors.toList()));
     }
@@ -231,16 +240,27 @@ public class ContractStatisticsEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
     })
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
             @Parameter(description = "CUBA view nomi")
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search contract statistics with filter: {}", filter);
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
 
-        List<ContractStatistics> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<ContractStatistics> allEntities = repository.findAll();
+        List<ContractStatistics> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
                 .map(e -> toMap(e, returnNulls))
                 .collect(Collectors.toList()));
     }
