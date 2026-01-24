@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("/api/v1/web")
-@Tag(name = "Language API", description = "Language management - Available languages, locale settings")
+@Tag(name = "14.Tillar", description = "Language management - Available languages, locale settings")
 @RequiredArgsConstructor
 @Slf4j
 public class WebLanguageController {

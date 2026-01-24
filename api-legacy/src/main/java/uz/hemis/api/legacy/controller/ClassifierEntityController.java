@@ -17,7 +17,7 @@ import uz.hemis.domain.repository.ClassifierRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Tag(name = "Classifiers")
+@Tag(name = "13.Klassifikatorlar", description = "Klassifikatorlar entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_HClassifier")
 @RequiredArgsConstructor

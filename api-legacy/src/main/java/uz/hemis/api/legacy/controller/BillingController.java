@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Tag(name = "Billing")
+@Tag(name = "63.Billing", description = "To'lov hisob-kitobi")
 @RestController
 @RequestMapping("/app/rest/v2/billing")
 @RequiredArgsConstructor

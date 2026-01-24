@@ -18,6 +18,7 @@ import uz.hemis.api.legacy.util.CubaFilterHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.http.HttpStatus;
 
 /**
  * Specialty Entity Controller (CUBA Pattern)
@@ -25,7 +26,7 @@ import java.util.stream.Collectors;
  *
  * CUBA Platform REST API compatible controller
  */
-@Tag(name = "Specialties")
+@Tag(name = "50.Mutaxassisliklar", description = "Mutaxassisliklar entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EUniversitySpeciality")
 @RequiredArgsConstructor
@@ -163,17 +164,65 @@ public class SpecialtyEntityController {
             .collect(Collectors.toList()));
     }
 
+    /**
+     * Create specialty (single object)
+     *
+     * OLD-HEMIS: Bitta object qabul qiladi
+     */
     @PostMapping
-    @Operation(summary = "Create specialty", description = "Creates a new specialty")
-    public ResponseEntity<Map<String, Object>> create(
-            @RequestBody Map<String, Object> body,
+    @Operation(summary = "Create specialty", description = "Creates a new specialty (OLD-HEMIS format)")
+    public ResponseEntity<?> create(
+            @RequestBody Object body,
             @RequestParam(required = false) Boolean returnNulls) {
 
         log.debug("POST create new specialty");
-        Specialty entity = new Specialty();
-        updateFromMap(entity, body);
-        Specialty saved = repository.save(entity);
-        return ResponseEntity.ok(toMap(saved, returnNulls));
+
+        // OLD-HEMIS: Array yoki single object qabul qilishi mumkin
+        if (body instanceof List) {
+            // Array format - OLD-HEMIS batch create
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> items = (List<Map<String, Object>>) body;
+            List<Map<String, Object>> results = new ArrayList<>();
+
+            for (Map<String, Object> item : items) {
+                Specialty entity = new Specialty();
+                updateFromMap(entity, item);
+                Specialty saved = repository.save(entity);
+                results.add(toCreateResponse(saved));
+            }
+
+            // OLD-HEMIS: 201 Created + Array response
+            return ResponseEntity.status(201).body(results);
+        } else {
+            // Single object
+            @SuppressWarnings("unchecked")
+            Map<String, Object> item = (Map<String, Object>) body;
+            Specialty entity = new Specialty();
+            updateFromMap(entity, item);
+            Specialty saved = repository.save(entity);
+            return ResponseEntity.status(201).body(toCreateResponse(saved));
+        }
+    }
+
+    /**
+     * OLD-HEMIS POST response formati
+     *
+     * {
+     *     "_entityName": "hemishe_EUniversitySpeciality",
+     *     "_instanceName": "2223 test2223",
+     *     "id": "7f797721-93bf-0518-49eb-49ddf26dd124"
+     * }
+     */
+    private Map<String, Object> toCreateResponse(Specialty entity) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("_entityName", ENTITY_NAME);
+
+        String instanceName = (entity.getCode() != null ? entity.getCode() : "") + " " +
+                              (entity.getName() != null ? entity.getName() : "");
+        map.put("_instanceName", instanceName.trim());
+        map.put("id", entity.getId() != null ? entity.getId().toString() : null);
+
+        return map;
     }
 
     private Map<String, Object> toMap(Specialty entity, Boolean returnNulls) {
@@ -206,8 +255,79 @@ public class SpecialtyEntityController {
         return map;
     }
 
+    /**
+     * OLD-HEMIS request formatidan entity yaratish
+     *
+     * OLD-HEMIS request:
+     * {
+     *     "university": {"code": "999"},
+     *     "faculty": {"code": "999-102"},
+     *     "educationType": {"code": "11"},
+     *     "educationYear": {"code": "2021"},
+     *     "specialityCode": "2223",
+     *     "specialityName": "test2223",
+     *     "active": true
+     * }
+     */
+    @SuppressWarnings("unchecked")
     private void updateFromMap(Specialty entity, Map<String, Object> map) {
-        // TODO: Add specific field mappings based on entity properties
+        // specialityCode -> code
+        if (map.containsKey("specialityCode")) {
+            entity.setCode((String) map.get("specialityCode"));
+        } else if (map.containsKey("code")) {
+            entity.setCode((String) map.get("code"));
+        }
+
+        // specialityName -> name
+        if (map.containsKey("specialityName")) {
+            entity.setName((String) map.get("specialityName"));
+        } else if (map.containsKey("name")) {
+            entity.setName((String) map.get("name"));
+        }
+
+        // university.code -> university
+        if (map.containsKey("university") && map.get("university") instanceof Map) {
+            Map<String, Object> univ = (Map<String, Object>) map.get("university");
+            if (univ.containsKey("code")) {
+                entity.setUniversity((String) univ.get("code"));
+            }
+        } else if (map.containsKey("_university")) {
+            entity.setUniversity((String) map.get("_university"));
+        }
+
+        // faculty.code -> faculty (UUID ga aylantirib saqlaymiz yoki String)
+        if (map.containsKey("faculty") && map.get("faculty") instanceof Map) {
+            Map<String, Object> fac = (Map<String, Object>) map.get("faculty");
+            if (fac.containsKey("code")) {
+                // Faculty code string sifatida saqlanadi (legacy compatibility)
+                // entity.setFaculty(...) - bu UUID, legacy uchun alohida field kerak
+            }
+        }
+
+        // educationType.code -> educationType
+        if (map.containsKey("educationType") && map.get("educationType") instanceof Map) {
+            Map<String, Object> edType = (Map<String, Object>) map.get("educationType");
+            if (edType.containsKey("code")) {
+                entity.setEducationType((String) edType.get("code"));
+            }
+        } else if (map.containsKey("_educationType")) {
+            entity.setEducationType((String) map.get("_educationType"));
+        }
+
+        // active
+        if (map.containsKey("active")) {
+            Object activeVal = map.get("active");
+            if (activeVal instanceof Boolean) {
+                entity.setActive((Boolean) activeVal);
+            } else if (activeVal instanceof String) {
+                entity.setActive(Boolean.parseBoolean((String) activeVal));
+            }
+        }
+
+        // shortName
+        if (map.containsKey("shortName")) {
+            entity.setShortName((String) map.get("shortName"));
+        }
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

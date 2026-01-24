@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Social Protection")
+@Tag(name = "61.Ijtimoiy himoya", description = "Ijtimoiy himoya integratsiyasi")
 @RestController
 @RequestMapping("/app/rest/v2/integrations/social-protection")
 @RequiredArgsConstructor

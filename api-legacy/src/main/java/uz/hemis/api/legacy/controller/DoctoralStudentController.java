@@ -26,7 +26,7 @@ import java.util.UUID;
  * This is a modern API controller (not legacy CUBA format).
  * For legacy CUBA format, see DoctoralStudentEntityController.
  */
-@Tag(name = "Doctoral Students", description = "Doktorant talabalar API (zamonaviy format)")
+@Tag(name = "04.Talaba", description = "Doktorant talabalar API (zamonaviy format)")
 @RestController
 @RequestMapping("/app/rest/v2/doctoral-students")
 @RequiredArgsConstructor

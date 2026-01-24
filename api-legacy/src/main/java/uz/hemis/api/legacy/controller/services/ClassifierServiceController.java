@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * @since 2.0.0
  */
-@Tag(name = "Klassifikatorlar", description = "Tizim klassifikatorlari (справочники) - davlat, viloyat, tuman, va boshqalar")
+@Tag(name = "70.Qo'shimcha xizmatlar", description = "Qo'shimcha xizmatlar - klassifikatorlar, diploma tekshirish va boshqalar")
 @RestController
 @RequestMapping("/services/classifiers")
 @RequiredArgsConstructor

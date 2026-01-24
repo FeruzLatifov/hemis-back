@@ -26,7 +26,7 @@ import java.util.UUID;
  *
  * @since 1.0.0
  */
-@Tag(name = "Scholarships")
+@Tag(name = "62.Stipendiya", description = "Stipendiya boshqaruvi")
 @RestController
 @RequestMapping("/app/rest/v2/scholarships")
 @RequiredArgsConstructor

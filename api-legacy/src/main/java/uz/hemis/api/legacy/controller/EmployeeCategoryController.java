@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  *
  * @since 2.0.0
  */
-@Tag(name = "Employee Categories")
+@Tag(name = "06.Xodim", description = "Xodim kategoriyalari")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_HEmployeeCategory")
 @RequiredArgsConstructor

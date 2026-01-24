@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_RIAdministrativeStudent3           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_RIAdministrativeStudent3           - Create new
  */
-@Tag(name = "Administrative Reports - Students")
+@Tag(name = "42.Inspeksiya administrative student3 - Bitiruvchilar band bo'lishi", description = "Bitiruvchilar bandligi hisoboti")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RIAdministrativeStudent3")
 @RequiredArgsConstructor

@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Tag(name = "Academic Reports")
+@Tag(name = "32.Akademik", description = "Akademik hisobotlar")
 @RestController
 @RequestMapping("/app/rest/v2/academic-reports")
 @RequiredArgsConstructor

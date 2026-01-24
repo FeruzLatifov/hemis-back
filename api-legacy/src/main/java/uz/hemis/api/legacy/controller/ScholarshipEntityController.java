@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * Scholarship Entity Controller (CUBA Pattern)
  * Entity: hemishe_EStudentScholarshipFull
  */
-@Tag(name = "Scholarships")
+@Tag(name = "62.Stipendiya", description = "Stipendiya entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EStudentScholarshipFull")
 @RequiredArgsConstructor

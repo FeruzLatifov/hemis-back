@@ -19,7 +19,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.UUID;
 
-@Tag(name = "Enrollment")
+@Tag(name = "04.Talaba", description = "Talaba qabul qilish")
 @RestController
 @RequestMapping("/app/rest/v2/enrollments")
 @RequiredArgsConstructor

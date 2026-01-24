@@ -28,7 +28,7 @@ import uz.hemis.service.UniversityService;
  */
 @RestController
 @RequestMapping("/services/university")
-@Tag(name = "University Service API", description = "CUBA compatible university service endpoints")
+@Tag(name = "67.OTM Config", description = "Universitet konfiguratsiyasi xizmatlari")
 @RequiredArgsConstructor
 @Slf4j
 public class UniversityServiceController {

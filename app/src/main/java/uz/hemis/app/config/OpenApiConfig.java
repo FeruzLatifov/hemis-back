@@ -30,9 +30,9 @@ import java.util.List;
  *    - External APIs: Tashqi tizimlar (S2S integration)
  *    - All APIs: To'liq hujjat (default)
  *
- * 2. Tag Hierarchy (12 category)
- *    - Emoji prefixes for visual clarity
- *    - Logical grouping by domain
+ * 2. Tag Hierarchy (70 kategoriya - endpoint_tester.html bilan mos)
+ *    - Raqamlangan kategoriyalar (01-70)
+ *    - endpoint_tester.html bilan sinxronlashtirilgan
  *    - Clear, concise names
  *
  * 3. Documentation Standards
@@ -136,23 +136,17 @@ public class OpenApiConfig {
 
                 ---
 
-                ## 🏷️ API Tags (Resource-Based)
+                ## 🏷️ API Tags (70 kategoriya)
 
-                APIs are organized by **specific resources** (45+ tags):
+                APIs are organized by **numbered categories** (01-70):
 
-                **Students:** Students | Student Status | Enrollment
-                **Teachers:** Teachers | Employee Categories | Employee Jobs | Employment
-                **Organization:** Departments | Faculty | Groups
-                **Academic:** Courses | Specialties | Curriculum | Grades | Exams | Schedule | Attendance
-                **Documents:** Diplomas | Diploma Blanks | Certificates | QR Diplomas | Transcripts
-                **Universities:** Universities | University Settings | University Additional
-                **Financial:** Contracts | Scholarships | Billing
-                **Science:** Doctoral Students | Dissertation Defense | Research Activity | Projects | Publications
-                **Reports:** Academic Reports | Economic Reports | Administrative Reports
-                **Integrations:** DTM | Tax | UzASBO | OAK | Social Protection | Contract Integration
-                **System:** Authentication | Classifiers | Mail | Health | Captcha | Translation | Services
+                **01-15:** Token, Captcha, Passport, Talaba, O'qituvchi, Xodim, OTM, Klassifikatorlar
+                **16-30:** Ilmiy doktorantlar, Dissertatsiya, Loyihalar, Nashrlar, Mualliflar
+                **31-44:** Akademik hisobotlar, Inspeksiya, Statistika
+                **48-57:** Mehnat, Fakultetlar, Guruhlar, Mail, DTM, OAK
+                **58-70:** UzASBO, Soliq, Ijtimoiy himoya, Stipendiya, Billing, BIMM, Sertifikat
 
-                Each resource has its **own dedicated tag** for easy API discovery.
+                Barcha kategoriyalar **endpoint_tester.html** bilan sinxronlashtirilgan.
 
                 ---
 
@@ -271,183 +265,90 @@ public class OpenApiConfig {
 
     /**
      * =====================================================
-     * API Tags - SPECIFIC RESOURCE-BASED TAGS
+     * API Tags - endpoint_tester.html BILAN MOSLASHTIRILGAN
      * =====================================================
      *
-     * Senior Developer Principle:
-     * - Each resource gets its OWN dedicated tag
-     * - No broad grouping (e.g., NOT "Academic" with 14 controllers)
-     * - Clear, specific naming for easy API discovery
-     * - Professional, no emojis in production
-     *
-     * Total: 45+ specific tags
+     * Total: 70 kategoriya (endpoint_tester.html dan)
      * =====================================================
      */
     private List<Tag> apiTags() {
         return Arrays.asList(
-            // === AUTHENTICATION ===
-            new Tag().name("01.Token")
-                .description("OAuth2 autentifikatsiya - token olish, yangilash. Old-hemis loyihasidagi foydalanuvchilar uchun uzluksiz xizmat."),
-            new Tag().name("Authentication")
-                .description("Token olish, login, logout, refresh token, OAuth2"),
+            // === 01-15: ASOSIY TIZIM ===
+            new Tag().name("01.Token").description("OAuth2 autentifikatsiya - token olish, yangilash"),
+            new Tag().name("02.Captcha").description("Captcha generatsiya va validatsiya"),
+            new Tag().name("03.Passport ma'lumotlari").description("GUVD passport ma'lumotlarini olish va tekshirish"),
+            new Tag().name("04.Talaba").description("Talabalar CRUD operatsiyalari"),
+            new Tag().name("05.O'qituvchi").description("O'qituvchilar ma'lumotlari"),
+            new Tag().name("06.Xodim lavozimlari").description("Xodim lavozim CRUD operatsiyalari"),
+            new Tag().name("07.OTM bo'linmalari").description("Kafedra va bo'limlar"),
+            new Tag().name("08.OTM bo'linma turlari").description("Bo'linma turlari klassifikatori"),
+            new Tag().name("09.OTM xodimlari kategoriyasi").description("Xodim kategoriyalari"),
+            new Tag().name("10.Talaba holati").description("Talaba holati klassifikatori"),
+            new Tag().name("11.Fuqarolik holatlari").description("Fuqarolik klassifikatori"),
+            new Tag().name("12.Diplomlar").description("Diplom berish va tekshirish"),
+            new Tag().name("13.Klassifikatorlar").description("Umumiy klassifikatorlar"),
+            new Tag().name("14.Tarjima").description("Tillar va tarjima"),
+            new Tag().name("15.OTM").description("OTM asosiy ma'lumotlari"),
 
-            // === CAPTCHA ===
-            new Tag().name("02.Captcha")
-                .description("🔢 Captcha generatsiya va validatsiya - login sahifasi uchun xavfsizlik. 5 xonali numeric captcha, 300 soniya amal qiladi."),
+            // === 16-30: ILMIY FAOLIYAT ===
+            new Tag().name("16.Ilmiy doktorant talabalari").description("Doktorantlar ro'yxati"),
+            new Tag().name("17.Ilmiy dissertasiya himoyalari").description("Dissertatsiya himoyalari"),
+            new Tag().name("18.Ilmiy faollik").description("Ilmiy faoliyat ko'rsatkichlari"),
+            new Tag().name("19.Ilmiy loyihalar").description("Ilmiy loyihalar"),
+            new Tag().name("20.Ilmiy loyiha meta ma'lumotlari").description("Loyiha qo'shimcha ma'lumotlari"),
+            new Tag().name("21.Ilmiy loyiha ijrochilari").description("Loyiha ijrochilari"),
+            new Tag().name("22.Ilmiy nashrlar").description("Ilmiy maqola va nashrlar"),
+            new Tag().name("23.Ilmiy ishlanmalar").description("Ilmiy ishlanmalar"),
+            new Tag().name("24.Ilmiy uslubiy nashlar").description("Uslubiy nashrlar"),
+            new Tag().name("25.Ilmiy nashr mualliflari meta ma'lumotlari").description("Muallif ma'lumotlari"),
+            new Tag().name("26.Ilmiy nashrlarni baholash mezonlari").description("Baholash mezonlari"),
+            new Tag().name("27.Ilmiy uslubiy nashr turlari").description("Nashr turlari klassifikatori"),
+            new Tag().name("28.Ilmiy doktorantura talabalari statusi").description("Doktorant holati"),
+            new Tag().name("29.Ilmiy doktorantura talabalari turlari").description("Doktorant turlari"),
+            new Tag().name("30.Ilmiy nashr etish hududlari turlari").description("Nashr hududlari"),
 
-            // === PASSPORT INTEGRATION ===
-            new Tag().name("03.Passport ma'lumotlari")
-                .description("📋 GUVD passport ma'lumotlarini olish va tekshirish xizmatlari. PINFL, seria/raqam va tug'ilgan sana orqali fuqarolarning passport ma'lumotlarini GUVD e-gov API orqali olish imkonini beradi."),
+            // === 31-44: AKADEMIK HISOBOTLAR VA INSPEKSIYA ===
+            new Tag().name("31.Akademik hisobotlar chetlashgan talabalar").description("Chetlashgan talabalar hisoboti"),
+            new Tag().name("32.Akademik hisobotlar akademik guruhlar").description("Guruhlar hisoboti"),
+            new Tag().name("33.Akademik hisobotlar fanlar").description("Fanlar hisoboti"),
+            new Tag().name("34.Akademik hisobotlar o'zlashtirish").description("O'zlashtirish hisoboti"),
+            new Tag().name("35.Akademik hisobotlar davomat").description("Davomat hisoboti"),
+            new Tag().name("36.Shartnoma statistikasi").description("Shartnoma statistikasi"),
+            new Tag().name("37.Bandlik statistikasi").description("Mehnat bozori statistikasi"),
+            new Tag().name("38.Inspeksiya administrative teacher").description("O'qituvchi inspeksiyasi"),
+            new Tag().name("39.Xorijiy OTMda malaka oshirish").description("Xorijda malaka oshirish"),
+            new Tag().name("40.OTMda xorijiy o'qituvchilar").description("Xorijlik o'qituvchilar"),
+            new Tag().name("41.Inspeksiya administrative student2 - Akademik almashinuv").description("Akademik almashinuv"),
+            new Tag().name("42.Inspeksiya administrative student3 - Bitiruvchilar band bo'lishi").description("Bitiruvchilar bandligi"),
+            new Tag().name("43.Inspeksiya administrative student4 - Talaba olimpiadalari").description("Olimpiadalar"),
+            new Tag().name("44.Inspeksiya administrative StudentSport - Talaba sport yutuqlari").description("Sport yutuqlari"),
 
-            // === STUDENTS ===
-            new Tag().name("Students")
-                .description("Talabalar CRUD: qidirish, yaratish, yangilash, o'chirish, GPA hisoblash"),
-            new Tag().name("Student Status")
-                .description("Talaba holati: aktiv, akademik ta'til, o'qishdan chetlashtirilgan, bitirgan"),
-            new Tag().name("Enrollment")
-                .description("Qabul jarayoni: arizalar, ro'yxatga olish, qabul qilish"),
+            // === 48-57: XIZMATLAR ===
+            new Tag().name("48.Mehnat").description("Mehnat bozori xizmatlari"),
+            new Tag().name("49.Fakultetlar").description("Fakultetlar xizmati"),
+            new Tag().name("50.Mutaxassisliklar").description("Mutaxassisliklar xizmati"),
+            new Tag().name("51.Guruhlar").description("Guruhlar xizmati"),
+            new Tag().name("52.Mail").description("Email yuborish xizmati"),
+            new Tag().name("53.Healthcheck").description("Tizim salomatligi tekshiruvi"),
+            new Tag().name("54.Transkript").description("Transkript xizmati"),
+            new Tag().name("55.DTM").description("DTM integratsiya - mandat ma'lumotlari"),
+            new Tag().name("56.OAK").description("OAK integratsiya - ilmiy darajalar"),
+            new Tag().name("57.Contract").description("Shartnoma xizmati"),
 
-            // === TEACHERS & EMPLOYEES ===
-            new Tag().name("Teachers")
-                .description("O'qituvchilar: shaxsiy ma'lumotlar, akademik daraja, malaka oshirish"),
-            new Tag().name("Employee Categories")
-                .description("Xodim toifalari: professor, dotsent, o'qituvchi, assistent"),
-            new Tag().name("Employee Jobs")
-                .description("Xodim lavozimlar: asosiy, o'rindosh, soatbay, ichki o'rindosh"),
-            new Tag().name("Employment")
-                .description("Mehnatga joylashish: shartnomalar, ish joyi, bandlik ma'lumotlari"),
-
-            // === ORGANIZATION STRUCTURE ===
-            new Tag().name("Departments")
-                .description("Kafedra va bo'limlar: hierarchiya, xodimlar, fakultetga bog'lash"),
-            new Tag().name("Faculty")
-                .description("Fakultetlar: asosiy ma'lumotlar, dekanlar, tuzilma"),
-            new Tag().name("Registry - Faculties")
-                .description("Fakultetlar Reestri: lazy tree, pagination, search, export (Frontend UI API)"),
-            new Tag().name("Groups")
-                .description("O'quv guruhlari: talabalar ro'yxati, yo'nalish, kurs"),
-
-            // === ACADEMIC PROCESS ===
-            new Tag().name("Courses")
-                .description("Fanlar: o'quv fanlari, soat hajmi, kredit, pre-requisite"),
-            new Tag().name("Specialties")
-                .description("Mutaxassisliklar: yo'nalishlar, shifr, ta'lim turi"),
-            new Tag().name("Curriculum")
-                .description("O'quv rejalari: fanlar ro'yxati, kreditslar, semestr bo'yicha taqsimot"),
-            new Tag().name("Grades")
-                .description("Baholar: oraliq nazorat, yakuniy nazorat, GPA"),
-            new Tag().name("Exams")
-                .description("Imtihonlar: jadvali, o'tkazish, natijalar"),
-            new Tag().name("Schedule")
-                .description("Dars jadvali: kunlik, haftalik, oylik jadval"),
-            new Tag().name("Attendance")
-                .description("Davomat: yo'qlama, kechikish, sababsiz qoldirish"),
-
-            // === DOCUMENTS ===
-            new Tag().name("Diplomas")
-                .description("Diplomlar: berish, ro'yxat, tekshirish, ma'lumot olish"),
-            new Tag().name("Diploma Blanks")
-                .description("Diplom blanklari: mavjudlik, tarqatish, hisobotlar"),
-            new Tag().name("Certificates")
-                .description("Sertifikatlar: o'quv, malaka oshirish, tadbirlar"),
-            new Tag().name("QR Diplomas")
-                .description("QR kodli diplomlar: yaratish, tekshirish, validatsiya"),
-            new Tag().name("Transcripts")
-                .description("Akademik ma'lumotlar: baholar, kreditlar, GPA"),
-
-            // === UNIVERSITY MANAGEMENT ===
-            new Tag().name("Universities")
-                .description("OTM ma'lumotlari: asosiy ma'lumotlar, rektor, joylashuv"),
-            new Tag().name("University Settings")
-                .description("OTM sozlamalari: semestr, akademik yil, parametrlar"),
-            new Tag().name("University Additional")
-                .description("OTM qo'shimcha: infratuzilma, resurslar, imkoniyatlar"),
-            new Tag().name("University Department Types")
-                .description("OTM bo'lim turlari: kafedra, fakultet, bo'lim, markaz"),
-
-            // === FINANCIAL ===
-            new Tag().name("Contracts")
-                .description("Shartnomalar: to'lov, kontrakt, grant, kvota"),
-            new Tag().name("Scholarships")
-                .description("Stipendiyalar: akademik, ijtimoiy, mahsus stipendiya"),
-            new Tag().name("Billing")
-                .description("To'lovlar: faktura, to'lov tarixi, qarzdorlik"),
-
-            // === SCIENCE & RESEARCH ===
-            new Tag().name("Doctoral Students")
-                .description("Doktorantlar: qabul, ilmiy rahbar, dissertatsiya mavzusi"),
-            new Tag().name("Dissertation Defense")
-                .description("Dissertatsiya himoyasi: ilmiy kengash, rad etilgan, himoya qilingan"),
-            new Tag().name("Research Activity")
-                .description("Ilmiy faoliyat: loyihalar, grantlar, tadqiqotlar"),
-            new Tag().name("Projects")
-                .description("Ilmiy loyihalar: amaliy, fundamental, xalqaro"),
-            new Tag().name("Publications - Methodical")
-                .description("Metodik nashrlar: darslik, o'quv qo'llanma, uslubiy ko'rsatma"),
-            new Tag().name("Publications - Scientific")
-                .description("Ilmiy nashrlar: maqola, monografiya, patent"),
-            new Tag().name("Publication Authors")
-                .description("Nashrilar mualliflari: asosiy muallif, hammuallif"),
-            new Tag().name("Publication Properties")
-                .description("Nashrlar xususiyatlari: impakt-faktor, indeks, rang"),
-
-            // === LABOR & STATISTICS ===
-            new Tag().name("Labor Statistics")
-                .description("Mehnat statistikasi: bo'sh ish o'rinlar, bandlik darajasi"),
-
-            // === INFRASTRUCTURE ===
-            new Tag().name("ICT Equipment")
-                .description("IKT jihozlar: kompyuter, server, tarmoq"),
-            new Tag().name("Laboratories")
-                .description("Laboratoriyalar: o'quv, ilmiy, amaliy"),
-            new Tag().name("Education Materials")
-                .description("O'quv materiallari: darslik, qo'llanma, multimedia"),
-
-            // === REPORTS ===
-            new Tag().name("Academic Reports")
-                .description("Akademik hisobotlar: talabalar, baholar, o'zlashtirish"),
-            new Tag().name("Economic Reports")
-                .description("Iqtisodiy hisobotlar: moliya, xarajatlar, daromad"),
-            new Tag().name("Administrative Reports - Students")
-                .description("Ma'muriy hisobotlar - Talabalar: ro'yxat, statistika, monitoring"),
-            new Tag().name("Administrative Reports - Employees")
-                .description("Ma'muriy hisobotlar - Xodimlar: shtat, ish haqi, ish vaqti"),
-
-            // === INSPECTION ===
-            new Tag().name("Inspection")
-                .description("Nazorat va inspeksiya: tekshirish, tavsiyalar, xulosalar"),
-
-            // === EXTERNAL INTEGRATIONS ===
-            new Tag().name("DTM Integration")
-                .description("DTM integratsiya: passport ma'lumotlari, jismoniy shaxs"),
-            new Tag().name("Tax Integration")
-                .description("Soliq integratsiya: INN, korxona, soliq to'lovchi"),
-            new Tag().name("Contract Integration")
-                .description("Shartnoma integratsiya: ro'yxat, holat, to'lov"),
-            new Tag().name("UzASBO Integration")
-                .description("UzASBO integratsiya: ta'lim muassasalari reestri"),
-            new Tag().name("OAK Integration")
-                .description("OAK integratsiya: ilmiy darajalar, dissertatsiyalar"),
-            new Tag().name("Social Protection")
-                .description("Ijtimoiy himoya: imtiyozlar, nafaqalar, to'lovlar"),
-
-            // === UTILITIES & SYSTEM ===
-            new Tag().name("Classifiers")
-                .description("Klassifikatorlar: davlat, shahar, tuman, til, millat"),
-            new Tag().name("Citizenship")
-                .description("Fuqarolik: O'zbekiston, chet el fuqarolari"),
-            new Tag().name("Mail")
-                .description("Pochta xizmati: email yuborish, xabarnomalar"),
-            new Tag().name("Health")
-                .description("Health check: tizim holati, database, xotira"),
-            new Tag().name("Captcha")
-                .description("Captcha: yaratish, tekshirish, validatsiya"),
-            new Tag().name("Translation")
-                .description("Tarjima: til, matn, xabarlar"),
-            new Tag().name("Services")
-                .description("Xizmatlar: mijoz xizmatlari, CUBA service method'lar"),
-            new Tag().name("Legacy Operations")
-                .description("Legacy operatsiyalar: CUBA/JDBC direct operations, ma'lumotlar ko'chirish")
+            // === 58-70: INTEGRATSIYALAR ===
+            new Tag().name("58.UzASBO").description("UzASBO integratsiya - stipendiya"),
+            new Tag().name("59.Test").description("Test endpointlar"),
+            new Tag().name("60.Soliq").description("Soliq integratsiya - ijara shartnomasi"),
+            new Tag().name("61.Ijtimoiy himoya").description("Ijtimoiy himoya integratsiya"),
+            new Tag().name("62.Stipendiya").description("Stipendiya boshqaruvi"),
+            new Tag().name("63.Billing").description("Billing va to'lov xizmatlari"),
+            new Tag().name("64.OTM").description("OTM xizmatlari - talaba info"),
+            new Tag().name("65.Xo'jalik hisobot").description("Xo'jalik hisobotlari"),
+            new Tag().name("66.BIMM").description("BIMM integratsiya"),
+            new Tag().name("67.OTM Config").description("OTM konfiguratsiyasi"),
+            new Tag().name("68.Sertifikat").description("Sertifikatlar boshqaruvi"),
+            new Tag().name("69.Amaliyot").description("Amaliyot boshqaruvi"),
+            new Tag().name("70.Qo'shimcha xizmatlar").description("Qo'shimcha xizmatlar")
         );
     }
 
@@ -573,8 +474,8 @@ public class OpenApiConfig {
         return GroupedOpenApi.builder()
             .group("university")
             .displayName("Universitet va Tashkilotlar API")
-            .pathsToMatch("/app/rest/v2/**")
-            .pathsToExclude("/actuator/**", "/error")
+            .pathsToMatch("/app/rest/v2/**", "/services/**", "/entities/**")
+            .pathsToExclude("/actuator/**", "/error", "/api/v1/web/**")
             .addOpenApiCustomizer(openApi -> {
                 // Sodda description - ortiqcha ma'lumotlar olib tashlangan
                 openApi.info(new Info()

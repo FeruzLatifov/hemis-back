@@ -20,7 +20,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.List;
 import java.util.UUID;
 
-@Tag(name = "Groups")
+@Tag(name = "51.Guruhlar", description = "Guruhlar boshqaruvi")
 @RestController
 @RequestMapping("/app/rest/v2/groups")
 @RequiredArgsConstructor

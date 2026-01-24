@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_RLaboratories           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_RLaboratories           - Create new
  */
-@Tag(name = "Laboratories")
+@Tag(name = "65.Xo'jalik hisobot", description = "Laboratoriyalar bilan ta'minlanganlik")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RLaboratories")
 @RequiredArgsConstructor

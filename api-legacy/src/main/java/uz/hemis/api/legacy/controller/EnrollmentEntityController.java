@@ -17,7 +17,7 @@ import uz.hemis.domain.repository.EnrollmentRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Tag(name = "Enrollment")
+@Tag(name = "04.Talaba", description = "Qabul entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EEnrollment")
 @RequiredArgsConstructor

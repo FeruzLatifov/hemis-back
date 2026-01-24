@@ -18,7 +18,7 @@ import uz.hemis.domain.repository.CourseRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Tag(name = "Courses")
+@Tag(name = "11.Fanlar", description = "Fanlar entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_ECourse")
 @RequiredArgsConstructor

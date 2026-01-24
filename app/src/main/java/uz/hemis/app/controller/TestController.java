@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Services")
+@Tag(name = "59.Test")
 @RestController
 @RequestMapping("/app/rest/v2/test")
 @RequiredArgsConstructor

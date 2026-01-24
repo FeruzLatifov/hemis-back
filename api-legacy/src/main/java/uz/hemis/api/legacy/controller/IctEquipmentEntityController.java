@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_RIctEquipment           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_RIctEquipment           - Create new
  */
-@Tag(name = "ICT Equipment")
+@Tag(name = "65.Xo'jalik hisobot", description = "AKT bilan jihozlanganlik")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_RIctEquipment")
 @RequiredArgsConstructor

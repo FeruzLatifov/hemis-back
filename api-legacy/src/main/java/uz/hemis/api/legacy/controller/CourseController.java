@@ -20,7 +20,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.List;
 import java.util.UUID;
 
-@Tag(name = "Courses")
+@Tag(name = "11.Fanlar", description = "Fanlar boshqaruvi")
 @RestController
 @RequestMapping("/app/rest/v2/courses")
 @RequiredArgsConstructor

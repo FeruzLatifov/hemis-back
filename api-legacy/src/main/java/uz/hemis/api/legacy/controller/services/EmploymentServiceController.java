@@ -21,7 +21,7 @@ import java.util.Map;
  *
  * @since 2.0.0
  */
-@Tag(name = "Bandlik", description = "Bitiruvchilar bandligi ma'lumotlari")
+@Tag(name = "48.Mehnat", description = "Mehnat va bandlik ma'lumotlari")
 @RestController
 @RequestMapping("/services/employment")
 @RequiredArgsConstructor

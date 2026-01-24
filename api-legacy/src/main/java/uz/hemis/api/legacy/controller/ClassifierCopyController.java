@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Classifiers")
+@Tag(name = "13.Klassifikatorlar", description = "Klassifikatorlar zaxira nusxasi")
 @RestController
 @RequestMapping("/app/rest/v2/classifiers-copy")
 @RequiredArgsConstructor

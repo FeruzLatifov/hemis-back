@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "Tax Integration")
+@Tag(name = "60.Soliq", description = "Soliq integratsiyasi")
 @RestController
 @RequestMapping("/app/rest/v2/integrations/tax")
 @RequiredArgsConstructor

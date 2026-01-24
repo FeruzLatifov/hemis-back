@@ -32,7 +32,7 @@ import java.util.*;
  *
  * @since 2.0.0
  */
-@Tag(name = "Diploma Service API", description = "CUBA compatible diploma verification and information service endpoints")
+@Tag(name = "70.Qo'shimcha xizmatlar", description = "Diploma tekshirish va ma'lumotlar xizmatlari")
 @RestController
 @RequestMapping("/services/diploma")
 @RequiredArgsConstructor

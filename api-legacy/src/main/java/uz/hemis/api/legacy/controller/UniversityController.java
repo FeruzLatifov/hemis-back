@@ -48,7 +48,7 @@ import java.util.List;
  *
  * @since 1.0.0
  */
-@Tag(name = "Universities")
+@Tag(name = "15.OTM", description = "Oliy ta'lim muassasalari")
 @SecurityRequirement(name = "apiKeyAuth")
 @RestController
 @RequestMapping("/app/rest/v2/universities")

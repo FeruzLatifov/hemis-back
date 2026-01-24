@@ -11,7 +11,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 import java.util.HashMap;
 import java.util.Map;
 
-@Tag(name = "OAK Integration")
+@Tag(name = "56.OAK", description = "OAK integratsiyasi")
 @RestController
 @RequestMapping("/app/rest/v2/integrations/oak")
 @RequiredArgsConstructor

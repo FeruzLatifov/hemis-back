@@ -18,7 +18,7 @@ import uz.hemis.api.legacy.util.CubaFilterHelper;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Tag(name = "Schedule")
+@Tag(name = "12.Dars jadvali", description = "Dars jadvali entity API")
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_ESchedule")
 @RequiredArgsConstructor
