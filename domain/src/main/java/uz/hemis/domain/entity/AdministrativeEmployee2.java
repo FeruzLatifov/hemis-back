@@ -6,7 +6,6 @@ import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 /**
  * Administrative Employee 2 Entity
@@ -23,18 +22,26 @@ import java.util.UUID;
 @Setter
 public class AdministrativeEmployee2 extends BaseEntity {
 
-    @Column(name = "_university", nullable = false)
-    private UUID university;
+    // Foreign keys - bazada VARCHAR sifatida saqlangan (OLD-HEMIS compatibility)
+    @Column(name = "_university")
+    private String university;
 
-    @Column(name = "_education_year", nullable = false)
-    private UUID educationYear;
+    @Column(name = "_education_year")
+    private String educationYear;
 
     @Column(name = "_employee")
-    private UUID employee;
+    private String employee;
 
     @Column(name = "_country")
-    private UUID country;
+    private String country;
 
+    @Column(name = "_internship_form")
+    private String internshipForm;
+
+    @Column(name = "_internship_type")
+    private String internshipType;
+
+    // Simple fields
     @Column(name = "foreign_university", length = 1024)
     private String foreignUniversity;
 
@@ -59,13 +66,6 @@ public class AdministrativeEmployee2 extends BaseEntity {
     @Column(name = "year_")
     private String year;
 
-    @Lob
-    @Column(name = "subject")
+    @Column(name = "subject", length = 1024)
     private String subject;
-
-    @Column(name = "_internship_form")
-    private UUID internshipForm;
-
-    @Column(name = "_internship_type")
-    private UUID internshipType;
 }

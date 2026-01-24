@@ -24,20 +24,20 @@ public interface AdministrativeEmployee1Repository extends JpaRepository<Adminis
     /**
      * Find by university
      */
-    List<AdministrativeEmployee1> findByUniversity(UUID university);
+    List<AdministrativeEmployee1> findByUniversity(String university);
 
     /**
      * Find by university and education year
      */
-    List<AdministrativeEmployee1> findByUniversityAndEducationYear(UUID university, UUID educationYear);
+    List<AdministrativeEmployee1> findByUniversityAndEducationYear(String university, String educationYear);
 
     /**
      * Find by university and education year (paginated)
      */
-    Page<AdministrativeEmployee1> findByUniversityAndEducationYear(UUID university, UUID educationYear, Pageable pageable);
+    Page<AdministrativeEmployee1> findByUniversityAndEducationYear(String university, String educationYear, Pageable pageable);
 
     /**
      * Count by university and education year
      */
-    long countByUniversityAndEducationYear(UUID university, UUID educationYear);
+    long countByUniversityAndEducationYear(String university, String educationYear);
 }

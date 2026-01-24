@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.domain.entity.Schedule;
 import uz.hemis.domain.repository.ScheduleRepository;
 
+import io.swagger.v3.oas.annotations.Parameter;
+import uz.hemis.api.legacy.util.CubaFilterHelper;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class ScheduleEntityController {
 
     private final ScheduleRepository repository;
+    private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_ESchedule";
 
     @GetMapping("/{entityId}")
@@ -50,15 +54,49 @@ public class ScheduleEntityController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Map<String, Object>>> searchGet(@RequestParam(required = false) String filter, @RequestParam(required = false) Boolean returnNulls) {
-        List<Schedule> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream().map(e -> toMap(e, returnNulls)).collect(Collectors.toList()));
+    public ResponseEntity<List<Map<String, Object>>> searchGet(
+            @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
+
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
+
+        List<Schedule> allEntities = repository.findAll();
+        List<Schedule> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
+            .map(e -> toMap(e, returnNulls))
+            .collect(Collectors.toList()));
     }
 
     @PostMapping("/search")
-    public ResponseEntity<List<Map<String, Object>>> searchPost(@RequestBody(required = false) Map<String, Object> filter, @RequestParam(required = false) Boolean returnNulls) {
-        List<Schedule> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream().map(e -> toMap(e, returnNulls)).collect(Collectors.toList()));
+    public ResponseEntity<List<Map<String, Object>>> searchPost(
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
+
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
+
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<Schedule> allEntities = repository.findAll();
+        List<Schedule> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
+            .map(e -> toMap(e, returnNulls))
+            .collect(Collectors.toList()));
     }
 
     @GetMapping

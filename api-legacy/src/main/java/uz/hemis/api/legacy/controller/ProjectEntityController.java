@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.domain.entity.Project;
 import uz.hemis.domain.repository.ProjectRepository;
 
+import uz.hemis.api.legacy.util.CubaFilterHelper;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,6 +54,7 @@ import java.util.stream.Collectors;
 public class ProjectEntityController {
 
     private final ProjectRepository repository;
+    private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_EProject";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
@@ -182,13 +185,20 @@ public class ProjectEntityController {
     @Operation(summary = "Loyihalarni qidirish (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search Project with filter: {}", filter);
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
-        List<Project> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        List<Project> allEntities = repository.findAll();
+        List<Project> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }
@@ -201,14 +211,25 @@ public class ProjectEntityController {
     @Transactional(readOnly = true)
     @Operation(summary = "Loyihalarni qidirish (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search Project with filter: {}", filter);
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
 
-        List<Project> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<Project> allEntities = repository.findAll();
+        List<Project> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls))
             .collect(Collectors.toList()));
     }

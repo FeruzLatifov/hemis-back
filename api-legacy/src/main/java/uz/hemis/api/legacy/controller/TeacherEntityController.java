@@ -20,6 +20,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 
+import uz.hemis.api.legacy.util.CubaFilterHelper;
+
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -56,6 +58,7 @@ public class TeacherEntityController {
 
     private final TeacherRepository repository;
     private final UserRepository userRepository;
+    private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_ETeacher";
 
     @GetMapping("/{entityId}")
@@ -126,13 +129,20 @@ public class TeacherEntityController {
     @Operation(summary = "O'qituvchilarni qidirish (GET)", description = "URL parametrlari orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("GET search teachers with filter: {}, view: {}", filter, view);
+        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
-        List<Teacher> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        List<Teacher> allEntities = repository.findAll();
+        List<Teacher> result = filterHelper.applyFilterAndPagination(
+            allEntities, filter, offset, limit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
@@ -141,14 +151,25 @@ public class TeacherEntityController {
     @Transactional(readOnly = true)
     @Operation(summary = "O'qituvchilarni qidirish (POST)", description = "JSON filter orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
+            @RequestBody(required = false) Map<String, Object> body,
+            @Parameter(description = "Offset") @RequestParam(required = false) Integer offset,
+            @Parameter(description = "Limit") @RequestParam(required = false) Integer limit,
             @RequestParam(required = false) Boolean returnNulls,
             @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("POST search teachers with filter: {}, view: {}", filter, view);
+        int effectiveOffset = filterHelper.extractInt(body, "offset", offset, 0);
+        int effectiveLimit = filterHelper.extractInt(body, "limit", limit, 50);
+        String filterJson = filterHelper.extractFilterFromBody(body);
 
-        List<Teacher> entities = repository.findAll();
-        return ResponseEntity.ok(entities.stream()
+        log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        List<Teacher> allEntities = repository.findAll();
+        List<Teacher> result = filterHelper.applyFilterAndPagination(
+            allEntities, filterJson, effectiveOffset, effectiveLimit,
+            req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
+        );
+
+        return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
