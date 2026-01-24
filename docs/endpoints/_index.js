@@ -1,6 +1,6 @@
 // Barcha endpoint kategoriyalarini birlashtiruvchi fayl
 // Auto-generated - DO NOT EDIT DIRECTLY
-// Jami: 44 kategoriya
+// Jami: 47 kategoriya
 
 const endpoints = [
     // 01.Token (3 endpoint)
@@ -91,6 +91,12 @@ const endpoints = [
     ...endpoints_43,
     // 44.Inspeksiya administrative StudentSport - Talaba sport yutuqlari (7 endpoint)
     ...endpoints_44,
+    // 45.Inspeksiya Sport inshootlari (7 endpoint)
+    ...endpoints_45,
+    // 46.Akademik Uslubiy nashrlar (7 endpoint)
+    ...endpoints_46,
+    // 47.Akademik O'quv ishlari (7 endpoint)
+    ...endpoints_47,
 ];
 
-console.log('Endpoints loaded:', endpoints.length, 'endpoints from 44 categories');
+console.log('Endpoints loaded:', endpoints.length, 'endpoints from 47 categories');
