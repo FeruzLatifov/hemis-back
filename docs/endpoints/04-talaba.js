@@ -558,11 +558,13 @@ const endpoints_04 = [
                     }
                 },
                 bodyGenerator: function(inputs) {
-                    // OLD HEMIS format: nested objects for references
+                    // CUBA REST v2 format: nested objects with "id" for ManyToOne references
+                    // HEducationYear va HCourse - BaseCodeNameEntity: code = id (primary key)
+                    // EStudent - StandardEntity: UUID = id
                     return {
                         studentId: { id: inputs.studentId },
-                        educationYear: { code: inputs.educationYearCode },
-                        level: { code: inputs.levelCode },
+                        educationYear: { id: inputs.educationYearCode },
+                        level: { id: inputs.levelCode },
                         gpa: inputs.gpa,
                         method: inputs.method,
                         creditSum: inputs.creditSum,
@@ -643,11 +645,12 @@ const endpoints_04 = [
                 },
                 bodyGenerator: function(inputs) {
                     // Service format: {"gpa": {...}} wrapper bilan (Entity POST dan farqli)
+                    // CUBA REST v2: ManyToOne references uchun "id" ishlatiladi
                     return {
                         gpa: {
                             studentId: { id: inputs.studentId },
-                            educationYear: { code: inputs.educationYearCode },
-                            level: { code: inputs.levelCode },
+                            educationYear: { id: inputs.educationYearCode },
+                            level: { id: inputs.levelCode },
                             gpa: inputs.gpa,
                             method: inputs.method,
                             creditSum: inputs.creditSum,

@@ -17,7 +17,6 @@ import uz.hemis.service.StudentGpaService;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * StudentGpa Entity Controller (CUBA Pattern)
@@ -31,7 +30,6 @@ import java.util.UUID;
  * <p>Endpoints:</p>
  * <ul>
  *   <li>GET /app/rest/v2/entities/hemishe_EStudentGpa - List all GPA records</li>
- *   <li>GET /app/rest/v2/entities/hemishe_EStudentGpa/{id} - Get GPA by ID</li>
  *   <li>POST /app/rest/v2/entities/hemishe_EStudentGpa - Create new GPA record</li>
  * </ul>
  *
@@ -171,59 +169,6 @@ public class StudentGpaEntityController {
         List<Map<String, Object>> result = studentGpaService.findAll(limit, offset);
 
         log.info("[CUBA Entity] hemishe_EStudentGpa: {} records returned", result.size());
-        return ResponseEntity.ok(result);
-    }
-
-    /**
-     * Bitta GPA yozuvini ID bo'yicha olish
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/entities/hemishe_EStudentGpa/{entityId}}</p>
-     *
-     * <p><strong>OLD-HEMIS Compatible</strong> - 100% backward compatibility</p>
-     *
-     * @param entityId GPA yozuv UUID
-     * @param view     View nomi (default: eStudentGpa-view)
-     * @return GPA yozuvi (CUBA format)
-     */
-    @GetMapping("/{entityId}")
-    @Operation(
-            summary = "Bitta GPA yozuvini olish",
-            description = """
-                ID bo'yicha bitta GPA yozuvini olish.
-
-                **OLD-HEMIS Compatible** - 100% backward compatibility
-
-                **Endpoint:** GET /app/rest/v2/entities/hemishe_EStudentGpa/{entityId}
-                **Auth:** Bearer token (required)
-
-                **Parametrlar:**
-                - entityId: GPA yozuv UUID (path variable)
-                - view: View nomi (default: eStudentGpa-view)
-                """
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - GPA yozuvi qaytarildi"),
-            @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
-            @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
-            @ApiResponse(responseCode = "404", description = "GPA yozuvi topilmadi")
-    })
-    @Transactional(readOnly = true)
-    public ResponseEntity<?> getById(
-            @Parameter(description = "GPA yozuv UUID", example = "ccb27f69-5258-0ae3-9e97-f068d65fadf9")
-            @PathVariable UUID entityId,
-            @Parameter(description = "View nomi", example = "eStudentGpa-view")
-            @RequestParam(value = "view", required = false, defaultValue = "eStudentGpa-view") String view) {
-
-        log.info("[CUBA Entity] hemishe_EStudentGpa/{}: view={}", entityId, view);
-
-        Map<String, Object> result = studentGpaService.findById(entityId);
-
-        if (result == null) {
-            log.warn("[CUBA Entity] hemishe_EStudentGpa/{}: NOT FOUND", entityId);
-            return ResponseEntity.notFound().build();
-        }
-
-        log.info("[CUBA Entity] hemishe_EStudentGpa/{}: FOUND", entityId);
         return ResponseEntity.ok(result);
     }
 

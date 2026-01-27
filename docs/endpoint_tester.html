@@ -131,8 +131,8 @@
         }
         .category-content {
             overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.3s ease;
-            max-height: 10000px;
+            transition: max-height 0.5s ease, opacity 0.3s ease;
+            max-height: 50000px;
             opacity: 1;
         }
         .category-content.collapsed {
@@ -1499,19 +1499,19 @@
             if (endpoint.inputFields && endpoint.inputFields.captchaId) {
                 // 1. Auto-get tokens for both systems if needed
                 const tokenUniqueId = makeUniqueId('01.Token', 1);
-                if (!newTestResults[tokenUniqueId]?.success) {
-                    console.log(`🔄 [NEW] Token olinyapti...`);
-                    await testSingleWithoutCaptchaPrompt('new', 1, '01.Token');
-                }
                 if (!oldTestResults[tokenUniqueId]?.success) {
                     console.log(`🔄 [OLD] Token olinyapti...`);
                     await testSingleWithoutCaptchaPrompt('old', 1, '01.Token');
                 }
+                if (!newTestResults[tokenUniqueId]?.success) {
+                    console.log(`🔄 [NEW] Token olinyapti...`);
+                    await testSingleWithoutCaptchaPrompt('new', 1, '01.Token');
+                }
 
                 // 2. Get captchas for both systems
                 console.log(`🔄 Ikkala tizim uchun captcha olinyapti...`);
-                await getCaptchaForEndpointSilent('new', id, effectiveCategory);
                 await getCaptchaForEndpointSilent('old', id, effectiveCategory);
+                await getCaptchaForEndpointSilent('new', id, effectiveCategory);
 
                 // 3. Show combined captcha prompt for both systems
                 const newCaptcha = newCaptchaData[uniqueId];
@@ -1533,16 +1533,16 @@
                     if (oldValueInput) oldValueInput.value = values.oldValue;
 
                     // 4. Now test both endpoints (skip captcha prompt)
-                    await testSingleSkipCaptcha('new', id, effectiveCategory);
                     await testSingleSkipCaptcha('old', id, effectiveCategory);
+                    await testSingleSkipCaptcha('new', id, effectiveCategory);
                     compareResponses(id, effectiveCategory);
                     return;
                 }
             }
 
             // For other endpoints - just test both
-            await testSingle('new', id, effectiveCategory);
             await testSingle('old', id, effectiveCategory);
+            await testSingle('new', id, effectiveCategory);
             compareResponses(id, effectiveCategory);
         }
 

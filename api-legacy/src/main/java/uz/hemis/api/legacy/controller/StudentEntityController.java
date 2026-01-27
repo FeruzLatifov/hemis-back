@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +21,6 @@ import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.service.StudentService;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Student Entity Controller (CUBA Pattern) - REFACTORED
@@ -50,8 +48,6 @@ import java.util.stream.Collectors;
  * - GET    /app/rest/v2/entities/hemishe_EStudent/{id}      - Get by ID
  * - PUT    /app/rest/v2/entities/hemishe_EStudent/{id}      - Update
  * - DELETE /app/rest/v2/entities/hemishe_EStudent/{id}      - Soft delete
- * - GET    /app/rest/v2/entities/hemishe_EStudent/search    - Search (URL params)
- * - POST   /app/rest/v2/entities/hemishe_EStudent/search    - Search (JSON filter)
  * - GET    /app/rest/v2/entities/hemishe_EStudent           - List all with pagination
  * - POST   /app/rest/v2/entities/hemishe_EStudent           - Create new
  *
@@ -87,22 +83,6 @@ public class StudentEntityController {
             sb.append(dto.getFathername());
         }
         return sb.length() > 0 ? sb.toString() : dto.getId().toString();
-    }
-
-    /**
-     * Bo'sh entityId bilan GET - ro'yxatga redirect (OLD-HEMIS compatible)
-     */
-    @GetMapping("/")
-    public ResponseEntity<List<Map<String, Object>>> getWithTrailingSlash(
-            @RequestParam(required = false) Boolean returnCount,
-            @RequestParam(defaultValue = "0") Integer offset,
-            @RequestParam(defaultValue = "50") Integer limit,
-            @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Boolean dynamicAttributes,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
-        log.debug("GET student with trailing slash - returning list (OLD-HEMIS compatible)");
-        return getAll(returnCount, offset, limit, sort, dynamicAttributes, returnNulls, view);
     }
 
     /**
@@ -173,18 +153,6 @@ public class StudentEntityController {
      * ✅ BACKWARD COMPATIBLE: Accepts CUBA Map format
      * ✅ CUBA PATTERN: PUT = partial update (only fields in JSON body are changed)
      */
-
-    /**
-     * Bo'sh entityId bilan PUT - 500 Server Error (OLD-HEMIS compatible)
-     */
-    @PutMapping("/")
-    public ResponseEntity<Map<String, Object>> updateWithTrailingSlash(@RequestBody(required = false) Map<String, Object> body) {
-        log.debug("PUT student with trailing slash - returning 500 (OLD-HEMIS compatible)");
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("error", "Server error");
-        error.put("details", "");
-        return ResponseEntity.status(500).body(error);
-    }
 
     @PutMapping("/{entityId}")
     @Operation(
@@ -269,18 +237,6 @@ public class StudentEntityController {
     }
 
     /**
-     * Bo'sh entityId bilan DELETE - 500 Server Error (OLD-HEMIS compatible)
-     */
-    @DeleteMapping("/")
-    public ResponseEntity<Map<String, Object>> deleteWithTrailingSlash() {
-        log.debug("DELETE student with trailing slash - returning 500 (OLD-HEMIS compatible)");
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("error", "Server error");
-        error.put("details", "");
-        return ResponseEntity.status(500).body(error);
-    }
-
-    /**
      * Talabani o'chirish (SOFT DELETE ONLY)
      *
      * ✅ REFACTORED: Uses service.softDelete() - NO PHYSICAL DELETE
@@ -330,108 +286,6 @@ public class StudentEntityController {
             errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
             return ResponseEntity.status(404).body(errorResponse);
         }
-    }
-
-    /**
-     * Talabalarni qidirish (GET)
-     *
-     * ✅ REFACTORED: Uses service layer
-     * ✅ BACKWARD COMPATIBLE: Same response format (List of CUBA Maps)
-     */
-    @GetMapping("/search")
-    @Operation(
-        summary = "Talabalarni qidirish (GET)",
-        description = """
-            URL parametrlari orqali talabalarni qidirish.
-
-            **OLD-HEMIS Compatible** - 100% backward compatibility
-
-            **Endpoint:** GET /app/rest/v2/entities/hemishe_EStudent/search
-            **Auth:** Bearer token (required)
-            """
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talabalar ro'yxati qaytarildi"),
-        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
-        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
-    })
-    public ResponseEntity<List<Map<String, Object>>> searchGet(
-            @Parameter(description = "CUBA filter expression")
-            @RequestParam(required = false) String filter,
-            @Parameter(description = "Null qiymatlarni qaytarish")
-            @RequestParam(required = false) Boolean returnNulls,
-            @Parameter(description = "CUBA view nomi")
-            @RequestParam(required = false) String view,
-            @Parameter(description = "Boshlang'ich pozitsiya")
-            @RequestParam(defaultValue = "0") Integer offset,
-            @Parameter(description = "Sahifadagi yozuvlar soni")
-            @RequestParam(defaultValue = "50") Integer limit) {
-
-        log.debug("GET search students with filter: {}, view: {}, limit: {}", filter, view, limit);
-
-        // Use pagination to avoid OutOfMemory
-        PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit);
-        List<StudentDto> dtos = studentService.findAll(pageRequest).getContent();
-
-        // Convert to CUBA format with view support
-        List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls, view);
-
-        return ResponseEntity.ok(cubaMaps);
-    }
-
-    /**
-     * Talabalarni qidirish (POST)
-     *
-     * ✅ REFACTORED: Uses service layer
-     * ✅ BACKWARD COMPATIBLE: Same response format
-     */
-    @PostMapping("/search")
-    @Operation(
-        summary = "Talabalarni qidirish (POST)",
-        description = """
-            JSON filter orqali talabalarni qidirish.
-
-            **OLD-HEMIS Compatible** - 100% backward compatibility
-
-            **Endpoint:** POST /app/rest/v2/entities/hemishe_EStudent/search
-            **Auth:** Bearer token (required)
-            """
-    )
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli - Talabalar ro'yxati qaytarildi"),
-        @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
-        @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
-    })
-    public ResponseEntity<List<Map<String, Object>>> searchPost(
-            @RequestBody(required = false) Map<String, Object> filter,
-            @Parameter(description = "Null qiymatlarni qaytarish")
-            @RequestParam(required = false) Boolean returnNulls,
-            @Parameter(description = "CUBA view nomi")
-            @RequestParam(required = false) String view) {
-
-        log.debug("POST search students with filter: {}, view: {}", filter, view);
-
-        // Extract pagination from filter body (OLD-HEMIS compatible)
-        int offset = 0;
-        int limit = 50; // default limit to avoid OutOfMemory
-
-        if (filter != null) {
-            if (filter.containsKey("offset")) {
-                offset = ((Number) filter.get("offset")).intValue();
-            }
-            if (filter.containsKey("limit")) {
-                limit = ((Number) filter.get("limit")).intValue();
-            }
-        }
-
-        // Use pagination to avoid OutOfMemory
-        PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit);
-        List<StudentDto> dtos = studentService.findAll(pageRequest).getContent();
-
-        // Convert to CUBA format with view support
-        List<Map<String, Object>> cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls, view);
-
-        return ResponseEntity.ok(cubaMaps);
     }
 
     /**

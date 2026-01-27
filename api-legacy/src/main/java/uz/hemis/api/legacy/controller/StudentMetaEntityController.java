@@ -89,23 +89,6 @@ public class StudentMetaEntityController {
     // =====================================================
 
     /**
-     * Bo'sh entityId bilan so'rov - ro'yxatga redirect (OLD-HEMIS compatible)
-     * URL: /app/rest/v2/entities/hemishe_EStudentMeta/ (trailing slash)
-     */
-    @GetMapping("/")
-    @Transactional(readOnly = true)
-    public ResponseEntity<List<Map<String, Object>>> getWithTrailingSlash(
-            @RequestParam(defaultValue = "100") int limit,
-            @RequestParam(defaultValue = "0") int offset,
-            @RequestParam(required = false) String sort,
-            @RequestParam(required = false) Boolean returnNulls,
-            @RequestParam(required = false) String view) {
-        // OLD-HEMIS behavior: bo'sh ID = ro'yxat qaytarish
-        log.debug("GET student meta with trailing slash - returning list (OLD-HEMIS compatible)");
-        return getAll(limit, offset, sort, returnNulls, view);
-    }
-
-    /**
      * Bitta talaba meta ma'lumotlarini olish
      */
     @GetMapping("/{entityId}")
@@ -266,32 +249,9 @@ public class StudentMetaEntityController {
         return ResponseEntity.status(201).body(cubaMap);
     }
 
-    /**
-     * POST with trailing slash - delegates to create (OLD-HEMIS compatible)
-     */
-    @PostMapping("/")
-    public ResponseEntity<Map<String, Object>> createWithTrailingSlash(
-            @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
-        log.debug("POST student meta with trailing slash - delegating to create");
-        return create(body, returnNulls);
-    }
-
     // =====================================================
     // UPDATE (PUT)
     // =====================================================
-
-    /**
-     * Bo'sh entityId bilan PUT - 500 Server Error (OLD-HEMIS compatible)
-     */
-    @PutMapping("/")
-    public ResponseEntity<Map<String, Object>> updateWithTrailingSlash(@RequestBody(required = false) Map<String, Object> body) {
-        log.debug("PUT student meta with trailing slash - returning 500 (OLD-HEMIS compatible)");
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("error", "Server error");
-        error.put("details", "");
-        return ResponseEntity.status(500).body(error);
-    }
 
     /**
      * Talaba meta ma'lumotlarini yangilash
@@ -345,19 +305,6 @@ public class StudentMetaEntityController {
     // =====================================================
     // DELETE (SOFT DELETE)
     // =====================================================
-
-    /**
-     * Bo'sh entityId bilan DELETE - 403 Forbidden (OLD-HEMIS compatible)
-     * StudentMeta uchun DELETE butunlay taqiqlangan
-     */
-    @DeleteMapping("/")
-    public ResponseEntity<Map<String, Object>> deleteWithTrailingSlash() {
-        log.debug("DELETE student meta with trailing slash - returning 403 Forbidden (OLD-HEMIS compatible)");
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("error", "Deletion forbidden");
-        error.put("details", "Deletion of the hemishe_EStudentMeta is forbidden");
-        return ResponseEntity.status(403).body(error);
-    }
 
     /**
      * Talaba meta ma'lumotlarini o'chirish - TAQIQLANGAN (OLD-HEMIS compatible)

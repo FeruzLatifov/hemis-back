@@ -257,10 +257,15 @@ public interface StudentMetaRepository extends JpaRepository<StudentMeta, UUID> 
     /**
      * Find max uId for a university (for generating next uId)
      *
+     * <p><strong>CRITICAL:</strong> Uses native SQL to bypass @SQLRestriction("delete_ts IS NULL").
+     * The DB unique constraint (u_id, _university) includes soft-deleted records,
+     * so we must consider ALL records when generating the next uId.</p>
+     *
      * @param universityCode university code
      * @return max uId or null if no records
      */
-    @Query("SELECT MAX(sm.uId) FROM StudentMeta sm WHERE sm.university = :university")
+    @Query(value = "SELECT MAX(u_id) FROM public.hemishe_e_student_meta WHERE _university = :university",
+            nativeQuery = true)
     Integer findMaxUIdByUniversity(@Param("university") String universityCode);
 
     // =====================================================

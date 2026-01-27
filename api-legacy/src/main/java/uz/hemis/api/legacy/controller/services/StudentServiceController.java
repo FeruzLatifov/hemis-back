@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.StudentIdRequest;
 import uz.hemis.domain.repository.UserRepository;
-import uz.hemis.service.ContractStatisticsService;
 import uz.hemis.service.StudentGpaService;
 import uz.hemis.service.StudentService;
 import uz.hemis.service.VerificationService;
@@ -61,7 +60,6 @@ public class StudentServiceController {
     private final VerificationService verificationService;
     private final UserRepository userRepository;
     private final HemisApiService hemisApiService;
-    private final ContractStatisticsService contractStatisticsService;
 
     /**
      * Talaba tasdiqlash ballarini olish (DTM verification)
@@ -127,67 +125,6 @@ public class StudentServiceController {
         return ResponseEntity.ok(verificationService.verifyByPinfl(pinfl));
     }
 
-    /**
-     * Get student by PINFL
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/get}</p>
-     *
-     * @param pinfl Student PINFL
-     * @return Student data
-     */
-    @GetMapping("/get")
-    @Operation(summary = "Get student", description = "Get student by PINFL")
-    public ResponseEntity<?> get(@RequestParam String pinfl) {
-        log.info("[CUBA Service] student/get: pinfl={}", pinfl);
-        return ResponseEntity.ok(studentService.getByPinfl(pinfl));
-    }
-
-    /**
-     * Get student by ID
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/getById}</p>
-     *
-     * @param id Student UUID
-     * @return Student data
-     */
-    @GetMapping("/getById")
-    @Operation(summary = "Get student by ID", description = "Get student by database ID")
-    public ResponseEntity<?> getById(@RequestParam UUID id) {
-        log.info("[CUBA Service] student/getById: id={}", id);
-        return ResponseEntity.ok(studentService.getById(id));
-    }
-
-    /**
-     * Get student with status
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/getWithStatus}</p>
-     *
-     * @param pinfl Student PINFL
-     * @return Student data with current status
-     */
-    @GetMapping("/getWithStatus")
-    @Operation(summary = "Get student with status", description = "Get student with current academic status")
-    public ResponseEntity<?> getWithStatus(@RequestParam String pinfl) {
-        log.info("[CUBA Service] student/getWithStatus: pinfl={}", pinfl);
-        return ResponseEntity.ok(studentService.getWithStatus(pinfl));
-    }
-
-    /**
-     * Get active student by PINFL
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/getActive}</p>
-     *
-     * <p>Returns student data only if student has active status (enrolled, not graduated/expelled)</p>
-     *
-     * @param pinfl Student PINFL
-     * @return Active student data or empty if not active
-     */
-    @GetMapping("/getActive")
-    @Operation(summary = "Get active student", description = "Get student by PINFL only if currently active (enrolled)")
-    public ResponseEntity<?> getActive(@RequestParam String pinfl) {
-        log.info("[CUBA Service] student/getActive: pinfl={}", pinfl);
-        return ResponseEntity.ok(studentService.getActiveByPinfl(pinfl));
-    }
 
     /**
      * Talaba shartnoma ma'lumotlarini olish (api.hemis.uz proxy)
@@ -329,54 +266,6 @@ public class StudentServiceController {
         return ResponseEntity.ok(hemisApiService.getContractInfo(pinfl));
     }
 
-    /**
-     * Check students
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/check}</p>
-     *
-     * @return Check result
-     */
-    @GetMapping("/check")
-    @Operation(summary = "Check students", description = "Perform student data check")
-    public ResponseEntity<?> check() {
-        log.info("[CUBA Service] student/check");
-        return ResponseEntity.ok(studentService.check());
-    }
-
-    /**
-     * Get doctoral student
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/getDoctoral}</p>
-     *
-     * @param pinfl Student PINFL
-     * @return Doctoral student data
-     */
-    @GetMapping("/getDoctoral")
-    @Operation(summary = "Get doctoral student", description = "Get doctoral student information")
-    public ResponseEntity<?> getDoctoral(@RequestParam String pinfl) {
-        log.info("[CUBA Service] student/getDoctoral: pinfl={}", pinfl);
-        return ResponseEntity.ok(studentService.getDoctoral(pinfl));
-    }
-
-    /**
-     * Get students by university
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/student/students}</p>
-     *
-     * @param university University code
-     * @param limit      Result limit
-     * @param offset     Result offset
-     * @return List of students
-     */
-    @GetMapping("/students")
-    @Operation(summary = "Get students by university", description = "Get paginated list of students for university")
-    public ResponseEntity<?> students(
-            @RequestParam String university,
-            @RequestParam(defaultValue = "100") Integer limit,
-            @RequestParam(defaultValue = "0") Integer offset) {
-        log.info("[CUBA Service] student/students: university={}, limit={}, offset={}", university, limit, offset);
-        return ResponseEntity.ok(studentService.getStudentsByUniversity(university, limit, offset));
-    }
 
     // =====================================================
     // POST Methods - old-hemis compatibility
@@ -811,133 +700,4 @@ public class StudentServiceController {
         return "anonymous";
     }
 
-    /**
-     * Check scholarship eligibility (version 2)
-     *
-     * <p><strong>URL:</strong> {@code POST /services/student/checkScholarship2}</p>
-     *
-     * @param request Scholarship check request
-     * @return Scholarship eligibility status
-     */
-    @PostMapping("/checkScholarship2")
-    @Operation(summary = "Scholarship check", description = "Talabaning stipendiya olish huquqini tekshirish")
-    public ResponseEntity<?> checkScholarship(@RequestBody Map<String, Object> request) {
-        log.info("[CUBA Service] student/checkScholarship2: request={}", request);
-        return ResponseEntity.ok(studentService.checkScholarship(request));
-    }
-
-    /**
-     * Shartnoma statistikasini yuborish (OLD-HEMIS Compatible)
-     *
-     * <p><strong>URL:</strong> {@code POST /app/rest/v2/services/student/contractStatistics}</p>
-     *
-     * <p><strong>OLD-HEMIS Compatible</strong> - 100% backward compatibility</p>
-     *
-     * <p><strong>Request format:</strong></p>
-     * <pre>
-     * {
-     *   "contractStatistics": {
-     *     "university": {"code": "999"},
-     *     "educationYear": {"code": "2021"},
-     *     "educationType": {"code": "12"},
-     *     "educationForm": {"code": "11"},
-     *     "faculty": {"code": "999-192"},
-     *     "course": {"code": "11"},
-     *     "semester": {"code": "11"},
-     *     "date": "2021-09-08",
-     *     "dailyCount": 5,
-     *     "total": 5
-     *   }
-     * }
-     * </pre>
-     *
-     * <p><strong>Response format:</strong></p>
-     * <pre>
-     * {
-     *   "success": true,
-     *   "message": "Successfully created!",
-     *   "data": {
-     *     "_entityName": "hemishe_RContractStatistics",
-     *     "id": "...",
-     *     "date": "2021-09-08",
-     *     "educationType": {"_entityName": "hemishe_HEducationType", "id": "12", "code": "12"},
-     *     ...
-     *   }
-     * }
-     * </pre>
-     *
-     * @param request Contract statistics request
-     * @return OLD-HEMIS compatible response
-     */
-    @PostMapping("/contractStatistics")
-    @Transactional
-    @Operation(
-            summary = "Shartnoma statistikasini yuborish",
-            description = """
-                Shartnoma statistika ma'lumotlarini bazaga saqlash.
-
-                **OLD-HEMIS Compatible** - 100% backward compatibility
-
-                **Endpoint:** POST /app/rest/v2/services/student/contractStatistics
-                **Auth:** Bearer token (required)
-                **Content-Type:** application/json
-
-                **Request Body:**
-                - contractStatistics.university.code: OTM kodi (required)
-                - contractStatistics.educationYear.code: Ta'lim yili kodi (masalan: "2021")
-                - contractStatistics.educationType.code: Ta'lim turi kodi
-                - contractStatistics.educationForm.code: Ta'lim shakli kodi
-                - contractStatistics.faculty.code: Fakultet kodi
-                - contractStatistics.course.code: Kurs kodi
-                - contractStatistics.semester.code: Semestr kodi
-                - contractStatistics.date: Sana (YYYY-MM-DD)
-                - contractStatistics.dailyCount: Kunlik soni
-                - contractStatistics.total: Jami soni
-                """
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Muvaffaqiyatli - Statistika saqlandi",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Saqlangan statistika",
-                                    value = """
-                                        {
-                                          "success": true,
-                                          "message": "Successfully created!",
-                                          "data": {
-                                            "_entityName": "hemishe_RContractStatistics",
-                                            "id": "35458c9b-1534-1977-79f0-0cfd9289e3e8",
-                                            "date": "2021-09-08",
-                                            "educationType": {
-                                              "_entityName": "hemishe_HEducationType",
-                                              "id": "12",
-                                              "code": "12"
-                                            },
-                                            "university": {
-                                              "_entityName": "hemishe_EUniversity",
-                                              "id": "999",
-                                              "code": "999"
-                                            },
-                                            "version": 1,
-                                            "dailyCount": 5,
-                                            "total": 5,
-                                            "createdBy": "otm351"
-                                          }
-                                        }
-                                        """
-                            )
-                    )
-            ),
-            @ApiResponse(responseCode = "400", description = "Noto'g'ri request format"),
-            @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
-            @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
-    })
-    public ResponseEntity<?> contractStatistics(@RequestBody Map<String, Object> request) {
-        log.info("[CUBA Service] student/contractStatistics: request={}", request);
-        String username = getCurrentUsername();
-        return ResponseEntity.ok(contractStatisticsService.submitContractStatistics(request, username));
-    }
 }
