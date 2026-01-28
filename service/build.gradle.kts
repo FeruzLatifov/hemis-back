@@ -20,10 +20,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis") {
         exclude(group = "io.lettuce", module = "lettuce-core")
     }
-    implementation("redis.clients:jedis:5.1.0")
+    implementation("redis.clients:jedis")
 
     // Caffeine for L1 JVM cache (per-pod, ultra-fast)
-    implementation("com.github.ben-manes.caffeine:caffeine:3.1.8")
+    implementation("com.github.ben-manes.caffeine:caffeine")
 
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -32,7 +32,7 @@ dependencies {
     implementation("org.springframework.security:spring-security-core")
 
     // Swagger/OpenAPI annotations for DTOs
-    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:2.2.0")
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:3.0.1")
 
     // Lombok (MUST be before MapStruct)
     compileOnly("org.projectlombok:lombok")
