@@ -1117,42 +1117,47 @@ public class StudentService {
     private Optional<Student> findActiveStudent(String idData, String citizenship) {
         // Step 1: Check for isDuplicate=TRUE active student (master record)
         // If master record exists, student is NOT active (can create new)
-        Optional<Student> masterStudent = studentRepository.findActiveByPinflAndDuplicate(idData, true);
-        if (masterStudent.isPresent()) {
+        // OLD-HEMIS: DataManager.load().list() — dublikat bo'lsa birinchisini oladi
+        List<Student> masterStudents = studentRepository.findActiveByPinflAndDuplicate(idData, true);
+        if (!masterStudents.isEmpty()) {
             log.debug("Master record (isDuplicate=true) found for PINFL: {} - NOT active", idData);
             return Optional.empty();  // NOT active → can create new
         }
 
         // Step 2: General search without isDuplicate filter
         if ("11".equals(citizenship)) {
-            Optional<Student> student = studentRepository.findActiveByPinfl(idData);
-            if (student.isPresent()) {
-                return student;  // Active → cannot create new
+            List<Student> students = studentRepository.findActiveByPinfl(idData);
+            if (!students.isEmpty()) {
+                return Optional.of(students.get(0));  // Active → cannot create new
             }
         }
 
         // Step 3: Search by serial number (for foreign citizens or as fallback)
-        return studentRepository.findActiveBySerialNumber(idData);
+        List<Student> bySerial = studentRepository.findActiveBySerialNumber(idData);
+        return bySerial.isEmpty() ? Optional.empty() : Optional.of(bySerial.get(0));
     }
 
     /**
      * Find existing student by request data
      */
     private Optional<Student> findExistingStudent(StudentIdRequest data) {
+        // OLD-HEMIS: DataManager.load().list() — dublikat bo'lsa birinchisini oladi
+        List<Student> students;
         if ("11".equals(data.getCitizenship())) {
-            return studentRepository.findExistingStudent(
+            students = studentRepository.findExistingStudent(
                     data.getPinfl(),
                     data.getEducationType(),
                     data.getYear()
             );
         } else {
-            return studentRepository.findExistingForeignStudent(
+            students = studentRepository.findExistingForeignStudent(
                     data.getSerial(),
                     data.getCitizenship(),
                     data.getEducationType(),
                     data.getYear()
             );
         }
+        return students.isEmpty() ? Optional.empty() : Optional.of(students.get(0));
     }
 
     /**

@@ -335,11 +335,12 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      *   - '16' = Bitirgan (Graduated) - NOT ACTIVE
      *
      * @param pinfl PINFL raqami
-     * @return aktiv talaba yoki empty
+     * @return aktiv talabalar ro'yxati (PINFL noyob emas — dublikat bo'lishi mumkin)
      */
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
-           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15')")
-    Optional<Student> findActiveByPinfl(@Param("pinfl") String pinfl);
+           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15') " +
+           "ORDER BY s.createTs DESC")
+    List<Student> findActiveByPinfl(@Param("pinfl") String pinfl);
 
     /**
      * Find active student by PINFL and isDuplicate flag
@@ -354,8 +355,9 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      */
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
            "AND s.isDuplicate = :isDuplicate " +
-           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15')")
-    Optional<Student> findActiveByPinflAndDuplicate(
+           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15') " +
+           "ORDER BY s.createTs DESC")
+    List<Student> findActiveByPinflAndDuplicate(
             @Param("pinfl") String pinfl,
             @Param("isDuplicate") Boolean isDuplicate);
 
@@ -368,8 +370,9 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      * @return aktiv talaba yoki empty
      */
     @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber " +
-           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15')")
-    Optional<Student> findActiveBySerialNumber(@Param("serialNumber") String serialNumber);
+           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15') " +
+           "ORDER BY s.createTs DESC")
+    List<Student> findActiveBySerialNumber(@Param("serialNumber") String serialNumber);
 
     /**
      * Find existing student by PINFL, education type and year (for returning existing record)
@@ -385,8 +388,9 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
            "AND s.educationType = :educationType " +
            "AND s.educationYear = :educationYear " +
-           "AND s.studentStatus <> '12'")
-    Optional<Student> findExistingStudent(
+           "AND s.studentStatus <> '12' " +
+           "ORDER BY s.createTs DESC")
+    List<Student> findExistingStudent(
             @Param("pinfl") String pinfl,
             @Param("educationType") String educationType,
             @Param("educationYear") String educationYear);
@@ -404,8 +408,9 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
            "AND s.citizenship = :citizenship " +
            "AND s.educationType = :educationType " +
            "AND s.educationYear = :educationYear " +
-           "AND s.studentStatus <> '12'")
-    Optional<Student> findExistingForeignStudent(
+           "AND s.studentStatus <> '12' " +
+           "ORDER BY s.createTs DESC")
+    List<Student> findExistingForeignStudent(
             @Param("serialNumber") String serialNumber,
             @Param("citizenship") String citizenship,
             @Param("educationType") String educationType,

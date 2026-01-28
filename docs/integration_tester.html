@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEMIS Integration Tester — Univer v2 Endpoint Tekshiruvi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!--
+    HEMIS Integration Tester
+    ========================
+    Univer (Yii2 PHP) tizimi old-hemis ga 63 ta noyob v2/ URL orqali murojaat qiladi.
+    Bu sahifa hemis-back ning barcha endpointlarni to'liq qo'llab-quvvatlashini tekshiradi.
+
+    Ishlatish:
+    1. hemis-back ni ishga tushiring: ./gradlew :app:bootRun
+    2. Brauzerda oching: http://localhost:8081/docs/integration_tester.html
+    3. Login & Bootstrap → "Barchasini bajarish"
+    -->
+    <style>
+        :root {
+            --bg-main: #F7FAFC;
+            --bg-card: #FFFFFF;
+            --text-primary: #1A202C;
+            --text-secondary: #4B5563;
+            --border-color: #E5E7EB;
+            --accent-blue: #2B6CB0;
+            --accent-green: #16A34A;
+            --accent-red: #E53E3E;
+            --accent-orange: #F97316;
+        }
+
+        body {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+        }
+
+        .main-header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            padding: 12px 0;
+        }
+
+        .main-header h4 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            color: var(--accent-blue);
+            margin: 0;
+        }
+
+        .config-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .summary-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .category-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+        }
+
+        .category-header {
+            background: var(--accent-blue);
+            color: white;
+            font-size: 0.9rem;
+            border: none;
+        }
+
+        .category-header:hover {
+            background: #245a91;
+        }
+
+        .test-card {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s;
+        }
+
+        .test-card:hover {
+            background: #F9FAFB;
+        }
+
+        .test-card:last-child {
+            border-bottom: none;
+        }
+
+        .request-box {
+            background: #EBF4FF;
+            border: 1px solid #BEE3F8;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .response-box {
+            background: #F7FAFC;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .filter-btn {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+        }
+
+        .badge {
+            font-weight: 500;
+        }
+
+        #bootstrap-log {
+            background: #FFFDF8;
+            border: 1px solid #FBBF24;
+            border-radius: 4px;
+            padding: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.85rem;
+        }
+
+        .status-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-success { background: var(--accent-green); }
+        .dot-error { background: var(--accent-red); }
+        .dot-pending { background: #D1D5DB; }
+        .dot-loading {
+            background: var(--accent-blue);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .progress {
+            background: #E5E7EB;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="main-header">
+        <div class="container-fluid px-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4><i class="fas fa-vial me-2"></i>HEMIS Integration Tester</h4>
+                <small class="text-muted">Univer v2 Endpoint Tekshiruvi</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-4 py-3">
+        <!-- CONFIG PANEL -->
+        <div class="config-panel">
+            <!-- Ulanish sxemasi -->
+            <div class="mb-3 p-2 rounded" style="background:#EBF4FF; border:1px solid #BEE3F8;">
+                <div class="small">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="fw-bold" style="color:var(--accent-blue)"><i class="fas fa-info-circle me-1"></i>Ulanish sxemasi:</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-warning text-dark" style="font-size:0.7rem">API Bootstrap</span>
+                        <span class="badge bg-light text-dark border">Brauzer</span>
+                        <i class="fas fa-arrow-right text-muted"></i>
+                        <span class="badge bg-primary" id="schema-backend">Backend API</span>
+                        <i class="fas fa-arrow-right text-muted"></i>
+                        <span class="text-muted">Entity endpointlardan data + testlar</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-success" style="font-size:0.7rem">DB Bootstrap</span>
+                        <span class="badge bg-light text-dark border">Brauzer</span>
+                        <i class="fas fa-arrow-right text-muted"></i>
+                        <span class="badge bg-info">Proxy :9001</span>
+                        <i class="fas fa-arrow-right text-muted"></i>
+                        <span class="badge bg-success">PostgreSQL</span>
+                        <i class="fas fa-plus text-muted"></i>
+                        <span class="badge bg-primary">Backend API</span>
+                        <i class="fas fa-arrow-right text-muted"></i>
+                        <span class="text-muted">Bazadan data + API ga testlar</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tezkor tanlash -->
+            <div class="mb-2">
+                <label class="form-label small mb-1 fw-bold">Tezkor tanlash:</label>
+                <div class="d-flex gap-1 flex-wrap">
+                    <button class="btn btn-outline-primary btn-sm" onclick="app.applyPreset('hemis-back')">
+                        <i class="fas fa-server me-1"></i>hemis-back (:8081)
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="app.applyPreset('old-hemis')">
+                        <i class="fas fa-archive me-1"></i>old-hemis (:8082)
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="app.applyPreset('proxy')">
+                        <i class="fas fa-exchange-alt me-1"></i>Proxy rejim (:9001)
+                    </button>
+                    <button class="btn btn-outline-dark btn-sm" onclick="app.applyPreset('custom')">
+                        <i class="fas fa-edit me-1"></i>Boshqa server...
+                    </button>
+                </div>
+            </div>
+
+            <hr class="my-2">
+
+            <!-- Asosiy sozlamalar -->
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label small mb-1 fw-bold">
+                        <i class="fas fa-link me-1"></i>Backend URL
+                        <span class="text-muted fw-normal">(API server manzili)</span>
+                    </label>
+                    <input type="text" class="form-control form-control-sm" id="baseUrl"
+                           value="http://localhost:8081" placeholder="http://localhost:8081">
+                    <small class="text-muted" id="baseUrl-hint">
+                        hemis-back Spring Boot serveri. API so'rovlar shu manzilga yuboriladi.
+                    </small>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1 fw-bold">
+                        <i class="fas fa-user me-1"></i>OTM Login
+                    </label>
+                    <input type="text" class="form-control form-control-sm" id="username"
+                           value="otm401" placeholder="masalan: otm401">
+                    <small class="text-muted">OTM foydalanuvchi nomi</small>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small mb-1 fw-bold">
+                        <i class="fas fa-key me-1"></i>Parol
+                    </label>
+                    <input type="password" class="form-control form-control-sm" id="password"
+                           value="XCZDAb7qvGTXxz" placeholder="***">
+                    <small class="text-muted">OTM paroli</small>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-primary btn-sm me-1" id="btn-login" onclick="app.loginAndBootstrap()">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login & API Bootstrap
+                    </button>
+                    <button class="btn btn-success btn-sm me-1" id="btn-db-main" onclick="app.dbBootstrapAndLogin()">
+                        <i class="fas fa-database me-1"></i>DB Bootstrap
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm me-1" onclick="document.getElementById('advanced-config').classList.toggle('d-none')">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <span class="status-indicator" id="auth-status">
+                        <span class="dot dot-pending"></span>
+                        <span>Ulanmagan</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Kengaytirilgan sozlamalar (yashirin) -->
+            <div id="advanced-config" class="d-none mt-3 p-2 rounded" style="background:#F9FAFB; border:1px solid var(--border-color);">
+                <label class="form-label small mb-2 fw-bold"><i class="fas fa-cogs me-1"></i>Kengaytirilgan sozlamalar</label>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label small mb-1">OAuth Client ID : Secret</label>
+                        <input type="text" class="form-control form-control-sm" id="oauthClient"
+                               value="client:secret" placeholder="client:secret">
+                        <small class="text-muted">Basic auth: <code>Y2xpZW50OnNlY3JldA==</code></small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small mb-1">OAuth Token URL</label>
+                        <input type="text" class="form-control form-control-sm" id="tokenUrl"
+                               value="/app/rest/v2/oauth/token" placeholder="/app/rest/v2/oauth/token">
+                        <small class="text-muted">Token olish endpoint</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small mb-1">Request Timeout (ms)</label>
+                        <input type="number" class="form-control form-control-sm" id="requestTimeout"
+                               value="30000" placeholder="30000">
+                        <small class="text-muted">So'rov kutish vaqti</small>
+                    </div>
+                </div>
+
+                <hr class="my-2">
+
+                <!-- DB Bootstrap sozlamalari -->
+                <label class="form-label small mb-2 fw-bold">
+                    <i class="fas fa-database me-1"></i>PostgreSQL baza ulanishi
+                    <span class="text-muted fw-normal">(DB Bootstrap uchun — proxy orqali ishlaydi)</span>
+                </label>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <label class="form-label small mb-1">Host</label>
+                        <input type="text" class="form-control form-control-sm" id="dbHost"
+                               value="localhost" placeholder="localhost">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small mb-1">Port</label>
+                        <input type="number" class="form-control form-control-sm" id="dbPort"
+                               value="5432" placeholder="5432">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">Baza nomi</label>
+                        <input type="text" class="form-control form-control-sm" id="dbName"
+                               value="hemis_401" placeholder="hemis_401">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">DB User</label>
+                        <input type="text" class="form-control form-control-sm" id="dbUser"
+                               value="postgres" placeholder="postgres">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small mb-1">DB Parol</label>
+                        <input type="password" class="form-control form-control-sm" id="dbPassword"
+                               value="postgres" placeholder="postgres">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-success btn-sm w-100" id="btn-db-bootstrap" onclick="app.dbBootstrap()">
+                            <i class="fas fa-database me-1"></i>DB Bootstrap
+                        </button>
+                    </div>
+                </div>
+                <small class="text-muted d-block mt-1">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Proxy server (<code>localhost:9001</code>) orqali PostgreSQL bazaga ulanadi.
+                    <code>python3 integration-proxy.py</code> ishga tushirilgan bo'lishi kerak.
+                </small>
+            </div>
+
+            <!-- Ulanish haqida ma'lumot -->
+            <div class="mt-2 small" id="config-info">
+                <div class="d-flex align-items-center gap-2 flex-wrap text-muted">
+                    <span><i class="fas fa-server me-1"></i>Server: <code id="display-server">http://localhost:8081</code></span>
+                    <span class="text-muted">|</span>
+                    <span><i class="fas fa-user me-1"></i>Login: <code id="display-login">otm401</code></span>
+                    <span class="text-muted">|</span>
+                    <span><i class="fas fa-database me-1"></i>Data: <span id="display-db" class="text-info">Hali yuklanmagan</span></span>
+                    <span class="text-muted">|</span>
+                    <span><i class="fas fa-shield-alt me-1"></i>OAuth: <code>POST /app/rest/v2/oauth/token</code></span>
+                </div>
+            </div>
+            <div id="bootstrap-log" class="mt-2" style="display:none;"></div>
+            <div id="bootstrap-summary" class="mt-2" style="display:none;">
+                <div class="d-flex gap-3 flex-wrap small" id="data-counts"></div>
+            </div>
+        </div>
+
+        <!-- TEST DASHBOARD -->
+        <div id="test-dashboard">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-vial fa-2x mb-2 d-block"></i>
+                <p class="mb-1">Testlarni boshlash uchun ikkita variant bor:</p>
+                <p class="small">
+                    <strong class="text-primary">Login & API Bootstrap</strong> — Entity endpointlardan data oladi (backend to'g'ridan-to'g'ri)<br>
+                    <strong class="text-success">DB Bootstrap</strong> — PostgreSQL bazadan data oladi (proxy orqali, <code>python3 integration-proxy.py</code> kerak)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS FAYLLAR -->
+    <!-- Lib -->
+    <script src="integration/lib/validator.js"></script>
+    <script src="integration/lib/bootstrap.js"></script>
+    <script src="integration/lib/runner.js"></script>
+    <script src="integration/lib/ui.js"></script>
+
+    <!-- Tests -->
+    <script src="integration/tests/00-auth.js"></script>
+    <script src="integration/tests/01-classifiers.js"></script>
+    <script src="integration/tests/02-student-services.js"></script>
+    <script src="integration/tests/03-teacher-services.js"></script>
+    <script src="integration/tests/04-passport.js"></script>
+    <script src="integration/tests/05-university.js"></script>
+    <script src="integration/tests/06-external.js"></script>
+    <script src="integration/tests/07-entity-student.js"></script>
+    <script src="integration/tests/08-entity-teacher.js"></script>
+    <script src="integration/tests/09-entity-structure.js"></script>
+    <script src="integration/tests/10-entity-diploma.js"></script>
+    <script src="integration/tests/11-entity-science.js"></script>
+    <script src="integration/tests/12-entity-admin.js"></script>
+    <script src="integration/tests/13-entity-stats.js"></script>
+    <script src="integration/tests/_index.js"></script>
+
+    <script>
+    // ─── APPLICATION CONTROLLER ───────────────────────────
+    const app = {
+        runner: null,
+        ui: null,
+        tests: [],
+
+        // Preset konfiguratsiyalar
+        presets: {
+            'hemis-back': {
+                url: 'http://localhost:8081',
+                label: 'hemis-back (Spring Boot)',
+                hint: 'hemis-back — yangi Java backend. PostgreSQL bazaga ulanadi (DB_MASTER_* sozlamalari bo\'yicha).',
+                db: 'hemis-back → PostgreSQL (localhost:5432)',
+                username: 'otm401',
+                password: 'XCZDAb7qvGTXxz'
+            },
+            'old-hemis': {
+                url: 'http://localhost:8082',
+                label: 'old-hemis (CUBA Platform)',
+                hint: 'old-hemis — eski Java backend. ministry.sql bazasiga ulanadi.',
+                db: 'old-hemis → PostgreSQL ministry.sql baza',
+                username: 'otm401',
+                password: 'XCZDAb7qvGTXxz'
+            },
+            'proxy': {
+                url: 'http://localhost:9001',
+                label: 'Proxy rejim (integration-proxy.py)',
+                hint: 'CORS proxy: brauzer → localhost:9001 → backend. python3 integration-proxy.py bilan ishga tushiring. DB Bootstrap ham shu proxy orqali ishlaydi.',
+                db: 'Proxy → Backend API → PostgreSQL (proxy target sozlamasi)',
+                username: 'otm401',
+                password: 'XCZDAb7qvGTXxz'
+            },
+            'custom': {
+                url: '',
+                label: 'Boshqa server',
+                hint: 'O\'zingiz xohlagan server manzilini kiriting (masalan: http://192.168.1.100:8081).',
+                db: 'Siz kiritgan server API orqali bazaga ulanadi',
+                username: '',
+                password: ''
+            }
+        },
+
+        /**
+         * Preset tanlash
+         */
+        applyPreset(name) {
+            const preset = this.presets[name];
+            if (!preset) return;
+
+            document.getElementById('baseUrl').value = preset.url;
+            document.getElementById('baseUrl').placeholder = preset.url || 'masalan: http://localhost:8082';
+            if (name !== 'custom') {
+                document.getElementById('username').value = preset.username;
+                document.getElementById('password').value = preset.password;
+            }
+
+            // Hint yangilash
+            const hintEl = document.getElementById('baseUrl-hint');
+            if (hintEl) hintEl.textContent = preset.hint;
+
+            // Info panel yangilash
+            this.updateConfigDisplay();
+
+            // Tugmalarni highlight qilish
+            document.querySelectorAll('.config-panel .btn-outline-primary, .config-panel .btn-outline-secondary, .config-panel .btn-outline-info, .config-panel .btn-outline-dark')
+                .forEach(btn => btn.classList.remove('active'));
+
+            if (name === 'custom') {
+                document.getElementById('baseUrl').focus();
+                document.getElementById('baseUrl').select();
+            }
+        },
+
+        /**
+         * Config display yangilash
+         */
+        updateConfigDisplay() {
+            const baseUrl = document.getElementById('baseUrl').value || '(proxy)';
+            const username = document.getElementById('username').value;
+
+            const serverEl = document.getElementById('display-server');
+            const loginEl = document.getElementById('display-login');
+            const schemaEl = document.getElementById('schema-backend');
+
+            if (serverEl) serverEl.textContent = baseUrl;
+            if (loginEl) loginEl.textContent = username;
+
+            // Schema badge yangilash
+            if (baseUrl.includes('8081')) {
+                if (schemaEl) { schemaEl.textContent = 'hemis-back :8081'; schemaEl.className = 'badge bg-primary'; }
+            } else if (baseUrl.includes('8082')) {
+                if (schemaEl) { schemaEl.textContent = 'old-hemis :8082'; schemaEl.className = 'badge bg-secondary'; }
+            } else if (baseUrl.includes('9001') || !baseUrl) {
+                if (schemaEl) { schemaEl.textContent = 'Proxy :9001'; schemaEl.className = 'badge bg-info'; }
+            } else {
+                if (schemaEl) { schemaEl.textContent = 'Backend API'; schemaEl.className = 'badge bg-dark'; }
+            }
+        },
+
+        // Ma'lumot manbasi
+        dataSource: null, // 'api' yoki 'db'
+
+        /**
+         * Login va API bootstrap (eski usul — entity endpointlardan data oladi)
+         */
+        async loginAndBootstrap() {
+            const baseUrl = document.getElementById('baseUrl').value.replace(/\/+$/, '');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                alert('Username va password kiriting');
+                return;
+            }
+
+            this.updateConfigDisplay();
+            this.runner = new TestRunner({ baseUrl });
+            this.ui = new TestUI('test-dashboard');
+
+            this.setAuthStatus('loading', 'Ulanmoqda...');
+            document.getElementById('btn-login').disabled = true;
+
+            try {
+                // 1. Auth
+                await this.runner.authenticate(username, password);
+                this.setAuthStatus('success', 'Token olindi');
+
+                // 2. API Bootstrap
+                this.setAuthStatus('loading', "API dan ma'lumotlar yuklanmoqda...");
+                const testData = await this.runner.bootstrap();
+
+                this.runner.testData.config = { username, password };
+                this.dataSource = 'api';
+                this.showBootstrapResults(testData, 'api');
+                this.setAuthStatus('success',
+                    `Token olindi | API: ${(testData.students||[]).length} talaba, ${(testData.teachers||[]).length} xodim`);
+
+                // 3. Dashboard
+                this.tests = typeof allIntegrationTests !== 'undefined' ? [...allIntegrationTests] : [];
+                this.ui.renderDashboard(this.tests);
+
+            } catch (err) {
+                this.setAuthStatus('error', 'Xatolik: ' + err.message);
+                console.error('Login/Bootstrap xatosi:', err);
+            } finally {
+                document.getElementById('btn-login').disabled = false;
+            }
+        },
+
+        /**
+         * DB Bootstrap + Login (asosiy usul — PostgreSQL dan data oladi)
+         * Ketma-ketlik: 1) DB dan ma'lumot olish 2) API ga login 3) Dashboard ko'rsatish
+         */
+        async dbBootstrapAndLogin() {
+            const baseUrl = document.getElementById('baseUrl').value.replace(/\/+$/, '');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                alert('Username va password kiriting');
+                return;
+            }
+
+            this.updateConfigDisplay();
+            this.runner = new TestRunner({ baseUrl });
+            this.ui = new TestUI('test-dashboard');
+
+            this.setAuthStatus('loading', 'DB Bootstrap boshlanmoqda...');
+            document.getElementById('btn-db-main').disabled = true;
+            document.getElementById('btn-login').disabled = true;
+
+            try {
+                // 1. DB Bootstrap — PostgreSQL dan test data olish
+                this.setAuthStatus('loading', "PostgreSQL dan ma'lumotlar yuklanmoqda...");
+                const dbData = await this.fetchDbBootstrap();
+
+                if (dbData.error) {
+                    throw new Error('DB Bootstrap xatosi: ' + dbData.error);
+                }
+
+                // 2. API Login — token olish
+                this.setAuthStatus('loading', "API ga ulanmoqda (token olish)...");
+                await this.runner.authenticate(username, password);
+
+                // 3. DB datani runner ga o'rnatish
+                this.runner.testData = dbData;
+                this.runner.testData.config = { username, password };
+                this.dataSource = 'db';
+
+                // 4. Natijani ko'rsatish
+                const meta = dbData._meta || {};
+                this.showBootstrapResults(dbData, 'db');
+                this.setAuthStatus('success',
+                    `Token olindi | DB: ${meta.database || 'hemis_401'} — ${meta.studentCount || 0} talaba, ${meta.teacherCount || 0} xodim`);
+
+                // 5. Dashboard
+                this.tests = typeof allIntegrationTests !== 'undefined' ? [...allIntegrationTests] : [];
+                this.ui.renderDashboard(this.tests);
+
+            } catch (err) {
+                this.setAuthStatus('error', 'Xatolik: ' + err.message);
+                console.error('DB Bootstrap xatosi:', err);
+            } finally {
+                document.getElementById('btn-db-main').disabled = false;
+                document.getElementById('btn-login').disabled = false;
+            }
+        },
+
+        /**
+         * DB Bootstrap — faqat kengaytirilgan sozlamalardan (alohida tugma)
+         */
+        async dbBootstrap() {
+            this.setAuthStatus('loading', "DB dan ma'lumotlar yuklanmoqda...");
+            document.getElementById('btn-db-bootstrap').disabled = true;
+
+            try {
+                const dbData = await this.fetchDbBootstrap();
+
+                if (dbData.error) {
+                    throw new Error(dbData.error);
+                }
+
+                // Agar runner mavjud bo'lsa, datani yangilash
+                if (this.runner) {
+                    this.runner.testData = dbData;
+                    if (this.runner.testData.config === undefined) {
+                        this.runner.testData.config = {
+                            username: document.getElementById('username').value,
+                            password: document.getElementById('password').value
+                        };
+                    }
+                }
+
+                this.dataSource = 'db';
+                const meta = dbData._meta || {};
+                this.showBootstrapResults(dbData, 'db');
+                this.setAuthStatus(this.runner?.accessToken ? 'success' : 'pending',
+                    `DB: ${meta.database || '?'} — ${meta.studentCount || 0} talaba, ${meta.teacherCount || 0} xodim` +
+                    (this.runner?.accessToken ? ' | Token mavjud' : ' | Token yo\'q — Login kerak'));
+
+            } catch (err) {
+                this.setAuthStatus('error', 'DB xato: ' + err.message);
+                console.error('DB Bootstrap xatosi:', err);
+            } finally {
+                document.getElementById('btn-db-bootstrap').disabled = false;
+            }
+        },
+
+        /**
+         * Proxy orqali PostgreSQL dan ma'lumot olish
+         */
+        async fetchDbBootstrap() {
+            const proxyUrl = 'http://localhost:9001/db/bootstrap';
+            const dbConfig = {
+                host: document.getElementById('dbHost')?.value || 'localhost',
+                port: parseInt(document.getElementById('dbPort')?.value || '5432'),
+                dbname: document.getElementById('dbName')?.value || 'hemis_401',
+                user: document.getElementById('dbUser')?.value || 'postgres',
+                password: document.getElementById('dbPassword')?.value || 'postgres'
+            };
+
+            const response = await fetch(proxyUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dbConfig)
+            });
+
+            if (!response.ok) {
+                throw new Error(`Proxy javob bermadi (${response.status}). integration-proxy.py ishga tushirilganmi?`);
+            }
+
+            return await response.json();
+        },
+
+        /**
+         * Barcha testlarni bajarish
+         */
+        async runAll() {
+            if (!this.runner || !this.runner.accessToken) {
+                alert('Avval Login & Bootstrap bajaring');
+                return;
+            }
+
+            this.ui.setRunning(true);
+
+            // Callbacks
+            this.runner.onTestComplete = (testId, result) => {
+                this.ui.updateTestCard(testId, result);
+                this.ui.updateSummary(this.runner.getStats(), this.tests.length);
+            };
+
+            try {
+                await this.runner.runAll(this.tests);
+            } catch (err) {
+                console.error('Test xatosi:', err);
+            } finally {
+                this.ui.setRunning(false);
+                this.ui.updateSummary(this.runner.getStats(), this.tests.length);
+            }
+        },
+
+        /**
+         * Faqat FAIL testlarni qaytarish
+         */
+        async runFailed() {
+            if (!this.runner) return;
+            this.ui.setRunning(true);
+
+            this.runner.onTestComplete = (testId, result) => {
+                this.ui.updateTestCard(testId, result);
+                this.ui.updateSummary(this.runner.getStats(), this.tests.length);
+            };
+
+            try {
+                await this.runner.runFailed(this.tests);
+            } catch (err) {
+                console.error('Test xatosi:', err);
+            } finally {
+                this.ui.setRunning(false);
+                this.ui.updateSummary(this.runner.getStats(), this.tests.length);
+            }
+        },
+
+        /**
+         * Kategoriya bo'yicha bajarish
+         */
+        async runCategoryByName(category) {
+            if (!this.runner || !this.runner.accessToken) {
+                alert('Avval Login & Bootstrap bajaring');
+                return;
+            }
+
+            this.ui.setRunning(true);
+
+            this.runner.onTestComplete = (testId, result) => {
+                this.ui.updateTestCard(testId, result);
+                this.ui.updateSummary(this.runner.getStats(), this.tests.length);
+            };
+
+            try {
+                await this.runner.runCategory(this.tests, category);
+            } catch (err) {
+                console.error('Test xatosi:', err);
+            } finally {
+                this.ui.setRunning(false);
+                this.ui.updateSummary(this.runner.getStats(), this.tests.length);
+            }
+        },
+
+        /**
+         * To'xtatish
+         */
+        stop() {
+            if (this.runner) this.runner.stop();
+        },
+
+        /**
+         * Tozalash
+         */
+        reset() {
+            if (this.runner) this.runner.reset();
+            if (this.ui && this.tests.length > 0) {
+                this.ui.renderDashboard(this.tests);
+            }
+        },
+
+        /**
+         * Kategoriya filter
+         */
+        filterCategory(cat) {
+            if (this.ui) this.ui.filterCategory(cat);
+        },
+
+        /**
+         * Kategoriya accordion toggle
+         */
+        toggleCategory(catId) {
+            if (this.ui) this.ui.toggleCategory(catId);
+        },
+
+        /**
+         * Test detail toggle
+         */
+        toggleTestDetail(testId) {
+            if (this.ui) this.ui.toggleTestDetail(testId);
+        },
+
+        // ─── YORDAMCHI ────────────────────────────────────
+
+        setAuthStatus(type, text) {
+            const el = document.getElementById('auth-status');
+            if (!el) return;
+            const dotClass = type === 'success' ? 'dot-success'
+                : type === 'error' ? 'dot-error'
+                : type === 'loading' ? 'dot-loading'
+                : 'dot-pending';
+            el.innerHTML = `<span class="dot ${dotClass}"></span><span>${text}</span>`;
+        },
+
+        showBootstrapResults(testData, source) {
+            const summary = document.getElementById('bootstrap-summary');
+            const counts = document.getElementById('data-counts');
+            if (!summary || !counts) return;
+
+            // Data source indikatori
+            const sourceLabel = source === 'db'
+                ? `<span class="badge bg-success me-2"><i class="fas fa-database me-1"></i>PostgreSQL: ${testData._meta?.database || 'hemis_401'}@${testData._meta?.host || 'localhost'}</span>`
+                : `<span class="badge bg-primary me-2"><i class="fas fa-cloud me-1"></i>API Bootstrap</span>`;
+
+            const items = [
+                { label: 'Talabalar', key: 'students' },
+                { label: 'Xodimlar', key: 'teachers' },
+                { label: "Bo'limlar", key: 'departments' },
+                { label: 'Guruhlar', key: 'groups' },
+                { label: 'Mutaxassisliklar', key: 'specialties' },
+                { label: 'Diplomlar', key: 'diplomas' },
+                { label: 'GPA', key: 'gpa' },
+                { label: 'Doktorantlar', key: 'doctoralStudents' },
+                { label: 'Loyihalar', key: 'projects' },
+                { label: 'Nashrlar', key: 'publicationsScientific' },
+                { label: 'Universitet', key: 'universities' },
+            ];
+
+            counts.innerHTML = sourceLabel + items.map(item => {
+                const arr = testData[item.key];
+                const count = Array.isArray(arr) ? arr.length : (arr ? 1 : 0);
+                const cls = count > 0 ? 'text-success' : 'text-danger';
+                return `<span class="${cls}"><i class="fas fa-${count > 0 ? 'check' : 'times'}"></i> ${item.label}: ${count}</span>`;
+            }).join(' ');
+
+            summary.style.display = 'block';
+
+            // Display-db yangilash
+            const dbEl = document.getElementById('display-db');
+            if (dbEl) {
+                if (source === 'db') {
+                    const meta = testData._meta || {};
+                    dbEl.innerHTML = `<span class="text-success"><i class="fas fa-database me-1"></i>PostgreSQL: ${meta.database || '?'}@${meta.host || '?'}</span>`;
+                } else {
+                    dbEl.innerHTML = '<span class="text-primary"><i class="fas fa-cloud me-1"></i>API entity endpointlar</span>';
+                }
+            }
+
+            // Log ko'rsatish (DB metadata)
+            const logEl = document.getElementById('bootstrap-log');
+            if (logEl && source === 'db' && testData._meta) {
+                const m = testData._meta;
+                logEl.innerHTML = `<small class="text-muted">
+                    <strong>DB Bootstrap:</strong>
+                    ${m.database}@${m.host} |
+                    Talabalar: ${m.studentCount}, Xodimlar: ${m.teacherCount},
+                    Bo'limlar: ${m.departmentCount}, Guruhlar: ${m.groupCount} |
+                    OTM: ${m.universityCode} (INN: ${m.universityTin || 'yo\'q'})
+                </small>`;
+                logEl.style.display = 'block';
+            } else if (logEl) {
+                logEl.style.display = 'none';
+            }
+        }
+    };
+    </script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
