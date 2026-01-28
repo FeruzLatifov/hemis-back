@@ -131,9 +131,9 @@ spring:
   # =====================================================
 
   jackson:
+    use-jackson2-defaults: true
     default-property-inclusion: non_null
     serialization:
-      write-dates-as-timestamps: false
       indent-output: true
     deserialization:
       fail-on-unknown-properties: false

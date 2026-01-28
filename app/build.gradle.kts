@@ -38,15 +38,15 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
 
     // Liquibase runtime (align with Gradle plugin runtime)
-    implementation("org.liquibase:liquibase-core:4.31.1")
+    implementation("org.liquibase:liquibase-core")
 
     // SpringDoc OpenAPI (Swagger)
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
 
     // ⭐ Sentry Error Tracking & Performance Monitoring
     // Yangilandi: 7.0.0 → 8.16.0 (latest, BeanPostProcessor warning fixed)
-    implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.16.0")
-    implementation("io.sentry:sentry-logback:8.16.0")
+    implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.29.0")
+    implementation("io.sentry:sentry-logback:8.29.0")
 
     // HikariCP (connection pooling - included in spring-boot-starter-data-jpa)
     // No need to declare explicitly

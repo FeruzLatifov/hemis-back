@@ -25,7 +25,7 @@ dependencies {
     val liquibaseVersion = "4.31.1"
     liquibaseRuntime("org.liquibase:liquibase-core:$liquibaseVersion")
     liquibaseRuntime("org.postgresql:postgresql")
-    liquibaseRuntime("info.picocli:picocli:4.7.5")
+    liquibaseRuntime("info.picocli:picocli:4.7.7")
     liquibaseRuntime("org.yaml:snakeyaml:2.2")
 
     // Hibernate (version from BOM via spring-boot-starter-data-jpa)

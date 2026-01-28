@@ -1,18 +1,15 @@
 // =====================================================
 // HEMIS Root Build Configuration
 // =====================================================
-// Stack: Spring Boot 3.5.8 + JDK 21 LTS + Gradle 9.2.1
+// Stack: Spring Boot 4.0.2 + JDK 21 LTS + Gradle 9.3.0
 // Mode: NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
 // =====================================================
 
 plugins {
     java
-    id("org.springframework.boot") version "3.5.8" apply false
+    id("org.springframework.boot") version "4.0.2" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
 }
-
-// Ensure Netty version is pinned (protect against external gradle.properties overrides)
-extra["netty.version"] = "4.1.115.Final"
 
 // =====================================================
 // Project Metadata
@@ -34,17 +31,21 @@ subprojects {
     // Import for dependency management extension
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.5.8")
-            mavenBom("io.netty:netty-bom:4.1.115.Final")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.2")
         }
     }
     
-    // Fix JAXB dependencies globally
+    // Fix dependency version conflicts
     configurations.all {
         resolutionStrategy.eachDependency {
             if (requested.group == "org.glassfish.jaxb") {
                 useVersion("4.0.5")
-                because("Fix Hibernate 6.6 JAXB version conflict")
+                because("Fix Hibernate JAXB version conflict")
+            }
+            // Fix: dependency-management plugin mis-resolves ${project.version} in netty-bom
+            if (requested.group == "io.netty") {
+                useVersion("4.2.9.Final")
+                because("Pin Netty to Boot 4.0.2 managed version")
             }
         }
     }
@@ -52,7 +53,7 @@ subprojects {
     // =====================================================
     // JDK 21 LTS Toolchain
     // =====================================================
-    // CRITICAL: Boot 3.5.8 supports Java 17-24
+    // CRITICAL: Boot 4.0.2 supports Java 17+
     // Using JDK 21 LTS for long-term stability
     // =====================================================
 
@@ -70,6 +71,9 @@ subprojects {
         // Lombok - reduce boilerplate
         compileOnly("org.projectlombok:lombok")
         annotationProcessor("org.projectlombok:lombok")
+
+        // Jackson 2 compatibility bridge (Boot 4 uses Jackson 3, bridge preserves Jackson 2 API)
+        implementation("org.springframework.boot:spring-boot-jackson2")
 
         // Testing - JUnit 5 + Spring Boot Test
         testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -157,9 +161,9 @@ tasks.register("testAll") {
 // Technology Stack (Managed by Spring Boot BOM)
 // =====================================================
 // Java: JDK 21 LTS
-// Gradle: 9.2.1
-// Spring Boot: 3.5.8
-// Spring Framework: 6.2.x (via Boot)
+// Gradle: 9.3.0
+// Spring Boot: 4.0.2
+// Spring Framework: 7.x (via Boot)
 // PostgreSQL Driver: Managed by BOM
 // Liquibase: Managed by BOM
 // Hibernate: Managed by BOM

@@ -18,7 +18,7 @@ dependencies {
 
     // OAuth2 Authorization Server (for token generation - OLD-HEMIS compatibility)
     // Spring Authorization Server 1.3.x compatible with Spring Boot 3.5.x
-    api("org.springframework.security:spring-security-oauth2-authorization-server:1.3.2")
+    api("org.springframework.security:spring-security-oauth2-authorization-server")
 
     // Spring Web (for REST controllers)
     api("org.springframework.boot:spring-boot-starter-web")
@@ -27,19 +27,19 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // SpringDoc OpenAPI for Swagger annotations
-    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0")
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
 
     // Redis for distributed cache (L2 - shared across pods)
     api("org.springframework.boot:spring-boot-starter-data-redis") {
         exclude(group = "io.lettuce", module = "lettuce-core")
     }
-    api("redis.clients:jedis:5.1.0")
+    api("redis.clients:jedis")
 
     // Spring Cache Abstraction
     api("org.springframework.boot:spring-boot-starter-cache")
 
     // Caffeine for L1 JVM cache (per-pod, ultra-fast)
-    api("com.github.ben-manes.caffeine:caffeine:3.1.8")
+    api("com.github.ben-manes.caffeine:caffeine")
 
     // Testing
     testImplementation("org.springframework.security:spring-security-test")
