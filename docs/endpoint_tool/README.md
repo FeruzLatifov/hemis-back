@@ -20,13 +20,13 @@ cd hemis-back
 ./gradlew :app:bootRun
 
 # Brauzerda:
-# http://localhost:8081/docs/endpoint_tester.html
+# http://localhost:8081/docs/endpoint_tool/endpoint_tester.html
 ```
 
 ### Variant B: Proxy orqali (yangi + old hemis)
 
 ```bash
-cd hemis-back/docs
+cd hemis-back/docs/endpoint_tool
 python3 proxy-server.py
 
 # Brauzerda:

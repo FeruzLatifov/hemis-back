@@ -9,13 +9,15 @@ Bu papkada HEMIS backend API ni test qilish uchun ikkita mustaqil vosita mavjud.
 Yangi hemis-back va old-hemis endpointlarini side-by-side solishtirish.
 Endpoint porting natijasini tekshirish uchun ishlatiladi.
 
+**Papka:** `endpoint_tool/`
+
 **Fayllar:**
 - `endpoint_tester.html` — asosiy test sahifasi
 - `endpoint_comparator.html` — javoblarni vizual solishtirish
 - `proxy-server.py` — CORS proxy (port 9000, old-hemis uchun)
 - `endpoints/` — JS modullari (70 ta kategoriya, 300+ endpoint)
 
-**Batafsil:** `ENDPOINT_TESTER_README.md`
+**Batafsil:** `endpoint_tool/README.md`
 
 ---
 
@@ -23,6 +25,8 @@ Endpoint porting natijasini tekshirish uchun ishlatiladi.
 
 Univer tizimi hemis-back ga yuboradigan barcha v2/ endpointlarni avtomatik tekshirish.
 PHP format bilan mos kelishini sinash uchun ishlatiladi.
+
+**Papka:** `integration/`
 
 **Fayllar:**
 - `integration_tester.html` — asosiy test sahifasi
@@ -42,7 +46,7 @@ cd hemis-back
 ./gradlew :app:bootRun
 
 # Brauzerda:
-# Endpoint Tester:    http://localhost:8081/docs/endpoint_tester.html
+# Endpoint Tester:    http://localhost:8081/docs/endpoint_tool/endpoint_tester.html
 # Integration Tester: http://localhost:8081/docs/integration_tester.html
 ```
 
