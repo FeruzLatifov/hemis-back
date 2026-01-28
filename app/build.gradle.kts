@@ -44,8 +44,8 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
 
     // ⭐ Sentry Error Tracking & Performance Monitoring
-    // Yangilandi: 7.0.0 → 8.16.0 (latest, BeanPostProcessor warning fixed)
-    implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.29.0")
+    // Spring Boot 4.x uchun sentry-spring-boot-4 ishlatiladi
+    implementation("io.sentry:sentry-spring-boot-4:8.29.0")
     implementation("io.sentry:sentry-logback:8.29.0")
 
     // HikariCP (connection pooling - included in spring-boot-starter-data-jpa)

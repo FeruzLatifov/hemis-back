@@ -31,11 +31,13 @@ class ResponseValidator {
 
         // 1. HTTP status tekshirish
         const expectedStatus = test.expectedStatus || 200;
+        const expectedStatusArray = Array.isArray(expectedStatus) ? expectedStatus : [expectedStatus];
+        const statusMatch = expectedStatusArray.includes(httpStatus);
         checks.push({
             name: 'HTTP Status',
-            expected: expectedStatus,
+            expected: expectedStatusArray.length > 1 ? expectedStatusArray.join('/') : expectedStatus,
             actual: httpStatus,
-            pass: httpStatus === expectedStatus
+            pass: statusMatch
         });
 
         // 2. Javob vaqti (< 5s = pass, 5-30s = warn, > 30s = fail)

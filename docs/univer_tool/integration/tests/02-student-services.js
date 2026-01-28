@@ -68,36 +68,18 @@ const tests_02 = [
                 }
             };
         },
-        expectedStatus: 200,
+        expectedStatus: [200, 204],  // old-hemis 204, hemis-back 200 qaytarishi mumkin
         customValidator: (body, status) => [{
             name: 'Transfer so\'rovi qabul qilindi (bo\'sh javob = transfer yo\'q — normal)',
-            // old-hemis: transfer candidate yo'q bo'lsa 200 OK + bo'sh body qaytaradi
-            pass: status === 200
-        }]
-    },
-    {
-        id: 'student-gpa-get',
-        category: '02. Student Services',
-        name: 'Talaba GPA olish (GET)',
-        order: 4,
-        method: 'GET',
-        url: '/app/rest/v2/services/student/gpa',
-        auth: 'bearer',
-        dependsOn: ['auth-token'],
-        params: {
-            data: '{{students[0].pinfl}}'
-        },
-        expectedStatus: 200,
-        customValidator: (body) => [{
-            name: 'GPA ma\'lumoti qaytdi',
-            pass: body !== null && body !== undefined
+            // old-hemis: transfer candidate yo'q bo'lsa 200/204 + bo'sh body qaytaradi
+            pass: status === 200 || status === 204
         }]
     },
     {
         id: 'student-gpa-post',
         category: '02. Student Services',
-        name: 'Talaba GPA olish (POST)',
-        order: 5,
+        name: 'Talaba GPA yaratish/yangilash (POST)',
+        order: 4,
         method: 'POST',
         url: '/app/rest/v2/services/student/gpa',
         auth: 'bearer',

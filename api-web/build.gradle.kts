@@ -18,7 +18,7 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
 
     // ⭐ Sentry (compileOnly - runtime comes from :app module)
-    compileOnly("io.sentry:sentry-spring-boot-starter-jakarta:8.29.0")
+    compileOnly("io.sentry:sentry-spring-boot-4:8.29.0")
     
     // Apache POI for Excel export
     implementation("org.apache.poi:poi:5.5.1")

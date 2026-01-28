@@ -33,7 +33,10 @@ public class LegacyJacksonConfig {
         ObjectMapper mapper = new ObjectMapper();
 
         // Include null values in JSON output (OLD-HEMIS compatibility)
-        mapper.setSerializationInclusion(JsonInclude.Include.ALWAYS);
+        mapper.setDefaultPropertyInclusion(JsonInclude.Value.construct(
+                JsonInclude.Include.ALWAYS,
+                JsonInclude.Include.ALWAYS
+        ));
 
         // Date/Time configuration
         mapper.registerModule(new JavaTimeModule());

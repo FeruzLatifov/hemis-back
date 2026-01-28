@@ -16,7 +16,11 @@ import java.util.UUID;
  * Handles PostgreSQL JDBC driver returning UUID as String on SELECT.
  * - READ: String -> UUID conversion
  * - WRITE: UUID -> UUID (JDBC driver handles casting to uuid type)
+ *
+ * Note: Using deprecated UserType methods without BasicValuedMapping parameter.
+ * These methods still work in Hibernate 7 but are deprecated in favor of new overloads.
  */
+@SuppressWarnings("removal")
 public class StringToUuidType implements UserType<UUID> {
 
     @Override

@@ -84,9 +84,13 @@ public class DashboardCacheConfig implements CachingConfigurer {
      * 1. Write to L1 Caffeine (immediate)
      * 2. Write to L2 Redis (sync for consistency)
      * </pre>
+     *
+     * Note: GenericJackson2JsonRedisSerializer is deprecated in Spring Data Redis 3.x
+     * but still works. Will be replaced in future versions.
      */
     @Bean
     @Primary
+    @SuppressWarnings("removal")
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         log.info("🚀 Initializing ENTERPRISE 2-Level Cache Manager (Caffeine + Redis)");
 

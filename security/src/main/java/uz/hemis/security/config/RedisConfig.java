@@ -15,7 +15,7 @@ import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
@@ -123,8 +123,12 @@ public class RedisConfig {
      *   <li>Key: String (user:admin:permissions)</li>
      *   <li>Value: JSON (Set of permission strings)</li>
      * </ul>
+     *
+     * Note: GenericJackson2JsonRedisSerializer is deprecated in Spring Data Redis 3.x
+     * but still works. Will be replaced in future versions.
      */
     @Bean
+    @SuppressWarnings("removal")
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
@@ -139,11 +143,10 @@ public class RedisConfig {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        Jackson2JsonRedisSerializer<Object> jackson2JsonRedisSerializer =
-                new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
-        template.setValueSerializer(jackson2JsonRedisSerializer);
-        template.setHashValueSerializer(jackson2JsonRedisSerializer);
+        template.setValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(jsonSerializer);
 
         template.afterPropertiesSet();
 
