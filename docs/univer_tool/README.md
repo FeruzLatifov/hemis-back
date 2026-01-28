@@ -1,4 +1,4 @@
-# Integration Tester
+# Univer Integration Tester
 
 Univer (PHP) tizimi hemis-back ga yuboradigan barcha v2/ endpointlarni avtomatik tekshirish vositasi.
 
@@ -20,7 +20,7 @@ cd hemis-back
 ./gradlew :app:bootRun
 
 # Brauzerda:
-# http://localhost:8081/docs/integration_tester.html
+# http://localhost:8081/docs/univer_tool/integration_tester.html
 # Login → "Login & API Bootstrap"
 ```
 
@@ -29,7 +29,7 @@ Test ma'lumotlari hemis-back ning o'z entity endpointlaridan olinadi.
 ### Variant B: DB Bootstrap (proxy orqali)
 
 ```bash
-cd hemis-back/docs
+cd hemis-back/docs/univer_tool
 pip3 install psycopg2-binary    # birinchi marta
 python3 integration-proxy.py
 
@@ -98,7 +98,7 @@ proxy JOIN orqali parent jadvalning UUID sini oladi.
 
 ## Yangi test qo'shish
 
-`tests/` papkasidagi faylga test qo'shing:
+`integration/tests/` papkasidagi faylga test qo'shing:
 
 ```javascript
 {

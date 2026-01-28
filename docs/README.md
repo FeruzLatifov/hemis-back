@@ -14,27 +14,27 @@ Endpoint porting natijasini tekshirish uchun ishlatiladi.
 **Fayllar:**
 - `endpoint_tester.html` — asosiy test sahifasi
 - `endpoint_comparator.html` — javoblarni vizual solishtirish
-- `proxy-server.py` — CORS proxy (port 9000, old-hemis uchun)
-- `endpoints/` — JS modullari (70 ta kategoriya, 300+ endpoint)
+- `proxy-server.py` — CORS proxy (port 9000)
+- `endpoints/` — JS modullari (70 ta kategoriya)
 
 **Batafsil:** `endpoint_tool/README.md`
 
 ---
 
-### 2. Integration Tester — Univer (PHP) integratsiya testi
+### 2. Univer Integration Tester — PHP integratsiya testi
 
-Univer tizimi hemis-back ga yuboradigan barcha v2/ endpointlarni avtomatik tekshirish.
+Univer (PHP) tizimi hemis-back ga yuboradigan barcha v2/ endpointlarni avtomatik tekshirish.
 PHP format bilan mos kelishini sinash uchun ishlatiladi.
 
-**Papka:** `integration/`
+**Papka:** `univer_tool/`
 
 **Fayllar:**
 - `integration_tester.html` — asosiy test sahifasi
 - `integration-proxy.py` — CORS proxy + DB bootstrap (port 9001)
-- `integration/lib/` — JS kutubxonalar (runner, validator, bootstrap, ui)
-- `integration/tests/` — test ta'riflari (00-12 kategoriya, 72+ test)
+- `integration/lib/` — JS kutubxonalar
+- `integration/tests/` — test ta'riflari (72+ test)
 
-**Batafsil:** `integration/README.md`
+**Batafsil:** `univer_tool/README.md`
 
 ---
 
@@ -47,7 +47,7 @@ cd hemis-back
 
 # Brauzerda:
 # Endpoint Tester:    http://localhost:8081/docs/endpoint_tool/endpoint_tester.html
-# Integration Tester: http://localhost:8081/docs/integration_tester.html
+# Univer Tester:      http://localhost:8081/docs/univer_tool/integration_tester.html
 ```
 
 ## Boshqa fayllar
