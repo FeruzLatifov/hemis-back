@@ -125,6 +125,7 @@ public class LegacyUserInfoController {
             String universityName = getUniversityName(user);
 
             // Build user data (old-hemis format - NO wrapper!)
+            String universityCode = user.getUniversity() != null ? user.getUniversity().getCode() : null;
             LegacyUserInfoResponse.UserData userData = LegacyUserInfoResponse.UserData.builder()
                     .id(user.getId().toString())
                     .login(user.getUsername())
@@ -138,7 +139,7 @@ public class LegacyUserInfoController {
                     .language(user.getLanguage() != null ? user.getLanguage() : "uz")  // ✅ OLD-HEMIS: default "uz" not "ru"
                     .instanceName(buildInstanceName(user, universityName))  // ✅ "{universityName} [{login}]"
                     .locale(user.getLocale() != null ? user.getLocale() : "uz")  // ✅ OLD-HEMIS: default "uz" not "ru"
-                    // NOTE: "university" field is NOT in old-hemis /app/rest/v2/userInfo response! Removed for 100% compatibility
+                    .university(universityCode)  // ✅ PHP HemisApi::apiLogin() uchun kerak
                     .build();
 
             log.info("Returning user info for: {} (university: {})", user.getUsername(), universityName);

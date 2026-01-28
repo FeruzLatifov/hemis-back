@@ -2043,14 +2043,45 @@
         // Smart comparison - structure and semantics
         function compareResponses(id, category) {
             const uniqueId = category ? makeUniqueId(category, id) : id;
-            const newData = newTestResults[uniqueId]?.data;
-            const oldData = oldTestResults[uniqueId]?.data;
+            let newData = newTestResults[uniqueId]?.data;
+            let oldData = oldTestResults[uniqueId]?.data;
 
             if (!newData || !oldData) return;
 
             const diffEl = document.getElementById(`diff-${uniqueId}`);
             const differences = [];
             const warnings = [];
+
+            // ARRAY HANDLING: Agar response array bo'lsa, birinchi elementni solishtir
+            const isNewArray = Array.isArray(newData);
+            const isOldArray = Array.isArray(oldData);
+
+            if (isNewArray !== isOldArray) {
+                differences.push(`❌ Response turi farqi: NEW=${isNewArray ? 'Array' : 'Object'}, OLD=${isOldArray ? 'Array' : 'Object'}`);
+            }
+
+            if (isNewArray && isOldArray) {
+                warnings.push(`ℹ️ Array response: NEW=${newData.length} ta, OLD=${oldData.length} ta element`);
+                // Birinchi elementlarni solishtir (strukturani tekshirish uchun)
+                if (newData.length > 0 && oldData.length > 0) {
+                    newData = newData[0];
+                    oldData = oldData[0];
+                    warnings.push(`📋 Birinchi elementlar strukturasi solishtirilmoqda...`);
+                } else if (newData.length === 0 && oldData.length === 0) {
+                    // Ikkalasi ham bo'sh array
+                    diffEl.innerHTML = '<span class="status-success"><i class="fas fa-check-circle"></i> ✅ Ikkalasi ham bo\'sh array</span>';
+                    diffEl.style.background = '#d4edda';
+                    return;
+                } else {
+                    differences.push(`⚠️ Array uzunligi farqi: NEW=${newData.length}, OLD=${oldData.length}`);
+                    if (newData.length === 0 || oldData.length === 0) {
+                        // Birida ma'lumot yo'q - solishtirish mumkin emas
+                        diffEl.innerHTML = '<span class="status-warning"><i class="fas fa-exclamation-triangle"></i> ⚠️ ' + differences.join('<br>') + '</span>';
+                        diffEl.style.background = '#fff3cd';
+                        return;
+                    }
+                }
+            }
 
             // 1. Compare field names (backward compatible check)
             const newFields = Object.keys(newData).sort();
@@ -2080,13 +2111,56 @@
                 }
             }
 
-            // 3. Compare field types
+            // 3. Compare field types and nested objects
             for (const key of newFields) {
                 if (oldData.hasOwnProperty(key)) {
-                    const newType = typeof newData[key];
-                    const oldType = typeof oldData[key];
+                    const newVal = newData[key];
+                    const oldVal = oldData[key];
+                    const newType = typeof newVal;
+                    const oldType = typeof oldVal;
+
                     if (newType !== oldType) {
-                        differences.push(`${key}: type farqi (New: ${newType}, Old: ${oldType})`);
+                        // Type farqi - muhim xato!
+                        if (newType === 'string' && oldType === 'object' && oldVal !== null) {
+                            differences.push(`❌ ${key}: NEW=string (flat ID), OLD=object (nested) - struktura farqi!`);
+                        } else if (newType === 'object' && oldType === 'string') {
+                            differences.push(`❌ ${key}: NEW=object (nested), OLD=string (flat ID) - struktura farqi!`);
+                        } else {
+                            differences.push(`${key}: type farqi (New: ${newType}, Old: ${oldType})`);
+                        }
+                    } else if (newType === 'object' && oldType === 'object' && newVal !== null && oldVal !== null) {
+                        // Ikkalasi ham object - nested strukturani solishtir
+                        const nestedNewFields = Object.keys(newVal).sort();
+                        const nestedOldFields = Object.keys(oldVal).sort();
+                        const nestedMissing = nestedOldFields.filter(f => !nestedNewFields.includes(f));
+                        if (nestedMissing.length > 0) {
+                            differences.push(`❌ ${key} nested object: NEW da yo'q fieldlar: [${nestedMissing.join(', ')}]`);
+                        }
+                    }
+                }
+            }
+
+            // 4. Check for fields that exist in OLD but with different names in NEW (e.g., employee vs _employee)
+            const possibleRenames = [
+                ['employee', '_employee'],
+                ['university', '_university'],
+                ['department', '_department'],
+                ['employeeType', '_employeeType'],
+                ['employeePosition', '_employeePosition'],
+                ['employeeRate', '_employeeRate'],
+                ['employeeForm', '_employeeForm'],
+                ['employeeStatus', '_employeeStatus']
+            ];
+            for (const [oldName, newName] of possibleRenames) {
+                if (oldFields.includes(oldName) && !newFields.includes(oldName) && newFields.includes(newName)) {
+                    const oldVal = oldData[oldName];
+                    const newVal = newData[newName];
+                    const oldIsNested = typeof oldVal === 'object' && oldVal !== null;
+                    const newIsFlat = typeof newVal === 'string';
+                    if (oldIsNested && newIsFlat) {
+                        differences.push(`❌ ${oldName} → ${newName}: OLD=nested object, NEW=flat ID - BACKWARD INCOMPATIBLE!`);
+                    } else {
+                        warnings.push(`ℹ️ Field nomi o'zgardi: ${oldName} → ${newName}`);
                     }
                 }
             }

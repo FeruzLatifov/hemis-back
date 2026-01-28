@@ -4,7 +4,7 @@
 
 const endpoints_05 = [
     // ============================================
-    // 05.O'qituvchi (5 endpoint)
+    // 05.O'qituvchi (8 endpoint)
     // ============================================
     {
                 id: 1,
@@ -133,14 +133,50 @@ const endpoints_05 = [
                 method: "POST",
                 url: "/app/rest/v2/services/teacher/id",
                 requiresAuth: true,
-                inputFields: {},
-                requestBody: {
+                inputFields: {
+                    citizenship: {
+                        label: "Citizenship (fuqarolik)",
+                        type: "text",
+                        placeholder: "11 = O'zbekiston",
+                        default: "11",
+                        required: true
+                    },
+                    pinfl: {
+                        label: "PINFL (14 raqam)",
+                        type: "text",
+                        placeholder: "42103714310024",
+                        default: "42103714310024",
+                        required: true
+                    },
+                    serial: {
+                        label: "Passport seriya/raqam",
+                        type: "text",
+                        placeholder: "AD3391507",
+                        default: "AD3391507",
+                        required: true
+                    },
+                    year: {
+                        label: "Yil",
+                        type: "text",
+                        placeholder: "2022",
+                        default: "2022",
+                        required: true
+                    },
+                    gender: {
+                        label: "Jinsi (11=erkak, 12=ayol)",
+                        type: "text",
+                        placeholder: "12",
+                        default: "12",
+                        required: true
+                    }
+                },
+                bodyTemplate: {
                     data: {
-                        citizenship: "11",
-                        pinfl: "42103714310024",
-                        serial: "AD3391507",
-                        year: "2022",
-                        gender: "12"
+                        citizenship: "{citizenship}",
+                        pinfl: "{pinfl}",
+                        serial: "{serial}",
+                        year: "{year}",
+                        gender: "{gender}"
                     }
                 },
                 description: "O'qituvchi Universal ID sini olish yoki yangi yaratish. citizenship=11 O'zbekiston fuqarosi. Mavjud o'qituvchi topilsa is_new=false, topilmasa yangi yaratiladi is_new=true. ID format: {universityCode}{YY}{gender}{sequence}.",
@@ -187,6 +223,203 @@ const endpoints_05 = [
                 description: "Yangi o'qituvchi yaratish (Entity API). Shaxsiy ma'lumotlar: firstname, lastname, fathername, pinfl (14 raqam), birthday (YYYY-MM-DD), serialNumber. Reference kodlar: _gender (11=erkak, 12=ayol), _citizenship (11=O'zbekiston), _university (OTM kodi), _academic_degree, _academic_rank. Qo'shimcha: phone, address, employeeYear.",
                 dependsOn: 1,
                 ported: true  // ✅ Controller ported - TeacherEntityController.java
+            },
+    {
+                id: 6,
+                category: "05.O'qituvchi",
+                name: "O'qituvchilarni qidirish (GET /search)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_ETeacher/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (JSON)",
+                        type: "text",
+                        placeholder: '{"conditions":[{"property":"pinfl","operator":"=","value":"32305967340015"}]}',
+                        default: '{"conditions":[{"property":"pinfl","operator":"=","value":"32305967340015"}]}',
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        default: "0",
+                        required: false
+                    },
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        default: "10",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    },
+                    view: {
+                        label: "View",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "_local", label: "_local"}, {value: "_minimal", label: "_minimal"}],
+                        default: "_local",
+                        required: false
+                    }
+                },
+                description: "O'qituvchilarni URL parametrlari orqali qidirish. Filter JSON formatida: {\"conditions\":[{\"property\":\"pinfl\",\"operator\":\"=\",\"value\":\"...\"}]}",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported - TeacherEntityController.java
+            },
+    {
+                id: 7,
+                category: "05.O'qituvchi",
+                name: "O'qituvchilarni qidirish (POST /search)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_ETeacher/search",
+                requiresAuth: true,
+                inputFields: {
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        placeholder: "0",
+                        default: "0",
+                        required: false
+                    },
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        placeholder: "50",
+                        default: "10",
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    },
+                    view: {
+                        label: "View",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "_local", label: "_local"}, {value: "_minimal", label: "_minimal"}],
+                        default: "_local",
+                        required: false
+                    }
+                },
+                requestBody: {
+                    filter: {
+                        conditions: [
+                            {
+                                property: "pinfl",
+                                operator: "=",
+                                value: "32305967340015"
+                            }
+                        ]
+                    }
+                },
+                description: "O'qituvchilarni JSON filter orqali qidirish. Request body da filter, offset, limit parametrlari bo'lishi mumkin.",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported - TeacherEntityController.java
+            },
+    {
+                id: 8,
+                category: "05.O'qituvchi",
+                name: "Xodim lavozimini qo'shish (addJob)",
+                method: "POST",
+                url: "/app/rest/v2/services/teacher/addJob",
+                requiresAuth: true,
+                inputFields: {
+                    employeeId: {
+                        label: "O'qituvchi ID (UUID)",
+                        type: "text",
+                        placeholder: "O'qituvchi UUID",
+                        default: "00000000-0000-0000-0000-000000000000",
+                        required: true
+                    },
+                    universityCode: {
+                        label: "OTM kodi",
+                        type: "text",
+                        placeholder: "401",
+                        default: "401",
+                        required: true
+                    },
+                    departmentCode: {
+                        label: "Kafedra kodi",
+                        type: "text",
+                        placeholder: "401-102",
+                        default: "401-102",
+                        required: true
+                    },
+                    employeeForm: {
+                        label: "Shtat shakli (11=Asosiy, 12=Ichki o'rindosh, 13=Tashqi o'rindosh, 14=Soatbay)",
+                        type: "text",
+                        placeholder: "11",
+                        default: "11",
+                        required: true
+                    },
+                    employeeStatus: {
+                        label: "Holati (11=Ishlamoqda, 12=Ta'tilda, 13=Bo'shatilgan)",
+                        type: "text",
+                        placeholder: "11",
+                        default: "11",
+                        required: true
+                    },
+                    employeeType: {
+                        label: "Xodim turi",
+                        type: "text",
+                        placeholder: "11",
+                        default: "11",
+                        required: true
+                    },
+                    employeeRate: {
+                        label: "Stavka (11=1.0, 12=0.75, 13=0.5, 14=0.25)",
+                        type: "text",
+                        placeholder: "13",
+                        default: "13",
+                        required: true
+                    },
+                    employeePosition: {
+                        label: "Lavozim kodi",
+                        type: "text",
+                        placeholder: "11",
+                        default: "11",
+                        required: true
+                    },
+                    jobStartDate: {
+                        label: "Ish boshlagan sana",
+                        type: "text",
+                        placeholder: "YYYY-MM-DD",
+                        default: "2020-01-06",
+                        required: true
+                    },
+                    jobEndDate: {
+                        label: "Shartnoma tugash sanasi",
+                        type: "text",
+                        placeholder: "YYYY-MM-DD",
+                        default: "2025-08-01",
+                        required: true
+                    }
+                },
+                bodyTemplate: {
+                    job: {
+                        employee: {id: "{employeeId}"},
+                        university: {code: "{universityCode}"},
+                        department: {code: "{departmentCode}"},
+                        employeeForm: {code: "{employeeForm}"},
+                        employeeStatus: {code: "{employeeStatus}"},
+                        employeeType: {code: "{employeeType}"},
+                        employeeRate: {code: "{employeeRate}"},
+                        employeePosition: {code: "{employeePosition}"},
+                        jobStartDate: "{jobStartDate}",
+                        jobEndDate: "{jobEndDate}"
+                    }
+                },
+                description: "Xodimga yangi lavozim qo'shish. employeeForm: 11=Asosiy shtat, 12=O'rindoshlik (ichki), 13=O'rindoshlik (tashqi), 14=Soatbay. employeeStatus: 11=Ishlamoqda, 12=Ta'tilda, 13=Ishdan bo'shatilgan.",
+                dependsOn: 1,
+                ported: true  // ✅ Controller ported - CubaTeacherServiceController.java
             }
 ];
 

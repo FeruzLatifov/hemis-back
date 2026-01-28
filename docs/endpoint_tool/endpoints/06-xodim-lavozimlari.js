@@ -4,7 +4,7 @@
 
 const endpoints_06 = [
     // ============================================
-    // 06.Xodim lavozimlari (18 endpoint)
+    // 06.Xodim lavozimlari (29 endpoint)
     // ============================================
     {
                 id: 1,
@@ -28,6 +28,13 @@ const endpoints_06 = [
                         default: "0",
                         required: false
                     },
+                    view: {
+                        label: "View (nested objects uchun)",
+                        type: "text",
+                        placeholder: "eEmployeeJob-view",
+                        default: "",
+                        required: false
+                    },
                     returnNulls: {
                         label: "Return Nulls",
                         type: "select",
@@ -36,7 +43,7 @@ const endpoints_06 = [
                         required: false
                     }
                 },
-                description: "Barcha xodim lavozimlari ro'yxatini olish. Birinchi element ID si keyingi endpointlar uchun avtomatik to'ldiriladi.",
+                description: "Barcha xodim lavozimlari ro'yxatini olish. view=eEmployeeJob-view qo'shsangiz nested objectlar qaytadi. Birinchi element ID si keyingi endpointlar uchun avtomatik to'ldiriladi.",
                 dependsOn: 1,
                 ported: true,
                 storeFirstId: "employeeJobId"  // Birinchi elementdan ID olish
@@ -709,6 +716,271 @@ const endpoints_06 = [
                     }
                 },
                 description: "Xodim ish joyini o'chirish (soft delete). O'chirilgan yozuv bazadan o'chirilmaydi, faqat delete_ts belgilanadi. 200=muvaffaqiyatli (bo'sh response), 404=topilmadi.",
+                ported: true
+            },
+    // ============================================
+    // employeeForm - Xodim mehnat shakllari (2 endpoint)
+    // ============================================
+    {
+                id: 20,
+                category: "06.Xodim lavozimlari",
+                name: "Barcha xodim mehnat shakllari (GET all)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm",
+                requiresAuth: true,
+                inputFields: {
+                    limit: {
+                        label: "Limit",
+                        type: "number",
+                        default: 50,
+                        required: false
+                    },
+                    offset: {
+                        label: "Offset",
+                        type: "number",
+                        default: 0,
+                        required: false
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                description: "Xodim mehnat shakllari klassifikatori: 11=Asosiy shtat, 12=Ichki o'rindoshlik, 13=Tashqi o'rindoshlik, 14=Soatbay",
+                ported: true,
+                storeFirstId: "employeeFormCode"
+            },
+    {
+                id: 21,
+                category: "06.Xodim lavozimlari",
+                name: "Xodim mehnat shaklini olish (GET by ID)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/{entityId}",
+                requiresAuth: true,
+                inputFields: {
+                    entityId: {
+                        label: "Shakl kodi (11, 12, 13, 14)",
+                        type: "text",
+                        default: "11",
+                        required: true,
+                        useStoredId: "employeeFormCode"
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                description: "Bitta mehnat shaklini kod bo'yicha olish. Kodlar: 11=Asosiy shtat, 12=Ichki o'rindoshlik, 13=Tashqi o'rindoshlik, 14=Soatbay",
+                dependsOn: 20,
+                ported: true
+            },
+    // ============================================
+    // /search endpointlar - CUBA Platform compatible
+    // ============================================
+    {
+                id: 22,
+                category: "06.Xodim lavozimlari",
+                name: "Xodim holatlarini qidirish (GET /search)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (JSON string)",
+                        type: "text",
+                        default: "",
+                        required: false,
+                        placeholder: "{\"conditions\":[...]}"
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                description: "Xodim holatlari klassifikatorini qidirish (CUBA /search endpoint). GET parametrlari orqali filter yuborish mumkin.",
+                ported: true
+            },
+    {
+                id: 23,
+                category: "06.Xodim lavozimlari",
+                name: "Xodim holatlarini qidirish (POST /search)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeStatusType/search",
+                requiresAuth: true,
+                inputFields: {
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                bodyTemplate: {
+                    "filter": {
+                        "conditions": []
+                    }
+                },
+                description: "Xodim holatlari klassifikatorini JSON filter orqali qidirish. Bo'sh filter barcha yozuvlarni qaytaradi.",
+                ported: true
+            },
+    {
+                id: 24,
+                category: "06.Xodim lavozimlari",
+                name: "Xodim stavkalarini qidirish (GET /search)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (JSON string)",
+                        type: "text",
+                        default: "",
+                        required: false,
+                        placeholder: "{\"conditions\":[...]}"
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                description: "Xodim stavkalari klassifikatorini qidirish (CUBA /search endpoint). GET parametrlari orqali filter yuborish mumkin.",
+                ported: true
+            },
+    {
+                id: 25,
+                category: "06.Xodim lavozimlari",
+                name: "Xodim stavkalarini qidirish (POST /search)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeRate/search",
+                requiresAuth: true,
+                inputFields: {
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                bodyTemplate: {
+                    "filter": {
+                        "conditions": []
+                    }
+                },
+                description: "Xodim stavkalari klassifikatorini JSON filter orqali qidirish. Bo'sh filter barcha yozuvlarni qaytaradi.",
+                ported: true
+            },
+    {
+                id: 26,
+                category: "06.Xodim lavozimlari",
+                name: "Xodim lavozimlarini qidirish (GET /search)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HTeacherPositionType/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (JSON string)",
+                        type: "text",
+                        default: "",
+                        required: false,
+                        placeholder: "{\"conditions\":[...]}"
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                description: "Xodim lavozimlari klassifikatorini qidirish (CUBA /search endpoint). 227 ta lavozim mavjud.",
+                ported: true
+            },
+    {
+                id: 27,
+                category: "06.Xodim lavozimlari",
+                name: "Xodim lavozimlarini qidirish (POST /search)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HTeacherPositionType/search",
+                requiresAuth: true,
+                inputFields: {
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                bodyTemplate: {
+                    "filter": {
+                        "conditions": []
+                    }
+                },
+                description: "Xodim lavozimlari klassifikatorini JSON filter orqali qidirish. Bo'sh filter barcha 227 ta lavozimni qaytaradi.",
+                ported: true
+            },
+    {
+                id: 28,
+                category: "06.Xodim lavozimlari",
+                name: "Mehnat shakllarini qidirish (GET /search)",
+                method: "GET",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search",
+                requiresAuth: true,
+                inputFields: {
+                    filter: {
+                        label: "Filter (JSON string)",
+                        type: "text",
+                        default: "",
+                        required: false,
+                        placeholder: "{\"conditions\":[...]}"
+                    },
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                description: "Mehnat shakllari klassifikatorini qidirish (CUBA /search endpoint). 11=Asosiy, 12=Ichki, 13=Tashqi, 14=Soatbay.",
+                ported: true
+            },
+    {
+                id: 29,
+                category: "06.Xodim lavozimlari",
+                name: "Mehnat shakllarini qidirish (POST /search)",
+                method: "POST",
+                url: "/app/rest/v2/entities/hemishe_HUniversityEmployeeForm/search",
+                requiresAuth: true,
+                inputFields: {
+                    returnNulls: {
+                        label: "Return Nulls",
+                        type: "select",
+                        options: [{value: "", label: "default"}, {value: "true", label: "true"}, {value: "false", label: "false"}],
+                        default: "",
+                        required: false
+                    }
+                },
+                bodyTemplate: {
+                    "filter": {
+                        "conditions": []
+                    }
+                },
+                description: "Mehnat shakllari klassifikatorini JSON filter orqali qidirish. Bo'sh filter 4 ta shaklni qaytaradi.",
                 ported: true
             }
 ];

@@ -12,7 +12,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.ContractStatisticsService;
 import uz.hemis.service.StudentService;
@@ -53,7 +52,6 @@ public class StudentExtraServiceController {
     }
 
     @PostMapping("/contractStatistics")
-    @Transactional
     @Operation(
             summary = "Shartnoma statistikasini yuborish",
             tags = {"36.Shartnoma statistikasi"},
@@ -122,7 +120,16 @@ public class StudentExtraServiceController {
     public ResponseEntity<?> contractStatistics(@RequestBody Map<String, Object> request) {
         log.info("[CUBA Service] student/contractStatistics: request={}", request);
         String username = getCurrentUsername();
-        return ResponseEntity.ok(contractStatisticsService.submitContractStatistics(request, username));
+        try {
+            return ResponseEntity.ok(contractStatisticsService.submitContractStatistics(request, username));
+        } catch (Exception e) {
+            // OLD-HEMIS compatible: return 200 with {success: false, message: ...}
+            log.error("[CUBA Service] contractStatistics error: {}", e.getMessage());
+            return ResponseEntity.ok(Map.of(
+                "success", false,
+                "message", e.getMessage() != null ? e.getMessage() : "Unknown error"
+            ));
+        }
     }
 
     private String getCurrentUsername() {

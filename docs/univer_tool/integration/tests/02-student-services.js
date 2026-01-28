@@ -68,11 +68,12 @@ const tests_02 = [
                 }
             };
         },
-        expectedStatus: [200, 204],  // old-hemis 204, hemis-back 200 qaytarishi mumkin
+        expectedStatus: [200, 204],
         customValidator: (body, status) => [{
-            name: 'Transfer so\'rovi qabul qilindi (bo\'sh javob = transfer yo\'q — normal)',
-            // old-hemis: transfer candidate yo'q bo'lsa 200/204 + bo'sh body qaytaradi
-            pass: status === 200 || status === 204
+            name: 'Update response: 200 + {id,code,verified} (yangi) yoki 204 (eski)',
+            // Yangi hemis-back: 200 + {id, code, verified, points}
+            // Old-hemis: 204 No Content (transfer bo'lmasa hech narsa qilmaydi)
+            pass: (status === 200 && body && typeof body.id === 'string' && typeof body.code === 'string') || status === 204
         }]
     },
     {
@@ -125,7 +126,7 @@ const tests_02 = [
                     educationType: { code: '11' },
                     educationForm: { code: '11' },
                     faculty: { code: ctx.departments?.[0]?.code || '001' },
-                    course: { code: '1' },
+                    course: { code: '11' },  // OLD-HEMIS format: 11=1-kurs, 12=2-kurs, etc.
                     semester: { code: '11' },
                     dailyCount: 0,
                     total: 0,

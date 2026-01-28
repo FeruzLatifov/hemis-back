@@ -385,15 +385,16 @@ public class StudentServiceController {
         }
 
         // Convert to StudentIdRequest
+        // Note: PHP may send year as Integer, so use String.valueOf() for safe conversion
         StudentIdRequest studentIdRequest = new StudentIdRequest();
         if (dataObj instanceof Map) {
             Map<String, Object> data = (Map<String, Object>) dataObj;
-            studentIdRequest.setCitizenship((String) data.get("citizenship"));
-            studentIdRequest.setPinfl((String) data.get("pinfl"));
-            studentIdRequest.setSerial((String) data.get("serial"));
-            studentIdRequest.setYear((String) data.get("year"));
-            studentIdRequest.setEducationType((String) data.get("education_type"));
-            studentIdRequest.setEducationForm((String) data.get("education_form"));
+            studentIdRequest.setCitizenship(data.get("citizenship") != null ? String.valueOf(data.get("citizenship")) : null);
+            studentIdRequest.setPinfl(data.get("pinfl") != null ? String.valueOf(data.get("pinfl")) : null);
+            studentIdRequest.setSerial(data.get("serial") != null ? String.valueOf(data.get("serial")) : null);
+            studentIdRequest.setYear(data.get("year") != null ? String.valueOf(data.get("year")) : null);
+            studentIdRequest.setEducationType(data.get("education_type") != null ? String.valueOf(data.get("education_type")) : null);
+            studentIdRequest.setEducationForm(data.get("education_form") != null ? String.valueOf(data.get("education_form")) : null);
         }
 
         // Get current user's university code from users table
@@ -462,23 +463,23 @@ public class StudentServiceController {
     }
 
     /**
-     * Update student information (transfer)
+     * Update student information (transfer or data update)
      *
      * <p><strong>URL:</strong> {@code POST /services/student/update}</p>
      *
      * <p><strong>OLD-HEMIS Compatible:</strong></p>
      * <ul>
-     *   <li>Request format: {"student": {"id": "...", "university": {"code": "..."}, "studentStatus": {"code": "..."}}}</li>
-     *   <li>Returns 204 No Content when no transfer conditions met</li>
-     *   <li>Returns transferred student entity when transfer successful</li>
+     *   <li>Request format: {"student": {"id": "...", "university": {"code": "..."}, "studentStatus": {"code": "..."}, ...}}</li>
+     *   <li>Transfer: status='12' + boshqa OTM kodi → talaba ko'chiriladi, null qaytariladi</li>
+     *   <li>Data update: transfer sharti yo'q → maydonlar yangilanadi, {id, code, verified, points} qaytariladi</li>
      * </ul>
      *
      * @param request Student update request (OLD HEMIS nested format)
-     * @return Transferred student or 204 No Content
+     * @return {id, code, verified, points} yoki transfer holatda bo'sh body
      */
     @PostMapping("/update")
     @Transactional
-    @Operation(summary = "Talabani o'zgartirish", description = "Talaba ma'lumotlarini yangilash (transfer)")
+    @Operation(summary = "Talabani o'zgartirish", description = "Talaba ma'lumotlarini yangilash (transfer yoki data update). Transfer bo'lmasa {id, code, verified, points} qaytaradi.")
     public ResponseEntity<?> update(@RequestBody Map<String, Object> request) {
         log.info("[CUBA Service] student/update: request={}", request);
         Object result = studentService.updateStudent(request);

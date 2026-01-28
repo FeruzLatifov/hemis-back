@@ -105,15 +105,14 @@ public class HemisApiService {
         // Check if API is configured
         if (!properties.isConfigured()) {
             log.error("[HEMIS API] API credentials not configured! Set HEMIS_API_USERNAME and HEMIS_API_PASSWORD");
-            return errorResponse("credentials_not_configured",
-                    "HEMIS API credentials not configured. Set HEMIS_API_USERNAME and HEMIS_API_PASSWORD in .env");
+            return notAuthenticatedResponse();
         }
 
         try {
             // Get token (cached or fresh)
             String token = getApiHemisToken();
             if (token == null) {
-                return errorResponse("auth_failed", "Failed to authenticate with api.hemis.uz");
+                return notAuthenticatedResponse();
             }
 
             // Disable SSL verification (api.hemis.uz may have self-signed cert)
@@ -142,7 +141,7 @@ public class HemisApiService {
             // Parse JSON response
             if (body == null || body.isEmpty()) {
                 log.warn("[HEMIS API] Empty response for PINFL: {}", pinfl);
-                return errorResponse("empty_response", "Empty response from HEMIS API");
+                return notAuthenticatedResponse();
             }
 
             @SuppressWarnings("unchecked")
@@ -252,13 +251,12 @@ public class HemisApiService {
     }
 
     /**
-     * Build error response
+     * OLD-HEMIS compatible "Not Authenticated" response
      */
-    private Map<String, Object> errorResponse(String code, String message) {
+    private Map<String, Object> notAuthenticatedResponse() {
         Map<String, Object> error = new LinkedHashMap<>();
-        error.put("success", false);
-        error.put("code", code);
-        error.put("message", message);
+        error.put("code", 401);
+        error.put("message", "Not Authenticated");
         return error;
     }
 

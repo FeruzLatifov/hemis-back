@@ -109,21 +109,6 @@ public class TeacherEntityController {
         return ResponseEntity.ok(toMap(saved, returnNulls, view));
     }
 
-    @DeleteMapping("/{entityId}")
-    @Transactional
-    @Operation(summary = "Delete teacher", description = "Soft deletes a teacher")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
-        log.debug("DELETE teacher id: {}", entityId);
-
-        Optional<Teacher> entity = repository.findById(entityId);
-        if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
-        repository.delete(entity.get());
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/search")
     @Transactional(readOnly = true)
     @Operation(summary = "O'qituvchilarni qidirish (GET)", description = "URL parametrlari orqali qidirish")
@@ -134,14 +119,17 @@ public class TeacherEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
+        log.info("GET /search - filter: [{}], offset: {}, limit: {}", filter, offset, limit);
 
         List<Teacher> allEntities = repository.findAll();
+        log.info("Total teachers in DB: {}", allEntities.size());
+
         List<Teacher> result = filterHelper.applyFilterAndPagination(
             allEntities, filter, offset, limit,
             req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
         );
 
+        log.info("After filter: {} results", result.size());
         return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));

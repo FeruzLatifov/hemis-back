@@ -140,7 +140,8 @@ public class LegacyUserInfoResponse implements Serializable {
         @Schema(description = "Locale code", example = "ru")
         private String locale;
 
-        // NOTE: "university" field is NOT in old-hemis /app/rest/v2/userInfo response!
-        // Removed for 100% backward compatibility with old-hemis
+        @JsonProperty("university")
+        @Schema(description = "University code", example = "401")
+        private String university;
     }
 }

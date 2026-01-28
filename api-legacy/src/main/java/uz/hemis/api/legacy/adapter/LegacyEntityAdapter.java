@@ -359,8 +359,11 @@ public class LegacyEntityAdapter {
             }
         }
 
-        if (targetType == UUID.class && value instanceof String) {
-            return UUID.fromString((String) value);
+        if (targetType == UUID.class && value instanceof String str) {
+            if (str.isEmpty()) {
+                return null;
+            }
+            return UUID.fromString(str);
         }
 
         if (targetType == LocalDateTime.class && value instanceof String) {

@@ -214,7 +214,9 @@ public class StudentMetaService {
             }
         }
 
+        log.debug("DTO before toEntity: id={}, uId={}, university={}", dto.getId(), dto.getUId(), dto.getUniversity());
         StudentMeta entity = studentMetaMapper.toEntity(dto);
+        log.debug("Entity after toEntity (before save): id={}, uId={}", entity.getId(), entity.getUId());
         StudentMeta saved = studentMetaRepository.save(entity);
 
         log.info("Created student meta with ID: {} and uId: {}", saved.getId(), saved.getUId());

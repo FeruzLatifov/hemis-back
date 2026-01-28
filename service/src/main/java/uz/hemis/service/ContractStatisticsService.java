@@ -47,7 +47,7 @@ public class ContractStatisticsService {
     /**
      * Submit contract statistics (OLD-HEMIS Compatible)
      */
-    @Transactional
+    @Transactional(noRollbackFor = Exception.class)
     @SuppressWarnings("unchecked")
     public Map<String, Object> submitContractStatistics(Map<String, Object> request, String username) {
         log.info("[ContractStatistics] Submitting: {}", request);
@@ -113,7 +113,7 @@ public class ContractStatisticsService {
                 message = "Successfully created!";
             }
 
-            ContractStatistics saved = repository.save(entity);
+            ContractStatistics saved = repository.saveAndFlush(entity);
             log.info("[ContractStatistics] {}: id={}", message, saved.getId());
 
             result.put("success", true);

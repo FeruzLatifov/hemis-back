@@ -213,6 +213,9 @@ public class TeacherPositionTypeEntityController {
         putIfNotNull(map, "name", entity.getName(), returnNulls);
         putIfNotNull(map, "active", entity.getActive(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+        // OLD-HEMIS Compatible: soft delete fields
+        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
 
         return map;
     }

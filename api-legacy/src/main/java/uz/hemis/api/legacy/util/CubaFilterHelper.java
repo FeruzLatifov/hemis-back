@@ -86,12 +86,16 @@ public class CubaFilterHelper {
             Function<PropertyRequest<T>, Object> propertyGetter) {
 
         if (filterJson == null || filterJson.isBlank()) {
+            log.info("No filter provided, returning all {} entities", entities.size());
             return entities;
         }
+
+        log.info("Applying filter: [{}]", filterJson);
 
         try {
             Map<String, Object> filter = objectMapper.readValue(filterJson, new TypeReference<>() {});
             Object conditionsObj = filter.get("conditions");
+            log.info("Parsed filter map: {}, conditions: {}", filter.keySet(), conditionsObj);
 
             if (!(conditionsObj instanceof List)) {
                 return entities;
@@ -99,12 +103,15 @@ public class CubaFilterHelper {
 
             List<Map<String, Object>> conditions = (List<Map<String, Object>>) conditionsObj;
 
-            return entities.stream()
+            List<T> result = entities.stream()
                 .filter(entity -> matchesAllConditions(entity, conditions, propertyGetter))
                 .collect(Collectors.toList());
 
+            log.info("Filter result: {} entities -> {} matches", entities.size(), result.size());
+            return result;
+
         } catch (Exception e) {
-            log.warn("Cannot parse CUBA filter: {}", e.getMessage());
+            log.warn("Cannot parse CUBA filter: {} - returning all entities", e.getMessage());
             return entities;
         }
     }
@@ -182,12 +189,17 @@ public class CubaFilterHelper {
         Object filterValue = condition.get("value");
 
         if (property == null || operator == null) {
+            log.debug("Missing property or operator in condition: {}", condition);
             return true;
         }
 
         Object entityValue = propertyGetter.apply(new PropertyRequest<>(entity, property));
+        boolean matches = compareValues(entityValue, operator, filterValue);
+        if (!matches) {
+            log.debug("Filter mismatch: {}={} {} {} -> false", property, entityValue, operator, filterValue);
+        }
 
-        return compareValues(entityValue, operator, filterValue);
+        return matches;
     }
 
     private boolean compareValues(Object entityValue, String operator, Object filterValue) {
@@ -244,10 +256,10 @@ public class CubaFilterHelper {
             Method getter = entity.getClass().getMethod(getterName);
             Object value = getter.invoke(entity);
 
-            // Convert to string for comparison if not null
+            log.trace("Got property {} (getter: {}) = {}", property, getterName, value);
             return value;
         } catch (Exception e) {
-            log.trace("Cannot get property {} from {}: {}", property, entity.getClass().getSimpleName(), e.getMessage());
+            log.debug("Cannot get property {} from {}: {}", property, entity.getClass().getSimpleName(), e.getMessage());
             return null;
         }
     }

@@ -19,7 +19,9 @@ import uz.hemis.domain.repository.StudentRepository;
 
 import uz.hemis.common.dto.StudentIdRequest;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -819,8 +821,27 @@ public class StudentService {
             }
         }
 
-        // If no transfer conditions met, return null (OLD-HEMIS behavior)
-        return null;
+        // Non-transfer update: find student and update fields from request
+        Optional<Student> studentOpt = studentRepository.findById(studentId);
+        if (studentOpt.isEmpty()) {
+            log.warn("Student not found for update: {}", studentId);
+            return Map.of("success", false, "error", "Student not found");
+        }
+
+        Student student = studentOpt.get();
+        updateStudentFields(student, studentData);
+        student.setUpdateTs(LocalDateTime.now());
+
+        Student saved = studentRepository.save(student);
+        log.info("Student updated successfully - ID: {}, code: {}", saved.getId(), saved.getCode());
+
+        // PHP HemisResponseStudent format: { id, code, verified, points }
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("id", saved.getId().toString());
+        response.put("code", saved.getCode());
+        response.put("verified", saved.getVerified());
+        response.put("points", saved.getPoints());
+        return response;
     }
 
     /**
@@ -890,6 +911,146 @@ public class StudentService {
         copy.setCreatedBy(original.getCreatedBy());
 
         return copy;
+    }
+
+    /**
+     * Update student entity fields from PHP request data.
+     * Only non-null fields in the request are updated (partial update).
+     *
+     * @param student the student entity to update
+     * @param data the request data map (PHP format)
+     */
+    @SuppressWarnings("unchecked")
+    private void updateStudentFields(Student student, Map<String, Object> data) {
+        // Direct string fields - use safeString() for PHP compatibility (may send Integer)
+        if (data.containsKey("firstname"))    student.setFirstname(safeString(data.get("firstname")));
+        if (data.containsKey("lastname"))     student.setLastname(safeString(data.get("lastname")));
+        if (data.containsKey("fathername"))   student.setFathername(safeString(data.get("fathername")));
+        if (data.containsKey("pinfl"))        student.setPinfl(safeString(data.get("pinfl")));
+        if (data.containsKey("serialNumber")) student.setSerialNumber(safeString(data.get("serialNumber")));
+        if (data.containsKey("phone"))        student.setPhone(safeString(data.get("phone")));
+        if (data.containsKey("email"))        student.setEmail(safeString(data.get("email")));
+        if (data.containsKey("address"))      student.setAddress(safeString(data.get("address")));
+        if (data.containsKey("currentAddress")) student.setCurrentAddress(safeString(data.get("currentAddress")));
+        if (data.containsKey("responsiblePersonPhone")) student.setResponsiblePersonPhone(safeString(data.get("responsiblePersonPhone")));
+        if (data.containsKey("parentPhone")) student.setParentPhone(safeString(data.get("parentPhone")));
+        if (data.containsKey("geoAddress"))  student.setGeoAddress(safeString(data.get("geoAddress")));
+        if (data.containsKey("groupId"))     student.setGroupId(safeString(data.get("groupId")));
+        if (data.containsKey("groupName"))   student.setGroupName(safeString(data.get("groupName")));
+        if (data.containsKey("isGraduate"))  student.setIsGraduate(safeString(data.get("isGraduate")));
+        if (data.containsKey("tag"))         student.setTag(safeString(data.get("tag")));
+        if (data.containsKey("enrollOrderNumber"))   student.setEnrollOrderNumber(safeString(data.get("enrollOrderNumber")));
+        if (data.containsKey("enrollOrderName"))     student.setEnrollOrderName(safeString(data.get("enrollOrderName")));
+        if (data.containsKey("enrollOrderCategory")) student.setEnrollOrderCategory(safeString(data.get("enrollOrderCategory")));
+        if (data.containsKey("statusOrderNumber"))   student.setStatusOrderNumber(safeString(data.get("statusOrderNumber")));
+        if (data.containsKey("statusOrderName"))     student.setStatusOrderName(safeString(data.get("statusOrderName")));
+        if (data.containsKey("statusOrderCategory")) student.setStatusOrderCategory(safeString(data.get("statusOrderCategory")));
+
+        // Nested {code: "..."} fields
+        if (data.containsKey("gender"))              student.setGender(extractCode(data.get("gender")));
+        if (data.containsKey("university"))          student.setUniversity(extractCode(data.get("university")));
+        if (data.containsKey("educationYear"))       student.setEducationYear(extractCode(data.get("educationYear")));
+        if (data.containsKey("country"))             student.setCountry(extractCode(data.get("country")));
+        if (data.containsKey("citizenship"))         student.setCitizenship(extractCode(data.get("citizenship")));
+        if (data.containsKey("nationality"))         student.setNationality(extractCode(data.get("nationality")));
+        if (data.containsKey("accomodation"))        student.setAccomodation(extractCode(data.get("accomodation")));
+        if (data.containsKey("soato"))               student.setSoato(extractCode(data.get("soato")));
+        if (data.containsKey("currentSoato"))        student.setCurrentSoato(extractCode(data.get("currentSoato")));
+        if (data.containsKey("paymentForm"))         student.setPaymentForm(extractCode(data.get("paymentForm")));
+        if (data.containsKey("educationForm"))       student.setEducationForm(extractCode(data.get("educationForm")));
+        if (data.containsKey("educationType"))       student.setEducationType(extractCode(data.get("educationType")));
+        if (data.containsKey("course"))              student.setCourse(extractCode(data.get("course")));
+        if (data.containsKey("language"))            student.setLanguage(extractCode(data.get("language")));
+        if (data.containsKey("faculty"))             student.setFaculty(extractCode(data.get("faculty")));
+        if (data.containsKey("studentStatus"))       student.setStudentStatus(extractCode(data.get("studentStatus")));
+        if (data.containsKey("socialCategory"))      student.setSocialCategory(extractCode(data.get("socialCategory")));
+        if (data.containsKey("expelReason"))         student.setExpelReason(extractCode(data.get("expelReason")));
+        if (data.containsKey("livingStatus"))        student.setLivingStatus(extractCode(data.get("livingStatus")));
+        if (data.containsKey("roommateType"))        student.setRoommateType(extractCode(data.get("roommateType")));
+        if (data.containsKey("statusEducationYear")) student.setCurrentEducationYearCode(extractCode(data.get("statusEducationYear")));
+
+        // Nested {id: "UUID"} fields
+        if (data.containsKey("specialityBachelor"))   student.setSpecialityBachelor(extractUuid(data.get("specialityBachelor")));
+        if (data.containsKey("specialityMaster"))     student.setSpecialityMaster(extractUuid(data.get("specialityMaster")));
+        if (data.containsKey("specialityOrdinatura")) student.setSpecialityDoctoral(extractUuid(data.get("specialityOrdinatura")));
+
+        // Date fields (format: Y-m-d)
+        if (data.containsKey("birthday"))          student.setBirthday(parseDate(data.get("birthday")));
+        if (data.containsKey("passportGivenDate")) student.setPassportGivenDate(parseDate(data.get("passportGivenDate")));
+        if (data.containsKey("enrollOrderDate"))   student.setEnrollOrderDate(parseDate(data.get("enrollOrderDate")));
+        if (data.containsKey("statusOrderDate"))   student.setStatusOrderDate(parseDate(data.get("statusOrderDate")));
+
+        // Integer fields
+        if (data.containsKey("roommateCount")) {
+            Object val = data.get("roommateCount");
+            if (val instanceof Number) {
+                student.setRoommateCount(((Number) val).intValue());
+            } else if (val instanceof String) {
+                try {
+                    student.setRoommateCount(Integer.parseInt((String) val));
+                } catch (NumberFormatException ignored) { }
+            }
+        }
+    }
+
+    /**
+     * Safely convert any object to String (handles Integer, null, etc.)
+     * PHP may send numeric values as Integer instead of String
+     */
+    private String safeString(Object obj) {
+        if (obj == null) return null;
+        String str = String.valueOf(obj);
+        return "null".equals(str) ? null : str;
+    }
+
+    /**
+     * Extract code from nested {@code {code: "..."}} object or plain string.
+     */
+    @SuppressWarnings("unchecked")
+    private String extractCode(Object obj) {
+        if (obj instanceof Map) {
+            Object code = ((Map<String, Object>) obj).get("code");
+            return code != null ? String.valueOf(code) : null;
+        } else if (obj != null) {
+            return String.valueOf(obj);
+        }
+        return null;
+    }
+
+    /**
+     * Extract UUID from nested {@code {id: "..."}} object or plain string.
+     */
+    @SuppressWarnings("unchecked")
+    private UUID extractUuid(Object obj) {
+        String idStr = null;
+        if (obj instanceof Map) {
+            Object id = ((Map<String, Object>) obj).get("id");
+            idStr = id != null ? String.valueOf(id) : null;
+        } else if (obj != null) {
+            idStr = String.valueOf(obj);
+        }
+        if (idStr == null || idStr.equals("null")) return null;
+        try {
+            return UUID.fromString(idStr);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid UUID in student update: {}", idStr);
+            return null;
+        }
+    }
+
+    /**
+     * Parse date from string (format: Y-m-d) or return null.
+     */
+    private LocalDate parseDate(Object obj) {
+        if (obj == null) return null;
+        String dateStr = obj.toString();
+        if (dateStr.isEmpty()) return null;
+        try {
+            return LocalDate.parse(dateStr);
+        } catch (DateTimeParseException e) {
+            log.warn("Invalid date in student update: {}", dateStr);
+            return null;
+        }
     }
 
     /**

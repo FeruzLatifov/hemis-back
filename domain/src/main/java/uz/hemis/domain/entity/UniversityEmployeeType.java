@@ -3,7 +3,6 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLRestriction;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -23,11 +22,13 @@ import java.time.LocalDateTime;
  *   <li>14 - Xizmat ko'rsatuvchi xodim</li>
  * </ul>
  *
+ * <p>OLD-HEMIS Compatible: soft-deleted yozuvlar ham qaytariladi</p>
+ *
  * @since 1.0.0
  */
 @Entity
 @Table(name = "hemishe_h_university_employee_type")
-@SQLRestriction("delete_ts IS NULL")
+// @SQLRestriction removed for OLD-HEMIS compatibility - soft-deleted records should be returned
 @Getter
 @Setter
 public class UniversityEmployeeType implements Serializable {

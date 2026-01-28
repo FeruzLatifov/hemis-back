@@ -716,10 +716,16 @@ public class EmployeeJobsEntityController {
     }
 
     /**
-     * Convert entity to CUBA-compatible Map with view support
+     * Convert entity to CUBA-compatible Map
      *
-     * When view is specified (e.g., "eEmployeeJob-view"), returns nested objects
-     * for related entities to match OLD-HEMIS format exactly.
+     * OLD-HEMIS Compatible: CUBA platformasi doimo nested employee qaytaradi.
+     * Boshqa related entitylar (university, department, etc.) faqat view=eEmployeeJob-view
+     * bilan qaytariladi.
+     *
+     * Response format OLD-HEMIS ga mos:
+     * - employee: nested object (doimo)
+     * - version, tag, dates: flat fields
+     * - university, department, etc.: faqat view bilan
      */
     private Map<String, Object> toMap(EmployeeJobs entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
@@ -731,12 +737,28 @@ public class EmployeeJobsEntityController {
 
         map.put("id", entity.getId());
 
-        // Check if view is specified for nested objects
-        boolean useNestedObjects = view != null && !view.isEmpty();
+        // OLD-HEMIS Compatible: Date va string fields avval keladi
+        putIfNotNull(map, "contractDate", entity.getContractDate(), returnNulls);
+        putIfNotNull(map, "jobStartDate", entity.getJobStartDate(), returnNulls);
+        putIfNotNull(map, "contractNumber", entity.getContractNumber(), returnNulls);
 
-        if (useNestedObjects) {
-            // Return nested objects (OLD-HEMIS compatible format)
-            putNestedEmployee(map, entity.getEmployee(), returnNulls);
+        // OLD-HEMIS Compatible: employee DOIMO nested object qaytaradi
+        putNestedEmployee(map, entity.getEmployee(), returnNulls);
+
+        // OLD-HEMIS Compatible: version field
+        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+
+        // Date and string fields
+        putIfNotNull(map, "decreeDate", entity.getDecreeDate(), returnNulls);
+        putIfNotNull(map, "decreeNumber", entity.getDecreeNumber(), returnNulls);
+        putIfNotNull(map, "tag", entity.getTag(), returnNulls);
+        putIfNotNull(map, "jobEndDate", entity.getJobEndDate(), returnNulls);
+
+        // Check if view is specified for additional nested objects
+        boolean useFullView = view != null && !view.isEmpty();
+
+        if (useFullView) {
+            // Full view: Return all nested objects
             putNestedUniversity(map, entity.getUniversity(), returnNulls);
             putNestedDepartment(map, entity.getDepartment(), returnNulls);
             putNestedEmployeeType(map, entity.getEmployeeType(), returnNulls);
@@ -744,34 +766,8 @@ public class EmployeeJobsEntityController {
             putNestedRate(map, entity.getEmployeeRate(), returnNulls);
             putNestedEmployeeForm(map, entity.getEmployeeForm(), returnNulls);
             putNestedEmployeeStatus(map, entity.getEmployeeStatus(), returnNulls);
-        } else {
-            // Return flat IDs only (simple format)
-            putIfNotNull(map, "_employee", entity.getEmployee(), returnNulls);
-            putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-            putIfNotNull(map, "_department", entity.getDepartment(), returnNulls);
-            putIfNotNull(map, "_employeeType", entity.getEmployeeType(), returnNulls);
-            putIfNotNull(map, "_employeePosition", entity.getEmployeePosition(), returnNulls);
-            putIfNotNull(map, "_employeeRate", entity.getEmployeeRate(), returnNulls);
-            putIfNotNull(map, "_employeeForm", entity.getEmployeeForm(), returnNulls);
-            putIfNotNull(map, "_employeeStatus", entity.getEmployeeStatus(), returnNulls);
         }
-
-        // Date and string fields (always flat)
-        putIfNotNull(map, "jobStartDate", entity.getJobStartDate(), returnNulls);
-        putIfNotNull(map, "jobEndDate", entity.getJobEndDate(), returnNulls);
-        putIfNotNull(map, "tag", entity.getTag(), returnNulls);
-        putIfNotNull(map, "contractDate", entity.getContractDate(), returnNulls);
-        putIfNotNull(map, "contractNumber", entity.getContractNumber(), returnNulls);
-        putIfNotNull(map, "decreeDate", entity.getDecreeDate(), returnNulls);
-        putIfNotNull(map, "decreeNumber", entity.getDecreeNumber(), returnNulls);
-
-        // BaseEntity audit fields
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        // OLD-HEMIS Compatible: Default view da university, department, etc. qaytarmaydi
 
         return map;
     }
@@ -781,7 +777,19 @@ public class EmployeeJobsEntityController {
     // =====================================================
 
     /**
-     * Build nested employee object (hemishe_EEmployee)
+     * Build nested employee object (hemishe_ETeacher)
+     *
+     * OLD-HEMIS Compatible format:
+     * {
+     *   "_entityName": "hemishe_ETeacher",
+     *   "_instanceName": "XAMZAYEV RAFIK AZIMOVICH",
+     *   "id": "uuid",
+     *   "firstname": "RAFIK",
+     *   "version": 9,
+     *   "lastname": "XAMZAYEV",
+     *   "fathername": "AZIMOVICH",
+     *   "fullname": "XAMZAYEV RAFIK AZIMOVICH"
+     * }
      */
     private void putNestedEmployee(Map<String, Object> map, UUID employeeId, Boolean returnNulls) {
         if (employeeId == null) {
@@ -796,14 +804,22 @@ public class EmployeeJobsEntityController {
             if (teacherOpt.isPresent()) {
                 Teacher teacher = teacherOpt.get();
                 Map<String, Object> nested = new LinkedHashMap<>();
-                nested.put("_entityName", "hemishe_EEmployee");
 
+                // OLD-HEMIS: hemishe_ETeacher entity name
+                nested.put("_entityName", "hemishe_ETeacher");
+
+                // Build full name: FAMILIYA ISM OTASINING_ISMI
                 String fullName = buildFullName(teacher.getFirstName(), teacher.getSecondName(), teacher.getThirdName());
                 nested.put("_instanceName", fullName);
+
                 nested.put("id", teacher.getId());
-                nested.put("firstName", teacher.getFirstName());
-                nested.put("secondName", teacher.getSecondName());
-                nested.put("thirdName", teacher.getThirdName());
+
+                // OLD-HEMIS field names: lowercase, no camelCase
+                nested.put("firstname", teacher.getFirstName());
+                nested.put("version", teacher.getVersion());
+                nested.put("lastname", teacher.getSecondName());  // secondName = familiya
+                nested.put("fathername", teacher.getThirdName()); // thirdName = otasining ismi
+                nested.put("fullname", fullName);
 
                 map.put("employee", nested);
                 return;
@@ -814,7 +830,7 @@ public class EmployeeJobsEntityController {
 
         // Employee not found or error, return ID only
         Map<String, Object> nested = new LinkedHashMap<>();
-        nested.put("_entityName", "hemishe_EEmployee");
+        nested.put("_entityName", "hemishe_ETeacher");
         nested.put("id", employeeId);
         map.put("employee", nested);
     }
