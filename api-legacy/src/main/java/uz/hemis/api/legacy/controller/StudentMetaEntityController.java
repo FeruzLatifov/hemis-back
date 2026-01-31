@@ -246,7 +246,7 @@ public class StudentMetaEntityController {
         StudentMetaDto created = studentMetaService.create(dto);
         Map<String, Object> cubaMap = adapter.toMap(created, ENTITY_NAME, returnNulls);
 
-        return ResponseEntity.status(201).body(cubaMap);
+        return ResponseEntity.ok(cubaMap);
     }
 
     // =====================================================

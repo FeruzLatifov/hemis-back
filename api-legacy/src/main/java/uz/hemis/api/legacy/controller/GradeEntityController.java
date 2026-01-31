@@ -332,6 +332,6 @@ public class GradeEntityController {
         Map<String, Object> cubaMap = adapter.toMap(created, ENTITY_NAME, returnNulls);
 
         // OLD-HEMIS: 201 Created qaytaradi
-        return ResponseEntity.status(HttpStatus.CREATED).body(cubaMap);
+        return ResponseEntity.ok(cubaMap);
     }
 }

@@ -1,21 +1,25 @@
 package uz.hemis.api.legacy.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.domain.entity.EmployeeCertificate;
+import uz.hemis.domain.repository.EmployeeCertificateRepository;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Employee Certificate Entity Controller for OLD-HEMIS compatibility.
@@ -30,184 +34,199 @@ import java.util.*;
 @Tag(name = "68.Sertifikat", description = "Xodim sertifikatlari")
 public class EmployeeCertificateEntityController {
 
-    /**
-     * Create employee certificates (batch operation).
-     * <p>
-     * Accepts an array of employee certificate data and returns created entities.
-     * This is a stub implementation that generates UUIDs without persisting to database.
-     * </p>
-     *
-     * @param certificateDataList List of employee certificate data maps
-     * @return List of created certificate responses with generated IDs
-     */
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(
-            summary = "Xodim sertifikatlarini yaratish",
-            description = """
-                    Xodim sertifikatlarini yaratish uchun OLD-HEMIS formatidagi endpoint.
+    private final EmployeeCertificateRepository employeeCertificateRepository;
 
-                    **Eslatma:** Endpoint yo'lida "EEmpoyeeCertificate" yozuvi OLD-HEMIS tizimiga moslik uchun ataylab saqlab qolindi.
+    @GetMapping("/{id}")
+    @Operation(summary = "Xodim sertifikatini ID bo'yicha olish")
+    public ResponseEntity<Map<String, Object>> getEmployeeCertificate(
+            @Parameter(description = "Employee certificate ID") @PathVariable UUID id) {
+        Optional<EmployeeCertificate> opt = employeeCertificateRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(toMap(opt.get()));
+    }
 
-                    **So'rov formati:** Array ko'rinishida sertifikat ma'lumotlari qabul qilinadi.
-
-                    **Javob:** Yaratilgan sertifikatlar ro'yxati qaytariladi.
-                    """
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Sertifikatlar muvaffaqiyatli yaratildi",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            array = @ArraySchema(schema = @Schema(implementation = EmployeeCertificateResponse.class)),
-                            examples = @ExampleObject(
-                                    name = "Muvaffaqiyatli javob",
-                                    value = """
-                                            [
-                                                {
-                                                    "_entityName": "hemishe_EEmpoyeeCertificate",
-                                                    "_instanceName": "AA1112244",
-                                                    "id": "550e8400-e29b-41d4-a716-446655440000"
-                                                }
-                                            ]
-                                            """
-                            )
-                    )
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Noto'g'ri so'rov formati",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Autentifikatsiya talab qilinadi",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Ruxsat berilmagan",
-                    content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
-            )
-    })
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Xodim sertifikatlari ma'lumotlari (array formatda)",
-            required = true,
-            content = @Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    array = @ArraySchema(schema = @Schema(implementation = EmployeeCertificateRequest.class)),
-                    examples = @ExampleObject(
-                            name = "So'rov namunasi",
-                            value = """
-                                    [
-                                        {
-                                            "university": {"code": "999"},
-                                            "employee": {"id": "f41a4336-a4f5-154d-cc28-eff76884fa99"},
-                                            "certificateType": {"code": "2"},
-                                            "certificateName": {"code": "30"},
-                                            "certificateGrade": {"code": "2"},
-                                            "certificateSubject": {"code": "1"},
-                                            "issueDate": "2025-03-05",
-                                            "validDate": "2026-03-11",
-                                            "serialNumber": "AA1112244",
-                                            "active": true
-                                        }
-                                    ]
-                                    """
-                    )
-            )
-    )
-    public ResponseEntity<List<Map<String, Object>>> createEmployeeCertificates(
-            @RequestBody List<Map<String, Object>> certificateDataList) {
-
-        log.info("Creating {} employee certificate(s)", certificateDataList.size());
-
-        List<Map<String, Object>> responseList = new ArrayList<>();
-
-        for (Map<String, Object> certificateData : certificateDataList) {
-            // Extract serial number for _instanceName
-            String serialNumber = extractSerialNumber(certificateData);
-
-            // Generate UUID for the new certificate
-            UUID generatedId = UUID.randomUUID();
-
-            // Build response in OLD-HEMIS format using LinkedHashMap for consistent field order
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("_entityName", "hemishe_EEmpoyeeCertificate");
-            response.put("_instanceName", serialNumber);
-            response.put("id", generatedId.toString());
-
-            responseList.add(response);
-
-            log.debug("Created employee certificate stub with id: {}, serialNumber: {}", generatedId, serialNumber);
+    @PutMapping("/{id}")
+    @Operation(summary = "Xodim sertifikatini yangilash")
+    public ResponseEntity<Map<String, Object>> updateEmployeeCertificate(
+            @Parameter(description = "Employee certificate ID") @PathVariable UUID id,
+            @RequestBody Map<String, Object> data) {
+        Optional<EmployeeCertificate> opt = employeeCertificateRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
         }
 
-        log.info("Successfully created {} employee certificate stub(s)", responseList.size());
+        EmployeeCertificate cert = opt.get();
+        updateFromMap(cert, data);
+        cert.setUpdateTs(LocalDateTime.now());
+        employeeCertificateRepository.save(cert);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseList);
+        return ResponseEntity.ok(toMap(cert));
     }
 
-    /**
-     * Extracts serial number from certificate data map.
-     *
-     * @param certificateData Certificate data map
-     * @return Serial number or empty string if not found
-     */
-    private String extractSerialNumber(Map<String, Object> certificateData) {
-        Object serialNumberObj = certificateData.get("serialNumber");
-        return serialNumberObj != null ? serialNumberObj.toString() : "";
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Xodim sertifikatini o'chirish")
+    public ResponseEntity<Void> deleteEmployeeCertificate(
+            @Parameter(description = "Employee certificate ID") @PathVariable UUID id) {
+        Optional<EmployeeCertificate> opt = employeeCertificateRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        EmployeeCertificate cert = opt.get();
+        cert.setDeleteTs(LocalDateTime.now());
+        employeeCertificateRepository.save(cert);
+
+        return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Schema class for Swagger documentation - Request body.
-     */
-    @Schema(description = "Xodim sertifikati yaratish uchun so'rov")
-    private static class EmployeeCertificateRequest {
+    @GetMapping
+    @Operation(summary = "Xodim sertifikatlari ro'yxati")
+    public ResponseEntity<List<Map<String, Object>>> getAllEmployeeCertificates(
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") int limit,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") int offset) {
 
-        @Schema(description = "Universitet", example = "{\"code\": \"999\"}")
-        public Map<String, String> university;
+        Pageable pageable = PageRequest.of(offset / limit, limit);
+        Page<EmployeeCertificate> page = employeeCertificateRepository.findAll(pageable);
 
-        @Schema(description = "Xodim", example = "{\"id\": \"f41a4336-a4f5-154d-cc28-eff76884fa99\"}")
-        public Map<String, String> employee;
+        List<Map<String, Object>> result = page.getContent().stream()
+                .map(this::toMap)
+                .collect(Collectors.toList());
 
-        @Schema(description = "Sertifikat turi", example = "{\"code\": \"2\"}")
-        public Map<String, String> certificateType;
-
-        @Schema(description = "Sertifikat nomi", example = "{\"code\": \"30\"}")
-        public Map<String, String> certificateName;
-
-        @Schema(description = "Sertifikat darajasi", example = "{\"code\": \"2\"}")
-        public Map<String, String> certificateGrade;
-
-        @Schema(description = "Sertifikat fani", example = "{\"code\": \"1\"}")
-        public Map<String, String> certificateSubject;
-
-        @Schema(description = "Berilgan sana", example = "2025-03-05")
-        public String issueDate;
-
-        @Schema(description = "Amal qilish sanasi", example = "2026-03-11")
-        public String validDate;
-
-        @Schema(description = "Seriya raqami", example = "AA1112244")
-        public String serialNumber;
-
-        @Schema(description = "Faol holati", example = "true")
-        public Boolean active;
+        return ResponseEntity.ok(result);
     }
 
-    /**
-     * Schema class for Swagger documentation - Response body.
-     */
-    @Schema(description = "Yaratilgan xodim sertifikati javobi")
-    private static class EmployeeCertificateResponse {
+    @GetMapping("/search")
+    @Operation(summary = "Xodim sertifikatlarini qidirish")
+    public ResponseEntity<List<Map<String, Object>>> searchEmployeeCertificates(
+            @Parameter(description = "Filter") @RequestParam(required = false) String filter,
+            @Parameter(description = "View") @RequestParam(required = false) String view,
+            @Parameter(description = "Limit") @RequestParam(defaultValue = "50") int limit,
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") int offset,
+            @Parameter(description = "Sort") @RequestParam(required = false) String sort) {
 
-        @Schema(description = "Entity nomi (OLD-HEMIS formati)", example = "hemishe_EEmpoyeeCertificate")
-        public String _entityName;
+        Sort sorting = Sort.unsorted();
+        if (sort != null && !sort.isEmpty()) {
+            String[] sortParts = sort.split(",");
+            if (sortParts.length == 2) {
+                sorting = Sort.by(Sort.Direction.fromString(sortParts[1]), sortParts[0]);
+            }
+        }
 
-        @Schema(description = "Instance nomi (seriya raqami)", example = "AA1112244")
-        public String _instanceName;
+        Pageable pageable = PageRequest.of(offset / limit, limit, sorting);
+        Page<EmployeeCertificate> page = employeeCertificateRepository.findAll(pageable);
 
-        @Schema(description = "Yaratilgan sertifikat ID", example = "550e8400-e29b-41d4-a716-446655440000")
-        public String id;
+        List<Map<String, Object>> result = page.getContent().stream()
+                .map(this::toMap)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(result);
+    }
+
+    @PostMapping
+    @Transactional
+    @Operation(summary = "Xodim sertifikatini yaratish/upsert")
+    public ResponseEntity<Map<String, Object>> createEmployeeCertificate(
+            @RequestBody Map<String, Object> data) {
+
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
+        if (data.containsKey("id")) {
+            try {
+                UUID existingId = UUID.fromString(data.get("id").toString());
+                var existingOpt = employeeCertificateRepository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    EmployeeCertificate cert = existingOpt.get();
+                    updateFromMap(cert, data);
+                    cert.setUpdateTs(LocalDateTime.now());
+                    employeeCertificateRepository.save(cert);
+                    return ResponseEntity.ok(toMap(cert));
+                }
+            } catch (IllegalArgumentException e) {
+                log.debug("Invalid UUID format for id: {}", data.get("id"));
+            }
+        }
+
+        EmployeeCertificate cert = new EmployeeCertificate();
+        cert.setId(UUID.randomUUID());
+        cert.setCreateTs(LocalDateTime.now());
+        cert.setUpdateTs(LocalDateTime.now());
+
+        updateFromMap(cert, data);
+        employeeCertificateRepository.save(cert);
+
+        return ResponseEntity.ok(toMap(cert));
+    }
+
+    private Map<String, Object> toMap(EmployeeCertificate cert) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", cert.getId());
+        map.put("_entityName", "hemishe_EEmpoyeeCertificate");
+        map.put("_instanceName", cert.getSerialNumber());
+        map.put("university", cert.getUniversity());
+        map.put("employee", cert.getEmployee());
+        map.put("certificateType", cert.getCertificateType());
+        map.put("certificateName", cert.getCertificateName());
+        map.put("certificateGrade", cert.getCertificateGrade());
+        map.put("certificateSubject", cert.getCertificateSubject());
+        map.put("issueDate", cert.getIssueDate());
+        map.put("validDate", cert.getValidDate());
+        map.put("serialNumber", cert.getSerialNumber());
+        map.put("active", cert.getActive());
+        map.put("createTs", cert.getCreateTs());
+        map.put("updateTs", cert.getUpdateTs());
+        map.put("deleteTs", cert.getDeleteTs());
+        return map;
+    }
+
+    private String toStr(Object value) {
+        if (value == null) return null;
+        if (value instanceof String) return (String) value;
+        if (value instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) value;
+            Object code = map.get("code");
+            if (code != null) return code.toString();
+            Object id = map.get("id");
+            if (id != null) return id.toString();
+            return value.toString();
+        }
+        return value.toString();
+    }
+
+    private void updateFromMap(EmployeeCertificate cert, Map<String, Object> data) {
+        if (data.containsKey("university")) {
+            cert.setUniversity(toStr(data.get("university")));
+        }
+        if (data.containsKey("employee")) {
+            Object empObj = data.get("employee");
+            cert.setEmployee(empObj != null ? UUID.fromString(toStr(empObj)) : null);
+        }
+        if (data.containsKey("certificateType")) {
+            cert.setCertificateType(toStr(data.get("certificateType")));
+        }
+        if (data.containsKey("certificateName")) {
+            cert.setCertificateName(toStr(data.get("certificateName")));
+        }
+        if (data.containsKey("certificateGrade")) {
+            cert.setCertificateGrade(toStr(data.get("certificateGrade")));
+        }
+        if (data.containsKey("certificateSubject")) {
+            cert.setCertificateSubject(toStr(data.get("certificateSubject")));
+        }
+        if (data.containsKey("issueDate")) {
+            Object issueDateObj = data.get("issueDate");
+            cert.setIssueDate(issueDateObj != null ? LocalDate.parse(issueDateObj.toString()) : null);
+        }
+        if (data.containsKey("validDate")) {
+            Object validDateObj = data.get("validDate");
+            cert.setValidDate(validDateObj != null ? LocalDate.parse(validDateObj.toString()) : null);
+        }
+        if (data.containsKey("serialNumber")) {
+            cert.setSerialNumber(toStr(data.get("serialNumber")));
+        }
+        if (data.containsKey("active")) {
+            cert.setActive((Boolean) data.get("active"));
+        }
     }
 }

@@ -158,7 +158,6 @@ public class Teacher extends BaseEntity {
      * Academic degree code
      * Column: _academic_degree VARCHAR(32)
      * References: hemishe_h_academic_degree.code
-     * Examples: '11' = candidate, '12' = doctor, '13' = DSc, etc.
      */
     @Column(name = "_academic_degree", length = 32)
     private String academicDegree;
@@ -167,10 +166,34 @@ public class Teacher extends BaseEntity {
      * Academic rank code
      * Column: _academic_rank VARCHAR(32)
      * References: hemishe_h_academic_rank.code
-     * Examples: '11' = assistant, '12' = senior lecturer, '13' = docent, '14' = professor, etc.
      */
     @Column(name = "_academic_rank", length = 32)
     private String academicRank;
+
+    // =====================================================
+    // Additional References (DB columns, old-hemis compatible)
+    // =====================================================
+
+    @Column(name = "_department", length = 255)
+    private String department;
+
+    @Column(name = "_position", length = 32)
+    private String position;
+
+    @Column(name = "_employee_type", length = 32)
+    private String employeeType;
+
+    @Column(name = "_employment_form", length = 32)
+    private String employmentForm;
+
+    @Column(name = "_university_employment_form", length = 32)
+    private String universityEmploymentForm;
+
+    @Column(name = "_soato_region", length = 32)
+    private String soatoRegion;
+
+    @Column(name = "_soato_district", length = 32)
+    private String soatoDistrict;
 
     // =====================================================
     // Business Methods

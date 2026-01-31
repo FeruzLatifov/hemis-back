@@ -86,7 +86,7 @@ public class EmploymentController {
     @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> createEmployment(@Valid @RequestBody EmploymentDto employmentDto) {
         EmploymentDto created = employmentService.create(employmentDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+        return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")

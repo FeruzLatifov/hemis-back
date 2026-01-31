@@ -3,7 +3,9 @@ package uz.hemis.api.legacy.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/app/rest/v2/entities/hemishe_EStudentCertificate")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "68.Sertifikat", description = "Talaba sertifikatlari")
 public class StudentCertificateEntityController {
 
@@ -147,9 +150,28 @@ public class StudentCertificateEntityController {
     }
 
     @PostMapping
-    @Operation(summary = "Create student certificate")
+    @Transactional
+    @Operation(summary = "Create/upsert student certificate")
     public ResponseEntity<Map<String, Object>> createStudentCertificate(
             @RequestBody Map<String, Object> studentCertificateData) {
+
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
+        if (studentCertificateData.containsKey("id")) {
+            try {
+                UUID existingId = UUID.fromString(studentCertificateData.get("id").toString());
+                var existingOpt = studentCertificateRepository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    StudentCertificate cert = existingOpt.get();
+                    updateStudentCertificateFromMap(cert, studentCertificateData);
+                    cert.setUpdateTs(LocalDateTime.now());
+                    studentCertificateRepository.save(cert);
+                    return ResponseEntity.ok(toMap(cert));
+                }
+            } catch (IllegalArgumentException e) {
+                log.debug("Invalid UUID format for id: {}", studentCertificateData.get("id"));
+            }
+        }
 
         StudentCertificate studentCertificate = new StudentCertificate();
         studentCertificate.setId(UUID.randomUUID());
@@ -159,7 +181,7 @@ public class StudentCertificateEntityController {
         updateStudentCertificateFromMap(studentCertificate, studentCertificateData);
         studentCertificateRepository.save(studentCertificate);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(toMap(studentCertificate));
+        return ResponseEntity.ok(toMap(studentCertificate));
     }
 
     private Map<String, Object> toMap(StudentCertificate studentCertificate) {
@@ -183,30 +205,39 @@ public class StudentCertificateEntityController {
         return map;
     }
 
+    private String toStr(Object value) {
+        if (value == null) return null;
+        if (value instanceof String) return (String) value;
+        if (value instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) value;
+            Object code = map.get("code");
+            if (code != null) return code.toString();
+            Object id = map.get("id");
+            if (id != null) return id.toString();
+            return value.toString();
+        }
+        return value.toString();
+    }
+
     private void updateStudentCertificateFromMap(StudentCertificate studentCertificate, Map<String, Object> data) {
         if (data.containsKey("university")) {
-            Object universityObj = data.get("university");
-            studentCertificate.setUniversity(universityObj != null ? UUID.fromString(universityObj.toString()) : null);
+            studentCertificate.setUniversity(toStr(data.get("university")));
         }
         if (data.containsKey("student")) {
             Object studentObj = data.get("student");
-            studentCertificate.setStudent(studentObj != null ? UUID.fromString(studentObj.toString()) : null);
+            studentCertificate.setStudent(studentObj != null ? UUID.fromString(toStr(studentObj)) : null);
         }
         if (data.containsKey("certificateType")) {
-            Object certificateTypeObj = data.get("certificateType");
-            studentCertificate.setCertificateType(certificateTypeObj != null ? UUID.fromString(certificateTypeObj.toString()) : null);
+            studentCertificate.setCertificateType(toStr(data.get("certificateType")));
         }
         if (data.containsKey("certificateName")) {
-            Object certificateNameObj = data.get("certificateName");
-            studentCertificate.setCertificateName(certificateNameObj != null ? UUID.fromString(certificateNameObj.toString()) : null);
+            studentCertificate.setCertificateName(toStr(data.get("certificateName")));
         }
         if (data.containsKey("certificateGrade")) {
-            Object certificateGradeObj = data.get("certificateGrade");
-            studentCertificate.setCertificateGrade(certificateGradeObj != null ? UUID.fromString(certificateGradeObj.toString()) : null);
+            studentCertificate.setCertificateGrade(toStr(data.get("certificateGrade")));
         }
         if (data.containsKey("certificateSubject")) {
-            Object certificateSubjectObj = data.get("certificateSubject");
-            studentCertificate.setCertificateSubject(certificateSubjectObj != null ? UUID.fromString(certificateSubjectObj.toString()) : null);
+            studentCertificate.setCertificateSubject(toStr(data.get("certificateSubject")));
         }
         if (data.containsKey("issueDate")) {
             Object issueDateObj = data.get("issueDate");

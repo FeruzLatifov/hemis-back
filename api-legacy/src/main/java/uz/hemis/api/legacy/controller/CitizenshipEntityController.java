@@ -292,7 +292,7 @@ public class CitizenshipEntityController {
         }
         log.info("Citizenship {} successfully: {}", isNew ? "created" : (wasRestored ? "restored" : "updated"), code);
 
-        return ResponseEntity.status(201).body(toMinimalMap(saved));
+        return ResponseEntity.ok(toMinimalMap(saved));
     }
 
     // =====================================================

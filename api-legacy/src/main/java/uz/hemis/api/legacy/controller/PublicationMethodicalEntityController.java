@@ -102,7 +102,10 @@ public class PublicationMethodicalEntityController {
             return ResponseEntity.notFound().build();
         }
 
-        repository.delete(entity.get());
+        // Soft delete: delete_ts belgilash (hard delete emas — FK constraint buzilmasligi uchun)
+        PublicationMethodical pub = entity.get();
+        pub.setDeleteTs(java.time.LocalDateTime.now());
+        repository.save(pub);
         return ResponseEntity.ok().build();
     }
 
@@ -191,7 +194,25 @@ public class PublicationMethodicalEntityController {
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("POST create new PublicationMethodical");
+        log.debug("POST create/upsert PublicationMethodical");
+
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
+        if (body.containsKey("id")) {
+            try {
+                UUID existingId = UUID.fromString(body.get("id").toString());
+                Optional<PublicationMethodical> existingOpt = repository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    PublicationMethodical existing = existingOpt.get();
+                    updateFromMap(existing, body);
+                    existing.setUpdateTs(java.time.LocalDateTime.now());
+                    PublicationMethodical saved = repository.save(existing);
+                    return ResponseEntity.ok(toMap(saved, returnNulls));
+                }
+            } catch (IllegalArgumentException e) {
+                log.debug("Invalid UUID format for id: {}", body.get("id"));
+            }
+        }
 
         PublicationMethodical entity = new PublicationMethodical();
         updateFromMap(entity, body);
@@ -249,8 +270,8 @@ public class PublicationMethodicalEntityController {
         if (map.containsKey("u_id") || map.containsKey("uId")) {
             entity.setUId(extractInteger(map.getOrDefault("uId", map.get("u_id"))));
         }
-        if (map.containsKey("_university")) {
-            entity.setUniversity(extractString(map.get("_university")));
+        if (map.containsKey("_university") || map.containsKey("university")) {
+            entity.setUniversity(extractString(map.getOrDefault("university", map.get("_university"))));
         }
         if (map.containsKey("name")) {
             entity.setName(extractString(map.get("name")));
@@ -276,14 +297,14 @@ public class PublicationMethodicalEntityController {
         if (map.containsKey("parameter")) {
             entity.setParameter(extractString(map.get("parameter")));
         }
-        if (map.containsKey("_methodical_publication_type")) {
-            entity.setMethodicalPublicationType(extractString(map.get("_methodical_publication_type")));
+        if (map.containsKey("_methodical_publication_type") || map.containsKey("methodicalPublicationType")) {
+            entity.setMethodicalPublicationType(extractString(map.getOrDefault("methodicalPublicationType", map.get("_methodical_publication_type"))));
         }
-        if (map.containsKey("_publication_database")) {
-            entity.setPublicationDatabase(extractString(map.get("_publication_database")));
+        if (map.containsKey("_publication_database") || map.containsKey("publicationDatabase")) {
+            entity.setPublicationDatabase(extractString(map.getOrDefault("publicationDatabase", map.get("_publication_database"))));
         }
-        if (map.containsKey("_employee")) {
-            entity.setEmployee(extractUuid(map.get("_employee")));
+        if (map.containsKey("_employee") || map.containsKey("employee")) {
+            entity.setEmployee(extractUuid(map.getOrDefault("employee", map.get("_employee"))));
         }
         if (map.containsKey("filename")) {
             entity.setFilename(extractString(map.get("filename")));
@@ -305,8 +326,8 @@ public class PublicationMethodicalEntityController {
         if (map.containsKey("is_checked_date") || map.containsKey("isCheckedDate")) {
             entity.setIsCheckedDate(extractLocalDateTime(map.getOrDefault("isCheckedDate", map.get("is_checked_date"))));
         }
-        if (map.containsKey("_education_year")) {
-            entity.setEducationYear(extractString(map.get("_education_year")));
+        if (map.containsKey("_education_year") || map.containsKey("educationYear")) {
+            entity.setEducationYear(extractString(map.getOrDefault("educationYear", map.get("_education_year"))));
         }
     }
 

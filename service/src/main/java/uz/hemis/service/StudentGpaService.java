@@ -108,24 +108,45 @@ public class StudentGpaService {
         }
 
         // OLD-HEMIS UPSERT Logic: Check if GPA exists for (studentId + educationYear)
-        // If exists, delete it first, then create new record
+        // If exists, UPDATE it (preserving UUID). If not, create new.
         final UUID finalStudentId = studentId;
         final String finalEducationYearCode = educationYearCode;
-        if (finalStudentId != null && finalEducationYearCode != null) {
-            studentGpaRepository.findByStudentIdAndEducationYearCode(finalStudentId, finalEducationYearCode)
-                    .ifPresent(existingGpa -> {
-                        log.info("Deleting existing GPA record for UPSERT: id={}, studentId={}, educationYear={}",
-                                existingGpa.getId(), finalStudentId, finalEducationYearCode);
-                        studentGpaRepository.delete(existingGpa);
-                        studentGpaRepository.flush(); // Ensure delete is executed before insert
-                    });
+        StudentGpa gpa = null;
+
+        // Check by explicit ID first
+        Object idObj = requestBody.get("id");
+        if (idObj != null) {
+            try {
+                UUID explicitId = UUID.fromString(idObj.toString());
+                gpa = studentGpaRepository.findById(explicitId).orElse(null);
+            } catch (Exception e) {
+                log.debug("Invalid explicit ID: {}", idObj);
+            }
         }
 
-        // Create new GPA record
-        StudentGpa gpa = new StudentGpa();
-        gpa.setId(UUID.randomUUID());
-        gpa.setStudentId(studentId);
-        gpa.setEducationYearCode(educationYearCode);
+        // Then check by (studentId + educationYear) composite key
+        if (gpa == null && finalStudentId != null && finalEducationYearCode != null) {
+            gpa = studentGpaRepository.findByStudentIdAndEducationYearCode(finalStudentId, finalEducationYearCode)
+                    .orElse(null);
+        }
+
+        // Create new if not found
+        if (gpa == null) {
+            gpa = new StudentGpa();
+            gpa.setId(UUID.randomUUID());
+        } else {
+            log.info("Updating existing GPA record: id={}, studentId={}, educationYear={}",
+                    gpa.getId(), finalStudentId, finalEducationYearCode);
+        }
+
+        // Only update studentId and educationYearCode if provided in request (not null)
+        // This prevents overwriting existing non-null values with null during PUT updates
+        if (studentId != null) {
+            gpa.setStudentId(studentId);
+        }
+        if (educationYearCode != null) {
+            gpa.setEducationYearCode(educationYearCode);
+        }
 
         // Parse level (can be nested object with code or direct code string)
         Object levelObj = requestBody.get("level");
@@ -253,27 +274,25 @@ public class StudentGpaService {
         }
 
         // OLD-HEMIS Logic: Find existing GPA by ID or (studentId + educationYear)
-        StudentGpa existingGpa = null;
+        // If found, UPDATE it (preserving UUID). If not, create new.
+        StudentGpa newGpa = null;
 
         if (requestId != null) {
-            existingGpa = studentGpaRepository.findById(requestId).orElse(null);
+            newGpa = studentGpaRepository.findById(requestId).orElse(null);
         }
 
-        if (existingGpa == null && studentId != null && educationYearCode != null) {
-            existingGpa = studentGpaRepository.findByStudentIdAndEducationYearCode(studentId, educationYearCode)
+        if (newGpa == null && studentId != null && educationYearCode != null) {
+            newGpa = studentGpaRepository.findByStudentIdAndEducationYearCode(studentId, educationYearCode)
                     .orElse(null);
         }
 
-        // Delete existing if found
-        if (existingGpa != null) {
-            log.info("Deleting existing GPA record: {}", existingGpa.getId());
-            studentGpaRepository.delete(existingGpa);
-            studentGpaRepository.flush(); // Ensure delete is executed before insert
+        if (newGpa != null) {
+            log.info("Updating existing GPA record: {}", newGpa.getId());
+        } else {
+            newGpa = new StudentGpa();
+            newGpa.setId(UUID.randomUUID());
         }
 
-        // Create new GPA record
-        StudentGpa newGpa = new StudentGpa();
-        newGpa.setId(UUID.randomUUID());
         newGpa.setStudentId(studentId);
         newGpa.setEducationYearCode(educationYearCode);
 

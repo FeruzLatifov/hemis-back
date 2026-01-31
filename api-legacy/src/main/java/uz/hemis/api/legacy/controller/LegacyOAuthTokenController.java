@@ -208,6 +208,39 @@ public class LegacyOAuthTokenController {
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "refresh_token", required = false) String refreshToken
     ) {
+        return processTokenRequest(authorization, grantType, username, password, refreshToken);
+    }
+
+    /**
+     * Token olish (JSON format) - OLD-HEMIS PHP loyihasi uchun
+     *
+     * <p>PHP (Yii2) HTTP Client Content-Type: application/json bilan yuboradi.
+     * 200 ta universitetda ishlayotgan PHP kodga moslik uchun JSON ham qabul qilinadi.</p>
+     */
+    @PostMapping(
+        value = {
+            "/app/rest/v2/oauth/token",
+            "/app/rest/oauth/token"
+        },
+        consumes = MediaType.APPLICATION_JSON_VALUE
+    )
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> tokenJson(
+            @RequestHeader(value = "Authorization", required = false) String authorization,
+            @RequestBody Map<String, String> body
+    ) {
+        return processTokenRequest(
+                authorization,
+                body.get("grant_type"),
+                body.get("username"),
+                body.get("password"),
+                body.get("refresh_token")
+        );
+    }
+
+    private ResponseEntity<?> processTokenRequest(
+            String authorization, String grantType, String username, String password, String refreshToken
+    ) {
         log.info("Legacy token request - grant_type: {}, username: {}", grantType, username);
 
         try {

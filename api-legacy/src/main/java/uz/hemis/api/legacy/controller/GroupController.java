@@ -17,7 +17,6 @@ import uz.hemis.common.dto.GroupDto;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 
-import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "51.Guruhlar", description = "Guruhlar boshqaruvi")
@@ -31,7 +30,7 @@ public class GroupController {
 
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<GroupDto>>> getAllGroups(
-            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
+            @PageableDefault(size = 20, sort = "groupName", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<GroupDto> groups = groupService.findAll(pageable);
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(groups)));
@@ -43,37 +42,11 @@ public class GroupController {
         return ResponseEntity.ok(ResponseWrapper.success(group));
     }
 
-    @GetMapping(params = "university")
-    public ResponseEntity<ResponseWrapper<PageResponse<GroupDto>>> getGroupsByUniversity(
-            @RequestParam("university") String universityCode,
-            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
-    ) {
-        Page<GroupDto> groups = groupService.findByUniversity(universityCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(groups)));
-    }
-
-    @GetMapping(params = "specialty")
-    public ResponseEntity<ResponseWrapper<PageResponse<GroupDto>>> getGroupsBySpecialty(
-            @RequestParam("specialty") UUID specialtyId,
-            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
-    ) {
-        Page<GroupDto> groups = groupService.findBySpecialty(specialtyId, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(groups)));
-    }
-
-    @GetMapping(params = "countByUniversity")
-    public ResponseEntity<ResponseWrapper<Long>> countGroupsByUniversity(
-            @RequestParam("countByUniversity") String universityCode
-    ) {
-        long count = groupService.countByUniversity(universityCode);
-        return ResponseEntity.ok(ResponseWrapper.success(count));
-    }
-
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
     public ResponseEntity<ResponseWrapper<GroupDto>> createGroup(@Valid @RequestBody GroupDto groupDto) {
         GroupDto created = groupService.create(groupDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+        return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")
@@ -89,7 +62,7 @@ public class GroupController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Void>> deleteGroup(@PathVariable UUID id) {
-        groupService.softDelete(id);
+        groupService.delete(id);
         return ResponseEntity.ok(ResponseWrapper.success(null));
     }
 }

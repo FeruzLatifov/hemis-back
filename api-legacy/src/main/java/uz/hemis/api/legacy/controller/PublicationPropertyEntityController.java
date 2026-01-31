@@ -300,18 +300,28 @@ public class PublicationPropertyEntityController {
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.info("POST create new PublicationProperty");
+        log.info("POST create/upsert PublicationProperty");
         log.debug("Request body: {}", body);
 
-        PublicationProperty entity = new PublicationProperty();
-
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
         if (body.containsKey("id")) {
             try {
-                entity.setId(UUID.fromString(body.get("id").toString()));
-            } catch (Exception e) {
+                UUID existingId = UUID.fromString(body.get("id").toString());
+                Optional<PublicationProperty> existingOpt = repository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    PublicationProperty existing = existingOpt.get();
+                    updateFromMap(existing, body);
+                    existing.setUpdateTs(LocalDateTime.now());
+                    PublicationProperty saved = repository.save(existing);
+                    return ResponseEntity.ok(toMap(saved, returnNulls));
+                }
+            } catch (IllegalArgumentException e) {
                 log.warn("Invalid UUID format for id: {}", body.get("id"));
             }
         }
+
+        PublicationProperty entity = new PublicationProperty();
 
         updateFromMap(entity, body);
         entity.setVersion(1);

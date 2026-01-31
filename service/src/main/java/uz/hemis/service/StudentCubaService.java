@@ -88,7 +88,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }
@@ -113,7 +112,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }
@@ -149,7 +147,6 @@ public class StudentCubaService {
             if (student.isEmpty()) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("code", "not_found");
                 error.put("message", "Student not found");
                 return error;
             }
@@ -160,7 +157,6 @@ public class StudentCubaService {
             log.error("Invalid UUID: {}", id);
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "invalid_id");
             error.put("message", "Invalid student ID format");
             return error;
         }
@@ -185,7 +181,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Doctoral student not found");
             return error;
         }
@@ -252,7 +247,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }
@@ -362,7 +356,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }
@@ -398,7 +391,6 @@ public class StudentCubaService {
         if (studentData == null || !studentData.containsKey("pinfl")) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "invalid_parameter");
             error.put("message", "PINFL required");
             return error;
         }
@@ -409,7 +401,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }
@@ -443,7 +434,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }
@@ -482,7 +472,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }
@@ -524,7 +513,6 @@ public class StudentCubaService {
         if (student.isEmpty()) {
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("code", "not_found");
             error.put("message", "Student not found");
             return error;
         }

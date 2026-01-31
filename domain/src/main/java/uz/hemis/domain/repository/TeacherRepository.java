@@ -325,6 +325,19 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
     Page<Teacher> findDoctorsByUniversity(@Param("universityCode") String universityCode, Pageable pageable);
 
     // =====================================================
+    // Find by Code (for CUBA upsert pattern)
+    // =====================================================
+
+    /**
+     * Find teacher by unique code
+     *
+     * @param code teacher code (e.g., "3512011113")
+     * @return teacher if found
+     */
+    @Query("SELECT t FROM Teacher t WHERE t.code = :code")
+    java.util.Optional<Teacher> findByCode(@Param("code") String code);
+
+    // =====================================================
     // Teacher ID Generation (OLD-HEMIS Compatible)
     // =====================================================
 
@@ -368,6 +381,14 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
      */
     @Query("SELECT MAX(t.code) FROM Teacher t WHERE t.code LIKE :codePattern")
     String findMaxCodeByPrefix(@Param("codePattern") String codePattern);
+
+    /**
+     * Check if teacher exists by code
+     *
+     * @param code teacher unique code
+     * @return true if teacher with this code exists
+     */
+    boolean existsByCode(String code);
 
     /**
      * Find soft-deleted teacher by ID

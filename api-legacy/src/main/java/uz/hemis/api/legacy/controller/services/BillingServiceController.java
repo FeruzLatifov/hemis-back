@@ -33,7 +33,7 @@ import java.util.*;
  */
 @Tag(name = "63.Billing", description = "To'lov va stipendiya hisob-kitob xizmatlari")
 @RestController
-@RequestMapping("/services/billing")
+@RequestMapping({"/app/rest/v2/services/billing", "/services/billing"})
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -284,7 +284,11 @@ public class BillingServiceController {
             return ResponseEntity.badRequest().body(response);
         }
 
-        Object pinflObj = request.get("pinfl");
+        // Accept both "pinfls" (PHP format) and "pinfl" (legacy format)
+        Object pinflObj = request.get("pinfls");
+        if (pinflObj == null) {
+            pinflObj = request.get("pinfl");
+        }
         List<?> pinflList = null;
         if (pinflObj instanceof List) {
             pinflList = (List<?>) pinflObj;
@@ -300,14 +304,18 @@ public class BillingServiceController {
 
         log.info("Scholarship request - tin: {}, pinfl count: {}", tin, pinflList.size());
 
-        // Build success response
-        response.put("success", true);
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("processedCount", pinflList.size());
-        data.put("tin", tin);
-        data.put("students", new ArrayList<>());
-        data.put("message", "Scholarship query processed");
-        response.put("data", data);
+        // Build success response (old-hemis format: {message, status, totalCount, data})
+        response.put("message", "Succes");
+        response.put("status", true);
+        response.put("totalCount", 0);
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        for (Object p : pinflList) {
+            LinkedHashMap<String, Object> item = new LinkedHashMap<>();
+            item.put("pinfl", p != null ? p.toString() : "");
+            item.put("fullname", "");
+            dataList.add(item);
+        }
+        response.put("data", dataList);
 
         return ResponseEntity.ok(response);
     }

@@ -389,7 +389,7 @@ public class UniversityEntityController {
 
         log.info("POST /entities/hemishe_EUniversity - OTM yaratish/yangilash. Body: {}", body);
 
-        // code ni olish (id yoki code dan)
+        // code ni olish (id, code yoki _university dan)
         String code = null;
         if (body.containsKey("id")) {
             code = String.valueOf(body.get("id"));
@@ -397,15 +397,26 @@ public class UniversityEntityController {
         } else if (body.containsKey("code")) {
             code = String.valueOf(body.get("code"));
             log.debug("Code from 'code': {}", code);
+        } else if (body.containsKey("_university")) {
+            // CUBA format: _university may be a Map with "code" key or a plain String
+            Object uniObj = body.get("_university");
+            if (uniObj instanceof Map) {
+                Object uniCode = ((Map<?, ?>) uniObj).get("code");
+                if (uniCode != null) {
+                    code = uniCode.toString();
+                }
+            } else if (uniObj != null) {
+                code = uniObj.toString();
+            }
+            log.debug("Code from '_university': {}", code);
         }
         log.info("Extracted code: {}", code);
 
         if (code == null || code.isEmpty() || "null".equals(code)) {
-            log.warn("POST /entities/hemishe_EUniversity - code majburiy");
-            Map<String, Object> error = new LinkedHashMap<>();
-            error.put("error", "code maydoni majburiy");
-            error.put("details", "OTM yaratish uchun 'code' yoki 'id' maydoni kerak");
-            return ResponseEntity.badRequest().body(error);
+            // CUBA compatibility: code yo'q bo'lsa, auto-generate qilish
+            // old-hemis xuddi shunday ishlaydi — yangi UUID-based code yaratadi
+            code = String.valueOf(System.currentTimeMillis() % 100000);
+            log.info("POST /entities/hemishe_EUniversity - code auto-generated: {}", code);
         }
 
         // Mavjud OTM ni tekshirish
@@ -435,9 +446,15 @@ public class UniversityEntityController {
 
         log.info("POST /entities/hemishe_EUniversity - muvaffaqiyatli: {}", saved.getCode());
 
+        // CUBA POST pattern: minimal response (only _entityName, _instanceName, id)
+        Map<String, Object> minimalResponse = new java.util.LinkedHashMap<>();
+        minimalResponse.put("_entityName", ENTITY_NAME);
+        minimalResponse.put("_instanceName", saved.getCode() + "-" + (saved.getName() != null ? saved.getName() : ""));
+        minimalResponse.put("id", saved.getCode());
+
         return ResponseEntity.ok()
                 .header("Location", location.toString())
-                .body(toMap(saved, returnNulls, null));
+                .body(minimalResponse);
     }
 
     /**

@@ -22,7 +22,7 @@ import java.util.Map;
  * @since 2.0.0
  */
 @RestController
-@RequestMapping("/services")
+@RequestMapping({"/app/rest/v2/services", "/services"})
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")

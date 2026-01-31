@@ -39,7 +39,7 @@ public class MailController {
         response.put("sentAt", LocalDateTime.now());
         response.put("messageId", "msg-" + System.currentTimeMillis());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(response));
+        return ResponseEntity.ok(ResponseWrapper.success(response));
     }
 
     @GetMapping("/status/{messageId}")

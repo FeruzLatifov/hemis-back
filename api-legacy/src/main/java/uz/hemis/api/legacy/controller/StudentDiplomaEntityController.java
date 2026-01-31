@@ -159,17 +159,18 @@ public class StudentDiplomaEntityController {
         }
 
         // Filter yo'q yoki qo'llab-quvvatlanmaydigan filter - standart pagination
-        Sort sorting = Sort.by(Sort.Direction.DESC, "createTs");
+        // CUBA compatible: sort parametri bo'lmasa, sort qo'shilmaydi (DB natural order)
+        int page = offset / Math.max(limit, 1);
+        PageRequest pageRequest;
         if (sort != null && !sort.isEmpty()) {
             String[] parts = sort.split("-");
             String field = parts[0];
             Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
                     ? Sort.Direction.DESC : Sort.Direction.ASC;
-            sorting = Sort.by(direction, field);
+            pageRequest = PageRequest.of(page, limit, Sort.by(direction, field));
+        } else {
+            pageRequest = PageRequest.of(page, limit);
         }
-
-        int page = offset / Math.max(limit, 1);
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
         Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
 
         List<Map<String, Object>> result = resultPage.getContent().stream()
@@ -212,14 +213,6 @@ public class StudentDiplomaEntityController {
 
         log.debug("PUT diploma id: {}", entityId);
 
-        // OLD-HEMIS format: _entityName majburiy
-        if (!body.containsKey("_entityName") || !"hemishe_EStudentDiploma".equals(body.get("_entityName"))) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Cannot deserialize an entity from JSON",
-                    "details", "_entityName must be 'hemishe_EStudentDiploma'"
-            ));
-        }
-
         Optional<StudentDiploma> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -252,48 +245,6 @@ public class StudentDiplomaEntityController {
 
         log.debug("POST create diploma");
 
-        // OLD-HEMIS format validation (STRICT)
-        // Required: _entityName, university{_entityName,id}, student{_entityName,id}, speciality(string), diplomaNumber
-        List<Map<String, Object>> validationErrors = new ArrayList<>();
-
-        // _entityName majburiy
-        if (!body.containsKey("_entityName") || !"hemishe_EStudentDiploma".equals(body.get("_entityName"))) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Cannot deserialize an entity from JSON",
-                    "details", "_entityName must be 'hemishe_EStudentDiploma'"
-            ));
-        }
-
-        // university: {"_entityName": "hemishe_EUniversity", "id": "..."}
-        if (!isValidNestedRef(body.get("university"), "hemishe_EUniversity")) {
-            validationErrors.add(createValidationError("university"));
-        }
-
-        // student: {"_entityName": "hemishe_EStudent", "id": "..."}
-        if (!isValidNestedRef(body.get("student"), "hemishe_EStudent")) {
-            validationErrors.add(createValidationError("student"));
-        }
-
-        // speciality: oddiy string (nested emas!)
-        Object specialityVal = body.get("speciality");
-        if (!(specialityVal instanceof String) || ((String) specialityVal).isEmpty()) {
-            validationErrors.add(createValidationError("speciality"));
-        }
-
-        // diplomaNumber majburiy
-        if (!body.containsKey("diplomaNumber") || body.get("diplomaNumber") == null ||
-                body.get("diplomaNumber").toString().isEmpty()) {
-            validationErrors.add(createValidationError("diplomaNumber"));
-        }
-
-        if (!validationErrors.isEmpty()) {
-            // OLD-HEMIS format: {"error": "Cannot deserialize an entity from JSON", "details": ""}
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Cannot deserialize an entity from JSON",
-                    "details", ""
-            ));
-        }
-
         StudentDiploma entity = new StudentDiploma();
 
         // ID ni body dan olish yoki yangi yaratish
@@ -315,7 +266,7 @@ public class StudentDiplomaEntityController {
         response.put("_instanceName", "com.company.hemishe.entity.EStudentDiploma-" + entity.getId() + " [detached]");
         response.put("id", entity.getId().toString());
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -468,7 +419,7 @@ public class StudentDiplomaEntityController {
 
                     // Fallback: Memory filtering
                     int page = offset / Math.max(limit, 1);
-                    PageRequest pageRequest = PageRequest.of(page, limit * 10, Sort.by(Sort.Direction.DESC, "createTs"));
+                    PageRequest pageRequest = PageRequest.of(page, limit * 10);
                     Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
                     result = applyConditions(resultPage.getContent(), conditions);
 
@@ -491,9 +442,9 @@ public class StudentDiplomaEntityController {
                 result = result.subList(start, end);
             }
         } else {
-            // Use paginated query instead of findAll() to prevent OOM
+            // CUBA compatible: no explicit sort
             int page = offset / Math.max(limit, 1);
-            PageRequest pageRequest = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "createTs"));
+            PageRequest pageRequest = PageRequest.of(page, limit);
             Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
             result = resultPage.getContent();
         }
@@ -578,7 +529,7 @@ public class StudentDiplomaEntityController {
 
             // Fallback: Use paginated findAll and filter in memory
             int page = effectiveOffset / Math.max(effectiveLimit, 1);
-            PageRequest pageRequest = PageRequest.of(page, effectiveLimit * 10, Sort.by(Sort.Direction.DESC, "createTs"));
+            PageRequest pageRequest = PageRequest.of(page, effectiveLimit * 10);
             Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
             result = applyConditions(resultPage.getContent(), conditions);
 
@@ -587,9 +538,9 @@ public class StudentDiplomaEntityController {
             int end = Math.min(start + effectiveLimit, result.size());
             result = result.subList(start, end);
         } else {
-            // No filter, use paginated query instead of findAll() to prevent OOM
+            // CUBA compatible: no explicit sort
             int page = effectiveOffset / Math.max(effectiveLimit, 1);
-            PageRequest pageRequest = PageRequest.of(page, effectiveLimit, Sort.by(Sort.Direction.DESC, "createTs"));
+            PageRequest pageRequest = PageRequest.of(page, effectiveLimit);
             Page<StudentDiploma> resultPage = repository.findAll(pageRequest);
             result = resultPage.getContent();
         }
@@ -722,16 +673,18 @@ public class StudentDiplomaEntityController {
         boolean useNestedObjects = view != null && !view.isEmpty();
 
         // Entity fields - with nested objects when view is provided
-        if (useNestedObjects && entity.getUniversity() != null) {
-            map.put("university", fetchUniversity(entity.getUniversity()));
-        } else {
-            putIfNotNull(map, "university", entity.getUniversity(), returnNulls);
-        }
-
-        if (useNestedObjects && entity.getStudent() != null) {
-            map.put("student", fetchStudent(entity.getStudent()));
-        } else {
-            putIfNotNull(map, "student", entity.getStudent(), returnNulls);
+        // OLD-HEMIS: university va student faqat view bilan qaytariladi
+        if (useNestedObjects) {
+            if (entity.getUniversity() != null) {
+                map.put("university", fetchUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", null);
+            }
+            if (entity.getStudent() != null) {
+                map.put("student", fetchStudent(entity.getStudent()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("student", null);
+            }
         }
 
         putIfNotNull(map, "speciality", entity.getSpeciality(), returnNulls);
@@ -778,8 +731,12 @@ public class StudentDiplomaEntityController {
         putIfNotNull(map, "hash", entity.getHash(), returnNulls);
 
         // blankGenerateStatusCode -> blankGenerateStatus (nested object)
-        if (useNestedObjects && entity.getBlankGenerateStatusCode() != null) {
-            map.put("blankGenerateStatus", fetchBlankGenerateStatus(entity.getBlankGenerateStatusCode()));
+        if (useNestedObjects) {
+            if (entity.getBlankGenerateStatusCode() != null) {
+                map.put("blankGenerateStatus", fetchBlankGenerateStatus(entity.getBlankGenerateStatusCode()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("blankGenerateStatus", null);
+            }
         } else {
             putIfNotNull(map, "blankGenerateStatusCode", entity.getBlankGenerateStatusCode(), returnNulls);
         }
@@ -827,7 +784,22 @@ public class StudentDiplomaEntityController {
     private Map<String, Object> fetchStudent(UUID studentId) {
         try {
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT id, code, firstname, lastname, fathername FROM hemishe_e_student WHERE id = ? AND delete_ts IS NULL",
+                    """
+                    SELECT id, version, code, firstname, lastname, fathername, birthday, pinfl,
+                           serial_number, _university, _soato, address, current_address,
+                           _payment_form, _education_form, _education_type, _education_year,
+                           _country, _gender, _language, _student_status, _citizenship,
+                           _social_category, _course, _speciality, _faculty,
+                           active, tag, phone, email, parent_phone, responsible_person_phone,
+                           geo_address, group_name, group_id, edu_start_date,
+                           graduation_date, study_duration, is_duplicate, is_graduate,
+                           status_order_name, status_order_date, status_order_number,
+                           status_order_category, enroll_order_category, enroll_order_number,
+                           enroll_order_date, enroll_order_name, verified, points,
+                           roommate_count, decree_info_name, decree_info_number, decree_info_date,
+                           passport_given_date, status, _current_education_year_code
+                    FROM hemishe_e_student WHERE id = ? AND delete_ts IS NULL
+                    """,
                     studentId);
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("_entityName", ENTITY_STUDENT);
@@ -837,13 +809,141 @@ public class StudentDiplomaEntityController {
                     row.get("fathername") != null ? row.get("fathername") : "").trim();
             result.put("_instanceName", instanceName);
             result.put("id", row.get("id"));
-            result.put("code", row.get("code"));
-            result.put("firstname", row.get("firstname"));
+            result.put("isGraduate", row.get("is_graduate"));
+            result.put("statusOrderDate", row.get("status_order_date"));
+            result.put("decreeInfoName", row.get("decree_info_name"));
+            result.put("groupId", row.get("group_id"));
+
+            // Nested classifier: educationYear
+            putClassifierIfNotNull(result, "educationYear", row.get("_education_year"),
+                    ENTITY_EDUCATION_YEAR, "hemishe_h_education_year");
+            // Nested classifier: educationForm
+            putClassifierIfNotNull(result, "educationForm", row.get("_education_form"),
+                    "hemishe_HEducationForm", "hemishe_h_education_form");
+
+            result.put("points", row.get("points"));
+            result.put("tag", row.get("tag"));
+            result.put("decreeInfoNumber", row.get("decree_info_number"));
+            result.put("responsiblePersonPhone", row.get("responsible_person_phone"));
+            result.put("geoAddress", row.get("geo_address"));
+            result.put("serialNumber", row.get("serial_number"));
+            result.put("active", row.get("active"));
+            result.put("statusOrderCategory", row.get("status_order_category"));
+            result.put("decreeInfoDate", row.get("decree_info_date"));
             result.put("lastname", row.get("lastname"));
+            result.put("groupName", row.get("group_name"));
+            result.put("statusOrderNumber", row.get("status_order_number"));
+            result.put("phone", row.get("phone"));
+            result.put("status", row.get("status"));
+            result.put("enrollOrderName", row.get("enroll_order_name"));
+            result.put("pinfl", row.get("pinfl"));
+            result.put("birthday", row.get("birthday"));
+            result.put("firstname", row.get("firstname"));
+            result.put("code", row.get("code"));
+
+            // Nested classifier: paymentForm
+            putClassifierIfNotNull(result, "paymentForm", row.get("_payment_form"),
+                    "hemishe_HPaymentForm", "hemishe_h_payment_form");
+            // Nested: soato (special structure)
+            putSoatoIfNotNull(result, row.get("_soato"));
+
+            result.put("parentPhone", row.get("parent_phone"));
+            result.put("speciality", row.get("_speciality"));
+            result.put("enrollOrderDate", row.get("enroll_order_date"));
+            result.put("enrollOrderNumber", row.get("enroll_order_number"));
+            result.put("roommateCount", row.get("roommate_count"));
+            result.put("isDuplicate", row.get("is_duplicate"));
+            result.put("email", row.get("email"));
+            result.put("address", row.get("address"));
+            result.put("eduStartDate", row.get("edu_start_date"));
+            result.put("passportGivenDate", row.get("passport_given_date"));
+            result.put("verified", row.get("verified"));
+            result.put("currentAddress", row.get("current_address"));
             result.put("fathername", row.get("fathername"));
+            result.put("graduationDate", row.get("graduation_date"));
+            result.put("statusOrderName", row.get("status_order_name"));
+            result.put("enrollOrderCategory", row.get("enroll_order_category"));
+            result.put("studyDuration", row.get("study_duration"));
+
             return result;
         } catch (EmptyResultDataAccessException e) {
             return createMinimalNestedObject(ENTITY_STUDENT, studentId, studentId.toString());
+        }
+    }
+
+    /**
+     * Classifier nested object yaratish (old-hemis format)
+     * entityName: CUBA entity name (e.g. "hemishe_HEducationForm")
+     * tableName: actual DB table name (e.g. "hemishe_h_education_form")
+     */
+    private void putClassifierIfNotNull(Map<String, Object> map, String key, Object code,
+                                         String entityName, String tableName) {
+        if (code == null) return;
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT * FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL",
+                    String.valueOf(code));
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", entityName);
+            String name = row.get("name") != null ? row.get("name").toString() : "";
+            nested.put("_instanceName", row.get("code") + " " + name);
+            nested.put("id", row.get("code"));
+            if (row.containsKey("name_ru")) nested.put("nameRu", row.get("name_ru"));
+            if (row.containsKey("name")) nested.put("name", row.get("name"));
+            if (row.containsKey("active")) nested.put("active", row.get("active"));
+            if (row.containsKey("name_en")) nested.put("nameEn", row.get("name_en"));
+            map.put(key, nested);
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", entityName);
+            nested.put("id", code);
+            map.put(key, nested);
+        }
+    }
+
+    /**
+     * Soato nested object - old-hemis format bilan
+     * Soato has name_uz, name_ru, parent_code (nested) instead of name
+     */
+    private void putSoatoIfNotNull(Map<String, Object> map, Object code) {
+        if (code == null) return;
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT code, name_uz, name_ru, parent_code, active FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL",
+                    String.valueOf(code));
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_HSoato");
+            nested.put("_instanceName", row.get("code") + " - " + row.get("name_uz"));
+            nested.put("id", row.get("code"));
+            nested.put("active", row.get("active"));
+            nested.put("name_ru", row.get("name_ru"));
+
+            // parent_code nested object
+            Object parentCode = row.get("parent_code");
+            if (parentCode != null) {
+                try {
+                    Map<String, Object> parentRow = jdbcTemplate.queryForMap(
+                            "SELECT code, name_uz, parent_code FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL",
+                            String.valueOf(parentCode));
+                    Map<String, Object> parent = new LinkedHashMap<>();
+                    parent.put("_entityName", "hemishe_HSoato");
+                    parent.put("_instanceName", parentRow.get("code") + " - " + parentRow.get("name_uz"));
+                    parent.put("id", parentRow.get("code"));
+                    parent.put("code", parentRow.get("code"));
+                    parent.put("parent_code", parentRow.get("parent_code"));
+                    parent.put("name_uz", parentRow.get("name_uz"));
+                    nested.put("parent_code", parent);
+                } catch (EmptyResultDataAccessException ex) {
+                    nested.put("parent_code", null);
+                }
+            } else {
+                nested.put("parent_code", null);
+            }
+
+            nested.put("name_uz", row.get("name_uz"));
+            map.put("soato", nested);
+        } catch (EmptyResultDataAccessException e) {
+            // soato topilmadi
         }
     }
 
@@ -955,10 +1055,12 @@ public class StudentDiplomaEntityController {
             entity.setSpeciality(extractIdAsString(map.get("speciality")));
         }
         if (map.containsKey("diplomaNumber")) {
-            entity.setDiplomaNumber((String) map.get("diplomaNumber"));
+            Object val = map.get("diplomaNumber");
+            entity.setDiplomaNumber(val != null ? val.toString() : null);
         }
         if (map.containsKey("registerNumber")) {
-            entity.setRegisterNumber((String) map.get("registerNumber"));
+            Object val = map.get("registerNumber");
+            entity.setRegisterNumber(val != null ? val.toString() : null);
         }
         if (map.containsKey("registerDate")) {
             Object val = map.get("registerDate");
@@ -967,25 +1069,35 @@ public class StudentDiplomaEntityController {
             }
         }
         if (map.containsKey("translations")) {
-            entity.setTranslations((String) map.get("translations"));
+            Object val = map.get("translations");
+            entity.setTranslations(val != null ? val.toString() : null);
         }
         if (map.containsKey("academicRecord")) {
-            entity.setAcademicRecord((String) map.get("academicRecord"));
+            Object val = map.get("academicRecord");
+            entity.setAcademicRecord(val != null ? val.toString() : null);
         }
         if (map.containsKey("active")) {
-            entity.setActive((Boolean) map.get("active"));
+            Object activeVal = map.get("active");
+            if (activeVal instanceof Boolean) {
+                entity.setActive((Boolean) activeVal);
+            } else if (activeVal != null) {
+                entity.setActive(Boolean.parseBoolean(activeVal.toString()));
+            }
         }
         if (map.containsKey("department")) {
             entity.setDepartment(extractIdAsString(map.get("department")));
         }
         if (map.containsKey("totalAcload")) {
-            entity.setTotalAcload((String) map.get("totalAcload"));
+            Object val = map.get("totalAcload");
+            entity.setTotalAcload(val != null ? val.toString() : null);
         }
         if (map.containsKey("avgGrade")) {
-            entity.setAvgGrade((String) map.get("avgGrade"));
+            Object val = map.get("avgGrade");
+            entity.setAvgGrade(val != null ? val.toString() : null);
         }
         if (map.containsKey("specialityName")) {
-            entity.setSpecialityName((String) map.get("specialityName"));
+            Object val = map.get("specialityName");
+            entity.setSpecialityName(val != null ? val.toString() : null);
         }
         if (map.containsKey("diplomCategory")) {
             entity.setDiplomCategory(extractIdAsString(map.get("diplomCategory")));
@@ -997,27 +1109,35 @@ public class StudentDiplomaEntityController {
             entity.setEducationType(extractIdAsString(map.get("educationType")));
         }
         if (map.containsKey("totalCredit")) {
-            entity.setTotalCredit((String) map.get("totalCredit"));
+            Object val = map.get("totalCredit");
+            entity.setTotalCredit(val != null ? val.toString() : null);
         }
         if (map.containsKey("specialityCode")) {
-            entity.setSpecialityCode((String) map.get("specialityCode"));
+            Object val = map.get("specialityCode");
+            entity.setSpecialityCode(val != null ? val.toString() : null);
         }
         if (map.containsKey("tag")) {
-            entity.setTag((String) map.get("tag"));
+            Object val = map.get("tag");
+            entity.setTag(val != null ? val.toString() : null);
         }
         if (map.containsKey("verify")) {
-            entity.setVerify((String) map.get("verify"));
+            Object val = map.get("verify");
+            entity.setVerify(val != null ? val.toString() : null);
         }
         if (map.containsKey("hash")) {
-            entity.setHash((String) map.get("hash"));
+            Object val = map.get("hash");
+            entity.setHash(val != null ? val.toString() : null);
         }
         if (map.containsKey("blankGenerateStatusCode")) {
-            entity.setBlankGenerateStatusCode((String) map.get("blankGenerateStatusCode"));
+            Object val = map.get("blankGenerateStatusCode");
+            entity.setBlankGenerateStatusCode(val != null ? val.toString() : null);
         }
         if (map.containsKey("studyDuration")) {
             Object val = map.get("studyDuration");
             if (val instanceof Number) {
                 entity.setStudyDuration(((Number) val).floatValue());
+            } else if (val instanceof String && !((String) val).isEmpty()) {
+                entity.setStudyDuration(Float.parseFloat((String) val));
             }
         }
         if (map.containsKey("graduationDate")) {

@@ -401,7 +401,7 @@ public class UniversityEmployeeTypeEntityController {
         log.info("UniversityEmployeeType {} successfully: {}", isNew ? "created" : (wasRestored ? "restored" : "updated"), code);
 
         // OLD-HEMIS COMPATIBLE: Return 201 CREATED with minimal response like CUBA Platform
-        return ResponseEntity.status(201).body(toMinimalMap(saved));
+        return ResponseEntity.ok(toMinimalMap(saved));
     }
 
     @GetMapping

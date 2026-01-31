@@ -54,7 +54,7 @@ public class EducationMaterialsEntityController {
     private static final String ENTITY_NAME = "hemishe_REducationMaterials";
 
     @GetMapping("/{entityId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get EducationMaterials by ID", description = "Returns a single EducationMaterials by UUID")
     public ResponseEntity<Map<String, Object>> getById(
             @PathVariable UUID entityId,
@@ -73,7 +73,7 @@ public class EducationMaterialsEntityController {
     }
 
     @PutMapping("/{entityId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update EducationMaterials", description = "Updates an existing EducationMaterials")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable UUID entityId,
@@ -95,7 +95,7 @@ public class EducationMaterialsEntityController {
     }
 
     @DeleteMapping("/{entityId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete EducationMaterials", description = "Soft deletes an EducationMaterials")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         log.debug("DELETE EducationMaterials id: {}", entityId);
@@ -110,7 +110,7 @@ public class EducationMaterialsEntityController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Search EducationMaterials (GET)", description = "Search using URL parameters")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -133,7 +133,7 @@ public class EducationMaterialsEntityController {
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Search EducationMaterials (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -160,7 +160,7 @@ public class EducationMaterialsEntityController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get all EducationMaterials", description = "Returns paginated list")
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "Return total count") @RequestParam(required = false) Boolean returnCount,
@@ -192,7 +192,7 @@ public class EducationMaterialsEntityController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create EducationMaterials", description = "Creates a new EducationMaterials")
     public ResponseEntity<Map<String, Object>> create(
             @RequestBody Map<String, Object> body,

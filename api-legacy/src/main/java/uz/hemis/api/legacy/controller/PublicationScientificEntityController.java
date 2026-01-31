@@ -310,8 +310,30 @@ public class PublicationScientificEntityController {
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.info("POST create new PublicationScientific");
+        log.info("POST create/upsert PublicationScientific");
         log.debug("Request body: {}", body);
+
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
+        if (body.containsKey("id")) {
+            try {
+                UUID existingId = UUID.fromString(body.get("id").toString());
+                var existingOpt = repository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    PublicationScientific entity = existingOpt.get();
+                    updateFromMap(entity, body);
+                    entity.setUpdateTs(LocalDateTime.now());
+                    PublicationScientific saved = repository.save(entity);
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("_entityName", ENTITY_NAME);
+                    response.put("_instanceName", buildInstanceName(saved));
+                    response.put("id", saved.getId().toString());
+                    return ResponseEntity.ok(response);
+                }
+            } catch (IllegalArgumentException e) {
+                log.debug("Invalid UUID format for id: {}", body.get("id"));
+            }
+        }
 
         PublicationScientific entity = new PublicationScientific();
 

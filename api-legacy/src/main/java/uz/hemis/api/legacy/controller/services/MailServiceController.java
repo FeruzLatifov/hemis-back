@@ -101,7 +101,7 @@ public class MailServiceController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
-    @PostMapping("/services/mail/send")
+    @PostMapping({"/app/rest/v2/services/mail/send", "/services/mail/send"})
     public ResponseEntity<Map<String, Object>> sendMail(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Email ma'lumotlari",
@@ -199,7 +199,7 @@ public class MailServiceController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
-    @PostMapping("/services/send/verifyCode")
+    @PostMapping({"/app/rest/v2/services/send/verifyCode", "/services/send/verifyCode"})
     public ResponseEntity<Map<String, Object>> sendVerifyCode(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Tasdiqlash kodi ma'lumotlari",

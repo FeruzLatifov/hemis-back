@@ -23,7 +23,7 @@ import java.util.Map;
  */
 @Tag(name = "48.Mehnat", description = "Mehnat va bandlik ma'lumotlari")
 @RestController
-@RequestMapping("/services/employment")
+@RequestMapping("/app/rest/v2/services/employment")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")

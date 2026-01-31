@@ -280,7 +280,7 @@ public class UniversityController {
         log.info("POST /app/rest/v2/universities - code: {}", dto.getCode());
 
         UniversityDto created = universityService.create(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+        return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     /**

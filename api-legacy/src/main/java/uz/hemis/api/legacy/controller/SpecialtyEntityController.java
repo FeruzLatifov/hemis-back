@@ -185,22 +185,22 @@ public class SpecialtyEntityController {
             List<Map<String, Object>> results = new ArrayList<>();
 
             for (Map<String, Object> item : items) {
-                Specialty entity = new Specialty();
+                Specialty entity = findExistingOrNew(item);
                 updateFromMap(entity, item);
                 Specialty saved = repository.save(entity);
                 results.add(toCreateResponse(saved));
             }
 
             // OLD-HEMIS: 201 Created + Array response
-            return ResponseEntity.status(201).body(results);
+            return ResponseEntity.ok(results);
         } else {
             // Single object
             @SuppressWarnings("unchecked")
             Map<String, Object> item = (Map<String, Object>) body;
-            Specialty entity = new Specialty();
+            Specialty entity = findExistingOrNew(item);
             updateFromMap(entity, item);
             Specialty saved = repository.save(entity);
-            return ResponseEntity.status(201).body(toCreateResponse(saved));
+            return ResponseEntity.ok(toCreateResponse(saved));
         }
     }
 
@@ -234,23 +234,13 @@ public class SpecialtyEntityController {
         map.put("_instanceName", instanceName);
 
         map.put("id", entity.getId());
-        putIfNotNull(map, "code", entity.getCode(), returnNulls);
-        putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "shortName", entity.getShortName(), returnNulls);
+        putIfNotNull(map, "specialityCode", entity.getCode(), returnNulls);
+        putIfNotNull(map, "specialityName", entity.getName(), returnNulls);
         putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
         putIfNotNull(map, "_faculty", entity.getFaculty(), returnNulls);
-        putIfNotNull(map, "_specialtyType", entity.getSpecialtyType(), returnNulls);
         putIfNotNull(map, "_educationType", entity.getEducationType(), returnNulls);
-        putIfNotNull(map, "_educationForm", entity.getEducationForm(), returnNulls);
-        putIfNotNull(map, "_studyPeriod", entity.getStudyPeriod(), returnNulls);
+        putIfNotNull(map, "_educationYear", entity.getEducationYear(), returnNulls);
         putIfNotNull(map, "active", entity.getActive(), returnNulls);
-
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
 
         return map;
     }
@@ -295,13 +285,24 @@ public class SpecialtyEntityController {
             entity.setUniversity((String) map.get("_university"));
         }
 
-        // faculty.code -> faculty (UUID ga aylantirib saqlaymiz yoki String)
+        // faculty.code -> faculty (String)
         if (map.containsKey("faculty") && map.get("faculty") instanceof Map) {
             Map<String, Object> fac = (Map<String, Object>) map.get("faculty");
             if (fac.containsKey("code")) {
-                // Faculty code string sifatida saqlanadi (legacy compatibility)
-                // entity.setFaculty(...) - bu UUID, legacy uchun alohida field kerak
+                entity.setFaculty((String) fac.get("code"));
             }
+        } else if (map.containsKey("_faculty")) {
+            entity.setFaculty((String) map.get("_faculty"));
+        }
+
+        // educationYear.code -> educationYear
+        if (map.containsKey("educationYear") && map.get("educationYear") instanceof Map) {
+            Map<String, Object> edYear = (Map<String, Object>) map.get("educationYear");
+            if (edYear.containsKey("code")) {
+                entity.setEducationYear((String) edYear.get("code"));
+            }
+        } else if (map.containsKey("_education_year")) {
+            entity.setEducationYear((String) map.get("_education_year"));
         }
 
         // educationType.code -> educationType
@@ -324,10 +325,35 @@ public class SpecialtyEntityController {
             }
         }
 
-        // shortName
-        if (map.containsKey("shortName")) {
-            entity.setShortName((String) map.get("shortName"));
+    }
+
+    /**
+     * UPSERT: Find existing specialty by unique constraint or create new.
+     * Unique key: (_university, _education_type, _education_year, speciality_code, speciality_name)
+     */
+    @SuppressWarnings("unchecked")
+    private Specialty findExistingOrNew(Map<String, Object> item) {
+        String code = (String) item.getOrDefault("specialityCode", item.get("code"));
+        String name = (String) item.getOrDefault("specialityName", item.get("name"));
+        String university = null;
+        String educationType = null;
+        String educationYear = null;
+
+        if (item.get("university") instanceof Map) {
+            university = (String) ((Map<String, Object>) item.get("university")).get("code");
         }
+        if (item.get("educationType") instanceof Map) {
+            educationType = (String) ((Map<String, Object>) item.get("educationType")).get("code");
+        }
+        if (item.get("educationYear") instanceof Map) {
+            educationYear = (String) ((Map<String, Object>) item.get("educationYear")).get("code");
+        }
+
+        if (code != null && university != null && educationType != null && educationYear != null && name != null) {
+            return repository.findByUniqueKey(university, educationType, educationYear, code, name)
+                    .orElseGet(Specialty::new);
+        }
+        return new Specialty();
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

@@ -13,10 +13,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.domain.entity.StudentGpa;
+import uz.hemis.domain.repository.StudentGpaRepository;
 import uz.hemis.service.StudentGpaService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * StudentGpa Entity Controller (CUBA Pattern)
@@ -63,6 +67,7 @@ import java.util.Map;
 public class StudentGpaEntityController {
 
     private final StudentGpaService studentGpaService;
+    private final StudentGpaRepository studentGpaRepository;
 
     /**
      * Barcha GPA yozuvlarini olish (pagination bilan)
@@ -304,6 +309,52 @@ public class StudentGpaEntityController {
         Map<String, Object> result = studentGpaService.create(requestBody);
 
         log.info("[CUBA Entity] POST hemishe_EStudentGpa: CREATED with ID {}", result.get("id"));
-        return ResponseEntity.status(201).body(result);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/{entityId}")
+    @Operation(summary = "GPA yozuvini ID bo'yicha olish")
+    @Transactional(readOnly = true)
+    public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
+            @RequestParam(value = "view", required = false) String view) {
+        log.info("[CUBA Entity] GET hemishe_EStudentGpa/{}", entityId);
+        Map<String, Object> result = studentGpaService.findById(entityId);
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    @PutMapping("/{entityId}")
+    @Operation(summary = "GPA yozuvini yangilash")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
+            @RequestParam(value = "responseView", required = false) String responseView,
+            @RequestBody Map<String, Object> requestBody) {
+        log.info("[CUBA Entity] PUT hemishe_EStudentGpa/{}: {}", entityId, requestBody);
+        Optional<StudentGpa> existing = studentGpaRepository.findById(entityId);
+        if (existing.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        requestBody.put("id", entityId.toString());
+        Map<String, Object> result = studentGpaService.create(requestBody);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/{entityId}")
+    @Operation(summary = "GPA yozuvini o'chirish")
+    @Transactional
+    public ResponseEntity<?> delete(@PathVariable UUID entityId) {
+        log.info("[CUBA Entity] DELETE hemishe_EStudentGpa/{}", entityId);
+        Optional<StudentGpa> existing = studentGpaRepository.findById(entityId);
+        if (existing.isEmpty()) {
+            Map<String, Object> error = new java.util.LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity hemishe_EStudentGpa with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
+        }
+        // hemishe_e_student_gpa jadvalida delete_ts ustuni yo'q — physical delete
+        studentGpaRepository.delete(existing.get());
+        return ResponseEntity.ok().build();
     }
 }

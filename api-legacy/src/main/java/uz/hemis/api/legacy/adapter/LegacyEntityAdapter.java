@@ -64,7 +64,7 @@ public class LegacyEntityAdapter {
 
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", entityName);
-        map.put("_instanceName", getCubaInstanceName(dto, entityName));
+        map.put("_instanceName", getInstanceName(dto));
 
         Field[] fields = dto.getClass().getDeclaredFields();
         for (Field field : fields) {
@@ -100,7 +100,7 @@ public class LegacyEntityAdapter {
 
                 if (value == null) {
                     if (Boolean.TRUE.equals(returnNulls)) {
-                        map.put(jsonName, null);
+                        map.put(jsonName, JsonNull.INSTANCE);
                     }
                     continue;
                 }
@@ -146,7 +146,7 @@ public class LegacyEntityAdapter {
                         if (value != null) {
                             map.put(jsonName, value);
                         } else if (Boolean.TRUE.equals(returnNulls)) {
-                            map.put(jsonName, null);
+                            map.put(jsonName, JsonNull.INSTANCE);
                         }
                     }
                 } catch (Exception e) {
@@ -409,6 +409,11 @@ public class LegacyEntityAdapter {
 
         if ((targetType == Boolean.class || targetType == boolean.class) && value instanceof String) {
             return Boolean.parseBoolean((String) value);
+        }
+
+        // Handle any value → String conversion (e.g., Integer from PHP JSON → String field)
+        if (targetType == String.class) {
+            return String.valueOf(value);
         }
 
         return value;

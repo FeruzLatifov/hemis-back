@@ -1,50 +1,36 @@
 package uz.hemis.api.legacy.config;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.context.annotation.Bean;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+
+import java.time.format.DateTimeFormatter;
 
 /**
- * Legacy API Jackson Configuration
- *
- * Configures Jackson ObjectMapper to include null values in JSON responses
- * for backward compatibility with OLD-HEMIS API.
- *
- * IMPORTANT: This overrides the global Jackson configuration (non_null)
- * to ensure legacy API responses include null fields.
- *
- * @since 2.0.0
+ * OLD-HEMIS CUBA Platform bilan mos sana formatlari:
+ * - LocalDate → "yyyy-MM-dd"
+ * - LocalDateTime → "yyyy-MM-dd HH:mm:ss.SSS"
  */
 @Configuration
+@RequiredArgsConstructor
 public class LegacyJacksonConfig {
 
-    /**
-     * Primary ObjectMapper that includes null values.
-     * This is necessary for OLD-HEMIS compatibility where null fields
-     * must be present in the response.
-     */
-    @Bean
-    @Primary
-    public ObjectMapper legacyObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
-        // Include null values in JSON output (OLD-HEMIS compatibility)
-        mapper.setDefaultPropertyInclusion(JsonInclude.Value.construct(
-                JsonInclude.Include.ALWAYS,
-                JsonInclude.Include.ALWAYS
-        ));
+    @PostConstruct
+    public void configureDateFormat() {
+        JavaTimeModule module = new JavaTimeModule();
+        module.addSerializer(java.time.LocalDate.class,
+                new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        module.addSerializer(java.time.LocalDateTime.class,
+                new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")));
 
-        // Date/Time configuration
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        // Pretty print for debugging
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
-
-        return mapper;
+        objectMapper.registerModule(module);
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 }

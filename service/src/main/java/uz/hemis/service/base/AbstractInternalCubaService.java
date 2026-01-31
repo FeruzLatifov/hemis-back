@@ -99,9 +99,8 @@ public abstract class AbstractInternalCubaService {
      * @return Error response map
      */
     protected Map<String, Object> errorResponse(String code, String message) {
-        Map<String, Object> error = new HashMap<>();
+        Map<String, Object> error = new LinkedHashMap<>();
         error.put("success", false);
-        error.put("code", code);
         error.put("message", message);
         return error;
     }

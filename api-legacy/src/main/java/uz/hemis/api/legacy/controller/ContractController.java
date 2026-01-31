@@ -70,7 +70,7 @@ public class ContractController {
     @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
     public ResponseEntity<ResponseWrapper<ContractDto>> createContract(@Valid @RequestBody ContractDto contractDto) {
         ContractDto created = contractService.create(contractDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+        return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")

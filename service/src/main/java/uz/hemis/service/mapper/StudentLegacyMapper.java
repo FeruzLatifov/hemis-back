@@ -83,6 +83,7 @@ public class StudentLegacyMapper {
         dto.setEnrollOrderNumber(student.getEnrollOrderNumber());
         dto.setEnrollOrderCategory(student.getEnrollOrderCategory());
         dto.setFullname(buildFullname(student));
+        dto.setInstanceName(buildFullname(student));
 
         // Audit fields
         dto.setVersion(student.getVersion());
@@ -110,8 +111,12 @@ public class StudentLegacyMapper {
         dto.setAccomodation(loadSimpleReference("hemishe_h_accomodation", "hemishe_HAccomodation", student.getAccomodation()));
         dto.setLivingStatus(loadSimpleReference("hemishe_h_student_living_status", "hemishe_HStudentLivingStatus", student.getLivingStatus()));
         dto.setRoommateType(loadSimpleReference("hemishe_h_student_room_mate_type", "hemishe_HStudentRoomMateType", student.getRoommateType()));
+        dto.setStipendRate(loadSimpleReference("hemishe_h_stipend_rate", "hemishe_HStipendRate", student.getStipendRate()));
+        dto.setExpelReason(loadSimpleReference("hemishe_h_expel_reason", "hemishe_HExpel", student.getExpelReason()));
+        dto.setDoctoralStudentType(loadSimpleReference("hemishe_h_doctoral_student_type", "hemishe_HDoctoralStudentType", student.getDoctoralStudentType()));
         dto.setStudentType(loadSimpleReference("hemishe_h_student_type", "hemishe_HStudentType", "11")); // default = "Oddiy"
         dto.setStatusEducationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getEducationYear()));
+        dto.setCurrentEducationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getCurrentEducationYearCode()));
 
         // Complex nested objects
         dto.setUniversity(loadUniversity(student.getUniversity()));
@@ -156,7 +161,16 @@ public class StudentLegacyMapper {
             ref.setEntityName(entityName);
             ref.setId(code);
             ref.setCode(code);
-            ref.setName((String) row.get("name"));
+            String name = (String) row.get("name");
+            ref.setName(name);
+            // _instanceName format: depends on entity type
+            // EducationYear: name only (e.g., "2024-2025")
+            // Others: "code name" (e.g., "11 Bakalavr")
+            if ("hemishe_HEducationYear".equals(entityName)) {
+                ref.setInstanceName(name != null ? name : code);
+            } else {
+                ref.setInstanceName(code + " " + (name != null ? name : ""));
+            }
             ref.setNameRu((String) row.get("name_ru"));
             ref.setNameEn((String) row.get("name_en"));
             ref.setActive(getBoolean(row, "active"));
@@ -181,7 +195,7 @@ public class StudentLegacyMapper {
             String sql = """
                 SELECT code, name, student_url, teacher_url, tin, address, active,
                        add_student, allow_grouping, allow_transfer_outside,
-                       accreditation_edit, gpa_edit, version,
+                       accreditation_edit, gpa_edit, version, one_id,
                        _university_type, _ownership, _university_version, _university_contract_category
                 FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL
                 """;
@@ -190,7 +204,9 @@ public class StudentLegacyMapper {
             StudentLegacyDto.UniversityReferenceDto uni = new StudentLegacyDto.UniversityReferenceDto();
             uni.setId(code);
             uni.setCode(code);
-            uni.setName((String) row.get("name"));
+            String uniName = (String) row.get("name");
+            uni.setName(uniName);
+            uni.setInstanceName(code + "-" + (uniName != null ? uniName : ""));
             uni.setStudentUrl((String) row.get("student_url"));
             uni.setTeacherUrl((String) row.get("teacher_url"));
             uni.setTin((String) row.get("tin"));
@@ -201,6 +217,7 @@ public class StudentLegacyMapper {
             uni.setAllowTransferOutside(getBoolean(row, "allow_transfer_outside"));
             uni.setAccreditationEdit(getBoolean(row, "accreditation_edit"));
             uni.setGpaEdit(getBoolean(row, "gpa_edit"));
+            uni.setOneId(getBoolean(row, "one_id"));
             uni.setVersion(getInteger(row, "version"));
 
             // Nested references
@@ -231,7 +248,9 @@ public class StudentLegacyMapper {
             StudentLegacyDto.FacultyReferenceDto faculty = new StudentLegacyDto.FacultyReferenceDto();
             faculty.setId(code);
             faculty.setCode(code);
-            faculty.setNameUz((String) row.get("name_uz"));
+            String nameUz = (String) row.get("name_uz");
+            faculty.setNameUz(nameUz);
+            faculty.setInstanceName(nameUz != null ? nameUz : code);
             faculty.setNameRu((String) row.get("name_ru"));
             faculty.setNameEn((String) row.get("name_en"));
             faculty.setVersion(getInteger(row, "version"));
@@ -258,8 +277,10 @@ public class StudentLegacyMapper {
             StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
             soato.setId(code);
             soato.setCode(code);
-            soato.setNameUz((String) row.get("name_uz"));
+            String soatoNameUz = (String) row.get("name_uz");
+            soato.setNameUz(soatoNameUz);
             soato.setNameRu((String) row.get("name_ru"));
+            soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
             soato.setVersion(getInteger(row, "version"));
 
             // Recursive parent
@@ -290,8 +311,10 @@ public class StudentLegacyMapper {
             StudentLegacyDto.TerrainReferenceDto terrain = new StudentLegacyDto.TerrainReferenceDto();
             terrain.setId(code);
             terrain.setCode(code);
-            terrain.setName((String) row.get("name"));
+            String terrainName = (String) row.get("name");
+            terrain.setName(terrainName);
             terrain.setNameRu((String) row.get("name_ru"));
+            terrain.setInstanceName(code + " " + (terrainName != null ? terrainName : ""));
             terrain.setVersion(getInteger(row, "version"));
 
             terrain.setSoato(loadSoato((String) row.get("_soato")));
@@ -316,11 +339,14 @@ public class StudentLegacyMapper {
             String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, soatoCode);
 
+            String tCode = (String) row.get("code");
+            String tName = (String) row.get("name");
             StudentLegacyDto.TerrainReferenceDto terrain = new StudentLegacyDto.TerrainReferenceDto();
-            terrain.setId((String) row.get("code"));
-            terrain.setCode((String) row.get("code"));
-            terrain.setName((String) row.get("name"));
+            terrain.setId(tCode);
+            terrain.setCode(tCode);
+            terrain.setName(tName);
             terrain.setNameRu((String) row.get("name_ru"));
+            terrain.setInstanceName(tCode + " " + (tName != null ? tName : ""));
             terrain.setVersion(getInteger(row, "version"));
 
             terrain.setSoato(loadSoato(soatoCode));
@@ -346,8 +372,11 @@ public class StudentLegacyMapper {
 
             StudentLegacyDto.SpecialityReferenceDto spec = new StudentLegacyDto.SpecialityReferenceDto();
             spec.setId(row.get("id").toString());
-            spec.setCode((String) row.get("code"));
-            spec.setName((String) row.get("name"));
+            String specCode = (String) row.get("code");
+            String specName = (String) row.get("name");
+            spec.setCode(specCode);
+            spec.setName(specName);
+            spec.setInstanceName(specCode + " - " + (specName != null ? specName : ""));
             spec.setVersion(getInteger(row, "version"));
 
             return spec;

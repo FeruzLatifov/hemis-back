@@ -86,7 +86,7 @@ public class ScholarshipController {
             @Valid @RequestBody ScholarshipDto scholarshipDto
     ) {
         ScholarshipDto created = scholarshipService.create(scholarshipDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+        return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")

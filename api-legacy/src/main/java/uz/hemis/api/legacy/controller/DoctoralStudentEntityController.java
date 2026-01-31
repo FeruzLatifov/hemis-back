@@ -372,8 +372,30 @@ public class DoctoralStudentEntityController {
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.info("POST create new doctoral student");
+        log.info("POST create/upsert doctoral student");
         log.debug("Request body: {}", body);
+
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
+        if (body.containsKey("id")) {
+            try {
+                UUID existingId = UUID.fromString(body.get("id").toString());
+                var existingOpt = repository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    DoctoralStudent entity = existingOpt.get();
+                    updateFromMap(entity, body);
+                    entity.setUpdateTs(LocalDateTime.now());
+                    DoctoralStudent saved = repository.save(entity);
+                    Map<String, Object> response = new LinkedHashMap<>();
+                    response.put("_entityName", ENTITY_NAME);
+                    response.put("_instanceName", buildInstanceName(saved));
+                    response.put("id", saved.getId().toString());
+                    return ResponseEntity.ok(response);
+                }
+            } catch (IllegalArgumentException e) {
+                log.debug("Invalid UUID format for id: {}", body.get("id"));
+            }
+        }
 
         DoctoralStudent entity = new DoctoralStudent();
 
@@ -551,14 +573,24 @@ public class DoctoralStudentEntityController {
 
         // Other fields
         if (map.containsKey("level")) {
-            entity.setLevel(getStringValue(map.get("level")));
+            Object levelVal = map.get("level");
+            if (levelVal instanceof Map) {
+                entity.setLevel(extractCode(levelVal));
+            } else {
+                entity.setLevel(getStringValue(levelVal));
+            }
         }
         if (map.containsKey("university")) {
             // OLD-HEMIS: university {code: "401"} formatda keladi - extractCode bilan olish kerak
             entity.setUniversity(extractCode(map.get("university")));
         }
         if (map.containsKey("department")) {
-            entity.setDepartment(getStringValue(map.get("department")));
+            Object deptVal = map.get("department");
+            if (deptVal instanceof Map) {
+                entity.setDepartment(extractCode(deptVal));
+            } else {
+                entity.setDepartment(getStringValue(deptVal));
+            }
         }
         if (map.containsKey("position")) {
             entity.setPosition(getIntegerValue(map.get("position")));
@@ -574,7 +606,12 @@ public class DoctoralStudentEntityController {
 
         // Education year
         if (map.containsKey("educationYear")) {
-            entity.setEducationYear(getStringValue(map.get("educationYear")));
+            Object eyVal = map.get("educationYear");
+            if (eyVal instanceof Map) {
+                entity.setEducationYear(extractCode(eyVal));
+            } else {
+                entity.setEducationYear(getStringValue(eyVal));
+            }
         }
     }
 
@@ -658,7 +695,13 @@ public class DoctoralStudentEntityController {
     private LocalDate parseDate(Object value) {
         if (value == null) return null;
         try {
-            return LocalDate.parse(value.toString(), DATE_FORMAT);
+            String dateStr = value.toString().trim();
+            // Handle timezone offset like "1986-02-15 +06"
+            int spaceIdx = dateStr.indexOf(' ');
+            if (spaceIdx > 0) {
+                dateStr = dateStr.substring(0, spaceIdx);
+            }
+            return LocalDate.parse(dateStr, DATE_FORMAT);
         } catch (Exception e) {
             log.warn("Invalid date format: {}", value);
             return null;

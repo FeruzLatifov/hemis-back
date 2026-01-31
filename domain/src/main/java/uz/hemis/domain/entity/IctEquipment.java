@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.util.UUID;
-
 /**
  * IctEquipment Entity (PHASE 5: Infrastructure)
  *
@@ -17,7 +15,6 @@ import java.util.UUID;
  * - Part of PHASE 5 (Infrastructure metrics)
  * - Tracks room count, projector counts (valid/invalid)
  * - Total count and grade calculations
- * - All FK are UUID (no ManyToOne)
  */
 @Getter
 @Setter
@@ -28,17 +25,17 @@ public class IctEquipment extends BaseEntity {
 
     /**
      * University reference (FK to h_university)
-     * Column: university_code UUID
+     * Column: university_code VARCHAR
      */
     @Column(name = "university_code")
-    private UUID university;
+    private String university;
 
     /**
      * Education year reference (FK to h_education_year)
-     * Column: education_year_code UUID
+     * Column: education_year_code VARCHAR
      */
     @Column(name = "education_year_code")
-    private UUID educationYear;
+    private String educationYear;
 
     /**
      * Room count

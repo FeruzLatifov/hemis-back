@@ -357,19 +357,28 @@ public class ResearchActivityEntityController {
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.info("POST create new ResearchActivity");
+        log.info("POST create/upsert ResearchActivity");
         log.debug("Request body: {}", body);
 
-        ResearchActivity entity = new ResearchActivity();
-
-        // Agar id berilgan bo'lsa, ishlatish (OLD-HEMIS pattern)
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
         if (body.containsKey("id")) {
             try {
-                entity.setId(UUID.fromString(body.get("id").toString()));
-            } catch (Exception e) {
+                UUID existingId = UUID.fromString(body.get("id").toString());
+                Optional<ResearchActivity> existingOpt = repository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    ResearchActivity existing = existingOpt.get();
+                    updateFromMap(existing, body);
+                    existing.setUpdateTs(LocalDateTime.now());
+                    ResearchActivity saved = repository.save(existing);
+                    return ResponseEntity.ok(toMap(saved, returnNulls));
+                }
+            } catch (IllegalArgumentException e) {
                 log.warn("Invalid UUID format for id: {}", body.get("id"));
             }
         }
+
+        ResearchActivity entity = new ResearchActivity();
 
         updateFromMap(entity, body);
 

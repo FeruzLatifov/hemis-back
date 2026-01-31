@@ -169,8 +169,11 @@ public class ProjectEntityController {
             return ResponseEntity.status(404).body(error);
         }
 
-        repository.delete(entity.get());
-        log.info("DELETE /entities/hemishe_EProject/{} - muvaffaqiyatli o'chirildi", entityId);
+        // Soft delete: delete_ts belgilash (hard delete emas — FK constraint buzilmasligi uchun)
+        Project project = entity.get();
+        project.setDeleteTs(LocalDateTime.now());
+        repository.save(project);
+        log.info("DELETE /entities/hemishe_EProject/{} - muvaffaqiyatli o'chirildi (soft)", entityId);
 
         // OLD-HEMIS: 200 OK
         return ResponseEntity.ok().build();

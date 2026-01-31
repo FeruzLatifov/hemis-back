@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
 
-import java.util.UUID;
-
 /**
  * EducationMaterials Entity (PHASE 5: Infrastructure)
  *
@@ -17,7 +15,6 @@ import java.util.UUID;
  * - Part of PHASE 5 (Infrastructure metrics)
  * - Tracks subject count, textbooks count, and created materials grade
  * - Speciality-level tracking
- * - All FK are UUID (no ManyToOne)
  */
 @Getter
 @Setter
@@ -28,24 +25,24 @@ public class EducationMaterials extends BaseEntity {
 
     /**
      * University reference (FK to h_university)
-     * Column: university_code UUID
+     * Column: university_code VARCHAR
      */
     @Column(name = "university_code")
-    private UUID university;
+    private String university;
 
     /**
      * Education year reference (FK to h_education_year)
-     * Column: education_year_code UUID
+     * Column: education_year_code VARCHAR
      */
     @Column(name = "education_year_code")
-    private UUID educationYear;
+    private String educationYear;
 
     /**
      * Speciality ID reference
-     * Column: speciality_id UUID
+     * Column: speciality_id VARCHAR
      */
     @Column(name = "speciality_id")
-    private UUID specialityId;
+    private String specialityId;
 
     /**
      * Speciality code
@@ -58,8 +55,7 @@ public class EducationMaterials extends BaseEntity {
      * Speciality name (LOB for long text)
      * Column: speciality_name TEXT
      */
-    @Lob
-    @Column(name = "speciality_name")
+    @Column(name = "speciality_name", columnDefinition = "TEXT")
     private String specialityName;
 
     /**

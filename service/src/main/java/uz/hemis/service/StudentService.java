@@ -753,10 +753,16 @@ public class StudentService {
         log.info("Updating student: {}", request);
 
         // Extract student object from request (OLD-HEMIS format)
-        Map<String, Object> studentData = (Map<String, Object>) request.get("student");
-        if (studentData == null) {
+        Object studentObj = request.get("student");
+        Map<String, Object> studentData;
+        if (studentObj instanceof Map) {
+            studentData = (Map<String, Object>) studentObj;
+        } else if (studentObj == null) {
             // Direct format (new API style)
             studentData = request;
+        } else {
+            // Invalid format (e.g. plain string instead of nested object)
+            throw new IllegalArgumentException("'student' field must be a JSON object, got: " + studentObj.getClass().getSimpleName());
         }
 
         // Extract student ID

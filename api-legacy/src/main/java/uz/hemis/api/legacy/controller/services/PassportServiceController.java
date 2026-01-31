@@ -208,15 +208,31 @@ public class PassportServiceController {
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")
             @RequestParam String pinfl,
 
-            @Parameter(description = "Passport seria va raqam (masalan: AB1234567)", required = true, example = "AB1234567")
-            @RequestParam String seriaNumber,
+            @Parameter(description = "Passport seria va raqam (masalan: AB1234567)", required = false, example = "AB1234567")
+            @RequestParam(required = false) String seriaNumber,
 
-            @Parameter(description = "Captcha identifikatori (GET /services/captcha/getNumericCaptcha)", required = true, example = "f441163e-8291-0498-730b-0b0d83b4800b")
-            @RequestParam String captchaId,
+            @Parameter(description = "Passport seriyasi (alias)", required = false)
+            @RequestParam(required = false) String seria,
 
-            @Parameter(description = "Foydalanuvchi tomonidan kiritilgan captcha qiymati", required = true, example = "12345")
-            @RequestParam String captchaValue
+            @Parameter(description = "Passport raqami (alias)", required = false)
+            @RequestParam(required = false) String number,
+
+            @Parameter(description = "Captcha identifikatori", required = false)
+            @RequestParam(required = false) String captchaId,
+
+            @Parameter(description = "Captcha qiymati", required = false)
+            @RequestParam(required = false) String captchaValue,
+
+            @Parameter(description = "Captcha (combined alias)", required = false)
+            @RequestParam(required = false) String captcha
     ) {
+        // Accept seria+number as separate params (combine into seriaNumber)
+        if (seriaNumber == null && seria != null && number != null) seriaNumber = seria + number;
+        if (seriaNumber == null && seria != null) seriaNumber = seria;
+        // Accept captcha as combined captchaId+captchaValue
+        if (captchaId == null && captcha != null) captchaId = captcha;
+        if (captchaValue == null && captcha != null) captchaValue = captcha;
+
         log.info("🔍 GET /app/rest/v2/services/passport-data/getDataBySN - pinfl={}, seriaNumber={}", pinfl, seriaNumber);
 
         // 1. Validate captcha
@@ -226,7 +242,7 @@ public class PassportServiceController {
             result.put("success", false);
             result.put("data", "Invalid captcha!");
             result.putNull("address");  // Explicitly include null (old-hemis compatible)
-            return ResponseEntity.badRequest().body(result);
+            return ResponseEntity.ok(result);
         }
 
         // 2. Get GUVD OAuth2 token
@@ -239,7 +255,7 @@ public class PassportServiceController {
                 result.put("success", false);
                 result.put("data", "GUVD token service unavailable");
                 result.putNull("address");
-                return ResponseEntity.status(500).body(result);
+                return ResponseEntity.ok(result);
             }
         } catch (Exception e) {
             log.error("❌ Error getting GUVD token", e);
@@ -247,7 +263,7 @@ public class PassportServiceController {
             result.put("success", false);
             result.put("data", e.getMessage());
             result.putNull("address");
-            return ResponseEntity.status(500).body(result);
+            return ResponseEntity.ok(result);
         }
 
         // 3. Call GUVD Passport API
@@ -307,7 +323,7 @@ public class PassportServiceController {
             result.put("success", false);
             result.put("data", e.getMessage());
             result.putNull("address");
-            return ResponseEntity.status(500).body(result);
+            return ResponseEntity.ok(result);
         }
     }
 
@@ -747,15 +763,27 @@ public class PassportServiceController {
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "31507976020031")
             @RequestParam String pinfl,
 
-            @Parameter(description = "Tug'ilgan sana (format: yyyy-MM-dd)", required = true, example = "1997-07-15")
-            @RequestParam String birthdate,
+            @Parameter(description = "Tug'ilgan sana (format: yyyy-MM-dd)", required = false, example = "1997-07-15")
+            @RequestParam(required = false) String birthdate,
 
-            @Parameter(description = "Captcha identifikatori (GET /services/captcha/getNumericCaptcha)", required = true, example = "f441163e-8291-0498-730b-0b0d83b4800b")
-            @RequestParam String captchaId,
+            @Parameter(description = "Tug'ilgan sana (alias: birth_date)", required = false)
+            @RequestParam(name = "birth_date", required = false) String birthDateAlias,
 
-            @Parameter(description = "Foydalanuvchi tomonidan kiritilgan captcha qiymati", required = true, example = "12345")
-            @RequestParam String captchaValue
+            @Parameter(description = "Captcha identifikatori", required = false)
+            @RequestParam(required = false) String captchaId,
+
+            @Parameter(description = "Captcha qiymati", required = false)
+            @RequestParam(required = false) String captchaValue,
+
+            @Parameter(description = "Captcha (combined alias)", required = false)
+            @RequestParam(required = false) String captcha
     ) {
+        // Accept both birthdate and birth_date parameter names
+        if (birthdate == null && birthDateAlias != null) birthdate = birthDateAlias;
+        // Accept captcha as combined captchaId+captchaValue
+        if (captchaId == null && captcha != null) captchaId = captcha;
+        if (captchaValue == null && captcha != null) captchaValue = captcha;
+
         log.info("🔍 GET /app/rest/v2/services/passport-data/getDataByPinflBirthdate - pinfl={}, birthdate={}", pinfl, birthdate);
 
         // 1. Validate captcha
@@ -765,7 +793,7 @@ public class PassportServiceController {
             result.put("success", false);
             result.put("data", "Invalid captcha!");
             result.putNull("address");  // Explicitly include null (old-hemis compatible)
-            return ResponseEntity.badRequest().body(result);
+            return ResponseEntity.ok(result);
         }
 
         // 2. Get GUVD OAuth2 token
@@ -778,7 +806,7 @@ public class PassportServiceController {
                 result.put("success", false);
                 result.put("data", "GUVD token service unavailable");
                 result.putNull("address");
-                return ResponseEntity.status(500).body(result);
+                return ResponseEntity.ok(result);
             }
         } catch (Exception e) {
             log.error("❌ Error getting GUVD token", e);
@@ -786,7 +814,7 @@ public class PassportServiceController {
             result.put("success", false);
             result.put("data", e.getMessage());
             result.putNull("address");
-            return ResponseEntity.status(500).body(result);
+            return ResponseEntity.ok(result);
         }
 
         // 3. Call GUVD Passport API (with pinpp + birth_date, NO document!)
@@ -846,7 +874,7 @@ public class PassportServiceController {
             result.put("success", false);
             result.put("data", e.getMessage());
             result.putNull("address");
-            return ResponseEntity.status(500).body(result);
+            return ResponseEntity.ok(result);
         }
     }
 

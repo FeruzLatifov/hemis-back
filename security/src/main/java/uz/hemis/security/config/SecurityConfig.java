@@ -144,6 +144,8 @@ public class SecurityConfig {
                                 "/api/v1/web/auth/refresh",    // Public refresh endpoint
                                 "/app/rest/v2/oauth/token",    // Legacy OAuth endpoint
                                 "/app/rest/v2/services/captcha/**", // Captcha endpoints (public)
+                                "/app/rest/v2/services/classifiers/info",     // Classifier info (PHP kod auth headersiz yuboradi)
+                                "/app/rest/v2/services/classifiers/allItems", // Classifier allItems (PHP kod auth headersiz yuboradi)
                                 "/actuator/**",                 // Actuator endpoints
                                 "/swagger-ui/**",               // Swagger UI
                                 "/v3/api-docs/**"              // OpenAPI docs
@@ -181,6 +183,11 @@ public class SecurityConfig {
                         // Captcha endpoints (PUBLIC - for login page security)
                         // CRITICAL: Must be public - captcha olish uchun login qilish shart emas
                         .requestMatchers("/app/rest/v2/services/captcha/**").permitAll()
+
+                        // Classifier endpoints (PUBLIC - OLD-HEMIS PHP loyihasi auth headersiz yuboradi)
+                        // CRITICAL: 200 ta universitetdagi PHP kod bu endpointlarga Authorization headersiz so'rov yuboradi
+                        .requestMatchers("/app/rest/v2/services/classifiers/info").permitAll()
+                        .requestMatchers("/app/rest/v2/services/classifiers/allItems").permitAll()
 
                         // Admin Auth endpoints (PUBLIC - for admin login - DEPRECATED)
                         .requestMatchers("/app/rest/v2/auth/**").permitAll()

@@ -70,6 +70,7 @@ public class EmployeeJobsEntityController {
     private final UniversityEmployeeRateRepository employeeRateRepository;
     private final TeacherPositionTypeRepository positionTypeRepository;
     private final TeacherRepository teacherRepository;
+    private final UniversityEmployeeFormRepository employeeFormRepository;
 
     private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
@@ -629,7 +630,6 @@ public class EmployeeJobsEntityController {
     }
 
     @PostMapping
-    @Transactional
     @Operation(
         summary = "Xodim ish joyini yaratish",
         description = """
@@ -674,6 +674,10 @@ public class EmployeeJobsEntityController {
             log.debug("Auto-set university to: {}", universityCode);
         }
 
+        // OLD-HEMIS Compatible: CUBA Platform mavjud bo'lmagan reference kodlarni NULL ga o'zgartiradi
+        // FK constraint violation oldini olish uchun validatsiya
+        validateFkReferences(entity);
+
         try {
             // saveAndFlush() - darhol bazaga yozish (try-catch ishlashi uchun)
             EmployeeJobs saved = repository.saveAndFlush(entity);
@@ -685,7 +689,7 @@ public class EmployeeJobsEntityController {
             response.put("_entityName", ENTITY_NAME);
             response.put("_instanceName", getEmployeeFullName(saved.getEmployee()));
             response.put("id", saved.getId().toString());
-            return ResponseEntity.status(201).body(response);
+            return ResponseEntity.ok(response);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             // OLD-HEMIS Compatible: Constraint xatolikda HTTP 500 qaytarish
             log.error("Constraint violation on EmployeeJob create: {}", e.getMessage());
@@ -694,6 +698,34 @@ public class EmployeeJobsEntityController {
             errorResponse.put("error", "Server Error");
             errorResponse.put("details", details);
             return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * OLD-HEMIS Compatible: FK reference kodlarni validatsiya qilish
+     * CUBA Platform mavjud bo'lmagan reference kodlarni NULL ga o'zgartiradi.
+     * Bu xatti-harakatni takrorlash uchun har bir FK maydonni tekshirish.
+     */
+    private void validateFkReferences(EmployeeJobs entity) {
+        if (entity.getEmployeeForm() != null && !employeeFormRepository.existsById(entity.getEmployeeForm())) {
+            log.debug("EmployeeForm code '{}' not found in reference table, setting to NULL", entity.getEmployeeForm());
+            entity.setEmployeeForm(null);
+        }
+        if (entity.getEmployeeStatus() != null && !employeeStatusRepository.existsById(entity.getEmployeeStatus())) {
+            log.debug("EmployeeStatus code '{}' not found in reference table, setting to NULL", entity.getEmployeeStatus());
+            entity.setEmployeeStatus(null);
+        }
+        if (entity.getEmployeeType() != null && !employeeTypeRepository.existsById(entity.getEmployeeType())) {
+            log.debug("EmployeeType code '{}' not found in reference table, setting to NULL", entity.getEmployeeType());
+            entity.setEmployeeType(null);
+        }
+        if (entity.getEmployeePosition() != null && !positionTypeRepository.existsById(entity.getEmployeePosition())) {
+            log.debug("EmployeePosition code '{}' not found in reference table, setting to NULL", entity.getEmployeePosition());
+            entity.setEmployeePosition(null);
+        }
+        if (entity.getEmployeeRate() != null && !employeeRateRepository.existsById(entity.getEmployeeRate())) {
+            log.debug("EmployeeRate code '{}' not found in reference table, setting to NULL", entity.getEmployeeRate());
+            entity.setEmployeeRate(null);
         }
     }
 
@@ -1199,6 +1231,20 @@ public class EmployeeJobsEntityController {
         }
         if (map.containsKey("employeeStatus")) {
             String value = parseCode(map.get("employeeStatus"));
+            if (value != null) {
+                entity.setEmployeeStatus(value);
+            }
+        }
+        // Support staffPosition → employeePosition (old-hemis alias)
+        if (map.containsKey("staffPosition") && !map.containsKey("employeePosition") && !map.containsKey("teacherPositionType")) {
+            String value = parseCode(map.get("staffPosition"));
+            if (value != null) {
+                entity.setEmployeePosition(value);
+            }
+        }
+        // Support employmentStaff → employeeStatus (old-hemis alias)
+        if (map.containsKey("employmentStaff") && !map.containsKey("employeeStatus")) {
+            String value = parseCode(map.get("employmentStaff"));
             if (value != null) {
                 entity.setEmployeeStatus(value);
             }

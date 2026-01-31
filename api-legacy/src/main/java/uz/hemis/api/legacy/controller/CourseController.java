@@ -105,7 +105,7 @@ public class CourseController {
     @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
     public ResponseEntity<ResponseWrapper<CourseDto>> createCourse(@Valid @RequestBody CourseDto courseDto) {
         CourseDto created = courseService.create(courseDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+        return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")

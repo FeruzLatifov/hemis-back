@@ -14,15 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Repository for Specialty entity
- *
- * <p><strong>NO-DELETE Constraint (NDG):</strong></p>
- * <ul>
- *   <li>NO delete() methods defined</li>
- *   <li>NO deleteById() methods defined</li>
- *   <li>NO deleteAll() methods defined</li>
- *   <li>Soft delete ONLY (set deleteTs in service layer)</li>
- * </ul>
+ * Repository for Specialty entity (hemishe_e_university_speciality)
  *
  * @see Specialty
  * @since 1.0.0
@@ -31,58 +23,26 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public interface SpecialtyRepository extends JpaRepository<Specialty, UUID> {
 
-    // NO DELETE METHODS (NDG)
-
-    /**
-     * Find specialty by code
-     */
     Optional<Specialty> findByCode(String code);
 
-    /**
-     * Find specialties by university code
-     */
     @Query("SELECT s FROM Specialty s WHERE s.university = :universityCode")
     Page<Specialty> findByUniversity(@Param("universityCode") String universityCode, Pageable pageable);
 
-    /**
-     * Find specialties by faculty ID
-     */
-    @Query("SELECT s FROM Specialty s WHERE s.faculty = :facultyId")
-    Page<Specialty> findByFaculty(@Param("facultyId") UUID facultyId, Pageable pageable);
+    @Query("SELECT s FROM Specialty s WHERE s.faculty = :facultyCode")
+    Page<Specialty> findByFaculty(@Param("facultyCode") String facultyCode, Pageable pageable);
 
-    /**
-     * Find all specialties by faculty (no pagination)
-     */
-    @Query("SELECT s FROM Specialty s WHERE s.faculty = :facultyId")
-    List<Specialty> findAllByFaculty(@Param("facultyId") UUID facultyId);
+    @Query("SELECT s FROM Specialty s WHERE s.faculty = :facultyCode")
+    List<Specialty> findAllByFaculty(@Param("facultyCode") String facultyCode);
 
-    /**
-     * Find specialties by name (partial match, case-insensitive)
-     */
     @Query("SELECT s FROM Specialty s WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :name, '%'))")
     Page<Specialty> findByNameContainingIgnoreCase(@Param("name") String name, Pageable pageable);
 
-    /**
-     * Find active specialties
-     */
     @Query("SELECT s FROM Specialty s WHERE s.active = true")
     Page<Specialty> findByActiveTrue(Pageable pageable);
 
-    /**
-     * Find specialties by education type
-     */
     @Query("SELECT s FROM Specialty s WHERE s.educationType = :typeCode")
     Page<Specialty> findByEducationType(@Param("typeCode") String typeCode, Pageable pageable);
 
-    /**
-     * Find specialties by education form
-     */
-    @Query("SELECT s FROM Specialty s WHERE s.educationForm = :formCode")
-    Page<Specialty> findByEducationForm(@Param("formCode") String formCode, Pageable pageable);
-
-    /**
-     * Find specialties by university and education type
-     */
     @Query("SELECT s FROM Specialty s WHERE s.university = :universityCode AND s.educationType = :typeCode")
     Page<Specialty> findByUniversityAndEducationType(
             @Param("universityCode") String universityCode,
@@ -90,27 +50,24 @@ public interface SpecialtyRepository extends JpaRepository<Specialty, UUID> {
             Pageable pageable
     );
 
-    /**
-     * Count specialties by university
-     */
     @Query("SELECT COUNT(s) FROM Specialty s WHERE s.university = :universityCode")
     long countByUniversity(@Param("universityCode") String universityCode);
 
-    /**
-     * Count specialties by faculty
-     */
-    @Query("SELECT COUNT(s) FROM Specialty s WHERE s.faculty = :facultyId")
-    long countByFaculty(@Param("facultyId") UUID facultyId);
+    @Query("SELECT COUNT(s) FROM Specialty s WHERE s.faculty = :facultyCode")
+    long countByFaculty(@Param("facultyCode") String facultyCode);
 
-    /**
-     * Check if specialty with code exists
-     */
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Specialty s WHERE s.code = :code")
     boolean existsByCode(@Param("code") String code);
 
-    /**
-     * Check if specialty with code exists (excluding current ID)
-     */
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END FROM Specialty s WHERE s.code = :code AND s.id != :id")
     boolean existsByCodeAndIdNot(@Param("code") String code, @Param("id") UUID id);
+
+    @Query("SELECT s FROM Specialty s WHERE s.university = :university AND s.educationType = :educationType AND s.educationYear = :educationYear AND s.code = :code AND s.name = :name")
+    Optional<Specialty> findByUniqueKey(
+            @Param("university") String university,
+            @Param("educationType") String educationType,
+            @Param("educationYear") String educationYear,
+            @Param("code") String code,
+            @Param("name") String name
+    );
 }

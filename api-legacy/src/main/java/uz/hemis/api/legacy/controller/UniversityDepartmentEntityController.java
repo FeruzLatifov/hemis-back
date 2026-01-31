@@ -754,12 +754,38 @@ public class UniversityDepartmentEntityController {
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
         putIfNotNull(map, "status", entity.getStatus(), returnNulls);
 
-        // ❌ OLD-HEMIS QAYTARMAYDI - shuning uchun olib tashlandi:
-        // - parent (nested object)
-        // - university (nested object)
-        // - deparmentType (nested object)
-        // - path
-        // - createTs, createdBy, updateTs, updatedBy (audit fields)
+        // View bilan so'rov bo'lsa - expanded reference objectlarni qo'shish
+        if (view != null && !"_local".equals(view)) {
+            // parent - nested department object yoki null
+            if (entity.getParentCode() != null) {
+                Map<String, Object> parentObj = new LinkedHashMap<>();
+                parentObj.put("_entityName", ENTITY_NAME);
+                parentObj.put("id", entity.getParentCode());
+                parentObj.put("code", entity.getParentCode());
+                map.put("parent", parentObj);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("parent", null);
+            }
+
+            // university - full expanded object
+            Map<String, Object> uniObj = loadUniversityObject(entity.getUniversityCode());
+            if (uniObj != null) {
+                map.put("university", uniObj);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", null);
+            }
+
+            // deparmentType - classifier object (note: typo in old-hemis)
+            if (entity.getDepartmentType() != null) {
+                map.put("deparmentType", loadClassifierObject(
+                    "hemishe_h_university_department_type", "HUniversityDepartmentType", entity.getDepartmentType()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("deparmentType", null);
+            }
+
+            // path
+            putIfNotNull(map, "path", entity.getPath(), returnNulls);
+        }
 
         return map;
     }
@@ -1164,6 +1190,172 @@ public class UniversityDepartmentEntityController {
             // Fall back to string comparison
             return entityValue.toString().compareTo(filterValue.toString());
         }
+    }
+
+    // ==================== REFERENCE OBJECT LOADERS ====================
+
+    /**
+     * University object ni JDBC bilan yuklash (OLD-HEMIS CUBA format)
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadUniversityObject(String universityCode) {
+        if (universityCode == null) return null;
+        try {
+            List<Object[]> results = entityManager.createNativeQuery(
+                    "SELECT code, name, tin, address, student_url, teacher_url, active, version, " +
+                    "add_student, accreditation_edit, allow_grouping, allow_transfer_outside, one_id, gpa_edit, " +
+                    "_university_type, _ownership, _university_contract_category, _soato, _soato_region, " +
+                    "_university_activity_status, _university_belongs_to " +
+                    "FROM hemishe_e_university WHERE code = :code AND delete_ts IS NULL")
+                    .setParameter("code", universityCode)
+                    .getResultList();
+            if (results.isEmpty()) return null;
+
+            Object[] row = results.get(0);
+            Map<String, Object> uni = new LinkedHashMap<>();
+            uni.put("_entityName", "hemishe_EUniversity");
+            uni.put("_instanceName", row[0] + "-" + row[1]);
+            uni.put("id", str(row[0]));
+            if (row[4] != null) uni.put("studentUrl", str(row[4]));
+            uni.put("code", str(row[0]));
+
+            // soato nested
+            if (row[17] != null) {
+                Map<String, Object> soatoObj = loadSoatoObject(str(row[17]));
+                if (soatoObj != null) uni.put("soato", soatoObj);
+            }
+            // universityActivityStatus
+            if (row[19] != null) uni.put("universityActivityStatus", loadClassifierObject("hemishe_h_university_activity_status", "HUniversityActivityStatus", str(row[19])));
+            // universityType
+            if (row[14] != null) uni.put("universityType", loadClassifierObject("hemishe_h_university_type", "HUniversityType", str(row[14])));
+            if (row[2] != null) uni.put("tin", str(row[2]));
+            // soatoRegion nested
+            if (row[18] != null) {
+                Map<String, Object> soatoRegionObj = loadSoatoObject(str(row[18]));
+                if (soatoRegionObj != null) uni.put("soatoRegion", soatoRegionObj);
+            }
+            // versionType
+            String versionTypeCode = getVersionType(str(row[0]));
+            if (versionTypeCode != null) uni.put("versionType", loadClassifierObjectWithNames("hemishe_h_hemis_version_type", "HHemisVersionType", versionTypeCode));
+
+            uni.put("addStudent", row[8] != null ? row[8] : true);
+            if (row[3] != null) uni.put("address", str(row[3]));
+            uni.put("accreditationEdit", row[9] != null ? row[9] : false);
+            uni.put("active", row[6] != null ? row[6] : false);
+            // universityContractCategory
+            if (row[16] != null) uni.put("universityContractCategory", loadClassifierObjectWithNames("hemishe_h_university_contract_category", "HUniversityContractCategory", str(row[16])));
+            uni.put("version", row[7] != null ? ((Number) row[7]).intValue() : 1);
+            uni.put("oneId", row[12] != null ? row[12] : true);
+            uni.put("allowGrouping", row[10] != null ? row[10] : true);
+            if (row[5] != null) uni.put("teacherUrl", str(row[5]));
+            uni.put("allowTransferOutside", row[11] != null ? row[11] : true);
+            // ownership
+            if (row[15] != null) uni.put("ownership", loadClassifierObject("hemishe_h_ownership", "HOwnership", str(row[15])));
+            uni.put("name", str(row[1]));
+            uni.put("gpaEdit", row[13] != null ? row[13] : false);
+            // belongsTo
+            if (row[20] != null) uni.put("belongsTo", loadClassifierObject("hemishe_h_university_belongs_to", "HUniversityBelongsTo", str(row[20])));
+
+            return uni;
+        } catch (Exception e) {
+            log.debug("University yuklashda xatolik (code={}): {}", universityCode, e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadClassifierObject(String tableName, String entityName, String code) {
+        try {
+            List<Object[]> results = entityManager.createNativeQuery(
+                    "SELECT code, name, active, version FROM " + tableName + " WHERE code = :code AND delete_ts IS NULL")
+                    .setParameter("code", code)
+                    .getResultList();
+            if (results.isEmpty()) return null;
+
+            Object[] row = results.get(0);
+            Map<String, Object> obj = new LinkedHashMap<>();
+            obj.put("_entityName", "hemishe_" + entityName);
+            obj.put("id", str(row[0]));
+            obj.put("code", str(row[0]));
+            obj.put("name", row[1] != null ? str(row[1]) : "");
+            obj.put("active", row[2] != null ? row[2] : true);
+            obj.put("version", row[3] != null ? ((Number) row[3]).intValue() : 1);
+            return obj;
+        } catch (Exception e) {
+            log.debug("Klassifikator yuklashda xatolik ({}, code={}): {}", tableName, code, e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadClassifierObjectWithNames(String tableName, String entityName, String code) {
+        try {
+            List<Object[]> results = entityManager.createNativeQuery(
+                    "SELECT code, name, active, version, name_ru, name_en FROM " + tableName + " WHERE code = :code AND delete_ts IS NULL")
+                    .setParameter("code", code)
+                    .getResultList();
+            if (results.isEmpty()) return null;
+
+            Object[] row = results.get(0);
+            Map<String, Object> obj = new LinkedHashMap<>();
+            obj.put("_entityName", "hemishe_" + entityName);
+            obj.put("id", str(row[0]));
+            obj.put("code", str(row[0]));
+            obj.put("name", row[1] != null ? str(row[1]) : "");
+            obj.put("active", row[2] != null ? row[2] : true);
+            obj.put("version", row[3] != null ? ((Number) row[3]).intValue() : 1);
+            if (row[4] != null) obj.put("nameRu", str(row[4]));
+            if (row[5] != null) obj.put("nameEn", str(row[5]));
+            return obj;
+        } catch (Exception e) {
+            log.debug("Klassifikator yuklashda xatolik ({}, code={}): {}", tableName, code, e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> loadSoatoObject(String soatoCode) {
+        try {
+            List<Object[]> results = entityManager.createNativeQuery(
+                    "SELECT code, name_uz, name_ru, active, version FROM hemishe_h_soato WHERE code = :code AND delete_ts IS NULL")
+                    .setParameter("code", soatoCode)
+                    .getResultList();
+            if (results.isEmpty()) return null;
+
+            Object[] row = results.get(0);
+            Map<String, Object> soato = new LinkedHashMap<>();
+            soato.put("_entityName", "hemishe_HSoato");
+            soato.put("id", row[0]);
+            soato.put("code", row[0]);
+            soato.put("active", row[3] != null ? row[3] : true);
+            soato.put("version", row[4] != null ? ((Number) row[4]).intValue() : 1);
+            soato.put("name_ru", row[2] != null ? str(row[2]) : "");
+            soato.put("name_uz", row[1] != null ? str(row[1]) : "");
+            return soato;
+        } catch (Exception e) {
+            log.debug("SOATO yuklashda xatolik (code={}): {}", soatoCode, e.getMessage());
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String getVersionType(String universityCode) {
+        try {
+            List<Object> results = entityManager.createNativeQuery(
+                    "SELECT _university_version FROM hemishe_e_university WHERE code = :code AND delete_ts IS NULL")
+                    .setParameter("code", universityCode)
+                    .getResultList();
+            if (!results.isEmpty() && results.get(0) != null) {
+                return String.valueOf(results.get(0));
+            }
+        } catch (Exception e) {
+            log.debug("versionType olishda xatolik (code={}): {}", universityCode, e.getMessage());
+        }
+        return null;
+    }
+
+    private String str(Object obj) {
+        return obj != null ? String.valueOf(obj) : null;
     }
 
     /**

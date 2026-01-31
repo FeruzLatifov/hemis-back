@@ -55,7 +55,7 @@ public class IctEquipmentEntityController {
     private static final String ENTITY_NAME = "hemishe_RIctEquipment";
 
     @GetMapping("/{entityId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get IctEquipment by ID", description = "Returns a single IctEquipment by UUID")
     public ResponseEntity<Map<String, Object>> getById(
             @PathVariable UUID entityId,
@@ -74,7 +74,7 @@ public class IctEquipmentEntityController {
     }
 
     @PutMapping("/{entityId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update IctEquipment", description = "Updates an existing IctEquipment")
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable UUID entityId,
@@ -96,7 +96,7 @@ public class IctEquipmentEntityController {
     }
 
     @DeleteMapping("/{entityId}")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete IctEquipment", description = "Soft deletes an IctEquipment")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         log.debug("DELETE IctEquipment id: {}", entityId);
@@ -111,7 +111,7 @@ public class IctEquipmentEntityController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Search IctEquipment (GET)", description = "Search using URL parameters")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -134,7 +134,7 @@ public class IctEquipmentEntityController {
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Search IctEquipment (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -161,7 +161,7 @@ public class IctEquipmentEntityController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get all IctEquipment", description = "Returns paginated list")
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "Return total count") @RequestParam(required = false) Boolean returnCount,
@@ -193,7 +193,7 @@ public class IctEquipmentEntityController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create IctEquipment", description = "Creates a new IctEquipment")
     public ResponseEntity<Map<String, Object>> create(
             @RequestBody Map<String, Object> body,

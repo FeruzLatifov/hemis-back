@@ -139,11 +139,45 @@ public class PublicationAuthorMetaEntityController {
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
     })
-    public ResponseEntity<Map<String, Object>> create(
-            @RequestBody Map<String, Object> body,
+    @SuppressWarnings("unchecked")
+    public ResponseEntity<?> create(
+            @RequestBody Object rawBody,
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.debug("POST create new PublicationAuthorMeta: {}", body);
+        // PHP sends array: [{...}], unwrap to single object
+        Map<String, Object> body;
+        boolean isArrayInput = false;
+        if (rawBody instanceof List) {
+            List<?> list = (List<?>) rawBody;
+            if (list.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            body = (Map<String, Object>) list.get(0);
+            isArrayInput = true;
+        } else {
+            body = (Map<String, Object>) rawBody;
+        }
+
+        log.debug("POST create/upsert PublicationAuthorMeta: {}", body);
+
+        // CUBA UPSERT: if body contains 'id' and entity exists, update instead of create
+        if (body.containsKey("id")) {
+            try {
+                UUID existingId = UUID.fromString(body.get("id").toString());
+                Optional<PublicationAuthorMeta> existingOpt = repository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    PublicationAuthorMeta existing = existingOpt.get();
+                    updateFromMap(existing, body);
+                    existing.setUpdateTs(LocalDateTime.now());
+                    PublicationAuthorMeta saved = repository.save(existing);
+                    Map<String, Object> result = toMinimalMap(saved);
+                    return ResponseEntity.ok(isArrayInput ? List.of(result) : result);
+                }
+            } catch (IllegalArgumentException e) {
+                log.debug("Invalid UUID format for id: {}", body.get("id"));
+            }
+        }
 
         PublicationAuthorMeta entity = new PublicationAuthorMeta();
         updateFromMap(entity, body);
@@ -151,7 +185,8 @@ public class PublicationAuthorMetaEntityController {
         PublicationAuthorMeta saved = repository.save(entity);
 
         // OLD-HEMIS POST da faqat minimal response qaytaradi
-        return ResponseEntity.status(HttpStatus.CREATED).body(toMinimalMap(saved));
+        Map<String, Object> result = toMinimalMap(saved);
+        return ResponseEntity.ok(isArrayInput ? List.of(result) : result);
     }
 
     // =====================================================
@@ -271,13 +306,19 @@ public class PublicationAuthorMetaEntityController {
             }
         }
 
-        // isMainAuthor - Number yoki String bo'lishi mumkin
+        // isMainAuthor - Number, String yoki Boolean bo'lishi mumkin
         if (map.containsKey("isMainAuthor")) {
             Object val = map.get("isMainAuthor");
             if (val instanceof Number) {
                 entity.setIsMainAuthor(((Number) val).intValue());
+            } else if (val instanceof Boolean) {
+                entity.setIsMainAuthor(((Boolean) val) ? 1 : 0);
             } else if (val instanceof String) {
-                entity.setIsMainAuthor(Integer.parseInt((String) val));
+                try {
+                    entity.setIsMainAuthor(Integer.parseInt((String) val));
+                } catch (NumberFormatException e) {
+                    entity.setIsMainAuthor(Boolean.parseBoolean((String) val) ? 1 : 0);
+                }
             }
         }
 

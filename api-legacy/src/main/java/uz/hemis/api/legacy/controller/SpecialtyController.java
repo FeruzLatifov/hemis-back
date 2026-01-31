@@ -60,9 +60,9 @@ public class SpecialtyController {
 
     @GetMapping(params = "faculty")
     public ResponseEntity<ResponseWrapper<List<SpecialtyDto>>> getSpecialtiesByFaculty(
-            @RequestParam("faculty") UUID facultyId
+            @RequestParam("faculty") String facultyCode
     ) {
-        List<SpecialtyDto> specialties = specialtyService.findAllByFaculty(facultyId);
+        List<SpecialtyDto> specialties = specialtyService.findAllByFaculty(facultyCode);
         return ResponseEntity.ok(ResponseWrapper.success(specialties));
     }
 
@@ -96,7 +96,7 @@ public class SpecialtyController {
     @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> createSpecialty(@Valid @RequestBody SpecialtyDto specialtyDto) {
         SpecialtyDto created = specialtyService.create(specialtyDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+        return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")
@@ -112,7 +112,7 @@ public class SpecialtyController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Void>> deleteSpecialty(@PathVariable UUID id) {
-        specialtyService.softDelete(id);
+        specialtyService.delete(id);
         return ResponseEntity.ok(ResponseWrapper.success(null));
     }
 }

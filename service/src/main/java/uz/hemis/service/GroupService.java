@@ -8,15 +8,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.GroupDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Group;
 import uz.hemis.service.mapper.GroupMapper;
-import uz.hemis.domain.repository.*;
+import uz.hemis.domain.repository.GroupRepository;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -27,34 +22,12 @@ public class GroupService {
 
     private final GroupRepository groupRepository;
     private final GroupMapper groupMapper;
-    private final UniversityRepository universityRepository;
-    private final SpecialtyRepository specialtyRepository;
-    private final FacultyRepository facultyRepository;
 
     @Transactional
     public GroupDto create(GroupDto dto) {
-        validateForCreate(dto);
         Group group = groupMapper.toEntity(dto);
+        group.setId(UUID.randomUUID());
         return groupMapper.toDto(groupRepository.save(group));
-    }
-
-    private void validateForCreate(GroupDto dto) {
-        Map<String, String> errors = new HashMap<>();
-        if (dto.getName() != null && groupRepository.existsByName(dto.getName())) {
-            errors.put("name", "Group name already exists");
-        }
-        if (dto.getUniversity() != null && !universityRepository.existsByCode(dto.getUniversity())) {
-            errors.put("university", "University not found");
-        }
-        if (dto.getSpecialty() != null && !specialtyRepository.existsById(dto.getSpecialty())) {
-            errors.put("specialty", "Specialty not found");
-        }
-        if (dto.getFaculty() != null && !facultyRepository.existsById(dto.getFaculty())) {
-            errors.put("faculty", "Faculty not found");
-        }
-        if (!errors.isEmpty()) {
-            throw new ValidationException("Group validation failed", errors);
-        }
     }
 
     public GroupDto findById(UUID id) {
@@ -67,14 +40,6 @@ public class GroupService {
         return groupRepository.findAll(pageable).map(groupMapper::toDto);
     }
 
-    public Page<GroupDto> findByUniversity(String universityCode, Pageable pageable) {
-        return groupRepository.findByUniversity(universityCode, pageable).map(groupMapper::toDto);
-    }
-
-    public Page<GroupDto> findBySpecialty(UUID specialtyId, Pageable pageable) {
-        return groupRepository.findBySpecialty(specialtyId, pageable).map(groupMapper::toDto);
-    }
-
     @Transactional
     public GroupDto update(UUID id, GroupDto dto) {
         Group existing = groupRepository.findById(id)
@@ -84,34 +49,9 @@ public class GroupService {
     }
 
     @Transactional
-    public void softDelete(UUID id) {
+    public void delete(UUID id) {
         Group group = groupRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Group not found: " + id));
-        group.setDeleteTs(LocalDateTime.now());
-        groupRepository.save(group);
-    }
-
-    public long countByUniversity(String universityCode) {
-        return groupRepository.countByUniversity(universityCode);
-    }
-
-    // =====================================================
-    // CUBA REST API Compatible Methods
-    // =====================================================
-
-    /**
-     * Get groups by university (CUBA compatible)
-     *
-     * @param university university code
-     * @param type group type (optional)
-     * @param year academic year (optional)
-     * @return list of group DTOs
-     */
-    public Object getByUniversity(String university, String type, Integer year) {
-        log.debug("CUBA API: get groups by university: {}, type: {}, year: {}", university, type, year);
-        Page<GroupDto> page = findByUniversity(university, Pageable.unpaged());
-        List<GroupDto> groups = page.getContent();
-        // TODO: Filter by type and year if provided
-        return groups;
+        groupRepository.delete(group);
     }
 }

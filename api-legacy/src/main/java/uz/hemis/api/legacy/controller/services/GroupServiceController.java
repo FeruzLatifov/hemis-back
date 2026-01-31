@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * @since 2.0.0
  */
 @RestController
-@RequestMapping("/services/group")
+@RequestMapping("/app/rest/v2/services/group")
 @Tag(name = "51.Guruhlar", description = "Guruhlar xizmatlari")
 @RequiredArgsConstructor
 @Slf4j
@@ -86,11 +86,11 @@ public class GroupServiceController {
                 .collect(Collectors.toList());
         }
 
-        // Filter by academicYear if provided
+        // Filter by educationYear if provided
         if (year != null) {
             String yearStr = String.valueOf(year);
             filtered = filtered.stream()
-                .filter(g -> g.getAcademicYear() != null && g.getAcademicYear().contains(yearStr))
+                .filter(g -> g.getEducationYear() != null && g.getEducationYear().contains(yearStr))
                 .collect(Collectors.toList());
         }
 
@@ -102,10 +102,10 @@ public class GroupServiceController {
             item.put("_entityName", ENTITY_NAME);
             item.put("id", group.getId().toString());
             // groupId - use index or extract from name if numeric pattern exists
-            item.put("groupId", extractGroupId(group, index));
+            item.put("groupId", group.getGroupId() != null ? group.getGroupId() : String.valueOf(index));
             item.put("active", group.getActive() != null ? group.getActive() : true);
             item.put("version", 1);
-            item.put("groupName", group.getName());
+            item.put("groupName", group.getGroupName());
             data.add(item);
             index++;
         }
@@ -119,14 +119,4 @@ public class GroupServiceController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Extract groupId from group.
-     * Attempts to extract a numeric suffix from the group name (e.g., "125-21" -> could use as-is or parse).
-     * Falls back to using the index position.
-     */
-    private String extractGroupId(Group group, int index) {
-        // If the group name contains a numeric pattern, try to use part of it
-        // For now, use the index as groupId to match OLD-HEMIS behavior
-        return String.valueOf(index);
-    }
 }

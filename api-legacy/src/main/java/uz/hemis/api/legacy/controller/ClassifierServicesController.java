@@ -52,6 +52,81 @@ public class ClassifierServicesController {
     private static final DateTimeFormatter CUBA_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     /**
+     * Old-hemis classifier nomi alias mapping
+     * DB table name (hemishe_h_ prefiksiz) -> Old-hemis classifier nomi (h_ bilan)
+     * Faqat nom farq qiladigan classifierlar uchun
+     */
+    private static final Map<String, String> CLASSIFIER_ALIAS = Map.ofEntries(
+        Map.entry("accomodation", "h_accommodation"),
+        Map.entry("attandance_setting", "h_attendance_setting"),
+        Map.entry("citizenship", "h_citizenship_type"),
+        Map.entry("teacher_conduction_form", "h_conduction_form"),
+        Map.entry("contract_types", "h_contract_class"),
+        Map.entry("doctoral_student_status", "h_doctorate_student_status"),
+        Map.entry("university_employee_type", "h_employee_type"),
+        Map.entry("expel", "h_expel_reason"),
+        Map.entry("education_language", "h_language"),
+        Map.entry("currency", "h_project_currency"),
+        Map.entry("scholar_database", "h_scientific_platform"),
+        Map.entry("publication_type", "h_scientific_publication_type"),
+        Map.entry("semester_list", "h_semestr_type"),
+        Map.entry("student_social_type", "h_social_category"),
+        Map.entry("university_department_type", "h_structure_type"),
+        Map.entry("student_room_mate_type", "h_student_roommate_type"),
+        Map.entry("student_status_type", "h_student_status"),
+        Map.entry("student_achievement_type", "h_student_success"),
+        Map.entry("teacher_achievement_type", "h_teacher_success"),
+        Map.entry("study_schedule_type", "h_training_type"),
+        Map.entry("university_employee_form", "h_university_form"),
+        // Yangi aliaslar - EXCLUDED dan olib tashlangan jadvallar uchun
+        Map.entry("university_employee_rate", "h_employment_staff"),
+        Map.entry("score_type", "h_grade_type"),
+        Map.entry("project_locality", "h_locality"),
+        Map.entry("grade_system_type", "h_marking_system"),
+        Map.entry("university_employee_status_type", "h_teacher_status")
+    );
+
+    /**
+     * Old-hemis da mavjud BO'LMAGAN jadvallar (hemis-back da qo'shimcha)
+     * Bu jadvallar classifiers ro'yxatiga KIRITILMAYDI
+     */
+    private static final Set<String> EXCLUDED_TABLES = Set.of(
+        "hemishe_h_certificate_language",
+        "hemishe_h_class_type",
+        "hemishe_h_diplom_blank_generate_status",
+        "hemishe_h_doctoral_speciality",
+        "hemishe_h_doctoral_student_course",
+        "hemishe_h_employee_age_range",
+        "hemishe_h_hospiton",
+        "hemishe_h_language_certificate",
+        "hemishe_h_position",
+        "hemishe_h_publication_locality",
+        "hemishe_h_scholarship",
+        "hemishe_h_scientific_project_type",
+        "hemishe_h_speciality_bachelor",
+        "hemishe_h_speciality_doctoral",
+        "hemishe_h_speciality_master",
+        "hemishe_h_specialization",
+        "hemishe_h_specialization_h_specialization_link",
+        "hemishe_h_specialization_type",
+        "hemishe_h_subject_choose_type",
+        "hemishe_h_university_activity_status",
+        "hemishe_h_university_belongs_to",
+        "hemishe_h_university_contract_category",
+        "hemishe_h_university_type",
+        "hemishe_h_verification_type",
+        "hemishe_h_workplace_compatibility"
+    );
+
+    /**
+     * Dublikat classifierlar - bir xil DB jadvalidan ikkinchi nom bilan qaytarish
+     * Old-hemis ba'zi classifierlarni ikki nom bilan qaytaradi
+     */
+    private static final Map<String, String> DUPLICATE_CLASSIFIERS = Map.of(
+        "h_outside_activity", "hemishe_h_outside_activities"  // singular variant (old-hemis has both)
+    );
+
+    /**
      * Barcha klassifikatorlar (items bilan)
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/allItems</p>
@@ -108,6 +183,17 @@ public class ClassifierServicesController {
             }
         }
 
+        // Dublikat classifierlar (bir xil jadval, boshqa nom)
+        for (Map.Entry<String, String> dup : DUPLICATE_CLASSIFIERS.entrySet()) {
+            Map<String, Object> info = getClassifierWithItems(dup.getValue());
+            if (info != null) {
+                Object data = info.values().iterator().next();
+                Map<String, Object> dupEntry = new LinkedHashMap<>();
+                dupEntry.put(dup.getKey(), data);
+                classifiers.add(dupEntry);
+            }
+        }
+
         response.put("classifiers", classifiers);
         log.info("Jami {} ta klassifikator (items bilan) topildi", classifiers.size());
 
@@ -125,7 +211,8 @@ public class ClassifierServicesController {
             String entityName;
             if (tableName.startsWith("hemishe_h_")) {
                 String baseName = tableName.substring(10); // hemishe_h_ olib tashlash
-                classifierName = "h_" + baseName;
+                // Alias mapping tekshirish (old-hemis nom farqlari)
+                classifierName = CLASSIFIER_ALIAS.getOrDefault(baseName, "h_" + baseName);
                 entityName = "H" + toPascalCase(baseName);
             } else if (tableName.equals("hemishe_e_university")) {
                 classifierName = "h_university";
@@ -269,6 +356,17 @@ public class ClassifierServicesController {
             }
         }
 
+        // Dublikat classifierlar (bir xil jadval, boshqa nom)
+        for (Map.Entry<String, String> dup : DUPLICATE_CLASSIFIERS.entrySet()) {
+            Map<String, Object> info = getClassifierInfo(dup.getValue());
+            if (info != null) {
+                Object data = info.values().iterator().next();
+                Map<String, Object> dupEntry = new LinkedHashMap<>();
+                dupEntry.put(dup.getKey(), data);
+                classifiers.add(dupEntry);
+            }
+        }
+
         response.put("classifiers", classifiers);
         log.info("Jami {} ta klassifikator topildi", classifiers.size());
 
@@ -277,6 +375,7 @@ public class ClassifierServicesController {
 
     /**
      * Bazada mavjud klassifikator jadvallarini olish
+     * EXCLUDED_TABLES ga kirgan jadvallar chiqarib tashlanadi
      */
     @SuppressWarnings("unchecked")
     private List<String> getClassifierTables() {
@@ -286,7 +385,10 @@ public class ClassifierServicesController {
             AND (table_name LIKE 'hemishe_h_%' OR table_name = 'hemishe_e_university')
             ORDER BY table_name
             """;
-        return entityManager.createNativeQuery(sql).getResultList();
+        List<String> allTables = entityManager.createNativeQuery(sql).getResultList();
+        return allTables.stream()
+                .filter(t -> !EXCLUDED_TABLES.contains(t))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -299,7 +401,9 @@ public class ClassifierServicesController {
             // hemishe_e_university -> h_university
             String classifierName;
             if (tableName.startsWith("hemishe_h_")) {
-                classifierName = "h_" + tableName.substring(10);
+                String baseName = tableName.substring(10); // "gender", "accomodation" etc.
+                // Alias mapping tekshirish (old-hemis nom farqlari)
+                classifierName = CLASSIFIER_ALIAS.getOrDefault(baseName, "h_" + baseName);
             } else if (tableName.equals("hemishe_e_university")) {
                 classifierName = "h_university";
             } else {
@@ -392,12 +496,12 @@ public class ClassifierServicesController {
             case "h_ownership" -> "OTM mulkchilik shakllari";
             case "h_structure_type" -> "OTM bo'linmalari turlari";
             case "h_employee_type" -> "Xodimlar toifalari";
-            case "h_teacher_status" -> "O'qituvchi xolatlari";
-            case "h_employment_staff" -> "Mehnat stavkalari";
+            case "h_teacher_status" -> "O\u2018qituvchi statuslari turlari";
+            case "h_employment_staff" -> "Mehnat stavkalari turlari";
             case "h_employment_form" -> "Mehnat shakllari";
             case "h_teacher_position_type" -> "Lavozim turlari";
             case "h_qualification" -> "Malaka oshirish joylari";
-            case "h_teacher_success" -> "O'qituvchi yutuqlari";
+            case "h_teacher_success" -> "O\u2018qituvchilar yutuqlari turlari";
             case "h_academic_degree" -> "Ilmiy darajalar";
             case "h_academic_rank" -> "Ilmiy unvonlar";
 
@@ -413,7 +517,7 @@ public class ClassifierServicesController {
             // O'quv jarayoni
             case "h_course" -> "O'quv kurslari";
             case "h_semestr_type", "h_semester" -> "Semestr turlari";
-            case "h_marking_system", "h_grade_system_type" -> "Baholash tizimlari";
+            case "h_marking_system", "h_grade_system_type" -> "Baholash tizimlari turlari";
             case "h_grade_type" -> "Baho turlari";
             case "h_exam_type" -> "Nazorat turlari";
             case "h_final_exam_type" -> "Qaydnoma turlari";
@@ -426,7 +530,7 @@ public class ClassifierServicesController {
             // Ilmiy faoliyat
             case "h_science_branch" -> "Fan tarmog'i va ixtisoslik nomi";
             case "h_project_type" -> "Ilmiy loyihalar turlari";
-            case "h_locality" -> "Ilmiy loyiha maqomi";
+            case "h_locality" -> "Loyihalar toifalari";
             case "h_locality_type" -> "Mahalliylik turi";
             case "h_project_currency" -> "Valyuta turlari";
             case "h_project_executor_type" -> "Ijrochilar turlari";
@@ -440,6 +544,7 @@ public class ClassifierServicesController {
             case "h_auditorium_type" -> "Auditoriya turlari";
             case "h_device_type" -> "AKT qurilmalari";
             case "h_attendance_setting" -> "Davomat chegaralari";
+            case "h_outside_activity", "h_outside_activities" -> "Auditoriyadan tashqari mashg\u2018ulotlar";
 
             default -> "Klassifikator: " + classifierName;
         };
@@ -713,17 +818,50 @@ public class ClassifierServicesController {
      * </ul>
      */
     @SuppressWarnings("unchecked")
+    /**
+     * Reverse alias mapping: old-hemis classifier nomi -> DB jadval base nomi
+     */
+    private static final Map<String, String> REVERSE_ALIAS = new LinkedHashMap<>();
+    static {
+        CLASSIFIER_ALIAS.forEach((dbName, oldHemisName) -> {
+            // oldHemisName: "h_accommodation" -> baseName: "accommodation"
+            String base = oldHemisName.startsWith("h_") ? oldHemisName.substring(2) : oldHemisName;
+            REVERSE_ALIAS.put(base, dbName);
+        });
+    }
+
+    @SuppressWarnings("unchecked")
     private Map<String, Object> buildDynamicClassifier(String classifier) {
+        // Dublikat classifierni tekshirish (h_outside_activity -> hemishe_h_outside_activities)
+        String dupTable = DUPLICATE_CLASSIFIERS.get(classifier);
+        if (dupTable != null) {
+            // Dublikat classifier - asosiy jadvaldan foydalanish
+            Map<String, Object> result = getClassifierWithItems(dupTable);
+            if (result != null) {
+                return result.values().iterator().next() instanceof Map ?
+                    (Map<String, Object>) result.values().iterator().next() : null;
+            }
+            return null;
+        }
+
         // classifier nomidan jadval va entity nomlarini generatsiya qilish
         String baseName = classifier;
         if (baseName.startsWith("h_")) {
             baseName = baseName.substring(2);
         }
 
-        // _type suffixini olib tashlash (h_citizenship_type -> citizenship)
-        String tableBaseName = baseName;
-        if (tableBaseName.endsWith("_type")) {
-            tableBaseName = tableBaseName.substring(0, tableBaseName.length() - 5);
+        // Reverse alias tekshirish (old-hemis nomi -> DB nomi)
+        String resolvedBaseName = REVERSE_ALIAS.getOrDefault(baseName, null);
+
+        String tableBaseName;
+        if (resolvedBaseName != null) {
+            tableBaseName = resolvedBaseName;
+        } else {
+            // _type suffixini olib tashlash (h_citizenship_type -> citizenship)
+            tableBaseName = baseName;
+            if (tableBaseName.endsWith("_type")) {
+                tableBaseName = tableBaseName.substring(0, tableBaseName.length() - 5);
+            }
         }
 
         String tableName = "hemishe_h_" + tableBaseName;

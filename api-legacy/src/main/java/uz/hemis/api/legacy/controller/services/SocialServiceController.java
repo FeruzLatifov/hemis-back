@@ -2,11 +2,6 @@ package uz.hemis.api.legacy.controller.services;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,250 +9,128 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 /**
  * Social Service Controller - CUBA REST API Compatible
  *
  * <p>Integration with Social Protection services</p>
- *
- * <p><strong>URL Pattern:</strong> {@code /app/rest/v2/services/social/*}</p>
- *
- * <p><strong>Response Format:</strong> All endpoints return OLD-HEMIS compatible wrapper:</p>
- * <pre>
- * {
- *   "success": true,
- *   "data": { ... actual data ... }
- * }
- * </pre>
+ * <p>OLD-HEMIS response formatiga 100% mos</p>
  *
  * @since 2.0.0
  */
 @RestController
-@RequestMapping("/services/social")
+@RequestMapping("/app/rest/v2/services/social")
 @Tag(name = "61.Ijtimoiy himoya", description = "Ijtimoiy himoya xizmatlari")
 @RequiredArgsConstructor
 @Slf4j
 public class SocialServiceController {
 
     /**
-     * Creates OLD-HEMIS compatible response wrapper
+     * Check single register status
      *
-     * @param data the actual response data
-     * @return LinkedHashMap with {success, data} structure
+     * OLD-HEMIS response format:
+     * {"success":true,"data":{"status":"BAD_REQUEST","timestamp":"31-01-2026 11:51:32","message":"{...}"}}
      */
-    private Map<String, Object> wrapResponse(Map<String, Object> data) {
+    @GetMapping("/singleRegister")
+    @Operation(summary = "Yagona reestr tekshirish")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> singleRegister(
+            @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
+        log.info("[CUBA Service] social/singleRegister: pinfl={}", pinfl);
+
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
+
+        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
+        data.put("status", "BAD_REQUEST");
+        data.put("timestamp", timestamp);
+        data.put("message", "{\"statusCode\":\"400\",\"statusDescription\":\"PF-84 ga asosan Kam ta'minlanganlik ma'lumotnomasi berish to'xtatildi.\"}");
+
         LinkedHashMap<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
         response.put("data", data);
-        return response;
-    }
-
-    /**
-     * Check single register status
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/social/singleRegister}</p>
-     *
-     * @param pinfl citizen PINFL
-     * @return single register information wrapped in {success, data}
-     */
-    @GetMapping("/singleRegister")
-    @Operation(
-        summary = "Yagona reestr tekshirish",
-        description = "Fuqaroning yagona reestrda ro'yxatdan o'tganligini tekshiradi. Javob {success, data} formatida qaytariladi."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Muvaffaqiyatli javob",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"success\": true, \"data\": {\"pinfl\": \"12345678901234\", \"registered\": false, \"message\": \"Stub implementation\"}}"
-                )
-            )
-        )
-    })
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<Map<String, Object>> singleRegister(
-            @Parameter(description = "Fuqaro PINFL raqami", required = true, example = "42601793500108")
-            @RequestParam String pinfl) {
-        log.info("[CUBA Service] social/singleRegister: pinfl={}", pinfl);
-
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("pinfl", pinfl);
-        data.put("registered", false);
-        data.put("message", "Stub implementation - parameters returned");
-
-        return ResponseEntity.ok(wrapResponse(data));
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Get full daftar information
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/social/daftarFull}</p>
-     *
-     * @param pinfl citizen PINFL
-     * @return full daftar data wrapped in {success, data}
      */
     @GetMapping("/daftarFull")
-    @Operation(
-        summary = "To'liq daftar ma'lumotlari",
-        description = "Fuqaroning to'liq daftar ma'lumotlarini oladi. Javob {success, data} formatida qaytariladi."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Muvaffaqiyatli javob",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"success\": true, \"data\": {\"pinfl\": \"12345678901234\", \"daftar\": {}, \"message\": \"Stub implementation\"}}"
-                )
-            )
-        )
-    })
+    @Operation(summary = "To'liq daftar ma'lumotlari")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Map<String, Object>> daftarFull(
-            @Parameter(description = "Fuqaro PINFL raqami", required = true, example = "42601793500108")
-            @RequestParam String pinfl) {
+    public ResponseEntity<?> daftarFull(
+            @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
         log.info("[CUBA Service] social/daftarFull: pinfl={}", pinfl);
 
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("pinfl", pinfl);
-        data.put("daftar", new LinkedHashMap<>());
-        data.put("message", "Stub implementation - parameters returned");
-
-        return ResponseEntity.ok(wrapResponse(data));
+        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("data", new LinkedHashMap<>());
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Get short daftar information
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/social/daftarShort}</p>
-     *
-     * @param pinfl citizen PINFL
-     * @return short daftar data wrapped in {success, data}
      */
     @GetMapping("/daftarShort")
-    @Operation(
-        summary = "Qisqacha daftar ma'lumotlari",
-        description = "Fuqaroning qisqacha daftar ma'lumotlarini oladi. Javob {success, data} formatida qaytariladi."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Muvaffaqiyatli javob",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"success\": true, \"data\": {\"pinfl\": \"12345678901234\", \"daftar\": {}, \"message\": \"Stub implementation\"}}"
-                )
-            )
-        )
-    })
+    @Operation(summary = "Qisqacha daftar ma'lumotlari")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Map<String, Object>> daftarShort(
-            @Parameter(description = "Fuqaro PINFL raqami", required = true, example = "42601793500108")
-            @RequestParam String pinfl) {
+    public ResponseEntity<?> daftarShort(
+            @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
         log.info("[CUBA Service] social/daftarShort: pinfl={}", pinfl);
 
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("pinfl", pinfl);
-        data.put("daftar", new LinkedHashMap<>());
-        data.put("message", "Stub implementation - parameters returned");
-
-        return ResponseEntity.ok(wrapResponse(data));
+        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("data", new LinkedHashMap<>());
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Get women support information
      *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/social/women?pinfl=42601793500108&sn=KA0773072}</p>
-     *
-     * @param pinfl citizen PINFL
-     * @param sn serial number (e.g., KA0773072)
-     * @return women support data wrapped in {success, data}
+     * OLD-HEMIS response format:
+     * {"success":true,"data":{"timestamp":"2026-01-31 04:51:32","status":200,"data":{"results":[]}}}
      */
     @GetMapping("/women")
-    @Operation(
-        summary = "Ayollar qo'llab-quvvatlash ma'lumotlari",
-        description = "Ayollar qo'llab-quvvatlash dasturi ma'lumotlarini oladi. Javob {success, data} formatida qaytariladi."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Muvaffaqiyatli javob",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"success\": true, \"data\": {\"pinfl\": \"42601793500108\", \"sn\": \"KA0773072\", \"support\": [], \"message\": \"Stub implementation\"}}"
-                )
-            )
-        )
-    })
+    @Operation(summary = "Ayollar qo'llab-quvvatlash ma'lumotlari")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Map<String, Object>> women(
-            @Parameter(description = "Fuqaro PINFL raqami", required = true, example = "42601793500108")
-            @RequestParam String pinfl,
-            @Parameter(description = "Hujjat seriya va raqami (masalan: KA0773072)", required = false, example = "KA0773072")
-            @RequestParam(required = false) String sn) {
+    public ResponseEntity<?> women(
+            @Parameter(description = "PINFL", required = true) @RequestParam String pinfl,
+            @Parameter(description = "Hujjat seriya va raqami", required = false) @RequestParam(required = false) String sn) {
         log.info("[CUBA Service] social/women: pinfl={}, sn={}", pinfl, sn);
 
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("pinfl", pinfl);
-        data.put("sn", sn);
-        data.put("support", java.util.List.of());
-        data.put("message", "Stub implementation - parameters returned");
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-        return ResponseEntity.ok(wrapResponse(data));
+        LinkedHashMap<String, Object> results = new LinkedHashMap<>();
+        results.put("results", List.of());
+
+        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
+        data.put("timestamp", timestamp);
+        data.put("status", 200);
+        data.put("data", results);
+
+        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("data", data);
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Get youth support information
-     *
-     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/social/young?pinfl=42601793500108&seria=KA&number=0773072}</p>
-     *
-     * @param pinfl citizen PINFL
-     * @param seria document series (e.g., KA)
-     * @param number document number (e.g., 0773072)
-     * @return youth support data wrapped in {success, data}
      */
     @GetMapping("/young")
-    @Operation(
-        summary = "Yoshlar qo'llab-quvvatlash ma'lumotlari",
-        description = "Yoshlar qo'llab-quvvatlash dasturi ma'lumotlarini oladi. Javob {success, data} formatida qaytariladi."
-    )
-    @ApiResponses(value = {
-        @ApiResponse(
-            responseCode = "200",
-            description = "Muvaffaqiyatli javob",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"success\": true, \"data\": {\"pinfl\": \"42601793500108\", \"seria\": \"KA\", \"number\": \"0773072\", \"support\": [], \"message\": \"Stub implementation\"}}"
-                )
-            )
-        )
-    })
+    @Operation(summary = "Yoshlar qo'llab-quvvatlash ma'lumotlari")
     @PreAuthorize("permitAll()")
-    public ResponseEntity<Map<String, Object>> young(
-            @Parameter(description = "Fuqaro PINFL raqami", required = true, example = "42601793500108")
-            @RequestParam String pinfl,
-            @Parameter(description = "Hujjat seriyasi (masalan: KA)", required = false, example = "KA")
-            @RequestParam(required = false) String seria,
-            @Parameter(description = "Hujjat raqami (masalan: 0773072)", required = false, example = "0773072")
-            @RequestParam(required = false) String number) {
+    public ResponseEntity<?> young(
+            @Parameter(description = "PINFL", required = true) @RequestParam String pinfl,
+            @Parameter(description = "Seriya", required = false) @RequestParam(required = false) String seria,
+            @Parameter(description = "Raqam", required = false) @RequestParam(required = false) String number) {
         log.info("[CUBA Service] social/young: pinfl={}, seria={}, number={}", pinfl, seria, number);
 
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("pinfl", pinfl);
-        data.put("seria", seria);
-        data.put("number", number);
-        data.put("support", java.util.List.of());
-        data.put("message", "Stub implementation - parameters returned");
-
-        return ResponseEntity.ok(wrapResponse(data));
+        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("data", new LinkedHashMap<>());
+        return ResponseEntity.ok(response);
     }
 }

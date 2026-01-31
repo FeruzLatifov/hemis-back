@@ -138,7 +138,7 @@ public class AdministrativeEmployee1EntityController {
         AdministrativeEmployee1 saved = repository.save(entity);
 
         // OLD-HEMIS: 201 Created qaytaradi
-        return ResponseEntity.status(HttpStatus.CREATED).body(toMap(saved, returnNulls));
+        return ResponseEntity.ok(toMap(saved, returnNulls));
     }
 
     // =====================================================

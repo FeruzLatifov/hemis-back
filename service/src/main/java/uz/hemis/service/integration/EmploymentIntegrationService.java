@@ -26,7 +26,15 @@ public class EmploymentIntegrationService {
     /**
      * Mehnat daftarchasi ma'lumotlarini olish
      *
-     * OLD-HEMIS response formati:
+     * OLD-HEMIS response formati (ma'lumot topilmagan holat):
+     * {
+     *     "_entityName": "hemishe_Workbook",
+     *     "id": "",
+     *     "result": "4",
+     *     "comments": "Данные не найдены"
+     * }
+     *
+     * OLD-HEMIS response formati (ma'lumot topilgan holat):
      * {
      *     "_entityName": "hemishe_Workbook",
      *     "id": "",
@@ -42,19 +50,14 @@ public class EmploymentIntegrationService {
     public Map<String, Object> getWorkbook(String pinfl) {
         log.info("Getting workbook for pinfl: {}", pinfl);
 
-        // OLD-HEMIS formatiga mos response
         // TODO: Haqiqiy Mehnat vazirligi API dan ma'lumot olish
-        Map<String, Object> data = new LinkedHashMap<>();
-        data.put("_entityName", "hemishe_Data");
-        data.put("id", "");
-        data.put("jobs", List.of()); // Haqiqiy integratsiyada to'ldiriladi
-
+        // Hozircha ma'lumot topilmagan holat qaytariladi (old-hemis bilan mos)
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("_entityName", "hemishe_Workbook");
         response.put("id", "");
-        response.put("result", "1");
-        response.put("comments", "Ok");
-        response.put("data", data);
+        response.put("result", "4");
+        response.put("comments", "Данные не найдены");
+        // result="4" holatda "data" field YO'Q (old-hemis bilan mos)
 
         return response;
     }

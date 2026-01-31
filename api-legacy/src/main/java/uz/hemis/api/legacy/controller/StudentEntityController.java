@@ -18,7 +18,12 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.LegacyEntityAdapter;
 import uz.hemis.common.dto.StudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
+import uz.hemis.domain.entity.Student;
+import uz.hemis.domain.repository.StudentRepository;
 import uz.hemis.service.StudentService;
+import uz.hemis.service.mapper.StudentLegacyMapper;
+
+import uz.hemis.api.legacy.adapter.JsonNull;
 
 import java.util.*;
 
@@ -64,8 +69,11 @@ public class StudentEntityController {
 
     private final StudentService studentService;
     private final LegacyEntityAdapter adapter;
-    
+    private final StudentLegacyMapper studentLegacyMapper;
+    private final StudentRepository studentRepository;
+
     private static final String ENTITY_NAME = "hemishe_EStudent";
+    private static final String VIEW_LOCAL = "_local";
 
     /**
      * Build _instanceName for CUBA compatibility
@@ -127,12 +135,35 @@ public class StudentEntityController {
         log.debug("GET student by id: {} (via service layer), view: {}", entityId, view);
 
         try {
+            // When view is specified and NOT _local, use legacy mapper with expanded reference objects
+            if (view != null && !VIEW_LOCAL.equals(view)) {
+                return getByIdWithExpandedRefs(entityId, returnNulls);
+            }
+
             // Service layer - with cache, validation, etc.
             StudentDto dto = studentService.findById(entityId);
 
             // Convert to CUBA format for backward compatibility
             // Pass view parameter to filter fields (_local excludes underscore-prefixed fields)
             Map<String, Object> cubaMap = adapter.toMap(dto, ENTITY_NAME, returnNulls, view);
+
+            // OLD-HEMIS compatibility: add fields that exist in CUBA entity but not in DTO
+            if (Boolean.TRUE.equals(returnNulls)) {
+                Object jsonNull = JsonNull.INSTANCE;
+                // Decree info fields (OLD-HEMIS: decreeInfoName/Number/Date)
+                cubaMap.putIfAbsent("decreeInfoName", jsonNull);
+                cubaMap.putIfAbsent("decreeInfoNumber", jsonNull);
+                cubaMap.putIfAbsent("decreeInfoDate", jsonNull);
+                // Additional fields from OLD-HEMIS
+                cubaMap.putIfAbsent("status", jsonNull);
+                cubaMap.putIfAbsent("speciality", jsonNull);
+                cubaMap.putIfAbsent("roommateCount", jsonNull);
+                cubaMap.putIfAbsent("eduStartDate", jsonNull);
+                cubaMap.putIfAbsent("graduationDate", jsonNull);
+                cubaMap.putIfAbsent("studyDuration", jsonNull);
+                cubaMap.putIfAbsent("deletedBy", jsonNull);
+                cubaMap.putIfAbsent("deleteTs", jsonNull);
+            }
 
             return ResponseEntity.ok(cubaMap);
 
@@ -144,6 +175,50 @@ public class StudentEntityController {
             error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
             return ResponseEntity.status(404).body(error);
         }
+    }
+
+    /**
+     * Get student with expanded reference objects (for views like eStudent-view)
+     * Uses StudentLegacyMapper which queries classifier tables to build CUBA-format nested objects
+     */
+    private ResponseEntity<Map<String, Object>> getByIdWithExpandedRefs(UUID entityId, Boolean returnNulls) {
+        Optional<Student> studentOpt = studentRepository.findById(entityId);
+        if (studentOpt.isEmpty()) {
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
+        }
+
+        Student student = studentOpt.get();
+        Map<String, Object> cubaMap = studentLegacyMapper.toLegacyMap(student);
+
+        // Handle returnNulls — add null fields for missing reference objects
+        if (Boolean.TRUE.equals(returnNulls)) {
+            Object jsonNull = JsonNull.INSTANCE;
+            // Reference fields that might be null
+            String[] refFields = {
+                "country", "educationType", "educationYear", "educationForm",
+                "language", "socialCategory", "studentStatus", "citizenship", "gender",
+                "nationality", "paymentForm", "grantType", "studentType", "course",
+                "accomodation", "livingStatus", "roommateType", "statusEducationYear",
+                "currentEducationYear", "expelReason", "stipendRate", "doctoralStudentType",
+                "university", "faculty", "soato", "currentSoato", "terrain", "currentTerrain",
+                "specialityBachelor", "specialityMaster", "specialityDoctoral",
+                "specialityOrdinatura", "academicMobileType", "povertyLevel",
+                "graduationYear", "academicReason",
+                // Additional OLD-HEMIS fields
+                "decreeInfoName", "decreeInfoNumber", "decreeInfoDate",
+                "status", "speciality", "roommateCount",
+                "eduStartDate", "graduationDate", "studyDuration",
+                "deletedBy", "deleteTs"
+            };
+            for (String field : refFields) {
+                cubaMap.putIfAbsent(field, jsonNull);
+            }
+        }
+
+        return ResponseEntity.ok(cubaMap);
     }
 
     /**
@@ -203,7 +278,9 @@ public class StudentEntityController {
                         """)))
             @RequestBody Map<String, Object> body,
             @Parameter(description = "Null qiymatlarni qaytarish")
-            @RequestParam(required = false) Boolean returnNulls) {
+            @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "Response view — _local bo'lsa to'liq entity qaytariladi")
+            @RequestParam(required = false) String responseView) {
 
         log.info("PUT student id: {} - partial update (only passed fields)", entityId);
         log.debug("Fields to update: {}", body.keySet());
@@ -216,8 +293,15 @@ public class StudentEntityController {
             // Only fields passed in JSON body will be updated
             StudentDto updated = studentService.partialUpdate(entityId, dto);
 
-            // OLD-HEMIS COMPATIBLE: Return minimal response (only _entityName, _instanceName, id)
-            // Old-hemis PUT response format: {"_entityName":"hemishe_EStudent","_instanceName":"...","id":"..."}
+            // OLD-HEMIS COMPATIBLE:
+            // responseView=_local → to'liq entity qaytarish (_local viewda)
+            // responseView=null → minimal response (faqat _entityName, _instanceName, id)
+            if (responseView != null) {
+                Map<String, Object> fullResponse = adapter.toMap(updated, ENTITY_NAME, returnNulls, responseView);
+                log.info("Student {} updated successfully (responseView={})", entityId, responseView);
+                return ResponseEntity.ok(fullResponse);
+            }
+
             Map<String, Object> minimalResponse = new LinkedHashMap<>();
             minimalResponse.put("_entityName", ENTITY_NAME);
             minimalResponse.put("_instanceName", buildInstanceName(updated));
@@ -422,6 +506,35 @@ public class StudentEntityController {
         log.info("POST create student - request body: {}", body);
 
         try {
+            // CUBA UPSERT: if body contains 'id' and student exists, update instead of create
+            Object idObj = body.get("id");
+            if (idObj != null) {
+                try {
+                    UUID existingId = UUID.fromString(idObj.toString());
+                    try {
+                        StudentDto existing = studentService.findById(existingId);
+                        // Student exists — do UPDATE (CUBA upsert pattern)
+                        log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                        StudentDto updateDto = adapter.fromMap(body, StudentDto.class);
+                        StudentDto updated = studentService.update(existingId, updateDto);
+
+                        Map<String, Object> minimalResponse = new LinkedHashMap<>();
+                        minimalResponse.put("_entityName", ENTITY_NAME);
+                        minimalResponse.put("_instanceName", buildInstanceName(updated));
+                        minimalResponse.put("id", updated.getId().toString());
+
+                        log.info("Student upserted (updated) with id: {}", updated.getId());
+                        return ResponseEntity.ok(minimalResponse);
+                    } catch (ResourceNotFoundException e) {
+                        // Student not found — proceed with create
+                        log.info("POST with id={} — student not found, creating new", existingId);
+                    }
+                } catch (IllegalArgumentException e) {
+                    // id is not a valid UUID — proceed with create
+                    log.debug("POST id='{}' is not a valid UUID, proceeding with create", idObj);
+                }
+            }
+
             // Convert CUBA Map to DTO
             StudentDto dto = adapter.fromMap(body, StudentDto.class);
             log.info("Converted DTO: code={}, pinfl={}, university={}, educationType={}",

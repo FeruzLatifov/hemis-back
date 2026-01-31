@@ -19,6 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 
@@ -59,6 +61,7 @@ public class TeacherEntityController {
     private final TeacherRepository repository;
     private final UserRepository userRepository;
     private final CubaFilterHelper filterHelper;
+    private final JdbcTemplate jdbcTemplate;
     private static final String ENTITY_NAME = "hemishe_ETeacher";
 
     @GetMapping("/{entityId}")
@@ -93,7 +96,8 @@ public class TeacherEntityController {
             @PathVariable UUID entityId,
             @RequestBody Map<String, Object> body,
             @Parameter(description = "Null qiymatlarni qaytarish") @RequestParam(required = false) Boolean returnNulls,
-            @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
+            @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view,
+            @Parameter(description = "Response view — berilsa to'liq entity qaytariladi") @RequestParam(required = false) String responseView) {
 
         log.debug("PUT teacher id: {}, body keys: {}", entityId, body.keySet());
 
@@ -106,7 +110,22 @@ public class TeacherEntityController {
         updateFromMap(entity, body);
 
         Teacher saved = repository.save(entity);
-        return ResponseEntity.ok(toMap(saved, returnNulls, view));
+
+        // OLD-HEMIS COMPATIBLE:
+        // responseView berilsa → to'liq entity qaytarish (shu viewda)
+        // responseView yo'q → minimal response (faqat _entityName, _instanceName, id)
+        if (responseView != null) {
+            return ResponseEntity.ok(toMap(saved, returnNulls, responseView));
+        }
+
+        // Minimal response - old-hemis PUT format
+        Map<String, Object> minimalResponse = new LinkedHashMap<>();
+        minimalResponse.put("_entityName", ENTITY_NAME);
+        String instanceName = saved.getFullName() != null && !saved.getFullName().isEmpty() ?
+            saved.getFullName() : "Teacher-" + saved.getId();
+        minimalResponse.put("_instanceName", instanceName);
+        minimalResponse.put("id", saved.getId() != null ? saved.getId().toString() : null);
+        return ResponseEntity.ok(minimalResponse);
     }
 
     @GetMapping("/search")
@@ -160,6 +179,32 @@ public class TeacherEntityController {
         return ResponseEntity.ok(result.stream()
             .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
+    }
+
+    @DeleteMapping("/{entityId}")
+    @Transactional
+    @Operation(
+        summary = "O'qituvchini o'chirish (soft delete)",
+        description = "ID bo'yicha o'qituvchini o'chiradi. CUBA compatibility: 200 status qaytaradi."
+    )
+    public ResponseEntity<?> delete(@PathVariable UUID entityId) {
+        log.info("DELETE teacher id: {}", entityId);
+        Optional<Teacher> existing = repository.findById(entityId);
+        if (existing.isEmpty()) {
+            Map<String, Object> error = new java.util.LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity hemishe_ETeacher with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
+        }
+        try {
+            Teacher entity = existing.get();
+            entity.setDeleteTs(java.time.LocalDateTime.now());
+            repository.save(entity);
+            log.info("Teacher soft-deleted: {}", entityId);
+        } catch (Exception e) {
+            log.warn("Teacher delete failed: {}", e.getMessage());
+        }
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping
@@ -313,10 +358,54 @@ public class TeacherEntityController {
             @Parameter(description = "Null qiymatlarni qaytarish") @RequestParam(required = false) Boolean returnNulls,
             @Parameter(description = "View nomi (_local, _minimal, default)") @RequestParam(required = false) String view) {
 
-        log.info("POST /app/rest/v2/entities/hemishe_ETeacher - Create new teacher");
+        log.info("POST /app/rest/v2/entities/hemishe_ETeacher - Create/Upsert teacher");
         log.debug("Request body keys: {}", body.keySet());
 
+        // CUBA UPSERT: if body contains 'id' and teacher exists, update instead of create
+        Object idObj = body.get("id");
+        if (idObj != null) {
+            try {
+                UUID existingId = UUID.fromString(idObj.toString());
+                Optional<Teacher> existingOpt = repository.findById(existingId);
+                if (existingOpt.isPresent()) {
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    Teacher entity = existingOpt.get();
+                    updateFromMap(entity, body);
+                    Teacher saved = repository.save(entity);
+                    return ResponseEntity.status(201).body(minimalResponse(saved));
+                }
+                log.info("POST with id={} — teacher not found by ID, checking code", existingId);
+            } catch (IllegalArgumentException e) {
+                log.debug("POST id='{}' is not a valid UUID, proceeding", idObj);
+            }
+        }
+
+        // CUBA UPSERT: if body contains 'code' and teacher with that code exists, update
+        Object codeObj = body.get("code");
+        if (codeObj != null) {
+            String code = codeObj.toString();
+            Optional<Teacher> existingOpt = repository.findByCode(code);
+            if (existingOpt.isPresent()) {
+                log.info("POST with existing code={} — performing UPSERT (update)", code);
+                Teacher entity = existingOpt.get();
+                updateFromMap(entity, body);
+                Teacher saved = repository.save(entity);
+                return ResponseEntity.status(201).body(minimalResponse(saved));
+            }
+        }
+
+        // Create new teacher
         Teacher entity = new Teacher();
+
+        // Set ID from body if provided
+        if (idObj != null) {
+            try {
+                entity.setId(UUID.fromString(idObj.toString()));
+            } catch (IllegalArgumentException e) {
+                log.debug("Ignoring invalid UUID id: {}", idObj);
+            }
+        }
+
         updateFromMap(entity, body);
 
         // Auto-generate code if not provided
@@ -348,7 +437,7 @@ public class TeacherEntityController {
         Teacher saved = repository.save(entity);
 
         log.info("Teacher created successfully with id: {}, code: {}", saved.getId(), saved.getCode());
-        return ResponseEntity.ok(toMap(saved, returnNulls, view));
+        return ResponseEntity.status(201).body(minimalResponse(saved));
     }
 
     /**
@@ -401,8 +490,10 @@ public class TeacherEntityController {
 
     /**
      * Teacher entity ni CUBA Map formatiga o'tkazish
-     * view=_local uchun: _entityName, _instanceName, id va barcha _local fieldlar
-     * Field tartibi old-hemis bilan 100% mos bo'lishi kerak
+     *
+     * view=_local: faqat oddiy (scalar) fieldlar
+     * view=eTeacher-view: barcha fieldlar + nested classifier objectlar
+     * default (null): oddiy fieldlar + fullname + version
      */
     private Map<String, Object> toMap(Teacher entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
@@ -410,29 +501,29 @@ public class TeacherEntityController {
         // CUBA metadata
         map.put("_entityName", ENTITY_NAME);
 
-        // Instance name: "LASTNAME FIRSTNAME FATHERNAME" formatida
         String instanceName = entity.getFullName() != null && !entity.getFullName().isEmpty() ?
             entity.getFullName() : "Teacher-" + entity.getId();
         map.put("_instanceName", instanceName);
 
-        // Primary key
         map.put("id", entity.getId() != null ? entity.getId().toString() : null);
 
-        // view=_local bo'lsa - faqat oddiy fieldlar (old-hemis tartibi bilan)
+        boolean isViewMode = view != null && view.contains("eTeacher");
+
         if ("_local".equals(view)) {
+            // _local view: faqat scalar fieldlar (old-hemis tartibi)
             putIfNotNull(map, "pinfl", entity.getPinfl(), returnNulls);
             putIfNotNull(map, "birthday", entity.getBirthDate(), returnNulls);
-            putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);  // getFirstName() - manual getter
+            putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);
             putIfNotNull(map, "code", entity.getCode(), returnNulls);
             putIfNotNull(map, "tag", entity.getTag(), returnNulls);
             putIfNotNull(map, "serialNumber", entity.getSerialNumber(), returnNulls);
             putIfNotNull(map, "address", entity.getAddress(), returnNulls);
-            putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);  // getSecondName() - manual getter
-            putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);  // getThirdName() - manual getter
+            putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);
+            putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);
             putIfNotNull(map, "phone", entity.getPhone(), returnNulls);
             putIfNotNull(map, "employeeYear", entity.getEmployeeYear(), returnNulls);
         } else {
-            // Default view - OLD-HEMIS compatible (underscore-prefixed fields excluded)
+            // Default va eTeacher-view: barcha fieldlar
             putIfNotNull(map, "pinfl", entity.getPinfl(), returnNulls);
             putIfNotNull(map, "birthday", entity.getBirthDate(), returnNulls);
             putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);
@@ -444,17 +535,218 @@ public class TeacherEntityController {
             putIfNotNull(map, "address", entity.getAddress(), returnNulls);
             putIfNotNull(map, "phone", entity.getPhone(), returnNulls);
             putIfNotNull(map, "employeeYear", entity.getEmployeeYear(), returnNulls);
-            // OLD-HEMIS compatible: fullname and version included in default view
             putIfNotNull(map, "fullname", entity.getFullName(), returnNulls);
             putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         }
 
+        // eTeacher-view: nested classifier objectlarni qo'shish
+        if (isViewMode) {
+            putClassifier(map, "citizenship", entity.getCitizenship(),
+                    "hemishe_HCitizenship", "hemishe_h_citizenship", returnNulls);
+            putClassifier(map, "gender", entity.getGender(),
+                    "hemishe_HGender", "hemishe_h_gender", returnNulls);
+            putClassifier(map, "academicDegree", entity.getAcademicDegree(),
+                    "hemishe_HAcademicDegree", "hemishe_h_academic_degree", returnNulls);
+            putClassifier(map, "academicRank", entity.getAcademicRank(),
+                    "hemishe_HAcademicRank", "hemishe_h_academic_rank", returnNulls);
+            putClassifier(map, "position", entity.getPosition(),
+                    "hemishe_HTeacherPositionType", "hemishe_h_teacher_position_type", returnNulls);
+            putClassifier(map, "employeeType", entity.getEmployeeType(),
+                    "hemishe_HUniversityEmployeeType", "hemishe_h_university_employee_type", returnNulls);
+            putClassifier(map, "employmentForm", entity.getEmploymentForm(),
+                    "hemishe_HEmploymentForm", "hemishe_h_employment_form", returnNulls);
+            putClassifier(map, "universityEmploymentForm", entity.getUniversityEmploymentForm(),
+                    "hemishe_HUniversityEmployeeForm", "hemishe_h_university_employee_form", returnNulls);
+
+            // university - entity, not classifier
+            putUniversity(map, entity.getUniversity(), returnNulls);
+
+            // department - entity with nested university
+            putDepartment(map, entity.getDepartment(), returnNulls);
+
+            // soato - special structure with parent_code
+            putSoato(map, "soatoRegion", entity.getSoatoRegion(), returnNulls);
+            putSoato(map, "soatoDistrict", entity.getSoatoDistrict(), returnNulls);
+
+            // jobs - OneToMany relation (separate query)
+            putJobs(map, entity.getCode(), entity.getUniversity(), returnNulls);
+        }
+
+        return map;
+    }
+
+    /**
+     * CUBA POST response format: faqat {_entityName, _instanceName, id}
+     */
+    private Map<String, Object> minimalResponse(Teacher entity) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("_entityName", ENTITY_NAME);
+        String instanceName = entity.getFullName() != null && !entity.getFullName().isEmpty() ?
+            entity.getFullName() : "Teacher-" + entity.getId();
+        map.put("_instanceName", instanceName);
+        map.put("id", entity.getId() != null ? entity.getId().toString() : null);
         return map;
     }
 
     // Backward compatibility uchun overload
     private Map<String, Object> toMap(Teacher entity, Boolean returnNulls) {
         return toMap(entity, returnNulls, null);
+    }
+
+    // =============================================
+    // Nested object builders for eTeacher-view
+    // =============================================
+
+    private void putClassifier(Map<String, Object> map, String key, String code,
+                               String entityName, String tableName, Boolean returnNulls) {
+        if (code == null || code.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put(key, null);
+            return;
+        }
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT * FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL",
+                    code);
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", entityName);
+            String name = row.get("name") != null ? row.get("name").toString() : "";
+            nested.put("_instanceName", code + " " + name);
+            nested.put("id", code);
+            nested.put("code", code);
+            if (row.containsKey("name")) nested.put("name", row.get("name"));
+            if (row.containsKey("name_ru")) nested.put("nameRu", row.get("name_ru"));
+            if (row.containsKey("name_en")) nested.put("nameEn", row.get("name_en"));
+            if (row.containsKey("active")) nested.put("active", row.get("active"));
+            map.put(key, nested);
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", entityName);
+            nested.put("id", code);
+            nested.put("code", code);
+            map.put(key, nested);
+        }
+    }
+
+    private void putUniversity(Map<String, Object> map, String code, Boolean returnNulls) {
+        if (code == null || code.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put("university", null);
+            return;
+        }
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT code, name FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL", code);
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_EUniversity");
+            nested.put("_instanceName", row.get("name"));
+            nested.put("id", code);
+            nested.put("code", code);
+            nested.put("name", row.get("name"));
+            map.put("university", nested);
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_EUniversity");
+            nested.put("id", code);
+            nested.put("code", code);
+            map.put("university", nested);
+        }
+    }
+
+    private void putDepartment(Map<String, Object> map, String code, Boolean returnNulls) {
+        if (code == null || code.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put("department", null);
+            return;
+        }
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT code, name_uz, university_code FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL", code);
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_EUniversityDepartment");
+            nested.put("_instanceName", row.get("name_uz"));
+            nested.put("id", code);
+            nested.put("code", code);
+            nested.put("name", row.get("name_uz"));
+
+            // department ichida university nested object
+            String uniCode = row.get("university_code") != null ? row.get("university_code").toString() : null;
+            if (uniCode != null) {
+                try {
+                    Map<String, Object> uniRow = jdbcTemplate.queryForMap(
+                            "SELECT code, name FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL", uniCode);
+                    Map<String, Object> uniNested = new LinkedHashMap<>();
+                    uniNested.put("_entityName", "hemishe_EUniversity");
+                    uniNested.put("_instanceName", uniRow.get("name"));
+                    uniNested.put("id", uniCode);
+                    uniNested.put("code", uniCode);
+                    uniNested.put("name", uniRow.get("name"));
+                    nested.put("university", uniNested);
+                } catch (EmptyResultDataAccessException ex) {
+                    // skip
+                }
+            }
+
+            map.put("department", nested);
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_EUniversityDepartment");
+            nested.put("id", code);
+            nested.put("code", code);
+            map.put("department", nested);
+        }
+    }
+
+    private void putSoato(Map<String, Object> map, String key, String code, Boolean returnNulls) {
+        if (code == null || code.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put(key, null);
+            return;
+        }
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT code, name_uz, name_ru, parent_code, active FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL", code);
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_HSoato");
+            nested.put("_instanceName", code + " - " + row.get("name_uz"));
+            nested.put("id", code);
+            nested.put("code", code);
+            nested.put("active", row.get("active"));
+            nested.put("name_ru", row.get("name_ru"));
+            nested.put("name_uz", row.get("name_uz"));
+            map.put(key, nested);
+        } catch (EmptyResultDataAccessException e) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put(key, null);
+        }
+    }
+
+    private void putJobs(Map<String, Object> map, String teacherCode, String universityCode, Boolean returnNulls) {
+        if (teacherCode == null) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put("jobs", Collections.emptyList());
+            return;
+        }
+        try {
+            // EEmployeeJobs jadvalidan teacher code va university bo'yicha qidirish
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                    "SELECT id, version, code, _university, _department, _position, _employee_type, " +
+                    "_employment_form, _university_employment_form, tag, start_date, end_date, active " +
+                    "FROM hemishe_e_employee_jobs WHERE code = ? AND delete_ts IS NULL",
+                    teacherCode);
+            if (!rows.isEmpty()) {
+                List<Map<String, Object>> jobsList = new ArrayList<>();
+                for (Map<String, Object> row : rows) {
+                    Map<String, Object> job = new LinkedHashMap<>();
+                    job.put("_entityName", "hemishe_EEmployeeJobs");
+                    job.put("id", row.get("id"));
+                    job.put("code", row.get("code"));
+                    job.put("active", row.get("active"));
+                    job.put("version", row.get("version"));
+                    jobsList.add(job);
+                }
+                map.put("jobs", jobsList);
+            } else {
+                if (Boolean.TRUE.equals(returnNulls)) map.put("jobs", Collections.emptyList());
+            }
+        } catch (Exception e) {
+            log.debug("Could not fetch jobs for teacher {}: {}", teacherCode, e.getMessage());
+            if (Boolean.TRUE.equals(returnNulls)) map.put("jobs", Collections.emptyList());
+        }
     }
 
     /**
@@ -473,66 +765,109 @@ public class TeacherEntityController {
     private void updateFromMap(Teacher entity, Map<String, Object> map) {
         // Personal info
         if (map.containsKey("firstname")) {
-            entity.setFirstname((String) map.get("firstname"));
+            entity.setFirstname(toStr(map.get("firstname")));
         }
         if (map.containsKey("lastname")) {
-            entity.setLastname((String) map.get("lastname"));
+            entity.setLastname(toStr(map.get("lastname")));
         }
         if (map.containsKey("fathername")) {
-            entity.setFathername((String) map.get("fathername"));
+            entity.setFathername(toStr(map.get("fathername")));
         }
 
         // Identifiers
         if (map.containsKey("pinfl")) {
-            entity.setPinfl((String) map.get("pinfl"));
+            entity.setPinfl(toStr(map.get("pinfl")));
         }
         if (map.containsKey("serialNumber")) {
-            entity.setSerialNumber((String) map.get("serialNumber"));
+            entity.setSerialNumber(toStr(map.get("serialNumber")));
         }
 
-        // Birthday - YYYY-MM-DD formatda
+        // Birthday - YYYY-MM-DD formatda (PHP may send "1986-05-01 +07" with timezone)
         if (map.containsKey("birthday")) {
             Object birthdayObj = map.get("birthday");
-            if (birthdayObj instanceof String) {
-                entity.setBirthday(java.time.LocalDate.parse((String) birthdayObj));
+            if (birthdayObj instanceof String birthdayStr) {
+                // Strip timezone offset if present (e.g., "1986-05-01 +07" → "1986-05-01")
+                String dateStr = birthdayStr.trim();
+                int spaceIdx = dateStr.indexOf(' ');
+                if (spaceIdx > 0) {
+                    dateStr = dateStr.substring(0, spaceIdx);
+                }
+                try {
+                    entity.setBirthday(java.time.LocalDate.parse(dateStr));
+                } catch (Exception e) {
+                    log.warn("Could not parse birthday '{}': {}", birthdayStr, e.getMessage());
+                }
             }
         }
 
         // Contact
         if (map.containsKey("phone")) {
-            entity.setPhone((String) map.get("phone"));
+            entity.setPhone(toStr(map.get("phone")));
         }
         if (map.containsKey("address")) {
-            entity.setAddress((String) map.get("address"));
+            entity.setAddress(toStr(map.get("address")));
         }
 
         // Additional
         if (map.containsKey("employeeYear")) {
-            entity.setEmployeeYear((String) map.get("employeeYear"));
+            entity.setEmployeeYear(toStr(map.get("employeeYear")));
         }
         if (map.containsKey("code")) {
-            entity.setCode((String) map.get("code"));
+            entity.setCode(toStr(map.get("code")));
         }
         if (map.containsKey("tag")) {
-            entity.setTag((String) map.get("tag"));
+            entity.setTag(toStr(map.get("tag")));
         }
 
-        // References (underscore prefix - CUBA convention)
-        if (map.containsKey("_citizenship")) {
-            entity.setCitizenship((String) map.get("_citizenship"));
+        // References: handle both CUBA underscore-prefixed flat format AND
+        // PHP nested object format (e.g., gender: {code: "11"} or _gender: "11")
+        entity.setCitizenship(extractRefCode(map, "citizenship", "_citizenship", entity.getCitizenship()));
+        entity.setGender(extractRefCode(map, "gender", "_gender", entity.getGender()));
+        entity.setUniversity(extractRefCode(map, "university", "_university", entity.getUniversity()));
+        entity.setAcademicDegree(extractRefCode(map, "academicDegree", "_academic_degree", entity.getAcademicDegree()));
+        entity.setAcademicRank(extractRefCode(map, "academicRank", "_academic_rank", entity.getAcademicRank()));
+        entity.setDepartment(extractRefCode(map, "department", "_department", entity.getDepartment()));
+        entity.setPosition(extractRefCode(map, "position", "_position", entity.getPosition()));
+        entity.setEmployeeType(extractRefCode(map, "employeeType", "_employee_type", entity.getEmployeeType()));
+        entity.setEmploymentForm(extractRefCode(map, "employmentForm", "_employment_form", entity.getEmploymentForm()));
+        entity.setUniversityEmploymentForm(extractRefCode(map, "universityEmploymentForm", "_university_employment_form", entity.getUniversityEmploymentForm()));
+        entity.setSoatoRegion(extractRefCode(map, "soatoRegion", "_soato_region", entity.getSoatoRegion()));
+        entity.setSoatoDistrict(extractRefCode(map, "soatoDistrict", "_soato_district", entity.getSoatoDistrict()));
+    }
+
+    /**
+     * Extract reference code from map — supports both formats:
+     * 1. Nested object: "gender": {"code": "11"} (PHP sync format)
+     * 2. Flat underscore: "_gender": "11" (CUBA format)
+     * 3. Flat non-underscore: "gender": "11" (direct format)
+     */
+    @SuppressWarnings("unchecked")
+    private String extractRefCode(Map<String, Object> map, String fieldName, String underscoreFieldName, String currentValue) {
+        // First check non-underscore field (PHP sync format)
+        if (map.containsKey(fieldName)) {
+            Object val = map.get(fieldName);
+            if (val instanceof Map) {
+                Object code = ((Map<String, Object>) val).get("code");
+                return code != null ? code.toString() : currentValue;
+            }
+            return toStr(val);
         }
-        if (map.containsKey("_gender")) {
-            entity.setGender((String) map.get("_gender"));
+        // Then check underscore-prefixed field (CUBA format)
+        if (map.containsKey(underscoreFieldName)) {
+            Object val = map.get(underscoreFieldName);
+            if (val instanceof Map) {
+                Object code = ((Map<String, Object>) val).get("code");
+                return code != null ? code.toString() : currentValue;
+            }
+            return toStr(val);
         }
-        if (map.containsKey("_university")) {
-            entity.setUniversity((String) map.get("_university"));
-        }
-        if (map.containsKey("_academic_degree")) {
-            entity.setAcademicDegree((String) map.get("_academic_degree"));
-        }
-        if (map.containsKey("_academic_rank")) {
-            entity.setAcademicRank((String) map.get("_academic_rank"));
-        }
+        return currentValue;
+    }
+
+    private String toStr(Object value) {
+        if (value == null) return null;
+        if (value instanceof String) return (String) value;
+        return String.valueOf(value);
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

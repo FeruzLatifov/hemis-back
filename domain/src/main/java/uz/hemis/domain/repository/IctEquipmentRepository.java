@@ -14,45 +14,16 @@ import java.util.UUID;
  * IctEquipment Repository
  *
  * PHASE 5: Infrastructure
- * Standard Spring Data JPA repository with custom query methods
  */
 @Repository
 @Transactional(readOnly = true)
 public interface IctEquipmentRepository extends JpaRepository<IctEquipment, UUID> {
 
-    /**
-     * Find all ICT equipment by university
-     *
-     * @param university University UUID
-     * @return List of ICT equipment
-     */
-    List<IctEquipment> findByUniversity(UUID university);
+    List<IctEquipment> findByUniversity(String university);
 
-    /**
-     * Find ICT equipment by university and education year
-     *
-     * @param university University UUID
-     * @param educationYear Education year UUID
-     * @return List of ICT equipment
-     */
-    List<IctEquipment> findByUniversityAndEducationYear(UUID university, UUID educationYear);
+    List<IctEquipment> findByUniversityAndEducationYear(String university, String educationYear);
 
-    /**
-     * Find ICT equipment by university and education year (paginated)
-     *
-     * @param university University UUID
-     * @param educationYear Education year UUID
-     * @param pageable Pagination parameters
-     * @return Page of ICT equipment
-     */
-    Page<IctEquipment> findByUniversityAndEducationYear(UUID university, UUID educationYear, Pageable pageable);
+    Page<IctEquipment> findByUniversityAndEducationYear(String university, String educationYear, Pageable pageable);
 
-    /**
-     * Count ICT equipment by university and education year
-     *
-     * @param university University UUID
-     * @param educationYear Education year UUID
-     * @return Count
-     */
-    long countByUniversityAndEducationYear(UUID university, UUID educationYear);
+    long countByUniversityAndEducationYear(String university, String educationYear);
 }

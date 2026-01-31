@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.TeacherIdRequest;
 import uz.hemis.domain.repository.UserRepository;
+import uz.hemis.service.TeacherCubaService;
 import uz.hemis.service.TeacherService;
 
 import java.util.LinkedHashMap;
@@ -52,6 +53,7 @@ import java.util.UUID;
 public class CubaTeacherServiceController {
 
     private final TeacherService teacherService;
+    private final TeacherCubaService teacherCubaService;
     private final UserRepository userRepository;
 
     /**
@@ -150,7 +152,6 @@ public class CubaTeacherServiceController {
             @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
-    @Transactional
     public ResponseEntity<Map<String, Object>> getTeacherId(
             @RequestBody Map<String, Object> requestBody
     ) {
@@ -163,15 +164,6 @@ public class CubaTeacherServiceController {
             data = requestBody; // Fallback: direct request without wrapper
         }
 
-        // Parse request
-        TeacherIdRequest request = new TeacherIdRequest();
-        request.setCitizenship((String) data.get("citizenship"));
-        request.setPinfl((String) data.get("pinfl"));
-        request.setSerial((String) data.get("serial"));
-        request.setYear((String) data.get("year"));
-        request.setGender((String) data.get("gender"));
-        request.setMainUniversity((String) data.get("main_university"));
-
         // Get university code from authenticated user
         String universityCode = getUniversityCodeFromContext();
         if (universityCode == null) {
@@ -183,9 +175,9 @@ public class CubaTeacherServiceController {
         }
 
         log.info("Processing teacher ID request - University: {}, PINFL: {}, Serial: {}",
-                universityCode, request.getPinfl(), request.getSerial());
+                universityCode, data.get("pinfl"), data.get("serial"));
 
-        Map<String, Object> result = teacherService.generateTeacherId(request, universityCode);
+        Map<String, Object> result = teacherService.generateTeacherId(data, universityCode);
         return ResponseEntity.ok(result);
     }
 
@@ -365,7 +357,67 @@ public class CubaTeacherServiceController {
             return ResponseEntity.ok(error);
         }
 
-        Map<String, Object> result = teacherService.addJob(requestBody);
+        Map<String, Object> result = teacherCubaService.addJob(requestBody);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * O'qituvchi ma'lumotlarini PINFL bo'yicha olish
+     *
+     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/teacher/get?pinfl={pinfl}}</p>
+     */
+    @GetMapping("/get")
+    @Operation(
+            summary = "O'qituvchi olish (PINFL)",
+            description = """
+                O'qituvchi ma'lumotlarini PINFL yoki passport seria bo'yicha olish.
+
+                **Endpoint:** GET /app/rest/v2/services/teacher/get?pinfl={pinfl}
+                **Auth:** Bearer token (required)
+
+                Agar PINFL bo'yicha topilmasa, passport serial number bo'yicha qidiradi.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yoki not_found"),
+            @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
+    })
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> get(
+            @Parameter(description = "PINFL yoki passport serial", required = true)
+            @RequestParam String pinfl
+    ) {
+        log.info("GET /app/rest/v2/services/teacher/get - pinfl={}", pinfl);
+        Map<String, Object> result = teacherService.getTeacherByPinfl(pinfl);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * O'qituvchi ma'lumotlarini code bo'yicha olish
+     *
+     * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/teacher/getById?id={id}}</p>
+     */
+    @GetMapping("/getById")
+    @Operation(
+            summary = "O'qituvchi olish (code)",
+            description = """
+                O'qituvchi ma'lumotlarini unique code bo'yicha olish.
+
+                **Endpoint:** GET /app/rest/v2/services/teacher/getById?id={id}
+                **Auth:** Bearer token (required)
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yoki not_found"),
+            @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
+    })
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getById(
+            @Parameter(description = "O'qituvchi kodi", required = true)
+            @RequestParam String id
+    ) {
+        log.info("GET /app/rest/v2/services/teacher/getById - id={}", id);
+        Map<String, Object> result = teacherService.getTeacherByCode(id);
         return ResponseEntity.ok(result);
     }
 
