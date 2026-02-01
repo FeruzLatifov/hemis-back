@@ -42,7 +42,7 @@ public class MenuItem {
     private String url;
 
     /**
-     * I18n translation key (e.g., "menu.dashboard", "menu.registry.e_reestr")
+     * I18n translation key (e.g., "Dashboard", "E-Registry")
      * <p>Used to fetch translations from i18n service</p>
      * <p><strong>IMPORTANT:</strong> This is the source of truth for translations</p>
      */

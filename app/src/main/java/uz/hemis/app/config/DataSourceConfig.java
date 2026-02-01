@@ -1,12 +1,15 @@
 package uz.hemis.app.config;
 
 import com.zaxxer.hikari.HikariDataSource;
+import liquibase.integration.spring.SpringLiquibase;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
@@ -120,9 +123,31 @@ public class DataSourceConfig {
      * (needed for proper transaction synchronization)
      */
     @Primary
+    @DependsOn("liquibase")
     @Bean(name = "dataSource")
     public DataSource dataSource(@Qualifier("routingDataSource") DataSource routingDataSource) {
         return new LazyConnectionDataSourceProxy(routingDataSource);
+    }
+
+    /**
+     * Liquibase bean — uses MASTER DataSource directly (not routing).
+     * Migrations must always run on master database.
+     */
+    @Bean
+    public SpringLiquibase liquibase(
+            @Qualifier("masterDataSource") DataSource masterDataSource,
+            @Value("${spring.liquibase.change-log:classpath:/db/changelog/db.changelog-master.yaml}") String changeLog,
+            @Value("${spring.liquibase.default-schema:public}") String defaultSchema,
+            @Value("${spring.liquibase.enabled:true}") boolean enabled) {
+
+        SpringLiquibase liquibase = new SpringLiquibase();
+        liquibase.setDataSource(masterDataSource);
+        liquibase.setChangeLog(changeLog);
+        liquibase.setDefaultSchema(defaultSchema);
+        liquibase.setShouldRun(enabled);
+
+        log.info("✅ Liquibase configured with MASTER DataSource (changeLog={})", changeLog);
+        return liquibase;
     }
 
     /**
