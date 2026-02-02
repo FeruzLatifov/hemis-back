@@ -10,8 +10,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.Scholarship;
-import uz.hemis.domain.repository.ScholarshipRepository;
+import uz.hemis.domain.entity.ScholarshipAmount;
+import uz.hemis.domain.repository.ScholarshipAmountRepository;
 
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 
@@ -20,28 +20,28 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Scholarship Entity Controller (CUBA Pattern)
- * Entity: hemishe_EStudentScholarshipFull
+ * ScholarshipAmount Entity Controller (CUBA Pattern)
+ * Entity: hemishe_EStudentScholarshipAmount
  */
-@Tag(name = "62.Stipendiya", description = "Stipendiya entity API")
+@Tag(name = "62.Stipendiya", description = "Stipendiya summa entity API")
 @RestController
-@RequestMapping("/app/rest/v2/entities/hemishe_EStudentScholarshipFull")
+@RequestMapping("/app/rest/v2/entities/hemishe_EStudentScholarshipAmount")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
-public class ScholarshipEntityController {
+public class ScholarshipAmountEntityController {
 
-    private final ScholarshipRepository repository;
+    private final ScholarshipAmountRepository repository;
     private final CubaFilterHelper filterHelper;
-    private static final String ENTITY_NAME = "hemishe_EStudentScholarshipFull";
+    private static final String ENTITY_NAME = "hemishe_EStudentScholarshipAmount";
 
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
-        log.debug("GET scholarship by id: {}", entityId);
-        Optional<Scholarship> entity = repository.findById(entityId);
+        log.debug("GET scholarshipAmount by id: {}", entityId);
+        Optional<ScholarshipAmount> entity = repository.findById(entityId);
         if (entity.isEmpty()) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(toMap(entity.get(), returnNulls));
     }
@@ -50,19 +50,19 @@ public class ScholarshipEntityController {
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
-        log.debug("PUT scholarship id: {}", entityId);
-        Optional<Scholarship> existingOpt = repository.findById(entityId);
+        log.debug("PUT scholarshipAmount id: {}", entityId);
+        Optional<ScholarshipAmount> existingOpt = repository.findById(entityId);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
-        Scholarship entity = existingOpt.get();
+        ScholarshipAmount entity = existingOpt.get();
         updateFromMap(entity, body);
-        Scholarship saved = repository.save(entity);
+        ScholarshipAmount saved = repository.save(entity);
         return ResponseEntity.ok(toMap(saved, returnNulls));
     }
 
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
-        log.debug("DELETE scholarship id: {}", entityId);
-        Optional<Scholarship> entity = repository.findById(entityId);
+        log.debug("DELETE scholarshipAmount id: {}", entityId);
+        Optional<ScholarshipAmount> entity = repository.findById(entityId);
         if (entity.isEmpty()) return ResponseEntity.notFound().build();
         repository.delete(entity.get());
         return ResponseEntity.noContent().build();
@@ -78,8 +78,8 @@ public class ScholarshipEntityController {
 
         log.debug("GET search with filter: {}, offset: {}, limit: {}", filter, offset, limit);
 
-        List<Scholarship> allEntities = repository.findAll();
-        List<Scholarship> result = filterHelper.applyFilterAndPagination(
+        List<ScholarshipAmount> allEntities = repository.findAll();
+        List<ScholarshipAmount> result = filterHelper.applyFilterAndPagination(
             allEntities, filter, offset, limit,
             req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
         );
@@ -103,8 +103,8 @@ public class ScholarshipEntityController {
 
         log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
 
-        List<Scholarship> allEntities = repository.findAll();
-        List<Scholarship> result = filterHelper.applyFilterAndPagination(
+        List<ScholarshipAmount> allEntities = repository.findAll();
+        List<ScholarshipAmount> result = filterHelper.applyFilterAndPagination(
             allEntities, filterJson, effectiveOffset, effectiveLimit,
             req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
         );
@@ -123,7 +123,7 @@ public class ScholarshipEntityController {
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
-        log.debug("GET all scholarships - offset: {}, limit: {}", offset, limit);
+        log.debug("GET all scholarshipAmounts - offset: {}, limit: {}", offset, limit);
         Sort sorting = Sort.unsorted();
         if (sort != null && !sort.isEmpty()) {
             String[] parts = sort.split("-");
@@ -132,41 +132,29 @@ public class ScholarshipEntityController {
         }
         int page = offset / Math.max(limit, 1);
         PageRequest pageRequest = PageRequest.of(page, limit, sorting);
-        Page<Scholarship> entityPage = repository.findAll(pageRequest);
+        Page<ScholarshipAmount> entityPage = repository.findAll(pageRequest);
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> toMap(e, returnNulls)).collect(Collectors.toList()));
     }
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
-        log.debug("POST create new scholarship");
-        Scholarship entity = new Scholarship();
+        log.debug("POST create new scholarshipAmount");
+        ScholarshipAmount entity = new ScholarshipAmount();
         updateFromMap(entity, body);
-        Scholarship saved = repository.save(entity);
+        ScholarshipAmount saved = repository.save(entity);
         return ResponseEntity.ok(toMap(saved, returnNulls));
     }
 
-    private Map<String, Object> toMap(Scholarship entity, Boolean returnNulls) {
+    private Map<String, Object> toMap(ScholarshipAmount entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ENTITY_NAME);
-        map.put("_instanceName", ENTITY_NAME + "-" + entity.getId());
+        map.put("_instanceName", "ScholarshipAmount-" + entity.getId());
         map.put("id", entity.getId());
-        putIfNotNull(map, "_student", entity.getStudent(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "_educationType", entity.getEducationType(), returnNulls);
-        putIfNotNull(map, "_educationForm", entity.getEducationForm(), returnNulls);
-        putIfNotNull(map, "_paymentForm", entity.getPaymentForm(), returnNulls);
-        putIfNotNull(map, "_semester", entity.getSemester(), returnNulls);
-        putIfNotNull(map, "_educationYear", entity.getEducationYear(), returnNulls);
-        putIfNotNull(map, "_stipendCategory", entity.getStipendCategory(), returnNulls);
-        putIfNotNull(map, "_stipendType", entity.getStipendType(), returnNulls);
-        putIfNotNull(map, "decree", entity.getDecree(), returnNulls);
-        putIfNotNull(map, "group", entity.getGroup(), returnNulls);
-        putIfNotNull(map, "curriculum", entity.getCurriculum(), returnNulls);
-        putIfNotNull(map, "startDate", entity.getStartDate(), returnNulls);
-        putIfNotNull(map, "endDate", entity.getEndDate(), returnNulls);
+        putIfNotNull(map, "_studentScholarship", entity.getStudentScholarship(), returnNulls);
+        putIfNotNull(map, "month", entity.getMonth(), returnNulls);
+        putIfNotNull(map, "summa", entity.getSumma(), returnNulls);
         putIfNotNull(map, "localId", entity.getLocalId(), returnNulls);
-        putIfNotNull(map, "semesterNumber", entity.getSemesterNumber(), returnNulls);
         putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
         putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
         putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
@@ -176,70 +164,22 @@ public class ScholarshipEntityController {
         return map;
     }
 
-    private void updateFromMap(Scholarship entity, Map<String, Object> map) {
-        if (map.containsKey("_student")) {
-            Object val = map.get("_student");
-            if (val != null) entity.setStudent(UUID.fromString(val.toString()));
+    private void updateFromMap(ScholarshipAmount entity, Map<String, Object> map) {
+        if (map.containsKey("_studentScholarship")) {
+            Object val = map.get("_studentScholarship");
+            if (val != null) entity.setStudentScholarship(UUID.fromString(val.toString()));
         }
-        if (map.containsKey("_university")) {
-            Object val = map.get("_university");
-            entity.setUniversity(val != null ? val.toString() : null);
+        if (map.containsKey("month")) {
+            Object val = map.get("month");
+            if (val != null) entity.setMonth(LocalDate.parse(val.toString()));
         }
-        if (map.containsKey("_educationType")) {
-            Object val = map.get("_educationType");
-            entity.setEducationType(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("_educationForm")) {
-            Object val = map.get("_educationForm");
-            entity.setEducationForm(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("_paymentForm")) {
-            Object val = map.get("_paymentForm");
-            entity.setPaymentForm(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("_semester")) {
-            Object val = map.get("_semester");
-            entity.setSemester(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("_educationYear")) {
-            Object val = map.get("_educationYear");
-            entity.setEducationYear(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("_stipendCategory")) {
-            Object val = map.get("_stipendCategory");
-            entity.setStipendCategory(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("_stipendType")) {
-            Object val = map.get("_stipendType");
-            entity.setStipendType(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("decree")) {
-            Object val = map.get("decree");
-            entity.setDecree(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("group")) {
-            Object val = map.get("group");
-            entity.setGroup(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("curriculum")) {
-            Object val = map.get("curriculum");
-            entity.setCurriculum(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("startDate")) {
-            Object val = map.get("startDate");
-            if (val != null) entity.setStartDate(LocalDate.parse(val.toString()));
-        }
-        if (map.containsKey("endDate")) {
-            Object val = map.get("endDate");
-            if (val != null) entity.setEndDate(LocalDate.parse(val.toString()));
+        if (map.containsKey("summa")) {
+            Object val = map.get("summa");
+            if (val != null) entity.setSumma(Double.parseDouble(val.toString()));
         }
         if (map.containsKey("localId")) {
             Object val = map.get("localId");
             entity.setLocalId(val != null ? val.toString() : null);
-        }
-        if (map.containsKey("semesterNumber")) {
-            Object val = map.get("semesterNumber");
-            entity.setSemesterNumber(val != null ? val.toString() : null);
         }
     }
 

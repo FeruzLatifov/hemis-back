@@ -115,6 +115,10 @@ public class StudentLegacyDto {
     private SimpleReferenceDto currentEducationYear;
     private SimpleReferenceDto stipendRate;
     private SimpleReferenceDto doctoralStudentType;
+    private SimpleReferenceDto admissionType;
+    private SimpleReferenceDto transferCountry;
+    private String transferUniversity;
+    private SimpleReferenceDto transferType;
     private SimpleReferenceDto academicMobileType;
     private SimpleReferenceDto povertyLevel;
     private SimpleReferenceDto academicReason;
@@ -184,6 +188,7 @@ public class StudentLegacyDto {
         private String address;
         private Boolean active;
         private Boolean addStudent;
+        private Boolean addTransferStudent;
         private Boolean allowGrouping;
         private Boolean allowTransferOutside;
         private Boolean accreditationEdit;

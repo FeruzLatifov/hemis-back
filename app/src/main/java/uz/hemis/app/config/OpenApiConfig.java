@@ -274,7 +274,7 @@ public class OpenApiConfig {
     private List<Tag> apiTags() {
         return Arrays.asList(
             // === 01-15: ASOSIY TIZIM ===
-            new Tag().name("01.Token").description("OAuth2 autentifikatsiya - token olish, yangilash"),
+            new Tag().name("01.Token, Foydalanuvchilar").description("OAuth2 autentifikatsiya - token olish, yangilash, foydalanuvchi boshqaruvi"),
             new Tag().name("02.Captcha").description("Captcha generatsiya va validatsiya"),
             new Tag().name("03.Passport ma'lumotlari").description("GUVD passport ma'lumotlarini olish va tekshirish"),
             new Tag().name("04.Talaba").description("Talabalar CRUD operatsiyalari"),

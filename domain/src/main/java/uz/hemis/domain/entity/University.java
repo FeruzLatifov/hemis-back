@@ -317,6 +317,13 @@ public class University implements Serializable {
     @Column(name = "_terrain", length = 32)
     private String terrain;
 
+    /**
+     * Add transfer student flag
+     * Column: add_transfer_student BOOLEAN
+     */
+    @Column(name = "add_transfer_student")
+    private Boolean addTransferStudent;
+
     // NOTE: _version_type column exists in DB but NOT mapped to entity
     // Reason: CUBA legacy field, not used in new system
     // Hibernate would include it in SELECT even with insertable=false, updatable=false

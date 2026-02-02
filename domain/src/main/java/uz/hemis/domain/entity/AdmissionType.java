@@ -12,15 +12,15 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * TransferType classifier - hemishe_h_transfer_type
+ * AdmissionType classifier - hemishe_h_admission_type
  * PK: code (String), not UUID
  */
 @Entity
-@Table(name = "hemishe_h_transfer_type")
+@Table(name = "hemishe_h_admission_type")
 @SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class TransferType implements Serializable {
+public class AdmissionType implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -31,17 +31,17 @@ public class TransferType implements Serializable {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "name_ru", length = 255)
-    private String nameRu;
-
     @Column(name = "name_en", length = 255)
     private String nameEn;
 
-    @Column(name = "version", nullable = false)
-    private Integer version;
+    @Column(name = "name_ru", length = 255)
+    private String nameRu;
 
     @Column(name = "active")
     private Boolean active;
+
+    @Column(name = "version", nullable = false)
+    private Integer version;
 
     @Column(name = "create_ts")
     private LocalDateTime createTs;

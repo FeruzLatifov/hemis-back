@@ -521,6 +521,7 @@ public class UniversityEntityController {
         putIfNotNull(map, "name", entity.getName(), returnNulls);
         putIfNotNull(map, "gpaEdit", entity.getGpaEdit(), returnNulls);
         putIfNotNull(map, "addForeignStudent", entity.getAddForeignStudent(), returnNulls);
+        putIfNotNull(map, "addTransferStudent", entity.getAddTransferStudent(), returnNulls);
 
         // Text fields
         putIfNotNull(map, "mailAddress", entity.getMailAddress(), returnNulls);
@@ -632,6 +633,9 @@ public class UniversityEntityController {
         }
         if (map.containsKey("addForeignStudent")) {
             entity.setAddForeignStudent(toBoolean(map.get("addForeignStudent")));
+        }
+        if (map.containsKey("addTransferStudent")) {
+            entity.setAddTransferStudent(toBoolean(map.get("addTransferStudent")));
         }
 
         // Additional text fields

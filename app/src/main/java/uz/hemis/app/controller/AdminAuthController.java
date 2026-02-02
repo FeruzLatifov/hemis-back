@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  *
  * Admin panel login endpoint - old-hemis `/app/#login` ekvivalenti
  */
-@Tag(name = "01.Token", description = "Admin autentifikatsiya")
+@Tag(name = "01.Token, Foydalanuvchilar", description = "Admin autentifikatsiya")
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor

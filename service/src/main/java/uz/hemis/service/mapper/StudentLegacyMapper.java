@@ -114,6 +114,10 @@ public class StudentLegacyMapper {
         dto.setStipendRate(loadSimpleReference("hemishe_h_stipend_rate", "hemishe_HStipendRate", student.getStipendRate()));
         dto.setExpelReason(loadSimpleReference("hemishe_h_expel_reason", "hemishe_HExpel", student.getExpelReason()));
         dto.setDoctoralStudentType(loadSimpleReference("hemishe_h_doctoral_student_type", "hemishe_HDoctoralStudentType", student.getDoctoralStudentType()));
+        dto.setAdmissionType(loadSimpleReference("hemishe_h_admission_type", "hemishe_HAdmissionType", student.getAdmissionType()));
+        dto.setTransferCountry(loadSimpleReference("hemishe_h_country", "hemishe_HCountry", student.getTransferCountry()));
+        dto.setTransferType(loadSimpleReference("hemishe_h_transfer_type", "hemishe_HTransferType", student.getTransferType()));
+        dto.setTransferUniversity(student.getTransferUniversity());
         dto.setStudentType(loadSimpleReference("hemishe_h_student_type", "hemishe_HStudentType", "11")); // default = "Oddiy"
         dto.setStatusEducationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getEducationYear()));
         dto.setCurrentEducationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getCurrentEducationYearCode()));
@@ -194,7 +198,7 @@ public class StudentLegacyMapper {
         try {
             String sql = """
                 SELECT code, name, student_url, teacher_url, tin, address, active,
-                       add_student, allow_grouping, allow_transfer_outside,
+                       add_student, add_transfer_student, allow_grouping, allow_transfer_outside,
                        accreditation_edit, gpa_edit, version, one_id,
                        _university_type, _ownership, _university_version, _university_contract_category
                 FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL
@@ -213,6 +217,7 @@ public class StudentLegacyMapper {
             uni.setAddress((String) row.get("address"));
             uni.setActive(getBoolean(row, "active"));
             uni.setAddStudent(getBoolean(row, "add_student"));
+            uni.setAddTransferStudent(getBoolean(row, "add_transfer_student"));
             uni.setAllowGrouping(getBoolean(row, "allow_grouping"));
             uni.setAllowTransferOutside(getBoolean(row, "allow_transfer_outside"));
             uni.setAccreditationEdit(getBoolean(row, "accreditation_edit"));

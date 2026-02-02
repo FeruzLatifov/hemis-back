@@ -67,7 +67,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(
-    name = "01.Token",
+    name = "01.Token, Foydalanuvchilar",
     description = "OAuth2 autentifikatsiya - token olish, yangilash. " +
                   "Old-hemis loyihasidagi foydalanuvchilar uchun uzluksiz xizmat."
 )

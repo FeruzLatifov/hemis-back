@@ -8,7 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,14 +16,11 @@ import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.ScholarshipDto;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * Scholarship REST Controller - API Layer
- *
- * @since 1.0.0
  */
 @Tag(name = "62.Stipendiya", description = "Stipendiya boshqaruvi")
 @RestController
@@ -49,34 +45,11 @@ public class ScholarshipController {
         return ResponseEntity.ok(ResponseWrapper.success(scholarship));
     }
 
-    @GetMapping("/code/{code}")
-    public ResponseEntity<ResponseWrapper<ScholarshipDto>> getScholarshipByCode(@PathVariable String code) {
-        ScholarshipDto scholarship = scholarshipService.findByCode(code);
-        return ResponseEntity.ok(ResponseWrapper.success(scholarship));
-    }
-
-    @GetMapping(params = "university")
-    public ResponseEntity<ResponseWrapper<PageResponse<ScholarshipDto>>> getScholarshipsByUniversity(
-            @RequestParam("university") String universityCode,
-            @PageableDefault(size = 20, sort = "startDate", direction = Sort.Direction.DESC) Pageable pageable
-    ) {
-        Page<ScholarshipDto> scholarships = scholarshipService.findByUniversity(universityCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(scholarships)));
-    }
-
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<ScholarshipDto>>> getScholarshipsByStudent(
             @RequestParam("student") UUID studentId
     ) {
         List<ScholarshipDto> scholarships = scholarshipService.findByStudent(studentId);
-        return ResponseEntity.ok(ResponseWrapper.success(scholarships));
-    }
-
-    @GetMapping(value = "/active", params = "student")
-    public ResponseEntity<ResponseWrapper<List<ScholarshipDto>>> getActiveScholarshipsByStudent(
-            @RequestParam("student") UUID studentId
-    ) {
-        List<ScholarshipDto> scholarships = scholarshipService.findActiveByStudent(studentId);
         return ResponseEntity.ok(ResponseWrapper.success(scholarships));
     }
 

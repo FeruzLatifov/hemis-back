@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 
 import java.util.*;
@@ -67,7 +68,7 @@ public class LegacyExceptionHandler {
 
     /**
      * Handle Bean Validation errors (@Valid)
-     * OLD-HEMIS format: array of {id, message}
+     * OLD-HEMIS format: array of {message, messageTemplate, path, invalidValue}
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<Map<String, String>>> handleValidation(
@@ -79,16 +80,23 @@ public class LegacyExceptionHandler {
         List<Map<String, String>> errors = new ArrayList<>();
         ex.getBindingResult().getFieldErrors().forEach(fe -> {
             Map<String, String> error = new LinkedHashMap<>();
-            error.put("id", fe.getField());
             error.put("message", fe.getDefaultMessage());
+            error.put("messageTemplate", fe.getCodes() != null && fe.getCodes().length > 0
+                    ? "{" + fe.getCodes()[0] + "}" : null);
+            error.put("path", fe.getField());
+            error.put("invalidValue", fe.getRejectedValue() != null
+                    ? fe.getRejectedValue().toString() : null);
             errors.add(error);
         });
 
         if (errors.isEmpty()) {
             ex.getBindingResult().getGlobalErrors().forEach(ge -> {
                 Map<String, String> error = new LinkedHashMap<>();
-                error.put("id", ge.getObjectName());
                 error.put("message", ge.getDefaultMessage());
+                error.put("messageTemplate", ge.getCodes() != null && ge.getCodes().length > 0
+                        ? "{" + ge.getCodes()[0] + "}" : null);
+                error.put("path", ge.getObjectName());
+                error.put("invalidValue", null);
                 errors.add(error);
             });
         }
@@ -98,7 +106,7 @@ public class LegacyExceptionHandler {
 
     /**
      * Handle Jakarta Constraint Violations
-     * OLD-HEMIS format: array of {id, message}
+     * OLD-HEMIS format: array of {message, messageTemplate, path, invalidValue}
      */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<List<Map<String, String>>> handleConstraintViolation(
@@ -111,8 +119,12 @@ public class LegacyExceptionHandler {
         for (ConstraintViolation<?> violation : ex.getConstraintViolations()) {
             Map<String, String> error = new LinkedHashMap<>();
             String path = violation.getPropertyPath().toString();
-            error.put("id", path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path);
+            String fieldName = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
             error.put("message", violation.getMessage());
+            error.put("messageTemplate", violation.getMessageTemplate());
+            error.put("path", fieldName);
+            error.put("invalidValue", violation.getInvalidValue() != null
+                    ? violation.getInvalidValue().toString() : null);
             errors.add(error);
         }
 
@@ -182,6 +194,45 @@ public class LegacyExceptionHandler {
         Map<String, Object> error = new LinkedHashMap<>();
         error.put("error", "Not found");
         error.put("details", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    /**
+     * Handle 404 for legacy endpoints that have no matching controller.
+     * Returns CUBA-compatible error format.
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoResourceFound(
+            NoResourceFoundException ex,
+            HttpServletRequest request
+    ) {
+        String path = request.getRequestURI();
+        log.debug("No resource found at legacy endpoint: {}", path);
+
+        Map<String, Object> error = new LinkedHashMap<>();
+
+        // /app/rest/v2/services/* — service not found format
+        if (path.contains("/services/")) {
+            String servicePart = path.substring(path.indexOf("/services/") + "/services/".length());
+            String[] parts = servicePart.split("/", 2);
+            String service = parts.length > 0 ? parts[0] : "unknown";
+            String method = parts.length > 1 ? parts[1].split("/")[0] : "unknown";
+            error.put("error", "Service method not found");
+            error.put("details", service + "." + method + "()");
+        }
+        // /app/rest/v2/entities/* — entity not found format
+        else if (path.contains("/entities/")) {
+            String entityPart = path.substring(path.indexOf("/entities/") + "/entities/".length());
+            String entity = entityPart.split("/")[0];
+            error.put("error", "MetaClass not found");
+            error.put("details", "MetaClass " + entity + " not found");
+        }
+        // Boshqa legacy endpointlar
+        else {
+            error.put("error", "Not found");
+            error.put("details", path);
+        }
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 

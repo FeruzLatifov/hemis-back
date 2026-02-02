@@ -40,6 +40,9 @@ public class UniversityAttachedSpeciality extends BaseEntity {
     @Column(name = "_speciality_doctoral")
     private UUID specialityDoctoral;
 
+    @Column(name = "_education_type", length = 32)
+    private String educationType;
+
     @Column(name = "active")
     private Boolean active;
 }

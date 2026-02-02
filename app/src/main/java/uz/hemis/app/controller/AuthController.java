@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  *
  * @since 1.0.0
  */
-@Tag(name = "01.Token", description = "OAuth 2.0 token endpoint - autentifikatsiya")
+@Tag(name = "01.Token, Foydalanuvchilar", description = "OAuth 2.0 token endpoint - autentifikatsiya")
 @RestController
 @RequestMapping("/app/rest/v2/oauth")
 @Slf4j

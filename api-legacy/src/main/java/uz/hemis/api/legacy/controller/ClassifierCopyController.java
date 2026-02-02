@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class ClassifierCopyController {
 
     @PostMapping("/backup")
+    @Operation(summary = "Klassifikatorlar zaxira nusxasi (old-hemis da yo'q)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> backupClassifiers() {
         log.info("Creating classifiers backup");
@@ -31,6 +33,7 @@ public class ClassifierCopyController {
     }
 
     @PostMapping("/restore")
+    @Operation(summary = "Klassifikatorlarni tiklash (old-hemis da yo'q)")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> restoreClassifiers(@RequestBody Map<String, String> request) {
         String backupId = request.get("backupId");

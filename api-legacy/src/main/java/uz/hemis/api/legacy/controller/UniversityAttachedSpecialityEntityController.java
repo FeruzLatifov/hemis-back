@@ -141,6 +141,7 @@ public class UniversityAttachedSpecialityEntityController {
         map.put("id", e.getId() != null ? e.getId().toString() : null);
 
         putIfNotNull(map, "active", e.getActive(), returnNulls);
+        putIfNotNull(map, "educationType", e.getEducationType(), returnNulls);
         putIfNotNull(map, "version", e.getVersion(), returnNulls);
         putIfNotNull(map, "deletedBy", e.getDeletedBy(), returnNulls);
         putIfNotNull(map, "deleteTs", e.getDeleteTs() != null ? e.getDeleteTs().toString() : null, returnNulls);
@@ -167,6 +168,9 @@ public class UniversityAttachedSpecialityEntityController {
         }
         if (map.containsKey("specialityDoctoral")) {
             entity.setSpecialityDoctoral(extractUUID(map.get("specialityDoctoral")));
+        }
+        if (map.containsKey("educationType")) {
+            entity.setEducationType(extractCode(map.get("educationType")));
         }
         if (map.containsKey("active")) {
             entity.setActive(toBoolean(map.get("active")));

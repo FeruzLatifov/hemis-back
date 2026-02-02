@@ -22,8 +22,7 @@ import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -437,13 +436,40 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Map missing static resources (e.g., /swagger-ui) to 404 instead of 500
+     * Map missing static resources (e.g., /swagger-ui) to 404 instead of 500.
+     * Legacy CUBA endpoints uchun CUBA formatida 404 qaytaradi.
      */
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResourceFound(
+    public ResponseEntity<?> handleNoResourceFound(
             NoResourceFoundException ex,
             HttpServletRequest request
     ) {
+        String path = request.getRequestURI();
+
+        // Legacy CUBA endpointlar uchun CUBA formatida qaytarish
+        if (isLegacyEndpoint(request)) {
+            Map<String, Object> cubaError = new LinkedHashMap<>();
+
+            if (path.contains("/services/")) {
+                String servicePart = path.substring(path.indexOf("/services/") + "/services/".length());
+                String[] parts = servicePart.split("/", 2);
+                String service = parts.length > 0 ? parts[0] : "unknown";
+                String method = parts.length > 1 ? parts[1].split("/")[0] : "unknown";
+                cubaError.put("error", "Service method not found");
+                cubaError.put("details", service + "." + method + "()");
+            } else if (path.contains("/entities/")) {
+                String entityPart = path.substring(path.indexOf("/entities/") + "/entities/".length());
+                String entity = entityPart.split("/")[0];
+                cubaError.put("error", "MetaClass not found");
+                cubaError.put("details", "MetaClass " + entity + " not found");
+            } else {
+                cubaError.put("error", "Not found");
+                cubaError.put("details", path);
+            }
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(cubaError);
+        }
+
         ErrorResponse error = ErrorResponse.of(
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",

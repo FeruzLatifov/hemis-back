@@ -586,6 +586,22 @@ public class Student extends BaseEntity {
     private String statusOrderCategory;
 
     // =====================================================
+    // Transfer Fields (added in old-hemis update 260202)
+    // =====================================================
+
+    @Column(name = "_admission_type", length = 32)
+    private String admissionType;
+
+    @Column(name = "_transfer_country", length = 32)
+    private String transferCountry;
+
+    @Column(name = "transfer_university", length = 255)
+    private String transferUniversity;
+
+    @Column(name = "_transfer_type", length = 32)
+    private String transferType;
+
+    // =====================================================
     // Business Methods
     // =====================================================
 

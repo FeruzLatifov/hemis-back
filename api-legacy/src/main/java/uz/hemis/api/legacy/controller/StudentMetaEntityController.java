@@ -129,7 +129,7 @@ public class StudentMetaEntityController {
 
         try {
             StudentMetaDto dto = studentMetaService.findById(entityId);
-            Map<String, Object> cubaMap = adapter.toMap(dto, ENTITY_NAME, returnNulls);
+            Map<String, Object> cubaMap = adapter.toMap(dto, ENTITY_NAME, returnNulls, view);
             return ResponseEntity.ok(cubaMap);
 
         } catch (ResourceNotFoundException e) {
@@ -197,7 +197,7 @@ public class StudentMetaEntityController {
         Page<StudentMetaDto> dtoPage = studentMetaService.findAll(pageable);
 
         List<Map<String, Object>> result = dtoPage.getContent().stream()
-                .map(dto -> adapter.toMap(dto, ENTITY_NAME, returnNulls))
+                .map(dto -> adapter.toMap(dto, ENTITY_NAME, returnNulls, view))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);

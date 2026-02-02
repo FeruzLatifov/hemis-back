@@ -975,58 +975,71 @@ public class ClassifierServicesController {
     }
 
     /**
-     * Get hokimiyat (local government) classifiers
+     * Hokimiyat klassifikatorlari
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/hokimiyat</p>
      *
-     * <p>Returns hierarchical structure of regions and districts</p>
+     * <p>Old-hemis formatida 20 ta hokimiyat klassifikatorini qaytaradi.
+     * Har bir klassifikator title, version, count va items bilan.</p>
      *
-     * @return hokimiyat classifiers (regions and districts)
+     * @return hokimiyat klassifikatorlari (allItems formatida)
      */
     @GetMapping("/hokimiyat")
-    @Operation(summary = "Get hokimiyat classifiers", description = "Returns local government structure (regions and districts)")
+    @Operation(summary = "Hokimiyat klassifikatorlari", description = "Old-hemis formatida 20 ta hokimiyat klassifikatorini qaytaradi")
+    @Transactional(readOnly = true)
     public ResponseEntity<Map<String, Object>> hokimiyat() {
         log.info("GET /services/classifiers/hokimiyat");
 
-        // Get regions (ERegion)
-        List<Map<String, Object>> regions = classifierRepository.findAllByType("ERegion")
-                .stream()
-                .map(classifier -> {
-                    Map<String, Object> region = new LinkedHashMap<>();
-                    region.put("id", classifier.getId());
-                    region.put("code", classifier.getCode());
-                    region.put("name", classifier.getNameUz());
-                    region.put("nameUz", classifier.getNameUz());
-                    region.put("nameRu", classifier.getNameRu());
-                    region.put("nameEn", classifier.getNameEn());
+        // Old-hemis hokimiyatMap: 20 ta klassifikator
+        // Har biri alohida jadvalda (hemishe_h_* yoki hemishe_e_university)
+        List<String[]> hokimiyatClassifiers = List.of(
+            new String[]{"hemishe_h_education_type", "h_education_type"},
+            new String[]{"hemishe_h_education_form", "h_education_form"},
+            new String[]{"hemishe_h_education_year", "h_education_year"},
+            new String[]{"hemishe_e_university", "h_university"},
+            new String[]{"hemishe_h_ownership", "h_ownership"},
+            new String[]{"hemishe_h_course", "h_course"},
+            new String[]{"hemishe_h_nationality", "h_nationality"},
+            new String[]{"hemishe_h_citizenship", "h_citizenship_type"},
+            new String[]{"hemishe_h_student_social_type", "h_social_category"},
+            new String[]{"hemishe_h_gender", "h_gender"},
+            new String[]{"hemishe_h_student_type", "h_student_type"},
+            new String[]{"hemishe_h_payment_form", "h_payment_form"},
+            new String[]{"hemishe_h_stipend_rate", "h_stipend_rate"},
+            new String[]{"hemishe_h_education_language", "h_language"},
+            new String[]{"hemishe_h_accomodation", "h_accommodation"},
+            new String[]{"hemishe_h_student_living_status", "h_student_living_status"},
+            new String[]{"hemishe_h_student_room_mate_type", "h_student_roommate_type"},
+            new String[]{"hemishe_h_student_status_type", "h_student_status"},
+            new String[]{"hemishe_h_soato", "h_soato"},
+            new String[]{"hemishe_h_country", "h_country"},
+            new String[]{"hemishe_h_admission_type", "h_admission_type"}
+        );
 
-                    // Get districts for this region
-                    // Note: Assuming district codes start with region code
-                    List<Map<String, Object>> districts = classifierRepository.findAllByType("EDistrict")
-                            .stream()
-                            .filter(d -> d.getCode() != null && d.getCode().startsWith(classifier.getCode()))
-                            .map(district -> {
-                                Map<String, Object> d = new LinkedHashMap<>();
-                                d.put("id", district.getId());
-                                d.put("code", district.getCode());
-                                d.put("name", district.getNameUz());
-                                d.put("nameUz", district.getNameUz());
-                                d.put("nameRu", district.getNameRu());
-                                d.put("nameEn", district.getNameEn());
-                                return d;
-                            })
-                            .collect(Collectors.toList());
+        List<Map<String, Object>> classifiers = new ArrayList<>();
 
-                    region.put("districts", districts);
-                    return region;
-                })
-                .collect(Collectors.toList());
+        for (String[] entry : hokimiyatClassifiers) {
+            String tableName = entry[0];
+            String classifierName = entry[1];
+            try {
+                Map<String, Object> classifierData = getClassifierWithItems(tableName);
+                if (classifierData != null) {
+                    // getClassifierWithItems auto-nomlash qiladi, lekin hokimiyat uchun aniq nom kerak
+                    Object data = classifierData.values().iterator().next();
+                    Map<String, Object> wrapper = new LinkedHashMap<>();
+                    wrapper.put(classifierName, data);
+                    classifiers.add(wrapper);
+                }
+            } catch (Exception e) {
+                log.debug("Hokimiyat klassifikator {} yuklashda xatolik: {}", classifierName, e.getMessage());
+            }
+        }
 
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("regions", regions);
-        result.put("totalRegions", regions.size());
+        result.put("success", true);
+        result.put("classifiers", classifiers);
 
-        log.info("Returned {} regions with districts", regions.size());
+        log.info("Hokimiyat: {} ta klassifikator qaytarildi", classifiers.size());
         return ResponseEntity.ok(result);
     }
 }

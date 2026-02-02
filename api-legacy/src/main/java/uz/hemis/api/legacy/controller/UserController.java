@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Tag(name = "03.Foydalanuvchi", description = "Foydalanuvchi boshqaruvi")
+@Tag(name = "01.Token, Foydalanuvchilar")
 @RestController
 @RequestMapping("/app/rest/v2/user")
 @RequiredArgsConstructor

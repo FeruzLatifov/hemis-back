@@ -395,6 +395,18 @@ public class StudentDto implements Serializable {
     @JsonProperty("statusOrderCategory")
     private String statusOrderCategory;
 
+    @JsonProperty("admissionType")
+    private String admissionType;
+
+    @JsonProperty("transferCountry")
+    private String transferCountry;
+
+    @JsonProperty("transferUniversity")
+    private String transferUniversity;
+
+    @JsonProperty("transferType")
+    private String transferType;
+
     /**
      * Roommate count
      * JSON field: "roommateCount"

@@ -27,7 +27,7 @@ import uz.hemis.domain.repository.UserRepository;
  * Direct UserInfo object return</p>
  */
 @Tag(
-    name = "01.Token",
+    name = "01.Token, Foydalanuvchilar",
     description = "OAuth2 autentifikatsiya - token olish, yangilash. " +
                   "Old-hemis loyihasidagi foydalanuvchilar uchun uzluksiz xizmat."
 )

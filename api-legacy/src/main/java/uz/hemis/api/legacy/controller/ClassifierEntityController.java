@@ -8,11 +8,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.domain.entity.AdmissionType;
 import uz.hemis.domain.entity.EducationType;
 import uz.hemis.domain.entity.EducationForm;
 import uz.hemis.domain.entity.HCourse;
 import uz.hemis.domain.entity.EducationYear;
 import uz.hemis.domain.entity.TransferType;
+import uz.hemis.domain.repository.AdmissionTypeRepository;
 import uz.hemis.domain.repository.EducationTypeRepository;
 import uz.hemis.domain.repository.EducationFormRepository;
 import uz.hemis.domain.repository.HCourseRepository;
@@ -44,7 +46,7 @@ public class ClassifierEntityController {
     // =====================================================
     // hemishe_HEducationType
     // =====================================================
-    @Tag(name = "90.Klassifikatorlar", description = "Klassifikator ma'lumotlari")
+    @Tag(name = "13.Klassifikatorlar")
     @RestController
     @RequestMapping("/app/rest/v2/entities/hemishe_HEducationType")
     @RequiredArgsConstructor
@@ -55,7 +57,7 @@ public class ClassifierEntityController {
         private static final String ENTITY_NAME = "hemishe_HEducationType";
 
         @GetMapping
-        @Operation(summary = "Ta'lim turlari ro'yxati")
+        @Operation(summary = "Ta'lim turlari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
                 @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
                 @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
@@ -71,7 +73,7 @@ public class ClassifierEntityController {
         }
 
         @GetMapping("/{code}")
-        @Operation(summary = "Ta'lim turi bo'yicha olish")
+        @Operation(summary = "Ta'lim turi bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
                 @PathVariable String code,
                 @RequestParam(required = false) Boolean returnNulls) {
@@ -90,7 +92,7 @@ public class ClassifierEntityController {
     // =====================================================
     // hemishe_HEducationForm
     // =====================================================
-    @Tag(name = "90.Klassifikatorlar")
+    @Tag(name = "13.Klassifikatorlar")
     @RestController
     @RequestMapping("/app/rest/v2/entities/hemishe_HEducationForm")
     @RequiredArgsConstructor
@@ -101,7 +103,7 @@ public class ClassifierEntityController {
         private static final String ENTITY_NAME = "hemishe_HEducationForm";
 
         @GetMapping
-        @Operation(summary = "Ta'lim shakllari ro'yxati")
+        @Operation(summary = "Ta'lim shakllari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
                 @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
                 @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
@@ -117,7 +119,7 @@ public class ClassifierEntityController {
         }
 
         @GetMapping("/{code}")
-        @Operation(summary = "Ta'lim shakli bo'yicha olish")
+        @Operation(summary = "Ta'lim shakli bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
                 @PathVariable String code,
                 @RequestParam(required = false) Boolean returnNulls) {
@@ -136,7 +138,7 @@ public class ClassifierEntityController {
     // =====================================================
     // hemishe_HCourse
     // =====================================================
-    @Tag(name = "90.Klassifikatorlar")
+    @Tag(name = "13.Klassifikatorlar")
     @RestController
     @RequestMapping("/app/rest/v2/entities/hemishe_HCourse")
     @RequiredArgsConstructor
@@ -147,7 +149,7 @@ public class ClassifierEntityController {
         private static final String ENTITY_NAME = "hemishe_HCourse";
 
         @GetMapping
-        @Operation(summary = "Kurslar ro'yxati (1-kurs, 2-kurs, ...)")
+        @Operation(summary = "Kurslar ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
                 @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
                 @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
@@ -163,7 +165,7 @@ public class ClassifierEntityController {
         }
 
         @GetMapping("/{code}")
-        @Operation(summary = "Kurs bo'yicha olish")
+        @Operation(summary = "Kurs bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
                 @PathVariable String code,
                 @RequestParam(required = false) Boolean returnNulls) {
@@ -182,7 +184,7 @@ public class ClassifierEntityController {
     // =====================================================
     // hemishe_HEducationYear
     // =====================================================
-    @Tag(name = "90.Klassifikatorlar")
+    @Tag(name = "13.Klassifikatorlar")
     @RestController
     @RequestMapping("/app/rest/v2/entities/hemishe_HEducationYear")
     @RequiredArgsConstructor
@@ -193,7 +195,7 @@ public class ClassifierEntityController {
         private static final String ENTITY_NAME = "hemishe_HEducationYear";
 
         @GetMapping
-        @Operation(summary = "O'quv yillari ro'yxati")
+        @Operation(summary = "O'quv yillari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
                 @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
                 @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
@@ -209,7 +211,7 @@ public class ClassifierEntityController {
         }
 
         @GetMapping("/{code}")
-        @Operation(summary = "O'quv yili bo'yicha olish")
+        @Operation(summary = "O'quv yili bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
                 @PathVariable String code,
                 @RequestParam(required = false) Boolean returnNulls) {
@@ -228,7 +230,7 @@ public class ClassifierEntityController {
     // =====================================================
     // hemishe_HTransferType
     // =====================================================
-    @Tag(name = "90.Klassifikatorlar")
+    @Tag(name = "13.Klassifikatorlar")
     @RestController
     @RequestMapping("/app/rest/v2/entities/hemishe_HTransferType")
     @RequiredArgsConstructor
@@ -239,7 +241,7 @@ public class ClassifierEntityController {
         private static final String ENTITY_NAME = "hemishe_HTransferType";
 
         @GetMapping
-        @Operation(summary = "O'tkazish turlari ro'yxati")
+        @Operation(summary = "O'tkazish turlari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
                 @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
                 @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
@@ -255,7 +257,7 @@ public class ClassifierEntityController {
         }
 
         @GetMapping("/{code}")
-        @Operation(summary = "O'tkazish turi bo'yicha olish")
+        @Operation(summary = "O'tkazish turi bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
                 @PathVariable String code,
                 @RequestParam(required = false) Boolean returnNulls) {
@@ -265,6 +267,52 @@ public class ClassifierEntityController {
         }
 
         private Map<String, Object> toMap(TransferType e, Boolean returnNulls) {
+            return classifierToMap(ENTITY_NAME, e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
+                    e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
+                    e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+        }
+    }
+
+    // =====================================================
+    // hemishe_HAdmissionType
+    // =====================================================
+    @Tag(name = "13.Klassifikatorlar")
+    @RestController
+    @RequestMapping("/app/rest/v2/entities/hemishe_HAdmissionType")
+    @RequiredArgsConstructor
+    @SecurityRequirement(name = "bearerAuth")
+    public static class AdmissionTypeEntityController {
+
+        private final AdmissionTypeRepository repository;
+        private static final String ENTITY_NAME = "hemishe_HAdmissionType";
+
+        @GetMapping
+        @Operation(summary = "Qabul turlari ro'yxati")
+        public ResponseEntity<List<Map<String, Object>>> getAll(
+                @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
+                @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+                @RequestParam(required = false) Boolean returnNulls) {
+            List<AdmissionType> all = repository.findAll();
+            int from = Math.min(offset, all.size());
+            int to = Math.min(from + limit, all.size());
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (AdmissionType e : all.subList(from, to)) {
+                result.add(toMap(e, returnNulls));
+            }
+            return ResponseEntity.ok(result);
+        }
+
+        @GetMapping("/{code}")
+        @Operation(summary = "Qabul turi bo'yicha olish")
+        public ResponseEntity<Map<String, Object>> getByCode(
+                @PathVariable String code,
+                @RequestParam(required = false) Boolean returnNulls) {
+            return repository.findById(code)
+                    .map(e -> ResponseEntity.ok(toMap(e, returnNulls)))
+                    .orElse(ResponseEntity.notFound().build());
+        }
+
+        private Map<String, Object> toMap(AdmissionType e, Boolean returnNulls) {
             return classifierToMap(ENTITY_NAME, e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
                     e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
                     e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
