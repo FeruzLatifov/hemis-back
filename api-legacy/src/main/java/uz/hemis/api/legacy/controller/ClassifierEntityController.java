@@ -12,10 +12,12 @@ import uz.hemis.domain.entity.EducationType;
 import uz.hemis.domain.entity.EducationForm;
 import uz.hemis.domain.entity.HCourse;
 import uz.hemis.domain.entity.EducationYear;
+import uz.hemis.domain.entity.TransferType;
 import uz.hemis.domain.repository.EducationTypeRepository;
 import uz.hemis.domain.repository.EducationFormRepository;
 import uz.hemis.domain.repository.HCourseRepository;
 import uz.hemis.domain.repository.EducationYearRepository;
+import uz.hemis.domain.repository.TransferTypeRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -217,6 +219,52 @@ public class ClassifierEntityController {
         }
 
         private Map<String, Object> toMap(EducationYear e, Boolean returnNulls) {
+            return classifierToMap(ENTITY_NAME, e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
+                    e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
+                    e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+        }
+    }
+
+    // =====================================================
+    // hemishe_HTransferType
+    // =====================================================
+    @Tag(name = "90.Klassifikatorlar")
+    @RestController
+    @RequestMapping("/app/rest/v2/entities/hemishe_HTransferType")
+    @RequiredArgsConstructor
+    @SecurityRequirement(name = "bearerAuth")
+    public static class TransferTypeEntityController {
+
+        private final TransferTypeRepository repository;
+        private static final String ENTITY_NAME = "hemishe_HTransferType";
+
+        @GetMapping
+        @Operation(summary = "O'tkazish turlari ro'yxati")
+        public ResponseEntity<List<Map<String, Object>>> getAll(
+                @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
+                @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
+                @RequestParam(required = false) Boolean returnNulls) {
+            List<TransferType> all = repository.findAll();
+            int from = Math.min(offset, all.size());
+            int to = Math.min(from + limit, all.size());
+            List<Map<String, Object>> result = new ArrayList<>();
+            for (TransferType e : all.subList(from, to)) {
+                result.add(toMap(e, returnNulls));
+            }
+            return ResponseEntity.ok(result);
+        }
+
+        @GetMapping("/{code}")
+        @Operation(summary = "O'tkazish turi bo'yicha olish")
+        public ResponseEntity<Map<String, Object>> getByCode(
+                @PathVariable String code,
+                @RequestParam(required = false) Boolean returnNulls) {
+            return repository.findById(code)
+                    .map(e -> ResponseEntity.ok(toMap(e, returnNulls)))
+                    .orElse(ResponseEntity.notFound().build());
+        }
+
+        private Map<String, Object> toMap(TransferType e, Boolean returnNulls) {
             return classifierToMap(ENTITY_NAME, e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
                     e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
                     e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);

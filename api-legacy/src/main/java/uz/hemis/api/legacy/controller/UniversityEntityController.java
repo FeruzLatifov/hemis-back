@@ -520,9 +520,16 @@ public class UniversityEntityController {
         putIfNotNull(map, "allowTransferOutside", entity.getAllowTransferOutside(), returnNulls);
         putIfNotNull(map, "name", entity.getName(), returnNulls);
         putIfNotNull(map, "gpaEdit", entity.getGpaEdit(), returnNulls);
+        putIfNotNull(map, "addForeignStudent", entity.getAddForeignStudent(), returnNulls);
 
-        // Audit fields (faqat deletedBy ko'rinadi ba'zan)
+        // Text fields
+        putIfNotNull(map, "mailAddress", entity.getMailAddress(), returnNulls);
+        putIfNotNull(map, "bankInfo", entity.getBankInfo(), returnNulls);
+        putIfNotNull(map, "accreditationInfo", entity.getAccreditationInfo(), returnNulls);
+
+        // Audit fields
         putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deleteTs", entity.getDeleteTs() != null ? entity.getDeleteTs().toString() : null, returnNulls);
 
         return map;
     }
@@ -623,6 +630,9 @@ public class UniversityEntityController {
         if (map.containsKey("gradingSystem")) {
             entity.setGradingSystem(toBoolean(map.get("gradingSystem")));
         }
+        if (map.containsKey("addForeignStudent")) {
+            entity.setAddForeignStudent(toBoolean(map.get("addForeignStudent")));
+        }
 
         // Additional text fields
         if (map.containsKey("mailAddress")) {
@@ -665,8 +675,10 @@ public class UniversityEntityController {
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
-        if (value != null || Boolean.TRUE.equals(returnNulls)) {
+        if (value != null) {
             map.put(key, value);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            map.put(key, uz.hemis.api.legacy.adapter.JsonNull.INSTANCE);
         }
     }
 }

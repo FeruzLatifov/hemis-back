@@ -76,6 +76,7 @@ public interface UniversityMapper {
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "oneId", ignore = true)
     @Mapping(target = "gradingSystem", ignore = true)
+    @Mapping(target = "addForeignStudent", ignore = true)
     University toEntity(UniversityDto dto);
 
     /**
@@ -110,6 +111,7 @@ public interface UniversityMapper {
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "oneId", ignore = true)
     @Mapping(target = "gradingSystem", ignore = true)
+    @Mapping(target = "addForeignStudent", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(UniversityDto dto, @MappingTarget University university);
 }

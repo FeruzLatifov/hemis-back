@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  */
 @Tag(name = "06.Xodim lavozimlari")
 @RestController
-@RequestMapping("/app/rest/v2/entities/hemishe_EEmployeeJobs")
+@RequestMapping("/app/rest/v2/entities/hemishe_EEmployeeJob")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -72,7 +72,7 @@ public class EmployeeJobsEntityController {
     private final TeacherRepository teacherRepository;
     private final UniversityEmployeeFormRepository employeeFormRepository;
 
-    private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
+    private static final String ENTITY_NAME = "hemishe_EEmployeeJob";
 
     /**
      * OLD-HEMIS Compatible: Constraint xatolikda HTTP 500 qaytarish
@@ -763,8 +763,8 @@ public class EmployeeJobsEntityController {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ENTITY_NAME);
 
-        // Instance name - xodim to'liq ismi (OLD-HEMIS compatible)
-        String instanceName = getEmployeeFullName(entity.getEmployee());
+        // Instance name - OLD-HEMIS compatible: "FULLNAME department rate"
+        String instanceName = buildInstanceName(entity);
         map.put("_instanceName", instanceName);
 
         map.put("id", entity.getId());
@@ -780,10 +780,14 @@ public class EmployeeJobsEntityController {
         // OLD-HEMIS Compatible: version field
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
 
-        // Date and string fields
+        // Date and string fields - OLD-HEMIS tartibi: decreeDate, decreeNumber, employeeRate, tag, department
         putIfNotNull(map, "decreeDate", entity.getDecreeDate(), returnNulls);
         putIfNotNull(map, "decreeNumber", entity.getDecreeNumber(), returnNulls);
+
+        // OLD-HEMIS Compatible: default view da employeeRate va department qaytaradi
+        putNestedRate(map, entity.getEmployeeRate(), returnNulls);
         putIfNotNull(map, "tag", entity.getTag(), returnNulls);
+        putNestedDepartment(map, entity.getDepartment(), returnNulls);
         putIfNotNull(map, "jobEndDate", entity.getJobEndDate(), returnNulls);
 
         // Check if view is specified for additional nested objects
@@ -792,14 +796,11 @@ public class EmployeeJobsEntityController {
         if (useFullView) {
             // Full view: Return all nested objects
             putNestedUniversity(map, entity.getUniversity(), returnNulls);
-            putNestedDepartment(map, entity.getDepartment(), returnNulls);
             putNestedEmployeeType(map, entity.getEmployeeType(), returnNulls);
             putNestedPosition(map, entity.getEmployeePosition(), returnNulls);
-            putNestedRate(map, entity.getEmployeeRate(), returnNulls);
             putNestedEmployeeForm(map, entity.getEmployeeForm(), returnNulls);
             putNestedEmployeeStatus(map, entity.getEmployeeStatus(), returnNulls);
         }
-        // OLD-HEMIS Compatible: Default view da university, department, etc. qaytarmaydi
 
         return map;
     }
@@ -918,12 +919,14 @@ public class EmployeeJobsEntityController {
             Optional<UniversityDepartment> deptOpt = universityDepartmentRepository.findByCode(departmentCode);
             if (deptOpt.isPresent()) {
                 UniversityDepartment department = deptOpt.get();
+                String deptName = department.getNameUz() != null ? department.getNameUz() : department.getName();
                 Map<String, Object> nested = new LinkedHashMap<>();
-                nested.put("_entityName", "hemishe_EDepartment");
-                nested.put("_instanceName", department.getName());
+                nested.put("_entityName", "hemishe_EUniversityDepartment");
+                nested.put("_instanceName", deptName);
                 nested.put("id", department.getCode());
                 nested.put("code", department.getCode());
-                nested.put("name", department.getName());
+                nested.put("version", department.getVersion());
+                nested.put("nameUz", deptName);
 
                 map.put("department", nested);
                 return;
@@ -934,7 +937,7 @@ public class EmployeeJobsEntityController {
 
         // Department not found or error, return code only
         Map<String, Object> nested = new LinkedHashMap<>();
-        nested.put("_entityName", "hemishe_EDepartment");
+        nested.put("_entityName", "hemishe_EUniversityDepartment");
         nested.put("code", departmentCode);
         map.put("department", nested);
     }
@@ -1032,6 +1035,7 @@ public class EmployeeJobsEntityController {
                 nested.put("id", rate.getCode());
                 nested.put("code", rate.getCode());
                 nested.put("name", rate.getName());
+                nested.put("version", rate.getVersion());
 
                 map.put("employeeRate", nested);
                 return;
@@ -1102,6 +1106,39 @@ public class EmployeeJobsEntityController {
         nested.put("_entityName", "hemishe_HUniversityEmployeeStatusType");
         nested.put("id", statusCode);
         map.put("employeeStatus", nested);
+    }
+
+    /**
+     * Build OLD-HEMIS compatible instance name: "FULLNAME DepartmentName RateName"
+     */
+    private String buildInstanceName(EmployeeJobs entity) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getEmployeeFullName(entity.getEmployee()));
+
+        // Department name
+        if (entity.getDepartment() != null) {
+            try {
+                universityDepartmentRepository.findById(entity.getDepartment()).ifPresent(dept -> {
+                    String deptName = dept.getNameUz() != null ? dept.getNameUz() : dept.getName();
+                    if (deptName != null && !deptName.isEmpty()) {
+                        sb.append(" ").append(deptName);
+                    }
+                });
+            } catch (Exception ignored) {}
+        }
+
+        // Rate name
+        if (entity.getEmployeeRate() != null) {
+            try {
+                employeeRateRepository.findById(entity.getEmployeeRate()).ifPresent(rate -> {
+                    if (rate.getName() != null && !rate.getName().isEmpty()) {
+                        sb.append(" ").append(rate.getName());
+                    }
+                });
+            } catch (Exception ignored) {}
+        }
+
+        return sb.toString();
     }
 
     /**

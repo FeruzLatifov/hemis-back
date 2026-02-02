@@ -436,7 +436,12 @@ public class DoctoralStudentStatusEntityController {
 
             DoctoralStudentStatus entity = repository.findById(code).orElseThrow();
 
-            return ResponseEntity.ok(toMap(entity, false));
+            // Old-hemis POST faqat minimal javob qaytaradi: _entityName, _instanceName, id
+            Map<String, Object> minimalResponse = new LinkedHashMap<>();
+            minimalResponse.put("_entityName", ENTITY_NAME);
+            minimalResponse.put("_instanceName", entity.getCode() + " " + entity.getName());
+            minimalResponse.put("id", entity.getCode());
+            return ResponseEntity.status(201).body(minimalResponse);
 
         } catch (Exception e) {
             log.error("CREATE xatosi: {}", e.getMessage(), e);

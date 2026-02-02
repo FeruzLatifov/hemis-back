@@ -304,6 +304,13 @@ public class University implements Serializable {
     private Boolean gradingSystem;
 
     /**
+     * Add foreign student flag
+     * Column: add_foreign_student BOOLEAN
+     */
+    @Column(name = "add_foreign_student")
+    private Boolean addForeignStudent;
+
+    /**
      * Terrain code (mahalla)
      * Column: _terrain VARCHAR(32)
      */

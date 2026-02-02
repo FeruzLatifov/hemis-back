@@ -419,9 +419,9 @@ public class REmploymentEntityController {
         // - Massiv yuborilgan → massiv qaytarish
         // - Bitta obyekt yuborilgan → bitta obyekt qaytarish
         if (isArrayRequest) {
-            return ResponseEntity.ok(results);
+            return ResponseEntity.status(201).body(results);
         }
-        return ResponseEntity.ok(results.get(0));
+        return ResponseEntity.status(201).body(results.get(0));
     }
 
     // =============================
