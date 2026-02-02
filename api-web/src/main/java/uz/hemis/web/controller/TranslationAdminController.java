@@ -141,7 +141,7 @@ public class TranslationAdminController {
                 {
                   "id": "uuid-123",
                   "category": "menu",
-                  "messageKey": "menu.registry.faculty",
+                  "messageKey": "Faculties",
                   "message": "Fakultet",
                   "translationUz": "Fakultet",
                   "translationOz": "Факультет",
@@ -232,7 +232,7 @@ public class TranslationAdminController {
             {
               "id": "uuid-123",
               "category": "menu",
-              "messageKey": "menu.registry.faculty",
+              "messageKey": "Faculties",
               "message": "Fakultet",
               "translationUz": "Fakultet",
               "translationOz": "Факультет",
@@ -279,7 +279,7 @@ public class TranslationAdminController {
             ```json
             {
               "category": "menu",
-              "messageKey": "menu.registry.faculty",
+              "messageKey": "Faculties",
               "message": "Fakultet",
               "translationOz": "Факультет",
               "translationRu": "Факультет",
@@ -293,7 +293,7 @@ public class TranslationAdminController {
             {
               "id": "uuid-123",
               "category": "menu",
-              "messageKey": "menu.registry.faculty",
+              "messageKey": "Faculties",
               "message": "Fakultet",
               "translationUz": "Fakultet",
               "translationOz": "Факультет",
@@ -321,7 +321,7 @@ public class TranslationAdminController {
                     value = """
                         {
                           "category": "menu",
-                          "messageKey": "menu.registry.faculty",
+                          "messageKey": "Faculties",
                           "message": "Fakultet",
                           "translationOz": "Факультет",
                           "translationRu": "Факультет",
@@ -463,16 +463,7 @@ public class TranslationAdminController {
                 default -> "uz-UZ";
             };
 
-            String key = "admin.translation.cache.cleared";
-            String localized = i18nService.getMessage(key, language);
-            if (key.equals(localized)) {
-                localized = switch (language) {
-                    case "ru-RU" -> "Кэш переводов успешно очищен на всех серверах";
-                    case "en-US" -> "Translation cache cleared on all servers";
-                    case "oz-UZ" -> "Таржима кеши барча серверларда тозаланди";
-                    default -> "Tarjima keshi barcha serverlarda tozalandi";
-                };
-            }
+            String localized = i18nService.getMessage("Translation cache cleared on all servers", language);
 
             // Build response
             Map<String, Object> response = new HashMap<>();

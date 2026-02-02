@@ -26,7 +26,7 @@ BEGIN
             SELECT id FROM system_messages
             WHERE category IN (
                 'action', 'status', 'label', 'message', 'validation',
-                'table', 'pagination', 'confirm', 'auth', 'menu'
+                'table', 'pagination', 'confirm', 'auth', 'menu', 'error'
             )
         );
         GET DIAGNOSTICS _deleted_translations = ROW_COUNT;
@@ -40,7 +40,7 @@ BEGIN
         DELETE FROM system_messages
         WHERE category IN (
             'action', 'status', 'label', 'message', 'validation',
-            'table', 'pagination', 'confirm', 'auth', 'menu'
+            'table', 'pagination', 'confirm', 'auth', 'menu', 'error'
         );
         GET DIAGNOSTICS _deleted_messages = ROW_COUNT;
         RAISE NOTICE 'S006 Rollback: Deleted % message rows', _deleted_messages;

@@ -52,7 +52,7 @@ import java.util.Map;
  * const loadTranslations = async (lang) => {
  *   const response = await fetch(`/api/v1/web/i18n/messages?lang=${lang}`);
  *   const {data} = await response.json();
- *   return data; // {"button.save": "Save", "button.cancel": "Cancel", ...}
+ *   return data; // {"Save": "Save", "Cancel": "Cancel", "Dashboard": "Dashboard", ...}
  * };
  * </pre>
  *
@@ -134,14 +134,14 @@ public class WebI18nController {
                             {
                               "success": true,
                               "data": {
-                                "login.title": "HEMIS Админ Панель",
-                                "login.username": "Имя пользователя",
-                                "login.password": "Пароль",
-                                "login.loginButton": "Войти",
-                                "button.save": "Сохранить",
-                                "button.cancel": "Отмена",
-                                "error.unauthorized": "Доступ запрещен",
-                                "error.network": "Ошибка сети"
+                                "HEMIS Admin Panel": "HEMIS Админ Панель",
+                                "Username": "Имя пользователя",
+                                "Password": "Пароль",
+                                "Sign in": "Войти",
+                                "Save": "Сохранить",
+                                "Cancel": "Отмена",
+                                "Access denied": "Доступ запрещён",
+                                "Network error": "Ошибка сети"
                               }
                             }
                             """
@@ -153,17 +153,17 @@ public class WebI18nController {
                             {
                               "success": true,
                               "data": {
-                                "login.title": "HEMIS Admin Panel",
-                                "login.subtitle": "Higher Education Management Information System",
-                                "login.username": "Username",
-                                "login.password": "Password",
-                                "login.loginButton": "Sign In",
-                                "button.save": "Save",
-                                "button.cancel": "Cancel",
-                                "button.search": "Search",
-                                "menu.students": "Students",
-                                "menu.teachers": "Teachers",
-                                "error.not_found": "Not Found"
+                                "HEMIS Admin Panel": "HEMIS Admin Panel",
+                                "Higher Education Management Information System": "Higher Education Management Information System",
+                                "Username": "Username",
+                                "Password": "Password",
+                                "Sign in": "Sign In",
+                                "Save": "Save",
+                                "Cancel": "Cancel",
+                                "Search": "Search",
+                                "Students": "Students",
+                                "Teachers": "Teachers",
+                                "Not found": "Not Found"
                               }
                             }
                             """
@@ -291,7 +291,7 @@ public class WebI18nController {
         )
     })
     public ResponseEntity<ResponseWrapper<String>> getMessage(
-        @Parameter(description = "Message key (format: category.name)", example = "button.save")
+        @Parameter(description = "Message key (natural English text)", example = "Save")
         @PathVariable String key,
         @Parameter(description = "Language code", example = "ru-RU")
         @RequestParam(defaultValue = "uz-UZ") String lang
@@ -305,9 +305,9 @@ public class WebI18nController {
 
     /**
      * Get messages by category
-     * <p>Load only specific category (e.g., all button labels)</p>
+     * <p>Load only specific category (e.g., all action labels, all menu items)</p>
      *
-     * @param category Message category (app, menu, button, label, message, error, validation)
+     * @param category Message category (action, menu, label, message, auth, validation, status, table, etc.)
      * @param lang Language code (default: uz-UZ)
      * @return Map of messageKey → translation for this category
      */
@@ -315,7 +315,7 @@ public class WebI18nController {
     @Operation(
         summary = "Get messages by category",
         description = "Returns all messages for specific category. " +
-                      "Categories: app, menu, button, label, message, error, validation"
+                      "Categories: action, menu, label, message, auth, validation, status, table, pagination, confirm"
     )
     @ApiResponses({
         @ApiResponse(
@@ -324,13 +324,13 @@ public class WebI18nController {
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
-                    value = "{\"success\":true,\"data\":{\"button.save\":\"Saqlash\",\"button.cancel\":\"Bekor qilish\"}}"
+                    value = "{\"success\":true,\"data\":{\"Save\":\"Saqlash\",\"Cancel\":\"Bekor qilish\",\"Delete\":\"O'chirish\"}}"
                 )
             )
         )
     })
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getMessagesByCategory(
-        @Parameter(description = "Message category", example = "button")
+        @Parameter(description = "Message category", example = "action")
         @PathVariable String category,
         @Parameter(description = "Language code", example = "uz-UZ")
         @RequestParam(defaultValue = "uz-UZ") String lang
@@ -344,19 +344,20 @@ public class WebI18nController {
     }
 
     /**
-     * Get messages by scopes (Progressive Loading - Industry Best Practice)
-     * <p>Optimized for frontend: load only required scopes instead of all translations</p>
+     * Get messages by categories (Progressive Loading)
+     * <p>Optimized for frontend: load only required categories instead of all translations.
+     * Scopes map directly to DB category names.</p>
      *
      * <p><strong>Progressive Loading Strategy:</strong></p>
      * <ul>
-     *   <li>Login Page: scopes=auth → 50 messages (10KB) - 50x reduction</li>
-     *   <li>Dashboard: scopes=auth,dashboard,menu → 200 messages (40KB) - 10x reduction</li>
-     *   <li>Full App: No scopes → 2000+ messages (400KB) - full load</li>
+     *   <li>Login Page: scopes=auth → ~50 messages (10KB)</li>
+     *   <li>Dashboard: scopes=auth,menu,action → ~200 messages (40KB)</li>
+     *   <li>Full App: No scopes → 2000+ messages (400KB)</li>
      * </ul>
      *
-     * @param scopes Comma-separated scope list (e.g., "auth,dashboard,menu")
+     * @param scopes Comma-separated category list (e.g., "auth,menu,action")
      * @param lang Language code (default: uz-UZ)
-     * @return Map of messageKey → translation for specified scopes
+     * @return Map of messageKey → translation for specified categories
      */
     @GetMapping("/messages/scopes")
     @Operation(
@@ -369,13 +370,13 @@ public class WebI18nController {
             - 50x payload reduction for login page (400KB → 10KB)
             - 10x faster initial load (500ms → 50ms)
 
-            **Scopes Naming Convention:**
-            - `auth` → Login/authentication (auth.username, auth.password)
-            - `dashboard` → Dashboard widgets (dashboard.welcome, dashboard.stats)
-            - `menu` → Menu items (menu.students, menu.teachers)
-            - `registry` → Registry pages (registry.student.list, registry.teacher.view)
-            - `button` → Common buttons (button.save, button.cancel)
-            - `error` → Error messages (error.network, error.unauthorized)
+            **Category Names (= scopes):**
+            - `auth` → Login/authentication ("Sign in", "Username", "Password")
+            - `menu` → Menu items ("Dashboard", "Students", "Teachers")
+            - `action` → Buttons/actions ("Save", "Cancel", "Delete")
+            - `label` → Form labels ("Name", "Code", "Status")
+            - `message` → User messages ("No data found", "Something went wrong")
+            - `validation` → Validation ("This field is required", "Too short")
 
             **Performance:**
             - Cache Hit: ~1ms (L1 Caffeine)
@@ -416,38 +417,36 @@ public class WebI18nController {
                 mediaType = "application/json",
                 examples = {
                     @ExampleObject(
-                        name = "Login Page (auth scope)",
-                        description = "Minimal load for login page - 50 messages (~10KB)",
+                        name = "Login Page (auth category)",
+                        description = "Minimal load for login page - ~50 messages (~10KB)",
                         value = """
                             {
                               "success": true,
                               "data": {
-                                "auth.title": "HEMIS Tizimiga Kirish",
-                                "auth.username": "Foydalanuvchi nomi",
-                                "auth.password": "Parol",
-                                "auth.loginButton": "Kirish",
-                                "auth.forgotPassword": "Parolni unutdingizmi?",
-                                "auth.invalidCredentials": "Noto'g'ri login yoki parol"
+                                "Sign in to system": "Tizimga kirish",
+                                "Username": "Foydalanuvchi nomi",
+                                "Password": "Parol",
+                                "Sign in": "Tizimga kirish",
+                                "Forgot password?": "Parolni unutdingizmi?",
+                                "Invalid username or password": "Foydalanuvchi nomi yoki parol noto'g'ri"
                               }
                             }
                             """
                     ),
                     @ExampleObject(
-                        name = "Dashboard (auth,dashboard,menu scopes)",
-                        description = "Dashboard with menu - 200 messages (~40KB)",
+                        name = "Dashboard (auth,menu,action categories)",
+                        description = "Dashboard with menu - ~200 messages (~40KB)",
                         value = """
                             {
                               "success": true,
                               "data": {
-                                "auth.username": "Foydalanuvchi nomi",
-                                "dashboard.welcome": "Xush kelibsiz",
-                                "dashboard.stats.students": "Talabalar soni",
-                                "dashboard.stats.teachers": "O'qituvchilar soni",
-                                "menu.students": "Talabalar",
-                                "menu.teachers": "O'qituvchilar",
-                                "menu.registry": "Ro'yxatlar",
-                                "button.save": "Saqlash",
-                                "button.cancel": "Bekor qilish"
+                                "Username": "Foydalanuvchi nomi",
+                                "Welcome back!": "Xush kelibsiz!",
+                                "Students": "Talabalar",
+                                "Teachers": "O'qituvchilar",
+                                "Registries": "Reestlar",
+                                "Save": "Saqlash",
+                                "Cancel": "Bekor qilish"
                               }
                             }
                             """

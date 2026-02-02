@@ -95,7 +95,7 @@ PERFORM _seed_msg('action', 'Close',               'Yopish',             'Ёпи
 PERFORM _seed_msg('action', 'Back',                'Orqaga',             'Орқага',               'Назад');
 PERFORM _seed_msg('action', 'Next',                'Keyingi',            'Кейинги',             'Далее');
 PERFORM _seed_msg('action', 'Previous',            'Oldingi',            'Олдинги',             'Предыдущий');
-PERFORM _seed_msg('action', 'Refresh',             'Yangilash',          'Янгилаш',             'Обновить');
+PERFORM _seed_msg('action', 'Refresh',             'Qayta yuklash',      'Қайта юклаш',         'Перезагрузить');
 PERFORM _seed_msg('action', 'Export',              'Eksport',            'Экспорт',             'Экспорт');
 PERFORM _seed_msg('action', 'Import',              'Import',             'Импорт',              'Импорт');
 PERFORM _seed_msg('action', 'Download',            'Yuklab olish',       'Юклаб олиш',          'Скачать');
@@ -107,7 +107,7 @@ PERFORM _seed_msg('action', 'Select',              'Tanlash',            'Тан
 PERFORM _seed_msg('action', 'Select all',          'Hammasini tanlash',  'Ҳаммасини танлаш',    'Выбрать все');
 PERFORM _seed_msg('action', 'Confirm',             'Tasdiqlash',         'Тасдиқлаш',           'Подтвердить');
 PERFORM _seed_msg('action', 'Submit',              'Yuborish',           'Юбориш',              'Отправить');
-PERFORM _seed_msg('action', 'Sign in',             'Tizimga kirish',     'Тизимга кириш',       'Войти');
+PERFORM _seed_msg('action', 'Sign in',             'Kirish',             'Кириш',               'Войти');
 PERFORM _seed_msg('action', 'Sign out',            'Chiqish',            'Чиқиш',               'Выйти');
 PERFORM _seed_msg('action', 'Download Excel',      'Excel yuklab olish', 'Excel юклаб олиш',    'Скачать Excel');
 PERFORM _seed_msg('action', 'Download JSON',       'JSON yuklab olish',  'JSON юклаб олиш',     'Скачать JSON');
@@ -183,7 +183,7 @@ PERFORM _seed_msg('message', 'Are you sure?',            'Ishonchingiz komilmi?'
 PERFORM _seed_msg('message', 'This action cannot be undone', 'Bu amalni qaytarib bo''lmaydi', 'Бу амални қайтариб бўлмайди', 'Это действие нельзя отменить');
 PERFORM _seed_msg('message', 'Failed to load data',      'Ma''lumotlarni yuklashda xatolik', 'Маълумотларни юклашда хатолик', 'Ошибка загрузки данных');
 PERFORM _seed_msg('message', 'Export failed',            'Eksport qilishda xatolik',     'Экспорт қилишда хатолик',   'Ошибка экспорта');
-PERFORM _seed_msg('message', 'Network error',           'Internet bilan bog''lanishda xatolik', 'Интернет билан боғланишда хатолик', 'Ошибка сети');
+PERFORM _seed_msg('message', 'Network error',           'Tarmoq xatosi',                        'Тармоқ хатоси',                     'Ошибка сети');
 PERFORM _seed_msg('message', 'Network connection error', 'Internet bilan bog''lanishda xatolik', 'Интернет билан боғланишда хатолик', 'Ошибка подключения к интернету');
 PERFORM _seed_msg('message', 'Backend server is not available', 'Backend server ishlamayapti. Iltimos, keyinroq qayta urinib ko''ring.', 'Бэкенд сервер ишламаяпти. Илтимос, кейинроқ қайта уриниб кўринг.', 'Сервер бэкенда недоступен. Пожалуйста, попробуйте позже.');
 PERFORM _seed_msg('message', 'Failed to delete',        'O''chirishda xatolik',          'Ўчиришда хатолик',          'Ошибка удаления');
@@ -241,7 +241,7 @@ PERFORM _seed_msg('auth', 'Forgot password?',           'Parolni unutdingizmi?',
 PERFORM _seed_msg('auth', 'Sign in to continue',       'Davom etish uchun tizimga kiring', 'Давом этиш учун тизимга киринг', 'Войдите для продолжения');
 PERFORM _seed_msg('auth', 'Welcome back!',             'Xush kelibsiz!',               'Хуш келибсиз!',            'Добро пожаловать!');
 PERFORM _seed_msg('auth', 'Invalid username or password', 'Foydalanuvchi nomi yoki parol noto''g''ri', 'Фойдаланувчи номи ёки парол нотўғри', 'Неверный логин или пароль');
-PERFORM _seed_msg('auth', 'Account is disabled',        'Foydalanuvchi hisobi faol emas', 'Фойдаланувчи ҳисоби фаол эмас', 'Учётная запись отключена');
+PERFORM _seed_msg('auth', 'Account is disabled',        'Hisob faol emas',                'Ҳисоб фаол эмас',              'Аккаунт отключён');
 PERFORM _seed_msg('auth', 'Too many attempts',          'Juda ko''p urinish. Keyinroq qayta urinib ko''ring.',            'Жуда кўп уриниш. Кейинроқ қайта уриниб кўринг.',          'Слишком много попыток. Попробуйте позже.');
 PERFORM _seed_msg('auth', 'User account is disabled',  'Foydalanuvchi hisobi faol emas', 'Фойдаланувчи ҳисоби фаол эмас', 'Учётная запись пользователя неактивна');
 PERFORM _seed_msg('auth', 'No university assigned',    'Universitet tayinlanmagan',      'Университет тайинланмаган',     'Университет не назначен');
@@ -285,7 +285,7 @@ PERFORM _seed_msg('table', 'Faculty type',          'Fakultet turi',            
 
 -- Page titles
 PERFORM _seed_msg('label', 'Institutions (HEIs)',   'Muassasalar (OTMlar)',         'Муассасалар (ОТМлар)',       'Учреждения (ВУЗы)');
-PERFORM _seed_msg('label', 'HEI Registry',          'Oliy ta''lim muassasalari reestri', 'Олий таълим муассасалари реестри', 'Реестр высших учебных заведений');
+PERFORM _seed_msg('label', 'HEI Registry',          'OTM reestri',                       'ОТМ реестри',                     'Реестр ВУЗов');
 PERFORM _seed_msg('label', 'Institution details',   'Muassasa ma''lumotlari',        'Муассаса маълумотлари',     'Информация об учреждении');
 PERFORM _seed_msg('label', 'Higher Education Institutions Registry', 'Oliy ta''lim muassasalari reestri', 'Олий таълим муассасалари реестри', 'Реестр высших учебных заведений');
 PERFORM _seed_msg('label', 'No faculties found',    'Fakultetlar topilmadi',        'Факультетлар топилмади',    'Факультеты не найдены');
@@ -371,7 +371,7 @@ PERFORM _seed_msg('menu', 'API Logs',               'API log''lar',             
 PERFORM _seed_msg('menu', 'Report updates',         'Hisobot yangilanishlari',      'Ҳисоботларни янгилаш',      'Обновления отчётов');
 
 -- E-Reestr submenus
-PERFORM _seed_msg('menu', 'Universities',           'Muassasalar',                  'Муассасалар',               'Университеты');
+PERFORM _seed_msg('menu', 'Universities',           'Universitetlar',               'Университетлар',            'Университеты');
 PERFORM _seed_msg('menu', 'Faculties',              'Fakultetlar',                  'Факультетлар',              'Факультеты');
 PERFORM _seed_msg('menu', 'Departments',            'Kafedralar',                   'Кафедралар',                'Кафедры');
 PERFORM _seed_msg('menu', 'Teachers',               'O''qituvchilar',                'Ўқитувчилар',               'Преподаватели');
@@ -538,7 +538,7 @@ PERFORM _seed_msg('label', 'Total HEIs',             'Jami OTMlar',             
 PERFORM _seed_msg('label', 'Issued Diplomas',        'Berilgan Diplomlar',           'Берилган Дипломлар',        'Выданные дипломы');
 PERFORM _seed_msg('label', 'unknown',                'noma''lum',                     'номаълум',                  'неизвестно');
 PERFORM _seed_msg('action', 'Get report',            'Hisobot olish',                'Ҳисобот олиш',              'Получить отчёт');
-PERFORM _seed_msg('label', 'Education types',        'Ta''lim turlari',               'Таълим турлари',            'Виды образования');
+-- NB: 'Education types' allaqachon menu kategoriyasida (qator 402) mavjud; dublikat olib tashlandi
 PERFORM _seed_msg('label', 'Distribution by education levels', 'Ta''lim bosqichlari bo''yicha taqsimlash', 'Таълим босқичлари бўйича тақсимлаш', 'Распределение по уровням образования');
 PERFORM _seed_msg('label', 'student',                'talaba',                       'талаба',                    'студент');
 PERFORM _seed_msg('label', 'TOP Universities',       'TOP Universitetlar',           'ТОП Университетлар',        'ТОП Университеты');
@@ -549,8 +549,7 @@ PERFORM _seed_msg('label', 'Changes in last 24 hours', 'Oxirgi 24 soatdagi o''zg
 PERFORM _seed_msg('label', 'Quick info',             'Tezkor ma''lumotlar',           'Тезкор маълумотлар',        'Быстрая информация');
 PERFORM _seed_msg('label', 'Grant students',         'Grant talabalar',              'Грант талабалар',           'Грантовые студенты');
 PERFORM _seed_msg('label', 'Contract students',      'Kontrakt talabalar',           'Контракт талабалар',        'Контрактные студенты');
-PERFORM _seed_msg('label', 'Scientific projects',    'Ilmiy loyihalar',              'Илмий лойиҳалар',           'Научные проекты');
-PERFORM _seed_msg('label', 'Scientific publications','Ilmiy nashrlar',               'Илмий нашрлар',             'Научные публикации');
+-- NB: 'Scientific projects' va 'Scientific publications' allaqachon menu kategoriyasida (qatorlar 327-328) mavjud; dublikatlar olib tashlandi
 PERFORM _seed_msg('message', 'Please refresh the page', 'Iltimos, sahifani yangilang', 'Илтимос, саҳифани янгиланг', 'Пожалуйста, обновите страницу');
 PERFORM _seed_msg('label', 'STATISTICS',             'STATISTIKA',                   'СТАТИСТИКА',                'СТАТИСТИКА');
 PERFORM _seed_msg('label', 'Monitoring and analysis of higher education system of the Republic of Uzbekistan', 'O''zbekiston Respublikasi Oliy Ta''lim Vazirligi - Oliy ta''lim tizimi monitoring va tahlil', 'Ўзбекистон Республикаси Олий Таълим Вазирлиги - Олий таълим тизими мониторинг ва таҳлил', 'Министерство высшего образования Республики Узбекистан - Мониторинг и анализ системы высшего образования');
@@ -592,7 +591,7 @@ PERFORM _seed_msg('label', 'Associate professors',   'Dotsentlar',              
 PERFORM _seed_msg('label', 'Doctor of science',      'Fan doktori',                  'Фан доктори',               'Доктор наук');
 PERFORM _seed_msg('label', 'years',                  'yil',                          'йил',                       'лет');
 PERFORM _seed_msg('label', 'teachers found',         'ta o''qituvchi topildi',        'та ўқитувчи топилди',       'преподавателей найдено');
-PERFORM _seed_msg('label', 'Teacher list',           'O''qituvchilar ro''yxati',       'Ўқитувчилар рўйхати',       'Список преподавателей');
+-- NB: 'Teacher list' allaqachon menu kategoriyasida (qator 516) mavjud; dublikat olib tashlandi
 PERFORM _seed_msg('table', 'Department',             'Kafedra',                      'Кафедра',                   'Кафедра');
 PERFORM _seed_msg('table', 'Position',               'Lavozim',                      'Лавозим',                   'Должность');
 PERFORM _seed_msg('table', 'Academic degree',        'Ilmiy daraja',                 'Илмий даража',              'Учёная степень');
@@ -606,14 +605,14 @@ PERFORM _seed_msg('label', 'Search by full name, PINFL, department...', 'FIO, PI
 -- =====================================================
 -- ErrorBoundary
 -- =====================================================
-PERFORM _seed_msg('message', 'An unexpected error occurred', 'Xatolik yuz berdi', 'Хатолик юз берди', 'Произошла ошибка');
+PERFORM _seed_msg('message', 'An unexpected error occurred', 'Kutilmagan xatolik yuz berdi', 'Кутилмаган хатолик юз берди', 'Произошла непредвиденная ошибка');
 PERFORM _seed_msg('message', 'An unexpected error occurred in the application. Please refresh the page or go to the home page.', 'Dasturda kutilmagan xatolik yuz berdi. Iltimos, sahifani yangilang yoki bosh sahifaga qayting.', 'Дастурда кутилмаган хатолик юз берди. Илтимос, саҳифани янгиланг ёки бош саҳифага қайтинг.', 'В приложении произошла непредвиденная ошибка. Пожалуйста, обновите страницу или вернитесь на главную.');
 PERFORM _seed_msg('label', 'Error details',          'Xatolik tafsilotlari',         'Хатолик тафсилотлари',      'Детали ошибки');
 PERFORM _seed_msg('label', 'Event ID (for support)', 'Event ID (qo''llab-quvvatlash uchun)', 'Event ID (қўллаб-қувватлаш учун)', 'Event ID (для поддержки)');
 PERFORM _seed_msg('label', 'Send this ID to the support team', 'Bu ID''ni texnik yordam xizmatiga yuborishingiz mumkin.', 'Бу ID''ни техник ёрдам хизматига юборишингиз мумкин.', 'Отправьте этот ID в службу поддержки.');
 PERFORM _seed_msg('label', 'Technical details (development only)', 'Texnik ma''lumot (faqat development)', 'Техник маълумот (фақат development)', 'Техническая информация (только для разработки)');
 PERFORM _seed_msg('action', 'Refresh page',          'Sahifani yangilash',            'Саҳифани янгилаш',          'Обновить страницу');
-PERFORM _seed_msg('action', 'Home page',             'Bosh sahifa',                  'Бош саҳифа',                'Главная страница');
+PERFORM _seed_msg('action', 'Home page',             'Asosiy sahifa',                'Асосий саҳифа',             'Главная страница');
 
 -- =====================================================
 -- UniversityDetailDrawer
@@ -665,7 +664,7 @@ PERFORM _seed_msg('label', 'parameters',             'parametr',                
 PERFORM _seed_msg('label', 'Edit translation',       'Tarjimani tahrirlash',         'Таржимани таҳрирлаш',       'Редактирование перевода');
 PERFORM _seed_msg('label', 'Update existing translation', 'Mavjud tarjimani yangilang', 'Мавжуд таржимани янгиланг', 'Обновите существующий перевод');
 PERFORM _seed_msg('label', 'Key',                    'Kalit',                        'Калит',                     'Ключ');
-PERFORM _seed_msg('label', 'Translations section',   'Tarjimalar',                   'Таржималар',                'Переводы');
+PERFORM _seed_msg('label', 'Translations section',   'Tarjimalar bo''limi',           'Таржималар бўлими',         'Раздел переводов');
 PERFORM _seed_msg('validation', 'Category is required', 'Kategoriya majburiy',       'Категория мажбурий',        'Категория обязательна');
 PERFORM _seed_msg('validation', 'Key is required',   'Kalit majburiy',               'Калит мажбурий',            'Ключ обязателен');
 PERFORM _seed_msg('validation', 'Key must contain only letters, numbers, dots and underscores', 'Kalit faqat harf, raqam, nuqta va pastki chiziqdan iborat bo''lishi kerak', 'Калит фақат ҳарф, рақам, нуқта ва пастки чизиқдан иборат бўлиши керак', 'Ключ может содержать только буквы, цифры, точки и подчёркивания');
@@ -678,6 +677,7 @@ PERFORM _seed_msg('label', 'If inactive, frontend will not see this translation'
 PERFORM _seed_msg('message', 'Translation successfully updated', 'Tarjima muvaffaqiyatli yangilandi!', 'Таржима муваффақиятли янгиланди!', 'Перевод успешно обновлён!');
 PERFORM _seed_msg('message', 'Error saving translation', 'Tarjimani saqlashda xatolik', 'Таржимани сақлашда хатолик', 'Ошибка сохранения перевода');
 PERFORM _seed_msg('message', 'If existing translation fits your needs, use it instead of adding new', 'Agar mavjud tarjima sizning ehtiyojingizni qoplasa, yangi qo''shmasdan uni ishlating.', 'Агар мавжуд таржима сизнинг эҳтиёжингизни қоплаcа, янги қўшмасдан уни ишлатинг.', 'Если существующий перевод подходит, используйте его вместо добавления нового.');
+PERFORM _seed_msg('message', 'Translation cache cleared on all servers', 'Tarjima keshi barcha serverlarda tozalandi', 'Таржима кеши барча серверларда тозаланди', 'Кэш переводов успешно очищен на всех серверах');
 PERFORM _seed_msg('label', 'and more',               'va yana',                      'ва яна',                    'и ещё');
 
 -- =====================================================
