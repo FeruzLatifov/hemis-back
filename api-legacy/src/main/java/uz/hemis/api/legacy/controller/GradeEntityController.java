@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.LegacyEntityAdapter;
 import uz.hemis.common.dto.AcademicScoreDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.service.AcademicScoreService;
+import uz.hemis.service.academic.AcademicScoreService;
 
 import java.util.*;
 

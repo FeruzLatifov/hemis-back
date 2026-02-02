@@ -16,7 +16,7 @@ import uz.hemis.common.dto.LanguageDto;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.domain.entity.SystemConfiguration;
 import uz.hemis.domain.repository.SystemConfigurationRepository;
-import uz.hemis.service.LanguageService;
+import uz.hemis.service.shared.LanguageService;
 
 import java.util.HashMap;
 import java.util.List;

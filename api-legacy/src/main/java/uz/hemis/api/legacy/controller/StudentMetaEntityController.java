@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.LegacyEntityAdapter;
 import uz.hemis.common.dto.StudentMetaDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.service.StudentMetaService;
+import uz.hemis.service.student.StudentMetaService;
 
 import java.util.*;
 import java.util.stream.Collectors;

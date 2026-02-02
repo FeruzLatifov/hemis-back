@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
-import uz.hemis.service.I18nService;
+import uz.hemis.service.shared.I18nService;
 
 import java.util.Map;
 

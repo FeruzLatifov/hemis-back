@@ -20,8 +20,8 @@ import uz.hemis.common.dto.StudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Student;
 import uz.hemis.domain.repository.StudentRepository;
-import uz.hemis.service.StudentService;
-import uz.hemis.service.mapper.StudentLegacyMapper;
+import uz.hemis.service.student.StudentService;
+import uz.hemis.service.student.mapper.StudentLegacyMapper;
 
 import uz.hemis.api.legacy.adapter.JsonNull;
 

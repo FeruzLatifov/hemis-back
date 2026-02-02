@@ -12,9 +12,9 @@ import org.springframework.data.domain.PageRequest;
 import uz.hemis.common.dto.GroupDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Group;
-import uz.hemis.service.mapper.GroupMapper;
+import uz.hemis.service.university.mapper.GroupMapper;
 import uz.hemis.domain.repository.GroupRepository;
-import uz.hemis.service.GroupService;
+import uz.hemis.service.university.GroupService;
 
 import java.util.Arrays;
 import java.util.Optional;

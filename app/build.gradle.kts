@@ -20,6 +20,7 @@ dependencies {
     implementation(project(":api-legacy"))      // CUBA-compatible entity APIs
     implementation(project(":api-web"))         // Modern Web/UI APIs
     implementation(project(":api-external"))    // S2S integration APIs
+    implementation(project(":api-university"))  // University APIs
 
     // Spring Boot Starters (versions from BOM)
     implementation("org.springframework.boot:spring-boot-starter-web")

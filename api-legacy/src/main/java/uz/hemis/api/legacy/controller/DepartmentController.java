@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.service.DepartmentService;
+import uz.hemis.service.university.DepartmentService;
 import uz.hemis.common.dto.DepartmentDto;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;

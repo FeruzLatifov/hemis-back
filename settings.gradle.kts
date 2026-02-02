@@ -16,6 +16,7 @@ include(
     "api-legacy",               // 🎯 Legacy CUBA-compatible APIs (/app/rest/*)
     "api-web",                  // 🎯 Modern Web APIs (/api/v1/web/*)
     "api-external",             // 🎯 S2S integrations (gov, education, finance)
+    "api-university",           // 🎯 University APIs (/api/v1/university/*)
     "app"                       // Main Spring Boot application
 )
 
@@ -56,5 +57,6 @@ plugins {
 // ├── api-legacy/              → 🎯 CUBA entity APIs /app/rest/*
 // ├── api-web/                 → 🎯 Modern Web APIs /api/v1/web/*
 // ├── api-external/            → 🎯 S2S integrations
+// ├── api-university/          → 🎯 University APIs /api/v1/university/*
 // └── app/                     → Main Spring Boot application
 // =====================================================

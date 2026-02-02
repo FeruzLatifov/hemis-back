@@ -14,7 +14,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import uz.hemis.common.dto.ErrorResponse;
-import uz.hemis.service.I18nService;
+import uz.hemis.service.shared.I18nService;
 
 /**
  * Web API Exception Handler

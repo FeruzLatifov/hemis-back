@@ -10,7 +10,7 @@ import uz.hemis.domain.entity.Permission;
 import uz.hemis.domain.entity.User;
 import uz.hemis.domain.repository.MenuRepository;
 import uz.hemis.domain.repository.UserRepository;
-import uz.hemis.service.I18nService;
+import uz.hemis.service.shared.I18nService;
 import uz.hemis.service.cache.CacheVersionService;
 import uz.hemis.service.menu.dto.MenuItem;
 import uz.hemis.service.menu.dto.MenuResponse;

@@ -21,7 +21,7 @@ import uz.hemis.domain.entity.SecUser;
 import uz.hemis.domain.entity.University;
 import uz.hemis.domain.repository.SecUserRepository;
 import uz.hemis.domain.repository.UniversityRepository;
-import uz.hemis.service.UniversityService;
+import uz.hemis.service.university.UniversityService;
 
 import java.util.LinkedHashMap;
 import java.util.List;

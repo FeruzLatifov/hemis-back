@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uz.hemis.common.dto.CaptchaResponse;
-import uz.hemis.service.CaptchaService;
+import uz.hemis.service.shared.CaptchaService;
 
 /**
  * Captcha Service Controller

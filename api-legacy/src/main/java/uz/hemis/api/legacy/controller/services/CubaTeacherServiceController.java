@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.TeacherIdRequest;
 import uz.hemis.domain.repository.UserRepository;
-import uz.hemis.service.TeacherCubaService;
-import uz.hemis.service.TeacherService;
+import uz.hemis.service.teacher.TeacherCubaService;
+import uz.hemis.service.teacher.TeacherService;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

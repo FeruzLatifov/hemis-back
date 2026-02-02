@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.service.EmploymentService;
+import uz.hemis.service.finance.EmploymentService;
 import uz.hemis.common.dto.EmploymentDto;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;

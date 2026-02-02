@@ -13,7 +13,7 @@ import uz.hemis.domain.entity.SystemMessageTranslation;
 import uz.hemis.domain.entity.SystemMessageTranslationId;
 import uz.hemis.domain.repository.SystemMessageRepository;
 import uz.hemis.domain.repository.SystemMessageTranslationRepository;
-import uz.hemis.service.I18nService;
+import uz.hemis.service.shared.I18nService;
 import uz.hemis.service.event.TranslationCacheEventPublisher;
 import uz.hemis.service.mapper.SystemMessageMapper;
 

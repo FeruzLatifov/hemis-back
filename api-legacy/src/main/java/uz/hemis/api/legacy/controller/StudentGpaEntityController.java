@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.domain.entity.StudentGpa;
 import uz.hemis.domain.repository.StudentGpaRepository;
-import uz.hemis.service.StudentGpaService;
+import uz.hemis.service.student.StudentGpaService;
 
 import java.util.List;
 import java.util.Map;

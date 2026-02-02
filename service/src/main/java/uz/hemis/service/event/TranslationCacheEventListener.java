@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
-import uz.hemis.service.I18nService;
+import uz.hemis.service.shared.I18nService;
 import uz.hemis.service.cache.CacheEvictionService;
 import uz.hemis.domain.event.TranslationCacheEvent;
 

@@ -11,7 +11,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.service.ScholarshipService;
+import uz.hemis.service.finance.ScholarshipService;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.ScholarshipDto;

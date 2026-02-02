@@ -13,8 +13,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.service.ContractStatisticsService;
-import uz.hemis.service.StudentService;
+import uz.hemis.service.finance.ContractStatisticsService;
+import uz.hemis.service.student.StudentService;
 
 import java.util.Map;
 

@@ -44,6 +44,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         "uz.hemis.api.web",        // Modern UI APIs (/app/rest/v2/*, /api/v1/web/*)
         "uz.hemis.web",            // Web authentication controllers (/api/v1/web/auth/*)
         "uz.hemis.api.external",   // S2S integrations
+        "uz.hemis.api.university", // University APIs (/api/v1/university/*)
         "uz.hemis.app"
 })
 @EntityScan(basePackages = "uz.hemis.domain.entity")

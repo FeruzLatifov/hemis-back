@@ -19,9 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.StudentIdRequest;
 import uz.hemis.domain.repository.UserRepository;
-import uz.hemis.service.StudentGpaService;
-import uz.hemis.service.StudentService;
-import uz.hemis.service.VerificationService;
+import uz.hemis.service.student.StudentGpaService;
+import uz.hemis.service.student.StudentService;
+import uz.hemis.service.student.VerificationService;
 import uz.hemis.service.integration.HemisApiService;
 
 import java.util.Map;

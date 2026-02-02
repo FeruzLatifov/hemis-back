@@ -1,0 +1,147 @@
+package uz.hemis.service.student;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.dto.DoctoralStudentDto;
+import uz.hemis.common.exception.ResourceNotFoundException;
+import uz.hemis.common.exception.ValidationException;
+import uz.hemis.domain.entity.DoctoralStudent;
+import uz.hemis.service.student.mapper.DoctoralStudentMapper;
+import uz.hemis.domain.repository.DoctoralStudentRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Service for DoctoralStudent entity operations
+ *
+ * Table: hemishe_e_doctorate_student
+ * All methods match actual entity fields from ministry.sql
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+@Transactional(readOnly = true)
+public class DoctoralStudentService {
+
+    private final DoctoralStudentRepository doctoralStudentRepository;
+    private final DoctoralStudentMapper doctoralStudentMapper;
+
+    @Cacheable(value = "doctoralStudents", key = "#id", unless = "#result == null")
+    public DoctoralStudentDto findById(UUID id) {
+        DoctoralStudent doctoralStudent = doctoralStudentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "id", id));
+        return doctoralStudentMapper.toDto(doctoralStudent);
+    }
+
+    /**
+     * Find by student ID number
+     */
+    @Cacheable(value = "doctoralStudents", key = "'studentIdNumber:' + #studentIdNumber", unless = "#result == null")
+    public DoctoralStudentDto findByStudentIdNumber(String studentIdNumber) {
+        DoctoralStudent doctoralStudent = doctoralStudentRepository.findByStudentIdNumber(studentIdNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "studentIdNumber", studentIdNumber));
+        return doctoralStudentMapper.toDto(doctoralStudent);
+    }
+
+    /**
+     * Find by passport PIN (PINFL)
+     */
+    @Cacheable(value = "doctoralStudents", key = "'passportPin:' + #passportPin", unless = "#result == null")
+    public DoctoralStudentDto findByPassportPin(String passportPin) {
+        DoctoralStudent doctoralStudent = doctoralStudentRepository.findByPassportPin(passportPin)
+                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "passportPin", passportPin));
+        return doctoralStudentMapper.toDto(doctoralStudent);
+    }
+
+    public Page<DoctoralStudentDto> findAll(Pageable pageable) {
+        return doctoralStudentRepository.findAll(pageable).map(doctoralStudentMapper::toDto);
+    }
+
+    public Page<DoctoralStudentDto> findByUniversity(String university, Pageable pageable) {
+        return doctoralStudentRepository.findByUniversity(university, pageable).map(doctoralStudentMapper::toDto);
+    }
+
+    public List<DoctoralStudentDto> findActiveByUniversity(String university) {
+        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findActiveByUniversity(university));
+    }
+
+    /**
+     * Find by doctoral student type
+     */
+    public List<DoctoralStudentDto> findByDoctoralStudentType(String doctoralStudentType) {
+        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findByDoctoralStudentType(doctoralStudentType));
+    }
+
+    /**
+     * Find by doctorate student status
+     */
+    public List<DoctoralStudentDto> findByDoctorateStudentStatus(String doctorateStudentStatus) {
+        return doctoralStudentMapper.toDtoList(doctoralStudentRepository.findByDoctorateStudentStatus(doctorateStudentStatus));
+    }
+
+    public long countActiveByUniversity(String university) {
+        return doctoralStudentRepository.countActiveByUniversity(university);
+    }
+
+    @Transactional
+    @CachePut(value = "doctoralStudents", key = "#result.id")
+    public DoctoralStudentDto create(DoctoralStudentDto doctoralStudentDto) {
+        log.info("Creating doctoral student");
+
+        // Validate unique constraints
+        if (doctoralStudentDto.getPassportPin() != null &&
+                doctoralStudentRepository.existsByPassportPin(doctoralStudentDto.getPassportPin())) {
+            throw new ValidationException("Doctoral student with this passport PIN already exists", "passportPin", "Passport PIN must be unique");
+        }
+
+        if (doctoralStudentDto.getStudentIdNumber() != null &&
+                doctoralStudentRepository.existsByStudentIdNumber(doctoralStudentDto.getStudentIdNumber())) {
+            throw new ValidationException("Doctoral student with this student ID number already exists", "studentIdNumber", "Student ID number must be unique");
+        }
+
+        DoctoralStudent doctoralStudent = doctoralStudentMapper.toEntity(doctoralStudentDto);
+        DoctoralStudent saved = doctoralStudentRepository.save(doctoralStudent);
+        log.info("Doctoral student created: {}", saved.getId());
+        return doctoralStudentMapper.toDto(saved);
+    }
+
+    @Transactional
+    @CachePut(value = "doctoralStudents", key = "#id")
+    public DoctoralStudentDto update(UUID id, DoctoralStudentDto doctoralStudentDto) {
+        log.info("Updating doctoral student: {}", id);
+
+        DoctoralStudent existing = doctoralStudentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "id", id));
+
+        doctoralStudentMapper.updateEntityFromDto(doctoralStudentDto, existing);
+        DoctoralStudent updated = doctoralStudentRepository.save(existing);
+        log.info("Doctoral student updated: {}", id);
+        return doctoralStudentMapper.toDto(updated);
+    }
+
+    @Transactional
+    @CacheEvict(value = "doctoralStudents", allEntries = true)
+    public void softDelete(UUID id) {
+        log.warn("Soft deleting doctoral student: {}", id);
+        DoctoralStudent doctoralStudent = doctoralStudentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("DoctoralStudent", "id", id));
+
+        if (doctoralStudent.isDeleted()) {
+            log.warn("Doctoral student already deleted: {}", id);
+            return;
+        }
+
+        doctoralStudent.setDeleteTs(LocalDateTime.now());
+        doctoralStudentRepository.save(doctoralStudent);
+        log.warn("Doctoral student soft deleted: {}", id);
+    }
+}

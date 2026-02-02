@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.UniversityDto;
 import uz.hemis.domain.entity.University;
-import uz.hemis.service.mapper.UniversityMapper;
+import uz.hemis.service.university.mapper.UniversityMapper;
 import uz.hemis.domain.repository.UniversityRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;

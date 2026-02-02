@@ -501,6 +501,46 @@ public class OpenApiConfig {
             .build();
     }
 
+    /**
+     * Group 3: University New API v1
+     *
+     * Target Audience: Yangi university endpointlar
+     *
+     * Includes:
+     * - /api/v1/university/** (Yangi university API'lar)
+     *
+     * Access URL: /swagger-ui.html?urls.primaryName=university-new
+     */
+    @Bean
+    public GroupedOpenApi universityNewApi() {
+        return GroupedOpenApi.builder()
+            .group("university-new")
+            .displayName("University API v1 (New)")
+            .packagesToScan("uz.hemis.api.university.controller")
+            .pathsToMatch("/api/v1/university/**")
+            .pathsToExclude("/actuator/**", "/error")
+            .addOpenApiCustomizer(openApi -> {
+                openApi.info(new Info()
+                    .title("University API v1")
+                    .version("1.0.0")
+                    .description("""
+                        # University API v1
+
+                        Yangi university endpointlar uchun zamonaviy REST API.
+
+                        ## Authentication
+
+                        Barcha endpoint'lar JWT token talab qiladi.
+                        `Authorization: Bearer <token>`
+                        """)
+                    .contact(new Contact()
+                        .name("HEMIS Development Team")
+                        .email("support@hemis.uz"))
+                );
+            })
+            .build();
+    }
+
     // =====================================================
     // OpenAPI Customizers (Advanced)
     // =====================================================
