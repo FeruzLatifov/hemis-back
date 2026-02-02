@@ -192,8 +192,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/refresh").permitAll()
                         .requestMatchers("/api/v1/web/auth/**").authenticated()
 
-                        // I18n endpoints (AUTH REQUIRED - swaggerda ko'rinadi)
-                        .requestMatchers("/api/v1/web/i18n/**").authenticated()
+                        // I18n endpoints (PUBLIC - login sahifasi uchun ham tarjima kerak)
+                        .requestMatchers("/api/v1/web/i18n/**").permitAll()
 
                         // Language/System endpoints (hammasi token talab qiladi)
                         .requestMatchers("/api/v1/web/languages/**").authenticated()
