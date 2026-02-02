@@ -42,6 +42,20 @@ spring:
         use_sql_comments: true
 
   # =====================================================
+  # Development Liquibase Configuration
+  # =====================================================
+  # ✅ AUTOMATIC MIGRATIONS (Best Practice for Development)
+  # Runs on every application startup
+  # Database lock prevents concurrent execution
+  # =====================================================
+
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+    default-schema: public
+    drop-first: false
+
+  # =====================================================
   # Development Security Configuration
   # =====================================================
   # Cookie settings for localhost HTTP testing
@@ -55,58 +69,7 @@ app:
       same-site: Lax
       domain: localhost
 
-  # =====================================================
-  # Development Liquibase Configuration
-  # =====================================================
-  # ✅ AUTOMATIC MIGRATIONS (Best Practice for Development)
-  # Runs on every application startup
-  # Database lock prevents concurrent execution
-  # =====================================================
-
-  liquibase:
-    # Enable automatic migrations in development
-    enabled: true  # ✅ Automatic migrations (Spring Boot default)
-
-    # Changelog location
-    change-log: classpath:/db/changelog/db.changelog-master.yaml
-
-    # Default schema
-    default-schema: public
-
-    # Safety settings
-    drop-first: false  # NEVER drop database
-
-    # Context for environment-specific changesets
-    contexts: dev
-    
-    # Database changelog lock (prevents concurrent migrations)
-    # Spring Boot Liquibase automatically uses DATABASECHANGELOGLOCK table
-    # to ensure only ONE instance runs migrations at a time
-
-  # =====================================================
-  # Redis Configuration - ENABLED for Permission Caching
-  # =====================================================
-
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-      timeout: 2000ms
-      jedis:
-        pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
-          max-wait: -1ms
-
-  cache:
-    type: redis  # Enable Redis cache
-    redis:
-      time-to-live: 3600000  # 1 hour (in milliseconds)
-      cache-null-values: false
-      use-key-prefix: true
-      key-prefix: "hemis:"
+  # Liquibase: see spring.liquibase.* above
 
 # =====================================================
 # Cache Warmup Configuration - OPTIMIZATION

@@ -81,9 +81,9 @@ public class Menu extends ModernBaseEntity {
      * i18n translation key
      * Column: i18n_key VARCHAR(200) NOT NULL
      *
-     * <p>Translation key for menu label</p>
-     * <p>References: h_system_message_translation table</p>
-     * <p>Examples: "menu.dashboard", "menu.registry.e-reestr"</p>
+     * <p>Translation key for menu label (gettext model: English text as key)</p>
+     * <p>References: system_message_translations table</p>
+     * <p>Examples: "Dashboard", "E-Registry"</p>
      */
     @Column(name = "i18n_key", nullable = false, length = 200)
     private String i18nKey;

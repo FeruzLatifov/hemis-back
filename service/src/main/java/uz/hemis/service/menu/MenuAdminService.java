@@ -434,7 +434,7 @@ public class MenuAdminService {
 
         if (response.getId() == null) return;
 
-        List<Menu> children = menuRepository.findByParentId(response.getId());
+        List<Menu> children = menuRepository.findAllChildrenByParentId(response.getId());
         if (!children.isEmpty()) {
             List<MenuAdminResponse> childResponses = menuMapper.toResponseList(children);
             // ✅ FIX: Pass incremented depth to prevent infinite recursion

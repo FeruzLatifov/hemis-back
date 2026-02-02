@@ -12,7 +12,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import uz.hemis.common.dto.ErrorResponse;
 import uz.hemis.service.I18nService;
@@ -47,7 +46,14 @@ import uz.hemis.service.I18nService;
 @Slf4j
 public class WebExceptionHandler {
 
+    private static final String DEFAULT_LANGUAGE = "uz-UZ";
+
     private final I18nService i18nService;
+
+    private String getLanguage(HttpServletRequest request) {
+        String lang = request.getHeader("Accept-Language");
+        return (lang != null && !lang.isBlank()) ? lang : DEFAULT_LANGUAGE;
+    }
 
     /**
      * Handle authentication failures (wrong username or password)
@@ -69,19 +75,18 @@ public class WebExceptionHandler {
      *
      * @param ex authentication exception
      * @param request HTTP request
-     * @param language Accept-Language header (default: uz-UZ)
      * @return 401 error response with localized message
      */
     @ExceptionHandler({UsernameNotFoundException.class, BadCredentialsException.class})
     public ResponseEntity<ErrorResponse> handleAuthenticationErrors(
             Exception ex,
-            HttpServletRequest request,
-            @RequestHeader(value = "Accept-Language", defaultValue = "uz-UZ") String language
+            HttpServletRequest request
     ) {
+        String language = getLanguage(request);
         log.warn("Authentication failed: {} - {}", ex.getClass().getSimpleName(), ex.getMessage());
 
         // ⭐ Get localized error message from database
-        String localizedMessage = i18nService.getMessage("error.auth.failed", language);
+        String localizedMessage = i18nService.getMessage("Invalid username or password", language);
 
         // ⭐ Capture to Sentry with WARNING level (401 is not a critical error)
         String eventId = Sentry.captureException(ex, scope -> {
@@ -121,19 +126,18 @@ public class WebExceptionHandler {
      *
      * @param ex runtime exception
      * @param request HTTP request
-     * @param language Accept-Language header (default: uz-UZ)
      * @return 500 error response with localized message
      */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(
             RuntimeException ex,
-            HttpServletRequest request,
-            @RequestHeader(value = "Accept-Language", defaultValue = "uz-UZ") String language
+            HttpServletRequest request
     ) {
+        String language = getLanguage(request);
         log.error("Runtime exception in web controller: {}", ex.getMessage(), ex);
 
         // ⭐ Get localized error message from database
-        String localizedMessage = i18nService.getMessage("error.internal", language);
+        String localizedMessage = i18nService.getMessage("Something went wrong", language);
 
         // ⭐ Capture to Sentry with ERROR level (500 is a critical error)
         String eventId = Sentry.captureException(ex, scope -> {
@@ -167,19 +171,18 @@ public class WebExceptionHandler {
      *
      * @param ex access denied exception
      * @param request HTTP request
-     * @param language Accept-Language header (default: uz-UZ)
      * @return 403 error response with localized message
      */
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(
             org.springframework.security.access.AccessDeniedException ex,
-            HttpServletRequest request,
-            @RequestHeader(value = "Accept-Language", defaultValue = "uz-UZ") String language
+            HttpServletRequest request
     ) {
+        String language = getLanguage(request);
         log.warn("Access denied: {} - {}", request.getRequestURI(), ex.getMessage());
 
         // ⭐ Get localized error message from database
-        String localizedMessage = i18nService.getMessage("error.auth.access_denied", language);
+        String localizedMessage = i18nService.getMessage("Access denied", language);
 
         // ⭐ Capture to Sentry with WARNING level
         String eventId = Sentry.captureException(ex, scope -> {

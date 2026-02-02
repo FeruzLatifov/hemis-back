@@ -48,12 +48,12 @@ import org.springframework.core.io.support.PropertiesLoaderUtils;
  * <p><strong>Usage Examples:</strong></p>
  * <pre>
  * // Get single message
- * String saveButton = i18nService.getMessage("button.save", "ru-RU");
+ * String saveButton = i18nService.getMessage("Save", "ru-RU");
  * // Returns: "Сохранить"
  *
  * // Get all messages for language (frontend bulk load)
  * Map&lt;String, String&gt; allMessages = i18nService.getAllMessages("en-US");
- * // Returns: {"button.save": "Save", "button.cancel": "Cancel", ...}
+ * // Returns: {"Save": "Save", "Cancel": "Cancel", ...}
  *
  * // Invalidate cache after update
  * i18nService.invalidateCache("ru-RU");
@@ -235,7 +235,7 @@ public class I18nService {
      *   <li>If still not found, return default Uzbek message</li>
      * </ol>
      *
-     * @param messageKey Message key (e.g., "button.save")
+     * @param messageKey Message key (e.g., "Save")
      * @param language Language code (e.g., "ru-RU")
      * @return Translated message (never null)
      */
@@ -282,9 +282,9 @@ public class I18nService {
      * <p><strong>Response Format:</strong></p>
      * <pre>
      * {
-     *   "button.save": "Сохранить",
-     *   "button.cancel": "Отмена",
-     *   "error.not_found": "Не найдено"
+     *   "Save": "Сохранить",
+     *   "Cancel": "Отмена",
+     *   "Not found": "Не найдено"
      * }
      * </pre>
      *
@@ -306,75 +306,86 @@ public class I18nService {
     }
 
     /**
-     * Get messages by category (e.g., all button labels)
-     * <p>Filtered from bulk cache data</p>
+     * Get messages by category (e.g., all action labels, all menu items)
+     * <p>Uses DB category column to resolve which keys belong to a category,
+     * then filters from the bulk translation cache.</p>
      *
-     * @param category Message category (app, menu, button, etc.)
+     * <p><strong>Natural Key Model:</strong> Keys are English text ("Save", "Dashboard"),
+     * so category cannot be inferred from the key. The {@code system_messages.category}
+     * column is the source of truth.</p>
+     *
+     * @param category Message category (action, menu, label, message, auth, etc.)
      * @param language Language code
      * @return Map of messageKey → translation for this category
      */
     public Map<String, String> getMessagesByCategory(String category, String language) {
         log.debug("Getting messages for category={}, language={}", category, language);
 
+        Set<String> categoryKeys = getCategoryKeys(category);
         Map<String, String> allMessages = getAllMessages(language);
 
-        // Filter by category prefix
-        String categoryPrefix = category + ".";
         return allMessages.entrySet().stream()
-            .filter(entry -> entry.getKey().startsWith(categoryPrefix))
+            .filter(entry -> categoryKeys.contains(entry.getKey()))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     /**
-     * Get messages by scopes (Progressive Loading - Industry Best Practice)
-     * <p>Optimized for frontend: load only required scopes instead of all translations</p>
+     * Get the set of message keys that belong to a category.
+     * <p>Cached in L1+L2 to avoid repeated DB queries.</p>
+     *
+     * @param category Category name (e.g., "action", "menu", "auth")
+     * @return Set of message keys belonging to this category
+     */
+    @org.springframework.cache.annotation.Cacheable(value = "i18n", key = "'category-keys:' + #category")
+    public Set<String> getCategoryKeys(String category) {
+        log.debug("Loading category keys from DB for category: {} (CACHE MISS)", category);
+        return systemMessageRepository.findByCategoryAndIsActiveTrue(category).stream()
+            .map(SystemMessage::getMessageKey)
+            .collect(Collectors.toSet());
+    }
+
+    /**
+     * Get messages by categories (Progressive Loading)
+     * <p>Optimized for frontend: load only required categories instead of all translations.</p>
+     *
+     * <p><strong>Natural Key Model:</strong> Scopes map directly to DB categories.
+     * Each scope name (e.g., "auth", "menu", "action") corresponds to a
+     * {@code system_messages.category} value.</p>
      *
      * <p><strong>Progressive Loading Strategy:</strong></p>
      * <ul>
-     *   <li>Login Page: scopes=["auth"] → 50 messages (10KB)</li>
-     *   <li>Dashboard: scopes=["auth","dashboard","menu"] → 200 messages (40KB)</li>
-     *   <li>Registry Page: scopes=["auth","dashboard","registry"] → 300 messages (60KB)</li>
+     *   <li>Login Page: scopes=["auth"] → ~50 messages (10KB)</li>
+     *   <li>Dashboard: scopes=["auth","menu","label"] → ~200 messages (40KB)</li>
      *   <li>Full Load: No scopes → 2000+ messages (400KB)</li>
      * </ul>
      *
-     * <p><strong>Performance Benefits:</strong></p>
+     * <p><strong>Category Examples:</strong></p>
      * <ul>
-     *   <li>50x Payload Reduction: 400KB → 10KB (login page) ✅</li>
-     *   <li>10x Faster Login: 500ms → 50ms (network time) ✅</li>
-     *   <li>L1+L2 Cached: Same 1ms performance after first load ✅</li>
-     *   <li>Zero Overfetching: Load only what's needed ✅</li>
-     * </ul>
-     *
-     * <p><strong>Scope Naming Convention:</strong></p>
-     * <ul>
-     *   <li>auth.* → Login/authentication (auth.username, auth.password)</li>
-     *   <li>dashboard.* → Dashboard widgets (dashboard.welcome, dashboard.stats)</li>
-     *   <li>menu.* → Menu items (menu.students, menu.teachers)</li>
-     *   <li>registry.* → Registry pages (registry.student.list, registry.teacher.view)</li>
-     *   <li>button.* → Common buttons (button.save, button.cancel)</li>
-     *   <li>error.* → Error messages (error.network, error.unauthorized)</li>
+     *   <li>auth → Login/authentication ("Sign in", "Username", "Password")</li>
+     *   <li>menu → Menu items ("Dashboard", "Students", "Teachers")</li>
+     *   <li>action → Buttons/actions ("Save", "Cancel", "Delete")</li>
+     *   <li>label → Form labels ("Name", "Code", "Status")</li>
+     *   <li>message → User messages ("No data found", "Something went wrong")</li>
+     *   <li>validation → Validation ("This field is required", "Too short")</li>
      * </ul>
      *
      * <p><strong>Frontend Integration:</strong></p>
      * <pre>
      * // Login page - minimal load
-     * const authTranslations = await fetch('/api/v1/web/i18n/messages/scopes?scopes=auth&lang=uz-UZ')
-     *   .then(r => r.json())
-     *   .then(r => r.data);
+     * const authMessages = await fetch('/api/v1/web/i18n/messages/scopes?scopes=auth&amp;lang=uz-UZ')
+     *   .then(r =&gt; r.json()).then(r =&gt; r.data);
      *
-     * // Dashboard - load additional scopes
-     * const dashboardTranslations = await fetch('/api/v1/web/i18n/messages/scopes?scopes=auth,dashboard,menu&lang=uz-UZ')
-     *   .then(r => r.json())
-     *   .then(r => r.data);
+     * // Dashboard - load additional categories
+     * const dashMessages = await fetch('/api/v1/web/i18n/messages/scopes?scopes=auth,menu,label&amp;lang=uz-UZ')
+     *   .then(r =&gt; r.json()).then(r =&gt; r.data);
      * </pre>
      *
-     * @param scopes List of scope prefixes (e.g., ["auth", "dashboard", "menu"])
+     * @param scopes List of category names (e.g., ["auth", "menu", "action"])
      * @param language Language code (e.g., "uz-UZ")
-     * @return Map of messageKey → translation (only messages matching scopes)
+     * @return Map of messageKey → translation (only messages matching categories)
      */
     public Map<String, String> getMessagesByScopes(List<String> scopes, String language) {
-        // ✅ FIX: Normalize scopes for deterministic cache key
-        // Sort and deduplicate to ensure ["auth", "menu"] and ["menu", "auth"] hit same cache
+        // Normalize for deterministic cache key
         List<String> normalizedScopes = scopes.stream()
             .distinct()
             .sorted()
@@ -391,18 +402,21 @@ public class I18nService {
         key = "'messages-scopes:' + #scopes.toString() + ':' + #language"
     )
     private Map<String, String> getMessagesByScopesInternal(List<String> scopes, String language) {
-        log.debug("Getting messages for scopes={}, language={} (normalized, sorted)", scopes, language);
+        log.debug("Getting messages for scopes(categories)={}, language={}", scopes, language);
 
-        // Get all messages (uses L1+L2 cache)
+        // Collect all keys from requested categories
+        Set<String> scopeKeys = new HashSet<>();
+        for (String scope : scopes) {
+            scopeKeys.addAll(getCategoryKeys(scope));
+        }
+
+        // Filter bulk cache by category keys
         Map<String, String> allMessages = getAllMessages(language);
-
-        // Filter by scope prefixes
         Map<String, String> filteredMessages = allMessages.entrySet().stream()
-            .filter(entry -> scopes.stream()
-                .anyMatch(scope -> entry.getKey().startsWith(scope + ".")))
+            .filter(entry -> scopeKeys.contains(entry.getKey()))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        log.debug("Filtered {} messages from {} total for scopes: {}",
+        log.debug("Filtered {} messages from {} total for categories: {}",
             filteredMessages.size(), allMessages.size(), scopes);
 
         return filteredMessages;

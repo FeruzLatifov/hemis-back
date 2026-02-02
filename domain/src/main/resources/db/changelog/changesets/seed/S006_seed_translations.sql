@@ -1,2200 +1,700 @@
 -- =====================================================
--- V3: ALL TRANSLATIONS (COMBINED)
+-- S006: SEED TRANSLATIONS (gettext model)
 -- =====================================================
 -- Author: hemis-team
--- Date: 2025-01-20 (Optimized)
+-- Date: 2025-01-20 (Rewritten)
 -- Purpose: Complete i18n system translations
 --
--- Contents:
--- PART 1: Core translations (menu, rating, data, reports, etc.)
--- PART 2: Faculty registry translations
+-- KEY CONVENTION (gettext model):
+--   message_key = English text (UNIQUE, serves as en-US translation)
+--   message     = Uzbek Latin default text
+--   Translations: uz-UZ, oz-UZ, ru-RU stored in system_message_translations
+--   en-US translation = message_key itself
 --
--- Strategy: SINGLE TRANSLATION UNIT
--- - All translations deployed together
--- - Uses system_messages (base) + system_message_translations
--- - Supports 4 languages: uz-UZ, oz-UZ, ru-RU, en-US
+-- CATEGORIES (for admin panel grouping only):
+--   action     - Button/action labels (Save, Cancel, Delete...)
+--   status     - Status labels (Active, Inactive...)
+--   label      - Form/UI labels (Name, Code, Date...)
+--   message    - User messages (No data found, Loading...)
+--   validation - Validation messages (Required, Too short...)
+--   table      - Table column headers
+--   pagination - Pagination labels
+--   confirm    - Confirmation dialogs
+--   auth       - Authentication related
+--   menu       - Navigation menu items
 -- =====================================================
+
+DO $$
+BEGIN
 
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- PART 1: CORE TRANSLATIONS
+-- Helper function: insert message + 4 translations in one call
+-- Args: category, english_key, uzbek_latin, uzbek_cyrillic, russian
+-- The english_key is used as both message_key and en-US translation
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREATE OR REPLACE FUNCTION _seed_msg(
+    _cat TEXT, _key TEXT, _uz TEXT, _oz TEXT, _ru TEXT
+) RETURNS VOID AS $fn$
+DECLARE _id UUID;
+BEGIN
+    -- Insert or update the base message (default = Uzbek Latin)
+    INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
+    VALUES (gen_random_uuid(), _cat, _key, _uz, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_key) DO UPDATE SET
+        message = EXCLUDED.message,
+        category = EXCLUDED.category,
+        updated_at = CURRENT_TIMESTAMP
+    RETURNING id INTO _id;
+
+    -- en-US (key = English text itself)
+    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'en-US', _key, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+
+    -- uz-UZ
+    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'uz-UZ', _uz, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+
+    -- oz-UZ
+    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'oz-UZ', _oz, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+
+    -- ru-RU
+    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'ru-RU', _ru, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+END;
+$fn$ LANGUAGE plpgsql;
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 1: COMMON UI TRANSLATIONS
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 -- =====================================================
--- Menu Messages - Default (Uzbek - uz-UZ)
+-- Actions (buttons, toolbar actions)
 -- =====================================================
+--                    category   key(en)              uz                    oz                     ru
+PERFORM _seed_msg('action', 'Save',                'Saqlash',            'Сақлаш',              'Сохранить');
+PERFORM _seed_msg('action', 'Cancel',              'Bekor qilish',       'Бекор қилиш',         'Отмена');
+PERFORM _seed_msg('action', 'Delete',              'O''chirish',         'Ўчириш',              'Удалить');
+PERFORM _seed_msg('action', 'Edit',                'Tahrirlash',         'Таҳрирлаш',           'Редактировать');
+PERFORM _seed_msg('action', 'Add',                 'Qo''shish',          'Қўшиш',               'Добавить');
+PERFORM _seed_msg('action', 'Create',              'Yaratish',           'Яратиш',              'Создать');
+PERFORM _seed_msg('action', 'Update',              'Yangilash',          'Янгилаш',             'Обновить');
+PERFORM _seed_msg('action', 'Search',              'Qidirish',           'Қидириш',             'Поиск');
+PERFORM _seed_msg('action', 'Search...',           'Qidirish...',        'Қидириш...',          'Поиск...');
+PERFORM _seed_msg('action', 'Filter',              'Filtr',              'Филтр',               'Фильтр');
+PERFORM _seed_msg('action', 'Apply',               'Qo''llash',          'Қўллаш',              'Применить');
+PERFORM _seed_msg('action', 'Clear',               'Tozalash',           'Тозалаш',             'Очистить');
+PERFORM _seed_msg('action', 'Reset',               'Qayta tiklash',      'Қайта тиклаш',        'Сбросить');
+PERFORM _seed_msg('action', 'Close',               'Yopish',             'Ёпиш',                'Закрыть');
+PERFORM _seed_msg('action', 'Back',                'Orqaga',             'Орқага',               'Назад');
+PERFORM _seed_msg('action', 'Next',                'Keyingi',            'Кейинги',             'Далее');
+PERFORM _seed_msg('action', 'Previous',            'Oldingi',            'Олдинги',             'Предыдущий');
+PERFORM _seed_msg('action', 'Refresh',             'Qayta yuklash',      'Қайта юклаш',         'Перезагрузить');
+PERFORM _seed_msg('action', 'Export',              'Eksport',            'Экспорт',             'Экспорт');
+PERFORM _seed_msg('action', 'Import',              'Import',             'Импорт',              'Импорт');
+PERFORM _seed_msg('action', 'Download',            'Yuklab olish',       'Юклаб олиш',          'Скачать');
+PERFORM _seed_msg('action', 'Upload',              'Yuklash',            'Юклаш',               'Загрузить');
+PERFORM _seed_msg('action', 'Print',               'Chop etish',         'Чоп этиш',            'Печать');
+PERFORM _seed_msg('action', 'Copy',                'Nusxalash',          'Нусхалаш',            'Копировать');
+PERFORM _seed_msg('action', 'View',                'Ko''rish',            'Кўриш',               'Просмотр');
+PERFORM _seed_msg('action', 'Select',              'Tanlash',            'Танлаш',              'Выбрать');
+PERFORM _seed_msg('action', 'Select all',          'Hammasini tanlash',  'Ҳаммасини танлаш',    'Выбрать все');
+PERFORM _seed_msg('action', 'Confirm',             'Tasdiqlash',         'Тасдиқлаш',           'Подтвердить');
+PERFORM _seed_msg('action', 'Submit',              'Yuborish',           'Юбориш',              'Отправить');
+PERFORM _seed_msg('action', 'Sign in',             'Kirish',             'Кириш',               'Войти');
+PERFORM _seed_msg('action', 'Sign out',            'Chiqish',            'Чиқиш',               'Выйти');
+PERFORM _seed_msg('action', 'Download Excel',      'Excel yuklab olish', 'Excel юклаб олиш',    'Скачать Excel');
+PERFORM _seed_msg('action', 'Download JSON',       'JSON yuklab olish',  'JSON юклаб олиш',     'Скачать JSON');
+PERFORM _seed_msg('action', 'Clear cache',         'Cache tozalash',     'Кеш тозалаш',         'Очистить кэш');
+PERFORM _seed_msg('action', 'Regenerate',          'Qayta yaratish',     'Қайта яратиш',        'Перегенерировать');
+PERFORM _seed_msg('action', 'Toggle',              'Almashtirish',       'Алмаштириш',          'Переключить');
+PERFORM _seed_msg('action', 'Show more',           'Ko''proq ko''rsatish','Кўпроқ кўрсатиш',    'Показать ещё');
 
+-- =====================================================
+-- Status labels
+-- =====================================================
+PERFORM _seed_msg('status', 'Active',              'Faol',               'Фаол',                'Активный');
+PERFORM _seed_msg('status', 'Inactive',            'Nofaol',             'Нофаол',              'Неактивный');
+PERFORM _seed_msg('status', 'Enabled',             'Yoqilgan',           'Ёқилган',             'Включено');
+PERFORM _seed_msg('status', 'Disabled',            'O''chirilgan',        'Ўчирилган',           'Отключено');
+PERFORM _seed_msg('status', 'Pending',             'Kutilmoqda',         'Кутилмоқда',          'В ожидании');
+PERFORM _seed_msg('status', 'Approved',            'Tasdiqlangan',       'Тасдиқланган',        'Одобрено');
+PERFORM _seed_msg('status', 'Rejected',            'Rad etilgan',        'Рад этилган',         'Отклонено');
+PERFORM _seed_msg('status', 'Draft',               'Qoralama',           'Қоралама',            'Черновик');
+PERFORM _seed_msg('status', 'Published',           'Nashr etilgan',      'Нашр этилган',        'Опубликовано');
+PERFORM _seed_msg('status', 'Completed',           'Bajarildi',          'Бажарилди',           'Завершено');
+
+-- =====================================================
+-- Common labels (form fields, UI elements)
+-- =====================================================
+PERFORM _seed_msg('label', 'Name',                 'Nomi',               'Номи',                'Название');
+PERFORM _seed_msg('label', 'Code',                 'Kod',                'Код',                 'Код');
+PERFORM _seed_msg('label', 'Status',               'Holat',              'Ҳолат',               'Статус');
+PERFORM _seed_msg('label', 'Category',             'Kategoriya',         'Категория',           'Категория');
+PERFORM _seed_msg('label', 'Description',          'Tavsif',             'Тавсиф',              'Описание');
+PERFORM _seed_msg('label', 'Date',                 'Sana',               'Сана',                'Дата');
+PERFORM _seed_msg('label', 'Type',                 'Turi',               'Тури',                'Тип');
+PERFORM _seed_msg('label', 'Actions',              'Amallar',            'Амаллар',             'Действия');
+PERFORM _seed_msg('label', 'Details',              'Tafsilotlar',        'Тафсилотлар',         'Детали');
+PERFORM _seed_msg('label', 'Settings',             'Sozlamalar',         'Созламалар',          'Настройки');
+PERFORM _seed_msg('label', 'Profile',              'Profil',             'Профил',              'Профиль');
+PERFORM _seed_msg('label', 'Language',             'Til',                'Тил',                 'Язык');
+PERFORM _seed_msg('label', 'Email',                'Email',              'Email',               'Электронная почта');
+PERFORM _seed_msg('label', 'Phone',                'Telefon',            'Телефон',             'Телефон');
+PERFORM _seed_msg('label', 'Address',              'Manzil',             'Манзил',              'Адрес');
+PERFORM _seed_msg('label', 'Region',               'Viloyat',            'Вилоят',              'Регион');
+PERFORM _seed_msg('label', 'Total',                'Jami',               'Жами',                'Итого');
+PERFORM _seed_msg('label', 'Count',                'Soni',               'Сони',                'Количество');
+PERFORM _seed_msg('label', 'Username',             'Foydalanuvchi nomi', 'Фойдаланувчи номи',   'Имя пользователя');
+PERFORM _seed_msg('label', 'Password',             'Parol',              'Парол',               'Пароль');
+PERFORM _seed_msg('label', 'Columns',              'Ustunlar',           'Устунлар',            'Колонки');
+PERFORM _seed_msg('label', 'TIN',                  'INN',                'ИНН',                 'ИНН');
+PERFORM _seed_msg('label', 'Ownership',            'Mulkchilik',         'Мулкчилик',           'Собственность');
+PERFORM _seed_msg('label', 'Short name',           'Qisqa nomi',         'Қисқа номи',          'Краткое название');
+PERFORM _seed_msg('label', 'Created at',           'Yaratilgan',         'Яратилган',           'Создано');
+PERFORM _seed_msg('label', 'Created by',           'Yaratuvchi',         'Яратувчи',            'Создал');
+PERFORM _seed_msg('label', 'Updated at',           'Yangilangan',        'Янгиланган',          'Обновлено');
+PERFORM _seed_msg('label', 'Updated by',           'Yangilovchi',        'Янгиловчи',           'Обновил');
+PERFORM _seed_msg('label', 'Basic information',    'Asosiy ma''lumotlar', 'Асосий маълумотлар',  'Основная информация');
+PERFORM _seed_msg('label', 'Audit information',    'Audit ma''lumotlari', 'Аудит маълумотлари',  'Аудит');
+
+-- =====================================================
+-- Common messages (toasts, empty states, loading)
+-- =====================================================
+PERFORM _seed_msg('message', 'Loading...',               'Yuklanmoqda...',               'Юкланмоқда...',              'Загрузка...');
+PERFORM _seed_msg('message', 'Saving...',                'Saqlanmoqda...',               'Сақланмоқда...',             'Сохранение...');
+PERFORM _seed_msg('message', 'Deleting...',              'O''chirilmoqda...',             'Ўчирилмоқда...',            'Удаление...');
+PERFORM _seed_msg('message', 'No data found',            'Ma''lumotlar topilmadi',        'Маълумотлар топилмади',     'Данные не найдены');
+PERFORM _seed_msg('message', 'No results found',         'Natija topilmadi',             'Натижа топилмади',          'Результаты не найдены');
+PERFORM _seed_msg('message', 'Successfully saved',       'Muvaffaqiyatli saqlandi',      'Муваффақиятли сақланди',    'Успешно сохранено');
+PERFORM _seed_msg('message', 'Successfully deleted',     'Muvaffaqiyatli o''chirildi',    'Муваффақиятли ўчирилди',    'Успешно удалено');
+PERFORM _seed_msg('message', 'Successfully updated',     'Muvaffaqiyatli yangilandi',    'Муваффақиятли янгиланди',   'Успешно обновлено');
+PERFORM _seed_msg('message', 'Something went wrong',     'Xatolik yuz berdi',            'Хатолик юз берди',          'Что-то пошло не так');
+PERFORM _seed_msg('message', 'Error',                    'Xatolik',                      'Хатолик',                   'Ошибка');
+PERFORM _seed_msg('message', 'Success',                  'Muvaffaqiyatli',               'Муваффақиятли',             'Успешно');
+PERFORM _seed_msg('message', 'Warning',                  'Ogohlantirish',                'Огоҳлантириш',              'Предупреждение');
+PERFORM _seed_msg('message', 'Are you sure?',            'Ishonchingiz komilmi?',        'Ишончингиз комилми?',       'Вы уверены?');
+PERFORM _seed_msg('message', 'This action cannot be undone', 'Bu amalni qaytarib bo''lmaydi', 'Бу амални қайтариб бўлмайди', 'Это действие нельзя отменить');
+PERFORM _seed_msg('message', 'Failed to load data',      'Ma''lumotlarni yuklashda xatolik', 'Маълумотларни юклашда хатолик', 'Ошибка загрузки данных');
+PERFORM _seed_msg('message', 'Export failed',            'Eksport qilishda xatolik',     'Экспорт қилишда хатолик',   'Ошибка экспорта');
+PERFORM _seed_msg('message', 'Network error',           'Tarmoq xatosi',                        'Тармоқ хатоси',                     'Ошибка сети');
+PERFORM _seed_msg('message', 'Network connection error', 'Internet bilan bog''lanishda xatolik', 'Интернет билан боғланишда хатолик', 'Ошибка подключения к интернету');
+PERFORM _seed_msg('message', 'Backend server is not available', 'Backend server ishlamayapti. Iltimos, keyinroq qayta urinib ko''ring.', 'Бэкенд сервер ишламаяпти. Илтимос, кейинроқ қайта уриниб кўринг.', 'Сервер бэкенда недоступен. Пожалуйста, попробуйте позже.');
+PERFORM _seed_msg('message', 'Failed to delete',        'O''chirishda xatolik',          'Ўчиришда хатолик',          'Ошибка удаления');
+PERFORM _seed_msg('message', 'Session expired',         'Sessiya muddati tugadi',       'Сессия муддати тугади',     'Сессия истекла');
+PERFORM _seed_msg('message', 'Access denied',           'Ruxsat berilmagan',            'Рухсат берилмаган',         'Доступ запрещён');
+PERFORM _seed_msg('message', 'Not found',               'Topilmadi',                    'Топилмади',                 'Не найдено');
+PERFORM _seed_msg('message', 'Retry',                   'Qayta urinish',                'Қайта уриниш',              'Повторить');
+
+-- =====================================================
+-- Validation messages
+-- =====================================================
+PERFORM _seed_msg('validation', 'This field is required',    'Bu maydon to''ldirilishi shart',     'Бу майдон тўлдирилиши шарт',     'Это поле обязательно');
+PERFORM _seed_msg('validation', 'Invalid email address',     'Email manzili noto''g''ri',           'Email манзили нотўғри',           'Неверный адрес email');
+PERFORM _seed_msg('validation', 'Too short',                 'Juda qisqa',                         'Жуда қисқа',                     'Слишком короткое');
+PERFORM _seed_msg('validation', 'Too long',                  'Juda uzun',                          'Жуда узун',                      'Слишком длинное');
+PERFORM _seed_msg('validation', 'Invalid format',            'Noto''g''ri format',                  'Нотўғри формат',                 'Неверный формат');
+PERFORM _seed_msg('validation', '{{field}} is required',      '{{field}} maydoni to''ldirilishi shart', '{{field}} майдони тўлдирилиши шарт', 'Поле {{field}} обязательно для заполнения');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters', 'Kamida {{count}} belgidan iborat bo''lishi kerak', 'Камида {{count}} белгидан иборат бўлиши керак', 'Должно содержать минимум {{count}} символов');
+PERFORM _seed_msg('validation', 'Passwords do not match',    'Parollar mos kelmaydi',              'Пароллар мос келмайди',          'Пароли не совпадают');
+PERFORM _seed_msg('validation', 'Value already exists',      'Bu qiymat allaqachon mavjud',        'Бу қиймат аллақачон мавжуд',     'Значение уже существует');
+
+-- =====================================================
+-- Confirmation dialogs
+-- =====================================================
+PERFORM _seed_msg('confirm', 'Delete confirmation',      'O''chirishni tasdiqlang',       'Ўчиришни тасдиқланг',      'Подтвердите удаление');
+PERFORM _seed_msg('confirm', 'Save changes?',           'O''zgarishlarni saqlaysizmi?',  'Ўзгаришларни сақлайсизми?', 'Сохранить изменения?');
+PERFORM _seed_msg('confirm', 'Discard changes?',        'O''zgarishlarni bekor qilasizmi?', 'Ўзгаришларни бекор қиласизми?', 'Отменить изменения?');
+PERFORM _seed_msg('confirm', 'Yes',                     'Ha',                            'Ҳа',                        'Да');
+PERFORM _seed_msg('confirm', 'No',                      'Yo''q',                          'Йўқ',                       'Нет');
+PERFORM _seed_msg('confirm', 'OK',                      'OK',                            'OK',                        'OK');
+
+-- =====================================================
+-- Pagination
+-- =====================================================
+PERFORM _seed_msg('pagination', 'Rows per page',         'Sahifadagi qatorlar',          'Саҳифадаги қаторлар',       'Строк на странице');
+PERFORM _seed_msg('pagination', 'of',                    'dan',                          'дан',                       'из');
+PERFORM _seed_msg('pagination', 'Page',                  'Sahifa',                       'Саҳифа',                    'Страница');
+PERFORM _seed_msg('pagination', 'First page',            'Birinchi sahifa',              'Биринчи саҳифа',            'Первая страница');
+PERFORM _seed_msg('pagination', 'Last page',             'Oxirgi sahifa',                'Охирги саҳифа',             'Последняя страница');
+PERFORM _seed_msg('pagination', 'items',                 'ta',                           'та',                        'элементов');
+
+-- =====================================================
+-- Filters
+-- =====================================================
+PERFORM _seed_msg('label', 'Filters',                    'Filtrlar',                     'Филтрлар',                  'Фильтры');
+PERFORM _seed_msg('label', 'Search by code, name or TIN...', 'Kod, nom yoki INN bo''yicha qidirish...', 'Код, ном ёки ИНН бўйича қидириш...', 'Поиск по коду, названию или ИНН...');
+
+-- =====================================================
+-- Auth
+-- =====================================================
+PERFORM _seed_msg('auth', 'HEMIS Admin Panel',          'HEMIS Admin Panel',            'HEMIS Админ Панели',        'HEMIS Админ Панель');
+PERFORM _seed_msg('auth', 'Higher Education Management Information System', 'Oliy Ta''lim Boshqaruv Axborot Tizimi', 'Олий Таълим Бошқарув Ахборот Тизими', 'Информационная Система Управления Высшим Образованием');
+PERFORM _seed_msg('auth', 'Remember me',               'Eslab qolish',                 'Эслаб қолиш',              'Запомнить меня');
+PERFORM _seed_msg('auth', 'Forgot password?',           'Parolni unutdingizmi?',        'Паролни унутдингизми?',     'Забыли пароль?');
+PERFORM _seed_msg('auth', 'Sign in to continue',       'Davom etish uchun tizimga kiring', 'Давом этиш учун тизимга киринг', 'Войдите для продолжения');
+PERFORM _seed_msg('auth', 'Welcome back!',             'Xush kelibsiz!',               'Хуш келибсиз!',            'Добро пожаловать!');
+PERFORM _seed_msg('auth', 'Invalid username or password', 'Foydalanuvchi nomi yoki parol noto''g''ri', 'Фойдаланувчи номи ёки парол нотўғри', 'Неверный логин или пароль');
+PERFORM _seed_msg('auth', 'Account is disabled',        'Hisob faol emas',                'Ҳисоб фаол эмас',              'Аккаунт отключён');
+PERFORM _seed_msg('auth', 'Too many attempts',          'Juda ko''p urinish. Keyinroq qayta urinib ko''ring.',            'Жуда кўп уриниш. Кейинроқ қайта уриниб кўринг.',          'Слишком много попыток. Попробуйте позже.');
+PERFORM _seed_msg('auth', 'User account is disabled',  'Foydalanuvchi hisobi faol emas', 'Фойдаланувчи ҳисоби фаол эмас', 'Учётная запись пользователя неактивна');
+PERFORM _seed_msg('auth', 'No university assigned',    'Universitet tayinlanmagan',      'Университет тайинланмаган',     'Университет не назначен');
+PERFORM _seed_msg('auth', 'University is inactive',    'Universitet faol emas',          'Университет фаол эмас',        'Университет неактивен');
+PERFORM _seed_msg('auth', '2025 HEMIS. All rights reserved.', '2025 HEMIS. Barcha huquqlar himoyalangan.', '2025 HEMIS. Барча ҳуқуқлар ҳимояланган.', '2025 HEMIS. Все права защищены.');
+PERFORM _seed_msg('auth', 'Login',                     'Login',                          'Логин',                         'Логин');
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 2: TABLE COLUMN TRANSLATIONS
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- University table columns
+PERFORM _seed_msg('table', 'Organization type',     'Tashkiliy turi',               'Ташкилий тури',             'Организационная форма');
+PERFORM _seed_msg('table', 'Cadastre',              'Kadastr',                      'Кадастр',                   'Кадастр');
+PERFORM _seed_msg('table', 'Version type',          'Versiya turi',                 'Версия тури',               'Тип версии');
+PERFORM _seed_msg('table', 'SOATO Region',          'SOATO Region',                 'СОАТО Регион',              'СОАТО Регион');
+PERFORM _seed_msg('table', 'University URL',        'OTM URL',                      'ОТМ URL',                   'URL ВУЗа');
+PERFORM _seed_msg('table', 'Teacher URL',           'O''qituvchi URL',               'Ўқитувчи URL',              'URL Преподавателей');
+PERFORM _seed_msg('table', 'Student URL',           'Talaba URL',                   'Талаба URL',                'URL Студентов');
+PERFORM _seed_msg('table', 'Contract category',     'Kontrakt kategoriyasi',        'Контракт категорияси',      'Категория контракта');
+PERFORM _seed_msg('table', 'Activity status',       'Faollik statusi',              'Фаоллик статуси',           'Статус активности');
+PERFORM _seed_msg('table', 'Belongs to',            'Tegishli',                     'Тегишли',                   'Принадлежит');
+PERFORM _seed_msg('table', 'Terrain',               'Mahalla',                      'Маҳалла',                   'Махалля');
+PERFORM _seed_msg('table', 'Mail address',          'Pochta manzili',               'Почта манзили',             'Почтовый адрес');
+PERFORM _seed_msg('table', 'Bank details',          'Bank ma''lumotlari',            'Банк маълумотлари',         'Банковские реквизиты');
+PERFORM _seed_msg('table', 'Accreditation info',    'Akkreditatsiya ma''lumotlari',  'Аккредитация маълумотлари', 'Информация об аккредитации');
+PERFORM _seed_msg('table', 'GPA edit',              'GPA tahrir',                   'ГПА таҳрир',                'Редактирование GPA');
+PERFORM _seed_msg('table', 'Accreditation edit',    'Akkreditatsiya tahrir',        'Аккредитация таҳрир',       'Редактирование аккредитации');
+PERFORM _seed_msg('table', 'Add student',           'Talaba qo''shish',              'Талаба қўшиш',              'Добавление студентов');
+PERFORM _seed_msg('table', 'Allow grouping',        'Guruhlashga ruxsat',           'Гуруҳлашга рухсат',         'Разрешить группировку');
+PERFORM _seed_msg('table', 'Allow external transfer', 'Tashqariga o''tkazishga ruxsat', 'Ташқарига ўтказишга рухсат', 'Разрешить внешний перевод');
+
+-- Faculty table columns
+PERFORM _seed_msg('table', 'University name',       'OTM nomi',                     'ОТМ номи',                  'Название ВУЗа');
+PERFORM _seed_msg('table', 'University code',       'OTM kodi',                     'ОТМ коди',                  'Код ВУЗа');
+PERFORM _seed_msg('table', 'Name (Uzbek)',          'Nomi (o''zbekcha)',              'Номи (ўзбекча)',            'Название (узбекский)');
+PERFORM _seed_msg('table', 'Name (Russian)',        'Nomi (ruscha)',                'Номи (русча)',              'Название (русский)');
+PERFORM _seed_msg('table', 'Faculty count',         'Fakultetlar soni',             'Факультетлар сони',         'Количество факультетов');
+PERFORM _seed_msg('table', 'Faculty type',          'Fakultet turi',                'Факультет тури',            'Тип факультета');
+
+-- Page titles
+PERFORM _seed_msg('label', 'Institutions (HEIs)',   'Muassasalar (OTMlar)',         'Муассасалар (ОТМлар)',       'Учреждения (ВУЗы)');
+PERFORM _seed_msg('label', 'HEI Registry',          'OTM reestri',                       'ОТМ реестри',                     'Реестр ВУЗов');
+PERFORM _seed_msg('label', 'Institution details',   'Muassasa ma''lumotlari',        'Муассаса маълумотлари',     'Информация об учреждении');
+PERFORM _seed_msg('label', 'Higher Education Institutions Registry', 'Oliy ta''lim muassasalari reestri', 'Олий таълим муассасалари реестри', 'Реестр высших учебных заведений');
+PERFORM _seed_msg('label', 'No faculties found',    'Fakultetlar topilmadi',        'Факультетлар топилмади',    'Факультеты не найдены');
+
+-- Translation admin page
+PERFORM _seed_msg('label', 'Translation management',    'Tarjimalarni boshqarish',      'Таржималарни бошқариш',     'Управление переводами');
+PERFORM _seed_msg('label', 'Find duplicates',          'Dublikatlarni topish',         'Дубликатларни топиш',       'Найти дубликаты');
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 3: MENU TRANSLATIONS
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Top-level menus
+PERFORM _seed_msg('menu', 'Dashboard',              'Bosh sahifa',                  'Бош саҳифа',                'Главная');
+PERFORM _seed_msg('menu', 'Institutions',           'Muassasalar',                  'Муассасалар',               'Учреждения');
+PERFORM _seed_msg('menu', 'Registries',             'Reestlar',                     'Реестрлар',                 'Реестры');
+PERFORM _seed_msg('menu', 'Rating',                 'Reyting',                      'Рейтинг',                   'Рейтинг');
+PERFORM _seed_msg('menu', 'Database',               'Ma''lumotlar bazasi',           'Маълумотлар базаси',        'База данных');
+PERFORM _seed_msg('menu', 'Classifiers',            'Klassifikatorlar',             'Классификаторлар',          'Классификаторы');
+PERFORM _seed_msg('menu', 'Reports',                'Hisobotlar',                   'Ҳисоботлар',                'Отчёты');
+PERFORM _seed_msg('menu', 'System',                 'Tizim',                        'Тизим',                     'Система');
+
+-- Registry submenus
+PERFORM _seed_msg('menu', 'E-Registry',             'E-Reestr',                     'Э-Реестр',                  'Э-Реестр');
+PERFORM _seed_msg('menu', 'Scientific registry',    'Ilmiy reestr',                 'Илмий реестр',              'Научный реестр');
+PERFORM _seed_msg('menu', 'Student data',           'Talaba ma''lumotlari',          'Талаба маълумотлари',       'Данные студента');
+
+-- Rating submenus
+PERFORM _seed_msg('menu', 'Administrative rating',  'Administrativ reyting',        'Административ рейтинг',    'Административный рейтинг');
+PERFORM _seed_msg('menu', 'Employee rating',        'Xodimlar reytingi',            'Ходимлар рейтинги',         'Рейтинг сотрудников');
+PERFORM _seed_msg('menu', 'Student rating',         'Talabalar reytingi',           'Талабалар рейтинги',        'Рейтинг студентов');
+PERFORM _seed_msg('menu', 'Sport rating',           'Sport reytingi',               'Спорт рейтинги',            'Спортивный рейтинг');
+PERFORM _seed_msg('menu', 'Academic rating',        'Akademik reyting',             'Академик рейтинг',          'Академический рейтинг');
+PERFORM _seed_msg('menu', 'Methodical publications','Uslubiy nashrlar',             'Услубий нашрлар',           'Методические публикации');
+PERFORM _seed_msg('menu', 'Study rating',           'O''quv reytingi',               'Ўқув рейтинги',             'Учебный рейтинг');
+PERFORM _seed_msg('menu', 'Verification type',      'Tekshirish turi',              'Текшириш тури',             'Тип проверки');
+PERFORM _seed_msg('menu', 'Scientific rating',      'Ilmiy reyting',                'Илмий рейтинг',             'Научный рейтинг');
+PERFORM _seed_msg('menu', 'Scientific publications','Ilmiy nashrlar',               'Илмий нашрлар',             'Научные публикации');
+PERFORM _seed_msg('menu', 'Scientific projects',    'Ilmiy loyihalar',              'Илмий лойиҳалар',           'Научные проекты');
+PERFORM _seed_msg('menu', 'Intellectual property',  'Intellektual mulk',            'Интеллектуал мулк',         'Интеллектуальная собственность');
+PERFORM _seed_msg('menu', 'Student GPA',            'Talaba GPA',                   'Талаба GPA',                'GPA студента');
+
+-- Data submenus
+PERFORM _seed_msg('menu', 'General data',           'Umumiy ma''lumotlar',           'Умумий маълумотлар',        'Общие данные');
+PERFORM _seed_msg('menu', 'Structure',              'Tuzilma',                      'Тузилма',                   'Структура');
+PERFORM _seed_msg('menu', 'Employees',              'Xodimlar',                     'Ходимлар',                  'Сотрудники');
+PERFORM _seed_msg('menu', 'Students',               'Talabalar',                    'Талабалар',                 'Студенты');
+PERFORM _seed_msg('menu', 'Education',              'Ta''lim',                       'Таълим',                    'Образование');
+PERFORM _seed_msg('menu', 'Study process',          'O''qish jarayoni',              'Ўқиш жараёни',              'Учебный процесс');
+PERFORM _seed_msg('menu', 'Science',                'Fan',                          'Фан',                       'Наука');
+PERFORM _seed_msg('menu', 'Organizational',         'Tashkiliy',                    'Ташкилий',                  'Организационный');
+PERFORM _seed_msg('menu', 'Contract types',         'Shartnoma turlari',            'Шартнома турлари',          'Типы договоров');
+
+-- Reports submenus
+PERFORM _seed_msg('menu', 'University reports',     'OTM hisobotlari',              'ОТМ ҳисоботлари',           'Отчёты ВУЗов');
+PERFORM _seed_msg('menu', 'Employee reports',       'Xodimlar hisobotlari',         'Ходимлар ҳисоботлари',      'Отчёты сотрудников');
+PERFORM _seed_msg('menu', 'Employee list',          'Xodimlar ro''yxati',            'Ходимлар рўйхати',          'Список сотрудников');
+PERFORM _seed_msg('menu', 'Employee personal',      'Xodimlar shaxsiy',             'Ходимлар шахсий',           'Личные данные сотрудников');
+PERFORM _seed_msg('menu', 'Employee work',          'Xodimlar ish',                 'Ходимлар иш',               'Работа сотрудников');
+PERFORM _seed_msg('menu', 'Student reports',        'Talabalar hisobotlari',        'Талабалар ҳисоботлари',     'Отчёты студентов');
+PERFORM _seed_msg('menu', 'Student statistics',     'Talabalar statistikasi',       'Талабалар статистикаси',    'Статистика студентов');
+PERFORM _seed_msg('menu', 'Student education',      'Talabalar ta''limi',            'Талабалар таълими',         'Образование студентов');
+PERFORM _seed_msg('menu', 'Student personal',       'Talabalar shaxsiy',            'Талабалар шахсий',          'Личные данные студентов');
+PERFORM _seed_msg('menu', 'Attendance',             'Davomat',                      'Давомат',                   'Посещаемость');
+PERFORM _seed_msg('menu', 'Grades',                 'Baholar',                      'Баҳолар',                   'Оценки');
+PERFORM _seed_msg('menu', 'Dynamics',               'Dinamika',                     'Динамика',                  'Динамика');
+PERFORM _seed_msg('menu', 'Academic reports',        'Akademik hisobotlar',          'Академик ҳисоботлар',       'Академические отчёты');
+PERFORM _seed_msg('menu', 'Study report',           'O''quv hisoboti',               'Ўқув ҳисоботи',             'Учебный отчёт');
+PERFORM _seed_msg('menu', 'Research reports',       'Tadqiqot hisobotlari',         'Тадқиқот ҳисоботлари',      'Исследовательские отчёты');
+PERFORM _seed_msg('menu', 'Research projects',      'Tadqiqot loyihalari',          'Тадқиқот лойиҳалари',       'Исследовательские проекты');
+PERFORM _seed_msg('menu', 'Research publications',  'Tadqiqot nashlari',            'Тадқиқот нашлари',          'Исследовательские публикации');
+PERFORM _seed_msg('menu', 'Researchers',            'Tadqiqotchilar',               'Тадқиқотчилар',             'Исследователи');
+PERFORM _seed_msg('menu', 'Economic reports',       'Iqtisodiy hisobotlar',         'Иқтисодий ҳисоботлар',      'Экономические отчёты');
+PERFORM _seed_msg('menu', 'Finance',                'Moliya',                       'Молия',                     'Финансы');
+PERFORM _seed_msg('menu', 'Economy',                'Xo''jalik',                     'Хўжалик',                   'Хозяйство');
+
+-- System submenus
+PERFORM _seed_msg('menu', 'Temporary',              'Vaqtinchalik',                 'Вақтинчалик',               'Временные');
+PERFORM _seed_msg('menu', 'Translations',           'Tarjimalar',                   'Таржималар',                'Переводы');
+PERFORM _seed_msg('menu', 'University users',       'OTM foydalanuvchilari',        'ОТМ фойдаланувчилари',      'Пользователи ВУЗа');
+PERFORM _seed_msg('menu', 'API Logs',               'API log''lar',                  'API журнал',                'API логи');
+PERFORM _seed_msg('menu', 'Report updates',         'Hisobot yangilanishlari',      'Ҳисоботларни янгилаш',      'Обновления отчётов');
+
+-- E-Reestr submenus
+PERFORM _seed_msg('menu', 'Universities',           'Universitetlar',               'Университетлар',            'Университеты');
+PERFORM _seed_msg('menu', 'Faculties',              'Fakultetlar',                  'Факультетлар',              'Факультеты');
+PERFORM _seed_msg('menu', 'Departments',            'Kafedralar',                   'Кафедралар',                'Кафедры');
+PERFORM _seed_msg('menu', 'Teachers',               'O''qituvchilar',                'Ўқитувчилар',               'Преподаватели');
+PERFORM _seed_msg('menu', 'Diplomas',               'Diplomlar',                    'Дипломлар',                 'Дипломы');
+PERFORM _seed_msg('menu', 'Bachelor specialities',  'Yo''nalishlar (Bakalavr)',      'Йўналишлар (Бакалавр)',     'Направления (Бакалавриат)');
+PERFORM _seed_msg('menu', 'Master specialities',    'Mutaxassisliklar (Magistr)',   'Мутахассисликлар (Магистр)', 'Специальности (Магистратура)');
+PERFORM _seed_msg('menu', 'Doctoral specialities',  'Ixtisosliklar (Doktorantura)', 'Ихтисосликлар (Докторантура)', 'Специальности (Докторантура)');
+PERFORM _seed_msg('menu', 'Employee jobs',          'Xodimlar ish joylari',         'Ходимлар иш жойлари',       'Рабочие места сотрудников');
+PERFORM _seed_msg('menu', 'Diploma blank distribution', 'Diplom blankalarini taqsimlash', 'Диплом бланкаларини тақсимлаш', 'Распределение бланков дипломов');
+PERFORM _seed_msg('menu', 'Diploma blanks',         'Diplom blankalar',             'Диплом бланкалар',          'Бланки дипломов');
+PERFORM _seed_msg('menu', 'Ordinatura specialities','Ordinatura mutaxassisliklari', 'Ординатура мутахассисликлари', 'Специальности ординатуры');
+PERFORM _seed_msg('menu', 'University specialities','OTM mutaxassisliklari',        'ОТМ мутахассисликлари',     'Специальности ВУЗа');
+PERFORM _seed_msg('menu', 'Study groups',           'O''quv guruhlari',              'Ўқув гурухлари',            'Учебные группы');
+PERFORM _seed_msg('menu', 'Scholarship',            'Stipendiya',                   'Стипендия',                 'Стипендия');
+PERFORM _seed_msg('menu', 'Student certificates',   'Talaba sertifikatlari',        'Талаба сертификатлари',     'Сертификаты студентов');
+PERFORM _seed_msg('menu', 'Teacher certificates',   'O''qituvchi sertifikatlari',    'Ўқитувчи сертификатлари',   'Сертификаты преподавателей');
+PERFORM _seed_msg('menu', 'Students Lite',          'Talabalar Lite',               'Талабалар Lite',            'Студенты Lite');
+
+-- Data > Structure submenus
+PERFORM _seed_msg('menu', 'University types',       'OTM tashkiliy shakllari',      'ОТМ ташкилий шакллари',     'Организационные формы ВУЗов');
+PERFORM _seed_msg('menu', 'Ownership forms',        'OTM mulkchilik shakllari',     'ОТМ мулкчилик шакллари',    'Формы собственности ВУЗов');
+PERFORM _seed_msg('menu', 'Department types',       'OTM bo''linmalari turlari',     'ОТМ бўлинмалари турлари',   'Типы подразделений ВУЗов');
+PERFORM _seed_msg('menu', 'Locality type',          'Mahalliylik turi',             'Маҳаллийлик тури',          'Тип местности');
+PERFORM _seed_msg('menu', 'University activity status', 'OTM aktivlik statusi',     'ОТМ активлик статуси',      'Статус активности ВУЗа');
+PERFORM _seed_msg('menu', 'Ministry affiliation',   'OTMning Vazirlikka tegishliligi', 'ОТМнинг Вазирликка тегишлилиги', 'Принадлежность ВУЗа министерству');
+
+-- Data > Education submenus
+PERFORM _seed_msg('menu', 'Education types',        'Ta''lim turlari',               'Таълим турлари',            'Типы образования');
+PERFORM _seed_msg('menu', 'Education forms',        'Ta''lim shakllari',             'Таълим шакллари',           'Формы образования');
+PERFORM _seed_msg('menu', 'Education languages',    'Ta''lim tillari',               'Таълим тиллари',            'Языки обучения');
+PERFORM _seed_msg('menu', 'Grading systems',        'Baholash tizimlari',           'Баҳолаш тизимлари',         'Системы оценивания');
+PERFORM _seed_msg('menu', 'Score types',            'Baho turlari',                 'Баҳо турлари',              'Типы оценок');
+PERFORM _seed_msg('menu', 'Exam types',             'Nazorat turlari',              'Назорат турлари',           'Типы контроля');
+PERFORM _seed_msg('menu', 'Diploma blank categories', 'Diplom blanka kategoriyalari', 'Диплом бланка категориялари', 'Категории бланков дипломов');
+PERFORM _seed_msg('menu', 'Diploma blank statuses', 'Diplom blanka statuslari',     'Диплом бланка статуслари',  'Статусы бланков дипломов');
+PERFORM _seed_msg('menu', 'Diploma generation statuses', 'Diplom shakllantirish statuslari', 'Диплом шакллантириш статуслари', 'Статусы формирования дипломов');
+PERFORM _seed_msg('menu', 'Certificate category',   'Sertifikat toifasi',           'Сертификат тоифаси',        'Категория сертификата');
+PERFORM _seed_msg('menu', 'Certificate type',       'Sertifikat turi',              'Сертификат тури',           'Тип сертификата');
+PERFORM _seed_msg('menu', 'Certificate subject',    'Sertifikat fani',              'Сертификат фани',           'Предмет сертификата');
+PERFORM _seed_msg('menu', 'Certificate grade',      'Sertifikat darajasi',          'Сертификат даражаси',       'Уровень сертификата');
+
+-- Data > Employee submenus
+PERFORM _seed_msg('menu', 'Employee categories',    'Xodimlar toifalari',           'Ходимлар тоифалари',        'Категории сотрудников');
+PERFORM _seed_msg('menu', 'Teacher statuses',       'O''qituvchi xolatlari',         'Ўқитувчи ҳолатлари',        'Статусы преподавателей');
+PERFORM _seed_msg('menu', 'Labor rates',            'Mehnat stavkalari',            'Меҳнат ставкалари',         'Ставки труда');
+PERFORM _seed_msg('menu', 'Labor forms',            'Mehnat shakllari',             'Меҳнат шакллари',           'Формы труда');
+PERFORM _seed_msg('menu', 'Position types',         'Lavozim turlari',              'Лавозим турлари',           'Типы должностей');
+PERFORM _seed_msg('menu', 'Qualification places',   'Malaka oshirish joylari',      'Малака оширш жойлари',      'Места повышения квалификации');
+PERFORM _seed_msg('menu', 'Teacher achievements',   'O''qituvchi yutuqlari',         'Ўқитувчи ютуқлари',         'Достижения преподавателей');
+PERFORM _seed_msg('menu', 'Academic degrees',       'Ilmiy darajalar',              'Илмий даражалар',           'Учёные степени');
+PERFORM _seed_msg('menu', 'Academic ranks',         'Ilmiy unvonlar',               'Илмий унвонлар',            'Учёные звания');
+
+-- Registry > Scientific submenus
+PERFORM _seed_msg('menu', 'Doctoral studies',       'Doktorantura',                 'Докторантура',              'Докторантура');
+PERFORM _seed_msg('menu', 'Dissertations',          'Dissertatsiyalar',             'Диссертациялар',            'Диссертации');
+PERFORM _seed_msg('menu', 'Project executors',      'Loyiha ijrochilari',           'Лойиҳа ижрочилари',         'Исполнители проектов');
+PERFORM _seed_msg('menu', 'Project funding',        'Loyiha moliyalash',            'Лойиҳа молиялаш',           'Финансирование проектов');
+PERFORM _seed_msg('menu', 'Methodical works',       'Uslubiy ishlar',               'Услубий ишлар',             'Методические работы');
+PERFORM _seed_msg('menu', 'Authors',                'Mualliflar',                   'Муаллифлар',                'Авторы');
+PERFORM _seed_msg('menu', 'Scientific activity',    'Ilmiy faoliyat',               'Илмий фаолият',             'Научная деятельность');
+
+-- Data > General submenus
+PERFORM _seed_msg('menu', 'Countries',              'Davlatlar',                    'Давлатлар',                 'Страны');
+PERFORM _seed_msg('menu', 'SOATO regions',          'SOATO hududlar',               'СОАТО ҳудудлар',            'СОАТО регионы');
+PERFORM _seed_msg('menu', 'Nationalities',          'Millatlar',                    'Миллатлар',                 'Национальности');
+PERFORM _seed_msg('menu', 'Citizenships',           'Fuqaroliklar',                 'Фуқароликлар',              'Гражданства');
+PERFORM _seed_msg('menu', 'Genders',                'Jinslar',                      'Жинслар',                   'Пол');
+PERFORM _seed_msg('menu', 'Bachelor specialties',   'Bakalavr yo''nalishlari',       'Бакалавр йўналишлари',      'Специальности бакалавриата');
+PERFORM _seed_msg('menu', 'Master specialties',     'Magistr mutaxassisliklari',    'Магистр мутахассисликлари',  'Специальности магистратуры');
+PERFORM _seed_msg('menu', 'Doctoral specialties',   'Doktorantura ixtisosliklari',  'Докторантура ихтисосликлари','Специальности докторантуры');
+PERFORM _seed_msg('menu', 'Terrain types',          'Hududiylik turlari',           'Ҳудудийлик турлари',         'Типы местности');
+PERFORM _seed_msg('menu', 'Poverty levels',         'Kam ta''minlanganlik',          'Кам таъминланганлик',       'Уровень малообеспеченности');
+
+-- Data > Student submenus
+PERFORM _seed_msg('menu', 'Student statuses',       'Talaba holatlari',             'Талаба ҳолатлари',          'Статусы студентов');
+PERFORM _seed_msg('menu', 'Student achievements',   'Talaba yutuqlari',             'Талаба ютуқлари',           'Достижения студентов');
+PERFORM _seed_msg('menu', 'Expulsion reasons',      'Chetlashtirish sabablari',     'Четлаштириш сабаблари',     'Причины отчисления');
+PERFORM _seed_msg('menu', 'Accommodation types',    'Yotoqxona turlari',            'Ётоқхона турлари',          'Типы общежитий');
+PERFORM _seed_msg('menu', 'Doctoral student types', 'Doktorant turlari',            'Докторант турлари',         'Типы докторантов');
+PERFORM _seed_msg('menu', 'Social categories',      'Ijtimoiy toifalar',            'Ижтимоий тоифалар',         'Социальные категории');
+PERFORM _seed_msg('menu', 'Academic leave reasons', 'Akademik ta''til sabablari',    'Академик таътил сабаблари', 'Причины академического отпуска');
+PERFORM _seed_msg('menu', 'Doctoral statuses',      'Doktorant holatlari',          'Докторант ҳолатлари',       'Статусы докторантов');
+PERFORM _seed_msg('menu', 'Graduate work fields',   'Bitiruvchi ish sohalari',      'Битирувчи иш соҳалари',    'Направления работы выпускников');
+PERFORM _seed_msg('menu', 'Graduate inactive reasons', 'Bitiruvchi nofaollik sabablari', 'Битирувчи нофаоллик сабаблари', 'Причины неактивности выпускников');
+PERFORM _seed_msg('menu', 'Student types',          'Talaba turlari',               'Талаба турлари',            'Типы студентов');
+PERFORM _seed_msg('menu', 'Living statuses',        'Yashash holatlari',            'Яшаш ҳолатлари',           'Статусы проживания');
+PERFORM _seed_msg('menu', 'Roommate types',         'Xonada yashash turlari',       'Хонада яшаш турлари',      'Типы совместного проживания');
+PERFORM _seed_msg('menu', 'Workplace compatibility','Ish joyi mosligi',             'Иш жойи мослиги',          'Совместимость с работой');
+PERFORM _seed_msg('menu', 'Academic mobility',      'Akademik mobillik',            'Академик мобиллик',        'Академическая мобильность');
+
+-- Data > Study process submenus
+PERFORM _seed_msg('menu', 'Academic years',         'O''quv yillari',                'Ўқув йиллари',             'Учебные годы');
+PERFORM _seed_msg('menu', 'Courses',                'Kurslar',                      'Курслар',                   'Курсы');
+PERFORM _seed_msg('menu', 'Semesters',              'Semestrlar',                   'Семестрлар',                'Семестры');
+PERFORM _seed_msg('menu', 'Week types',             'Hafta turlari',                'Ҳафта турлари',             'Типы недель');
+PERFORM _seed_msg('menu', 'Subject blocks',         'Fan bloklari',                 'Фан блоклари',              'Блоки предметов');
+PERFORM _seed_msg('menu', 'Subject types',          'Fan turlari',                  'Фан турлари',               'Типы предметов');
+PERFORM _seed_msg('menu', 'Class types',            'Mashg''ulot turlari',           'Машғулот турлари',          'Типы занятий');
+PERFORM _seed_msg('menu', 'Exam completion types',  'Imtihon yakunlash turlari',    'Имтиҳон якунлаш турлари',   'Типы завершения экзаменов');
+PERFORM _seed_msg('menu', 'Final exam types',       'Yakuniy nazorat turlari',      'Якуний назорат турлари',    'Типы итогового контроля');
+PERFORM _seed_msg('menu', 'Semester list',          'Semestrlar ro''yxati',          'Семестрлар рўйхати',        'Список семестров');
+PERFORM _seed_msg('menu', 'Decree types',           'Buyruq turlari',               'Буйруқ турлари',            'Типы приказов');
+PERFORM _seed_msg('menu', 'Sport types',            'Sport turlari',                'Спорт турлари',             'Виды спорта');
+PERFORM _seed_msg('menu', 'Attendance settings',    'Davomat sozlamalari',          'Давомат созламалари',       'Настройки посещаемости');
+PERFORM _seed_msg('menu', 'Conduction forms',       'O''tkazish shakllari',          'Ўтказиш шакллари',          'Формы проведения');
+PERFORM _seed_msg('menu', 'Internship forms',       'Amaliyot shakllari',           'Амалиёт шакллари',          'Формы практики');
+PERFORM _seed_msg('menu', 'Internship types',       'Amaliyot turlari',             'Амалиёт турлари',           'Типы практики');
+PERFORM _seed_msg('menu', 'Resource types',         'Resurs turlari',               'Ресурс турлари',            'Типы ресурсов');
+PERFORM _seed_msg('menu', 'Extracurricular activities', 'Darsdan tashqari mashg''ulotlar', 'Дарсдан ташқари машғулотлар', 'Внеучебные мероприятия');
+
+-- Data > Science submenus
+PERFORM _seed_msg('menu', 'Science project types',  'Ilmiy loyiha turlari',         'Илмий лойиҳа турлари',      'Типы научных проектов');
+PERFORM _seed_msg('menu', 'Project locality',       'Loyiha joylashuvi',            'Лойиҳа жойлашуви',          'Местоположение проекта');
+PERFORM _seed_msg('menu', 'Currencies',             'Valyutalar',                   'Валюталар',                 'Валюты');
+PERFORM _seed_msg('menu', 'Executor types',         'Ijrochi turlari',              'Ижрочи турлари',            'Типы исполнителей');
+PERFORM _seed_msg('menu', 'Publication types',      'Nashr turlari',                'Нашр турлари',              'Типы публикаций');
+PERFORM _seed_msg('menu', 'Methodical publication types', 'Uslubiy nashr turlari',  'Услубий нашр турлари',      'Типы методических публикаций');
+PERFORM _seed_msg('menu', 'Patent types',           'Patent turlari',               'Патент турлари',            'Типы патентов');
+PERFORM _seed_msg('menu', 'Publication databases',  'Nashr bazalari',               'Нашр базалари',             'Базы публикаций');
+PERFORM _seed_msg('menu', 'Scholar databases',      'Ilmiy bazalar',                'Илмий базалар',             'Научные базы данных');
+
+-- Data > Organizational submenus
+PERFORM _seed_msg('menu', 'Payment forms',          'To''lov shakllari',             'Тўлов шакллари',            'Формы оплаты');
+PERFORM _seed_msg('menu', 'Scholarship rates',      'Stipendiya stavkalari',        'Стипендия ставкалари',      'Ставки стипендий');
+PERFORM _seed_msg('menu', 'Scholarship categories', 'Stipendiya toifalari',         'Стипендия тоифалари',       'Категории стипендий');
+PERFORM _seed_msg('menu', 'Scholarship decrees',    'Stipendiya buyruqlari',        'Стипендия буйруқлари',      'Приказы о стипендиях');
+PERFORM _seed_msg('menu', 'Contract payment types', 'Shartnoma to''lov turlari',     'Шартнома тўлов турлари',    'Типы оплаты контрактов');
+PERFORM _seed_msg('menu', 'Contract amounts',       'Shartnoma summalari',          'Шартнома суммалари',        'Суммы контрактов');
+PERFORM _seed_msg('menu', 'Auditorium types',       'Auditoriya turlari',           'Аудитория турлари',         'Типы аудиторий');
+PERFORM _seed_msg('menu', 'Device types',           'Jihoz turlari',                'Жиҳоз турлари',             'Типы оборудования');
+PERFORM _seed_msg('menu', 'Grant types',            'Grant turlari',                'Грант турлари',             'Типы грантов');
+
+-- Data > Contract category
+PERFORM _seed_msg('menu', 'Contract categories',    'Shartnoma toifalari',          'Шартнома тоифалари',        'Категории контрактов');
+
+-- Reports > Universities submenus
+PERFORM _seed_msg('menu', 'University count',       'OTMlar soni',                  'ОТМлар сони',               'Количество ВУЗов');
+PERFORM _seed_msg('menu', 'Faculty list report',    'Fakultetlar ro''yxati',         'Факультетлар рўйхати',      'Список факультетов');
+
+-- Missing menu translations (M005 gettext migration)
+PERFORM _seed_msg('menu', 'Directions',             'Yo''nalishlar',                 'Йўналишлар',                'Направления');
+PERFORM _seed_msg('menu', 'Teacher list',           'O''qituvchilar ro''yxati',       'Ўқитувчилар рўйхати',       'Список преподавателей');
+PERFORM _seed_msg('menu', 'Positions',              'Lavozimlar',                   'Лавозимлар',                'Должности');
+PERFORM _seed_msg('menu', 'Teacher qualifications', 'Malaka oshirish',              'Малака оширш',              'Повышение квалификации');
+PERFORM _seed_msg('menu', 'Teacher reports',        'O''qituvchilar hisobotlari',    'Ўқитувчилар ҳисоботлари',   'Отчёты преподавателей');
+PERFORM _seed_msg('menu', 'Student classifiers',    'Talaba klassifikatorlari',     'Талаба классификаторлари',   'Классификаторы студентов');
+PERFORM _seed_msg('menu', 'Science classifiers',    'Fan klassifikatorlari',        'Фан классификаторлари',     'Классификаторы науки');
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 4: DASHBOARD, STUDENTS, TEACHERS, REPORTS, FORM TRANSLATIONS
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- =====================================================
 -- Dashboard
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES (gen_random_uuid(), 'menu', 'menu.dashboard', 'Bosh sahifa', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- Registry Module (4 messages)
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'menu', 'menu.registry', 'Reestlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr', 'E-Reestr', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.registry.scientific', 'Ilmiy reestr', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.registry.student_meta', 'Talaba ma''lumotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- Rating Module (14 messages)
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'menu', 'menu.rating', 'Reyting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.administrative', 'Administrativ reyting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.administrative.employee', 'Xodimlar reytingi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.administrative.students', 'Talabalar reytingi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.administrative.sport', 'Sport reytingi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.academic', 'Akademik reyting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.academic.methodical', 'Uslubiy nashrlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.academic.study', 'O''quv reytingi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.academic.verification', 'Tekshirish turi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.scientific', 'Ilmiy reyting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.scientific.publications', 'Ilmiy nashrlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.scientific.projects', 'Ilmiy loyihalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.scientific.intellectual', 'Intellektual mulk', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.rating.student_gpa', 'Talaba GPA', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- Data Module (10 messages)
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'menu', 'menu.data', 'Ma''lumotlar bazasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.general', 'Umumiy ma''lumotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.structure', 'Tuzilma', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.employee', 'Xodimlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.student', 'Talabalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.education', 'Ta''lim', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.study', 'O''qish jarayoni', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.science', 'Fan', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.organizational', 'Tashkiliy', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.data.contract_category', 'Shartnoma turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- Reports Module (25 messages)
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'menu', 'menu.reports', 'Hisobotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.universities', 'OTM hisobotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.employees', 'Xodimlar hisobotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.employees.navigation', 'Xodimlar ro''yxati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.employees.private', 'Xodimlar shaxsiy', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.employees.work', 'Xodimlar ish', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.students', 'Talabalar hisobotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.students.statistics', 'Talabalar statistikasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.students.education', 'Talabalar ta''limi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.students.private', 'Talabalar shaxsiy', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.students.attendance', 'Davomat', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.students.score', 'Baholar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.students.dynamic', 'Dinamika', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.academic', 'Akademik hisobotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.academic.study', 'O''quv hisoboti', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.research', 'Tadqiqot hisobotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.research.project', 'Tadqiqot loyihalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.research.publication', 'Tadqiqot nashlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.research.researcher', 'Tadqiqotchilar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.economic', 'Iqtisodiy hisobotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.economic.finance', 'Moliya', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.reports.economic.xujalik', 'Xo''jalik', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- System Module (6 messages)
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'menu', 'menu.system', 'Tizim', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.system.temp', 'Vaqtinchalik', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.system.translation', 'Tarjimalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.system.university_users', 'OTM foydalanuvchilari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.system.api_logs', 'API log''lar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'menu', 'menu.system.report_update', 'Hisobot yangilanishlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
+-- =====================================================
+PERFORM _seed_msg('label', 'Currently studying',     'Hozir O''qimoqda',             'Ҳозир Ўқимоқда',            'Сейчас обучаются');
+PERFORM _seed_msg('label', 'Graduates',              'Bitirganlar',                  'Битирганлар',               'Выпускники');
+PERFORM _seed_msg('label', 'Expelled',               'Chetlashganlar',               'Четлашганлар',              'Отчисленные');
+PERFORM _seed_msg('label', 'Total Teachers',         'Jami O''qituvchilar',           'Жами Ўқитувчилар',          'Всего преподавателей');
+PERFORM _seed_msg('label', 'Academic Leave',         'Akademik Ta''til',              'Академик Таътил',           'Академический отпуск');
+PERFORM _seed_msg('label', 'Cancelled',              'Bekor Qilingan',               'Бекор Қилинган',            'Отменённые');
+PERFORM _seed_msg('label', 'Total HEIs',             'Jami OTMlar',                  'Жами ОТМлар',               'Всего ВУЗов');
+PERFORM _seed_msg('label', 'Issued Diplomas',        'Berilgan Diplomlar',           'Берилган Дипломлар',        'Выданные дипломы');
+PERFORM _seed_msg('label', 'unknown',                'noma''lum',                     'номаълум',                  'неизвестно');
+PERFORM _seed_msg('action', 'Get report',            'Hisobot olish',                'Ҳисобот олиш',              'Получить отчёт');
+-- NB: 'Education types' allaqachon menu kategoriyasida (qator 402) mavjud; dublikat olib tashlandi
+PERFORM _seed_msg('label', 'Distribution by education levels', 'Ta''lim bosqichlari bo''yicha taqsimlash', 'Таълим босқичлари бўйича тақсимлаш', 'Распределение по уровням образования');
+PERFORM _seed_msg('label', 'student',                'talaba',                       'талаба',                    'студент');
+PERFORM _seed_msg('label', 'TOP Universities',       'TOP Universitetlar',           'ТОП Университетлар',        'ТОП Университеты');
+PERFORM _seed_msg('label', 'Top 5 by rating',        'Reyting bo''yicha eng yaxshi 5 ta OTM', 'Рейтинг бўйича энг яхши 5 та ОТМ', 'Топ 5 по рейтингу');
+PERFORM _seed_msg('label', 'Grant:',                 'Grant:',                       'Грант:',                    'Грант:');
+PERFORM _seed_msg('label', 'Recent activity',        'So''nggi faoliyat',             'Сўнгги фаолият',            'Последняя активность');
+PERFORM _seed_msg('label', 'Changes in last 24 hours', 'Oxirgi 24 soatdagi o''zgarishlar', 'Охирги 24 соатдаги ўзгаришлар', 'Изменения за последние 24 часа');
+PERFORM _seed_msg('label', 'Quick info',             'Tezkor ma''lumotlar',           'Тезкор маълумотлар',        'Быстрая информация');
+PERFORM _seed_msg('label', 'Grant students',         'Grant talabalar',              'Грант талабалар',           'Грантовые студенты');
+PERFORM _seed_msg('label', 'Contract students',      'Kontrakt talabalar',           'Контракт талабалар',        'Контрактные студенты');
+-- NB: 'Scientific projects' va 'Scientific publications' allaqachon menu kategoriyasida (qatorlar 327-328) mavjud; dublikatlar olib tashlandi
+PERFORM _seed_msg('message', 'Please refresh the page', 'Iltimos, sahifani yangilang', 'Илтимос, саҳифани янгиланг', 'Пожалуйста, обновите страницу');
+PERFORM _seed_msg('label', 'STATISTICS',             'STATISTIKA',                   'СТАТИСТИКА',                'СТАТИСТИКА');
+PERFORM _seed_msg('label', 'Monitoring and analysis of higher education system of the Republic of Uzbekistan', 'O''zbekiston Respublikasi Oliy Ta''lim Vazirligi - Oliy ta''lim tizimi monitoring va tahlil', 'Ўзбекистон Республикаси Олий Таълим Вазирлиги - Олий таълим тизими мониторинг ва таҳлил', 'Министерство высшего образования Республики Узбекистан - Мониторинг и анализ системы высшего образования');
+PERFORM _seed_msg('label', 'academic year',          'o''quv yili',                   'ўқув йили',                 'учебный год');
 
 -- =====================================================
--- Menu Translations - Russian (ru-RU)
+-- Students page
 -- =====================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'ru-RU',
-  CASE m.message_key
-    -- Dashboard
-    WHEN 'menu.dashboard' THEN 'Главная'
-
-    -- Registry
-    WHEN 'menu.registry' THEN 'Реестры'
-    WHEN 'menu.registry.e_reestr' THEN 'Э-Реестр'
-    WHEN 'menu.registry.scientific' THEN 'Научный реестр'
-    WHEN 'menu.registry.student_meta' THEN 'Данные студента'
-
-    -- Rating
-    WHEN 'menu.rating' THEN 'Рейтинг'
-    WHEN 'menu.rating.administrative' THEN 'Административный рейтинг'
-    WHEN 'menu.rating.administrative.employee' THEN 'Рейтинг сотрудников'
-    WHEN 'menu.rating.administrative.students' THEN 'Рейтинг студентов'
-    WHEN 'menu.rating.administrative.sport' THEN 'Спортивный рейтинг'
-    WHEN 'menu.rating.academic' THEN 'Академический рейтинг'
-    WHEN 'menu.rating.academic.methodical' THEN 'Методические публикации'
-    WHEN 'menu.rating.academic.study' THEN 'Учебный рейтинг'
-    WHEN 'menu.rating.academic.verification' THEN 'Тип проверки'
-    WHEN 'menu.rating.scientific' THEN 'Научный рейтинг'
-    WHEN 'menu.rating.scientific.publications' THEN 'Научные публикации'
-    WHEN 'menu.rating.scientific.projects' THEN 'Научные проекты'
-    WHEN 'menu.rating.scientific.intellectual' THEN 'Интеллектуальная собственность'
-    WHEN 'menu.rating.student_gpa' THEN 'GPA студента'
-
-    -- Data
-    WHEN 'menu.data' THEN 'База данных'
-    WHEN 'menu.data.general' THEN 'Общие данные'
-    WHEN 'menu.data.structure' THEN 'Структура'
-    WHEN 'menu.data.employee' THEN 'Сотрудники'
-    WHEN 'menu.data.student' THEN 'Студенты'
-    WHEN 'menu.data.education' THEN 'Образование'
-    WHEN 'menu.data.study' THEN 'Учебный процесс'
-    WHEN 'menu.data.science' THEN 'Наука'
-    WHEN 'menu.data.organizational' THEN 'Организационный'
-    WHEN 'menu.data.contract_category' THEN 'Типы договоров'
-
-    -- Reports
-    WHEN 'menu.reports' THEN 'Отчеты'
-    WHEN 'menu.reports.universities' THEN 'Отчеты ВУЗов'
-    WHEN 'menu.reports.employees' THEN 'Отчеты сотрудников'
-    WHEN 'menu.reports.employees.navigation' THEN 'Список сотрудников'
-    WHEN 'menu.reports.employees.private' THEN 'Личные данные сотрудников'
-    WHEN 'menu.reports.employees.work' THEN 'Работа сотрудников'
-    WHEN 'menu.reports.students' THEN 'Отчеты студентов'
-    WHEN 'menu.reports.students.statistics' THEN 'Статистика студентов'
-    WHEN 'menu.reports.students.education' THEN 'Образование студентов'
-    WHEN 'menu.reports.students.private' THEN 'Личные данные студентов'
-    WHEN 'menu.reports.students.attendance' THEN 'Посещаемость'
-    WHEN 'menu.reports.students.score' THEN 'Оценки'
-    WHEN 'menu.reports.students.dynamic' THEN 'Динамика'
-    WHEN 'menu.reports.academic' THEN 'Академические отчеты'
-    WHEN 'menu.reports.academic.study' THEN 'Учебный отчет'
-    WHEN 'menu.reports.research' THEN 'Исследовательские отчеты'
-    WHEN 'menu.reports.research.project' THEN 'Исследовательские проекты'
-    WHEN 'menu.reports.research.publication' THEN 'Исследовательские публикации'
-    WHEN 'menu.reports.research.researcher' THEN 'Исследователи'
-    WHEN 'menu.reports.economic' THEN 'Экономические отчеты'
-    WHEN 'menu.reports.economic.finance' THEN 'Финансы'
-    WHEN 'menu.reports.economic.xujalik' THEN 'Хозяйство'
-
-    -- System
-    WHEN 'menu.system' THEN 'Система'
-    WHEN 'menu.system.temp' THEN 'Временные'
-    WHEN 'menu.system.translation' THEN 'Переводы'
-    WHEN 'menu.system.university_users' THEN 'Пользователи ВУЗа'
-    WHEN 'menu.system.api_logs' THEN 'API логи'
-    WHEN 'menu.system.report_update' THEN 'Обновления отчетов'
-    ELSE m.message  -- Fallback to default Uzbek message
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key LIKE 'menu.%'
-  AND CASE m.message_key
-    WHEN 'menu.dashboard' THEN TRUE
-    WHEN 'menu.registry' THEN TRUE
-    WHEN 'menu.registry.e_reestr' THEN TRUE
-    WHEN 'menu.registry.scientific' THEN TRUE
-    WHEN 'menu.registry.student_meta' THEN TRUE
-    WHEN 'menu.rating' THEN TRUE
-    WHEN 'menu.rating.administrative' THEN TRUE
-    WHEN 'menu.rating.administrative.employee' THEN TRUE
-    WHEN 'menu.rating.administrative.students' THEN TRUE
-    WHEN 'menu.rating.administrative.sport' THEN TRUE
-    WHEN 'menu.rating.academic' THEN TRUE
-    WHEN 'menu.rating.academic.methodical' THEN TRUE
-    WHEN 'menu.rating.academic.study' THEN TRUE
-    WHEN 'menu.rating.academic.verification' THEN TRUE
-    WHEN 'menu.rating.scientific' THEN TRUE
-    WHEN 'menu.rating.scientific.publications' THEN TRUE
-    WHEN 'menu.rating.scientific.projects' THEN TRUE
-    WHEN 'menu.rating.scientific.intellectual' THEN TRUE
-    WHEN 'menu.rating.student_gpa' THEN TRUE
-    WHEN 'menu.data' THEN TRUE
-    WHEN 'menu.data.general' THEN TRUE
-    WHEN 'menu.data.structure' THEN TRUE
-    WHEN 'menu.data.employee' THEN TRUE
-    WHEN 'menu.data.student' THEN TRUE
-    WHEN 'menu.data.education' THEN TRUE
-    WHEN 'menu.data.study' THEN TRUE
-    WHEN 'menu.data.science' THEN TRUE
-    WHEN 'menu.data.organizational' THEN TRUE
-    WHEN 'menu.data.contract_category' THEN TRUE
-    WHEN 'menu.reports' THEN TRUE
-    WHEN 'menu.reports.universities' THEN TRUE
-    WHEN 'menu.reports.employees' THEN TRUE
-    WHEN 'menu.reports.employees.navigation' THEN TRUE
-    WHEN 'menu.reports.employees.private' THEN TRUE
-    WHEN 'menu.reports.employees.work' THEN TRUE
-    WHEN 'menu.reports.students' THEN TRUE
-    WHEN 'menu.reports.students.statistics' THEN TRUE
-    WHEN 'menu.reports.students.education' THEN TRUE
-    WHEN 'menu.reports.students.private' THEN TRUE
-    WHEN 'menu.reports.students.attendance' THEN TRUE
-    WHEN 'menu.reports.students.score' THEN TRUE
-    WHEN 'menu.reports.students.dynamic' THEN TRUE
-    WHEN 'menu.reports.academic' THEN TRUE
-    WHEN 'menu.reports.academic.study' THEN TRUE
-    WHEN 'menu.reports.research' THEN TRUE
-    WHEN 'menu.reports.research.project' THEN TRUE
-    WHEN 'menu.reports.research.publication' THEN TRUE
-    WHEN 'menu.reports.research.researcher' THEN TRUE
-    WHEN 'menu.reports.economic' THEN TRUE
-    WHEN 'menu.reports.economic.finance' THEN TRUE
-    WHEN 'menu.reports.economic.xujalik' THEN TRUE
-    WHEN 'menu.system' THEN TRUE
-    WHEN 'menu.system.temp' THEN TRUE
-    WHEN 'menu.system.translation' THEN TRUE
-    WHEN 'menu.system.university_users' THEN TRUE
-    WHEN 'menu.system.api_logs' THEN TRUE
-    WHEN 'menu.system.report_update' THEN TRUE
-    ELSE FALSE
-  END = TRUE
-ON CONFLICT (message_id, language) DO NOTHING;
+PERFORM _seed_msg('label', 'Student list and management', 'Barcha talabalar ro''yxati va boshqaruv tizimi', 'Барча талабалар рўйхати ва бошқарув тизими', 'Список и управление студентами');
+PERFORM _seed_msg('action', 'New student',           'Yangi talaba',                 'Янги талаба',               'Новый студент');
+PERFORM _seed_msg('status', 'On leave',              'Ta''tilda',                     'Таътилда',                  'В отпуске');
+PERFORM _seed_msg('label', 'Grant recipients',       'Grantlilar',                   'Грантлилар',                'Грантополучатели');
+PERFORM _seed_msg('label', 'Search and filter',      'Qidiruv va filtrlash',         'Қидирув ва филтрлаш',       'Поиск и фильтрация');
+PERFORM _seed_msg('label', 'All HEIs',               'Barcha OTMlar',                'Барча ОТМлар',              'Все ВУЗы');
+PERFORM _seed_msg('label', 'All',                    'Barchasi',                     'Барчаси',                   'Все');
+PERFORM _seed_msg('label', 'Bachelor',               'Bakalavr',                     'Бакалавр',                  'Бакалавр');
+PERFORM _seed_msg('label', 'Master',                 'Magistr',                      'Магистр',                   'Магистр');
+PERFORM _seed_msg('label', 'students found',         'ta talaba topildi',            'та талаба топилди',         'студентов найдено');
+PERFORM _seed_msg('action', 'Configure columns',     'Ustunlarni sozlash',           'Устунларни созлаш',         'Настроить колонки');
+PERFORM _seed_msg('label', 'Student list',           'Talabalar ro''yxati',           'Талабалар рўйхати',         'Список студентов');
+PERFORM _seed_msg('table', 'Full name',              'FIO',                          'ФИО',                       'ФИО');
+PERFORM _seed_msg('table', 'Specialty',              'Mutaxassislik',                'Мутахассислик',             'Специальность');
+PERFORM _seed_msg('table', 'Course',                 'Kurs',                         'Курс',                      'Курс');
+PERFORM _seed_msg('table', 'Education type',         'Ta''lim turi',                  'Таълим тури',               'Вид обучения');
+PERFORM _seed_msg('table', 'Payment',                'To''lov',                       'Тўлов',                     'Оплата');
+PERFORM _seed_msg('table', 'Payment form',           'To''lov shakli',                'Тўлов шакли',               'Форма оплаты');
+PERFORM _seed_msg('label', 'Contract',               'Kontrakt',                     'Контракт',                  'Контракт');
+PERFORM _seed_msg('label', 'Grant',                  'Grant',                        'Грант',                     'Грант');
+PERFORM _seed_msg('label', 'Showing from',           'dan ko''rsatilmoqda',           'дан кўрсатилмоқда',         'показано из');
+PERFORM _seed_msg('label', 'Search by full name, code, PINFL...', 'FIO, kod, PINFL bo''yicha qidirish...', 'ФИО, код, ПИНФЛ бўйича қидириш...', 'Поиск по ФИО, коду, ПИНФЛ...');
 
 -- =====================================================
--- Menu Translations - English (en-US)
+-- Teachers page
 -- =====================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'en-US',
-  CASE m.message_key
-    -- Dashboard
-    WHEN 'menu.dashboard' THEN 'Dashboard'
-
-    -- Registry
-    WHEN 'menu.registry' THEN 'Registries'
-    WHEN 'menu.registry.e_reestr' THEN 'E-Registry'
-    WHEN 'menu.registry.scientific' THEN 'Scientific Registry'
-    WHEN 'menu.registry.student_meta' THEN 'Student Data'
-
-    -- Rating
-    WHEN 'menu.rating' THEN 'Rating'
-    WHEN 'menu.rating.administrative' THEN 'Administrative Rating'
-    WHEN 'menu.rating.administrative.employee' THEN 'Employee Rating'
-    WHEN 'menu.rating.administrative.students' THEN 'Student Rating'
-    WHEN 'menu.rating.administrative.sport' THEN 'Sport Rating'
-    WHEN 'menu.rating.academic' THEN 'Academic Rating'
-    WHEN 'menu.rating.academic.methodical' THEN 'Methodical Publications'
-    WHEN 'menu.rating.academic.study' THEN 'Study Rating'
-    WHEN 'menu.rating.academic.verification' THEN 'Verification Type'
-    WHEN 'menu.rating.scientific' THEN 'Scientific Rating'
-    WHEN 'menu.rating.scientific.publications' THEN 'Scientific Publications'
-    WHEN 'menu.rating.scientific.projects' THEN 'Scientific Projects'
-    WHEN 'menu.rating.scientific.intellectual' THEN 'Intellectual Property'
-    WHEN 'menu.rating.student_gpa' THEN 'Student GPA'
-
-    -- Data
-    WHEN 'menu.data' THEN 'Database'
-    WHEN 'menu.data.general' THEN 'General Data'
-    WHEN 'menu.data.structure' THEN 'Structure'
-    WHEN 'menu.data.employee' THEN 'Employees'
-    WHEN 'menu.data.student' THEN 'Students'
-    WHEN 'menu.data.education' THEN 'Education'
-    WHEN 'menu.data.study' THEN 'Study Process'
-    WHEN 'menu.data.science' THEN 'Science'
-    WHEN 'menu.data.organizational' THEN 'Organizational'
-    WHEN 'menu.data.contract_category' THEN 'Contract Types'
-
-    -- Reports
-    WHEN 'menu.reports' THEN 'Reports'
-    WHEN 'menu.reports.universities' THEN 'University Reports'
-    WHEN 'menu.reports.employees' THEN 'Employee Reports'
-    WHEN 'menu.reports.employees.navigation' THEN 'Employee List'
-    WHEN 'menu.reports.employees.private' THEN 'Employee Personal'
-    WHEN 'menu.reports.employees.work' THEN 'Employee Work'
-    WHEN 'menu.reports.students' THEN 'Student Reports'
-    WHEN 'menu.reports.students.statistics' THEN 'Student Statistics'
-    WHEN 'menu.reports.students.education' THEN 'Student Education'
-    WHEN 'menu.reports.students.private' THEN 'Student Personal'
-    WHEN 'menu.reports.students.attendance' THEN 'Attendance'
-    WHEN 'menu.reports.students.score' THEN 'Grades'
-    WHEN 'menu.reports.students.dynamic' THEN 'Dynamics'
-    WHEN 'menu.reports.academic' THEN 'Academic Reports'
-    WHEN 'menu.reports.academic.study' THEN 'Study Report'
-    WHEN 'menu.reports.research' THEN 'Research Reports'
-    WHEN 'menu.reports.research.project' THEN 'Research Projects'
-    WHEN 'menu.reports.research.publication' THEN 'Research Publications'
-    WHEN 'menu.reports.research.researcher' THEN 'Researchers'
-    WHEN 'menu.reports.economic' THEN 'Economic Reports'
-    WHEN 'menu.reports.economic.finance' THEN 'Finance'
-    WHEN 'menu.reports.economic.xujalik' THEN 'Economy'
-
-    -- System
-    WHEN 'menu.system' THEN 'System'
-    WHEN 'menu.system.temp' THEN 'Temporary'
-    WHEN 'menu.system.translation' THEN 'Translations'
-    WHEN 'menu.system.university_users' THEN 'University Users'
-    WHEN 'menu.system.api_logs' THEN 'API Logs'
-    WHEN 'menu.system.report_update' THEN 'Report Updates'
-    ELSE m.message  -- Fallback to default Uzbek message
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key LIKE 'menu.%'
-  AND CASE m.message_key
-    WHEN 'menu.dashboard' THEN TRUE
-    WHEN 'menu.registry' THEN TRUE
-    WHEN 'menu.registry.e_reestr' THEN TRUE
-    WHEN 'menu.registry.scientific' THEN TRUE
-    WHEN 'menu.registry.student_meta' THEN TRUE
-    WHEN 'menu.rating' THEN TRUE
-    WHEN 'menu.rating.administrative' THEN TRUE
-    WHEN 'menu.rating.administrative.employee' THEN TRUE
-    WHEN 'menu.rating.administrative.students' THEN TRUE
-    WHEN 'menu.rating.administrative.sport' THEN TRUE
-    WHEN 'menu.rating.academic' THEN TRUE
-    WHEN 'menu.rating.academic.methodical' THEN TRUE
-    WHEN 'menu.rating.academic.study' THEN TRUE
-    WHEN 'menu.rating.academic.verification' THEN TRUE
-    WHEN 'menu.rating.scientific' THEN TRUE
-    WHEN 'menu.rating.scientific.publications' THEN TRUE
-    WHEN 'menu.rating.scientific.projects' THEN TRUE
-    WHEN 'menu.rating.scientific.intellectual' THEN TRUE
-    WHEN 'menu.rating.student_gpa' THEN TRUE
-    WHEN 'menu.data' THEN TRUE
-    WHEN 'menu.data.general' THEN TRUE
-    WHEN 'menu.data.structure' THEN TRUE
-    WHEN 'menu.data.employee' THEN TRUE
-    WHEN 'menu.data.student' THEN TRUE
-    WHEN 'menu.data.education' THEN TRUE
-    WHEN 'menu.data.study' THEN TRUE
-    WHEN 'menu.data.science' THEN TRUE
-    WHEN 'menu.data.organizational' THEN TRUE
-    WHEN 'menu.data.contract_category' THEN TRUE
-    WHEN 'menu.reports' THEN TRUE
-    WHEN 'menu.reports.universities' THEN TRUE
-    WHEN 'menu.reports.employees' THEN TRUE
-    WHEN 'menu.reports.employees.navigation' THEN TRUE
-    WHEN 'menu.reports.employees.private' THEN TRUE
-    WHEN 'menu.reports.employees.work' THEN TRUE
-    WHEN 'menu.reports.students' THEN TRUE
-    WHEN 'menu.reports.students.statistics' THEN TRUE
-    WHEN 'menu.reports.students.education' THEN TRUE
-    WHEN 'menu.reports.students.private' THEN TRUE
-    WHEN 'menu.reports.students.attendance' THEN TRUE
-    WHEN 'menu.reports.students.score' THEN TRUE
-    WHEN 'menu.reports.students.dynamic' THEN TRUE
-    WHEN 'menu.reports.academic' THEN TRUE
-    WHEN 'menu.reports.academic.study' THEN TRUE
-    WHEN 'menu.reports.research' THEN TRUE
-    WHEN 'menu.reports.research.project' THEN TRUE
-    WHEN 'menu.reports.research.publication' THEN TRUE
-    WHEN 'menu.reports.research.researcher' THEN TRUE
-    WHEN 'menu.reports.economic' THEN TRUE
-    WHEN 'menu.reports.economic.finance' THEN TRUE
-    WHEN 'menu.reports.economic.xujalik' THEN TRUE
-    WHEN 'menu.system' THEN TRUE
-    WHEN 'menu.system.temp' THEN TRUE
-    WHEN 'menu.system.translation' THEN TRUE
-    WHEN 'menu.system.university_users' THEN TRUE
-    WHEN 'menu.system.api_logs' THEN TRUE
-    WHEN 'menu.system.report_update' THEN TRUE
-    ELSE FALSE
-  END = TRUE
-ON CONFLICT (message_id, language) DO NOTHING;
--- =====================================================
--- V12: Add Cyrillic Uzbek Translations for Menus
--- oz-UZ (Uzbek Cyrillic) - 4th language support
---
--- Author: System Architect
--- Date: 2025-11-10
--- =====================================================
-
--- Insert Cyrillic Uzbek translations for existing menu items
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'oz-UZ', 
-  CASE m.message_key
-    WHEN 'menu.dashboard' THEN 'Бош саҳифа'
-    WHEN 'menu.registry' THEN 'Реестрлар'
-    WHEN 'menu.rating' THEN 'Рейтинг'
-    WHEN 'menu.data' THEN 'Маълумотлар базаси'
-    WHEN 'menu.reports' THEN 'Ҳисоботлар'
-    WHEN 'menu.system' THEN 'Тизим'
-    WHEN 'menu.registry.e_reestr' THEN 'Е-Реестр'
-    WHEN 'menu.registry.scientific' THEN 'Илмий реестр'
-    WHEN 'menu.registry.student_meta' THEN 'Талаба маълумотлари'
-    WHEN 'menu.rating.administrative' THEN 'Административ рейтинг'
-    WHEN 'menu.rating.administrative.employee' THEN 'Ходимлар рейтинги'
-    WHEN 'menu.rating.administrative.students' THEN 'Талабалар рейтинги'
-    WHEN 'menu.rating.administrative.sport' THEN 'Спорт иншоотлари рейтинги'
-    WHEN 'menu.rating.academic' THEN 'Академик рейтинг'
-    WHEN 'menu.rating.academic.methodical' THEN 'Услубий нашрлар'
-    WHEN 'menu.rating.academic.study' THEN 'Ўқув рейтинги'
-    WHEN 'menu.rating.academic.verification' THEN 'Текшириш турлари'
-    WHEN 'menu.rating.scientific' THEN 'Илмий рейтинг'
-    WHEN 'menu.rating.scientific.publications' THEN 'Илмий нашрлар'
-    WHEN 'menu.rating.scientific.projects' THEN 'Илмий лойиҳалар'
-    WHEN 'menu.rating.scientific.intellectual' THEN 'Интеллектуал мулк'
-    WHEN 'menu.rating.student_gpa' THEN 'Талаба GPA рейтинги'
-    WHEN 'menu.data.general' THEN 'Умумий маълумотлар'
-    WHEN 'menu.data.structure' THEN 'Тузилма'
-    WHEN 'menu.data.employee' THEN 'Ходимлар'
-    WHEN 'menu.data.student' THEN 'Талабалар'
-    WHEN 'menu.data.education' THEN 'Таълим'
-    WHEN 'menu.data.study' THEN 'Ўқув жараёни'
-    WHEN 'menu.data.science' THEN 'Илмий фаолият'
-    WHEN 'menu.data.organizational' THEN 'Ташкилий'
-    WHEN 'menu.data.contract_category' THEN 'Шартнома турлари'
-    WHEN 'menu.reports.universities' THEN 'ОТМ ҳисоботлари'
-    WHEN 'menu.reports.employees' THEN 'Ходимлар ҳисоботлари'
-    WHEN 'menu.reports.employees.navigation' THEN 'Ходимлар рўйхати'
-    WHEN 'menu.reports.employees.private' THEN 'Ходимлар шахсий маълумотлари'
-    WHEN 'menu.reports.employees.work' THEN 'Ходимлар иш фаолияти'
-    WHEN 'menu.reports.students' THEN 'Талабалар ҳисоботлари'
-    WHEN 'menu.reports.students.statistics' THEN 'Талабалар статистикаси'
-    WHEN 'menu.reports.students.education' THEN 'Талабалар таълими'
-    WHEN 'menu.reports.students.private' THEN 'Талабалар шахсий маълумотлари'
-    WHEN 'menu.reports.students.attendance' THEN 'Талабалар давомати'
-    WHEN 'menu.reports.students.score' THEN 'Талабалар баҳолари'
-    WHEN 'menu.reports.students.dynamic' THEN 'Талабалар динамикаси'
-    WHEN 'menu.reports.academic' THEN 'Академик ҳисоботлар'
-    WHEN 'menu.reports.academic.study' THEN 'Ўқув ҳисоботи'
-    WHEN 'menu.reports.research' THEN 'Илмий тадқиқот ҳисоботлари'
-    WHEN 'menu.reports.research.project' THEN 'Тадқиқот лойиҳалари'
-    WHEN 'menu.reports.research.publication' THEN 'Тадқиқот нашлари'
-    WHEN 'menu.reports.research.researcher' THEN 'Тадқиқотчилар'
-    WHEN 'menu.reports.economic' THEN 'Иқтисодий ҳисоботлар'
-    WHEN 'menu.reports.economic.finance' THEN 'Молия ҳисоботи'
-    WHEN 'menu.reports.economic.xujalik' THEN 'Хўжалик фаолияти'
-    WHEN 'menu.system.temp' THEN 'Вақтинчалик'
-    WHEN 'menu.system.translation' THEN 'Таржималар'
-    WHEN 'menu.system.university_users' THEN 'ОТМ фойдаланувчилари'
-    WHEN 'menu.system.api_logs' THEN 'API журнал'
-    WHEN 'menu.system.report_update' THEN 'Ҳисоботларни янгилаш'
-  END
-FROM system_messages m
-WHERE m.category = 'menu' 
-  AND m.message_key IN (
-    'menu.dashboard', 'menu.registry', 'menu.rating', 'menu.data', 'menu.reports', 'menu.system',
-    'menu.registry.e_reestr', 'menu.registry.scientific', 'menu.registry.student_meta',
-    'menu.rating.administrative', 'menu.rating.administrative.employee', 'menu.rating.administrative.students', 'menu.rating.administrative.sport',
-    'menu.rating.academic', 'menu.rating.academic.methodical', 'menu.rating.academic.study', 'menu.rating.academic.verification',
-    'menu.rating.scientific', 'menu.rating.scientific.publications', 'menu.rating.scientific.projects', 'menu.rating.scientific.intellectual',
-    'menu.rating.student_gpa',
-    'menu.data.general', 'menu.data.structure', 'menu.data.employee', 'menu.data.student', 'menu.data.education', 'menu.data.study', 'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category',
-    'menu.reports.universities', 'menu.reports.employees', 'menu.reports.employees.navigation', 'menu.reports.employees.private', 'menu.reports.employees.work',
-    'menu.reports.students', 'menu.reports.students.statistics', 'menu.reports.students.education', 'menu.reports.students.private', 'menu.reports.students.attendance', 'menu.reports.students.score', 'menu.reports.students.dynamic',
-    'menu.reports.academic', 'menu.reports.academic.study',
-    'menu.reports.research', 'menu.reports.research.project', 'menu.reports.research.publication', 'menu.reports.research.researcher',
-    'menu.reports.economic', 'menu.reports.economic.finance', 'menu.reports.economic.xujalik',
-    'menu.system.temp', 'menu.system.translation', 'menu.system.university_users', 'menu.system.api_logs', 'menu.system.report_update'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
+PERFORM _seed_msg('label', 'Teacher list and monitoring', 'Professor-o''qituvchilar ro''yxati va ilmiy faoliyat monitoring', 'Профессор-ўқитувчилар рўйхати ва илмий фаолият мониторинг', 'Список преподавателей и мониторинг научной деятельности');
+PERFORM _seed_msg('action', 'New teacher',           'Yangi o''qituvchi',             'Янги ўқитувчи',             'Новый преподаватель');
+PERFORM _seed_msg('label', 'Professors',             'Professorlar',                 'Профессорлар',              'Профессора');
+PERFORM _seed_msg('label', 'Associate professors',   'Dotsentlar',                   'Дотсентлар',                'Доценты');
+PERFORM _seed_msg('label', 'Doctor of science',      'Fan doktori',                  'Фан доктори',               'Доктор наук');
+PERFORM _seed_msg('label', 'years',                  'yil',                          'йил',                       'лет');
+PERFORM _seed_msg('label', 'teachers found',         'ta o''qituvchi topildi',        'та ўқитувчи топилди',       'преподавателей найдено');
+-- NB: 'Teacher list' allaqachon menu kategoriyasida (qator 516) mavjud; dublikat olib tashlandi
+PERFORM _seed_msg('table', 'Department',             'Kafedra',                      'Кафедра',                   'Кафедра');
+PERFORM _seed_msg('table', 'Position',               'Lavozim',                      'Лавозим',                   'Должность');
+PERFORM _seed_msg('table', 'Academic degree',        'Ilmiy daraja',                 'Илмий даража',              'Учёная степень');
+PERFORM _seed_msg('table', 'Academic title',         'Ilmiy unvon',                  'Илмий унвон',               'Учёное звание');
+PERFORM _seed_msg('table', 'Experience',             'Tajriba',                      'Тажриба',                   'Стаж');
+PERFORM _seed_msg('table', 'Publications',           'Nashrlar',                     'Нашрлар',                   'Публикации');
+PERFORM _seed_msg('table', 'Projects',               'Loyihalar',                    'Лойиҳалар',                 'Проекты');
+PERFORM _seed_msg('label', 'No degree',              'Ilmiy daraja yo''q',            'Илмий даража йўқ',          'Нет степени');
+PERFORM _seed_msg('label', 'Search by full name, PINFL, department...', 'FIO, PINFL, kafedra bo''yicha qidirish...', 'ФИО, ПИНФЛ, кафедра бўйича қидириш...', 'Поиск по ФИО, ПИНФЛ, кафедре...');
 
 -- =====================================================
--- Menu Translations - Uzbek Latin (uz-UZ)
+-- ErrorBoundary
 -- =====================================================
--- Note: system_messages already contains uz-UZ as default message,
--- but we need to explicitly add to system_message_translations table
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'uz-UZ', m.message  -- Use default message which is already in Uzbek Latin
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    'menu.dashboard', 'menu.registry', 'menu.rating', 'menu.data', 'menu.reports', 'menu.system',
-    'menu.registry.e_reestr', 'menu.registry.scientific', 'menu.registry.student_meta',
-    'menu.rating.administrative', 'menu.rating.administrative.employee', 'menu.rating.administrative.students', 'menu.rating.administrative.sport',
-    'menu.rating.academic', 'menu.rating.academic.methodical', 'menu.rating.academic.study', 'menu.rating.academic.verification',
-    'menu.rating.scientific', 'menu.rating.scientific.publications', 'menu.rating.scientific.projects', 'menu.rating.scientific.intellectual',
-    'menu.rating.student_gpa',
-    'menu.data.general', 'menu.data.structure', 'menu.data.employee', 'menu.data.student', 'menu.data.education', 'menu.data.study', 'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category',
-    'menu.reports.universities', 'menu.reports.employees', 'menu.reports.employees.navigation', 'menu.reports.employees.private', 'menu.reports.employees.work',
-    'menu.reports.students', 'menu.reports.students.statistics', 'menu.reports.students.education', 'menu.reports.students.private', 'menu.reports.students.attendance', 'menu.reports.students.score', 'menu.reports.students.dynamic',
-    'menu.reports.academic', 'menu.reports.academic.study',
-    'menu.reports.research', 'menu.reports.research.project', 'menu.reports.research.publication', 'menu.reports.research.researcher',
-    'menu.reports.economic', 'menu.reports.economic.finance', 'menu.reports.economic.xujalik',
-    'menu.system', 'menu.system.temp', 'menu.system.translation', 'menu.system.university_users', 'menu.system.api_logs', 'menu.system.report_update'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- ================================================
--- V13: Add Complete Menu Translations
--- Date: 2025-01-10
--- Purpose: Add 44 new submenu translations (4 languages each)
---
--- New Submenus:
--- 1. registry-e-reestr: 19 submenus (Muassasalar, Fakultetlar...)
--- 2. data-structure: 6 submenus
--- 3. data-education: 13 submenus
--- 4. data-general: 6 submenus
---
--- Total: 44 x 4 = 176 new translations
--- ================================================
-
--- ========================================
--- 1. REGISTRY > E-REESTR (19 submenus)
--- ========================================
-
--- Insert all 19 e-reestr submenus into system_messages
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 1.1 Universities
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.university', 'Muassasalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.2 Faculties
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.faculty', 'Fakultetlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.3 Departments
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.cathedra', 'Kafedralar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.4 Teachers
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.teacher', 'O''qituvchilar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.5 Students
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.student', 'Talabalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.6 Diplomas
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.diploma', 'Diplomlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.7 Bachelor Specialities
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.speciality_bachelor', 'Yo''nalishlar (Bakalavr)', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.8 Master Specialities
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.speciality_master', 'Mutaxassisliklar (Magistr)', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.9 Doctoral Specialities
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.speciality_doctoral', 'Ixtisosliklar (Doktorantura)', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.10 Employee Jobs
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.employee_jobs', 'Xodimlar ish joylari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.11 Diploma Blank Distribution
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.diploma_blank_distribution', 'Diplom blankalarini taqsimlash', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.12 Diploma Blanks
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.diploma_blank', 'Diplom blankalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.13 Ordinatura Specialities
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.speciality_ordinatura', 'Ordinatura mutaxassisliklari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.14 University Specialities
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.university_speciality', 'OTM mutaxassisliklari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.15 Study Groups
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.university_group', 'O''quv guruhlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.16 Scholarships
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.student_scholarship', 'Stipendiya', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.17 Student Certificates
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.student_certificate', 'Talaba sertifikatlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.18 Employee Certificates
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.employee_certificate', 'O''qituvchi sertifikatlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.19 Students Lite
-(gen_random_uuid(), 'menu', 'menu.registry.e_reestr.student_lite', 'Talabalar Lite', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 2. DATA > STRUCTURE (6 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 2.1 University Types
-(gen_random_uuid(), 'menu', 'menu.data.structure.university_type', 'OTM tashkiliy shakllari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.2 Ownership
-(gen_random_uuid(), 'menu', 'menu.data.structure.ownership', 'OTM mulkchilik shakllari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.3 Department Types
-(gen_random_uuid(), 'menu', 'menu.data.structure.department_type', 'OTM bo''linmalari turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.4 Locality Type
-(gen_random_uuid(), 'menu', 'menu.data.structure.locality_type', 'Mahalliylik turi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.5 Activity Status
-(gen_random_uuid(), 'menu', 'menu.data.structure.activity_status', 'OTM aktivlik statusi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.6 Belongs To
-(gen_random_uuid(), 'menu', 'menu.data.structure.belongs_to', 'OTMning Vazirlikka tegishliligi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 3. DATA > EDUCATION (13 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 3.1 Education Types
-(gen_random_uuid(), 'menu', 'menu.data.education.education_type', 'Ta''lim turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.2 Education Forms
-(gen_random_uuid(), 'menu', 'menu.data.education.education_form', 'Ta''lim shakllari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.3 Education Languages
-(gen_random_uuid(), 'menu', 'menu.data.education.education_language', 'Ta''lim tillari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.4 Grade System Types
-(gen_random_uuid(), 'menu', 'menu.data.education.grade_system_type', 'Baholash tizimlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.5 Score Types
-(gen_random_uuid(), 'menu', 'menu.data.education.score_type', 'Baho turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.6 Exam Types
-(gen_random_uuid(), 'menu', 'menu.data.education.exam_type', 'Nazorat turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.7 Diploma Blank Categories
-(gen_random_uuid(), 'menu', 'menu.data.education.diploma_blank_category', 'Diplom blanka kategoriyalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.8 Diploma Blank Statuses
-(gen_random_uuid(), 'menu', 'menu.data.education.diploma_blank_status', 'Diplom blanka statuslari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.9 Diploma Generate Statuses
-(gen_random_uuid(), 'menu', 'menu.data.education.diploma_blank_generate_status', 'Diplom shakllantirish statuslari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.10 Certificate Types
-(gen_random_uuid(), 'menu', 'menu.data.education.certificate_type', 'Sertifikat toifasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.11 Certificate Names
-(gen_random_uuid(), 'menu', 'menu.data.education.certificate_names', 'Sertifikat turi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.12 Certificate Subjects
-(gen_random_uuid(), 'menu', 'menu.data.education.certificate_subjects', 'Sertifikat fani', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.13 Certificate Grades
-(gen_random_uuid(), 'menu', 'menu.data.education.certificate_grades', 'Sertifikat darajasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 4. DATA > GENERAL (6 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 4.1 General (parent label fix)
-(gen_random_uuid(), 'menu', 'menu.data.general', 'Umumiy', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.2 Employees
-(gen_random_uuid(), 'menu', 'menu.data.employee', 'Xodimlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.3 Students
-(gen_random_uuid(), 'menu', 'menu.data.student', 'Talabalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.4 Study
-(gen_random_uuid(), 'menu', 'menu.data.study', 'O''qitish', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.5 Science
-(gen_random_uuid(), 'menu', 'menu.data.science', 'Ilmiy', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.6 Organizational
-(gen_random_uuid(), 'menu', 'menu.data.organizational', 'Tashkiliy', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.7 Contract Category
-(gen_random_uuid(), 'menu', 'menu.data.contract_category', 'Shartnoma kategoriyalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO UPDATE SET
-  message = EXCLUDED.message,
-  updated_at = CURRENT_TIMESTAMP;
-
--- ================================================
--- TRANSLATIONS: Cyrillic (oz-UZ)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'oz-UZ',
-  CASE m.message_key
-    -- Registry > E-Reestr (19)
-    WHEN 'menu.registry.e_reestr.university' THEN 'Муассасалар'
-    WHEN 'menu.registry.e_reestr.faculty' THEN 'Факультетлар'
-    WHEN 'menu.registry.e_reestr.cathedra' THEN 'Кафедралар'
-    WHEN 'menu.registry.e_reestr.teacher' THEN 'Ўқитувчилар'
-    WHEN 'menu.registry.e_reestr.student' THEN 'Талабалар'
-    WHEN 'menu.registry.e_reestr.diploma' THEN 'Дипломлар'
-    WHEN 'menu.registry.e_reestr.speciality_bachelor' THEN 'Йўналишлар (Бакалавр)'
-    WHEN 'menu.registry.e_reestr.speciality_master' THEN 'Мутахассисликлар (Магистр)'
-    WHEN 'menu.registry.e_reestr.speciality_doctoral' THEN 'Ихтисосликлар (Докторантура)'
-    WHEN 'menu.registry.e_reestr.employee_jobs' THEN 'Ходимлар иш жойлари'
-    WHEN 'menu.registry.e_reestr.diploma_blank_distribution' THEN 'Диплом бланкаларини тақсимлаш'
-    WHEN 'menu.registry.e_reestr.diploma_blank' THEN 'Диплом бланкалар'
-    WHEN 'menu.registry.e_reestr.speciality_ordinatura' THEN 'Ординатура мутахассисликлари'
-    WHEN 'menu.registry.e_reestr.university_speciality' THEN 'ОТМ мутахассисликлари'
-    WHEN 'menu.registry.e_reestr.university_group' THEN 'Ўқув гурухлари'
-    WHEN 'menu.registry.e_reestr.student_scholarship' THEN 'Стипендия'
-    WHEN 'menu.registry.e_reestr.student_certificate' THEN 'Талаба сертификатлари'
-    WHEN 'menu.registry.e_reestr.employee_certificate' THEN 'Ўқитувчи сертификатлари'
-    WHEN 'menu.registry.e_reestr.student_lite' THEN 'Талабалар Lite'
-
-    -- Data > Structure (6)
-    WHEN 'menu.data.structure.university_type' THEN 'ОТМ ташкилий шакллари'
-    WHEN 'menu.data.structure.ownership' THEN 'ОТМ мулкчилик шакллари'
-    WHEN 'menu.data.structure.department_type' THEN 'ОТМ бўлинмалари турлари'
-    WHEN 'menu.data.structure.locality_type' THEN 'Маҳаллийлик тури'
-    WHEN 'menu.data.structure.activity_status' THEN 'ОТМ активлик статуси'
-    WHEN 'menu.data.structure.belongs_to' THEN 'ОТМнинг Вазирликка тегишлилиги'
-
-    -- Data > Education (13)
-    WHEN 'menu.data.education.education_type' THEN 'Таълим турлари'
-    WHEN 'menu.data.education.education_form' THEN 'Таълим шакллари'
-    WHEN 'menu.data.education.education_language' THEN 'Таълим тиллари'
-    WHEN 'menu.data.education.grade_system_type' THEN 'Баҳолаш тизимлари'
-    WHEN 'menu.data.education.score_type' THEN 'Баҳо турлари'
-    WHEN 'menu.data.education.exam_type' THEN 'Назорат турлари'
-    WHEN 'menu.data.education.diploma_blank_category' THEN 'Диплом бланка категориялари'
-    WHEN 'menu.data.education.diploma_blank_status' THEN 'Диплом бланка статуслари'
-    WHEN 'menu.data.education.diploma_blank_generate_status' THEN 'Диплом шакллантириш статуслари'
-    WHEN 'menu.data.education.certificate_type' THEN 'Сертификат тоифаси'
-    WHEN 'menu.data.education.certificate_names' THEN 'Сертификат тури'
-    WHEN 'menu.data.education.certificate_subjects' THEN 'Сертификат фани'
-    WHEN 'menu.data.education.certificate_grades' THEN 'Сертификат даражаси'
-
-    -- Data > General (7)
-    WHEN 'menu.data.general' THEN 'Умумий'
-    WHEN 'menu.data.employee' THEN 'Ходимлар'
-    WHEN 'menu.data.student' THEN 'Талабалар'
-    WHEN 'menu.data.study' THEN 'Ўқитиш'
-    WHEN 'menu.data.science' THEN 'Илмий'
-    WHEN 'menu.data.organizational' THEN 'Ташкилий'
-    WHEN 'menu.data.contract_category' THEN 'Шартнома категориялари'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    -- Registry > E-Reestr (19)
-    'menu.registry.e_reestr.university', 'menu.registry.e_reestr.faculty', 'menu.registry.e_reestr.cathedra',
-    'menu.registry.e_reestr.teacher', 'menu.registry.e_reestr.student', 'menu.registry.e_reestr.diploma',
-    'menu.registry.e_reestr.speciality_bachelor', 'menu.registry.e_reestr.speciality_master',
-    'menu.registry.e_reestr.speciality_doctoral', 'menu.registry.e_reestr.employee_jobs',
-    'menu.registry.e_reestr.diploma_blank_distribution', 'menu.registry.e_reestr.diploma_blank',
-    'menu.registry.e_reestr.speciality_ordinatura', 'menu.registry.e_reestr.university_speciality',
-    'menu.registry.e_reestr.university_group', 'menu.registry.e_reestr.student_scholarship',
-    'menu.registry.e_reestr.student_certificate', 'menu.registry.e_reestr.employee_certificate',
-    'menu.registry.e_reestr.student_lite',
-    -- Data > Structure (6)
-    'menu.data.structure.university_type', 'menu.data.structure.ownership', 'menu.data.structure.department_type',
-    'menu.data.structure.locality_type', 'menu.data.structure.activity_status', 'menu.data.structure.belongs_to',
-    -- Data > Education (13)
-    'menu.data.education.education_type', 'menu.data.education.education_form', 'menu.data.education.education_language',
-    'menu.data.education.grade_system_type', 'menu.data.education.score_type', 'menu.data.education.exam_type',
-    'menu.data.education.diploma_blank_category', 'menu.data.education.diploma_blank_status',
-    'menu.data.education.diploma_blank_generate_status', 'menu.data.education.certificate_type',
-    'menu.data.education.certificate_names', 'menu.data.education.certificate_subjects', 'menu.data.education.certificate_grades',
-    -- Data > General (7)
-    'menu.data.general', 'menu.data.employee', 'menu.data.student', 'menu.data.study',
-    'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- ================================================
--- TRANSLATIONS: Uzbek Latin (uz-UZ)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'uz-UZ', m.message  -- Use default Uzbek Latin from system_messages
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    -- Registry > E-Reestr (19)
-    'menu.registry.e_reestr.university', 'menu.registry.e_reestr.faculty', 'menu.registry.e_reestr.cathedra',
-    'menu.registry.e_reestr.teacher', 'menu.registry.e_reestr.student', 'menu.registry.e_reestr.diploma',
-    'menu.registry.e_reestr.speciality_bachelor', 'menu.registry.e_reestr.speciality_master',
-    'menu.registry.e_reestr.speciality_doctoral', 'menu.registry.e_reestr.employee_jobs',
-    'menu.registry.e_reestr.diploma_blank_distribution', 'menu.registry.e_reestr.diploma_blank',
-    'menu.registry.e_reestr.speciality_ordinatura', 'menu.registry.e_reestr.university_speciality',
-    'menu.registry.e_reestr.university_group', 'menu.registry.e_reestr.student_scholarship',
-    'menu.registry.e_reestr.student_certificate', 'menu.registry.e_reestr.employee_certificate',
-    'menu.registry.e_reestr.student_lite',
-    -- Data > Structure (6)
-    'menu.data.structure.university_type', 'menu.data.structure.ownership', 'menu.data.structure.department_type',
-    'menu.data.structure.locality_type', 'menu.data.structure.activity_status', 'menu.data.structure.belongs_to',
-    -- Data > Education (13)
-    'menu.data.education.education_type', 'menu.data.education.education_form', 'menu.data.education.education_language',
-    'menu.data.education.grade_system_type', 'menu.data.education.score_type', 'menu.data.education.exam_type',
-    'menu.data.education.diploma_blank_category', 'menu.data.education.diploma_blank_status',
-    'menu.data.education.diploma_blank_generate_status', 'menu.data.education.certificate_type',
-    'menu.data.education.certificate_names', 'menu.data.education.certificate_subjects', 'menu.data.education.certificate_grades',
-    -- Data > General (7)
-    'menu.data.general', 'menu.data.employee', 'menu.data.student', 'menu.data.study',
-    'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- ================================================
--- TRANSLATIONS: Russian (ru-RU)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'ru-RU',
-  CASE m.message_key
-    -- Registry > E-Reestr (19)
-    WHEN 'menu.registry.e_reestr.university' THEN 'Университеты'
-    WHEN 'menu.registry.e_reestr.faculty' THEN 'Факультеты'
-    WHEN 'menu.registry.e_reestr.cathedra' THEN 'Кафедры'
-    WHEN 'menu.registry.e_reestr.teacher' THEN 'Преподаватели'
-    WHEN 'menu.registry.e_reestr.student' THEN 'Студенты'
-    WHEN 'menu.registry.e_reestr.diploma' THEN 'Дипломы'
-    WHEN 'menu.registry.e_reestr.speciality_bachelor' THEN 'Направления (Бакалавриат)'
-    WHEN 'menu.registry.e_reestr.speciality_master' THEN 'Специальности (Магистратура)'
-    WHEN 'menu.registry.e_reestr.speciality_doctoral' THEN 'Специальности (Докторантура)'
-    WHEN 'menu.registry.e_reestr.employee_jobs' THEN 'Рабочие места сотрудников'
-    WHEN 'menu.registry.e_reestr.diploma_blank_distribution' THEN 'Распределение бланков дипломов'
-    WHEN 'menu.registry.e_reestr.diploma_blank' THEN 'Бланки дипломов'
-    WHEN 'menu.registry.e_reestr.speciality_ordinatura' THEN 'Специальности ординатуры'
-    WHEN 'menu.registry.e_reestr.university_speciality' THEN 'Специальности ВУЗа'
-    WHEN 'menu.registry.e_reestr.university_group' THEN 'Учебные группы'
-    WHEN 'menu.registry.e_reestr.student_scholarship' THEN 'Стипендия'
-    WHEN 'menu.registry.e_reestr.student_certificate' THEN 'Сертификаты студентов'
-    WHEN 'menu.registry.e_reestr.employee_certificate' THEN 'Сертификаты преподавателей'
-    WHEN 'menu.registry.e_reestr.student_lite' THEN 'Студенты Lite'
-
-    -- Data > Structure (6)
-    WHEN 'menu.data.structure.university_type' THEN 'Организационные формы вузов'
-    WHEN 'menu.data.structure.ownership' THEN 'Формы собственности вузов'
-    WHEN 'menu.data.structure.department_type' THEN 'Типы подразделений вузов'
-    WHEN 'menu.data.structure.locality_type' THEN 'Тип местности'
-    WHEN 'menu.data.structure.activity_status' THEN 'Статус активности вуза'
-    WHEN 'menu.data.structure.belongs_to' THEN 'Принадлежность вуза министерству'
-
-    -- Data > Education (13)
-    WHEN 'menu.data.education.education_type' THEN 'Типы образования'
-    WHEN 'menu.data.education.education_form' THEN 'Формы образования'
-    WHEN 'menu.data.education.education_language' THEN 'Языки обучения'
-    WHEN 'menu.data.education.grade_system_type' THEN 'Системы оценивания'
-    WHEN 'menu.data.education.score_type' THEN 'Типы оценок'
-    WHEN 'menu.data.education.exam_type' THEN 'Типы контроля'
-    WHEN 'menu.data.education.diploma_blank_category' THEN 'Категории бланков дипломов'
-    WHEN 'menu.data.education.diploma_blank_status' THEN 'Статусы бланков дипломов'
-    WHEN 'menu.data.education.diploma_blank_generate_status' THEN 'Статусы формирования дипломов'
-    WHEN 'menu.data.education.certificate_type' THEN 'Категория сертификата'
-    WHEN 'menu.data.education.certificate_names' THEN 'Тип сертификата'
-    WHEN 'menu.data.education.certificate_subjects' THEN 'Предмет сертификата'
-    WHEN 'menu.data.education.certificate_grades' THEN 'Уровень сертификата'
-
-    -- Data > General (7)
-    WHEN 'menu.data.general' THEN 'Общие'
-    WHEN 'menu.data.employee' THEN 'Сотрудники'
-    WHEN 'menu.data.student' THEN 'Студенты'
-    WHEN 'menu.data.study' THEN 'Обучение'
-    WHEN 'menu.data.science' THEN 'Наука'
-    WHEN 'menu.data.organizational' THEN 'Организационные'
-    WHEN 'menu.data.contract_category' THEN 'Категории договоров'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    -- Registry > E-Reestr (19)
-    'menu.registry.e_reestr.university', 'menu.registry.e_reestr.faculty', 'menu.registry.e_reestr.cathedra',
-    'menu.registry.e_reestr.teacher', 'menu.registry.e_reestr.student', 'menu.registry.e_reestr.diploma',
-    'menu.registry.e_reestr.speciality_bachelor', 'menu.registry.e_reestr.speciality_master',
-    'menu.registry.e_reestr.speciality_doctoral', 'menu.registry.e_reestr.employee_jobs',
-    'menu.registry.e_reestr.diploma_blank_distribution', 'menu.registry.e_reestr.diploma_blank',
-    'menu.registry.e_reestr.speciality_ordinatura', 'menu.registry.e_reestr.university_speciality',
-    'menu.registry.e_reestr.university_group', 'menu.registry.e_reestr.student_scholarship',
-    'menu.registry.e_reestr.student_certificate', 'menu.registry.e_reestr.employee_certificate',
-    'menu.registry.e_reestr.student_lite',
-    -- Data > Structure (6)
-    'menu.data.structure.university_type', 'menu.data.structure.ownership', 'menu.data.structure.department_type',
-    'menu.data.structure.locality_type', 'menu.data.structure.activity_status', 'menu.data.structure.belongs_to',
-    -- Data > Education (13)
-    'menu.data.education.education_type', 'menu.data.education.education_form', 'menu.data.education.education_language',
-    'menu.data.education.grade_system_type', 'menu.data.education.score_type', 'menu.data.education.exam_type',
-    'menu.data.education.diploma_blank_category', 'menu.data.education.diploma_blank_status',
-    'menu.data.education.diploma_blank_generate_status', 'menu.data.education.certificate_type',
-    'menu.data.education.certificate_names', 'menu.data.education.certificate_subjects', 'menu.data.education.certificate_grades',
-    -- Data > General (7)
-    'menu.data.general', 'menu.data.employee', 'menu.data.student', 'menu.data.study',
-    'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- ================================================
--- TRANSLATIONS: English (en-US)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'en-US',
-  CASE m.message_key
-    -- Registry > E-Reestr (19)
-    WHEN 'menu.registry.e_reestr.university' THEN 'Universities'
-    WHEN 'menu.registry.e_reestr.faculty' THEN 'Faculties'
-    WHEN 'menu.registry.e_reestr.cathedra' THEN 'Departments'
-    WHEN 'menu.registry.e_reestr.teacher' THEN 'Teachers'
-    WHEN 'menu.registry.e_reestr.student' THEN 'Students'
-    WHEN 'menu.registry.e_reestr.diploma' THEN 'Diplomas'
-    WHEN 'menu.registry.e_reestr.speciality_bachelor' THEN 'Bachelor Specialities'
-    WHEN 'menu.registry.e_reestr.speciality_master' THEN 'Master Specialities'
-    WHEN 'menu.registry.e_reestr.speciality_doctoral' THEN 'Doctoral Specialities'
-    WHEN 'menu.registry.e_reestr.employee_jobs' THEN 'Employee Jobs'
-    WHEN 'menu.registry.e_reestr.diploma_blank_distribution' THEN 'Diploma Blank Distribution'
-    WHEN 'menu.registry.e_reestr.diploma_blank' THEN 'Diploma Blanks'
-    WHEN 'menu.registry.e_reestr.speciality_ordinatura' THEN 'Ordinatura Specialities'
-    WHEN 'menu.registry.e_reestr.university_speciality' THEN 'University Specialities'
-    WHEN 'menu.registry.e_reestr.university_group' THEN 'Study Groups'
-    WHEN 'menu.registry.e_reestr.student_scholarship' THEN 'Scholarship'
-    WHEN 'menu.registry.e_reestr.student_certificate' THEN 'Student Certificates'
-    WHEN 'menu.registry.e_reestr.employee_certificate' THEN 'Teacher Certificates'
-    WHEN 'menu.registry.e_reestr.student_lite' THEN 'Students Lite'
-
-    -- Data > Structure (6)
-    WHEN 'menu.data.structure.university_type' THEN 'University Types'
-    WHEN 'menu.data.structure.ownership' THEN 'Ownership Forms'
-    WHEN 'menu.data.structure.department_type' THEN 'Department Types'
-    WHEN 'menu.data.structure.locality_type' THEN 'Locality Type'
-    WHEN 'menu.data.structure.activity_status' THEN 'Activity Status'
-    WHEN 'menu.data.structure.belongs_to' THEN 'Ministry Affiliation'
-
-    -- Data > Education (13)
-    WHEN 'menu.data.education.education_type' THEN 'Education Types'
-    WHEN 'menu.data.education.education_form' THEN 'Education Forms'
-    WHEN 'menu.data.education.education_language' THEN 'Education Languages'
-    WHEN 'menu.data.education.grade_system_type' THEN 'Grading Systems'
-    WHEN 'menu.data.education.score_type' THEN 'Score Types'
-    WHEN 'menu.data.education.exam_type' THEN 'Exam Types'
-    WHEN 'menu.data.education.diploma_blank_category' THEN 'Diploma Blank Categories'
-    WHEN 'menu.data.education.diploma_blank_status' THEN 'Diploma Blank Statuses'
-    WHEN 'menu.data.education.diploma_blank_generate_status' THEN 'Diploma Generation Statuses'
-    WHEN 'menu.data.education.certificate_type' THEN 'Certificate Category'
-    WHEN 'menu.data.education.certificate_names' THEN 'Certificate Type'
-    WHEN 'menu.data.education.certificate_subjects' THEN 'Certificate Subject'
-    WHEN 'menu.data.education.certificate_grades' THEN 'Certificate Grade'
-
-    -- Data > General (7)
-    WHEN 'menu.data.general' THEN 'General'
-    WHEN 'menu.data.employee' THEN 'Employees'
-    WHEN 'menu.data.student' THEN 'Students'
-    WHEN 'menu.data.study' THEN 'Study'
-    WHEN 'menu.data.science' THEN 'Science'
-    WHEN 'menu.data.organizational' THEN 'Organizational'
-    WHEN 'menu.data.contract_category' THEN 'Contract Categories'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    -- Registry > E-Reestr (19)
-    'menu.registry.e_reestr.university', 'menu.registry.e_reestr.faculty', 'menu.registry.e_reestr.cathedra',
-    'menu.registry.e_reestr.teacher', 'menu.registry.e_reestr.student', 'menu.registry.e_reestr.diploma',
-    'menu.registry.e_reestr.speciality_bachelor', 'menu.registry.e_reestr.speciality_master',
-    'menu.registry.e_reestr.speciality_doctoral', 'menu.registry.e_reestr.employee_jobs',
-    'menu.registry.e_reestr.diploma_blank_distribution', 'menu.registry.e_reestr.diploma_blank',
-    'menu.registry.e_reestr.speciality_ordinatura', 'menu.registry.e_reestr.university_speciality',
-    'menu.registry.e_reestr.university_group', 'menu.registry.e_reestr.student_scholarship',
-    'menu.registry.e_reestr.student_certificate', 'menu.registry.e_reestr.employee_certificate',
-    'menu.registry.e_reestr.student_lite',
-    -- Data > Structure (6)
-    'menu.data.structure.university_type', 'menu.data.structure.ownership', 'menu.data.structure.department_type',
-    'menu.data.structure.locality_type', 'menu.data.structure.activity_status', 'menu.data.structure.belongs_to',
-    -- Data > Education (13)
-    'menu.data.education.education_type', 'menu.data.education.education_form', 'menu.data.education.education_language',
-    'menu.data.education.grade_system_type', 'menu.data.education.score_type', 'menu.data.education.exam_type',
-    'menu.data.education.diploma_blank_category', 'menu.data.education.diploma_blank_status',
-    'menu.data.education.diploma_blank_generate_status', 'menu.data.education.certificate_type',
-    'menu.data.education.certificate_names', 'menu.data.education.certificate_subjects', 'menu.data.education.certificate_grades',
-    -- Data > General (7)
-    'menu.data.general', 'menu.data.employee', 'menu.data.student', 'menu.data.study',
-    'menu.data.science', 'menu.data.organizational', 'menu.data.contract_category'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- END OF V13 MIGRATION
--- ================================================
--- V14: Add Data Submenu Translations
--- Date: 2025-01-10
--- Purpose: Add 71 new data submenu translations (4 languages each)
---
--- New Submenus:
--- 1. data-employee: 9 submenus
--- 2. data-student: 15 submenus
--- 3. data-study: 18 submenus
--- 4. data-science: 9 submenus
--- 5. data-organizational: 10 submenus
--- 6. data-general: 10 submenus
---
--- Total: 71 x 4 = 284 new translations
--- ================================================
-
--- ========================================
--- 1. DATA > EMPLOYEE (9 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 1.1 Employee Type
-(gen_random_uuid(), 'menu', 'menu.data.employee.type', 'Xodimlar toifalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.2 Employee Status
-(gen_random_uuid(), 'menu', 'menu.data.employee.status', 'O''qituvchi xolatlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.3 Employee Rate
-(gen_random_uuid(), 'menu', 'menu.data.employee.rate', 'Mehnat stavkalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.4 Employee Form
-(gen_random_uuid(), 'menu', 'menu.data.employee.form', 'Mehnat shakllari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.5 Position Type
-(gen_random_uuid(), 'menu', 'menu.data.employee.position_type', 'Lavozim turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.6 Qualification
-(gen_random_uuid(), 'menu', 'menu.data.employee.qualification', 'Malaka oshirish joylari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.7 Achievement
-(gen_random_uuid(), 'menu', 'menu.data.employee.achievement', 'O''qituvchi yutuqlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.8 Academic Degree
-(gen_random_uuid(), 'menu', 'menu.data.employee.academic_degree', 'Ilmiy darajalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.9 Academic Rank
-(gen_random_uuid(), 'menu', 'menu.data.employee.academic_rank', 'Ilmiy unvonlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 2. DATA > STUDENT (15 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 2.1 Student Status
-(gen_random_uuid(), 'menu', 'menu.data.student.status', 'Talaba holatlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.2 Student Achievement
-(gen_random_uuid(), 'menu', 'menu.data.student.achievement', 'Talaba yutuqlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.3 Expel Reasons
-(gen_random_uuid(), 'menu', 'menu.data.student.expel', 'Chetlatish sabablari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.4 Accommodation
-(gen_random_uuid(), 'menu', 'menu.data.student.accommodation', 'Yashash joyi turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.5 Doctoral Type
-(gen_random_uuid(), 'menu', 'menu.data.student.doctoral_type', 'Doktorant toifalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.6 Social Type
-(gen_random_uuid(), 'menu', 'menu.data.student.social_type', 'Ijtimoiy toifalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.7 Academic Leave Reasons
-(gen_random_uuid(), 'menu', 'menu.data.student.academic_reason', 'Talabalarga akademik ta''til berish sabablari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.8 Doctoral Student Status
-(gen_random_uuid(), 'menu', 'menu.data.student.doctoral_status', 'Doktorantura talaba holatlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.9 Graduate Fields
-(gen_random_uuid(), 'menu', 'menu.data.student.graduate_fields', 'Bitiruvchilar faoliyat sohalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.10 Graduate Inactive
-(gen_random_uuid(), 'menu', 'menu.data.student.graduate_inactive', 'Ishga joylashmaganlik sabablari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.11 Student Type
-(gen_random_uuid(), 'menu', 'menu.data.student.student_type', 'Talaba toifasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.12 Living Status
-(gen_random_uuid(), 'menu', 'menu.data.student.living_status', 'Talaba yashash joyi statusi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.13 Roommate Type
-(gen_random_uuid(), 'menu', 'menu.data.student.roommate_type', 'Birgalikda yashashdiganlar toifasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.14 Workplace Compatibility
-(gen_random_uuid(), 'menu', 'menu.data.student.workplace_compatibility', 'Yo''nalishga mosligi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.15 Academic Mobile Type
-(gen_random_uuid(), 'menu', 'menu.data.student.academic_mobile', 'Akademik mobillik turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 3. DATA > STUDY (18 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 3.1 Education Year
-(gen_random_uuid(), 'menu', 'menu.data.study.year', 'O''quv yillari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.2 Course
-(gen_random_uuid(), 'menu', 'menu.data.study.course', 'O''quv kurslari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.3 Semester
-(gen_random_uuid(), 'menu', 'menu.data.study.semester', 'Semestr turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.4 Education Week Type
-(gen_random_uuid(), 'menu', 'menu.data.study.week_type', 'O''quv grafik haftalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.5 Subject Block
-(gen_random_uuid(), 'menu', 'menu.data.study.subject_block', 'Fanlar bloklari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.6 Subject Type
-(gen_random_uuid(), 'menu', 'menu.data.study.subject_type', 'Fanlar toifalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.7 Class Type
-(gen_random_uuid(), 'menu', 'menu.data.study.class_type', 'Mashg''ulot turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.8 Exam Finish
-(gen_random_uuid(), 'menu', 'menu.data.study.exam_finish', 'Fanning yakuniy nazorat shakli', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.9 Final Exam Type
-(gen_random_uuid(), 'menu', 'menu.data.study.final_exam_type', 'Qaydnoma turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.10 Semester List
-(gen_random_uuid(), 'menu', 'menu.data.study.semester_list', 'Semestrlar ro''yxati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.11 Decree Type
-(gen_random_uuid(), 'menu', 'menu.data.study.decree_type', 'Buyruq turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.12 Sport Type
-(gen_random_uuid(), 'menu', 'menu.data.study.sport_type', 'Sport turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.13 Attendance Setting
-(gen_random_uuid(), 'menu', 'menu.data.study.attendance_setting', 'Davomat chegaralari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.14 Teacher Conduction Form
-(gen_random_uuid(), 'menu', 'menu.data.study.teacher_conduction', 'Dars olib borish shakllari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.15 Internship Form
-(gen_random_uuid(), 'menu', 'menu.data.study.internship_form', 'Stajirovka shakllari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.16 Internship Type
-(gen_random_uuid(), 'menu', 'menu.data.study.internship_type', 'Stajirovka turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.17 Resource Type
-(gen_random_uuid(), 'menu', 'menu.data.study.resource_type', 'Resurs turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 3.18 Outside Activities
-(gen_random_uuid(), 'menu', 'menu.data.study.outside_activities', 'Auditoriyadan tashqari mashg''ulotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 4. DATA > SCIENCE (9 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 4.1 Project Type
-(gen_random_uuid(), 'menu', 'menu.data.science.project_type', 'Ilmiy loyihalar turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.2 Project Locality
-(gen_random_uuid(), 'menu', 'menu.data.science.project_locality', 'Ilmiy loyiha maqomi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.3 Currency
-(gen_random_uuid(), 'menu', 'menu.data.science.currency', 'Valyuta turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.4 Executor Type
-(gen_random_uuid(), 'menu', 'menu.data.science.executor_type', 'Ijrochilar turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.5 Publication Type
-(gen_random_uuid(), 'menu', 'menu.data.science.publication_type', 'Ilmiy nashr turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.6 Methodical Publication Type
-(gen_random_uuid(), 'menu', 'menu.data.science.methodical_type', 'Uslubiy nashr turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.7 Patient Type (Intellectual Property)
-(gen_random_uuid(), 'menu', 'menu.data.science.patient_type', 'Intellektural mulklar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.8 Publication Database
-(gen_random_uuid(), 'menu', 'menu.data.science.publication_database', 'Ilmiy nashr bazalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 4.9 Scholar Database
-(gen_random_uuid(), 'menu', 'menu.data.science.scholar_database', 'Tadqiqotchilar ba''zalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 5. DATA > ORGANIZATIONAL (10 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 5.1 Payment Form
-(gen_random_uuid(), 'menu', 'menu.data.organizational.payment_form', 'To''lov turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.2 Stipend Rate
-(gen_random_uuid(), 'menu', 'menu.data.organizational.stipend_rate', 'Stipendiya turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.3 Stipend Rate Category
-(gen_random_uuid(), 'menu', 'menu.data.organizational.stipend_category', 'Stipendiya turlari kategoriyalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.4 Scholarship Decree Type
-(gen_random_uuid(), 'menu', 'menu.data.organizational.scholarship_decree', 'Stipendiya buyrug`i turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.5 Contract Type
-(gen_random_uuid(), 'menu', 'menu.data.organizational.contract_type', 'Shartnoma turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.6 Contract Summa Type
-(gen_random_uuid(), 'menu', 'menu.data.organizational.contract_summa', 'Shartnoma qiymati turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.7 Contract Category
-(gen_random_uuid(), 'menu', 'menu.data.organizational.contract_category', 'Shartnoma toifalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.8 Auditorium Type
-(gen_random_uuid(), 'menu', 'menu.data.organizational.auditorium_type', 'Auditoriya turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.9 Device Type
-(gen_random_uuid(), 'menu', 'menu.data.organizational.device_type', 'AKT qurilmalari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 5.10 Grant Type
-(gen_random_uuid(), 'menu', 'menu.data.organizational.grant_type', 'Grant turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 6. DATA > GENERAL (10 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 6.1 Country
-(gen_random_uuid(), 'menu', 'menu.data.general.country', 'Davlatlar ro''yxati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.2 SOATO (Regions)
-(gen_random_uuid(), 'menu', 'menu.data.general.soato', 'Viloyat va tumanlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.3 Nationality
-(gen_random_uuid(), 'menu', 'menu.data.general.nationality', 'Millatlar ro''yxati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.4 Citizenship
-(gen_random_uuid(), 'menu', 'menu.data.general.citizenship', 'Fuqarolik holati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.5 Gender
-(gen_random_uuid(), 'menu', 'menu.data.general.gender', 'Jins turlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.6 Bachelor Specialty
-(gen_random_uuid(), 'menu', 'menu.data.general.bachelor_specialty', 'BSc ta''lim yo''nalishlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.7 Master Specialty
-(gen_random_uuid(), 'menu', 'menu.data.general.master_specialty', 'MSc mutaxassisliklari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.8 Doctoral Specialty
-(gen_random_uuid(), 'menu', 'menu.data.general.doctoral_specialty', 'PhD va DSc ixtisosliklari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.9 Terrain (Neighborhoods)
-(gen_random_uuid(), 'menu', 'menu.data.general.terrain', 'Mahallalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 6.10 Poverty Level
-(gen_random_uuid(), 'menu', 'menu.data.general.poverty_level', 'Kambag''allik darajasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ================================================
--- TRANSLATIONS: Cyrillic (oz-UZ)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'oz-UZ',
-  CASE m.message_key
-    -- Data > Employee (9)
-    WHEN 'menu.data.employee.type' THEN 'Ходимлар тоифалари'
-    WHEN 'menu.data.employee.status' THEN 'Ўқитувчи холатлари'
-    WHEN 'menu.data.employee.rate' THEN 'Меҳнат ставкалари'
-    WHEN 'menu.data.employee.form' THEN 'Меҳнат шакллари'
-    WHEN 'menu.data.employee.position_type' THEN 'Лавозим турлари'
-    WHEN 'menu.data.employee.qualification' THEN 'Малака оширишжойлари'
-    WHEN 'menu.data.employee.achievement' THEN 'Ўқитувчи ютуқлари'
-    WHEN 'menu.data.employee.academic_degree' THEN 'Илмий даражалар'
-    WHEN 'menu.data.employee.academic_rank' THEN 'Илмий унвонлар'
-
-    -- Data > Student (15)
-    WHEN 'menu.data.student.status' THEN 'Талаба ҳолатлари'
-    WHEN 'menu.data.student.achievement' THEN 'Талаба ютуқлари'
-    WHEN 'menu.data.student.expel' THEN 'Четлатиш сабаблари'
-    WHEN 'menu.data.student.accommodation' THEN 'Яшаш жойи турлари'
-    WHEN 'menu.data.student.doctoral_type' THEN 'Докторант тоифалари'
-    WHEN 'menu.data.student.social_type' THEN 'Ижтимоий тоифалар'
-    WHEN 'menu.data.student.academic_reason' THEN 'Талабаларга академик таътил бериш сабаблари'
-    WHEN 'menu.data.student.doctoral_status' THEN 'Докторантура талаба ҳолатлари'
-    WHEN 'menu.data.student.graduate_fields' THEN 'Битирувчилар фаолият соҳалари'
-    WHEN 'menu.data.student.graduate_inactive' THEN 'Ишга жойлашмаганлик сабаблари'
-    WHEN 'menu.data.student.student_type' THEN 'Талаба тоифаси'
-    WHEN 'menu.data.student.living_status' THEN 'Талаба яшаш жойи статуси'
-    WHEN 'menu.data.student.roommate_type' THEN 'Биргаликда яшашдиганлар тоифаси'
-    WHEN 'menu.data.student.workplace_compatibility' THEN 'Йўналишга мослиги'
-    WHEN 'menu.data.student.academic_mobile' THEN 'Академик мобиллик турлари'
-
-    -- Data > Study (18)
-    WHEN 'menu.data.study.year' THEN 'Ўқув йиллари'
-    WHEN 'menu.data.study.course' THEN 'Ўқув курслари'
-    WHEN 'menu.data.study.semester' THEN 'Семестр турлари'
-    WHEN 'menu.data.study.week_type' THEN 'Ўқув график ҳафталари'
-    WHEN 'menu.data.study.subject_block' THEN 'Фанлар блоклари'
-    WHEN 'menu.data.study.subject_type' THEN 'Фанлар тоифалари'
-    WHEN 'menu.data.study.class_type' THEN 'Машғулот турлари'
-    WHEN 'menu.data.study.exam_finish' THEN 'Фаннинг якуний назорат шакли'
-    WHEN 'menu.data.study.final_exam_type' THEN 'Қайднома турлари'
-    WHEN 'menu.data.study.semester_list' THEN 'Семестрлар рўйхати'
-    WHEN 'menu.data.study.decree_type' THEN 'Буйруқ турлари'
-    WHEN 'menu.data.study.sport_type' THEN 'Спорт турлари'
-    WHEN 'menu.data.study.attendance_setting' THEN 'Давомат чегаралари'
-    WHEN 'menu.data.study.teacher_conduction' THEN 'Дарс олиб бориш шакллари'
-    WHEN 'menu.data.study.internship_form' THEN 'Стажировка шакллари'
-    WHEN 'menu.data.study.internship_type' THEN 'Стажировка турлари'
-    WHEN 'menu.data.study.resource_type' THEN 'Ресурс турлари'
-    WHEN 'menu.data.study.outside_activities' THEN 'Аудиториядан ташқари машғулотлар'
-
-    -- Data > Science (9)
-    WHEN 'menu.data.science.project_type' THEN 'Илмий лойиҳалар турлари'
-    WHEN 'menu.data.science.project_locality' THEN 'Илмий лойиҳа мақоми'
-    WHEN 'menu.data.science.currency' THEN 'Валюта турлари'
-    WHEN 'menu.data.science.executor_type' THEN 'Ижрочилар турлари'
-    WHEN 'menu.data.science.publication_type' THEN 'Илмий нашр турлари'
-    WHEN 'menu.data.science.methodical_type' THEN 'Услубий нашр турлари'
-    WHEN 'menu.data.science.patient_type' THEN 'Интеллектурал мулклар'
-    WHEN 'menu.data.science.publication_database' THEN 'Илмий нашр базалари'
-    WHEN 'menu.data.science.scholar_database' THEN 'Тадқиқотчилар базалари'
-
-    -- Data > Organizational (10)
-    WHEN 'menu.data.organizational.payment_form' THEN 'Тўлов турлари'
-    WHEN 'menu.data.organizational.stipend_rate' THEN 'Стипендия турлари'
-    WHEN 'menu.data.organizational.stipend_category' THEN 'Стипендия турлари категориялари'
-    WHEN 'menu.data.organizational.scholarship_decree' THEN 'Стипендия буйруғи турлари'
-    WHEN 'menu.data.organizational.contract_type' THEN 'Шартнома турлари'
-    WHEN 'menu.data.organizational.contract_summa' THEN 'Шартнома қиймати турлари'
-    WHEN 'menu.data.organizational.contract_category' THEN 'Шартнома тоифалари'
-    WHEN 'menu.data.organizational.auditorium_type' THEN 'Аудитория турлари'
-    WHEN 'menu.data.organizational.device_type' THEN 'АКТ қурилмалари'
-    WHEN 'menu.data.organizational.grant_type' THEN 'Грант турлари'
-
-    -- Data > General (10)
-    WHEN 'menu.data.general.country' THEN 'Давлатлар рўйхати'
-    WHEN 'menu.data.general.soato' THEN 'Вилоят ва туманлар'
-    WHEN 'menu.data.general.nationality' THEN 'Миллатлар рўйхати'
-    WHEN 'menu.data.general.citizenship' THEN 'Фуқаролик ҳолати'
-    WHEN 'menu.data.general.gender' THEN 'Жинс турлари'
-    WHEN 'menu.data.general.bachelor_specialty' THEN 'BSc таълим йўналишлари'
-    WHEN 'menu.data.general.master_specialty' THEN 'MSc мутахассисликлари'
-    WHEN 'menu.data.general.doctoral_specialty' THEN 'PhD ва DSc ихтисосликлари'
-    WHEN 'menu.data.general.terrain' THEN 'Маҳаллалар'
-    WHEN 'menu.data.general.poverty_level' THEN 'Камбағаллик даражаси'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    -- Employee
-    'menu.data.employee.type', 'menu.data.employee.status', 'menu.data.employee.rate',
-    'menu.data.employee.form', 'menu.data.employee.position_type', 'menu.data.employee.qualification',
-    'menu.data.employee.achievement', 'menu.data.employee.academic_degree', 'menu.data.employee.academic_rank',
-    -- Student
-    'menu.data.student.status', 'menu.data.student.achievement', 'menu.data.student.expel',
-    'menu.data.student.accommodation', 'menu.data.student.doctoral_type', 'menu.data.student.social_type',
-    'menu.data.student.academic_reason', 'menu.data.student.doctoral_status', 'menu.data.student.graduate_fields',
-    'menu.data.student.graduate_inactive', 'menu.data.student.student_type', 'menu.data.student.living_status',
-    'menu.data.student.roommate_type', 'menu.data.student.workplace_compatibility', 'menu.data.student.academic_mobile',
-    -- Study
-    'menu.data.study.year', 'menu.data.study.course', 'menu.data.study.semester',
-    'menu.data.study.week_type', 'menu.data.study.subject_block', 'menu.data.study.subject_type',
-    'menu.data.study.class_type', 'menu.data.study.exam_finish', 'menu.data.study.final_exam_type',
-    'menu.data.study.semester_list', 'menu.data.study.decree_type', 'menu.data.study.sport_type',
-    'menu.data.study.attendance_setting', 'menu.data.study.teacher_conduction', 'menu.data.study.internship_form',
-    'menu.data.study.internship_type', 'menu.data.study.resource_type', 'menu.data.study.outside_activities',
-    -- Science
-    'menu.data.science.project_type', 'menu.data.science.project_locality', 'menu.data.science.currency',
-    'menu.data.science.executor_type', 'menu.data.science.publication_type', 'menu.data.science.methodical_type',
-    'menu.data.science.patient_type', 'menu.data.science.publication_database', 'menu.data.science.scholar_database',
-    -- Organizational
-    'menu.data.organizational.payment_form', 'menu.data.organizational.stipend_rate', 'menu.data.organizational.stipend_category',
-    'menu.data.organizational.scholarship_decree', 'menu.data.organizational.contract_type', 'menu.data.organizational.contract_summa',
-    'menu.data.organizational.contract_category', 'menu.data.organizational.auditorium_type', 'menu.data.organizational.device_type',
-    'menu.data.organizational.grant_type',
-    -- General
-    'menu.data.general.country', 'menu.data.general.soato', 'menu.data.general.nationality',
-    'menu.data.general.citizenship', 'menu.data.general.gender', 'menu.data.general.bachelor_specialty',
-    'menu.data.general.master_specialty', 'menu.data.general.doctoral_specialty', 'menu.data.general.terrain',
-    'menu.data.general.poverty_level'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  updated_at = CURRENT_TIMESTAMP;
-
--- ================================================
--- TRANSLATIONS: Russian (ru-RU)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'ru-RU',
-  CASE m.message_key
-    -- Data > Employee (9)
-    WHEN 'menu.data.employee.type' THEN 'Категории сотрудников'
-    WHEN 'menu.data.employee.status' THEN 'Статусы преподавателей'
-    WHEN 'menu.data.employee.rate' THEN 'Трудовые ставки'
-    WHEN 'menu.data.employee.form' THEN 'Формы труда'
-    WHEN 'menu.data.employee.position_type' THEN 'Типы должностей'
-    WHEN 'menu.data.employee.qualification' THEN 'Места повышения квалификации'
-    WHEN 'menu.data.employee.achievement' THEN 'Достижения преподавателей'
-    WHEN 'menu.data.employee.academic_degree' THEN 'Ученые степени'
-    WHEN 'menu.data.employee.academic_rank' THEN 'Ученые звания'
-
-    -- Data > Student (15)
-    WHEN 'menu.data.student.status' THEN 'Статусы студентов'
-    WHEN 'menu.data.student.achievement' THEN 'Достижения студентов'
-    WHEN 'menu.data.student.expel' THEN 'Причины отчисления'
-    WHEN 'menu.data.student.accommodation' THEN 'Типы проживания'
-    WHEN 'menu.data.student.doctoral_type' THEN 'Категории докторантов'
-    WHEN 'menu.data.student.social_type' THEN 'Социальные категории'
-    WHEN 'menu.data.student.academic_reason' THEN 'Причины предоставления академического отпуска'
-    WHEN 'menu.data.student.doctoral_status' THEN 'Статусы докторантов'
-    WHEN 'menu.data.student.graduate_fields' THEN 'Области деятельности выпускников'
-    WHEN 'menu.data.student.graduate_inactive' THEN 'Причины не трудоустройства'
-    WHEN 'menu.data.student.student_type' THEN 'Категории студентов'
-    WHEN 'menu.data.student.living_status' THEN 'Статус места проживания студента'
-    WHEN 'menu.data.student.roommate_type' THEN 'Категории совместно проживающих'
-    WHEN 'menu.data.student.workplace_compatibility' THEN 'Соответствие направлению'
-    WHEN 'menu.data.student.academic_mobile' THEN 'Типы академической мобильности'
-
-    -- Data > Study (18)
-    WHEN 'menu.data.study.year' THEN 'Учебные годы'
-    WHEN 'menu.data.study.course' THEN 'Учебные курсы'
-    WHEN 'menu.data.study.semester' THEN 'Типы семестров'
-    WHEN 'menu.data.study.week_type' THEN 'Учебные недели графика'
-    WHEN 'menu.data.study.subject_block' THEN 'Блоки предметов'
-    WHEN 'menu.data.study.subject_type' THEN 'Категории предметов'
-    WHEN 'menu.data.study.class_type' THEN 'Типы занятий'
-    WHEN 'menu.data.study.exam_finish' THEN 'Формы итогового контроля предмета'
-    WHEN 'menu.data.study.final_exam_type' THEN 'Типы ведомостей'
-    WHEN 'menu.data.study.semester_list' THEN 'Список семестров'
-    WHEN 'menu.data.study.decree_type' THEN 'Типы приказов'
-    WHEN 'menu.data.study.sport_type' THEN 'Виды спорта'
-    WHEN 'menu.data.study.attendance_setting' THEN 'Настройки посещаемости'
-    WHEN 'menu.data.study.teacher_conduction' THEN 'Формы проведения занятий'
-    WHEN 'menu.data.study.internship_form' THEN 'Формы стажировки'
-    WHEN 'menu.data.study.internship_type' THEN 'Типы стажировки'
-    WHEN 'menu.data.study.resource_type' THEN 'Типы ресурсов'
-    WHEN 'menu.data.study.outside_activities' THEN 'Внеаудиторные занятия'
-
-    -- Data > Science (9)
-    WHEN 'menu.data.science.project_type' THEN 'Типы научных проектов'
-    WHEN 'menu.data.science.project_locality' THEN 'Статус научного проекта'
-    WHEN 'menu.data.science.currency' THEN 'Типы валют'
-    WHEN 'menu.data.science.executor_type' THEN 'Типы исполнителей'
-    WHEN 'menu.data.science.publication_type' THEN 'Типы научных публикаций'
-    WHEN 'menu.data.science.methodical_type' THEN 'Типы методических публикаций'
-    WHEN 'menu.data.science.patient_type' THEN 'Интеллектуальная собственность'
-    WHEN 'menu.data.science.publication_database' THEN 'Базы научных публикаций'
-    WHEN 'menu.data.science.scholar_database' THEN 'Базы исследователей'
-
-    -- Data > Organizational (10)
-    WHEN 'menu.data.organizational.payment_form' THEN 'Формы оплаты'
-    WHEN 'menu.data.organizational.stipend_rate' THEN 'Виды стипендий'
-    WHEN 'menu.data.organizational.stipend_category' THEN 'Категории видов стипендий'
-    WHEN 'menu.data.organizational.scholarship_decree' THEN 'Типы приказов о стипендиях'
-    WHEN 'menu.data.organizational.contract_type' THEN 'Типы договоров'
-    WHEN 'menu.data.organizational.contract_summa' THEN 'Типы стоимости договора'
-    WHEN 'menu.data.organizational.contract_category' THEN 'Категории договоров'
-    WHEN 'menu.data.organizational.auditorium_type' THEN 'Типы аудиторий'
-    WHEN 'menu.data.organizational.device_type' THEN 'ИКТ устройства'
-    WHEN 'menu.data.organizational.grant_type' THEN 'Типы грантов'
-
-    -- Data > General (10)
-    WHEN 'menu.data.general.country' THEN 'Список стран'
-    WHEN 'menu.data.general.soato' THEN 'Области и районы'
-    WHEN 'menu.data.general.nationality' THEN 'Список национальностей'
-    WHEN 'menu.data.general.citizenship' THEN 'Гражданство'
-    WHEN 'menu.data.general.gender' THEN 'Типы пола'
-    WHEN 'menu.data.general.bachelor_specialty' THEN 'Направления образования BSc'
-    WHEN 'menu.data.general.master_specialty' THEN 'Специальности MSc'
-    WHEN 'menu.data.general.doctoral_specialty' THEN 'Специальности PhD и DSc'
-    WHEN 'menu.data.general.terrain' THEN 'Махалли'
-    WHEN 'menu.data.general.poverty_level' THEN 'Уровень бедности'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    -- Employee
-    'menu.data.employee.type', 'menu.data.employee.status', 'menu.data.employee.rate',
-    'menu.data.employee.form', 'menu.data.employee.position_type', 'menu.data.employee.qualification',
-    'menu.data.employee.achievement', 'menu.data.employee.academic_degree', 'menu.data.employee.academic_rank',
-    -- Student
-    'menu.data.student.status', 'menu.data.student.achievement', 'menu.data.student.expel',
-    'menu.data.student.accommodation', 'menu.data.student.doctoral_type', 'menu.data.student.social_type',
-    'menu.data.student.academic_reason', 'menu.data.student.doctoral_status', 'menu.data.student.graduate_fields',
-    'menu.data.student.graduate_inactive', 'menu.data.student.student_type', 'menu.data.student.living_status',
-    'menu.data.student.roommate_type', 'menu.data.student.workplace_compatibility', 'menu.data.student.academic_mobile',
-    -- Study
-    'menu.data.study.year', 'menu.data.study.course', 'menu.data.study.semester',
-    'menu.data.study.week_type', 'menu.data.study.subject_block', 'menu.data.study.subject_type',
-    'menu.data.study.class_type', 'menu.data.study.exam_finish', 'menu.data.study.final_exam_type',
-    'menu.data.study.semester_list', 'menu.data.study.decree_type', 'menu.data.study.sport_type',
-    'menu.data.study.attendance_setting', 'menu.data.study.teacher_conduction', 'menu.data.study.internship_form',
-    'menu.data.study.internship_type', 'menu.data.study.resource_type', 'menu.data.study.outside_activities',
-    -- Science
-    'menu.data.science.project_type', 'menu.data.science.project_locality', 'menu.data.science.currency',
-    'menu.data.science.executor_type', 'menu.data.science.publication_type', 'menu.data.science.methodical_type',
-    'menu.data.science.patient_type', 'menu.data.science.publication_database', 'menu.data.science.scholar_database',
-    -- Organizational
-    'menu.data.organizational.payment_form', 'menu.data.organizational.stipend_rate', 'menu.data.organizational.stipend_category',
-    'menu.data.organizational.scholarship_decree', 'menu.data.organizational.contract_type', 'menu.data.organizational.contract_summa',
-    'menu.data.organizational.contract_category', 'menu.data.organizational.auditorium_type', 'menu.data.organizational.device_type',
-    'menu.data.organizational.grant_type',
-    -- General
-    'menu.data.general.country', 'menu.data.general.soato', 'menu.data.general.nationality',
-    'menu.data.general.citizenship', 'menu.data.general.gender', 'menu.data.general.bachelor_specialty',
-    'menu.data.general.master_specialty', 'menu.data.general.doctoral_specialty', 'menu.data.general.terrain',
-    'menu.data.general.poverty_level'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  updated_at = CURRENT_TIMESTAMP;
-
--- ================================================
--- TRANSLATIONS: English (en-US)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'en-US',
-  CASE m.message_key
-    -- Data > Employee (9)
-    WHEN 'menu.data.employee.type' THEN 'Employee Categories'
-    WHEN 'menu.data.employee.status' THEN 'Teacher Statuses'
-    WHEN 'menu.data.employee.rate' THEN 'Employment Rates'
-    WHEN 'menu.data.employee.form' THEN 'Employment Forms'
-    WHEN 'menu.data.employee.position_type' THEN 'Position Types'
-    WHEN 'menu.data.employee.qualification' THEN 'Training Locations'
-    WHEN 'menu.data.employee.achievement' THEN 'Teacher Achievements'
-    WHEN 'menu.data.employee.academic_degree' THEN 'Academic Degrees'
-    WHEN 'menu.data.employee.academic_rank' THEN 'Academic Ranks'
-
-    -- Data > Student (15)
-    WHEN 'menu.data.student.status' THEN 'Student Statuses'
-    WHEN 'menu.data.student.achievement' THEN 'Student Achievements'
-    WHEN 'menu.data.student.expel' THEN 'Expulsion Reasons'
-    WHEN 'menu.data.student.accommodation' THEN 'Accommodation Types'
-    WHEN 'menu.data.student.doctoral_type' THEN 'Doctoral Student Categories'
-    WHEN 'menu.data.student.social_type' THEN 'Social Categories'
-    WHEN 'menu.data.student.academic_reason' THEN 'Academic Leave Reasons'
-    WHEN 'menu.data.student.doctoral_status' THEN 'Doctoral Student Statuses'
-    WHEN 'menu.data.student.graduate_fields' THEN 'Graduate Activity Fields'
-    WHEN 'menu.data.student.graduate_inactive' THEN 'Unemployment Reasons'
-    WHEN 'menu.data.student.student_type' THEN 'Student Categories'
-    WHEN 'menu.data.student.living_status' THEN 'Student Living Status'
-    WHEN 'menu.data.student.roommate_type' THEN 'Roommate Categories'
-    WHEN 'menu.data.student.workplace_compatibility' THEN 'Workplace Compatibility'
-    WHEN 'menu.data.student.academic_mobile' THEN 'Academic Mobility Types'
-
-    -- Data > Study (18)
-    WHEN 'menu.data.study.year' THEN 'Academic Years'
-    WHEN 'menu.data.study.course' THEN 'Academic Courses'
-    WHEN 'menu.data.study.semester' THEN 'Semester Types'
-    WHEN 'menu.data.study.week_type' THEN 'Academic Calendar Weeks'
-    WHEN 'menu.data.study.subject_block' THEN 'Subject Blocks'
-    WHEN 'menu.data.study.subject_type' THEN 'Subject Categories'
-    WHEN 'menu.data.study.class_type' THEN 'Class Types'
-    WHEN 'menu.data.study.exam_finish' THEN 'Final Assessment Forms'
-    WHEN 'menu.data.study.final_exam_type' THEN 'Grade Sheet Types'
-    WHEN 'menu.data.study.semester_list' THEN 'Semester List'
-    WHEN 'menu.data.study.decree_type' THEN 'Decree Types'
-    WHEN 'menu.data.study.sport_type' THEN 'Sport Types'
-    WHEN 'menu.data.study.attendance_setting' THEN 'Attendance Settings'
-    WHEN 'menu.data.study.teacher_conduction' THEN 'Teaching Conduction Forms'
-    WHEN 'menu.data.study.internship_form' THEN 'Internship Forms'
-    WHEN 'menu.data.study.internship_type' THEN 'Internship Types'
-    WHEN 'menu.data.study.resource_type' THEN 'Resource Types'
-    WHEN 'menu.data.study.outside_activities' THEN 'Extracurricular Activities'
-
-    -- Data > Science (9)
-    WHEN 'menu.data.science.project_type' THEN 'Scientific Project Types'
-    WHEN 'menu.data.science.project_locality' THEN 'Project Locality Status'
-    WHEN 'menu.data.science.currency' THEN 'Currency Types'
-    WHEN 'menu.data.science.executor_type' THEN 'Executor Types'
-    WHEN 'menu.data.science.publication_type' THEN 'Scientific Publication Types'
-    WHEN 'menu.data.science.methodical_type' THEN 'Methodical Publication Types'
-    WHEN 'menu.data.science.patient_type' THEN 'Intellectual Property'
-    WHEN 'menu.data.science.publication_database' THEN 'Publication Databases'
-    WHEN 'menu.data.science.scholar_database' THEN 'Scholar Databases'
-
-    -- Data > Organizational (10)
-    WHEN 'menu.data.organizational.payment_form' THEN 'Payment Forms'
-    WHEN 'menu.data.organizational.stipend_rate' THEN 'Stipend Types'
-    WHEN 'menu.data.organizational.stipend_category' THEN 'Stipend Rate Categories'
-    WHEN 'menu.data.organizational.scholarship_decree' THEN 'Scholarship Decree Types'
-    WHEN 'menu.data.organizational.contract_type' THEN 'Contract Types'
-    WHEN 'menu.data.organizational.contract_summa' THEN 'Contract Amount Types'
-    WHEN 'menu.data.organizational.contract_category' THEN 'Contract Categories'
-    WHEN 'menu.data.organizational.auditorium_type' THEN 'Auditorium Types'
-    WHEN 'menu.data.organizational.device_type' THEN 'ICT Devices'
-    WHEN 'menu.data.organizational.grant_type' THEN 'Grant Types'
-
-    -- Data > General (10)
-    WHEN 'menu.data.general.country' THEN 'Country List'
-    WHEN 'menu.data.general.soato' THEN 'Regions and Districts'
-    WHEN 'menu.data.general.nationality' THEN 'Nationality List'
-    WHEN 'menu.data.general.citizenship' THEN 'Citizenship Status'
-    WHEN 'menu.data.general.gender' THEN 'Gender Types'
-    WHEN 'menu.data.general.bachelor_specialty' THEN 'BSc Education Directions'
-    WHEN 'menu.data.general.master_specialty' THEN 'MSc Specialties'
-    WHEN 'menu.data.general.doctoral_specialty' THEN 'PhD and DSc Specialties'
-    WHEN 'menu.data.general.terrain' THEN 'Neighborhoods'
-    WHEN 'menu.data.general.poverty_level' THEN 'Poverty Level'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    -- Employee
-    'menu.data.employee.type', 'menu.data.employee.status', 'menu.data.employee.rate',
-    'menu.data.employee.form', 'menu.data.employee.position_type', 'menu.data.employee.qualification',
-    'menu.data.employee.achievement', 'menu.data.employee.academic_degree', 'menu.data.employee.academic_rank',
-    -- Student
-    'menu.data.student.status', 'menu.data.student.achievement', 'menu.data.student.expel',
-    'menu.data.student.accommodation', 'menu.data.student.doctoral_type', 'menu.data.student.social_type',
-    'menu.data.student.academic_reason', 'menu.data.student.doctoral_status', 'menu.data.student.graduate_fields',
-    'menu.data.student.graduate_inactive', 'menu.data.student.student_type', 'menu.data.student.living_status',
-    'menu.data.student.roommate_type', 'menu.data.student.workplace_compatibility', 'menu.data.student.academic_mobile',
-    -- Study
-    'menu.data.study.year', 'menu.data.study.course', 'menu.data.study.semester',
-    'menu.data.study.week_type', 'menu.data.study.subject_block', 'menu.data.study.subject_type',
-    'menu.data.study.class_type', 'menu.data.study.exam_finish', 'menu.data.study.final_exam_type',
-    'menu.data.study.semester_list', 'menu.data.study.decree_type', 'menu.data.study.sport_type',
-    'menu.data.study.attendance_setting', 'menu.data.study.teacher_conduction', 'menu.data.study.internship_form',
-    'menu.data.study.internship_type', 'menu.data.study.resource_type', 'menu.data.study.outside_activities',
-    -- Science
-    'menu.data.science.project_type', 'menu.data.science.project_locality', 'menu.data.science.currency',
-    'menu.data.science.executor_type', 'menu.data.science.publication_type', 'menu.data.science.methodical_type',
-    'menu.data.science.patient_type', 'menu.data.science.publication_database', 'menu.data.science.scholar_database',
-    -- Organizational
-    'menu.data.organizational.payment_form', 'menu.data.organizational.stipend_rate', 'menu.data.organizational.stipend_category',
-    'menu.data.organizational.scholarship_decree', 'menu.data.organizational.contract_type', 'menu.data.organizational.contract_summa',
-    'menu.data.organizational.contract_category', 'menu.data.organizational.auditorium_type', 'menu.data.organizational.device_type',
-    'menu.data.organizational.grant_type',
-    -- General
-    'menu.data.general.country', 'menu.data.general.soato', 'menu.data.general.nationality',
-    'menu.data.general.citizenship', 'menu.data.general.gender', 'menu.data.general.bachelor_specialty',
-    'menu.data.general.master_specialty', 'menu.data.general.doctoral_specialty', 'menu.data.general.terrain',
-    'menu.data.general.poverty_level'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  updated_at = CURRENT_TIMESTAMP;
--- ================================================
--- V15: Add Final Submenu Translations
--- Date: 2025-01-10
--- Purpose: Add final 12 submenu translations (4 languages each)
---
--- New Submenus:
--- 1. registry-scientific: 10 submenus (Scientific Registry)
--- 2. reports-universities: 2 submenus (University Reports)
---
--- Total: 12 x 4 = 48 new translations
--- ================================================
-
--- ========================================
--- 1. REGISTRY > SCIENTIFIC (10 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 1.1 Doctorate Students
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.doctorate', 'Ilmiy tadqiqotchilar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.2 Dissertation Defense
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.dissertation', 'Dissertatsiya himoyasi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.3 Scientific Projects
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.project', 'Ilmiy loyihalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.4 Project Executors
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.executor', 'Loyiha ijrochilari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.5 Project Metadata
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.project_meta', 'Loyiha qiymati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.6 Scientific Publications
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.publication', 'Ilmiy nashrlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.7 Methodical Publications
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.methodical', 'Uslubiy nashrlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.8 Scientific Property
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.property', 'Ilmiy ishlanmalar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.9 Publication Authors
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.author', 'Nashr mualliflari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 1.10 Research Activity
-(gen_random_uuid(), 'menu', 'menu.registry.scientific.activity', 'Ilmiy faollik', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ========================================
--- 2. REPORTS > UNIVERSITIES (2 submenus)
--- ========================================
-
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
--- 2.1 Universities Count
-(gen_random_uuid(), 'menu', 'menu.reports.universities.count', 'OTMlar umumiy soni', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
--- 2.2 Faculty List
-(gen_random_uuid(), 'menu', 'menu.reports.universities.faculty_list', 'Fakultetlar soni va ro''yxati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO NOTHING;
-
--- ================================================
--- TRANSLATIONS: Cyrillic (oz-UZ)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'oz-UZ',
-  CASE m.message_key
-    -- Registry > Scientific (10)
-    WHEN 'menu.registry.scientific.doctorate' THEN 'Илмий тадқиқотчилар'
-    WHEN 'menu.registry.scientific.dissertation' THEN 'Диссертация ҳимояси'
-    WHEN 'menu.registry.scientific.project' THEN 'Илмий лойиҳалар'
-    WHEN 'menu.registry.scientific.executor' THEN 'Лойиҳа ижрочилари'
-    WHEN 'menu.registry.scientific.project_meta' THEN 'Лойиҳа қиймати'
-    WHEN 'menu.registry.scientific.publication' THEN 'Илмий нашрлар'
-    WHEN 'menu.registry.scientific.methodical' THEN 'Услубий нашрлар'
-    WHEN 'menu.registry.scientific.property' THEN 'Илмий ишланмалар'
-    WHEN 'menu.registry.scientific.author' THEN 'Нашр муаллифлари'
-    WHEN 'menu.registry.scientific.activity' THEN 'Илмий фаоллик'
-
-    -- Reports > Universities (2)
-    WHEN 'menu.reports.universities.count' THEN 'ОТМлар умумий сони'
-    WHEN 'menu.reports.universities.faculty_list' THEN 'Факультетлар сони ва рўйхати'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    'menu.registry.scientific.doctorate', 'menu.registry.scientific.dissertation',
-    'menu.registry.scientific.project', 'menu.registry.scientific.executor',
-    'menu.registry.scientific.project_meta', 'menu.registry.scientific.publication',
-    'menu.registry.scientific.methodical', 'menu.registry.scientific.property',
-    'menu.registry.scientific.author', 'menu.registry.scientific.activity',
-    'menu.reports.universities.count', 'menu.reports.universities.faculty_list'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  updated_at = CURRENT_TIMESTAMP;
-
--- ================================================
--- TRANSLATIONS: Russian (ru-RU)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'ru-RU',
-  CASE m.message_key
-    -- Registry > Scientific (10)
-    WHEN 'menu.registry.scientific.doctorate' THEN 'Научные исследователи'
-    WHEN 'menu.registry.scientific.dissertation' THEN 'Защита диссертаций'
-    WHEN 'menu.registry.scientific.project' THEN 'Научные проекты'
-    WHEN 'menu.registry.scientific.executor' THEN 'Исполнители проектов'
-    WHEN 'menu.registry.scientific.project_meta' THEN 'Стоимость проекта'
-    WHEN 'menu.registry.scientific.publication' THEN 'Научные публикации'
-    WHEN 'menu.registry.scientific.methodical' THEN 'Методические публикации'
-    WHEN 'menu.registry.scientific.property' THEN 'Научные разработки'
-    WHEN 'menu.registry.scientific.author' THEN 'Авторы публикаций'
-    WHEN 'menu.registry.scientific.activity' THEN 'Научная активность'
-
-    -- Reports > Universities (2)
-    WHEN 'menu.reports.universities.count' THEN 'Общее количество вузов'
-    WHEN 'menu.reports.universities.faculty_list' THEN 'Количество и список факультетов'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    'menu.registry.scientific.doctorate', 'menu.registry.scientific.dissertation',
-    'menu.registry.scientific.project', 'menu.registry.scientific.executor',
-    'menu.registry.scientific.project_meta', 'menu.registry.scientific.publication',
-    'menu.registry.scientific.methodical', 'menu.registry.scientific.property',
-    'menu.registry.scientific.author', 'menu.registry.scientific.activity',
-    'menu.reports.universities.count', 'menu.reports.universities.faculty_list'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  updated_at = CURRENT_TIMESTAMP;
-
--- ================================================
--- TRANSLATIONS: English (en-US)
--- ================================================
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'en-US',
-  CASE m.message_key
-    -- Registry > Scientific (10)
-    WHEN 'menu.registry.scientific.doctorate' THEN 'Doctoral Researchers'
-    WHEN 'menu.registry.scientific.dissertation' THEN 'Dissertation Defense'
-    WHEN 'menu.registry.scientific.project' THEN 'Scientific Projects'
-    WHEN 'menu.registry.scientific.executor' THEN 'Project Executors'
-    WHEN 'menu.registry.scientific.project_meta' THEN 'Project Cost'
-    WHEN 'menu.registry.scientific.publication' THEN 'Scientific Publications'
-    WHEN 'menu.registry.scientific.methodical' THEN 'Methodical Publications'
-    WHEN 'menu.registry.scientific.property' THEN 'Research Developments'
-    WHEN 'menu.registry.scientific.author' THEN 'Publication Authors'
-    WHEN 'menu.registry.scientific.activity' THEN 'Research Activity'
-
-    -- Reports > Universities (2)
-    WHEN 'menu.reports.universities.count' THEN 'Total Number of Universities'
-    WHEN 'menu.reports.universities.faculty_list' THEN 'Faculty Count and List'
-
-    ELSE m.message  -- Fallback
-  END
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND m.message_key IN (
-    'menu.registry.scientific.doctorate', 'menu.registry.scientific.dissertation',
-    'menu.registry.scientific.project', 'menu.registry.scientific.executor',
-    'menu.registry.scientific.project_meta', 'menu.registry.scientific.publication',
-    'menu.registry.scientific.methodical', 'menu.registry.scientific.property',
-    'menu.registry.scientific.author', 'menu.registry.scientific.activity',
-    'menu.reports.universities.count', 'menu.reports.universities.faculty_list'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET
-  translation = EXCLUDED.translation,
-  updated_at = CURRENT_TIMESTAMP;
-
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- PART 2: FACULTY REGISTRY TRANSLATIONS
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
--- liquibase formatted sql
-
--- changeset ai-assistant:5-faculty-registry-translations-1
--- comment: Add Faculty Registry translations (uz-UZ, oz-UZ, ru-RU, en-US)
-
--- ========================================
--- 1. MENU TRANSLATIONS
--- ========================================
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'menu', 'menu.registry.faculty', 'Fakultet', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO UPDATE SET
-    message = EXCLUDED.message,
-    updated_at = CURRENT_TIMESTAMP;
-
--- Menu translations (oz-UZ, ru-RU, en-US)
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT 
-    sm.id,
-    lang.code,
-    CASE 
-        WHEN lang.code = 'oz-UZ' THEN 'Факультет'
-        WHEN lang.code = 'ru-RU' THEN 'Факультет'
-        WHEN lang.code = 'en-US' THEN 'Faculty'
-        ELSE sm.message
-    END,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-FROM system_messages sm
-CROSS JOIN (
-    SELECT 'oz-UZ' as code
-    UNION ALL SELECT 'ru-RU'
-    UNION ALL SELECT 'en-US'
-) lang
-WHERE sm.message_key = 'menu.registry.faculty'
-ON CONFLICT (message_id, language) DO UPDATE SET
-    translation = EXCLUDED.translation,
-    updated_at = CURRENT_TIMESTAMP;
-
--- ========================================
--- 2. TABLE COLUMN TRANSLATIONS (uz-UZ base)
--- ========================================
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'table', 'table.actions', 'Amallar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'table', 'table.faculty.universityName', 'OTM nomi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'table', 'table.faculty.universityCode', 'OTM kodi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'table', 'table.faculty.code', 'Kod', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'table', 'table.faculty.nameUz', 'Nomi (o''zbekcha)', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'table', 'table.faculty.nameRu', 'Nomi (ruscha)', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'table', 'table.faculty.status', 'Holati', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'table', 'table.faculty.facultyCount', 'Fakultetlar soni', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO UPDATE SET message = EXCLUDED.message, updated_at = CURRENT_TIMESTAMP;
-
--- ========================================
--- 3. CYRILLIC (oz-UZ) TRANSLATIONS
--- ========================================
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT
-    sm.id,
-    'oz-UZ',
-    CASE sm.message_key
-        WHEN 'table.actions' THEN 'Амаллар'
-        WHEN 'table.faculty.universityName' THEN 'ОТМ номи'
-        WHEN 'table.faculty.universityCode' THEN 'ОТМ коди'
-        WHEN 'table.faculty.code' THEN 'Код'
-        WHEN 'table.faculty.nameUz' THEN 'Номи (ўзбекча)'
-        WHEN 'table.faculty.nameRu' THEN 'Номи (русча)'
-        WHEN 'table.faculty.status' THEN 'Ҳолати'
-        WHEN 'table.faculty.facultyCount' THEN 'Факультетлар сони'
-    END,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-FROM system_messages sm
-WHERE sm.message_key IN (
-    'table.actions', 'table.faculty.universityName', 'table.faculty.universityCode',
-    'table.faculty.code', 'table.faculty.nameUz', 'table.faculty.nameRu', 
-    'table.faculty.status', 'table.faculty.facultyCount'
-)
-ON CONFLICT (message_id, language) DO UPDATE SET
-    translation = EXCLUDED.translation,
-    updated_at = CURRENT_TIMESTAMP;
-
--- ========================================
--- 4. RUSSIAN (ru-RU) TRANSLATIONS
--- ========================================
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT
-    sm.id,
-    'ru-RU',
-    CASE sm.message_key
-        WHEN 'table.actions' THEN 'Действия'
-        WHEN 'table.faculty.universityName' THEN 'Название ВУЗа'
-        WHEN 'table.faculty.universityCode' THEN 'Код ВУЗа'
-        WHEN 'table.faculty.code' THEN 'Код'
-        WHEN 'table.faculty.nameUz' THEN 'Название (узбекский)'
-        WHEN 'table.faculty.nameRu' THEN 'Название (русский)'
-        WHEN 'table.faculty.status' THEN 'Статус'
-        WHEN 'table.faculty.facultyCount' THEN 'Количество факультетов'
-    END,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-FROM system_messages sm
-WHERE sm.message_key IN (
-    'table.actions', 'table.faculty.universityName', 'table.faculty.universityCode',
-    'table.faculty.code', 'table.faculty.nameUz', 'table.faculty.nameRu',
-    'table.faculty.status', 'table.faculty.facultyCount'
-)
-ON CONFLICT (message_id, language) DO UPDATE SET
-    translation = EXCLUDED.translation,
-    updated_at = CURRENT_TIMESTAMP;
-
--- ========================================
--- 5. ENGLISH (en-US) TRANSLATIONS
--- ========================================
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT
-    sm.id,
-    'en-US',
-    CASE sm.message_key
-        WHEN 'table.actions' THEN 'Actions'
-        WHEN 'table.faculty.universityName' THEN 'University Name'
-        WHEN 'table.faculty.universityCode' THEN 'University Code'
-        WHEN 'table.faculty.code' THEN 'Code'
-        WHEN 'table.faculty.nameUz' THEN 'Name (Uzbek)'
-        WHEN 'table.faculty.nameRu' THEN 'Name (Russian)'
-        WHEN 'table.faculty.status' THEN 'Status'
-        WHEN 'table.faculty.facultyCount' THEN 'Faculty Count'
-    END,
-    CURRENT_TIMESTAMP,
-    CURRENT_TIMESTAMP
-FROM system_messages sm
-WHERE sm.message_key IN (
-    'table.actions', 'table.faculty.universityName', 'table.faculty.universityCode',
-    'table.faculty.code', 'table.faculty.nameUz', 'table.faculty.nameRu',
-    'table.faculty.status', 'table.faculty.facultyCount'
-)
-ON CONFLICT (message_id, language) DO UPDATE SET
-    translation = EXCLUDED.translation,
-    updated_at = CURRENT_TIMESTAMP;
-
--- ========================================
--- 6. ACTIONS TRANSLATIONS
--- ========================================
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'actions', 'actions.view', 'Ko''rish', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'actions', 'actions.close', 'Yopish', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO UPDATE SET message = EXCLUDED.message, updated_at = CURRENT_TIMESTAMP;
-
--- Actions translations (all languages)
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT sm.id, lang.code,
-    CASE
-        WHEN sm.message_key = 'actions.view' AND lang.code = 'oz-UZ' THEN 'Кўриш'
-        WHEN sm.message_key = 'actions.view' AND lang.code = 'ru-RU' THEN 'Просмотр'
-        WHEN sm.message_key = 'actions.view' AND lang.code = 'en-US' THEN 'View'
-        WHEN sm.message_key = 'actions.close' AND lang.code = 'oz-UZ' THEN 'Ёпиш'
-        WHEN sm.message_key = 'actions.close' AND lang.code = 'ru-RU' THEN 'Закрыть'
-        WHEN sm.message_key = 'actions.close' AND lang.code = 'en-US' THEN 'Close'
-    END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM system_messages sm
-CROSS JOIN (SELECT 'oz-UZ' as code UNION ALL SELECT 'ru-RU' UNION ALL SELECT 'en-US') lang
-WHERE sm.message_key IN ('actions.view', 'actions.close')
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
-
--- ========================================
--- 7. DETAILS DRAWER TRANSLATIONS
--- ========================================
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-(gen_random_uuid(), 'details', 'details.basicInfo', 'Asosiy ma''lumotlar', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'details', 'details.auditInfo', 'Audit ma''lumotlari', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'details', 'details.shortName', 'Qisqa nomi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'details', 'details.facultyType', 'Fakultet turi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'details', 'details.createdAt', 'Yaratilgan', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'details', 'details.createdBy', 'Yaratuvchi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'details', 'details.updatedAt', 'Yangilangan', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(gen_random_uuid(), 'details', 'details.updatedBy', 'Yangilovchi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO UPDATE SET message = EXCLUDED.message, updated_at = CURRENT_TIMESTAMP;
-
--- Details translations (oz-UZ)
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT sm.id, 'oz-UZ',
-    CASE sm.message_key
-        WHEN 'details.basicInfo' THEN 'Асосий маълумотлар'
-        WHEN 'details.auditInfo' THEN 'Аудит маълумотлари'
-        WHEN 'details.shortName' THEN 'Қисқа номи'
-        WHEN 'details.facultyType' THEN 'Факультет тури'
-        WHEN 'details.createdAt' THEN 'Яратилган'
-        WHEN 'details.createdBy' THEN 'Яратувчи'
-        WHEN 'details.updatedAt' THEN 'Янгиланган'
-        WHEN 'details.updatedBy' THEN 'Янгиловчи'
-    END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM system_messages sm
-WHERE sm.message_key IN ('details.basicInfo', 'details.auditInfo', 'details.shortName', 'details.facultyType',
-    'details.createdAt', 'details.createdBy', 'details.updatedAt', 'details.updatedBy')
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
-
--- Details translations (ru-RU)
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT sm.id, 'ru-RU',
-    CASE sm.message_key
-        WHEN 'details.basicInfo' THEN 'Основная информация'
-        WHEN 'details.auditInfo' THEN 'Аудит'
-        WHEN 'details.shortName' THEN 'Краткое название'
-        WHEN 'details.facultyType' THEN 'Тип факультета'
-        WHEN 'details.createdAt' THEN 'Создано'
-        WHEN 'details.createdBy' THEN 'Создал'
-        WHEN 'details.updatedAt' THEN 'Обновлено'
-        WHEN 'details.updatedBy' THEN 'Обновил'
-    END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM system_messages sm
-WHERE sm.message_key IN ('details.basicInfo', 'details.auditInfo', 'details.shortName', 'details.facultyType',
-    'details.createdAt', 'details.createdBy', 'details.updatedAt', 'details.updatedBy')
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
-
--- Details translations (en-US)
-INSERT INTO system_message_translations (message_id, language, translation, created_at, updated_at)
-SELECT sm.id, 'en-US',
-    CASE sm.message_key
-        WHEN 'details.basicInfo' THEN 'Basic Information'
-        WHEN 'details.auditInfo' THEN 'Audit Information'
-        WHEN 'details.shortName' THEN 'Short Name'
-        WHEN 'details.facultyType' THEN 'Faculty Type'
-        WHEN 'details.createdAt' THEN 'Created At'
-        WHEN 'details.createdBy' THEN 'Created By'
-        WHEN 'details.updatedAt' THEN 'Updated At'
-        WHEN 'details.updatedBy' THEN 'Updated By'
-    END, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-FROM system_messages sm
-WHERE sm.message_key IN ('details.basicInfo', 'details.auditInfo', 'details.shortName', 'details.facultyType',
-    'details.createdAt', 'details.createdBy', 'details.updatedAt', 'details.updatedBy')
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+PERFORM _seed_msg('message', 'An unexpected error occurred', 'Kutilmagan xatolik yuz berdi', 'Кутилмаган хатолик юз берди', 'Произошла непредвиденная ошибка');
+PERFORM _seed_msg('message', 'An unexpected error occurred in the application. Please refresh the page or go to the home page.', 'Dasturda kutilmagan xatolik yuz berdi. Iltimos, sahifani yangilang yoki bosh sahifaga qayting.', 'Дастурда кутилмаган хатолик юз берди. Илтимос, саҳифани янгиланг ёки бош саҳифага қайтинг.', 'В приложении произошла непредвиденная ошибка. Пожалуйста, обновите страницу или вернитесь на главную.');
+PERFORM _seed_msg('label', 'Error details',          'Xatolik tafsilotlari',         'Хатолик тафсилотлари',      'Детали ошибки');
+PERFORM _seed_msg('label', 'Event ID (for support)', 'Event ID (qo''llab-quvvatlash uchun)', 'Event ID (қўллаб-қувватлаш учун)', 'Event ID (для поддержки)');
+PERFORM _seed_msg('label', 'Send this ID to the support team', 'Bu ID''ni texnik yordam xizmatiga yuborishingiz mumkin.', 'Бу ID''ни техник ёрдам хизматига юборишингиз мумкин.', 'Отправьте этот ID в службу поддержки.');
+PERFORM _seed_msg('label', 'Technical details (development only)', 'Texnik ma''lumot (faqat development)', 'Техник маълумот (фақат development)', 'Техническая информация (только для разработки)');
+PERFORM _seed_msg('action', 'Refresh page',          'Sahifani yangilash',            'Саҳифани янгилаш',          'Обновить страницу');
+PERFORM _seed_msg('action', 'Home page',             'Asosiy sahifa',                'Асосий саҳифа',             'Главная страница');
+
+-- =====================================================
+-- UniversityDetailDrawer
+-- =====================================================
+PERFORM _seed_msg('label', 'Address and location',   'Manzil va joylashuv',          'Манзил ва жойлашув',        'Адрес и местоположение');
+PERFORM _seed_msg('label', 'Organizational info',    'Tashkiliy ma''lumotlar',        'Ташкилий маълумотлар',      'Организационная информация');
+PERFORM _seed_msg('label', 'Websites',               'Veb-saytlar',                  'Веб-сайтлар',               'Веб-сайты');
+PERFORM _seed_msg('label', 'Main university',        'Asosiy universitet',           'Асосий университет',        'Основной университет');
+PERFORM _seed_msg('label', 'Additional info',        'Qo''shimcha ma''lumotlar',       'Қўшимча маълумотлар',       'Дополнительная информация');
+
+-- =====================================================
+-- UniversityFormDialog
+-- =====================================================
+PERFORM _seed_msg('label', 'Edit HEI',               'OTM tahrirlash',               'ОТМ таҳрирлаш',             'Редактирование ВУЗа');
+PERFORM _seed_msg('label', 'Add new HEI',            'Yangi OTM qo''shish',           'Янги ОТМ қўшиш',           'Добавить новый ВУЗ');
+PERFORM _seed_msg('label', 'Update data',            'Ma''lumotlarni yangilang',      'Маълумотларни янгиланг',    'Обновить данные');
+PERFORM _seed_msg('label', 'Enter new university data', 'Yangi universitet ma''lumotlarini kiriting', 'Янги университет маълумотларини киритинг', 'Введите данные нового университета');
+PERFORM _seed_msg('label', 'Basic',                  'Asosiy',                       'Асосий',                    'Основные');
+PERFORM _seed_msg('label', 'Links',                  'Havolalar',                    'Ҳаволалар',                 'Ссылки');
+PERFORM _seed_msg('label', 'Additional',             'Qo''shimcha',                   'Қўшимча',                   'Дополнительно');
+PERFORM _seed_msg('validation', 'Code is required',  'Kod majburiy',                 'Код мажбурий',              'Код обязателен');
+PERFORM _seed_msg('validation', 'Name is required',  'Nom majburiy',                 'Ном мажбурий',              'Название обязательно');
+PERFORM _seed_msg('validation', 'Ownership type is required', 'Mulkchilik turi majburiy', 'Мулкчилик тури мажбурий', 'Тип собственности обязателен');
+PERFORM _seed_msg('validation', 'HEI type is required', 'OTM turi majburiy',           'ОТМ тури мажбурий',         'Тип ВУЗа обязателен');
+PERFORM _seed_msg('validation', 'Invalid URL',       'Noto''g''ri URL',                 'Нотўғри URL',               'Некорректный URL');
+PERFORM _seed_msg('label', 'Full name of HEI',       'OTM to''liq nomi',                'ОТМ тўлиқ номи',            'Полное название ВУЗа');
+PERFORM _seed_msg('label', 'Full address',            'To''liq manzil',                  'Тўлиқ манзил',              'Полный адрес');
+PERFORM _seed_msg('label', 'Allow external transfer', 'Tashqi o''tkazmalarga ruxsat',    'Ташқи ўтказмаларга рухсат',  'Разрешить внешние переводы');
+PERFORM _seed_msg('error', 'Failed to load dictionaries', 'Lug''atlar yuklanmadi',       'Луғатлар юкланмади',        'Не удалось загрузить справочники');
+PERFORM _seed_msg('error', 'Failed to update university', 'OTM yangilanmadi',            'ОТМ янгиланмади',           'Не удалось обновить ВУЗ');
+PERFORM _seed_msg('error', 'Failed to create university', 'OTM yaratilmadi',             'ОТМ яратилмади',            'Не удалось создать ВУЗ');
+
+-- =====================================================
+-- Reports page
+-- =====================================================
+PERFORM _seed_msg('label', 'Reports subtitle',       'Turli hisobotlar, tahlillar va statistik ma''lumotlar', 'Турли ҳисоботлар, таҳлиллар ва статистик маълумотлар', 'Различные отчёты, анализы и статистические данные');
+PERFORM _seed_msg('action', 'Select academic year',  'O''quv yilini tanlash',         'Ўқув йилини танлаш',        'Выбрать учебный год');
+PERFORM _seed_msg('action', 'All reports',           'Barcha hisobotlar',            'Барча ҳисоботлар',          'Все отчёты');
+PERFORM _seed_msg('label', 'General reports',        'Umumiy hisobotlar',            'Умумий ҳисоботлар',         'Общие отчёты');
+PERFORM _seed_msg('label', 'Monthly reports',        'Oy hisobotlari',               'Ой ҳисоботлари',            'Месячные отчёты');
+PERFORM _seed_msg('label', 'Downloaded',             'Yuklab olindi',                'Юклаб олинди',              'Скачано');
+PERFORM _seed_msg('label', 'Last update',            'Oxirgi yangilanish',            'Охирги янгиланиш',          'Последнее обновление');
+PERFORM _seed_msg('label', 'reports',                'ta hisobot',                   'та ҳисобот',                'отчётов');
+PERFORM _seed_msg('label', 'parameters',             'parametr',                     'параметр',                  'параметров');
+
+-- =====================================================
+-- TranslationFormPage
+-- =====================================================
+PERFORM _seed_msg('label', 'Edit translation',       'Tarjimani tahrirlash',         'Таржимани таҳрирлаш',       'Редактирование перевода');
+PERFORM _seed_msg('label', 'Update existing translation', 'Mavjud tarjimani yangilang', 'Мавжуд таржимани янгиланг', 'Обновите существующий перевод');
+PERFORM _seed_msg('label', 'Key',                    'Kalit',                        'Калит',                     'Ключ');
+PERFORM _seed_msg('label', 'Translations section',   'Tarjimalar bo''limi',           'Таржималар бўлими',         'Раздел переводов');
+PERFORM _seed_msg('validation', 'Category is required', 'Kategoriya majburiy',       'Категория мажбурий',        'Категория обязательна');
+PERFORM _seed_msg('validation', 'Key is required',   'Kalit majburiy',               'Калит мажбурий',            'Ключ обязателен');
+PERFORM _seed_msg('validation', 'Key must contain only letters, numbers, dots and underscores', 'Kalit faqat harf, raqam, nuqta va pastki chiziqdan iborat bo''lishi kerak', 'Калит фақат ҳарф, рақам, нуқта ва пастки чизиқдан иборат бўлиши керак', 'Ключ может содержать только буквы, цифры, точки и подчёркивания');
+PERFORM _seed_msg('validation', 'Uzbek (Latin) is required', 'O''zbek (lotin) majburiy', 'Ўзбек (лотин) мажбурий', 'Узбекский (латиница) обязателен');
+PERFORM _seed_msg('label', 'Help section',           'Yordam',                       'Ёрдам',                     'Помощь');
+PERFORM _seed_msg('label', 'Similar translations found', 'O''xshash tarjimalar topildi', 'Ўхшаш таржималар топилди', 'Найдены похожие переводы');
+PERFORM _seed_msg('label', 'Key cannot be changed',  'Kalitni o''zgartirish mumkin emas', 'Калитни ўзгартириш мумкин эмас', 'Ключ нельзя изменить');
+PERFORM _seed_msg('label', 'Active (ready for use)', 'Aktiv (foydalanish uchun tayyor)', 'Актив (фойдаланиш учун тайёр)', 'Активен (готов к использованию)');
+PERFORM _seed_msg('label', 'If inactive, frontend will not see this translation', 'Agar faol emas bo''lsa, frontend tarjimani ko''rmaydi', 'Агар фаол эмас бўлса, фронтенд таржимани кўрмайди', 'Если неактивен, фронтенд не увидит этот перевод');
+PERFORM _seed_msg('message', 'Translation successfully updated', 'Tarjima muvaffaqiyatli yangilandi!', 'Таржима муваффақиятли янгиланди!', 'Перевод успешно обновлён!');
+PERFORM _seed_msg('message', 'Error saving translation', 'Tarjimani saqlashda xatolik', 'Таржимани сақлашда хатолик', 'Ошибка сохранения перевода');
+PERFORM _seed_msg('message', 'If existing translation fits your needs, use it instead of adding new', 'Agar mavjud tarjima sizning ehtiyojingizni qoplasa, yangi qo''shmasdan uni ishlating.', 'Агар мавжуд таржима сизнинг эҳтиёжингизни қоплаcа, янги қўшмасдан уни ишлатинг.', 'Если существующий перевод подходит, используйте его вместо добавления нового.');
+PERFORM _seed_msg('message', 'Translation cache cleared on all servers', 'Tarjima keshi barcha serverlarda tozalandi', 'Таржима кеши барча серверларда тозаланди', 'Кэш переводов успешно очищен на всех серверах');
+PERFORM _seed_msg('label', 'and more',               'va yana',                      'ва яна',                    'и ещё');
+
+-- =====================================================
+-- Login page (split layout redesign)
+-- =====================================================
+PERFORM _seed_msg('auth', 'Sign in to system',      'Tizimga kirish',               'Тизимга кириш',             'Вход в систему');
+PERFORM _seed_msg('auth', 'Enter your credentials to continue', 'Davom etish uchun ma''lumotlaringizni kiriting', 'Давом этиш учун маълумотларингизни киритинг', 'Введите данные для продолжения');
+PERFORM _seed_msg('label', '226+ higher education institutions', '226+ oliy ta''lim muassasalari', '226+ олий таълим муассасалари', '226+ высших учебных заведений');
+PERFORM _seed_msg('label', '1,000,000+ users',      '1,000,000+ foydalanuvchilar',  '1,000,000+ фойдаланувчилар', '1,000,000+ пользователей');
+PERFORM _seed_msg('label', '4 management modules',  '4 ta boshqaruv moduli',        '4 та бошқарув модули',      '4 модуля управления');
+PERFORM _seed_msg('label', 'Ministry of Higher Education, Science and Innovations', 'Oliy ta''lim, fan va innovatsiyalar vazirligi', 'Олий таълим, фан ва инновациялар вазирлиги', 'Министерство высшего образования, науки и инноваций');
 
 
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- VERIFICATION
+-- CLEANUP
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-DO $$
-DECLARE
-    message_count INTEGER;
-    translation_count INTEGER;
-    menu_msg_count INTEGER;
-    table_msg_count INTEGER;
-    actions_msg_count INTEGER;
-    details_msg_count INTEGER;
-BEGIN
-    -- Count messages
-    SELECT COUNT(*) INTO message_count FROM system_messages WHERE is_active = TRUE;
-    SELECT COUNT(*) INTO translation_count FROM system_message_translations;
-    
-    -- Count by category
-    SELECT COUNT(*) INTO menu_msg_count FROM system_messages WHERE category = 'menu' AND is_active = TRUE;
-    SELECT COUNT(*) INTO table_msg_count FROM system_messages WHERE category = 'table' AND is_active = TRUE;
-    SELECT COUNT(*) INTO actions_msg_count FROM system_messages WHERE category = 'actions' AND is_active = TRUE;
-    SELECT COUNT(*) INTO details_msg_count FROM system_messages WHERE category = 'details' AND is_active = TRUE;
+DROP FUNCTION IF EXISTS _seed_msg(TEXT, TEXT, TEXT, TEXT, TEXT);
 
-    -- Success log
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    RAISE NOTICE '✅ V3: ALL TRANSLATIONS LOADED';
-    RAISE NOTICE '   System messages: %', message_count;
-    RAISE NOTICE '   Translations: %', translation_count;
-    RAISE NOTICE '   ├─ Menu: %', menu_msg_count;
-    RAISE NOTICE '   ├─ Table: %', table_msg_count;
-    RAISE NOTICE '   ├─ Actions: %', actions_msg_count;
-    RAISE NOTICE '   └─ Details: %', details_msg_count;
-    
-    -- Validation
-    IF message_count < 50 THEN
-        RAISE WARNING '⚠️  Expected at least 50 messages, found %', message_count;
-    END IF;
-    
-    IF translation_count < 100 THEN
-        RAISE WARNING '⚠️  Expected at least 100 translations, found %', translation_count;
-    END IF;
-
-    RAISE NOTICE '   Status: READY FOR MENU PERMISSIONS (V4)';
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-END $$;
-
--- =====================================================
--- FINAL: Ensure ALL menu translations have uz-UZ
--- =====================================================
--- This universal INSERT ensures every menu message has
--- an uz-UZ translation (using default Uzbek Latin from system_messages)
-
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'uz-UZ', m.message
-FROM system_messages m
-WHERE m.category = 'menu'
-  AND NOT EXISTS (
-    SELECT 1 FROM system_message_translations smt
-    WHERE smt.message_id = m.id AND smt.language = 'uz-UZ'
-  )
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- Verification for uz-UZ completeness
-DO $$
-DECLARE
-    total_menus INTEGER;
-    uz_translations INTEGER;
-    missing_count INTEGER;
-BEGIN
-    SELECT COUNT(*) INTO total_menus FROM system_messages WHERE category = 'menu';
-    SELECT COUNT(*) INTO uz_translations
-    FROM system_message_translations smt
-    JOIN system_messages sm ON sm.id = smt.message_id
-    WHERE sm.category = 'menu' AND smt.language = 'uz-UZ';
-
-    missing_count := total_menus - uz_translations;
-
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    RAISE NOTICE '📋 UZ-UZ TRANSLATION VERIFICATION';
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    RAISE NOTICE '   Total menu messages: %', total_menus;
-    RAISE NOTICE '   uz-UZ translations: %', uz_translations;
-
-    IF missing_count > 0 THEN
-        RAISE WARNING '⚠️  Missing % uz-UZ translations!', missing_count;
-    ELSE
-        RAISE NOTICE '✅ All menu messages have uz-UZ translations';
-    END IF;
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-END $$;
-
--- =====================================================
--- ERROR MESSAGES (Backend-driven i18n)
--- =====================================================
--- Industrial best practice: Backend returns localized error messages
--- based on Accept-Language header
--- =====================================================
-
--- Error messages - Default (Uzbek Latin)
-INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-VALUES
-    (gen_random_uuid(), 'error', 'error.auth.failed', 'Login yoki parol noto''g''ri', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.auth.token_expired', 'Sessiya muddati tugagan. Qaytadan kiring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.auth.token_invalid', 'Noto''g''ri token', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.auth.access_denied', 'Sizda bu amalni bajarish huquqi yo''q', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.auth.user_disabled', 'Foydalanuvchi bloklangan', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.auth.user_not_found', 'Foydalanuvchi topilmadi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.internal', 'Serverda xatolik yuz berdi. Iltimos, qaytadan urinib ko''ring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.not_found', 'Ma''lumot topilmadi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.validation', 'Kiritilgan ma''lumotlar noto''g''ri', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.validation.required', 'Bu maydon to''ldirilishi shart', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.validation.email', 'Email formati noto''g''ri', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.validation.min_length', 'Minimal uzunlik: {0} belgi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.validation.max_length', 'Maksimal uzunlik: {0} belgi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.duplicate', 'Bunday ma''lumot allaqachon mavjud', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.delete.has_children', 'Avval bog''liq ma''lumotlarni o''chiring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.file.too_large', 'Fayl hajmi juda katta. Maksimal: {0} MB', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.file.invalid_type', 'Fayl turi qo''llab-quvvatlanmaydi', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.network', 'Tarmoq xatosi. Internet aloqasini tekshiring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.timeout', 'So''rov vaqti tugadi. Qaytadan urinib ko''ring', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    (gen_random_uuid(), 'error', 'error.rate_limit', 'Juda ko''p so''rov. Biroz kuting', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (message_key) DO UPDATE SET
-    message = EXCLUDED.message,
-    updated_at = CURRENT_TIMESTAMP;
-
--- Error translations - Russian (ru-RU)
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'ru-RU',
-    CASE m.message_key
-        WHEN 'error.auth.failed' THEN 'Неверный логин или пароль'
-        WHEN 'error.auth.token_expired' THEN 'Сессия истекла. Войдите снова'
-        WHEN 'error.auth.token_invalid' THEN 'Недействительный токен'
-        WHEN 'error.auth.access_denied' THEN 'У вас нет прав для выполнения этого действия'
-        WHEN 'error.auth.user_disabled' THEN 'Пользователь заблокирован'
-        WHEN 'error.auth.user_not_found' THEN 'Пользователь не найден'
-        WHEN 'error.internal' THEN 'Ошибка сервера. Пожалуйста, попробуйте снова'
-        WHEN 'error.not_found' THEN 'Данные не найдены'
-        WHEN 'error.validation' THEN 'Введенные данные некорректны'
-        WHEN 'error.validation.required' THEN 'Это поле обязательно для заполнения'
-        WHEN 'error.validation.email' THEN 'Неверный формат email'
-        WHEN 'error.validation.min_length' THEN 'Минимальная длина: {0} символов'
-        WHEN 'error.validation.max_length' THEN 'Максимальная длина: {0} символов'
-        WHEN 'error.duplicate' THEN 'Такие данные уже существуют'
-        WHEN 'error.delete.has_children' THEN 'Сначала удалите связанные данные'
-        WHEN 'error.file.too_large' THEN 'Файл слишком большой. Максимум: {0} МБ'
-        WHEN 'error.file.invalid_type' THEN 'Тип файла не поддерживается'
-        WHEN 'error.network' THEN 'Ошибка сети. Проверьте интернет-соединение'
-        WHEN 'error.timeout' THEN 'Время запроса истекло. Попробуйте снова'
-        WHEN 'error.rate_limit' THEN 'Слишком много запросов. Подождите немного'
-        ELSE m.message
-    END
-FROM system_messages m
-WHERE m.category = 'error'
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- Error translations - English (en-US)
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'en-US',
-    CASE m.message_key
-        WHEN 'error.auth.failed' THEN 'Invalid username or password'
-        WHEN 'error.auth.token_expired' THEN 'Session expired. Please login again'
-        WHEN 'error.auth.token_invalid' THEN 'Invalid token'
-        WHEN 'error.auth.access_denied' THEN 'You do not have permission to perform this action'
-        WHEN 'error.auth.user_disabled' THEN 'User account is disabled'
-        WHEN 'error.auth.user_not_found' THEN 'User not found'
-        WHEN 'error.internal' THEN 'Server error. Please try again'
-        WHEN 'error.not_found' THEN 'Data not found'
-        WHEN 'error.validation' THEN 'Invalid input data'
-        WHEN 'error.validation.required' THEN 'This field is required'
-        WHEN 'error.validation.email' THEN 'Invalid email format'
-        WHEN 'error.validation.min_length' THEN 'Minimum length: {0} characters'
-        WHEN 'error.validation.max_length' THEN 'Maximum length: {0} characters'
-        WHEN 'error.duplicate' THEN 'This data already exists'
-        WHEN 'error.delete.has_children' THEN 'Delete related data first'
-        WHEN 'error.file.too_large' THEN 'File too large. Maximum: {0} MB'
-        WHEN 'error.file.invalid_type' THEN 'File type not supported'
-        WHEN 'error.network' THEN 'Network error. Check your internet connection'
-        WHEN 'error.timeout' THEN 'Request timed out. Please try again'
-        WHEN 'error.rate_limit' THEN 'Too many requests. Please wait'
-        ELSE m.message
-    END
-FROM system_messages m
-WHERE m.category = 'error'
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- Error translations - Uzbek Cyrillic (oz-UZ)
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'oz-UZ',
-    CASE m.message_key
-        WHEN 'error.auth.failed' THEN 'Логин ёки парол нотўғри'
-        WHEN 'error.auth.token_expired' THEN 'Сессия муддати тугаган. Қайтадан киринг'
-        WHEN 'error.auth.token_invalid' THEN 'Нотўғри токен'
-        WHEN 'error.auth.access_denied' THEN 'Сизда бу амални бажариш ҳуқуқи йўқ'
-        WHEN 'error.auth.user_disabled' THEN 'Фойдаланувчи блокланган'
-        WHEN 'error.auth.user_not_found' THEN 'Фойдаланувчи топилмади'
-        WHEN 'error.internal' THEN 'Серверда хатолик юз берди. Илтимос, қайтадан уриниб кўринг'
-        WHEN 'error.not_found' THEN 'Маълумот топилмади'
-        WHEN 'error.validation' THEN 'Киритилган маълумотлар нотўғри'
-        WHEN 'error.validation.required' THEN 'Бу майдон тўлдирилиши шарт'
-        WHEN 'error.validation.email' THEN 'Email формати нотўғри'
-        WHEN 'error.validation.min_length' THEN 'Минимал узунлик: {0} белги'
-        WHEN 'error.validation.max_length' THEN 'Максимал узунлик: {0} белги'
-        WHEN 'error.duplicate' THEN 'Бундай маълумот аллақачон мавжуд'
-        WHEN 'error.delete.has_children' THEN 'Аввал боғлиқ маълумотларни ўчиринг'
-        WHEN 'error.file.too_large' THEN 'Файл ҳажми жуда катта. Максимал: {0} МБ'
-        WHEN 'error.file.invalid_type' THEN 'Файл тури қўллаб-қувватланмайди'
-        WHEN 'error.network' THEN 'Тармоқ хатоси. Интернет алоқасини текширинг'
-        WHEN 'error.timeout' THEN 'Сўров вақти тугади. Қайтадан уриниб кўринг'
-        WHEN 'error.rate_limit' THEN 'Жуда кўп сўров. Бироз кутинг'
-        ELSE m.message
-    END
-FROM system_messages m
-WHERE m.category = 'error'
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- Error translations - Uzbek Latin (uz-UZ)
-INSERT INTO system_message_translations (message_id, language, translation)
-SELECT m.id, 'uz-UZ', m.message
-FROM system_messages m
-WHERE m.category = 'error'
-ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation;
-
--- Verification for error translations
-DO $$
-DECLARE
-    error_msg_count INTEGER;
-    error_trans_count INTEGER;
-BEGIN
-    SELECT COUNT(*) INTO error_msg_count FROM system_messages WHERE category = 'error';
-    SELECT COUNT(*) INTO error_trans_count FROM system_message_translations smt
-        JOIN system_messages sm ON sm.id = smt.message_id WHERE sm.category = 'error';
-
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    RAISE NOTICE '📋 ERROR TRANSLATIONS VERIFICATION';
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    RAISE NOTICE '   Error messages: %', error_msg_count;
-    RAISE NOTICE '   Error translations: % (expected: %)', error_trans_count, error_msg_count * 4;
-    RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
 END $$;

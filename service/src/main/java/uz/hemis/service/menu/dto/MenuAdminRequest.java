@@ -44,8 +44,8 @@ public class MenuAdminRequest {
     @NotBlank(message = "i18n key is required")
     @Size(min = 5, max = 200, message = "i18n key must be 5-200 characters")
     @Schema(
-        description = "Translation key for menu label",
-        example = "menu.system.users"
+        description = "Translation key for menu label (English text, gettext model)",
+        example = "University users"
     )
     private String i18nKey;
 

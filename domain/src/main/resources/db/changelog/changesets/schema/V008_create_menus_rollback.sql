@@ -19,4 +19,6 @@ BEGIN
     RAISE NOTICE 'V008 Rollback: Dropping menus table (% rows)', row_count;
 END $$;
 
+DROP TABLE IF EXISTS menu_audit_logs;
+DROP TABLE IF EXISTS user_favorites;
 DROP TABLE IF EXISTS menus CASCADE;
