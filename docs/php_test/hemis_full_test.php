@@ -1300,6 +1300,202 @@ test('RIAdministrativeStudent2 PUT', 'PUT', "v2/entities/hemishe_RIAdministrativ
 test('RIAdministrativeStudent2 search', 'POST', 'v2/entities/hemishe_RIAdministrativeStudent2/search', ['filter' => ['conditions' => []], 'limit' => 3]);
 test('RIAdministrativeStudent2 search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeStudent2/search', ['filter' => ['conditions' => []], 'limit' => 3]);
 
+
+// ============================================================
+// AVTOMATIK QO'SHILGAN YANGI TESTLAR (missing endpoints)
+// ============================================================
+
+// --- 05.O'qituvchi (missing) ---
+test('ETeacher GET search', 'GET', 'v2/entities/hemishe_ETeacher/search');
+test('ETeacher search POST', 'POST', 'v2/entities/hemishe_ETeacher/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 06.Xodim lavozimlari (missing) ---
+test('HUniversityEmployeeForm GET list', 'GET', 'v2/entities/hemishe_HUniversityEmployeeForm?limit=3');
+test('HUniversityEmployeeForm GET by id', 'GET', "v2/entities/hemishe_HUniversityEmployeeForm/$fakeDeleteUid?returnNulls=true");
+test('HUniversityEmployeeStatusType GET search', 'GET', 'v2/entities/hemishe_HUniversityEmployeeStatusType/search');
+test('HUniversityEmployeeStatusType search POST', 'POST', 'v2/entities/hemishe_HUniversityEmployeeStatusType/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+test('HUniversityEmployeeRate GET search', 'GET', 'v2/entities/hemishe_HUniversityEmployeeRate/search');
+test('HUniversityEmployeeRate search POST', 'POST', 'v2/entities/hemishe_HUniversityEmployeeRate/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+test('HTeacherPositionType GET search', 'GET', 'v2/entities/hemishe_HTeacherPositionType/search');
+test('HTeacherPositionType search POST', 'POST', 'v2/entities/hemishe_HTeacherPositionType/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+test('HUniversityEmployeeForm GET search', 'GET', 'v2/entities/hemishe_HUniversityEmployeeForm/search');
+test('HUniversityEmployeeForm search POST', 'POST', 'v2/entities/hemishe_HUniversityEmployeeForm/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 07.OTM bo'linmalari (missing) ---
+test('EUniversityDepartment GET search', 'GET', 'v2/entities/hemishe_EUniversityDepartment/search');
+
+// --- 08.OTM bo'linma turlari (missing) ---
+test('HUniversityDepartmentType GET search', 'GET', 'v2/entities/hemishe_HUniversityDepartmentType/search');
+
+// --- 09.OTM xodimlari kategoriyasi (missing) ---
+test('HUniversityEmployeeType GET search', 'GET', 'v2/entities/hemishe_HUniversityEmployeeType/search');
+
+// --- 10.Talaba holati (missing) ---
+test('HStudentStatusType GET search', 'GET', 'v2/entities/hemishe_HStudentStatusType/search');
+
+// --- 11.Fuqarolik holatlari (missing) ---
+test('HCitizenship GET search', 'GET', 'v2/entities/hemishe_HCitizenship/search');
+
+// --- 12.Diplomlar (missing) ---
+test('EStudentDiploma GET search', 'GET', 'v2/entities/hemishe_EStudentDiploma/search');
+
+// --- 16.Ilmiy doktorant talabalari (missing) ---
+test('EDoctorateStudent GET search', 'GET', 'v2/entities/hemishe_EDoctorateStudent/search');
+
+// --- 27.Ilmiy uslubiy nashr turlari (missing) ---
+test('HMethodicalPublicationType GET search', 'GET', 'v2/entities/hemishe_HMethodicalPublicationType/search');
+
+// --- 28.Ilmiy doktorantura talabalari statusi (missing) ---
+test('HDoctoralStudentStatus GET search', 'GET', 'v2/entities/hemishe_HDoctoralStudentStatus/search');
+
+// --- 29.Ilmiy doktorantura talabalari turlari (missing) ---
+test('HDoctoralStudentType GET search', 'GET', 'v2/entities/hemishe_HDoctoralStudentType/search');
+
+// --- 30.Ilmiy nashr etish hududlari turlari (missing) ---
+test('HPublicationLocality GET search', 'GET', 'v2/entities/hemishe_HPublicationLocality/search');
+
+// --- 31.Akademik hisobotlar chetlashgan talabalar (missing) ---
+test('RExpel GET search', 'GET', 'v2/entities/hemishe_RExpel/search');
+
+// --- 32.Akademik hisobotlar akademik guruhlar (missing) ---
+test('RAcademicGroup GET search', 'GET', 'v2/entities/hemishe_RAcademicGroup/search');
+
+// --- 33.Akademik hisobotlar fanlar (missing) ---
+test('RAcademicSubjects GET search', 'GET', 'v2/entities/hemishe_RAcademicSubjects/search');
+
+// --- 34.Akademik hisobotlar o'zlashtirish (missing) ---
+test('RAcademicScore GET search', 'GET', 'v2/entities/hemishe_RAcademicScore/search');
+
+// --- 35.Akademik hisobotlar davomat (missing) ---
+test('RAcademicAttendance GET search', 'GET', 'v2/entities/hemishe_RAcademicAttendance/search');
+
+// --- 37.Bandlik statistikasi (missing) ---
+test('REmployment GET search', 'GET', 'v2/entities/hemishe_REmployment/search');
+
+// --- 38.Inspeksiya administrative teacher (missing) ---
+test('RIAdministrativeEmployee1 GET by id', 'GET', "v2/entities/hemishe_RIAdministrativeEmployee1/$fakeDeleteUid?returnNulls=true");
+test('RIAdministrativeEmployee1 PUT', 'PUT', "v2/entities/hemishe_RIAdministrativeEmployee1/$fakeDeleteUid", ['active' => true]);
+test('RIAdministrativeEmployee1 GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeEmployee1/search');
+test('RIAdministrativeEmployee1 search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeEmployee1/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 39.Xorijiy OTMda malaka oshirish (missing) ---
+test('RIAdministrativeEmployee2 GET by id', 'GET', "v2/entities/hemishe_RIAdministrativeEmployee2/$fakeDeleteUid?returnNulls=true");
+test('RIAdministrativeEmployee2 PUT', 'PUT', "v2/entities/hemishe_RIAdministrativeEmployee2/$fakeDeleteUid", ['active' => true]);
+test('RIAdministrativeEmployee2 GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeEmployee2/search');
+test('RIAdministrativeEmployee2 search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeEmployee2/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 40.OTMda xorijiy o'qituvchilar (missing) ---
+test('RIAdministrativeEmployee3 GET by id', 'GET', "v2/entities/hemishe_RIAdministrativeEmployee3/$fakeDeleteUid?returnNulls=true");
+test('RIAdministrativeEmployee3 PUT', 'PUT', "v2/entities/hemishe_RIAdministrativeEmployee3/$fakeDeleteUid", ['active' => true]);
+test('RIAdministrativeEmployee3 GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeEmployee3/search');
+test('RIAdministrativeEmployee3 search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeEmployee3/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 41.Inspeksiya administrative student2 (Akademik almashinuv) (missing) ---
+test('RIAdministrativeStudent2 GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeStudent2/search');
+
+// --- 42.Inspeksiya administrative student3 (Bitiruvchilar band bo'lishi) (missing) ---
+test('RIAdministrativeStudent3 GET by id', 'GET', "v2/entities/hemishe_RIAdministrativeStudent3/$fakeDeleteUid?returnNulls=true");
+test('RIAdministrativeStudent3 PUT', 'PUT', "v2/entities/hemishe_RIAdministrativeStudent3/$fakeDeleteUid", ['active' => true]);
+test('RIAdministrativeStudent3 GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeStudent3/search');
+test('RIAdministrativeStudent3 search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeStudent3/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 43.Inspeksiya administrative student4 (Talaba olimpiadalari) (missing) ---
+test('RIAdministrativeStudent4 GET by id', 'GET', "v2/entities/hemishe_RIAdministrativeStudent4/$fakeDeleteUid?returnNulls=true");
+test('RIAdministrativeStudent4 PUT', 'PUT', "v2/entities/hemishe_RIAdministrativeStudent4/$fakeDeleteUid", ['active' => true]);
+test('RIAdministrativeStudent4 GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeStudent4/search');
+test('RIAdministrativeStudent4 search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeStudent4/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 44.Inspeksiya administrative StudentSport (Talaba sport yutuqlari) (missing) ---
+test('RIAdministrativeStudentSport GET by id', 'GET', "v2/entities/hemishe_RIAdministrativeStudentSport/$fakeDeleteUid?returnNulls=true");
+test('RIAdministrativeStudentSport PUT', 'PUT', "v2/entities/hemishe_RIAdministrativeStudentSport/$fakeDeleteUid", ['active' => true]);
+test('RIAdministrativeStudentSport GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeStudentSport/search');
+test('RIAdministrativeStudentSport search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeStudentSport/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 45.Inspeksiya Sport inshootlari (missing) ---
+test('RIAdministrativeSportFacilities POST', 'POST', 'v2/entities/hemishe_RIAdministrativeSportFacilities/', ['active' => true]);
+test('RIAdministrativeSportFacilities GET list', 'GET', 'v2/entities/hemishe_RIAdministrativeSportFacilities?limit=3');
+test('RIAdministrativeSportFacilities GET by id', 'GET', "v2/entities/hemishe_RIAdministrativeSportFacilities/$fakeDeleteUid?returnNulls=true");
+test('RIAdministrativeSportFacilities PUT', 'PUT', "v2/entities/hemishe_RIAdministrativeSportFacilities/$fakeDeleteUid", ['active' => true]);
+test('RIAdministrativeSportFacilities DELETE', 'DELETE', "v2/entities/hemishe_RIAdministrativeSportFacilities/$fakeDeleteUid");
+test('RIAdministrativeSportFacilities GET search', 'GET', 'v2/entities/hemishe_RIAdministrativeSportFacilities/search');
+test('RIAdministrativeSportFacilities search POST', 'POST', 'v2/entities/hemishe_RIAdministrativeSportFacilities/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 46.Akademik Uslubiy nashrlar (missing) ---
+test('RIAcademicMethodologicPublications POST', 'POST', 'v2/entities/hemishe_RIAcademicMethodologicPublications/', ['active' => true]);
+test('RIAcademicMethodologicPublications GET list', 'GET', 'v2/entities/hemishe_RIAcademicMethodologicPublications?limit=3');
+test('RIAcademicMethodologicPublications GET by id', 'GET', "v2/entities/hemishe_RIAcademicMethodologicPublications/$fakeDeleteUid?returnNulls=true");
+test('RIAcademicMethodologicPublications PUT', 'PUT', "v2/entities/hemishe_RIAcademicMethodologicPublications/$fakeDeleteUid", ['active' => true]);
+test('RIAcademicMethodologicPublications DELETE', 'DELETE', "v2/entities/hemishe_RIAcademicMethodologicPublications/$fakeDeleteUid");
+test('RIAcademicMethodologicPublications GET search', 'GET', 'v2/entities/hemishe_RIAcademicMethodologicPublications/search');
+test('RIAcademicMethodologicPublications search POST', 'POST', 'v2/entities/hemishe_RIAcademicMethodologicPublications/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 47.Akademik O'quv ishlari (missing) ---
+test('RIAcademicEducationalWork POST', 'POST', 'v2/entities/hemishe_RIAcademicEducationalWork/', ['active' => true]);
+test('RIAcademicEducationalWork GET list', 'GET', 'v2/entities/hemishe_RIAcademicEducationalWork?limit=3');
+test('RIAcademicEducationalWork GET by id', 'GET', "v2/entities/hemishe_RIAcademicEducationalWork/$fakeDeleteUid?returnNulls=true");
+test('RIAcademicEducationalWork PUT', 'PUT', "v2/entities/hemishe_RIAcademicEducationalWork/$fakeDeleteUid", ['active' => true]);
+test('RIAcademicEducationalWork DELETE', 'DELETE', "v2/entities/hemishe_RIAcademicEducationalWork/$fakeDeleteUid");
+test('RIAcademicEducationalWork GET search', 'GET', 'v2/entities/hemishe_RIAcademicEducationalWork/search');
+test('RIAcademicEducationalWork search POST', 'POST', 'v2/entities/hemishe_RIAcademicEducationalWork/search', ['filter' => ['conditions' => []], 'limit' => 3]);
+
+// --- 49.Fakultetlar (missing) ---
+test('Service: faculty/get', 'GET', 'v2/services/faculty/get');
+
+// --- 52.Mail (missing) ---
+test('Service: mail/send POST', 'POST', 'v2/services/mail/send/', json_encode(['data' => []]));
+
+// --- 54.Transkript (missing) ---
+test('Service: transcript/get', 'GET', 'v2/services/transcript/get');
+
+// --- 55.DTM (missing) ---
+test('Service: mandat/get', 'GET', 'v2/services/mandat/get');
+
+// --- 56.OAK (missing) ---
+test('Service: oak/byPin', 'GET', 'v2/services/oak/byPin');
+
+// --- 57.Contract (missing) ---
+test('Service: contract/get', 'GET', 'v2/services/contract/get');
+
+// --- 58.UzASBO (missing) ---
+test('Service: student/checkScholarship2 POST', 'POST', 'v2/services/student/checkScholarship2/', json_encode(['data' => []]));
+test('Service: test/typetest', 'GET', 'v2/services/test/typetest');
+
+// --- 60.Soliq (missing) ---
+test('Service: tax/rent', 'GET', 'v2/services/tax/rent');
+
+// --- 61.Ijtimoiy himoya (missing) ---
+test('Service: social/daftarFull', 'GET', 'v2/services/social/daftarFull');
+test('Service: social/daftarShort', 'GET', 'v2/services/social/daftarShort');
+test('Service: social/young', 'GET', 'v2/services/social/young');
+
+// --- 62.Stipendiya (missing) ---
+test('EStudentScholarshipFull POST', 'POST', 'v2/entities/hemishe_EStudentScholarshipFull/', ['active' => true]);
+test('EStudentScholarshipAmount POST', 'POST', 'v2/entities/hemishe_EStudentScholarshipAmount/', ['active' => true]);
+test('Service: scholarship/deleteAmounts', 'GET', 'v2/services/scholarship/deleteAmounts');
+
+// --- 64.OTM (missing) ---
+test('Service: otm/studentInfoById', 'GET', 'v2/services/otm/studentInfoById');
+test('Service: otm/studentListByTutor', 'GET', 'v2/services/otm/studentListByTutor');
+test('Service: otm/studentInfoByPinfl', 'GET', 'v2/services/otm/studentInfoByPinfl');
+
+// --- 65.Xo'jalik hisobot (missing) ---
+test('REducationMaterials POST', 'POST', 'v2/entities/hemishe_REducationMaterials/', ['active' => true]);
+test('RLaboratories POST', 'POST', 'v2/entities/hemishe_RLaboratories/', ['active' => true]);
+test('RIctEquipment POST', 'POST', 'v2/entities/hemishe_RIctEquipment/', ['active' => true]);
+
+// --- 66.BIMM (missing) ---
+test('Service: bimm/disabilityCheck', 'GET', 'v2/services/bimm/disabilityCheck');
+test('Service: bimm/teacherTraining', 'GET', 'v2/services/bimm/teacherTraining');
+
+// --- 69.Amaliyot (missing) ---
+test('EStudentPractice POST', 'POST', 'v2/entities/hemishe_EStudentPractice/', ['active' => true]);
+
+// --- 70.Qo'shimcha xizmatlar (missing) ---
+test('Service: classifiers/hokimiyat', 'GET', 'v2/services/classifiers/hokimiyat');
+test('Service: diploma/byhash', 'GET', 'v2/services/diploma/byhash');
+test('Service: student/get', 'GET', 'v2/services/student/get');
+test('Service: student/getActive', 'GET', 'v2/services/student/getActive');
+
 // ============================================================
 // NATIJA
 // ============================================================
