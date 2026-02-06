@@ -1,7 +1,7 @@
 package uz.hemis.service.finance.mapper;
 
 import org.mapstruct.*;
-import uz.hemis.common.dto.ContractDto;
+import uz.hemis.common.dto.finance.ContractDto;
 import uz.hemis.domain.entity.Contract;
 
 import java.util.List;

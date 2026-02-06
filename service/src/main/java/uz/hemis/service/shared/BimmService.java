@@ -1,10 +1,13 @@
 package uz.hemis.service.shared;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uz.hemis.service.base.AbstractGovernmentApiService;
+import uz.hemis.service.integration.BimmTokenService;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -12,7 +15,7 @@ import java.util.Map;
  *
  * <p><strong>CRITICAL - External Service Integration:</strong></p>
  * <ul>
- *   <li>Calls BIMM (Beneficiary Information Management System) API</li>
+ *   <li>Calls BIMM (api-mspd.edu.uz) API with Bearer token</li>
  *   <li>Checks disability status, poverty register, academic degrees</li>
  *   <li>Used for student benefits and scholarship eligibility</li>
  * </ul>
@@ -20,15 +23,8 @@ import java.util.Map;
  * <p><strong>OLD-HEMIS Compatibility:</strong></p>
  * <ul>
  *   <li>5 methods exposed via CUBA REST pattern</li>
- *   <li>Same external API endpoints</li>
- *   <li>Same request/response format</li>
- * </ul>
- *
- * <p><strong>OPTIMIZATION:</strong></p>
- * <ul>
- *   <li>Extends AbstractGovernmentApiService</li>
- *   <li>No code duplication (SSL, error handling, etc. in base class)</li>
- *   <li>Clean, focused business logic only</li>
+ *   <li>Same external API endpoints as old-hemis BimmServiceBean</li>
+ *   <li>Raw response proxy — no wrapping (matches old-hemis getBodyAsArray/getBodyAsMap)</li>
  * </ul>
  *
  * @since 1.0.0
@@ -37,116 +33,150 @@ import java.util.Map;
 @Slf4j
 public class BimmService extends AbstractGovernmentApiService {
 
-    @Value("${hemis.external.bimm.url:https://api.gov.uz/bimm}")
-    private String externalApiUrl;
+    @Autowired
+    private BimmTokenService bimmTokenService;
 
-    @Value("${hemis.external.bimm.token:}")
-    private String externalApiToken;
+    @Value("${hemis.integration.bimm.api.base-url:https://api-mspd.edu.uz}")
+    private String apiBaseUrl;
 
     /**
      * Check disability status
      *
+     * <p>Old-hemis: POST https://api-mspd.edu.uz/disability/disability-pinfl-document</p>
+     * <p>Body: {"pinfl": "X", "document": "Y"}</p>
+     * <p>Response: getBodyAsArray() — raw proxy</p>
+     *
      * @param pinfl PINFL (14 digits)
      * @param document Passport or disability certificate number
-     * @return disability data map
+     * @return raw API response (array or object)
      */
-    public Map<String, Object> disabilityCheck(String pinfl, String document) {
+    public Object disabilityCheck(String pinfl, String document) {
         log.info("Checking disability status - PINFL: {}, Document: {}", pinfl, document);
 
-        Map<String, String> params = params();
-        addParam(params, "pinfl", pinfl);
-        addParam(params, "document", document);
-        addParam(params, "token", externalApiToken);
+        String token = bimmTokenService.getToken();
+        if (token == null) {
+            return tokenError("BimmService.disabilityCheck");
+        }
 
-        return callExternalApi(
-                externalApiUrl + "/disability",
-                params,
-                "has_disability", // Flag: true if has disability, false if not
-                "BimmService.disabilityCheck"
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("pinfl", pinfl);
+        body.put("document", document);
+
+        return proxyExternalApiPost(
+                apiBaseUrl + "/disability/disability-pinfl-document/",
+                body, token, "BimmService.disabilityCheck"
         );
     }
 
     /**
      * Check poverty register status
      *
+     * <p>Old-hemis: POST https://api-mspd.edu.uz/ihma/reestr-family</p>
+     * <p>Body: {"pinfl": "X"}</p>
+     * <p>Response: getBodyAsArray() — raw proxy</p>
+     *
      * @param pinfl PINFL
-     * @return poverty register data map
+     * @return raw API response (array or object)
      */
-    public Map<String, Object> provertyRegister(String pinfl) {
+    public Object provertyRegister(String pinfl) {
         log.info("Checking poverty register - PINFL: {}", pinfl);
 
-        Map<String, String> params = params();
-        addParam(params, "pinfl", pinfl);
-        addParam(params, "token", externalApiToken);
+        String token = bimmTokenService.getToken();
+        if (token == null) {
+            return tokenError("BimmService.provertyRegister");
+        }
 
-        return callExternalApi(
-                externalApiUrl + "/poverty",
-                params,
-                "in_poverty_register",
-                "BimmService.provertyRegister"
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("pinfl", pinfl);
+
+        return proxyExternalApiPost(
+                apiBaseUrl + "/ihma/reestr-family/",
+                body, token, "BimmService.provertyRegister"
         );
     }
 
     /**
      * Get certificate information
      *
+     * <p>Old-hemis: GET https://api-mspd.edu.uz/dtm/certificate-info?pinfl=X</p>
+     * <p>Response: getBodyAsArray() — raw proxy (typically array at root)</p>
+     *
      * @param pinfl PINFL
-     * @return certificate data map
+     * @return raw API response (array or object)
      */
-    public Map<String, Object> certificate(String pinfl) {
+    public Object certificate(String pinfl) {
         log.info("Fetching certificate info - PINFL: {}", pinfl);
 
-        Map<String, String> params = params();
-        addParam(params, "pinfl", pinfl);
-        addParam(params, "token", externalApiToken);
+        String token = bimmTokenService.getToken();
+        if (token == null) {
+            return tokenError("BimmService.certificate");
+        }
 
-        return callExternalApi(
-                externalApiUrl + "/certificate",
-                params,
-                "has_certificate",
-                "BimmService.certificate"
-        );
+        String url = apiBaseUrl + "/dtm/certificate-info?pinfl=" + pinfl;
+
+        return proxyExternalApiGet(url, token, "BimmService.certificate");
     }
 
     /**
      * Get academic degree information
      *
+     * <p>Old-hemis: POST https://api-mspd.edu.uz/sac/academic-degree-title/</p>
+     * <p>Body: {"pinfl": "X"}</p>
+     * <p>Response: getBodyAsMap() — raw proxy</p>
+     *
      * @param pinfl PINFL
-     * @return academic degree data map
+     * @return raw API response (object or array)
      */
-    public Map<String, Object> academicDegree(String pinfl) {
+    public Object academicDegree(String pinfl) {
         log.info("Fetching academic degree info - PINFL: {}", pinfl);
 
-        Map<String, String> params = params();
-        addParam(params, "pinfl", pinfl);
-        addParam(params, "token", externalApiToken);
+        String token = bimmTokenService.getToken();
+        if (token == null) {
+            return tokenError("BimmService.academicDegree");
+        }
 
-        return callExternalApi(
-                externalApiUrl + "/academic-degree",
-                params,
-                "has_degree",
-                "BimmService.academicDegree"
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("pinfl", pinfl);
+
+        return proxyExternalApiPost(
+                apiBaseUrl + "/sac/academic-degree-title/",
+                body, token, "BimmService.academicDegree"
         );
     }
 
     /**
      * Get teacher training information
      *
+     * <p>Old-hemis: POST https://api-mspd.edu.uz/bimm/training-history/</p>
+     * <p>Body: {"pinfl": "X"}</p>
+     * <p>Response: getBodyAsMap() — raw proxy</p>
+     *
      * @param pinfl PINFL
-     * @return teacher training data map
+     * @return raw API response (object or array)
      */
-    public Map<String, Object> teacherTraining(String pinfl) {
+    public Object teacherTraining(String pinfl) {
         log.info("Fetching teacher training info - PINFL: {}", pinfl);
 
-        Map<String, String> params = params();
-        addParam(params, "pinfl", pinfl);
-        addParam(params, "token", externalApiToken);
+        String token = bimmTokenService.getToken();
+        if (token == null) {
+            return tokenError("BimmService.teacherTraining");
+        }
 
-        return callExternalApi(
-                externalApiUrl + "/teacher-training",
-                params,
-                "has_training",
-                "BimmService.teacherTraining"
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("pinfl", pinfl);
+
+        return proxyExternalApiPost(
+                apiBaseUrl + "/bimm/training-history/",
+                body, token, "BimmService.teacherTraining"
         );
+    }
+
+    private Map<String, Object> tokenError(String serviceName) {
+        log.error("{} - BIMM token not available", serviceName);
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("success", false);
+        error.put("code", 401);
+        error.put("data", "BIMM token not available");
+        return error;
     }
 }

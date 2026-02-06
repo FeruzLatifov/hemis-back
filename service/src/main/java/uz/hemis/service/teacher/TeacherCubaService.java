@@ -3,7 +3,7 @@ package uz.hemis.service.teacher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uz.hemis.service.base.AbstractInternalCubaService;
+import uz.hemis.service.base.CubaResponseHelper;
 import uz.hemis.domain.entity.Teacher;
 import uz.hemis.domain.repository.TeacherRepository;
 
@@ -17,13 +17,6 @@ import java.util.*;
  *   <li>Implements 4 CUBA service methods from rest-services.xml</li>
  *   <li>Different from TeacherService (CRUD) - these are CUBA-specific methods</li>
  *   <li>Used by universities calling old-HEMIS API patterns</li>
- * </ul>
- *
- * <p><strong>OPTIMIZATION:</strong></p>
- * <ul>
- *   <li>Extends AbstractInternalCubaService</li>
- *   <li>No code duplication (response builders, helpers in base class)</li>
- *   <li>Clean, focused business logic only</li>
  * </ul>
  *
  * <p><strong>Methods:</strong></p>
@@ -46,7 +39,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class TeacherCubaService extends AbstractInternalCubaService {
+public class TeacherCubaService {
 
     private final TeacherRepository teacherRepository;
 
@@ -65,15 +58,15 @@ public class TeacherCubaService extends AbstractInternalCubaService {
     public Map<String, Object> id(String data) {
         log.info("Getting teacher ID - Data: {}", data);
 
-        if (isEmpty(data)) {
-            return errorResponse("invalid_parameter", "Data parameter required");
+        if (CubaResponseHelper.isEmpty(data)) {
+            return CubaResponseHelper.errorResponse("invalid_parameter", "Data parameter required");
         }
 
         // Try to find teacher by PINFL first
         Optional<Teacher> teacher = teacherRepository.findByPinfl(data);
 
         if (teacher.isEmpty()) {
-            return errorResponse("not_found", "Teacher not found");
+            return CubaResponseHelper.errorResponse("not_found", "Teacher not found");
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -96,8 +89,8 @@ public class TeacherCubaService extends AbstractInternalCubaService {
     public Map<String, Object> getById(String id) {
         log.info("Getting teacher by ID - ID: {}", id);
 
-        if (isEmpty(id)) {
-            return errorResponse("invalid_parameter", "ID parameter required");
+        if (CubaResponseHelper.isEmpty(id)) {
+            return CubaResponseHelper.errorResponse("invalid_parameter", "ID parameter required");
         }
 
         try {
@@ -105,14 +98,14 @@ public class TeacherCubaService extends AbstractInternalCubaService {
             Optional<Teacher> teacher = teacherRepository.findById(uuid);
 
             if (teacher.isEmpty()) {
-                return notFoundResponse("Teacher");
+                return CubaResponseHelper.notFoundResponse("Teacher");
             }
 
-            return successResponse(teacherToMap(teacher.get()));
+            return CubaResponseHelper.successResponse(teacherToMap(teacher.get()));
 
         } catch (IllegalArgumentException e) {
             log.error("Invalid UUID: {}", id);
-            return errorResponse("invalid_id", "Invalid teacher ID format");
+            return CubaResponseHelper.errorResponse("invalid_id", "Invalid teacher ID format");
         }
     }
 
@@ -128,7 +121,7 @@ public class TeacherCubaService extends AbstractInternalCubaService {
     public Map<String, Object> get(String pinfl) {
         log.info("Getting teacher by PINFL - PINFL: {}", pinfl);
 
-        Map<String, Object> validationError = validateRequired("pinfl", pinfl);
+        Map<String, Object> validationError = CubaResponseHelper.validateRequired("pinfl", pinfl);
         if (validationError != null) {
             return validationError;
         }
@@ -136,10 +129,10 @@ public class TeacherCubaService extends AbstractInternalCubaService {
         Optional<Teacher> teacher = teacherRepository.findByPinfl(pinfl);
 
         if (teacher.isEmpty()) {
-            return notFoundResponse("Teacher");
+            return CubaResponseHelper.notFoundResponse("Teacher");
         }
 
-        return successResponse(teacherToMap(teacher.get()));
+        return CubaResponseHelper.successResponse(teacherToMap(teacher.get()));
     }
 
     /**
@@ -162,7 +155,7 @@ public class TeacherCubaService extends AbstractInternalCubaService {
      * </pre>
      *
      * <p><strong>Note:</strong> This requires EEmployeeJobs entity which doesn't exist yet</p>
-     * <p>TODO: Implement when EEmployeeJobs entity is created</p>
+     * <p>DEFERRED: Implement when EEmployeeJobs entity is created</p>
      *
      * @param jobData Job data map
      * @return Success or error response
@@ -171,26 +164,26 @@ public class TeacherCubaService extends AbstractInternalCubaService {
         log.info("Adding job to teacher - Job data: {}", jobData);
 
         if (jobData == null || jobData.isEmpty()) {
-            return errorResponse("invalid_parameter", "Job data required");
+            return CubaResponseHelper.errorResponse("invalid_parameter", "Job data required");
         }
 
         // Validate required fields
         String teacherId = (String) jobData.get("teacher_id");
-        if (isEmpty(teacherId)) {
-            return errorResponse("invalid_parameter", "teacher_id required");
+        if (CubaResponseHelper.isEmpty(teacherId)) {
+            return CubaResponseHelper.errorResponse("invalid_parameter", "teacher_id required");
         }
 
-        // TODO: Implement actual job creation when EEmployeeJobs entity exists
+        // DEFERRED: Implement actual job creation when EEmployeeJobs entity exists
         // For now, validate that teacher exists
         try {
             UUID uuid = UUID.fromString(teacherId);
             Optional<Teacher> teacher = teacherRepository.findById(uuid);
 
             if (teacher.isEmpty()) {
-                return notFoundResponse("Teacher");
+                return CubaResponseHelper.notFoundResponse("Teacher");
             }
 
-            // TODO: Create and save EEmployeeJobs entity
+            // DEFERRED: Create and save EEmployeeJobs entity
             // EEmployeeJobs job = new EEmployeeJobs();
             // job.setTeacher(teacher.get());
             // job.setUniversity(jobData.get("university"));
@@ -208,7 +201,7 @@ public class TeacherCubaService extends AbstractInternalCubaService {
 
         } catch (IllegalArgumentException e) {
             log.error("Invalid teacher ID: {}", teacherId);
-            return errorResponse("invalid_id", "Invalid teacher ID format");
+            return CubaResponseHelper.errorResponse("invalid_id", "Invalid teacher ID format");
         }
     }
 

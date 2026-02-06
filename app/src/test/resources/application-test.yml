@@ -57,6 +57,9 @@ logging:
 # =====================================================
 hemis:
   security:
+    oauth:
+      client-id: test-client
+      client-secret: test-secret
     jwt:
       secret: test-secret-key-minimum-256-bits-required-for-hmac-sha256-algorithm
       expiration: 3600  # 1 hour

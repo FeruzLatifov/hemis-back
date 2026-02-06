@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * {@literal @}Transactional(readOnly = true)
  * public Map&lt;String, Object&gt; verify(String pinfl) {
  *     // This will query REPLICA database
- *     return studentRepository.findByPinfl(pinfl);
+ *     return studentRepository.findMasterByPinfl(pinfl);
  * }
  * </pre>
  *

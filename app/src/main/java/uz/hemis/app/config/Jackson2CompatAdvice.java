@@ -10,7 +10,7 @@ import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
-import uz.hemis.api.legacy.controller.services.PassportServiceController;
+import uz.hemis.common.Jackson2Response;
 
 /**
  * Bridge for Jackson 2 JsonNode types in Spring Boot 4 (Jackson 3).
@@ -20,10 +20,9 @@ import uz.hemis.api.legacy.controller.services.PassportServiceController;
  * and serialises them as plain POJOs, exposing getter metadata instead of the
  * actual JSON tree content.
  *
- * This advice ONLY targets PassportServiceController — the sole controller
- * that builds responses using Jackson 2 ObjectNode.
+ * This advice targets any controller annotated with @Jackson2Response.
  */
-@ControllerAdvice(assignableTypes = PassportServiceController.class)
+@ControllerAdvice(annotations = Jackson2Response.class)
 @RequiredArgsConstructor
 public class Jackson2CompatAdvice implements ResponseBodyAdvice<Object> {
 

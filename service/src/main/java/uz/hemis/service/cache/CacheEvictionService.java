@@ -326,7 +326,7 @@ public class CacheEvictionService {
         log.warn("⚠️  Role-based eviction requires user lookup - consider evictAllPermissions() for large user bases");
 
         // For now, clear all permissions cache
-        // TODO: Implement targeted eviction if user count is reasonable
+        // DEFERRED: Implement targeted eviction when user count tracking is available
         evictAllPermissions();
     }
 

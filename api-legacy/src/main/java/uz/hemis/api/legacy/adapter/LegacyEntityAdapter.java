@@ -92,9 +92,10 @@ public class LegacyEntityAdapter {
                     continue;
                 }
 
-                // For _local view and default view: skip CUBA audit fields
+                // For explicit _local view ONLY: skip CUBA audit fields
                 // Old-hemis doesn't return createTs, createdBy, updateTs, updatedBy in _local view
-                if (isLocalView && CUBA_AUDIT_FIELDS.contains(jsonName)) {
+                // Note: default view (null) SHOULD include audit fields - only _local excludes them
+                if (VIEW_LOCAL.equals(view) && CUBA_AUDIT_FIELDS.contains(jsonName)) {
                     continue;
                 }
 

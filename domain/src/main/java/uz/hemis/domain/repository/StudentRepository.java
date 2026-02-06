@@ -98,20 +98,6 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     boolean existsMasterByPinfl(@Param("pinfl") String pinfl);
 
     /**
-     * Find student by PINFL (first match)
-     *
-     * <p><strong>⚠️ DEPRECATED - Use findMasterByPinfl() instead!</strong></p>
-     * <p>This method returns first match, which may not be the master record.</p>
-     * <p>Kept for backward compatibility only.</p>
-     *
-     * @param pinfl personal identification number
-     * @return first student with this PINFL (may be duplicate!)
-     * @deprecated Use {@link #findMasterByPinfl(String)} for correct behavior
-     */
-    @Deprecated
-    Optional<Student> findByPinfl(String pinfl);
-
-    /**
      * Check if ANY student exists with PINFL
      *
      * <p><strong>⚠️ WARNING:</strong> Returns true if ANY student (master or duplicate) exists.</p>
@@ -537,6 +523,41 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
     @org.springframework.data.jpa.repository.Modifying
     @Query("UPDATE Student s SET s.isDuplicate = false WHERE s.pinfl = :pinfl AND s.isDuplicate = true")
     int markPreviousMastersAsDuplicates(@Param("pinfl") String pinfl);
+
+    // =====================================================
+    // Legacy Service Queries (OLD-HEMIS Compatible)
+    // =====================================================
+
+    /**
+     * Find students by PINFL and status list.
+     * Used by: get(pinfl), getActive(pinfl)
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl AND s.studentStatus IN :statuses ORDER BY s.createTs DESC")
+    List<Student> findByPinflAndStudentStatusIn(@Param("pinfl") String pinfl, @Param("statuses") List<String> statuses);
+
+    /**
+     * Find student by code and status list.
+     * Used by: getById(code)
+     */
+    @Query("SELECT s FROM Student s WHERE s.code = :code AND s.studentStatus IN :statuses")
+    Optional<Student> findByCodeAndStudentStatusIn(@Param("code") String code, @Param("statuses") List<String> statuses);
+
+    /**
+     * Find students by PINFL, education type, and status list.
+     * Used by: getDoctoral(pinfl)
+     */
+    @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl AND s.educationType = :educationType AND s.studentStatus IN :statuses ORDER BY s.createTs DESC")
+    List<Student> findByPinflAndEducationTypeAndStudentStatusIn(
+            @Param("pinfl") String pinfl,
+            @Param("educationType") String educationType,
+            @Param("statuses") List<String> statuses);
+
+    /**
+     * Find students by university with limit/offset (native SQL for pagination).
+     * Used by: students(university, limit, offset)
+     */
+    @Query(value = "SELECT * FROM hemishe_e_student WHERE _university = :university AND _student_status IN ('11','16') AND delete_ts IS NULL ORDER BY create_ts DESC LIMIT :lim OFFSET :off", nativeQuery = true)
+    List<Student> findStudentsByUniversityPaginated(@Param("university") String university, @Param("lim") int limit, @Param("off") int offset);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

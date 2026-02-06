@@ -1,7 +1,7 @@
 package uz.hemis.service.university.mapper;
 
 import org.mapstruct.*;
-import uz.hemis.common.dto.SpecialtyDto;
+import uz.hemis.common.dto.university.SpecialtyDto;
 import uz.hemis.domain.entity.Specialty;
 
 /**

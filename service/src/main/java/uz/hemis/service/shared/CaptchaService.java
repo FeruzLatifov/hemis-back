@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import uz.hemis.common.dto.CaptchaResponse;
+import uz.hemis.common.dto.system.CaptchaResponse;
 import uz.hemis.common.port.cache.DistributedCachePort;
 
 import javax.imageio.ImageIO;

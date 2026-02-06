@@ -210,6 +210,6 @@ public class HybridUserDetailsService implements UserDetailsService {
      *
      * @return migration statistics map
      */
-    // TODO: Implement getMigrationStats() method for monitoring dashboard
+    // DEFERRED: Implement getMigrationStats() method for monitoring dashboard
     // =====================================================
 }

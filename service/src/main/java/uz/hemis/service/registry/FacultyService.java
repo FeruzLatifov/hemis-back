@@ -8,7 +8,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.*;
+import uz.hemis.common.dto.university.FacultyDetailDto;
+import uz.hemis.common.dto.university.FacultyDictionariesDto;
+import uz.hemis.common.dto.university.FacultyGroupRowDto;
+import uz.hemis.common.dto.university.FacultyRowDto;
 import uz.hemis.domain.repository.FacultyRepository;
 
 import java.math.BigInteger;

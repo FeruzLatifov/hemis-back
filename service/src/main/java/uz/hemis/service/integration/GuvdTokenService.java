@@ -1,5 +1,6 @@
 package uz.hemis.service.integration;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -52,17 +53,33 @@ public class GuvdTokenService {
     @Value("${hemis.integration.guvd.oauth2.url:https://iskm.egov.uz:9444/oauth2/token}")
     private String oauth2Url;
 
-    @Value("${hemis.integration.guvd.oauth2.client-id:lfZJDHdJm9Sw7UNsI0uUJzLZp9Ea}")
+    @Value("${hemis.integration.guvd.oauth2.client-id:}")
     private String clientId;
 
-    @Value("${hemis.integration.guvd.oauth2.client-secret:s3cJ2Q3t0zswsMNXzE6nIh3KV8Ua}")
+    @Value("${hemis.integration.guvd.oauth2.client-secret:}")
     private String clientSecret;
 
-    @Value("${hemis.integration.guvd.oauth2.username:minvuz_user1}")
+    @Value("${hemis.integration.guvd.oauth2.username:}")
     private String username;
 
-    @Value("${hemis.integration.guvd.oauth2.password:m1nvuz!@#}")
+    @Value("${hemis.integration.guvd.oauth2.password:}")
     private String password;
+
+    @PostConstruct
+    void validateCredentials() {
+        if (clientId == null || clientId.isBlank()) {
+            log.warn("GUVD OAuth2 client-id is not configured (hemis.integration.guvd.oauth2.client-id)");
+        }
+        if (clientSecret == null || clientSecret.isBlank()) {
+            log.warn("GUVD OAuth2 client-secret is not configured (hemis.integration.guvd.oauth2.client-secret)");
+        }
+        if (username == null || username.isBlank()) {
+            log.warn("GUVD OAuth2 username is not configured (hemis.integration.guvd.oauth2.username)");
+        }
+        if (password == null || password.isBlank()) {
+            log.warn("GUVD OAuth2 password is not configured (hemis.integration.guvd.oauth2.password)");
+        }
+    }
 
     /**
      * Get GUVD OAuth2 token

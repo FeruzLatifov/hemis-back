@@ -21,7 +21,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.shared.I18nService;
 import uz.hemis.service.admin.TranslationAdminService;
-import uz.hemis.common.dto.TranslationDto;
+import uz.hemis.common.dto.system.TranslationDto;
 
 import java.util.HashMap;
 import java.util.List;

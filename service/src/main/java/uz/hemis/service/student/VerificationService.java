@@ -6,7 +6,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.Verification;
+import uz.hemis.domain.entity.VerificationType;
 import uz.hemis.domain.repository.VerificationRepository;
+import uz.hemis.domain.repository.VerificationTypeRepository;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -48,6 +50,7 @@ import java.util.Map;
 public class VerificationService {
 
     private final VerificationRepository verificationRepository;
+    private final VerificationTypeRepository verificationTypeRepository;
     private final JdbcTemplate jdbcTemplate;
 
     /**
@@ -185,30 +188,28 @@ public class VerificationService {
     }
 
     /**
-     * Load verification type from hemishe_h_verification_type
+     * Load verification type via JPA repository
+     *
+     * <p>Uses VerificationTypeRepository instead of raw JDBC.
+     * Entity's @SQLRestriction("delete_ts IS NULL") handles soft delete filtering.</p>
      */
     private Map<String, Object> loadVerificationType(String code) {
         if (code == null || code.isBlank()) {
             return null;
         }
 
-        try {
-            String sql = "SELECT code, name, name_ru, name_en, version FROM hemishe_h_verification_type WHERE code = ? AND delete_ts IS NULL";
-            Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
-
-            Map<String, Object> ref = new LinkedHashMap<>();
-            ref.put("_entityName", "hemishe_HVerificationType");
-            ref.put("id", code);
-            ref.put("code", code);
-            ref.put("name", row.get("name"));
-            ref.put("nameRu", row.get("name_ru"));
-            ref.put("nameEn", row.get("name_en"));
-            ref.put("version", row.get("version"));
-
-            return ref;
-        } catch (Exception e) {
-            log.debug("Failed to load verification type {}: {}", code, e.getMessage());
-            return null;
-        }
+        return verificationTypeRepository.findById(code)
+                .map(vt -> {
+                    Map<String, Object> ref = new LinkedHashMap<>();
+                    ref.put("_entityName", "hemishe_HVerificationType");
+                    ref.put("id", vt.getCode());
+                    ref.put("code", vt.getCode());
+                    ref.put("name", vt.getName());
+                    ref.put("nameRu", vt.getNameRu());
+                    ref.put("nameEn", vt.getNameEn());
+                    ref.put("version", vt.getVersion());
+                    return ref;
+                })
+                .orElse(null);
     }
 }

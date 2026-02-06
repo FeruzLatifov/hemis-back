@@ -8,9 +8,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.UniversityDto;
+import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.domain.entity.University;
-import uz.hemis.service.university.mapper.UniversityMapper;
+import uz.hemis.service.shared.mapper.UniversityDtoConverter;
 import uz.hemis.domain.repository.UniversityRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
@@ -39,7 +39,7 @@ import java.util.Map;
 public class UniversityRegistryService {
 
     private final UniversityRepository universityRepository;
-    private final UniversityMapper universityMapper;
+    private final UniversityDtoConverter universityMapper;
 
     @Cacheable(
             value = "universitiesSearch",

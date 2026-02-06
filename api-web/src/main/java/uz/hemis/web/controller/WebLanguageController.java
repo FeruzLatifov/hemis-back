@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.common.dto.LanguageDto;
+import uz.hemis.common.dto.system.LanguageDto;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.domain.entity.SystemConfiguration;
 import uz.hemis.domain.repository.SystemConfigurationRepository;

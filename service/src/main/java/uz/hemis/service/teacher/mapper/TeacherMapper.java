@@ -1,7 +1,7 @@
 package uz.hemis.service.teacher.mapper;
 
 import org.mapstruct.*;
-import uz.hemis.common.dto.TeacherDto;
+import uz.hemis.common.dto.teacher.TeacherDto;
 import uz.hemis.domain.entity.Teacher;
 
 import java.util.List;
@@ -99,6 +99,13 @@ public interface TeacherMapper {
     @Mapping(target = "phone", ignore = true)
     @Mapping(target = "employeeYear", ignore = true)
     @Mapping(target = "tag", ignore = true)
+    @Mapping(target = "department", ignore = true)
+    @Mapping(target = "position", ignore = true)
+    @Mapping(target = "employeeType", ignore = true)
+    @Mapping(target = "employmentForm", ignore = true)
+    @Mapping(target = "universityEmploymentForm", ignore = true)
+    @Mapping(target = "soatoRegion", ignore = true)
+    @Mapping(target = "soatoDistrict", ignore = true)
     Teacher toEntity(TeacherDto dto);
 
     /**
@@ -139,6 +146,13 @@ public interface TeacherMapper {
     @Mapping(target = "phone", ignore = true)
     @Mapping(target = "employeeYear", ignore = true)
     @Mapping(target = "tag", ignore = true)
+    @Mapping(target = "department", ignore = true)
+    @Mapping(target = "position", ignore = true)
+    @Mapping(target = "employeeType", ignore = true)
+    @Mapping(target = "employmentForm", ignore = true)
+    @Mapping(target = "universityEmploymentForm", ignore = true)
+    @Mapping(target = "soatoRegion", ignore = true)
+    @Mapping(target = "soatoDistrict", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(TeacherDto dto, @MappingTarget Teacher teacher);
 }

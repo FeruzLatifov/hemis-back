@@ -3,13 +3,15 @@ package uz.hemis.service.university;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.DepartmentDto;
+import uz.hemis.common.dto.university.DepartmentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Department;
@@ -350,8 +352,7 @@ public class DepartmentService {
 
         // Set soft delete fields
         department.setDeleteTs(LocalDateTime.now());
-        // TODO: Set deletedBy from SecurityContext
-        // department.setDeletedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+        department.setDeletedBy(extractCurrentUsername());
 
         // Save (this triggers @PreUpdate)
         departmentRepository.save(department);
@@ -381,5 +382,10 @@ public class DepartmentService {
     public Object getByUniversity(String university) {
         log.debug("CUBA API: get departments by university: {}", university);
         return findByUniversity(university);
+    }
+
+    private String extractCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
     }
 }

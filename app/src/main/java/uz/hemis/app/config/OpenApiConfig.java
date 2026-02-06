@@ -545,7 +545,7 @@ public class OpenApiConfig {
     // OpenAPI Customizers (Advanced)
     // =====================================================
 
-    // TODO: Add global response examples
-    // TODO: Add error code dictionary
-    // TODO: Add request/response validators
+    // DEFERRED: Add global response examples
+    // DEFERRED: Add error code dictionary
+    // DEFERRED: Add request/response validators
 }

@@ -70,42 +70,6 @@ public class MenuItem {
     private Map<String, String> labels = new HashMap<>();
 
     /**
-     * Label in Uzbek Latin (for multi-language support)
-     * @deprecated Use {@link #labels} map with key "uz-UZ" instead
-     * <p>Kept for backward compatibility with old frontend versions</p>
-     */
-    @Deprecated
-    @JsonProperty("labelUz")
-    private String labelUz;
-
-    /**
-     * Label in Uzbek Cyrillic (for multi-language support)
-     * @deprecated Use {@link #labels} map with key "oz-UZ" instead
-     * <p>Kept for backward compatibility with old frontend versions</p>
-     */
-    @Deprecated
-    @JsonProperty("labelOz")
-    private String labelOz;
-
-    /**
-     * Label in Russian (for multi-language support)
-     * @deprecated Use {@link #labels} map with key "ru-RU" instead
-     * <p>Kept for backward compatibility with old frontend versions</p>
-     */
-    @Deprecated
-    @JsonProperty("labelRu")
-    private String labelRu;
-
-    /**
-     * Label in English (for multi-language support)
-     * @deprecated Use {@link #labels} map with key "en-US" instead
-     * <p>Kept for backward compatibility with old frontend versions</p>
-     */
-    @Deprecated
-    @JsonProperty("labelEn")
-    private String labelEn;
-
-    /**
      * Icon name (e.g., "home", "database", "users")
      * <p>Used by frontend icon library</p>
      */

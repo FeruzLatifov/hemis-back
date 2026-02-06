@@ -209,6 +209,9 @@ public class SecurityConfig {
                         // Admin endpoints (requires ROLE_ADMIN)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
 
+                        // Test healthcheck (anonymous - old-hemis: anonymousAllowed)
+                        .requestMatchers("/app/rest/v2/services/test/healthcheck").permitAll()
+
                         // TEST: ProjectExecutor endpoint (temporarily public for testing)
                         .requestMatchers("/app/rest/v2/entities/hemishe_EProjectExecutor/**").permitAll()
                         .requestMatchers("/app/rest/v2/entities/hemishe_EProjectExecutor").permitAll()

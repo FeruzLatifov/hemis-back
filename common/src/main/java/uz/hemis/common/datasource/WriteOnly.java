@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * {@literal @}Transactional
  * public Map&lt;String, Object&gt; update(Map&lt;String, Object&gt; data) {
  *     // This will write to MASTER database
- *     Student student = studentRepository.findByPinfl(pinfl);
+ *     Student student = studentRepository.findMasterByPinfl(pinfl).orElseThrow();
  *     student.setFirstName(data.get("first_name"));
  *     return studentRepository.save(student);
  * }

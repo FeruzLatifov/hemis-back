@@ -3,6 +3,11 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -39,6 +44,7 @@ import java.util.UUID;
  * @since 1.0.0
  */
 @MappedSuperclass
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 public abstract class BaseEntity implements Serializable {
@@ -67,36 +73,40 @@ public abstract class BaseEntity implements Serializable {
     /**
      * Creation timestamp
      *
-     * <p>Set automatically on INSERT.</p>
+     * <p>Set automatically on INSERT via Spring Data JPA Auditing.</p>
      * <p>Column: create_ts TIMESTAMP(6) WITHOUT TIME ZONE</p>
      */
+    @CreatedDate
     @Column(name = "create_ts", updatable = false)
     private LocalDateTime createTs;
 
     /**
      * Creator username
      *
-     * <p>Set automatically on INSERT from security context.</p>
+     * <p>Set automatically on INSERT from security context via AuditorAware.</p>
      * <p>Column: created_by VARCHAR(50)</p>
      */
+    @CreatedBy
     @Column(name = "created_by", length = 50, updatable = false)
     private String createdBy;
 
     /**
      * Last update timestamp
      *
-     * <p>Set automatically on UPDATE.</p>
+     * <p>Set automatically on UPDATE via Spring Data JPA Auditing.</p>
      * <p>Column: update_ts TIMESTAMP(6) WITHOUT TIME ZONE</p>
      */
+    @LastModifiedDate
     @Column(name = "update_ts")
     private LocalDateTime updateTs;
 
     /**
      * Last updater username
      *
-     * <p>Set automatically on UPDATE from security context.</p>
+     * <p>Set automatically on UPDATE from security context via AuditorAware.</p>
      * <p>Column: updated_by VARCHAR(50)</p>
      */
+    @LastModifiedBy
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
 
@@ -144,21 +154,6 @@ public abstract class BaseEntity implements Serializable {
         if (version == null) {
             version = 1;
         }
-        createTs = LocalDateTime.now();
-        // TODO: Set createdBy from SecurityContext
-        // createdBy = SecurityContextHolder.getContext().getAuthentication().getName();
-    }
-
-    /**
-     * JPA PreUpdate callback
-     *
-     * <p>Set update audit fields before UPDATE.</p>
-     */
-    @PreUpdate
-    protected void onUpdate() {
-        updateTs = LocalDateTime.now();
-        // TODO: Set updatedBy from SecurityContext
-        // updatedBy = SecurityContextHolder.getContext().getAuthentication().getName();
     }
 
     /**

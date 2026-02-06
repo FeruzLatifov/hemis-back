@@ -2,16 +2,16 @@ package uz.hemis.app.exception;
 
 import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -19,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uz.hemis.common.dto.ErrorResponse;
 import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.common.exception.ExceptionHandlerUtils;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
  * @since 1.0.0
  */
 @RestControllerAdvice
+@Order(Ordered.LOWEST_PRECEDENCE)
 @Slf4j
 public class GlobalExceptionHandler {
 
@@ -136,6 +138,32 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
+    /**
+     * Handle IllegalArgumentException
+     *
+     * <p>HTTP Status: 400 BAD REQUEST</p>
+     *
+     * @param ex exception
+     * @param request HTTP request
+     * @return error response
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+            IllegalArgumentException ex,
+            HttpServletRequest request
+    ) {
+        log.error("Illegal argument: {}", ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     // =====================================================
     // Spring Security Exceptions
     // =====================================================
@@ -215,26 +243,7 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Method argument validation failed");
 
-        List<ErrorResponse.FieldError> fieldErrors = ex.getBindingResult()
-                .getAllErrors()
-                .stream()
-                .map(error -> {
-                    String fieldName = error instanceof FieldError
-                            ? ((FieldError) error).getField()
-                            : error.getObjectName();
-
-                    Object rejectedValue = error instanceof FieldError
-                            ? ((FieldError) error).getRejectedValue()
-                            : null;
-
-                    return ErrorResponse.FieldError.builder()
-                            .field(fieldName)
-                            .rejectedValue(rejectedValue)
-                            .message(error.getDefaultMessage())
-                            .code(error.getCode())
-                            .build();
-                })
-                .collect(Collectors.toList());
+        List<ErrorResponse.FieldError> fieldErrors = ExceptionHandlerUtils.extractFieldErrors(ex);
 
         ErrorResponse error = ErrorResponse.validationError(
                 HttpStatus.BAD_REQUEST.value(),
@@ -263,14 +272,7 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Constraint violation: {}", ex.getMessage());
 
-        List<ErrorResponse.FieldError> fieldErrors = ex.getConstraintViolations()
-                .stream()
-                .map(violation -> ErrorResponse.FieldError.builder()
-                        .field(getFieldName(violation))
-                        .rejectedValue(violation.getInvalidValue())
-                        .message(violation.getMessage())
-                        .build())
-                .collect(Collectors.toList());
+        List<ErrorResponse.FieldError> fieldErrors = ExceptionHandlerUtils.extractConstraintViolations(ex);
 
         ErrorResponse error = ErrorResponse.validationError(
                 HttpStatus.BAD_REQUEST.value(),
@@ -482,18 +484,6 @@ public class GlobalExceptionHandler {
     // =====================================================
     // Helper Methods
     // =====================================================
-
-    /**
-     * Extract field name from constraint violation
-     *
-     * @param violation constraint violation
-     * @return field name
-     */
-    private String getFieldName(ConstraintViolation<?> violation) {
-        String propertyPath = violation.getPropertyPath().toString();
-        String[] parts = propertyPath.split("\\.");
-        return parts[parts.length - 1];
-    }
 
     /**
      * Check if request is for legacy CUBA endpoints

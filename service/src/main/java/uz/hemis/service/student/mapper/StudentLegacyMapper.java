@@ -82,6 +82,16 @@ public class StudentLegacyMapper {
         dto.setEnrollOrderDate(student.getEnrollOrderDate());
         dto.setEnrollOrderNumber(student.getEnrollOrderNumber());
         dto.setEnrollOrderCategory(student.getEnrollOrderCategory());
+
+        // Status Order Fields (OLD-HEMIS backward compatibility)
+        dto.setStatusOrderName(student.getStatusOrderName());
+        dto.setStatusOrderDate(student.getStatusOrderDate());
+        dto.setStatusOrderNumber(student.getStatusOrderNumber());
+        dto.setStatusOrderCategory(student.getStatusOrderCategory());
+
+        // Points field
+        dto.setPoints(student.getPoints());
+
         dto.setFullname(buildFullname(student));
         dto.setInstanceName(buildFullname(student));
 
@@ -106,7 +116,8 @@ public class StudentLegacyMapper {
         dto.setGender(loadSimpleReference("hemishe_h_gender", "hemishe_HGender", student.getGender()));
         dto.setNationality(loadSimpleReference("hemishe_h_nationality", "hemishe_HNationality", student.getNationality()));
         dto.setPaymentForm(loadSimpleReference("hemishe_h_payment_form", "hemishe_HPaymentForm", student.getPaymentForm()));
-        dto.setGrantType(null); // grantType alohida jadvalda yo'q
+        dto.setGrantType(loadSimpleReference("hemishe_h_grant_type", "hemishe_HGrantType", student.getGrantType()));
+        dto.setPovertyLevel(loadSimpleReference("hemishe_h_poverty_level", "hemishe_HPovertyLevel", student.getPovertyLevel()));
         dto.setCourse(loadSimpleReference("hemishe_h_course", "hemishe_HCourse", student.getCourse()));
         dto.setAccomodation(loadSimpleReference("hemishe_h_accomodation", "hemishe_HAccomodation", student.getAccomodation()));
         dto.setLivingStatus(loadSimpleReference("hemishe_h_student_living_status", "hemishe_HStudentLivingStatus", student.getLivingStatus()));
@@ -114,6 +125,7 @@ public class StudentLegacyMapper {
         dto.setStipendRate(loadSimpleReference("hemishe_h_stipend_rate", "hemishe_HStipendRate", student.getStipendRate()));
         dto.setExpelReason(loadSimpleReference("hemishe_h_expel_reason", "hemishe_HExpel", student.getExpelReason()));
         dto.setDoctoralStudentType(loadSimpleReference("hemishe_h_doctoral_student_type", "hemishe_HDoctoralStudentType", student.getDoctoralStudentType()));
+        // OLD-HEMIS compatibility: These fields ARE returned by OLD-HEMIS in view mode (with null values)
         dto.setAdmissionType(loadSimpleReference("hemishe_h_admission_type", "hemishe_HAdmissionType", student.getAdmissionType()));
         dto.setTransferCountry(loadSimpleReference("hemishe_h_country", "hemishe_HCountry", student.getTransferCountry()));
         dto.setTransferType(loadSimpleReference("hemishe_h_transfer_type", "hemishe_HTransferType", student.getTransferType()));
@@ -125,11 +137,13 @@ public class StudentLegacyMapper {
         // Complex nested objects
         dto.setUniversity(loadUniversity(student.getUniversity()));
         dto.setFaculty(loadFaculty(student.getFaculty()));
-        dto.setSoato(loadSoato(student.getSoato()));
-        dto.setCurrentSoato(loadSoato(student.getCurrentSoato()));
+        dto.setSoato(loadSoatoWithParent(student.getSoato()));
+        dto.setCurrentSoato(loadSoatoWithParent(student.getCurrentSoato()));
         dto.setTerrain(loadTerrainBySoato(student.getSoato()));
-        dto.setCurrentTerrain(loadTerrainBySoato(student.getCurrentSoato()));
+        dto.setCurrentTerrain(loadCurrentTerrainBySoato(student.getCurrentSoato()));
         dto.setSpecialityBachelor(loadSpecialityByUuid(student.getSpecialityBachelor()));
+        dto.setSpecialityMaster(loadSimpleSpecialityByUuid(student.getSpecialityMaster(), "hemishe_h_speciality_master", "hemishe_HSpecialityMaster"));
+        dto.setSpecialityDoctoral(loadSimpleSpecialityByUuid(student.getSpecialityDoctoral(), "hemishe_h_speciality_doctoral", "hemishe_HSpecialityDoctoral"));
 
         // Speciality info from bachelor speciality
         if (student.getSpecialityBachelor() != null) {
@@ -158,27 +172,85 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name, name_ru, name_en, active, version FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name, name_ru, name_en, active FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.SimpleReferenceDto ref = new StudentLegacyDto.SimpleReferenceDto();
             ref.setEntityName(entityName);
             ref.setId(code);
-            ref.setCode(code);
             String name = (String) row.get("name");
             ref.setName(name);
+
             // _instanceName format: depends on entity type
-            // EducationYear: name only (e.g., "2024-2025")
-            // Others: "code name" (e.g., "11 Bakalavr")
             if ("hemishe_HEducationYear".equals(entityName)) {
                 ref.setInstanceName(name != null ? name : code);
+            } else if ("hemishe_HPaymentForm".equals(entityName)) {
+                // Payment form uses "12 - To'lov-shartnoma" format with dash
+                ref.setInstanceName(code + " - " + (name != null ? name : ""));
             } else {
                 ref.setInstanceName(code + " " + (name != null ? name : ""));
             }
-            ref.setNameRu((String) row.get("name_ru"));
-            ref.setNameEn((String) row.get("name_en"));
-            ref.setActive(getBoolean(row, "active"));
-            ref.setVersion(getInteger(row, "version"));
+
+            // OLD-HEMIS compatibility: different classifiers return different fields
+            // Analyzed from actual OLD-HEMIS responses:
+            switch (entityName) {
+                case "hemishe_HCountry":
+                case "hemishe_HEducationLanguage":
+                case "hemishe_HEducationForm":
+                case "hemishe_HCourse":
+                case "hemishe_HPaymentForm":
+                case "hemishe_HCitizenship":
+                case "hemishe_HNationality":
+                case "hemishe_HAccomodation":
+                case "hemishe_HStudentLivingStatus":
+                case "hemishe_HStudentRoomMateType":
+                case "hemishe_HExpel":
+                case "hemishe_HAcademicReason":
+                case "hemishe_HAcademicMobileType":
+                case "hemishe_HGrantType":
+                case "hemishe_HAdmissionType":
+                case "hemishe_HTransferType":
+                case "hemishe_HDoctoralStudentType":
+                case "hemishe_HStipendRate":
+                case "hemishe_HStudentType":
+                case "hemishe_HPovertyLevel":
+                    // These return: code (no nameRu, nameEn, active)
+                    ref.setCode(code);
+                    break;
+                case "hemishe_HEducationType":
+                    // Returns: nameRu, nameEn, active (no code)
+                    ref.setNameRu((String) row.get("name_ru"));
+                    ref.setNameEn((String) row.get("name_en"));
+                    ref.setActive(getBoolean(row, "active"));
+                    break;
+                case "hemishe_HStudentSocialType":
+                    // Returns: code, active (no nameRu, nameEn)
+                    ref.setCode(code);
+                    ref.setActive(getBoolean(row, "active"));
+                    break;
+                case "hemishe_HGender":
+                    // Returns: code only (no active, nameRu, nameEn)
+                    ref.setCode(code);
+                    break;
+                case "hemishe_HStudentStatusType":
+                    // OLD-HEMIS: returns code only (no nameRu, nameEn, active)
+                    ref.setCode(code);
+                    break;
+                case "hemishe_HEducationYear":
+                    // Returns: nothing extra (just _entityName, _instanceName, id, name)
+                    break;
+                case "hemishe_HHemisVersionType":
+                case "hemishe_HUniversityContractCategory":
+                    // Returns: nameRu, name, active, nameEn (no code) - OLD-HEMIS format
+                    ref.setNameRu((String) row.get("name_ru"));
+                    ref.setActive(getBoolean(row, "active"));
+                    ref.setNameEn((String) row.get("name_en"));
+                    break;
+                default:
+                    // Default: return code
+                    ref.setCode(code);
+                    break;
+            }
 
             return ref;
         } catch (Exception e) {
@@ -200,14 +272,16 @@ public class StudentLegacyMapper {
                 SELECT code, name, student_url, teacher_url, tin, address, active,
                        add_student, add_transfer_student, allow_grouping, allow_transfer_outside,
                        accreditation_edit, gpa_edit, version, one_id,
-                       _university_type, _ownership, _university_version, _university_contract_category
+                       _university_type, _ownership, _university_version, _university_contract_category,
+                       add_foreign_student, grading_system, uzbmb_url, university_url,
+                       mail_address, bank_info, accreditation_info
                 FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL
                 """;
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.UniversityReferenceDto uni = new StudentLegacyDto.UniversityReferenceDto();
             uni.setId(code);
-            uni.setCode(code);
+            // OLD-HEMIS compatibility: do NOT include code
             String uniName = (String) row.get("name");
             uni.setName(uniName);
             uni.setInstanceName(code + "-" + (uniName != null ? uniName : ""));
@@ -224,6 +298,15 @@ public class StudentLegacyMapper {
             uni.setGpaEdit(getBoolean(row, "gpa_edit"));
             uni.setOneId(getBoolean(row, "one_id"));
             uni.setVersion(getInteger(row, "version"));
+
+            // 7 ta yangi maydon (OLD-HEMIS compatibility)
+            uni.setAddForeignStudent(getBoolean(row, "add_foreign_student"));
+            uni.setGradingSystem(getBoolean(row, "grading_system"));
+            uni.setUzbmbUrl((String) row.get("uzbmb_url"));
+            uni.setUniversityUrl((String) row.get("university_url"));
+            uni.setMailAddress((String) row.get("mail_address"));
+            uni.setBankInfo((String) row.get("bank_info"));
+            uni.setAccreditationInfo((String) row.get("accreditation_info"));
 
             // Nested references
             uni.setUniversityType(loadSimpleReference("hemishe_h_university_type", "hemishe_HUniversityType", (String) row.get("_university_type")));
@@ -247,18 +330,15 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name_uz, name_ru, name_en, version FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.FacultyReferenceDto faculty = new StudentLegacyDto.FacultyReferenceDto();
             faculty.setId(code);
-            faculty.setCode(code);
+            // OLD-HEMIS compatibility: do NOT include code, nameRu, nameEn, version, university in nested faculty
             String nameUz = (String) row.get("name_uz");
             faculty.setNameUz(nameUz);
             faculty.setInstanceName(nameUz != null ? nameUz : code);
-            faculty.setNameRu((String) row.get("name_ru"));
-            faculty.setNameEn((String) row.get("name_en"));
-            faculty.setVersion(getInteger(row, "version"));
 
             return faculty;
         } catch (Exception e) {
@@ -268,15 +348,16 @@ public class StudentLegacyMapper {
     }
 
     /**
-     * Load SOATO with parent from hemishe_h_soato
+     * Load SOATO with parent_code from hemishe_h_soato
+     * OLD-HEMIS format for TOP-LEVEL soato/currentSoato: parent_code included, NO name_ru
      */
-    private StudentLegacyDto.SoatoReferenceDto loadSoato(String code) {
+    private StudentLegacyDto.SoatoReferenceDto loadSoatoWithParent(String code) {
         if (code == null || code.isBlank()) {
             return null;
         }
 
         try {
-            String sql = "SELECT code, name_uz, name_ru, parent_code, version FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz, parent_code FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
@@ -284,55 +365,110 @@ public class StudentLegacyMapper {
             soato.setCode(code);
             String soatoNameUz = (String) row.get("name_uz");
             soato.setNameUz(soatoNameUz);
-            soato.setNameRu((String) row.get("name_ru"));
+            // OLD-HEMIS compatibility: top-level soato does NOT have name_ru
             soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
-            soato.setVersion(getInteger(row, "version"));
 
-            // Recursive parent
+            // OLD-HEMIS compatibility: top-level soato HAS parent_code
             String parentCode = (String) row.get("parent_code");
-            if (parentCode != null && !parentCode.equals(code)) {
-                soato.setParentCode(loadSoato(parentCode));
+            if (parentCode != null && !parentCode.isBlank()) {
+                soato.setParentCode(loadParentSoato(parentCode));
             }
 
             return soato;
         } catch (Exception e) {
-            log.debug("Failed to load soato {}: {}", code, e.getMessage());
+            log.debug("Failed to load soato with parent {}: {}", code, e.getMessage());
             return null;
         }
     }
 
     /**
-     * Load terrain (mahalla) from hemishe_h_terrain
+     * Load parent SOATO (for nested parent_code object)
+     * OLD-HEMIS format: _entityName, _instanceName, id, code, name_uz (no name_ru, no parent_code)
      */
-    private StudentLegacyDto.TerrainReferenceDto loadTerrain(String code) {
+    private StudentLegacyDto.SoatoReferenceDto loadParentSoato(String code) {
         if (code == null || code.isBlank()) {
             return null;
         }
 
         try {
-            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
-            StudentLegacyDto.TerrainReferenceDto terrain = new StudentLegacyDto.TerrainReferenceDto();
-            terrain.setId(code);
-            terrain.setCode(code);
-            String terrainName = (String) row.get("name");
-            terrain.setName(terrainName);
-            terrain.setNameRu((String) row.get("name_ru"));
-            terrain.setInstanceName(code + " " + (terrainName != null ? terrainName : ""));
-            terrain.setVersion(getInteger(row, "version"));
+            StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
+            soato.setId(code);
+            soato.setCode(code);
+            String soatoNameUz = (String) row.get("name_uz");
+            soato.setNameUz(soatoNameUz);
+            // OLD-HEMIS compatibility: parent_code object has NO name_ru, NO nested parent_code
+            soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
 
-            terrain.setSoato(loadSoato((String) row.get("_soato")));
-
-            return terrain;
+            return soato;
         } catch (Exception e) {
-            log.debug("Failed to load terrain {}: {}", code, e.getMessage());
+            log.debug("Failed to load parent soato {}: {}", code, e.getMessage());
             return null;
         }
     }
 
     /**
-     * Load terrain by SOATO code (find first terrain in that region)
+     * Load SOATO for currentTerrain.soato (nested) from hemishe_h_soato
+     * OLD-HEMIS format: HAS name_ru, NO parent_code
+     */
+    private StudentLegacyDto.SoatoReferenceDto loadSoatoForCurrentTerrain(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+
+        try {
+            String sql = "SELECT code, name_uz, name_ru FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
+
+            StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
+            soato.setId(code);
+            soato.setCode(code);
+            String soatoNameUz = (String) row.get("name_uz");
+            soato.setNameUz(soatoNameUz);
+            // OLD-HEMIS compatibility: currentTerrain.soato HAS name_ru, NO parent_code
+            soato.setNameRu((String) row.get("name_ru"));
+            soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
+
+            return soato;
+        } catch (Exception e) {
+            log.debug("Failed to load soato for currentTerrain {}: {}", code, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Load SOATO for terrain.soato (nested) from hemishe_h_soato
+     * OLD-HEMIS format: NO name_ru, NO parent_code
+     */
+    private StudentLegacyDto.SoatoReferenceDto loadSoatoForTerrain(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+
+        try {
+            String sql = "SELECT code, name_uz FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
+
+            StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
+            soato.setId(code);
+            soato.setCode(code);
+            String soatoNameUz = (String) row.get("name_uz");
+            soato.setNameUz(soatoNameUz);
+            // OLD-HEMIS compatibility: terrain.soato NO name_ru, NO parent_code
+            soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
+
+            return soato;
+        } catch (Exception e) {
+            log.debug("Failed to load soato for terrain {}: {}", code, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Load terrain by SOATO code (for dto.terrain field)
+     * OLD-HEMIS format: terrain.soato has NO name_ru
      */
     private StudentLegacyDto.TerrainReferenceDto loadTerrainBySoato(String soatoCode) {
         if (soatoCode == null || soatoCode.isBlank()) {
@@ -340,25 +476,85 @@ public class StudentLegacyMapper {
         }
 
         try {
-            // Find first terrain in this SOATO region
-            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
+            String sql = "SELECT code, name, name_ru, _soato FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, soatoCode);
 
             String tCode = (String) row.get("code");
             String tName = (String) row.get("name");
             StudentLegacyDto.TerrainReferenceDto terrain = new StudentLegacyDto.TerrainReferenceDto();
             terrain.setId(tCode);
-            terrain.setCode(tCode);
             terrain.setName(tName);
             terrain.setNameRu((String) row.get("name_ru"));
             terrain.setInstanceName(tCode + " " + (tName != null ? tName : ""));
-            terrain.setVersion(getInteger(row, "version"));
 
-            terrain.setSoato(loadSoato(soatoCode));
+            // OLD-HEMIS compatibility: terrain.soato NO name_ru
+            terrain.setSoato(loadSoatoForTerrain(soatoCode));
 
             return terrain;
         } catch (Exception e) {
             log.debug("No terrain found for soato {}: {}", soatoCode, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Load currentTerrain by SOATO code (for dto.currentTerrain field)
+     * OLD-HEMIS format: currentTerrain.soato HAS name_ru
+     */
+    private StudentLegacyDto.TerrainReferenceDto loadCurrentTerrainBySoato(String soatoCode) {
+        if (soatoCode == null || soatoCode.isBlank()) {
+            return null;
+        }
+
+        try {
+            String sql = "SELECT code, name, name_ru, _soato FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, soatoCode);
+
+            String tCode = (String) row.get("code");
+            String tName = (String) row.get("name");
+            StudentLegacyDto.TerrainReferenceDto terrain = new StudentLegacyDto.TerrainReferenceDto();
+            terrain.setId(tCode);
+            terrain.setName(tName);
+            terrain.setNameRu((String) row.get("name_ru"));
+            terrain.setInstanceName(tCode + " " + (tName != null ? tName : ""));
+
+            // OLD-HEMIS compatibility: currentTerrain.soato HAS name_ru
+            terrain.setSoato(loadSoatoForCurrentTerrain(soatoCode));
+
+            return terrain;
+        } catch (Exception e) {
+            log.debug("No currentTerrain found for soato {}: {}", soatoCode, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Load speciality as SimpleReferenceDto by UUID
+     * Used for specialityMaster, specialityDoctoral where type is SimpleReferenceDto
+     */
+    private StudentLegacyDto.SimpleReferenceDto loadSimpleSpecialityByUuid(UUID uuid, String tableName, String entityName) {
+        if (uuid == null) {
+            return null;
+        }
+
+        try {
+            String sql = "SELECT id, code, name, version, active FROM " + tableName + " WHERE id = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, uuid);
+
+            StudentLegacyDto.SimpleReferenceDto ref = new StudentLegacyDto.SimpleReferenceDto();
+            ref.setEntityName(entityName);
+            ref.setId(row.get("id").toString());
+            String specCode = (String) row.get("code");
+            String specName = (String) row.get("name");
+            ref.setCode(specCode);
+            ref.setName(specName);
+            ref.setInstanceName(specCode + " - " + (specName != null ? specName : ""));
+            ref.setActive(getBoolean(row, "active"));
+            ref.setVersion(getInteger(row, "version"));
+
+            return ref;
+        } catch (Exception e) {
+            log.debug("Failed to load simple speciality {} from {}: {}", uuid, tableName, e.getMessage());
             return null;
         }
     }
@@ -382,8 +578,7 @@ public class StudentLegacyMapper {
             spec.setCode(specCode);
             spec.setName(specName);
             spec.setInstanceName(specCode + " - " + (specName != null ? specName : ""));
-            spec.setVersion(getInteger(row, "version"));
-
+            // OLD-HEMIS compatibility: specialityBachelor does NOT have version
             return spec;
         } catch (Exception e) {
             log.debug("Failed to load speciality {}: {}", uuid, e.getMessage());
@@ -430,6 +625,302 @@ public class StudentLegacyMapper {
             return ((Number) val).intValue();
         }
         return null;
+    }
+
+    /**
+     * Convert Student entity to flat service Map (OLD-HEMIS service endpoint format).
+     * Used by: get, getActive, getById, getDoctoral, getWithStatus endpoints.
+     * Matches old-hemis StudentServiceBean.get() format EXACTLY (snake_case + name lookups).
+     */
+    public Map<String, Object> toFlatServiceMap(Student student) {
+        if (student == null) return null;
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("id", emptyIfNull(student.getCode())); // old-hemis: id = student CODE
+        result.put("pinfl", emptyIfNull(student.getPinfl()));
+        result.put("serial_number", emptyIfNull(student.getSerialNumber()));
+        result.put("firstname", emptyIfNull(student.getFirstName()));
+        result.put("lastname", emptyIfNull(student.getLastname()));
+        result.put("fathername", emptyIfNull(student.getFathername()));
+        result.put("birthday", student.getBirthday() != null ? student.getBirthday().toString() + " 00:00:00.000" : "");
+        result.put("gender_code", emptyIfNull(student.getGender()));
+        result.put("gender_name", lookupName("hemishe_h_gender", student.getGender()));
+        result.put("nationality_code", emptyIfNull(student.getNationality()));
+        result.put("nationality_name", lookupName("hemishe_h_nationality", student.getNationality()));
+        result.put("citizenship_code", emptyIfNull(student.getCitizenship()));
+        result.put("citizenship_name", lookupName("hemishe_h_citizenship", student.getCitizenship()));
+        result.put("education_type_code", emptyIfNull(student.getEducationType()));
+        result.put("education_type_name", lookupName("hemishe_h_education_type", student.getEducationType()));
+        result.put("education_form_code", emptyIfNull(student.getEducationForm()));
+        result.put("education_form_name", lookupName("hemishe_h_education_form", student.getEducationForm()));
+        result.put("payment_type_code", emptyIfNull(student.getPaymentForm()));
+        result.put("payment_type_name", lookupName("hemishe_h_payment_form", student.getPaymentForm()));
+        result.put("university_code", emptyIfNull(student.getUniversity()));
+        result.put("university_name", lookupName("hemishe_e_university", student.getUniversity()));
+        result.put("university_ownership_code", lookupUniversityField(student.getUniversity(), "_ownership"));
+        result.put("university_ownership_name", lookupNameByCode("hemishe_h_ownership", lookupUniversityField(student.getUniversity(), "_ownership")));
+        result.put("university_type_code", lookupUniversityField(student.getUniversity(), "_university_type"));
+        result.put("university_type_name", lookupNameByCode("hemishe_h_university_type", lookupUniversityField(student.getUniversity(), "_university_type")));
+        result.put("faculty_code", emptyIfNull(student.getFaculty()));
+        result.put("faculty_name", lookupFacultyName(student.getFaculty()));
+
+        // Speciality (conditional by education type)
+        String eduType = student.getEducationType();
+        if ("11".equals(eduType)) {
+            result.put("speciality_id", student.getSpecialityBachelor() != null ? student.getSpecialityBachelor().toString() : "");
+            result.put("speciality_code", lookupSpecialityCode("hemishe_h_speciality_bachelor", student.getSpecialityBachelor()));
+            result.put("speciality_name", lookupSpecialityName("hemishe_h_speciality_bachelor", student.getSpecialityBachelor()));
+        } else if ("12".equals(eduType)) {
+            result.put("speciality_id", student.getSpecialityMaster() != null ? student.getSpecialityMaster().toString() : "");
+            result.put("speciality_code", lookupSpecialityCode("hemishe_h_speciality_master", student.getSpecialityMaster()));
+            result.put("speciality_name", lookupSpecialityName("hemishe_h_speciality_master", student.getSpecialityMaster()));
+        } else if ("13".equals(eduType)) {
+            result.put("speciality_id", student.getSpecialityDoctoral() != null ? student.getSpecialityDoctoral().toString() : "");
+            result.put("speciality_code", lookupSpecialityCode("hemishe_h_speciality_doctoral", student.getSpecialityDoctoral()));
+            result.put("speciality_name", lookupSpecialityName("hemishe_h_speciality_doctoral", student.getSpecialityDoctoral()));
+        }
+
+        result.put("course_code", emptyIfNull(student.getCourse()));
+        result.put("course", lookupName("hemishe_h_course", student.getCourse()));
+        result.put("country_code", emptyIfNull(student.getCountry()));
+        result.put("country_name", lookupName("hemishe_h_country", student.getCountry()));
+        result.put("soato_code", emptyIfNull(student.getSoato()));
+
+        // Region/district from SOATO
+        String soato = student.getSoato();
+        result.put("region", lookupRegionName(soato));
+        result.put("district", lookupSoatoNameUz(soato));
+        result.put("address", emptyIfNull(student.getAddress()));
+
+        String currentSoato = student.getCurrentSoato();
+        result.put("regionCurrent", lookupRegionName(currentSoato));
+        result.put("districtCurrent", lookupSoatoNameUz(currentSoato));
+        result.put("address_current", emptyIfNull(student.getCurrentAddress()));
+
+        result.put("accomodation_code", emptyIfNull(student.getAccomodation()));
+        result.put("accomodation_name", lookupName("hemishe_h_accomodation", student.getAccomodation()));
+        result.put("social_category_code", emptyIfNull(student.getSocialCategory()));
+        result.put("social_category_name", lookupName("hemishe_h_student_social_type", student.getSocialCategory()));
+        result.put("education_year", emptyIfNull(student.getEducationYear()));
+        result.put("education_language_code", emptyIfNull(student.getLanguage()));
+        result.put("education_language_name", lookupName("hemishe_h_education_language", student.getLanguage()));
+        result.put("group_id", student.getGroupId());
+        result.put("group_name", student.getGroupName());
+        result.put("status_code", emptyIfNull(student.getStudentStatus()));
+        result.put("status_name", lookupName("hemishe_h_student_status_type", student.getStudentStatus()));
+        result.put("student_type_code", "11"); // old-hemis default
+        result.put("student_type_name", lookupName("hemishe_h_student_type", "11"));
+
+        return result;
+    }
+
+    private String lookupUniversityField(String universityCode, String field) {
+        if (universityCode == null || universityCode.isBlank()) return "";
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT " + field + " FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL",
+                    String.class, universityCode);
+        } catch (Exception e) { return ""; }
+    }
+
+    private String lookupNameByCode(String tableName, String code) {
+        if (code == null || code.isBlank()) return "";
+        return lookupName(tableName, code);
+    }
+
+    private String lookupFacultyName(String code) {
+        if (code == null || code.isBlank()) return "";
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
+                    String.class, code);
+        } catch (Exception e) { return ""; }
+    }
+
+    private String lookupSpecialityName(String tableName, java.util.UUID uuid) {
+        if (uuid == null) return "";
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT name FROM " + tableName + " WHERE id = ? AND delete_ts IS NULL",
+                    String.class, uuid);
+        } catch (Exception e) { return ""; }
+    }
+
+    private String lookupSoatoNameUz(String code) {
+        if (code == null || code.isBlank()) return "";
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT name_uz FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL",
+                    String.class, code);
+        } catch (Exception e) { return ""; }
+    }
+
+    private String lookupRegionName(String soatoCode) {
+        if (soatoCode == null || soatoCode.length() < 5) return "";
+        String regionCode = soatoCode.substring(0, 4);
+        return lookupSoatoNameUz(regionCode);
+    }
+
+    /**
+     * Convert Student entity to billing/testGet format.
+     * Used by: testGet endpoint — matches old-hemis StudentServiceBean.testGet() field names exactly.
+     */
+    public Map<String, Object> toBillingMap(Student student) {
+        if (student == null) return null;
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("code", student.getId().toString());
+        result.put("hemisId", emptyIfNull(student.getCode()));
+        result.put("birthDate", student.getBirthday() != null ? student.getBirthday().toString() : "");
+        result.put("serialNumber", emptyIfNull(student.getSerialNumber()));
+        result.put("languageCode", emptyIfNull(student.getLanguage()));
+        result.put("studentTypeCode", "11"); // old-hemis default: "Oddiy"
+        result.put("paymentFormCode", emptyIfNull(student.getPaymentForm()));
+        result.put("pinfl", emptyIfNull(student.getPinfl()));
+        result.put("universityCode", emptyIfNull(student.getUniversity()));
+        result.put("facultyCode", emptyIfNull(student.getFaculty()));
+
+        // Conditional speciality fields based on educationType
+        String eduType = student.getEducationType();
+        if ("11".equals(eduType)) {
+            result.put("specialityBachelorId", student.getSpecialityBachelor() != null ? student.getSpecialityBachelor().toString() : "");
+            result.put("specialityBachelorCode", lookupSpecialityCode("hemishe_h_speciality_bachelor", student.getSpecialityBachelor()));
+        } else if ("12".equals(eduType)) {
+            result.put("specialityMasterId", student.getSpecialityMaster() != null ? student.getSpecialityMaster().toString() : "");
+            result.put("specialityMasterCode", lookupSpecialityCode("hemishe_h_speciality_master", student.getSpecialityMaster()));
+        } else if ("13".equals(eduType)) {
+            result.put("specialityDoctoralId", student.getSpecialityDoctoral() != null ? student.getSpecialityDoctoral().toString() : "");
+            result.put("specialityDoctoralCode", lookupSpecialityCode("hemishe_h_speciality_doctoral", student.getSpecialityDoctoral()));
+        }
+
+        result.put("eduFormCode", emptyIfNull(student.getEducationForm()));
+        result.put("courseCode", emptyIfNull(student.getCourse()));
+        result.put("statusCode", emptyIfNull(student.getStudentStatus()));
+        result.put("educationTypeCode", emptyIfNull(student.getEducationType()));
+        result.put("citizenshipCode", emptyIfNull(student.getCitizenship()));
+        result.put("socialCategoryCode", emptyIfNull(student.getSocialCategory()));
+        result.put("countryCode", emptyIfNull(student.getCountry()));
+        result.put("groupId", emptyIfNull(student.getGroupId()));
+        result.put("groupName", emptyIfNull(student.getGroupName()));
+        result.put("eduYearCode", emptyIfNull(student.getEducationYear()));
+        result.put("gpa", null);
+
+        return result;
+    }
+
+    /**
+     * Convert Student entity to RStudentFull format (flat denormalized camelCase).
+     * Used by: tashkentStudents endpoint — matches old-hemis RStudentFull entity EXACTLY.
+     */
+    public Map<String, Object> toRStudentFullMap(Student student) {
+        if (student == null) return null;
+
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("_entityName", "hemishe_RStudentFull");
+        r.put("_instanceName", emptyIfNull(student.getCode()));
+        r.put("id", emptyIfNull(student.getCode()));
+        r.put("code", emptyIfNull(student.getCode()));
+        r.put("citizenshipCode", emptyIfNull(student.getCitizenship()));
+        r.put("citizenshipName", lookupName("hemishe_h_citizenship", student.getCitizenship()));
+        r.put("countryCode", emptyIfNull(student.getCountry()));
+        r.put("countryName", lookupName("hemishe_h_country", student.getCountry()));
+        r.put("nationalityCode", emptyIfNull(student.getNationality()));
+        r.put("nationalityName", lookupName("hemishe_h_nationality", student.getNationality()));
+        r.put("pinfl", emptyIfNull(student.getPinfl()));
+        r.put("passportNumber", emptyIfNull(student.getSerialNumber()));
+        String fullname = buildFullname(student);
+        r.put("fullname", fullname);
+        r.put("birthday", student.getBirthday() != null ? student.getBirthday().toString() : null);
+        r.put("genderCode", emptyIfNull(student.getGender()));
+        r.put("genderName", lookupName("hemishe_h_gender", student.getGender()));
+
+        // Region/district from SOATO
+        String soato = student.getSoato();
+        String regionCode = (soato != null && soato.length() >= 4) ? soato.substring(0, 4) : "";
+        r.put("regionCode", regionCode);
+        r.put("regionName", lookupSoatoNameUz(regionCode));
+        r.put("districtCode", emptyIfNull(soato));
+        r.put("districtName", lookupSoatoNameUz(soato));
+        r.put("address", emptyIfNull(student.getAddress()));
+        r.put("addressCurrent", emptyIfNull(student.getCurrentAddress()));
+
+        // University info
+        r.put("universityCode", emptyIfNull(student.getUniversity()));
+        r.put("universityName", lookupName("hemishe_e_university", student.getUniversity()));
+        r.put("universtiryOwnershipCode", lookupUniversityField(student.getUniversity(), "_ownership")); // typo preserved from old-hemis!
+        r.put("universityOwnershipName", lookupNameByCode("hemishe_h_ownership", lookupUniversityField(student.getUniversity(), "_ownership")));
+        String uniSoato = lookupUniversityField(student.getUniversity(), "_soato");
+        String uniRegionCode = (uniSoato != null && uniSoato.length() >= 4) ? uniSoato.substring(0, 4) : "";
+        r.put("universityRegionCode", uniRegionCode);
+        r.put("universityRegionName", lookupSoatoNameUz(uniRegionCode));
+        r.put("universityDistrictCode", emptyIfNull(uniSoato));
+        r.put("universityDistrictName", lookupSoatoNameUz(uniSoato));
+
+        // Faculty
+        r.put("facultyCode", emptyIfNull(student.getFaculty()));
+        r.put("facultyName", lookupFacultyName(student.getFaculty()));
+
+        // Education fields
+        r.put("educationTypeCode", emptyIfNull(student.getEducationType()));
+        r.put("educationTypeName", lookupName("hemishe_h_education_type", student.getEducationType()));
+        r.put("educationFormCode", emptyIfNull(student.getEducationForm()));
+        r.put("educationFormName", lookupName("hemishe_h_education_form", student.getEducationForm()));
+        r.put("paymentFormCode", emptyIfNull(student.getPaymentForm()));
+        r.put("paymentFormName", lookupName("hemishe_h_payment_form", student.getPaymentForm()));
+        r.put("courseCode", emptyIfNull(student.getCourse()));
+        r.put("courseName", lookupName("hemishe_h_course", student.getCourse()));
+
+        // Speciality (conditional by education type)
+        String eduType = student.getEducationType();
+        UUID specUuid = null;
+        String specTable = null;
+        if ("11".equals(eduType)) { specUuid = student.getSpecialityBachelor(); specTable = "hemishe_h_speciality_bachelor"; }
+        else if ("12".equals(eduType)) { specUuid = student.getSpecialityMaster(); specTable = "hemishe_h_speciality_master"; }
+        else if ("13".equals(eduType)) { specUuid = student.getSpecialityDoctoral(); specTable = "hemishe_h_speciality_doctoral"; }
+        r.put("specialityId", specUuid);
+        r.put("specialityCode", specTable != null ? lookupSpecialityCode(specTable, specUuid) : "");
+        r.put("specialityName", specTable != null ? lookupSpecialityName(specTable, specUuid) : "");
+
+        r.put("educationLanguageCode", emptyIfNull(student.getLanguage()));
+        r.put("educationLanguageName", lookupName("hemishe_h_education_language", student.getLanguage()));
+        r.put("accomodationCode", emptyIfNull(student.getAccomodation()));
+        r.put("accomodationName", lookupName("hemishe_h_accomodation", student.getAccomodation()));
+        r.put("socialCategoryCode", emptyIfNull(student.getSocialCategory()));
+        r.put("socialCategoryName", lookupName("hemishe_h_student_social_type", student.getSocialCategory()));
+        r.put("statusCode", emptyIfNull(student.getStudentStatus()));
+        r.put("statusName", lookupName("hemishe_h_student_status_type", student.getStudentStatus()));
+        r.put("eduYear", emptyIfNull(student.getEducationYear()));
+        r.put("created_at", student.getCreateTs() != null ? student.getCreateTs().toLocalDate().toString() : null);
+        r.put("updated_at", student.getUpdateTs() != null ? student.getUpdateTs().toLocalDate().toString() : null);
+        r.put("isGraduate", student.getIsGraduate());
+
+        return r;
+    }
+
+    private String lookupSpecialityCode(String tableName, java.util.UUID uuid) {
+        if (uuid == null) return "";
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT code FROM " + tableName + " WHERE id = ? AND delete_ts IS NULL",
+                    String.class, uuid);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String emptyIfNull(String val) {
+        return val != null ? val : "";
+    }
+
+    private String lookupName(String tableName, String code) {
+        if (code == null || code.isBlank()) return "";
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT name FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL",
+                    String.class, code);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     /**

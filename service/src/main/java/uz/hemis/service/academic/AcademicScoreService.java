@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.AcademicScoreDto;
+import uz.hemis.common.dto.academic.AcademicScoreDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.AcademicScore;
 import uz.hemis.domain.repository.AcademicScoreRepository;

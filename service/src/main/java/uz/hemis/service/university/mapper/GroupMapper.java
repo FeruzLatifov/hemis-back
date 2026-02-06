@@ -1,7 +1,7 @@
 package uz.hemis.service.university.mapper;
 
 import org.mapstruct.*;
-import uz.hemis.common.dto.GroupDto;
+import uz.hemis.common.dto.university.GroupDto;
 import uz.hemis.domain.entity.Group;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)

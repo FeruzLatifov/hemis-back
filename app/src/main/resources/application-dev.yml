@@ -148,9 +148,13 @@ hemis:
       - http://127.0.0.1:5173
 
   security:
+    oauth:
+      client-id: ${OAUTH_CLIENT_ID:client}
+      client-secret: ${OAUTH_CLIENT_SECRET:secret}
     jwt:
       # Development JWT configuration (OLD-HEMIS compatible)
-      secret: ${JWT_SECRET:dev-secret-key-change-in-production-this-is-only-for-development-min-64-chars}
+      # CRITICAL: JWT_SECRET must be set via environment variable or .env.local
+      secret: ${JWT_SECRET}
       expiration: ${JWT_EXPIRATION:43200}  # 12 hours in seconds (OLD-HEMIS: 43199)
       refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800}  # 7 days in seconds
       jwk-set-uri: ${JWT_JWK_SET_URI:}

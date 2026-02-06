@@ -77,24 +77,21 @@ public class MenuController {
               "items": [
                 {
                   "id": "dashboard",
-                  "labelUz": "Bosh sahifa",
-                  "labelRu": "Главная",
+                  "labels": {"uz-UZ": "Bosh sahifa", "ru-RU": "Главная", "en-US": "Home"},
                   "url": "/dashboard",
                   "icon": "home",
                   "order": 1
                 },
                 {
                   "id": "registry",
-                  "labelUz": "Reestlar",
-                  "labelRu": "Реестры",
+                  "labels": {"uz-UZ": "Reestlar", "ru-RU": "Реестры", "en-US": "Registries"},
                   "url": null,
                   "icon": "database",
                   "order": 2,
                   "items": [
                     {
                       "id": "registry-faculty",
-                      "labelUz": "Fakultet",
-                      "labelRu": "Факультет",
+                      "labels": {"uz-UZ": "Fakultet", "ru-RU": "Факультет", "en-US": "Faculty"},
                       "url": "/registry/e-reestr/faculty",
                       "icon": "school",
                       "order": 1

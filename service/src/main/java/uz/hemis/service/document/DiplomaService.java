@@ -7,9 +7,11 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.DiplomaDto;
+import uz.hemis.common.dto.document.DiplomaDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Diploma;
@@ -18,6 +20,8 @@ import uz.hemis.domain.repository.DiplomaRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -227,6 +231,74 @@ public class DiplomaService {
     }
 
     // =====================================================
+    // Legacy Entity Access (for CUBA-compatible controllers)
+    // =====================================================
+
+    /**
+     * Find diploma entity by number (for legacy endpoints)
+     *
+     * @param diplomaNumber diploma registration number
+     * @return Optional containing diploma entity
+     */
+    public Optional<Diploma> findEntityByDiplomaNumber(String diplomaNumber) {
+        return diplomaRepository.findByDiplomaNumber(diplomaNumber);
+    }
+
+    /**
+     * Find diploma entity by hash (for verification/legacy endpoints)
+     *
+     * @param diplomaHash SHA-256 hash
+     * @return Optional containing diploma entity
+     */
+    public Optional<Diploma> findEntityByDiplomaHash(String diplomaHash) {
+        return diplomaRepository.findByDiplomaHash(diplomaHash);
+    }
+
+    /**
+     * Convert Diploma entity to CUBA-compatible info Map
+     * Used by /services/diploma/info endpoint
+     *
+     * @param diploma diploma entity
+     * @return map with diploma info
+     */
+    public Map<String, Object> toDiplomaInfoMap(Diploma diploma) {
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("id", diploma.getId());
+        result.put("diplomaNumber", diploma.getDiplomaNumber());
+        result.put("serialNumber", diploma.getSerialNumber());
+        result.put("student", diploma.getStudent());
+        result.put("university", diploma.getUniversity());
+        result.put("specialty", diploma.getSpecialty());
+        result.put("diplomaType", diploma.getDiplomaType());
+        result.put("issueDate", diploma.getIssueDate());
+        result.put("registrationDate", diploma.getRegistrationDate());
+        result.put("graduationYear", diploma.getGraduationYear());
+        result.put("qualification", diploma.getQualification());
+        result.put("averageGrade", diploma.getAverageGrade());
+        result.put("honors", diploma.getHonors());
+        result.put("diplomaHash", diploma.getDiplomaHash());
+        result.put("rectorName", diploma.getRectorName());
+        result.put("status", diploma.getStatus());
+        result.put("qrCode", diploma.getQrCode());
+        result.put("verificationUrl", diploma.getVerificationUrl());
+        return result;
+    }
+
+    /**
+     * Convert Diploma entity to CUBA-compatible verification Map
+     * Used by /services/diploma/byhash endpoint (QR verification)
+     *
+     * @param diploma diploma entity
+     * @return map with verification info
+     */
+    public Map<String, Object> toDiplomaVerificationMap(Diploma diploma) {
+        Map<String, Object> result = toDiplomaInfoMap(diploma);
+        result.put("verified", true);
+        result.put("verificationDate", new java.util.Date());
+        return result;
+    }
+
+    // =====================================================
     // Write Operations (Read-Write Transactions)
     // =====================================================
 
@@ -380,8 +452,7 @@ public class DiplomaService {
 
         // Set soft delete fields
         diploma.setDeleteTs(LocalDateTime.now());
-        // TODO: Set deletedBy from SecurityContext
-        // diploma.setDeletedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+        diploma.setDeletedBy(extractCurrentUsername());
 
         // Save (this triggers @PreUpdate)
         diplomaRepository.save(diploma);
@@ -397,4 +468,9 @@ public class DiplomaService {
     // Physical DELETE is not allowed (NDG).
     // Use softDelete() instead.
     // =====================================================
+
+    private String extractCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
+    }
 }

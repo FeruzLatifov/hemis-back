@@ -1,8 +1,10 @@
 package uz.hemis.service.university.mapper;
 
 import org.mapstruct.*;
-import uz.hemis.common.dto.UniversityDto;
+import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.domain.entity.University;
+
+import uz.hemis.service.shared.mapper.UniversityDtoConverter;
 
 import java.util.List;
 
@@ -23,6 +25,9 @@ import java.util.List;
  *   <li>Version field ignored in DTO (internal optimistic locking)</li>
  * </ul>
  *
+ * <p>Implements {@link UniversityDtoConverter} to provide shared Entity→DTO
+ * conversion accessible across domain boundaries.</p>
+ *
  * @since 1.0.0
  */
 @Mapper(
@@ -30,7 +35,7 @@ import java.util.List;
         unmappedTargetPolicy = ReportingPolicy.WARN,
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
 )
-public interface UniversityMapper {
+public interface UniversityMapper extends UniversityDtoConverter {
 
     // =====================================================
     // Entity → DTO
@@ -77,6 +82,7 @@ public interface UniversityMapper {
     @Mapping(target = "oneId", ignore = true)
     @Mapping(target = "gradingSystem", ignore = true)
     @Mapping(target = "addForeignStudent", ignore = true)
+    @Mapping(target = "addTransferStudent", ignore = true)
     University toEntity(UniversityDto dto);
 
     /**
@@ -112,6 +118,7 @@ public interface UniversityMapper {
     @Mapping(target = "oneId", ignore = true)
     @Mapping(target = "gradingSystem", ignore = true)
     @Mapping(target = "addForeignStudent", ignore = true)
+    @Mapping(target = "addTransferStudent", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(UniversityDto dto, @MappingTarget University university);
 }

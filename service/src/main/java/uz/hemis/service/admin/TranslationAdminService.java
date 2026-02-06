@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.TranslationDto;
+import uz.hemis.common.dto.system.TranslationDto;
 import uz.hemis.domain.entity.SystemMessage;
 import uz.hemis.domain.entity.SystemMessageTranslation;
 import uz.hemis.domain.entity.SystemMessageTranslationId;
@@ -15,7 +15,7 @@ import uz.hemis.domain.repository.SystemMessageRepository;
 import uz.hemis.domain.repository.SystemMessageTranslationRepository;
 import uz.hemis.service.shared.I18nService;
 import uz.hemis.service.event.TranslationCacheEventPublisher;
-import uz.hemis.service.mapper.SystemMessageMapper;
+import uz.hemis.service.shared.mapper.SystemMessageMapper;
 
 import java.io.FileWriter;
 import java.io.IOException;

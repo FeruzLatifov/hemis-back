@@ -40,6 +40,7 @@ application-local.yml
 application-*.local.yml
 
 # Secrets (NEVER commit)
+.env
 *.env
 .env.*
 **/secrets/

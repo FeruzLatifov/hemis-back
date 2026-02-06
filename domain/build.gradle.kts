@@ -47,6 +47,11 @@ dependencies {
     // Spring Boot Validation
     api("org.springframework.boot:spring-boot-starter-validation")
 
+    // Test dependencies
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-data-jpa-test")
+    testRuntimeOnly("com.h2database:h2")
+
     // Redis moved to app module (domain layer doesn't need caching)
     // implementation("org.springframework.boot:spring-boot-starter-data-redis")
     // implementation("org.springframework.boot:spring-boot-starter-cache")

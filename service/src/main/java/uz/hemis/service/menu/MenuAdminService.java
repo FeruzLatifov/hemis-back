@@ -15,7 +15,7 @@ import uz.hemis.domain.entity.Menu;
 import uz.hemis.domain.entity.MenuAuditLog;
 import uz.hemis.domain.repository.MenuAuditLogRepository;
 import uz.hemis.domain.repository.MenuRepository;
-import uz.hemis.service.mapper.MenuMapper;
+import uz.hemis.service.menu.mapper.MenuMapper;
 import uz.hemis.service.menu.dto.MenuAdminRequest;
 import uz.hemis.service.menu.dto.MenuAdminResponse;
 

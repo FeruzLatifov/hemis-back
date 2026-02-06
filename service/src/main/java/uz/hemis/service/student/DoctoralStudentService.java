@@ -9,7 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.DoctoralStudentDto;
+import uz.hemis.common.dto.student.DoctoralStudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.DoctoralStudent;
@@ -17,7 +17,10 @@ import uz.hemis.service.student.mapper.DoctoralStudentMapper;
 import uz.hemis.domain.repository.DoctoralStudentRepository;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -143,5 +146,54 @@ public class DoctoralStudentService {
         doctoralStudent.setDeleteTs(LocalDateTime.now());
         doctoralStudentRepository.save(doctoralStudent);
         log.warn("Doctoral student soft deleted: {}", id);
+    }
+
+    // =====================================================
+    // Legacy Entity Access (for CUBA-compatible controllers)
+    // =====================================================
+
+    /**
+     * Find entity by passport PIN (PINFL) - for legacy endpoints
+     * Returns Optional instead of throwing exception
+     */
+    public Optional<DoctoralStudent> findEntityByPassportPin(String passportPin) {
+        return doctoralStudentRepository.findByPassportPin(passportPin);
+    }
+
+    /**
+     * Find entity by passport number - for legacy endpoints
+     */
+    public Optional<DoctoralStudent> findEntityByPassportNumber(String passportNumber) {
+        return doctoralStudentRepository.findByPassportNumber(passportNumber);
+    }
+
+    /**
+     * Count all doctoral students
+     */
+    public long count() {
+        return doctoralStudentRepository.count();
+    }
+
+    /**
+     * Save entity directly (for legacy endpoints)
+     */
+    @Transactional
+    public DoctoralStudent saveEntity(DoctoralStudent entity) {
+        return doctoralStudentRepository.save(entity);
+    }
+
+    /**
+     * Convert DoctoralStudent to CUBA-compatible Map
+     */
+    public Map<String, Object> toStudentMap(DoctoralStudent s) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("id", s.getId().toString());
+        map.put("studentIdNumber", s.getStudentIdNumber());
+        map.put("passportPin", s.getPassportPin());
+        map.put("passportNumber", s.getPassportNumber());
+        map.put("firstName", s.getFirstName());
+        map.put("secondName", s.getSecondName());
+        map.put("thirdName", s.getThirdName());
+        return map;
     }
 }

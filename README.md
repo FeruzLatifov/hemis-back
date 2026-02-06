@@ -2,64 +2,107 @@
 
 > **H**igher **E**ducation **M**anagement **I**nformation **S**ystem - Backend API
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4.1-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/)
-[![Gradle](https://img.shields.io/badge/Gradle-9.2.0-blue.svg)](https://gradle.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-21%20LTS-orange.svg)](https://openjdk.org/)
+[![Gradle](https://img.shields.io/badge/Gradle-9.3.0-blue.svg)](https://gradle.org/)
 [![Liquibase](https://img.shields.io/badge/Liquibase-4.31.1-red.svg)](https://www.liquibase.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-blue.svg)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-6+-red.svg)](https://redis.io/)
 
 ---
 
-## 📋 Umumiy Ma'lumot
+## Umumiy Ma'lumot
 
 HEMIS Backend - bu oliy ta'lim muassasalarini boshqarish uchun zamonaviy RESTful API. Clean Architecture prinsiplariga asoslangan, modular monolith arxitekturasida qurilgan.
 
 ### Asosiy Xususiyatlar
 
-- ✅ **Clean Architecture** - domain, use case, interface layers
-- ✅ **Modular Monolith** - 8 ta mustaqil modul
-- ✅ **Liquibase 4.x** - professional database migration
-- ✅ **Hybrid Authentication** - legacy (CUBA Platform) + BCrypt
-- ✅ **RBAC** - role-based access control
-- ✅ **Redis Cache** - distributed caching
-- ✅ **Swagger/OpenAPI** - API documentation
-- ✅ **i18n** - 4 til (uz-UZ, oz-UZ, ru-RU, en-US)
+- **Clean Architecture** - domain, use case, interface layers
+- **Modular Monolith** - 9 ta mustaqil modul
+- **Liquibase 4.x** - professional database migration
+- **Hybrid Authentication** - legacy (CUBA Platform PBKDF2) + BCrypt
+- **RBAC** - role-based access control (90+ permission)
+- **Redis Cache** - L1 (Caffeine) + L2 (Redis) hybrid caching
+- **Swagger/OpenAPI 3.0** - multi-group API documentation
+- **i18n** - 4 til (uz-UZ, oz-UZ, ru-RU, en-US)
+- **Master/Replica** - read/write database separation
 
 ---
 
-## 🏗 Arxitektura
+## Arxitektura
 
 ### Modular Monolith Tuzilishi
 
 ```
 hemis-back/
-├── app/                    # Application Layer (main)
+├── app/                    # Application Layer (entry point)
 │   ├── config/            # Spring configuration
-│   └── HemisApplication   # Boot class
-├── api-web/               # Public Web API (REST)
-├── api-legacy/            # Legacy CUBA API (compatibility)
-├── api-external/          # External integrations
-├── service/               # Business Logic (use cases)
-├── security/              # Authentication & Authorization
+│   ├── controller/        # Auth, Captcha, Test endpoints
+│   └── HemisApplication   # @SpringBootApplication
+├── api-web/               # Modern Web API (/api/v1/web/*)
+├── api-legacy/            # Legacy CUBA API (/app/rest/v2/*)
+├── api-external/          # External integrations (GUVD, Tax, BIMM)
+├── api-university/        # University API (/api/v1/university/*)
+├── service/               # Business Logic (use cases, mappers)
+├── security/              # JWT OAuth2 + RBAC
 │   └── crypto/           # LegacyPasswordEncoder (BCrypt + PBKDF2)
-├── domain/                # Entities, Repositories, Migrations
+├── domain/                # JPA Entities, Repositories
 │   └── resources/db/     # Liquibase changesets
-└── common/                # Shared utilities
+└── common/                # Shared DTOs, Ports, Exceptions
 ```
 
-### Database Schema
+### Modul Dependency Graph
 
-**Asosiy Jadvallar:**
-- `users` - Yangi foydalanuvchilar (BCrypt hash)
-- `sec_user` - Eski CUBA foydalanuvchilar (PBKDF2 hash) - migration qilingan
-- `roles` - Rollar (5 ta)
-- `permissions` - Huquqlar (90 ta)
-- `h_system_message` - i18n xabarlar
-- `h_system_message_translation` - Tarjimalar (508 yozuv)
+```
+common (no dependencies)
+    ↑
+security + domain
+    ↑
+service
+    ↑
+api-legacy + api-web + api-external + api-university
+    ↑
+app (entry point)
+```
+
+### Loyiha Statistikasi
+
+| Metrika | Qiymat |
+|---------|--------|
+| Modullar | 9 ta |
+| REST Controllers | 151 ta |
+| JPA Entities | 100+ ta |
+| Repositories | 92 ta |
+| API Endpoints | 200+ ta |
+| Permissions | 90+ ta |
+| Tillar | 4 ta |
 
 ---
 
-## 💾 Database Migration
+## Database Schema
+
+### Yangi Jadvallar (Liquibase bilan yaratilgan)
+
+| Jadval | Tavsif |
+|--------|--------|
+| `users` | Yangi foydalanuvchilar (BCrypt hash) |
+| `roles` | Rollar (5 ta) |
+| `permissions` | Huquqlar (90+ ta) |
+| `user_roles` | User-Role mapping |
+| `role_permissions` | Role-Permission mapping |
+| `system_messages` | i18n xabar kalitlari |
+| `system_message_translations` | Tarjimalar |
+| `menus` | Dinamik menu tuzilmasi |
+| `languages` | Qo'llab-quvvatlanadigan tillar |
+| `language_translations` | Til nomlari tarjimasi |
+
+### Legacy Jadvallar (ministry.sql)
+
+Mavjud `ministry.sql` schemasi bilan to'liq moslik. Legacy jadvallar o'zgartirilmaydi.
+
+---
+
+## Database Migration
 
 ### Liquibase 4.x Modern CLI
 
@@ -85,89 +128,71 @@ HEMIS Backend professional migration tizimiga ega. Barcha migration'lar tag'lar 
 ./gradlew :domain:liquibaseRollbackCount -Pcount=2
 
 # Ma'lum tag'ga rollback qilish
-./gradlew :domain:liquibaseRollbackToTag -Ptag=v3-users-migrated
+./gradlew :domain:liquibaseRollbackToTag -Ptag=seed-v1.0
 
 # Rollback SQL ni ko'rish (xavfsiz preview)
 ./gradlew :domain:liquibaseRollbackSQL -Pcount=2
 ```
 
+#### Migration Tuzilmasi
+
+```
+domain/src/main/resources/db/changelog/
+├── db.changelog-master.yaml     # Master changelog
+└── changesets/
+    ├── schema/                  # DDL (V001-V010)
+    │   ├── V001_create_users.sql
+    │   ├── V001_create_users_rollback.sql
+    │   └── ...
+    ├── seed/                    # Reference data (S001-S006)
+    │   ├── S001_seed_roles.sql
+    │   ├── S001_seed_roles_rollback.sql
+    │   └── ...
+    └── migration/               # Data migrations (M001-M003)
+        ├── M001_migrate_old_hemis_users.sql
+        └── ...
+```
+
 #### Migration Tag'lar
 
-| Tag | Tavsif | Yozuvlar |
-|-----|--------|----------|
-| `v1-schema-complete` | Database schema yaratildi (7 ta jadval) | 0 |
-| `v2-seed-data-complete` | Boshlang'ich data (roles, permissions) | 95 |
-| `v3-users-migrated` | 339 ta user ko'chirildi (sec_user → users) | 339 |
-| `v4-menu-translations-complete` | Menu tarjimalari (197 ta message × 4 til) | 508 |
-| `v5-faculty-translations-complete` | Fakultet tarjimalari | 50 |
+| Tag | Tavsif |
+|-----|--------|
+| `schema-v1.0` | Database schema yaratildi (10 ta jadval) |
+| `seed-v1.0` | Boshlang'ich data (roles, permissions, languages) |
+| `v1.0.0` | Birinchi reliz (legacy users migrated) |
 
 #### Best Practices
 
-**✅ DO:**
-- Migration'dan oldin **database backup** oling:
-  ```bash
-  pg_dump -U postgres test_hemis > backup_$(date +%Y%m%d_%H%M%S).sql
-  ```
+**DO:**
+- Migration'dan oldin **database backup** oling
 - `liquibaseRollbackSQL` bilan **preview** qiling
 - **Staging** muhitda test qiling
-- Production'da **monitoring** qo'ying
 
-**❌ DON'T:**
+**DON'T:**
 - Production'da to'g'ridan-to'g'ri rollback qilmang
-- Backup olmasdan migration bajarmang
 - Migration fayllarni qo'lda o'zgartirmang
 - Tag'larni o'chirmang
 
-#### Rollback Stsenariy
-
-```bash
-# 1. Avval rollback SQL ni ko'ramiz (xavfsiz)
-./gradlew :domain:liquibaseRollbackSQL -Pcount=1 > /tmp/rollback-preview.sql
-cat /tmp/rollback-preview.sql
-
-# 2. Agar SQL to'g'ri bo'lsa, rollback qilamiz
-./gradlew :domain:liquibaseRollbackCount -Pcount=1
-
-# 3. Holatni tekshiramiz
-./gradlew :domain:liquibaseStatus
-
-# 4. Migration faylni tuzatamiz
-# 5. Qayta apply qilamiz
-./gradlew :domain:liquibaseUpdate
-```
-
-**Batafsil ma'lumot:** `/home/adm1n/startup/docs/hemis-back/` papkasida to'liq qo'llanma mavjud.
-
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Requirements
 
-- Java 21+
+- Java 21 LTS
 - PostgreSQL 16+
-- Redis 7+
-- Gradle 9.2.0 (wrapper bilan birga keladi)
+- Redis 6+
+- Gradle 9.3.0 (wrapper bilan birga keladi)
 
 ### Database Setup
 
 ```bash
 # PostgreSQL database yaratish
-createdb test_hemis
+createdb hemis_db
 
-# Yoki psql orqali:
-psql -U postgres
-CREATE DATABASE test_hemis;
-\q
-
-# .env fayl yaratish (ixtiyoriy)
-cat > .env << EOF
-DB_MASTER_HOST=localhost
-DB_MASTER_PORT=5432
-DB_MASTER_NAME=test_hemis
-DB_MASTER_USERNAME=postgres
-DB_MASTER_PASSWORD=postgres
-EOF
+# .env fayl yaratish
+cp .env.example .env
+# .env faylni tahrirlang va qiymatlarni kiriting
 ```
 
 ### Build & Run
@@ -183,53 +208,119 @@ EOF
 ./gradlew clean :app:bootRun
 ```
 
-**Backend:** http://localhost:8082
-**Swagger UI:** http://localhost:8082/api/swagger-ui.html
+### URL'lar
 
-### Initial Login
+| Xizmat | URL |
+|--------|-----|
+| Backend | http://localhost:8081 |
+| Swagger UI | http://localhost:8081/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8081/v3/api-docs |
+| Health Check | http://localhost:8081/actuator/health |
 
-**Admin foydalanuvchi (legacy):**
-```
-Username: admin
-Password: admin
-```
+### Test Credentials
 
-**Legacy foydalanuvchilar:** Eski CUBA tizimdan ko'chirilgan 339 ta user mavjud (sec_user jadvalidan).
+API test uchun credential'lar `.env` faylda yoki `/docs/endpoint_tester.html` da belgilangan.
 
 ---
 
-## 🛠 Development
+## Environment Variables
 
-### Code Generation
+`.env.example` faylini `.env` ga nusxalab, quyidagi o'zgaruvchilarni sozlang:
 
 ```bash
-# MapStruct mapper generation
-./gradlew :domain:compileJava
+# Database (Master - Write)
+DB_MASTER_HOST=localhost
+DB_MASTER_PORT=5432
+DB_MASTER_NAME=hemis_db
+DB_MASTER_USERNAME=postgres
+DB_MASTER_PASSWORD=<secret>
 
-# Lombok processing
-./gradlew clean :domain:compileJava --no-build-cache
+# Database (Replica - Read)
+DB_REPLICA_HOST=localhost
+DB_REPLICA_PORT=5432
+DB_REPLICA_NAME=hemis_db
+DB_REPLICA_USERNAME=postgres
+DB_REPLICA_PASSWORD=<secret>
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+
+# Server
+SERVER_PORT=8081
+
+# JWT
+JWT_SECRET=<min-32-characters-secret>
+JWT_EXPIRATION=43200
+JWT_REFRESH_EXPIRATION=604800
+
+# OAuth2
+OAUTH_CLIENT_ID=<client>
+OAUTH_CLIENT_SECRET=<secret>
+
+# Testing
+TESTS_ENABLED=false
 ```
 
-### Profil Tanlash
+---
 
-```bash
-# Development (default)
-./gradlew :app:bootRun
+## API Documentation
 
-# Production
-SPRING_PROFILES_ACTIVE=production ./gradlew :app:bootRun
+### API Guruhlari
 
-# Replica (read-only)
-SPRING_PROFILES_ACTIVE=replica ./gradlew :app:bootRun
+| Guruh | Path | Maqsad |
+|-------|------|--------|
+| Web Frontend | `/api/v1/web/**` | React/Vue frontend uchun |
+| Legacy CUBA | `/app/rest/v2/**` | Eski tizim bilan moslik |
+| University | `/api/v1/university/**` | Universitet API |
+| External | `/services/**` | Tashqi integratsiyalar |
+
+### Asosiy Endpoints
+
+```
+# Authentication
+POST /app/rest/v2/oauth/token          # OAuth2 token olish
+POST /api/v1/web/auth/login            # Web login
+POST /api/v1/web/auth/logout           # Logout
+GET  /api/v1/web/auth/me               # Current user info
+
+# Web API
+GET  /api/v1/web/menu                  # Dynamic menu
+GET  /api/v1/web/dashboard/statistics  # Dashboard stats
+GET  /api/v1/web/registry/faculties    # Faculty registry
+GET  /api/v1/web/i18n/messages         # Translations
+
+# Legacy API
+GET  /app/rest/v2/services/*           # CUBA services
+GET  /app/rest/v2/entities/*           # CUBA entities
 ```
 
-### Testing
+---
+
+## Development
+
+### Build Commands
 
 ```bash
-# Barcha testlar
+# Full build
+./gradlew clean build
+
+# Specific module
+./gradlew :service:build
+./gradlew :api-web:build
+
+# Skip tests
+./gradlew build -x test
+```
+
+### Test Commands
+
+```bash
+# Run all tests (TESTS_ENABLED=true required in .env)
 ./gradlew test
 
-# Ma'lum modul testi
+# Specific module
 ./gradlew :api-web:test
 ./gradlew :service:test
 
@@ -237,164 +328,138 @@ SPRING_PROFILES_ACTIVE=replica ./gradlew :app:bootRun
 ./gradlew test jacocoTestReport
 ```
 
----
+### Profile Selection
 
-## 📡 API Documentation
+```bash
+# Development (default)
+./gradlew :app:bootRun
 
-### Swagger/OpenAPI
-
-Application ishga tushgandan keyin:
-
-**Swagger UI:** http://localhost:8082/api/swagger-ui.html
-**OpenAPI JSON:** http://localhost:8082/api/v3/api-docs
-
-### API Endpoints
-
+# Production
+SPRING_PROFILES_ACTIVE=prod ./gradlew :app:bootRun
 ```
-GET  /api/v1/auth/login           # Login
-POST /api/v1/auth/logout          # Logout
-GET  /api/v1/users                # Users list
-GET  /api/v1/permissions          # Permissions
-GET  /api/v1/i18n/messages        # Translations
-GET  /api/v1/registry/faculty     # Faculty registry
-```
-
-**Batafsil:** Swagger UI da barcha endpoint'lar hujjatlashtirilgan.
 
 ---
 
-## 🔐 Security
+## Security
 
 ### Authentication
 
 **Hybrid Authentication System:**
 - **LegacyPasswordEncoder** - BCrypt (yangi) + PBKDF2 (eski CUBA) ni qo'llab-quvvatlaydi
-- **JWT Tokens** - Spring Security OAuth2 Resource Server
-- **Session Management** - Redis-based distributed sessions
-
-**Password Format:**
-```java
-// Yangi format (BCrypt)
-$2a$10$N9qo8uLOickgx2ZMRZoMye...
-
-// Eski format (CUBA PBKDF2)
-4Z8b9XJGb/dZWHsF3Uo9Qg==:kR7s2Vp9mN...:50000
-```
+- **JWT Tokens** - HS256 signed, 12h expiration
+- **Refresh Tokens** - 7 days expiration
+- **Token Blacklist** - Redis-based logout support
 
 ### RBAC (Role-Based Access Control)
 
-**Rollar:**
+| Role | Tavsif |
+|------|--------|
+| `SUPER_ADMIN` | Tizim administratori |
+| `MINISTRY_ADMIN` | Vazirlik administratori |
+| `UNIVERSITY_ADMIN` | OTM administratori |
+| `TEACHERS` | O'qituvchilar |
+| `EMPLOYEES` | Xodimlar |
 
-| Role | Tavsif | Foydalanuvchilar |
-|------|--------|------------------|
-| `ROLE_SUPER_ADMIN` | Tizim administratori | 1 |
-| `ROLE_ADMINISTRATORS` | Administrator | 90+ |
-| `ROLE_TEACHERS` | O'qituvchilar | 200+ |
-| `ROLE_STUDENTS` | Talabalar | - |
-| `ROLE_EMPLOYEES` | Xodimlar | 50+ |
-
-**Huquqlar:** 90 ta permission (30 CRUD + 60 menu)
+**Permissions:** 90+ permission (CRUD + menu + system)
 
 ---
 
-## 🐛 Troubleshooting
+## Caching Strategy
+
+### Hybrid L1 + L2 Cache
+
+| Layer | Technology | Scope | TTL |
+|-------|------------|-------|-----|
+| L1 | Caffeine | JVM-local | Fast |
+| L2 | Redis | Distributed | 30-60 min |
+
+### Cached Data
+
+- Menu (role-based)
+- User permissions
+- Dashboard statistics
+- i18n translations
+
+---
+
+## Monitoring
+
+### Actuator Endpoints
+
+```bash
+# Health check
+curl http://localhost:8081/actuator/health
+
+# Metrics
+curl http://localhost:8081/actuator/metrics
+
+# Migration status
+curl http://localhost:8081/actuator/liquibase
+```
+
+### Sentry Integration
+
+Error tracking via Sentry (configure `SENTRY_DSN` in `.env`).
+
+---
+
+## Troubleshooting
 
 ### Liquibase Xatoliklari
 
 **Muammo:** "No changesets to rollback"
-
 ```bash
-# Holatni tekshiring
 ./gradlew :domain:liquibaseStatus
-
-# Agar changeset'lar mavjud bo'lmasa, yangi migration apply qiling
 ./gradlew :domain:liquibaseUpdate
-```
-
-**Muammo:** "Rollback script not found"
-
-```bash
-# Rollback fayl mavjudligini tekshiring
-ls -la domain/src/main/resources/db/changelog/changesets/*rollback*
-
-# db.changelog-master.yaml da rollback path to'g'ri ekanligini tekshiring
 ```
 
 ### Database Connection
 
 **Muammo:** "Connection refused"
-
 ```bash
 # PostgreSQL statusini tekshiring
 sudo systemctl status postgresql
 
-# Yoki Docker container
-docker ps | grep postgres
-
-# Connection parametrlarni tekshiring
-cat .env  # yoki application-dev.yml
+# .env sozlamalarini tekshiring
+cat .env | grep DB_
 ```
 
 ### Build Errors
 
 **Muammo:** "MapStruct annotation processor failed"
-
 ```bash
-# Clean build qiling
 ./gradlew clean build --no-build-cache
-
-# Gradle daemon ni qayta ishga tushiring
-./gradlew --stop
-./gradlew build
+./gradlew --stop && ./gradlew build
 ```
 
 ---
 
-## 📊 Monitoring
+## Project Structure
 
-### Actuator Endpoints
-
-Application ishga tushgandan keyin:
-
-```bash
-# Health check
-curl http://localhost:8082/api/actuator/health
-
-# Metrics
-curl http://localhost:8082/api/actuator/metrics
-
-# Database migration status
-curl http://localhost:8082/api/actuator/liquibase
 ```
-
-### Logging
-
-**Log fayllar:**
-```bash
-# Backend log
-tail -f /tmp/backend.log
-
-# Liquibase log
-tail -f /tmp/liquibase.log
-
-# Application log
-./gradlew :app:bootRun 2>&1 | tee /tmp/app.log
+hemis-back/
+├── app/                          # Main application
+├── api-web/                      # Web Frontend API
+├── api-legacy/                   # Legacy CUBA API
+├── api-external/                 # External integrations
+├── api-university/               # University API
+├── service/                      # Business logic
+├── security/                     # Auth & RBAC
+├── domain/                       # Entities & migrations
+├── common/                       # Shared code
+├── docs/                         # Documentation
+├── scripts/                      # Utility scripts
+├── build.gradle.kts              # Root build config
+├── settings.gradle.kts           # Module definitions
+├── gradle.properties             # Gradle settings
+├── .env.example                  # Environment template
+├── Dockerfile                    # Container image
+└── docker-compose.yml            # Local dev stack
 ```
 
 ---
 
-## 📚 Qo'shimcha Hujjatlar
-
-Batafsil hujjatlar `/home/adm1n/startup/docs/hemis-back/` papkasida:
-
-- **LIQUIBASE_ROLLBACK_GUIDE.md** - Rollback qo'llanmasi
-- **CLEAN_ARCHITECTURE_STATUS.md** - Arxitektura holati
-- **API_TESTS.md** - API test qo'llanmasi
-- **MIGRATION_TAHLIL.md** - Migration tahlil
-
----
-
-## 🤝 Contributing
+## Contributing
 
 ### Commit Message Format
 
@@ -416,20 +481,22 @@ chore: texnik o'zgarishlar
 
 ---
 
-## 📄 License
+## Links
 
-Proprietary - HEMIS Project © 2024
-
----
-
-## 🔗 Links
-
-- **Frontend:** `/home/adm1n/startup/hemis-front`
-- **Old Backend:** `/home/adm1n/startup/old-hemis`
-- **Documentation:** `/home/adm1n/startup/docs/hemis-back`
+| Resource | Path |
+|----------|------|
+| Frontend | `/home/adm1n/startup/hemis-front` |
+| Old Backend | `/home/adm1n/startup/old-hemis` |
+| Documentation | `.claude/` folder |
 
 ---
 
-**Oxirgi yangilanish:** 2025-01-14
+## License
+
+Proprietary - HEMIS Project
+
+---
+
 **Versiya:** 1.0.0
-**Holat:** Development 🚧
+**Oxirgi yangilanish:** 2025-02-04
+**Holat:** Development

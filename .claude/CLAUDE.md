@@ -35,7 +35,7 @@ layers for API, service, domain and security and preserves backwards compatibili
 
 API endpointlarni test qilish uchun login/parol ma'lumotlari:
 - **Manba fayl:** `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` (default credentials shu faylda)
-- **Token olish:** `POST /app/rest/v2/oauth/token` + `Authorization: Basic Y2xpZW50OnNlY3JldA==` (client:secret)
+- **Token olish:** `POST /app/rest/v2/oauth/token` endpoint (Basic Auth credentials `.env` faylda)
 
 ### Adding a New Endpoint
 

@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.legacy;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -29,20 +30,21 @@ import java.util.UUID;
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "_entityName", "_instanceName", "id", "isGraduate", "country", "educationType", "groupId", "language",
-    "socialCategory", "currentEducationYear", "educationYear", "educationForm", "faculty",
-    "academicMobileType", "povertyLevel", "studentSuccess", "specialityMaster",
-    "currentTerrain", "statusEducationYear", "createTs", "tag", "responsiblePersonPhone",
-    "specialityDoctoral", "graduationYear", "terrain", "geoAddress", "commonSpecialityName",
-    "serialNumber", "specialityOrdinatura", "currentSoato", "academicReason",
-    "active", "version", "lastname", "groupName", "nationality", "phone", "specialityName",
-    "livingStatus", "roommateType", "pinfl", "birthday", "studentType", "firstname", "code",
-    "paymentForm", "gender", "university", "soato", "commonSpecialityCode", "parentPhone",
-    "expelReason", "specialityCode", "stipendRate", "course", "studentStatus", "isDuplicate",
-    "email", "address", "citizenship", "passportGivenDate", "verified", "currentAddress",
-    "fathername", "accomodation", "fullname", "specialityBachelor", "doctoralStudentType",
-    "updateTs", "createdBy", "updatedBy",
-    "enrollOrderName", "enrollOrderDate", "enrollOrderNumber", "enrollOrderCategory", "grantType"
+    // OLD-HEMIS exact field order (from actual response)
+    "_entityName", "_instanceName", "id", "currentEducationYear", "isGraduate", "country",
+    "statusOrderDate", "decreeInfoName", "educationType", "groupId", "language", "socialCategory",
+    "educationYear", "educationForm", "faculty", "points", "academicMobileType", "transferCountry",
+    "povertyLevel", "studentSuccess", "specialityMaster", "currentTerrain", "statusEducationYear",
+    "specialityDoctoral", "createTs", "graduationYear", "tag", "decreeInfoNumber", "responsiblePersonPhone",
+    "terrain", "geoAddress", "admissionType", "serialNumber", "specialityOrdinatura", "currentSoato",
+    "active", "statusOrderCategory", "decreeInfoDate", "academicReason", "lastname", "groupName",
+    "statusOrderNumber", "nationality", "phone", "livingStatus", "roommateType", "grantType", "status",
+    "enrollOrderName", "pinfl", "birthday", "studentType", "firstname", "code", "paymentForm", "gender",
+    "university", "soato", "parentPhone", "speciality", "enrollOrderDate", "expelReason", "enrollOrderNumber",
+    "stipendRate", "course", "studentStatus", "roommateCount", "isDuplicate", "email", "address",
+    "citizenship", "eduStartDate", "passportGivenDate", "verified", "currentAddress", "fathername",
+    "transferUniversity", "graduationDate", "statusOrderName", "accomodation", "enrollOrderCategory",
+    "transferType", "studyDuration", "specialityBachelor", "updateTs", "doctoralStudentType"
 })
 public class StudentLegacyDto {
 
@@ -78,6 +80,16 @@ public class StudentLegacyDto {
     private LocalDate enrollOrderDate;
     private String enrollOrderNumber;
     private String enrollOrderCategory;
+
+    // Status Order Fields (OLD-HEMIS backward compatibility)
+    private String statusOrderName;
+    private LocalDate statusOrderDate;
+    private String statusOrderNumber;
+    private String statusOrderCategory;
+
+    // Points field for verification system
+    private String points;
+
     private String specialityName;
     private String specialityCode;
     private String commonSpecialityName;
@@ -87,7 +99,9 @@ public class StudentLegacyDto {
     private Boolean active;
     private Boolean verified;
 
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
     private LocalDateTime createTs;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
     private LocalDateTime updateTs;
     private String createdBy;
     private String updatedBy;
@@ -172,7 +186,8 @@ public class StudentLegacyDto {
     @JsonPropertyOrder({
         "_entityName", "_instanceName", "id", "studentUrl", "code", "universityType", "tin", "versionType",
         "addStudent", "address", "accreditationEdit", "active", "universityContractCategory",
-        "version", "oneId", "allowGrouping", "teacherUrl", "allowTransferOutside", "ownership", "name", "gpaEdit"
+        "version", "oneId", "allowGrouping", "teacherUrl", "allowTransferOutside", "ownership", "name", "gpaEdit",
+        "addForeignStudent", "gradingSystem", "uzbmbUrl", "universityUrl", "mailAddress", "bankInfo", "accreditationInfo"
     })
     public static class UniversityReferenceDto {
         @JsonProperty("_entityName")
@@ -196,6 +211,15 @@ public class StudentLegacyDto {
         private Boolean gpaEdit;
         private Integer version;
 
+        // 7 ta yangi maydon (OLD-HEMIS compatibility uchun)
+        private Boolean addForeignStudent;
+        private Boolean gradingSystem;
+        private String uzbmbUrl;
+        private String universityUrl;
+        private String mailAddress;
+        private String bankInfo;
+        private String accreditationInfo;
+
         private SimpleReferenceDto universityType;
         private SimpleReferenceDto ownership;
         private SimpleReferenceDto versionType;
@@ -204,11 +228,11 @@ public class StudentLegacyDto {
 
     /**
      * Faculty/Department reference
-     * Field order: _entityName, id, code, version, nameUz, nameRu, nameEn
+     * Field order: _entityName, id, code, version, nameUz, nameRu, nameEn, university
      */
     @Data
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @JsonPropertyOrder({"_entityName", "_instanceName", "id", "code", "version", "nameUz", "nameRu", "nameEn"})
+    @JsonPropertyOrder({"_entityName", "_instanceName", "id", "code", "version", "nameUz", "nameRu", "nameEn", "university"})
     public static class FacultyReferenceDto {
         @JsonProperty("_entityName")
         private String entityName = "hemishe_EUniversityDepartment";
@@ -220,6 +244,9 @@ public class StudentLegacyDto {
         private String nameRu;
         private String nameEn;
         private Integer version;
+
+        // Nested university reference (OLD-HEMIS compatibility uchun)
+        private UniversityReferenceDto university;
     }
 
     /**

@@ -3,7 +3,6 @@ plugins {
 }
 
 group = "uz.hemis"
-version = "2.0.0"
 
 dependencies {
     implementation(project(":common"))
@@ -16,6 +15,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
