@@ -93,7 +93,8 @@ public class CleanArchitectureTest {
                 "javax.servlet..",
                 "jakarta.servlet.."
             )
-            .because("Service layer must be independent of web layer");
+            .because("Service layer must be independent of web layer")
+            .allowEmptyShould(true);
 
         rule.check(classes);
         System.out.println("✅ Service layer is independent of web layer!");

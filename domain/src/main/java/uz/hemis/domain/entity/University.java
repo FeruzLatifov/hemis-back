@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -32,6 +37,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "hemishe_e_university")
 @SQLRestriction("delete_ts IS NULL")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 public class University implements Serializable {
@@ -71,6 +77,7 @@ public class University implements Serializable {
      * Creation timestamp
      * Column: create_ts TIMESTAMP(6)
      */
+    @CreatedDate
     @Column(name = "create_ts", updatable = false)
     private LocalDateTime createTs;
 
@@ -78,6 +85,7 @@ public class University implements Serializable {
      * Creator username
      * Column: created_by VARCHAR(50)
      */
+    @CreatedBy
     @Column(name = "created_by", length = 50, updatable = false)
     private String createdBy;
 
@@ -85,6 +93,7 @@ public class University implements Serializable {
      * Last update timestamp
      * Column: update_ts TIMESTAMP(6)
      */
+    @LastModifiedDate
     @Column(name = "update_ts")
     private LocalDateTime updateTs;
 
@@ -92,6 +101,7 @@ public class University implements Serializable {
      * Last updater username
      * Column: updated_by VARCHAR(50)
      */
+    @LastModifiedBy
     @Column(name = "updated_by", length = 50)
     private String updatedBy;
 
@@ -378,20 +388,16 @@ public class University implements Serializable {
 
     @PrePersist
     protected void onCreate() {
-        createTs = LocalDateTime.now();
         if (version == null) {
             version = 1;
         }
-        // TODO: Set createdBy from SecurityContext
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updateTs = LocalDateTime.now();
         if (version != null) {
             version++;
         }
-        // TODO: Set updatedBy from SecurityContext
     }
 
     // =====================================================

@@ -1,7 +1,7 @@
 package uz.hemis.service.academic.mapper;
 
 import org.mapstruct.*;
-import uz.hemis.common.dto.AttendanceDto;
+import uz.hemis.common.dto.academic.AttendanceDto;
 import uz.hemis.domain.entity.Attendance;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)

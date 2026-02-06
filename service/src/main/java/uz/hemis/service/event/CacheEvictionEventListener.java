@@ -189,7 +189,7 @@ public class CacheEvictionEventListener {
 
         try {
             // For now: Clear all permission and menu caches (affects all users)
-            // TODO: Implement targeted eviction for large user bases
+            // DEFERRED: Implement targeted eviction for large user bases
             //       - Query users with roleCode
             //       - Evict each user's cache individually
             cacheEvictionService.evictAllPermissions();

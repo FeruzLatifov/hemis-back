@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.UniversityDto;
+import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.University;
@@ -360,7 +362,7 @@ public class UniversityService {
 
         // Set soft delete timestamp
         university.setDeleteTs(LocalDateTime.now());
-        // TODO: Set deletedBy from SecurityContext
+        university.setDeletedBy(extractCurrentUsername());
 
         universityRepository.save(university);
 
@@ -437,5 +439,10 @@ public class UniversityService {
             log.warn("University not found: {}", code);
             return null;
         }
+    }
+
+    private String extractCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
     }
 }

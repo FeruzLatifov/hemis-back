@@ -1,7 +1,7 @@
 package uz.hemis.service.student.mapper;
 
 import org.mapstruct.*;
-import uz.hemis.common.dto.StudentDto;
+import uz.hemis.common.dto.student.StudentDto;
 import uz.hemis.domain.entity.Student;
 
 import java.util.List;

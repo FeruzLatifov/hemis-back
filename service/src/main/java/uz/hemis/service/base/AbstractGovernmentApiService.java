@@ -1,12 +1,16 @@
 package uz.hemis.service.base;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -185,6 +189,199 @@ public abstract class AbstractGovernmentApiService {
     }
 
     /**
+     * Proxy POST request to external API with Bearer token authentication.
+     *
+     * <p>Replicates old-hemis BimmServiceBean pattern:</p>
+     * <ul>
+     *   <li>Sends POST with JSON body and Bearer token</li>
+     *   <li>Returns raw parsed response (array or object) — no wrapping</li>
+     *   <li>On HTTP errors, parses error body and returns {success:false, code:status, data:body}</li>
+     * </ul>
+     *
+     * @param url Full API URL
+     * @param jsonBody JSON request body (will be serialized)
+     * @param bearerToken Bearer token for Authorization header
+     * @param serviceName Service name for logging
+     * @return Parsed JSON response (Object — may be Map or List)
+     */
+    protected Object proxyExternalApiPost(String url, Object jsonBody, String bearerToken, String serviceName) {
+        log.debug("Proxy POST - Service: {}, URL: {}", serviceName, url);
+
+        try {
+            disableSslVerification();
+
+            // Use HttpsURLConnection directly (same as old-hemis MyRequest)
+            // RestTemplate loses error body on HTTPS 4xx/5xx responses
+            java.net.URL urlObj = new java.net.URL(url);
+            javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) urlObj.openConnection();
+            conn.setInstanceFollowRedirects(true);
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + bearerToken);
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(30000);
+
+            // Write body
+            String bodyJson = objectMapper.writeValueAsString(jsonBody);
+            try (java.io.OutputStream os = conn.getOutputStream()) {
+                os.write(bodyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            int statusCode = conn.getResponseCode();
+            String response;
+
+            // Read response (success or error stream)
+            java.io.InputStream is = (statusCode >= 200 && statusCode < 300)
+                    ? conn.getInputStream()
+                    : conn.getErrorStream();
+
+            if (is != null) {
+                response = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                is.close();
+            } else {
+                response = "";
+            }
+
+            conn.disconnect();
+
+            log.debug("{} - Status: {}, Response: {}", serviceName, statusCode, response);
+
+            if (statusCode >= 200 && statusCode < 300) {
+                return parseJsonResponse(response);
+            } else {
+                // Return parsed error body (like old-hemis does)
+                return buildProxyErrorResponse(statusCode, response);
+            }
+
+        } catch (Exception e) {
+            log.error("{} - External API call failed: {}", serviceName, e.getMessage(), e);
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
+            error.put("code", 500);
+            error.put("data", e.getMessage());
+            return error;
+        }
+    }
+
+    /**
+     * Proxy GET request to external API with Bearer token authentication.
+     *
+     * <p>Replicates old-hemis BimmServiceBean.certificate() pattern:</p>
+     * <ul>
+     *   <li>Sends GET with query parameters and Bearer token</li>
+     *   <li>Returns raw parsed response (array or object)</li>
+     * </ul>
+     *
+     * @param url Full API URL (with query params already appended)
+     * @param bearerToken Bearer token for Authorization header
+     * @param serviceName Service name for logging
+     * @return Parsed JSON response (Object — may be Map or List)
+     */
+    protected Object proxyExternalApiGet(String url, String bearerToken, String serviceName) {
+        log.debug("Proxy GET - Service: {}, URL: {}", serviceName, url);
+
+        try {
+            disableSslVerification();
+
+            java.net.URL urlObj = new java.net.URL(url);
+            javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) urlObj.openConnection();
+            conn.setInstanceFollowRedirects(true);
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("Authorization", "Bearer " + bearerToken);
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(30000);
+
+            int statusCode = conn.getResponseCode();
+            String response;
+
+            java.io.InputStream is = (statusCode >= 200 && statusCode < 300)
+                    ? conn.getInputStream()
+                    : conn.getErrorStream();
+
+            if (is != null) {
+                response = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                is.close();
+            } else {
+                response = "";
+            }
+
+            conn.disconnect();
+
+            log.debug("{} - Status: {}, Response: {}", serviceName, statusCode, response);
+
+            if (statusCode >= 200 && statusCode < 300) {
+                return parseJsonResponse(response);
+            } else {
+                return buildProxyErrorResponse(statusCode, response);
+            }
+
+        } catch (Exception e) {
+            log.error("{} - External API call failed: {}", serviceName, e.getMessage(), e);
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
+            error.put("code", 500);
+            error.put("data", e.getMessage());
+            return error;
+        }
+    }
+
+    /**
+     * Parse JSON response string into Object (Map or List).
+     *
+     * <p>Replicates old-hemis MyResponse.getBodyAsArray() behavior exactly:</p>
+     * <ul>
+     *   <li>null/empty body → null</li>
+     *   <li>JSON array → List (null if empty)</li>
+     *   <li>JSON object → Map (null if empty)</li>
+     *   <li>Non-JSON → raw string</li>
+     *   <li>Numbers: Gson converts Double to Long for whole numbers;
+     *       Jackson uses Integer/Long natively — JSON output identical</li>
+     * </ul>
+     */
+    @SuppressWarnings("unchecked")
+    private Object parseJsonResponse(String response) throws JsonProcessingException {
+        if (response == null || response.isEmpty()) {
+            return null;
+        }
+        String trimmed = response.trim();
+        if (trimmed.startsWith("[")) {
+            java.util.List<Object> list = objectMapper.readValue(trimmed, java.util.List.class);
+            return (list == null || list.isEmpty()) ? null : list;
+        } else if (trimmed.startsWith("{")) {
+            Map<String, Object> map = objectMapper.readValue(trimmed, LinkedHashMap.class);
+            return (map == null || map.isEmpty()) ? null : map;
+        } else {
+            // Non-JSON: return raw string (matches old-hemis getBodyAsArray behavior)
+            return response;
+        }
+    }
+
+    /**
+     * Build proxy error response from HTTP error.
+     * Tries to parse error body as JSON; falls back to raw string.
+     */
+    private Object buildProxyErrorResponse(int statusCode, String responseBody) {
+        // Try to parse error body as JSON (BIMM API returns JSON errors)
+        if (responseBody != null && !responseBody.isBlank()) {
+            try {
+                Object parsed = parseJsonResponse(responseBody);
+                if (parsed != null) {
+                    return parsed;
+                }
+            } catch (JsonProcessingException ignored) {
+                // Not valid JSON, wrap in error map
+            }
+        }
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("success", false);
+        error.put("code", statusCode);
+        error.put("data", responseBody);
+        return error;
+    }
+
+    /**
      * Check if response indicates "not found" or "invalid"
      *
      * <p>Government APIs often return string "no" or "No" when data not found</p>
@@ -286,7 +483,7 @@ public abstract class AbstractGovernmentApiService {
     /**
      * Validate captcha (stub implementation)
      *
-     * <p>TODO: Integrate with actual captcha service</p>
+     * <p>DEFERRED: Integrate with actual captcha service</p>
      * <p>For now, accepts any non-empty value</p>
      *
      * @param captchaId Captcha ID

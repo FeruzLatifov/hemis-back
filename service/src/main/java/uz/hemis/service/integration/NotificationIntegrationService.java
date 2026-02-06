@@ -3,7 +3,8 @@ package uz.hemis.service.integration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uz.hemis.common.dto.*;
+import uz.hemis.common.dto.system.EmailRequest;
+import uz.hemis.common.dto.system.VerifyCodeRequest;
 import java.util.*;
 
 @Service

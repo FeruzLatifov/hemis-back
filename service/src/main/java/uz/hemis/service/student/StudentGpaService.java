@@ -466,6 +466,27 @@ public class StudentGpaService {
     }
 
     /**
+     * Get GPA entity by ID
+     *
+     * @param id GPA record UUID
+     * @return Optional containing entity or empty
+     */
+    public Optional<StudentGpa> findEntityById(UUID id) {
+        return studentGpaRepository.findById(id);
+    }
+
+    /**
+     * Delete GPA record (physical delete - no delete_ts column in this table)
+     *
+     * @param entity GPA entity to delete
+     */
+    @Transactional
+    public void delete(StudentGpa entity) {
+        studentGpaRepository.delete(entity);
+        log.info("Deleted GPA record: {}", entity.getId());
+    }
+
+    /**
      * Count GPA records by university
      *
      * @param universityCode University code

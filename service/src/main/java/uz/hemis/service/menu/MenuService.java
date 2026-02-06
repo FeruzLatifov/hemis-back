@@ -169,7 +169,6 @@ public class MenuService {
     /**
      * Filter menu with pre-loaded translations (recursive)
      */
-    @SuppressWarnings("deprecation")  // labelUz, labelOz, labelRu, labelEn are deprecated but kept for backward compatibility
     private List<MenuItem> filterMenuByPermissionsWithCache(
         List<MenuItem> items,
         List<String> permissions,
@@ -195,12 +194,7 @@ public class MenuService {
                     .id(item.getId())
                     .i18nKey(translationKey)
                     .label(translations.get(locale).getOrDefault(translationKey, translationKey))
-                    .labels(labelsMap)  // ✅ FIX #21: New dynamic labels map
-                    // ✅ Keep deprecated fields for backward compatibility
-                    .labelUz(labelsMap.get("uz-UZ"))
-                    .labelOz(labelsMap.get("oz-UZ"))
-                    .labelRu(labelsMap.get("ru-RU"))
-                    .labelEn(labelsMap.get("en-US"))
+                    .labels(labelsMap)
                     .url(item.getUrl())
                     .icon(item.getIcon())
                     .permission(item.getPermission())

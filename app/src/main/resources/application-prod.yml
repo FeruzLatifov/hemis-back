@@ -71,40 +71,43 @@ spring:
   # =====================================================
   # Production Liquibase Configuration
   # =====================================================
-  # ✅ AUTOMATIC MIGRATIONS with Production Safeguards
-  # 
   # Safeguards:
   # 1. Database lock (DATABASECHANGELOGLOCK) - only 1 instance migrates
   # 2. Context filtering (contexts: production)
   # 3. Tag-based rollback support
   # 4. Validation before deployment (CI/CD)
-  # 
+  #
   # Best Practice: Run migrations before scaling to multiple instances
   # =====================================================
 
   liquibase:
-    # Enable automatic migrations in production
-    enabled: true  # ✅ Automatic with safeguards
-    
-    # Changelog location
+    enabled: true
     change-log: classpath:/db/changelog/db.changelog-master.yaml
-    
-    # Default schema
     default-schema: public
-    
-    # Production context (only runs production-safe changesets)
     contexts: production
-    
-    # Database lock timeout (30 seconds)
-    # If another instance is running migrations, wait max 30s
     lock-timeout: 30
-    
-    # Strict validation
-    # Fail fast if changesets were modified
     liquibase-tablespace: null
-    
-    # Safety: Never drop in production
     drop-first: false
+
+  # =====================================================
+  # Production Jackson override
+  # =====================================================
+  # Base config has indent-output: true (dev-friendly)
+  # Production: compact JSON for performance
+  # =====================================================
+
+  jackson:
+    serialization:
+      indent-output: false
+
+  # =====================================================
+  # File upload limits
+  # =====================================================
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 # =====================================================
 # Server Configuration (Production)
@@ -112,6 +115,13 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+  # Reverse proxy support (nginx -> spring boot)
+  forward-headers-strategy: framework
+  tomcat:
+    remoteip:
+      protocol-header: x-forwarded-proto
+      remote-ip-header: x-forwarded-for
 
   error:
     include-stacktrace: never  # Never expose stack traces
@@ -122,6 +132,85 @@ server:
 
   http2:
     enabled: true
+
+  # SSL (enable when terminating TLS at app level, not at nginx)
+  # ssl:
+  #   enabled: true
+  #   key-store: classpath:keystore.p12
+  #   key-store-password: ${SSL_KEYSTORE_PASSWORD}
+  #   key-store-type: PKCS12
+  #   key-alias: hemis
+
+# =====================================================
+# Legacy OAuth Client Credentials (REQUIRED)
+# =====================================================
+# CRITICAL: Must be set via environment variables
+# OAUTH_CLIENT_ID and OAUTH_CLIENT_SECRET
+# Application will fail to start if blank
+# =====================================================
+
+hemis:
+  security:
+    oauth:
+      client-id: ${OAUTH_CLIENT_ID}
+      client-secret: ${OAUTH_CLIENT_SECRET}
+
+# =====================================================
+# Security Configuration (SecurityProperties.java)
+# =====================================================
+# Consumed by: uz.hemis.app.config.SecurityProperties
+# =====================================================
+
+security:
+  oauth2:
+    issuer-uri: ${OAUTH2_ISSUER_URI:https://auth.hemis.uz/realms/hemis}
+    jwk-set-uri: ${OAUTH2_JWK_SET_URI:https://auth.hemis.uz/realms/hemis/protocol/openid-connect/certs}
+    token-expiration-seconds: 3600
+    refresh-token-expiration-seconds: 86400
+
+  cors:
+    enabled: true
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:https://hemis.uz}
+    max-age: 3600
+
+  rate-limit:
+    enabled: true
+    requests-per-minute: 100
+    burst-capacity: 200
+    global-requests-per-minute: 1000
+
+  api:
+    require-https: true
+    log-requests: true
+    log-responses: false
+    max-request-size: 10485760
+
+# =====================================================
+# Cookie Configuration (WebAuthController.java)
+# =====================================================
+# Consumed by: uz.hemis.web.controller.WebAuthController
+# =====================================================
+
+app:
+  security:
+    cookie:
+      secure: true
+      same-site: Strict
+
+# =====================================================
+# External Government API (GovernmentMinorApiService.java)
+# =====================================================
+# Consumed by: uz.hemis.service.shared.GovernmentMinorApiService
+# =====================================================
+
+external:
+  api:
+    guvd:
+      url: ${GUVD_API_URL:https://api.guvd.gov.uz}
+      token: ${GUVD_API_TOKEN:}
+    tax:
+      url: ${TAX_API_URL:https://api.soliq.uz}
+      token: ${TAX_API_TOKEN:}
 
 # =====================================================
 # Actuator Configuration (Production)
@@ -163,60 +252,28 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 # =====================================================
-# HEMIS Production Configuration
-# =====================================================
-
-hemis:
-  cors:
-    allowed-origins:
-      - ${CORS_ALLOWED_ORIGINS:https://hemis.uz}
-
-  security:
-    jwt:
-      jwk-set-uri: ${JWT_JWK_SET_URI}
-      issuer-uri: ${JWT_ISSUER_URI}
-
-  database:
-    enforce-no-delete: true
-
-# =====================================================
 # Required Environment Variables
 # =====================================================
 # Master Database:
-# DB_MASTER_HOST=master-db-server
-# DB_MASTER_PORT=5432
-# DB_MASTER_NAME=test1_hemis
-# DB_MASTER_USERNAME=hemis_app
-# DB_MASTER_PASSWORD=<secure-password>
+#   DB_MASTER_HOST, DB_MASTER_PORT, DB_MASTER_NAME
+#   DB_MASTER_USERNAME, DB_MASTER_PASSWORD
 #
 # Replica Database:
-# DB_REPLICA_HOST=replica-db-server
-# DB_REPLICA_PORT=5432
-# DB_REPLICA_NAME=test1_hemis
-# DB_REPLICA_USERNAME=hemis_readonly
-# DB_REPLICA_PASSWORD=<secure-password>
+#   DB_REPLICA_HOST, DB_REPLICA_PORT, DB_REPLICA_NAME
+#   DB_REPLICA_USERNAME, DB_REPLICA_PASSWORD
 #
-# JWT & Security:
-# JWT_JWK_SET_URI=https://auth-server/.well-known/jwks.json
-# JWT_ISSUER_URI=https://auth-server
-# CORS_ALLOWED_ORIGINS=https://hemis.uz
+# Security:
+#   OAUTH2_ISSUER_URI, OAUTH2_JWK_SET_URI
+#   CORS_ALLOWED_ORIGINS
+#   JWT_JWK_SET_URI, JWT_ISSUER_URI
+#
+# External APIs:
+#   GUVD_API_TOKEN, TAX_API_TOKEN
 #
 # Logging:
-# LOG_FILE=/var/log/hemis/application.log
+#   LOG_FILE (default: /var/log/hemis/application.log)
 #
 # Optional:
-# SERVER_PORT=8080
-# =====================================================
-
-# =====================================================
-# Security Checklist
-# =====================================================
-# ✓ Database credentials in ENV variables
-# ✓ JWT validation via JWK Set URI
-# ✓ HTTPS enabled (via reverse proxy)
-# ✓ CORS limited to production domain
-# ✓ Actuator endpoints secured
-# ✓ Error messages sanitized
-# ✓ SQL logging disabled
-# ✓ Stack traces hidden
+#   SERVER_PORT (default: 8080)
+#   SSL_KEYSTORE_PASSWORD (if SSL at app level)
 # =====================================================

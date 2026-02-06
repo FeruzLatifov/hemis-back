@@ -171,7 +171,7 @@ public class AdminAuthController {
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
         log.info("Get current admin user");
-        // TODO: Token'dan user ma'lumotlarini olish
+        // DEFERRED: Token'dan user ma'lumotlarini olish - JWT claim mapping kerak
         return ResponseEntity.ok(Map.of(
                 "username", "admin",
                 "roles", new String[]{"ADMIN"}

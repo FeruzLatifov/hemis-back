@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.LanguageDto;
+import uz.hemis.common.dto.system.LanguageDto;
 import uz.hemis.domain.entity.Language;
 import uz.hemis.domain.repository.LanguageRepository;
-import uz.hemis.service.mapper.LanguageMapper;
+import uz.hemis.service.shared.mapper.LanguageMapper;
 
 import java.util.List;
 import java.util.Optional;

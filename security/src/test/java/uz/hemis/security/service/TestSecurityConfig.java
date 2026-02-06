@@ -14,6 +14,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
+import static org.mockito.Mockito.mock;
+
 /**
  * Test Security Configuration
  *
@@ -29,6 +31,14 @@ public class TestSecurityConfig {
 
     @Value("${hemis.security.jwt.secret:test-secret-key-minimum-256-bits-required-for-hmac-sha256}")
     private String jwtSecret;
+
+    /**
+     * Mock UserPermissionCacheService for tests
+     */
+    @Bean
+    public UserPermissionCacheService userPermissionCacheService() {
+        return mock(UserPermissionCacheService.class);
+    }
 
     /**
      * JWT Encoder for generating tokens in tests

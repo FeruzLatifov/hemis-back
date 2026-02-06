@@ -3,7 +3,8 @@ package uz.hemis.service.integration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uz.hemis.common.dto.*;
+import uz.hemis.common.dto.finance.InvoiceRequest;
+import uz.hemis.common.dto.finance.ScholarshipBillingRequest;
 import java.util.*;
 
 @Service

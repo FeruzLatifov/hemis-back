@@ -3,7 +3,6 @@ plugins {
 }
 
 group = "uz.hemis"
-version = "2.0.0"
 
 dependencies {
     implementation(project(":common"))
@@ -25,7 +24,9 @@ dependencies {
     implementation("org.apache.poi:poi-ooxml:5.5.1")
     
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation(project(":app"))
 }
 
 tasks.test {

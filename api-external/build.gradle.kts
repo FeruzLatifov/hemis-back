@@ -3,7 +3,6 @@ plugins {
 }
 
 group = "uz.hemis"
-version = "2.0.0"
 
 dependencies {
     implementation(project(":common"))

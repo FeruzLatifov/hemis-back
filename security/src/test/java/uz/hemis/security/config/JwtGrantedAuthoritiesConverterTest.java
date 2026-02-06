@@ -251,7 +251,9 @@ class JwtGrantedAuthoritiesConverterTest {
     @DisplayName("Should handle null roles claim")
     void handleNullRolesClaim() {
         // Given
-        Jwt jwt = createJwt(Map.of("roles", null));
+        java.util.HashMap<String, Object> claims = new java.util.HashMap<>();
+        claims.put("roles", null);
+        Jwt jwt = createJwt(claims);
 
         // When
         Collection<GrantedAuthority> authorities = converter.convert(jwt);

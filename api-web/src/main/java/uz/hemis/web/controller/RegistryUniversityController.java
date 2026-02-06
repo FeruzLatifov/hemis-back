@@ -22,7 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
-import uz.hemis.common.dto.UniversityDto;
+import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.service.registry.UniversityRegistryService;
 
 import java.nio.charset.StandardCharsets;

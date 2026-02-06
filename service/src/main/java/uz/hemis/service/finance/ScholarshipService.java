@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.ScholarshipDto;
+import uz.hemis.common.dto.finance.ScholarshipDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Scholarship;
 import uz.hemis.service.finance.mapper.ScholarshipMapper;

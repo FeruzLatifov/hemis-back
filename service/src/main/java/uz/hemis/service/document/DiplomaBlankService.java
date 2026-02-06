@@ -7,9 +7,11 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.DiplomaBlankDto;
+import uz.hemis.common.dto.document.DiplomaBlankDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.DiplomaBlank;
@@ -419,8 +421,7 @@ public class DiplomaBlankService {
 
         // Set soft delete fields
         diplomaBlank.setDeleteTs(LocalDateTime.now());
-        // TODO: Set deletedBy from SecurityContext
-        // diplomaBlank.setDeletedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+        diplomaBlank.setDeletedBy(extractCurrentUsername());
 
         // Save (this triggers @PreUpdate)
         diplomaBlankRepository.save(diplomaBlank);
@@ -436,4 +437,9 @@ public class DiplomaBlankService {
     // Physical DELETE is not allowed (NDG).
     // Use softDelete() instead.
     // =====================================================
+
+    private String extractCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
+    }
 }

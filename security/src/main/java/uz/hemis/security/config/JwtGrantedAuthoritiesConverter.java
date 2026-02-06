@@ -186,6 +186,9 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
      * @return list of granted authorities
      */
     private List<GrantedAuthority> extractRolesFromClaim(Jwt jwt, String claimName) {
+        if (jwt.getClaim(claimName) == null) {
+            return List.of();
+        }
         List<String> roles = jwt.getClaimAsStringList(claimName);
 
         if (roles == null || roles.isEmpty()) {

@@ -375,6 +375,22 @@ public class Student extends BaseEntity {
     @Column(name = "_doctoral_student_type", length = 32)
     private String doctoralStudentType;
 
+    /**
+     * Poverty level code
+     * Column: _poverty_level VARCHAR(32)
+     * References: hemishe_h_poverty_level.code
+     */
+    @Column(name = "_poverty_level", length = 32)
+    private String povertyLevel;
+
+    /**
+     * Grant type code
+     * Column: _grant_type VARCHAR(32)
+     * References: hemishe_h_grant_type.code
+     */
+    @Column(name = "_grant_type", length = 32)
+    private String grantType;
+
     // =====================================================
     // Speciality UUID References (for multi-level education)
     // =====================================================

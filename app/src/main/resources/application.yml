@@ -1,7 +1,7 @@
 # =====================================================
 # HEMIS Application Configuration
 # =====================================================
-# Stack: Spring Boot 3.5.7 + JDK 25 + PostgreSQL 17
+# Stack: Spring Boot 4.0.2 + JDK 21 LTS + PostgreSQL 16+
 # Mode: NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
 # =====================================================
 
@@ -303,12 +303,33 @@ hemis:
     # Legacy CUBA REST API base path
     base-path: /app/rest/v2
 
+  # GUVD Integration (Government Unified Virtual Database)
+  integration:
+    guvd:
+      oauth2:
+        url: ${GUVD_OAUTH2_URL:https://iskm.egov.uz:9444/oauth2/token}
+        client-id: ${GUVD_CLIENT_ID:}
+        client-secret: ${GUVD_CLIENT_SECRET:}
+        username: ${GUVD_USERNAME:}
+        password: ${GUVD_PASSWORD:}
+      passport-api-url: ${GUVD_PASSPORT_API_URL:https://apimgw.egov.uz:8243/gcp/docrest/v1}
+      address-api-url: ${GUVD_ADDRESS_API_URL:https://apimgw.egov.uz:8243/mvd/services/address/info/pin/v1}
+
+    # BIMM Integration (api-mspd.edu.uz)
+    bimm:
+      oauth2:
+        url: ${BIMM_OAUTH2_URL:https://api-mspd.edu.uz/auth/token}
+        username: ${BIMM_OAUTH2_USERNAME:}
+        password: ${BIMM_OAUTH2_PASSWORD:}
+      api:
+        base-url: ${BIMM_API_URL:https://api-mspd.edu.uz}
+
   # External API Configuration (Government Services)
   external:
     # Personal Data Service (MVD Integration)
     personal-data:
       url: ${PERSONAL_DATA_URL:https://talaba.edu.uz/api/my_edu_uz/student_mvd_hemis.php}
-      token: ${PERSONAL_DATA_TOKEN:12345}
+      token: ${PERSONAL_DATA_TOKEN:}
 
     # Passport Data Service (Government Passport API)
     passport-data:
@@ -347,7 +368,7 @@ hemis:
   security:
     jwt:
       # JWT Secret Key (for HMAC-SHA256 signing)
-      secret: ${JWT_SECRET:aGVtaXMtc2VjcmV0LWtleS0yMDI1LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLWhlbWlzLXNlY3JldC1rZXk=}
+      secret: ${JWT_SECRET}
       # Token expiration (seconds) - default: 12 hours
       expiration: ${JWT_EXPIRATION:43200}
       # Refresh token expiration (seconds) - default: 7 days
@@ -359,8 +380,9 @@ hemis:
       issuer-uri: ${JWT_ISSUER_URI:}
     oauth:
       # Legacy client credentials (Basic auth)
-      client-id: ${OAUTH_CLIENT_ID:client}
-      client-secret: ${OAUTH_CLIENT_SECRET:secret}
+      # CRITICAL: No defaults — must be configured per profile
+      client-id: ${OAUTH_CLIENT_ID:}
+      client-secret: ${OAUTH_CLIENT_SECRET:}
       # Scope returned in token responses
       scope: ${OAUTH_SCOPE:rest-api}
 

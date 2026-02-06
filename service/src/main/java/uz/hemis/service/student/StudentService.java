@@ -7,9 +7,10 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.common.dto.StudentDto;
+import uz.hemis.common.dto.student.StudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.Student;
@@ -17,7 +18,10 @@ import uz.hemis.service.student.mapper.StudentMapper;
 import uz.hemis.service.student.mapper.StudentLegacyMapper;
 import uz.hemis.domain.repository.StudentRepository;
 
-import uz.hemis.common.dto.StudentIdRequest;
+import uz.hemis.common.dto.student.StudentIdRequest;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.audit.AuditAction;
@@ -25,11 +29,14 @@ import uz.hemis.common.audit.AuditAction;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * Student Service - Business Logic Layer
@@ -60,6 +67,7 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
     private final StudentLegacyMapper studentLegacyMapper;
+    private final JdbcTemplate jdbcTemplate;
 
     // =====================================================
     // Read Operations (Read-Only Transactions)
@@ -179,6 +187,16 @@ public class StudentService {
      */
     public boolean existsByPinfl(String pinfl) {
         return studentRepository.existsMasterByPinfl(pinfl);
+    }
+
+    /**
+     * Find student entity by ID (for legacy endpoints that need entity access)
+     *
+     * @param id student UUID
+     * @return Optional containing student entity
+     */
+    public Optional<Student> findEntityById(UUID id) {
+        return studentRepository.findById(id);
     }
 
     // =====================================================
@@ -530,8 +548,10 @@ public class StudentService {
 
         // Set soft delete fields
         student.setDeleteTs(LocalDateTime.now());
-        // TODO: Set deletedBy from SecurityContext
-        // student.setDeletedBy(SecurityContextHolder.getContext().getAuthentication().getName());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null) {
+            student.setDeletedBy(auth.getName());
+        }
 
         // Save (this triggers @PreUpdate)
         Student deleted = studentRepository.save(student);
@@ -539,18 +559,6 @@ public class StudentService {
         log.warn("Student soft deleted: {} from university: {}", id, student.getUniversity());
 
         return studentMapper.toDto(deleted);
-    }
-
-    /**
-     * Soft delete student (backward compatible - no university check)
-     *
-     * @deprecated Use {@link #softDelete(UUID, String)} with university check instead
-     */
-    @Transactional
-    @CacheEvict(value = "students", allEntries = true)
-    @Deprecated
-    public void softDelete(UUID id) {
-        softDelete(id, null);
     }
 
     /**
@@ -612,133 +620,423 @@ public class StudentService {
     }
 
     /**
-     * Get student by PINFL (CUBA compatible)
-     *
-     * @param pinfl personal identification number
-     * @return student DTO or null
+     * OLD-HEMIS: StudentServiceBean.get(pinfl)
+     * JPQL: studentStatus IN ('11','16')
+     * Returns flat service map or null
      */
-    public Object getByPinfl(String pinfl) {
-        log.debug("CUBA API: get student by PINFL: {}", pinfl);
-        try {
-            return findByPinfl(pinfl);
-        } catch (ResourceNotFoundException e) {
-            return null;
+    public Map<String, Object> getByPinflFlat(String pinfl) {
+        List<Student> students = studentRepository.findByPinflAndStudentStatusIn(pinfl, Arrays.asList("11", "16"));
+        if (students.isEmpty()) return null;
+        return studentLegacyMapper.toFlatServiceMap(students.get(0));
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.getActive(pinfl)
+     * JPQL: studentStatus IN ('11','16') AND decreeInfoNumber IS NOT NULL AND decreeInfoNumber <> ''
+     * Uses native SQL because decree_info_number is not mapped in Student entity
+     */
+    public Map<String, Object> getActiveFlat(String pinfl) {
+        // Primary: pinfl + status + decreeInfoNumber check
+        String sql = """
+                SELECT id FROM hemishe_e_student
+                WHERE pinfl = ?
+                AND _student_status IN ('11','16')
+                AND decree_info_number IS NOT NULL AND decree_info_number <> ''
+                AND delete_ts IS NULL
+                LIMIT 1
+                """;
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, pinfl);
+        if (rows.isEmpty()) {
+            // Fallback: search by serial number (old-hemis behavior)
+            sql = """
+                    SELECT id FROM hemishe_e_student
+                    WHERE serial_number = ? AND delete_ts IS NULL
+                    LIMIT 1
+                    """;
+            rows = jdbcTemplate.queryForList(sql, pinfl);
+            if (rows.isEmpty()) return null;
         }
+        UUID id = (UUID) rows.get(0).get("id");
+        Optional<Student> student = studentRepository.findById(id);
+        return student.map(studentLegacyMapper::toFlatServiceMap).orElse(null);
     }
 
     /**
-     * Get student by ID (CUBA compatible)
-     *
-     * @param id student ID
-     * @return student DTO or null
+     * OLD-HEMIS: StudentServiceBean.getById(code)
+     * JPQL: code = :code AND studentStatus IN ('11')
      */
-    public Object getById(UUID id) {
-        log.debug("CUBA API: get student by ID: {}", id);
-        try {
-            return findById(id);
-        } catch (ResourceNotFoundException e) {
-            return null;
+    public Map<String, Object> getByCodeFlat(String code) {
+        Optional<Student> student = studentRepository.findByCodeAndStudentStatusIn(code, List.of("11"));
+        return student.map(studentLegacyMapper::toFlatServiceMap).orElse(null);
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.getDoctoral(pinfl)
+     * JPQL: pinfl AND educationType='13' AND studentStatus IN ('11')
+     */
+    public Map<String, Object> getDoctoralFlat(String pinfl) {
+        List<Student> students = studentRepository.findByPinflAndEducationTypeAndStudentStatusIn(
+                pinfl, "13", List.of("11"));
+        if (students.isEmpty()) return null;
+        return studentLegacyMapper.toFlatServiceMap(students.get(0));
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.getWithStatus(pinfl)
+     * Fallback chain: status '11' → latest createTs → serialNumber
+     */
+    public Map<String, Object> getWithStatusFlat(String pinfl) {
+        // Try 1: active students (status '11')
+        List<Student> students = studentRepository.findByPinflAndStudentStatusIn(pinfl, List.of("11"));
+        if (!students.isEmpty()) {
+            return studentLegacyMapper.toFlatServiceMap(students.get(0));
         }
-    }
-
-    /**
-     * Get student with status (CUBA compatible)
-     *
-     * @param pinfl personal identification number
-     * @return student DTO with status
-     */
-    public Object getWithStatus(String pinfl) {
-        log.debug("CUBA API: get student with status by PINFL: {}", pinfl);
-        try {
-            StudentDto student = findByPinfl(pinfl);
-            // TODO: Add status information
-            return student;
-        } catch (ResourceNotFoundException e) {
-            return null;
+        // Try 2: any student by PINFL ordered by createTs DESC
+        students = studentRepository.findAllByPinfl(pinfl);
+        if (!students.isEmpty()) {
+            return studentLegacyMapper.toFlatServiceMap(students.get(0));
         }
-    }
-
-    /**
-     * Get active student by PINFL (CUBA compatible)
-     *
-     * <p>Returns student only if they have active status (enrolled, not graduated/expelled)</p>
-     *
-     * @param pinfl personal identification number
-     * @return active student DTO or null if not found or not active
-     */
-    public Object getActiveByPinfl(String pinfl) {
-        log.debug("CUBA API: get active student by PINFL: {}", pinfl);
-        try {
-            StudentDto student = findByPinfl(pinfl);
-            // Check if student is active (not graduated, not expelled)
-            // TODO: Add actual status check when status field is available
-            return student;
-        } catch (ResourceNotFoundException e) {
-            return null;
+        // Try 3: by serial number
+        students = studentRepository.findBySerialNumber(pinfl);
+        if (!students.isEmpty()) {
+            return studentLegacyMapper.toFlatServiceMap(students.get(0));
         }
-    }
-
-    /**
-     * Get contract information (CUBA compatible)
-     *
-     * @param pinfl personal identification number
-     * @return contract information
-     */
-    public Object getContractInfo(String pinfl) {
-        log.debug("CUBA API: get contract info for PINFL: {}", pinfl);
-        try {
-            StudentDto student = findByPinfl(pinfl);
-            // TODO: Load contract information
-            return student;
-        } catch (ResourceNotFoundException e) {
-            return null;
-        }
-    }
-
-    /**
-     * Check students (CUBA compatible)
-     *
-     * @return check result
-     */
-    public Object check() {
-        log.debug("CUBA API: check students");
-        // TODO: Implement check logic
-        return "{\"status\": \"ok\"}";
-    }
-
-    /**
-     * Get doctoral student (CUBA compatible)
-     *
-     * @param pinfl personal identification number
-     * @return doctoral student data
-     */
-    public Object getDoctoral(String pinfl) {
-        log.debug("CUBA API: get doctoral student by PINFL: {}", pinfl);
-        // TODO: Implement doctoral student lookup
         return null;
     }
 
     /**
-     * Get students by university (CUBA compatible)
-     *
-     * @param university university code
-     * @param limit      result limit
-     * @param offset     result offset
-     * @return list of students
+     * OLD-HEMIS: StudentServiceBean.testGet(pinfl)
+     * Returns billing-format student data
      */
-    public Object getStudentsByUniversity(String university, Integer limit, Integer offset) {
-        log.debug("CUBA API: get students by university: {}, limit: {}, offset: {}", university, limit, offset);
-        List<StudentDto> students = findActiveByUniversity(university);
-        // TODO: Apply limit and offset
-        return students;
+    public Map<String, Object> testGetFlat(String pinfl) {
+        List<Student> students = studentRepository.findByPinflAndStudentStatusIn(pinfl, Arrays.asList("11", "16"));
+        if (students.isEmpty()) return null;
+        return studentLegacyMapper.toBillingMap(students.get(0));
     }
 
     /**
-     * Get student ID by PINFL or other criteria
+     * OLD-HEMIS: StudentServiceBean.students(university, limit, offset)
+     * Paginated student list, max 1000
      */
-    public Object getById(String pinfl) {
-        log.info("Getting student ID by PINFL: {}", pinfl);
-        return findByPinfl(pinfl);
+    public List<Map<String, Object>> getStudentsByUniversityFlat(String university, int limit, int offset) {
+        int safeLimit = Math.min(limit, 1000);
+        List<Student> students = studentRepository.findStudentsByUniversityPaginated(university, safeLimit, offset);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Student s : students) {
+            result.add(studentLegacyMapper.toLegacyMap(s));
+        }
+        return result;
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.tashkentStudents(limit, offset)
+     * Returns CUBA entity format (toLegacyMap) matching old-hemis RStudentFull
+     */
+    public List<Map<String, Object>> getTashkentStudents(int limit, int offset) {
+        int safeLimit = Math.min(limit, 1000);
+        String sql = """
+                SELECT s.id
+                FROM hemishe_e_student s
+                JOIN hemishe_e_university u ON u.code = s._university
+                JOIN hemishe_h_soato so ON so.code = u._soato
+                WHERE so.code LIKE '1726%'
+                  AND s._student_status = '11'
+                  AND s.delete_ts IS NULL
+                ORDER BY s.create_ts
+                LIMIT ? OFFSET ?
+                """;
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, safeLimit, offset);
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            UUID id = (UUID) row.get("id");
+            Optional<Student> student = studentRepository.findById(id);
+            student.ifPresent(s -> result.add(studentLegacyMapper.toRStudentFullMap(s)));
+        }
+        return result;
+    }
+
+    /**
+     * Total count of Tashkent students (for pagination)
+     */
+    public int getTashkentStudentsCount() {
+        String sql = """
+                SELECT count(s.id)
+                FROM hemishe_e_student s
+                JOIN hemishe_e_university u ON u.code = s._university
+                JOIN hemishe_h_soato so ON so.code = u._soato
+                WHERE so.code LIKE '1726%'
+                  AND s._student_status = '11'
+                  AND s.delete_ts IS NULL
+                """;
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+        return count != null ? count : 0;
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.isExpel(pinfls)
+     * Native SQL joining hemishe_e_student + hemishe_h_expel
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> isExpel(String[] pinfls) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (pinfls == null || pinfls.length == 0) {
+            result.put("success", false);
+            result.put("data", "Bad request");
+            return result;
+        }
+
+        try {
+            StringBuilder placeholders = new StringBuilder();
+            List<Object> params = new ArrayList<>();
+            for (int i = 0; i < pinfls.length; i++) {
+                if (i > 0) placeholders.append(",");
+                placeholders.append("?");
+                params.add(pinfls[i]);
+            }
+
+            String sql = """
+                    SELECT s.pinfl,
+                           COALESCE(s.lastname,'') || ' ' || COALESCE(s.firstname,'') || ' ' || COALESCE(s.fathername,'') as fullname,
+                           s._university as "universityCode",
+                           s._expel_reason as "expelReasonCode",
+                           h.name as "expelReasonName"
+                    FROM hemishe_e_student s
+                    LEFT JOIN hemishe_h_expel h ON h.code = s._expel_reason AND h.delete_ts IS NULL
+                    WHERE s.pinfl IN (%s)
+                      AND s._student_status = '12'
+                      AND s.delete_ts IS NULL
+                    ORDER BY s.create_ts DESC
+                    """.formatted(placeholders.toString());
+
+            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql, params.toArray());
+            result.put("success", true);
+            result.put("data", items);
+        } catch (Exception e) {
+            log.error("Error in isExpel", e);
+            result.put("success", false);
+            result.put("data", e.getMessage());
+        }
+        return result;
+    }
+
+    private static final Pattern DIGITS_ONLY = Pattern.compile("^\\d+$");
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.checkScholarship(tin, pinfls)
+     * Native SQL with PostgreSQL stipend_check() and get_student_fullname_by_pinfl()
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> checkScholarshipNative(String tin, String[] pinfls) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (tin == null || !DIGITS_ONLY.matcher(tin).matches()) {
+            result.put("success", false);
+            result.put("data", "Bad request");
+            return result;
+        }
+        if (pinfls == null || pinfls.length == 0) {
+            result.put("success", false);
+            result.put("data", "Bad request");
+            return result;
+        }
+        for (String p : pinfls) {
+            if (!DIGITS_ONLY.matcher(p).matches()) {
+                result.put("success", false);
+                result.put("data", "Bad request");
+                return result;
+            }
+        }
+
+        try {
+            // Build ARRAY literal for UNNEST
+            StringBuilder arrayLiteral = new StringBuilder();
+            for (int i = 0; i < pinfls.length; i++) {
+                if (i > 0) arrayLiteral.append(",");
+                arrayLiteral.append("'").append(pinfls[i]).append("'");
+            }
+
+            String sql = "SELECT t.pinfl, t.fullname FROM (" +
+                    "SELECT r.pinfl, stipend_check('" + tin + "', r.pinfl) as data, " +
+                    "get_student_fullname_by_pinfl(r.pinfl) as fullname " +
+                    "FROM (SELECT UNNEST(ARRAY[" + arrayLiteral + "]) as pinfl) r" +
+                    ") t WHERE t.\"data\" = false";
+
+            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql);
+            result.put("success", true);
+            result.put("data", items);
+        } catch (Exception e) {
+            log.error("Error in checkScholarship", e);
+            result.put("success", false);
+            result.put("data", e.getMessage());
+        }
+        return result;
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.byTashkentAndPaymentForm()
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> byTashkentAndPaymentForm() {
+        return executeTashkentStats(
+                "Toshkent shahrida tahsil oluvchi talabalar (to'luv shakli kesimida)",
+                "byTashkentAndPaymentForm",
+                Map.of("university_code", "OTM kodi", "university_name", "OTM nomi",
+                        "budget", "Davlat grantida tahsil olayotgan talabalar soni",
+                        "contract", "To'lov shartnoma asosida tahsil olayotgan talabalar soni",
+                        "total", "Jami talabalar soni"),
+                """
+                SELECT t.university_code, t.university_name,
+                       b.student_count as budget, c.student_count as contract,
+                       b.student_count + c.student_count as total
+                FROM hemishe_r_student_full t
+                INNER JOIN (
+                    SELECT e.university_code, e.payment_form_code, count(*) as student_count
+                    FROM hemishe_r_student_full e WHERE e.university_region_code like '1726%'
+                    GROUP BY e.university_code, payment_form_code
+                ) b ON b.university_code = t.university_code AND b.payment_form_code = '11'
+                INNER JOIN (
+                    SELECT e.university_code, e.payment_form_code, count(*) as student_count
+                    FROM hemishe_r_student_full e WHERE e.university_region_code like '1726%'
+                    GROUP BY e.university_code, payment_form_code
+                ) c ON c.university_code = t.university_code AND c.payment_form_code = '12'
+                WHERE t.university_region_code like '1726%'
+                GROUP BY t.university_code, t.university_name, budget, contract
+                ORDER BY t.university_code
+                """);
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.byTashkentAndRegionDistrict()
+     */
+    public Map<String, Object> byTashkentAndRegionDistrict() {
+        return executeTashkentStats(
+                "Toshkent shahrida tahsil oluvchi talabalar (OTM, viloyat va tumanlar kesimida)",
+                "byTashkentAndRegionDistrict",
+                Map.of("university_code", "OTM kodi", "university_name", "OTM nomi",
+                        "region_code", "Viloyat kodi", "region_name", "Viloyat nomi",
+                        "district_code", "Tuman kodi", "district_name", "Tuman nomi",
+                        "payment_form_code", "To'lov turi kodi", "payment_form_name", "To'lov turi nomi",
+                        "student_count", "Talabalar soni"),
+                """
+                SELECT e.university_code, e.university_name,
+                       e.region_code, e.region_name, e.district_code, e.district_name,
+                       e.payment_form_code,
+                       CASE WHEN (e.payment_form_name IS NULL) THEN '(Belgilanmagan)' ELSE e.payment_form_name END as payment_form_name,
+                       count(*) as student_count
+                FROM hemishe_r_student_full e WHERE e.university_region_code like '1726%'
+                GROUP BY e.university_code, e.university_name, e.region_code, e.region_name,
+                         e.district_code, e.district_name, e.payment_form_name, payment_form_code
+                ORDER BY e.university_code, e.university_name, e.region_code, e.region_name,
+                         e.district_code, e.district_name, e.payment_form_name
+                """);
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.byTashkentAndRegionDistrictAndEduType()
+     */
+    public Map<String, Object> byTashkentAndRegionDistrictAndEduType() {
+        return executeTashkentStats(
+                "Toshkent shahrida tahsil oluvchi talabalar (OTM, viloyat, tumanlar va ta'lim turi kesimida)",
+                "byTashkentAndRegionDistrictAndEduType",
+                Map.of("university_code", "OTM kodi", "university_name", "OTM nomi",
+                        "region_code", "Viloyat kodi", "region_name", "Viloyat nomi",
+                        "district_code", "Tuman kodi", "district_name", "Tuman nomi",
+                        "education_type_code", "Ta'lim turi kodi", "education_type_name", "Ta'lim turi nomi",
+                        "student_count", "Talabalar soni"),
+                """
+                SELECT e.university_code, e.university_name,
+                       e.region_code, e.region_name, e.district_code, e.district_name,
+                       e.education_type_code,
+                       CASE WHEN (e.education_type_name IS NULL) THEN '(Belgilanmagan)' ELSE e.education_type_name END as education_type_name,
+                       count(*) as student_count
+                FROM hemishe_r_student_full e WHERE e.university_region_code like '1726%'
+                GROUP BY e.university_code, e.university_name, e.region_code, e.region_name,
+                         e.district_code, e.district_name, e.education_type_code, e.education_type_name
+                ORDER BY e.university_code, e.university_name, e.region_code, e.region_name,
+                         e.district_code, e.district_name, e.education_type_code, e.education_type_name
+                """);
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.byTashkentAndFacultyAndCourse()
+     */
+    public Map<String, Object> byTashkentAndFacultyAndCourse() {
+        return executeTashkentStats(
+                "Toshkent shahrida tahsil oluvchi talabalar (OTM, fakultet, ta'lim turi va kurslar kesimida)",
+                "byTashkentAndFacultyAndCourse",
+                Map.of("university_code", "OTM kodi", "university_name", "OTM nomi",
+                        "faculty_code", "Fakultet kodi", "faculty_name", "Fakultet nomi",
+                        "education_type_code", "Ta'lim turi kodi", "education_type_name", "Ta'lim turi nomi",
+                        "course_code", "O'quv kurs kodi", "course_name", "O'quv kurs nomi",
+                        "student_count", "Talabalar soni"),
+                """
+                SELECT e.university_code, e.university_name,
+                       e.faculty_code, e.faculty_name,
+                       e.education_type_code, e.education_type_name,
+                       e.course_code, e.course_name,
+                       count(*) as student_count
+                FROM hemishe_r_student_full e WHERE e.university_region_code like '1726%'
+                GROUP BY e.university_code, e.university_name, e.faculty_code, e.faculty_name,
+                         e.education_type_code, e.education_type_name, e.course_code, e.course_name
+                ORDER BY e.university_code, e.university_name, e.faculty_code, e.faculty_name,
+                         e.education_type_code, e.education_type_name, e.course_code, e.course_name
+                """);
+    }
+
+    /**
+     * OLD-HEMIS: StudentServiceBean.byTashkentAndEduFormTypeAndGender()
+     */
+    public Map<String, Object> byTashkentAndEduFormTypeAndGender() {
+        return executeTashkentStats(
+                "Toshkent shahrida tahsil oluvchi talabalar (OTM, ta'lim shakli, turi va jinslar kesimida)",
+                "byTashkentAndEduFormTypeAndGender",
+                Map.of("university_code", "OTM kodi", "university_name", "OTM nomi",
+                        "education_form_code", "Ta'lim shakli kodi", "education_form_name", "Ta'lim shakli nomi",
+                        "education_type_code", "Ta'lim turi kodi", "education_type_name", "Ta'lim turi nomi",
+                        "gender_code", "Jins kodi", "gender_name", "Jins nomi",
+                        "student_count", "Talabalar soni"),
+                """
+                SELECT e.university_code, e.university_name,
+                       e.education_form_code,
+                       CASE WHEN (e.education_form_name IS NULL) THEN '(Belgilanmagan)' ELSE e.education_form_name END as education_form_name,
+                       e.education_type_code, e.education_type_name,
+                       e.gender_code, e.gender_name,
+                       count(*) as student_count
+                FROM hemishe_r_student_full e WHERE e.university_region_code like '1726%'
+                GROUP BY e.university_code, e.university_name, e.education_form_code, e.education_form_name,
+                         e.education_type_code, e.education_type_name, e.gender_code, e.gender_name
+                ORDER BY e.university_code, e.university_name, e.education_form_code, e.education_form_name,
+                         e.education_type_code, e.education_type_name, e.gender_code, e.gender_name
+                """);
+    }
+
+    /**
+     * Helper: Execute Tashkent statistics query with standard response format
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> executeTashkentStats(String title, String methodName,
+                                                      Map<String, String> columns, String sql) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        String sqlCount = "SELECT count(*) as total_count FROM hemishe_r_student_full e WHERE e.university_region_code like '1726%'";
+        try {
+            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql);
+            Long total = jdbcTemplate.queryForObject(sqlCount, Long.class);
+
+            // Use LinkedHashMap for columns to preserve order
+            Map<String, String> orderedColumns = new LinkedHashMap<>(columns);
+
+            result.put("status", "OK");
+            result.put("title", title);
+            result.put("message", null);
+            result.put("total_student_count", total);
+            result.put("columns", orderedColumns);
+            result.put("items", items);
+        } catch (Exception e) {
+            log.error("Error in {}", methodName, e);
+            result.put("status", "ERROR");
+            result.put("title", title);
+            result.put("message", e.getMessage());
+        }
+        return result;
     }
 
     /**
@@ -1131,29 +1429,28 @@ public class StudentService {
     }
 
     /**
-     * Calculate student GPA
-     */
-    public Object calculateGpa(Map<String, Object> request) {
-        log.info("Calculating GPA: {}", request);
-        String studentId = (String) request.get("studentId");
-        return Map.of("success", true, "gpa", 4.0, "studentId", studentId);
-    }
-
-    /**
-     * Check scholarship eligibility
+     * Check scholarship eligibility (POST format - used by checkScholarship2 endpoint)
      */
     public Object checkScholarship(Map<String, Object> request) {
         log.info("Checking scholarship eligibility: {}", request);
         String studentId = (String) request.get("studentId");
-        return Map.of("success", true, "eligible", true, "studentId", studentId);
+        return Map.of("success", true, "eligible", true, "studentId", String.valueOf(studentId));
     }
 
     /**
-     * Submit contract statistics
+     * OLD-HEMIS: StudentServiceBean.check()
+     * Compares ALL students with citizenship '11' against MVD personal data.
+     * Note: This is a very heavy operation. Returns stub for now.
      */
-    public Object submitContractStatistics(Map<String, Object> request) {
-        log.info("Submitting contract statistics: {}", request);
-        return Map.of("success", true, "submitted", true);
+    public Map<String, Object> checkStudents() {
+        log.info("CUBA API: check students against MVD");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("all_count", 0);
+        result.put("incorrect_count", 0);
+        result.put("no_data_count", 0);
+        result.put("incorrect", List.of());
+        result.put("no_personal_data", List.of());
+        return result;
     }
 
     // =====================================================

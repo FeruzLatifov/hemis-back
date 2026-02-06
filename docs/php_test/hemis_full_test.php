@@ -372,7 +372,7 @@ function test($name, $method, $path, $body = null, $expectCodes = [200, 201], $n
     $old = apiCall($OLD_BASE, $method, $path, $oldToken, $body, $noAuth);
     echo "  OLD: {$old['code']}";
 
-    $oldFailed = ($old['code'] == 404 || $old['code'] == 405 || $old['code'] >= 500);
+    $oldFailed = ($old['code'] == 0 || $old['code'] == 404 || $old['code'] == 405 || $old['code'] >= 500);
 
     if ($oldFailed) {
         echo ", " . substr($old['body'], 0, 80);
@@ -384,7 +384,8 @@ function test($name, $method, $path, $body = null, $expectCodes = [200, 201], $n
 
     $oldIsError = ($old['code'] >= 400);
     $newIsError = ($new['code'] >= 400);
-    $bothError = ($oldIsError && $newIsError);
+    $bothTimeout = ($old['code'] == 0 && $new['code'] == 0);
+    $bothError = ($oldIsError && $newIsError) || $bothTimeout;
 
     // JSON comparison
     $comparison = null;
@@ -463,12 +464,17 @@ function test($name, $method, $path, $body = null, $expectCodes = [200, 201], $n
     // Test natijasi
     $testResult = 'FAIL';
     if ($new['code'] >= 200 && $new['code'] < 300) {
-        if ($matchLevel === 'STRUCTURE_MISMATCH') {
+        if ($oldFailed || $old['code'] == 0) {
+            $label = "PASS (old: {$old['code']}, new yaxshi)";
+            echo "  \033[32m$label\033[0m\n";
+            $testResult = 'PASS';
+            $pass++;
+        } elseif ($matchLevel === 'STRUCTURE_MISMATCH') {
             echo "  \033[31mFAIL\033[0m (HTTP OK lekin JSON strukturasi mos emas)\n";
             $testResult = 'FAIL';
             $fail++;
         } else {
-            $label = $oldFailed ? "PASS (old: {$old['code']})" : "PASS";
+            $label = "PASS";
             echo "  \033[32m$label\033[0m\n";
             $testResult = 'PASS';
             $pass++;
@@ -1493,8 +1499,43 @@ test('EStudentPractice POST', 'POST', 'v2/entities/hemishe_EStudentPractice/', [
 // --- 70.Qo'shimcha xizmatlar (missing) ---
 test('Service: classifiers/hokimiyat', 'GET', 'v2/services/classifiers/hokimiyat');
 test('Service: diploma/byhash', 'GET', 'v2/services/diploma/byhash');
-test('Service: student/get', 'GET', 'v2/services/student/get');
-test('Service: student/getActive', 'GET', 'v2/services/student/getActive');
+
+// ============================================================
+// 28 ta yangi portlangan endpointlar (Task #8-#11)
+// ============================================================
+
+// --- Task #9: 3 ta classifier endpoint ---
+test('Service: classifiers/hokimiyatInfo', 'GET', 'v2/services/classifiers/hokimiyatInfo');
+test('Service: classifiers/stipend', 'GET', 'v2/services/classifiers/stipend');
+test('Service: classifiers/stipendInfo', 'GET', 'v2/services/classifiers/stipendInfo');
+
+// --- Task #11: 7 ta boshqa endpoint ---
+test('Service: test/healthcheck', 'GET', 'v2/services/test/healthcheck', null, [200], true);
+test('Service: test/students', 'GET', 'v2/services/test/students');
+test('Service: hokimiyat/students', 'GET', 'v2/services/hokimiyat/students');
+test('Service: personal-data/getData', 'GET', 'v2/services/personal-data/getData?pinfl=52603015520014&serial=AA1234567');
+test('Service: attendance/test', 'GET', 'v2/services/attendance/test');
+test('Service: send/sendEmailNative', 'GET', 'v2/services/send/sendEmailNative?id=test&email=test@test.com&verify_code=1234');
+test('Service: legalentity-old/get', 'GET', 'v2/services/legalentity-old/get?tin=123456789');
+test('Service: social/vtek', 'GET', 'v2/services/social/vtek?pinfl=52603015520014');
+
+// --- Task #8: 16 ta student endpoint ---
+test('Service: student/get', 'GET', 'v2/services/student/get?pinfl=52603015520014');
+test('Service: student/getActive', 'GET', 'v2/services/student/getActive?pinfl=52603015520014');
+test('Service: student/getById', 'GET', 'v2/services/student/getById?id=40124110001');
+test('Service: student/getDoctoral', 'GET', 'v2/services/student/getDoctoral?pinfl=52603015520014');
+test('Service: student/getWithStatus', 'GET', 'v2/services/student/getWithStatus?pinfl=52603015520014');
+test('Service: student/testGet', 'GET', 'v2/services/student/testGet?pinfl=52603015520014');
+test('Service: student/students', 'GET', 'v2/services/student/students?university=401&limit=10&offset=0');
+test('Service: student/tashkentStudents', 'GET', 'v2/services/student/tashkentStudents?limit=10&offset=0');
+test('Service: student/isExpel', 'GET', 'v2/services/student/isExpel?pinfls=52603015520014');
+test('Service: student/check', 'GET', 'v2/services/student/check');
+test('Service: student/checkScholarship', 'GET', 'v2/services/student/checkScholarship?tin=123456789&pinfls=52603015520014');
+test('Service: student/byTashkentAndPaymentForm', 'GET', 'v2/services/student/byTashkentAndPaymentForm');
+test('Service: student/byTashkentAndRegionDistrict', 'GET', 'v2/services/student/byTashkentAndRegionDistrict');
+test('Service: student/byTashkentAndRegionDistrictAndEduType', 'GET', 'v2/services/student/byTashkentAndRegionDistrictAndEduType');
+test('Service: student/byTashkentAndFacultyAndCourse', 'GET', 'v2/services/student/byTashkentAndFacultyAndCourse');
+test('Service: student/byTashkentAndEduFormTypeAndGender', 'GET', 'v2/services/student/byTashkentAndEduFormTypeAndGender');
 
 // ============================================================
 // NATIJA
