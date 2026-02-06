@@ -11,6 +11,9 @@ import uz.hemis.domain.repository.UserRepository;
 
 import org.springframework.data.domain.Example;
 
+import uz.hemis.common.audit.Audited;
+import uz.hemis.common.audit.AuditAction;
+
 import java.util.*;
 
 /**
@@ -33,6 +36,7 @@ public class TeacherService {
      * @param universityCode current user's university code
      * @return Map with success, is_new, unique_id, teacher
      */
+    @Audited(action = AuditAction.CREATE, entity = "Teacher", entityClass = Teacher.class)
     public Map<String, Object> generateTeacherId(Map<String, Object> data, String universityCode) {
         Map<String, Object> result = new LinkedHashMap<>();
         log.info("Generating teacher ID - data: {}, university: {}", data, universityCode);

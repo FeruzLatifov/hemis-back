@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -81,6 +82,7 @@ public class DashboardDataSourceConfig {
      * Uses dashboardDataSource (replica) for all queries
      * DashboardService will use this template
      */
+    @Primary
     @Bean(name = "dashboardJdbcTemplate")
     public JdbcTemplate dashboardJdbcTemplate(
             @Qualifier("dashboardDataSource") DataSource dashboardDataSource

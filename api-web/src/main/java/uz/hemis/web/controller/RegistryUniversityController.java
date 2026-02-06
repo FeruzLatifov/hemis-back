@@ -83,7 +83,7 @@ public class RegistryUniversityController {
     private final UniversityRegistryService universityRegistryService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('registry.e-reestr.view')")
+    @PreAuthorize("hasAuthority('institutions.universities.view')")
     @Operation(
         summary = "Get universities list (with advanced filters)",
         description = """
@@ -146,7 +146,7 @@ public class RegistryUniversityController {
         ),
         @ApiResponse(
             responseCode = "403",
-            description = "Forbidden - User lacks 'registry.e-reestr.view' permission"
+            description = "Forbidden - User lacks 'institutions.universities.view' permission"
         )
     })
     public ResponseEntity<ResponseWrapper<Page<UniversityDto>>> getUniversities(
@@ -193,7 +193,7 @@ public class RegistryUniversityController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('registry.e-reestr.view')")
+    @PreAuthorize("hasAuthority('institutions.universities.view')")
     @Operation(
         summary = "Get university by ID",
         description = "Get detailed information about a specific university by its code"
@@ -229,7 +229,7 @@ public class RegistryUniversityController {
     }
 
     @PostMapping("/export")
-    @PreAuthorize("hasAuthority('registry.e-reestr.view')")
+    @PreAuthorize("hasAuthority('institutions.universities.view')")
     @Operation(
         summary = "Export universities to CSV",
         description = """
@@ -293,7 +293,7 @@ public class RegistryUniversityController {
     }
 
     @GetMapping("/dictionaries")
-    @PreAuthorize("hasAuthority('registry.e-reestr.view')")
+    @PreAuthorize("hasAuthority('institutions.universities.view')")
     @Operation(
         summary = "Get filter dictionaries",
         description = "Get available values for filter select inputs (ownerships, types, regions)"
@@ -320,7 +320,7 @@ public class RegistryUniversityController {
     // =====================================================
     
     @PostMapping
-    @PreAuthorize("hasAuthority('registry.e-reestr.edit')")
+    @PreAuthorize("hasAuthority('universities.edit')")
     @Operation(
         summary = "Create new university",
         description = """
@@ -332,7 +332,7 @@ public class RegistryUniversityController {
             - code (unique university code)
             - name (university name)
             
-            **Permissions:** registry.e-reestr.edit
+            **Permissions:** universities.edit
             """
     )
     @ApiResponses({
@@ -351,7 +351,7 @@ public class RegistryUniversityController {
     }
     
     @PutMapping("/{code}")
-    @PreAuthorize("hasAuthority('registry.e-reestr.edit')")
+    @PreAuthorize("hasAuthority('universities.edit')")
     @Operation(
         summary = "Update existing university",
         description = """
@@ -359,7 +359,7 @@ public class RegistryUniversityController {
             
             **🔒 Data Target:** MASTER Database (write operation)
             
-            **Permissions:** registry.e-reestr.edit
+            **Permissions:** universities.edit
             """
     )
     @ApiResponses({
@@ -378,7 +378,7 @@ public class RegistryUniversityController {
     }
     
     @DeleteMapping("/{code}")
-    @PreAuthorize("hasAuthority('registry.e-reestr.delete')")
+    @PreAuthorize("hasAuthority('universities.delete')")
     @Operation(
         summary = "Delete university (soft delete)",
         description = """
@@ -387,7 +387,7 @@ public class RegistryUniversityController {
             
             **🔒 Data Target:** MASTER Database (write operation)
             
-            **Permissions:** registry.e-reestr.delete
+            **Permissions:** universities.delete
             """
     )
     @ApiResponses({

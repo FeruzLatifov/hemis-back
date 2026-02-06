@@ -28,6 +28,7 @@ import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.web.dto.LoginRequest;
 import uz.hemis.web.dto.LoginResponse;
 import uz.hemis.domain.entity.Permission;
@@ -207,7 +208,7 @@ public class WebAuthController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<LoginResponse> login(
+    public ResponseEntity<ResponseWrapper<LoginResponse>> login(
             @Valid @RequestBody LoginRequest request,
             jakarta.servlet.http.HttpServletRequest httpRequest,
             jakarta.servlet.http.HttpServletResponse httpResponse
@@ -222,10 +223,7 @@ public class WebAuthController {
             log.warn("🚨 Rate limit exceeded for IP: {} (try again in {} seconds)", clientIp, remainingSeconds);
 
             return ResponseEntity.status(429) // HTTP 429 Too Many Requests
-                .body(LoginResponse.builder()
-                    .error("too_many_requests")
-                    .errorDescription(String.format("Juda ko'p urinish. %d soniyadan keyin qayta urinib ko'ring.", remainingSeconds))
-                    .build());
+                .body(ResponseWrapper.error(String.format("Juda ko'p urinish. %d soniyadan keyin qayta urinib ko'ring.", remainingSeconds)));
         }
 
         log.info("Web login attempt - username: {}, IP: {}", username, clientIp);
@@ -358,47 +356,32 @@ public class WebAuthController {
 
             log.info("✅ Login successful - user: {}, cached {} permissions, set HTTPOnly cookies (no body tokens), reset rate limit", username, permissions.size());
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ResponseWrapper.success(response));
 
         } catch (DisabledException e) {
             // Account is disabled (isEnabled() = false)
             log.warn("Login blocked - account disabled: {}", username);
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(LoginResponse.builder()
-                    .error("account_disabled")
-                    .errorDescription("Akkaunt faolsizlantirilgan. Administrator bilan bog'laning.")
-                    .build());
+                .body(ResponseWrapper.error("Akkaunt faolsizlantirilgan. Administrator bilan bog'laning."));
         } catch (LockedException e) {
             // Account is locked (isAccountNonLocked() = false)
             log.warn("Login blocked - account locked: {}", username);
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(LoginResponse.builder()
-                    .error("account_locked")
-                    .errorDescription("Akkaunt bloklangan. Administrator bilan bog'laning.")
-                    .build());
+                .body(ResponseWrapper.error("Akkaunt bloklangan. Administrator bilan bog'laning."));
         } catch (BadCredentialsException e) {
             // Invalid username or password
             log.warn("Login failed - bad credentials: {}", username);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(LoginResponse.builder()
-                    .error("invalid_credentials")
-                    .errorDescription("Noto'g'ri foydalanuvchi nomi yoki parol.")
-                    .build());
+                .body(ResponseWrapper.error("Noto'g'ri foydalanuvchi nomi yoki parol."));
         } catch (UsernameNotFoundException e) {
             // User not found (should not happen after AuthenticationManager, but keep for safety)
             log.warn("Login failed - user not found: {}", username);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(LoginResponse.builder()
-                    .error("invalid_credentials")
-                    .errorDescription("Noto'g'ri foydalanuvchi nomi yoki parol.")
-                    .build());
+                .body(ResponseWrapper.error("Noto'g'ri foydalanuvchi nomi yoki parol."));
         } catch (Exception e) {
             log.error("Web login failed - username: {}", username, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(LoginResponse.builder()
-                    .error("server_error")
-                    .errorDescription("Server xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
-                    .build());
+                .body(ResponseWrapper.error("Server xatolik yuz berdi. Iltimos, qayta urinib ko'ring."));
         }
     }
 
@@ -577,7 +560,7 @@ public class WebAuthController {
             description = "Token'ni bekor qilish va Redis cache'ni tozalash"
     )
     @PostMapping("/logout")
-    public ResponseEntity<Map<String, Object>> logout(
+    public ResponseEntity<ResponseWrapper<String>> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @CookieValue(value = "accessToken", required = false) String accessTokenCookie,
             @CookieValue(value = "refreshToken", required = false) String refreshTokenCookie,
@@ -653,10 +636,7 @@ public class WebAuthController {
 
         log.info("✅ Logout successful - cleared HTTPOnly cookies");
 
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Logged out successfully"
-        ));
+        return ResponseEntity.ok(ResponseWrapper.success("Logged out successfully"));
     }
 
     /**
@@ -672,7 +652,7 @@ public class WebAuthController {
             description = "Refresh token yordamida yangi access token olish"
     )
     @PostMapping("/refresh")
-    public ResponseEntity<Map<String, Object>> refresh(
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> refresh(
             @RequestBody(required = false) Map<String, String> body,
             @CookieValue(value = "refreshToken", required = false) String cookieRefreshToken,
             jakarta.servlet.http.HttpServletResponse httpResponse
@@ -687,10 +667,7 @@ public class WebAuthController {
 
         if (refreshToken == null) {
             log.error("No refresh token provided");
-            return ResponseEntity.status(401).body(Map.of(
-                    "error", "invalid_request",
-                    "message", "Refresh token talab qilinadi"
-            ));
+            return ResponseEntity.status(401).body(ResponseWrapper.error("Refresh token talab qilinadi"));
         }
 
         log.info("Web token refresh request");
@@ -703,10 +680,7 @@ public class WebAuthController {
             String tokenType = decodedToken.getClaimAsString("type");
             if (!"refresh".equals(tokenType)) {
                 log.error("Invalid token type: {}", tokenType);
-                return ResponseEntity.status(401).body(Map.of(
-                        "error", "invalid_token",
-                        "message", "Token turi noto'g'ri"
-                ));
+                return ResponseEntity.status(401).body(ResponseWrapper.error("Token turi noto'g'ri"));
             }
 
             // ✅ SECURITY FIX #3a: Check if refresh token is blacklisted
@@ -715,20 +689,14 @@ public class WebAuthController {
             String refreshTokenId = decodedToken.getId(); // JTI claim
             if (refreshTokenId != null && tokenBlacklistService.isBlacklisted(refreshTokenId)) {
                 log.warn("🚨 Attempt to use blacklisted refresh token: {}", refreshTokenId);
-                return ResponseEntity.status(401).body(Map.of(
-                        "error", "invalid_token",
-                        "message", "Token bekor qilingan (logout qilingan)"
-                ));
+                return ResponseEntity.status(401).body(ResponseWrapper.error("Token bekor qilingan (logout qilingan)"));
             }
 
             // Extract userId from token
             String userIdString = decodedToken.getSubject(); // ✅ JWT sub = userId (UUID)
             if (userIdString == null || userIdString.isEmpty()) {
                 log.error("No userId in refresh token");
-                return ResponseEntity.status(401).body(Map.of(
-                        "error", "invalid_token",
-                        "message", "Token'da foydalanuvchi ma'lumoti yo'q"
-                ));
+                return ResponseEntity.status(401).body(ResponseWrapper.error("Token'da foydalanuvchi ma'lumoti yo'q"));
             }
 
             UUID userId;
@@ -736,10 +704,7 @@ public class WebAuthController {
                 userId = UUID.fromString(userIdString);
             } catch (IllegalArgumentException e) {
                 log.error("Invalid userId in refresh token: {}", userIdString);
-                return ResponseEntity.status(401).body(Map.of(
-                        "error", "invalid_token",
-                        "message", "Token'da noto'g'ri foydalanuvchi ID"
-                ));
+                return ResponseEntity.status(401).body(ResponseWrapper.error("Token'da noto'g'ri foydalanuvchi ID"));
             }
 
             // ✅ SECURITY FIX #3b: Reload user account and verify still active/enabled
@@ -755,18 +720,12 @@ public class WebAuthController {
                 // Check account status flags
                 if (!user.getEnabled()) {
                     log.warn("🚨 Refresh blocked - account disabled: userId={}", userId);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                            "error", "account_disabled",
-                            "message", "Akkaunt faolsizlantirilgan. Administrator bilan bog'laning."
-                    ));
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseWrapper.error("Akkaunt faolsizlantirilgan. Administrator bilan bog'laning."));
                 }
 
                 if (!Boolean.TRUE.equals(user.getAccountNonLocked())) {
                     log.warn("🚨 Refresh blocked - account locked: userId={}", userId);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                            "error", "account_locked",
-                            "message", "Akkaunt bloklangan. Administrator bilan bog'laning."
-                    ));
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseWrapper.error("Akkaunt bloklangan. Administrator bilan bog'laning."));
                 }
 
                 log.info("✅ Account status verified - userId: {}, enabled: {}, locked: {}",
@@ -780,20 +739,14 @@ public class WebAuthController {
                 String username = decodedToken.getClaimAsString("username");
                 if (username == null || username.isEmpty()) {
                     log.warn("🚨 Refresh blocked - no username in token: userId={}", userId);
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                            "error", "invalid_token",
-                            "message", "Token'da username ma'lumoti yo'q."
-                    ));
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResponseWrapper.error("Token'da username ma'lumoti yo'q."));
                 }
 
                 // Validate legacy user status in sec_user table
                 Optional<SecUser> secUserOpt = secUserRepository.findByLoginAndActiveTrue(username);
                 if (secUserOpt.isEmpty()) {
                     log.warn("🚨 Refresh blocked - legacy user inactive/deleted: username={}, userId={}", username, userId);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                            "error", "account_disabled",
-                            "message", "Akkaunt faolsizlantirilgan yoki o'chirilgan. Administrator bilan bog'laning."
-                    ));
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseWrapper.error("Akkaunt faolsizlantirilgan yoki o'chirilgan. Administrator bilan bog'laning."));
                 }
 
                 SecUser secUser = secUserOpt.get();
@@ -801,10 +754,7 @@ public class WebAuthController {
                 // Check change password flag (credentials expired)
                 if (Boolean.TRUE.equals(secUser.getChangePasswordAtLogon())) {
                     log.warn("🚨 Refresh blocked - legacy user must change password: username={}", username);
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
-                            "error", "credentials_expired",
-                            "message", "Parolni o'zgartirish talab qilinadi."
-                    ));
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResponseWrapper.error("Parolni o'zgartirish talab qilinadi."));
                 }
 
                 log.info("✅ Legacy user status verified - username: {}, userId: {}, active: {}",
@@ -880,31 +830,18 @@ public class WebAuthController {
                 }
             }
 
-            // ✅ SECURITY FIX #5: Don't include tokens in response body
-            // Same fix as login endpoint - use HTTPOnly cookies only
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "Tokens refreshed and stored in HTTPOnly cookies");
-            // ✅ FIX: Don't expose tokens in response body
-            // Previous: response.put("accessToken", newAccessToken);
-            // Previous: response.put("refreshToken", newRefreshToken);
-
             log.info("Token refreshed successfully for userId: {}, set HTTPOnly cookies (no body tokens), rotated refresh token", userId);
 
-            return ResponseEntity.ok(response);
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("message", "Tokens refreshed and stored in HTTPOnly cookies");
+            return ResponseEntity.ok(ResponseWrapper.success(responseData));
 
         } catch (JwtException e) {
             log.error("Invalid or expired refresh token: {}", e.getMessage());
-            return ResponseEntity.status(401).body(Map.of(
-                    "error", "invalid_token",
-                    "message", "Refresh token yaroqsiz yoki muddati o'tgan"
-            ));
+            return ResponseEntity.status(401).body(ResponseWrapper.error("Refresh token yaroqsiz yoki muddati o'tgan"));
         } catch (Exception e) {
             log.error("Token refresh failed: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of(
-                    "error", "server_error",
-                    "message", "Token yangilashda xatolik"
-            ));
+            return ResponseEntity.status(500).body(ResponseWrapper.error("Token yangilashda xatolik"));
         }
     }
 
@@ -1008,7 +945,7 @@ public class WebAuthController {
         )
     })
     @GetMapping("/me")
-    public ResponseEntity<UserInfoResponse> getCurrentUser(
+    public ResponseEntity<ResponseWrapper<UserInfoResponse>> getCurrentUser(
             @AuthenticationPrincipal Jwt jwt  // ✅ Get JWT from SecurityContext
     ) {
         // NOTE: Backend caching will be added via service layer in future optimization
@@ -1079,7 +1016,7 @@ public class WebAuthController {
 
             return ResponseEntity.ok()
                 .headers(headers)
-                .body(response);
+                .body(ResponseWrapper.success(response));
 
         } catch (JwtException e) {
             log.error("Invalid JWT token: {}", e.getMessage());
@@ -1147,7 +1084,7 @@ public class WebAuthController {
         )
     })
     @PostMapping("/cache/clear")
-    public ResponseEntity<Map<String, Object>> clearUserCache(
+    public ResponseEntity<ResponseWrapper<String>> clearUserCache(
             @AuthenticationPrincipal Jwt jwt
     ) {
         log.info("POST /api/v1/web/auth/cache/clear request");
@@ -1183,18 +1120,11 @@ public class WebAuthController {
 
             log.info("✅ Cache cleared successfully for userId: {} - {}", userId, cleared);
 
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Cache cleared successfully",
-                    "cleared", cleared
-            ));
+            return ResponseEntity.ok(ResponseWrapper.success("Cache cleared successfully"));
 
         } catch (Exception e) {
             log.error("Failed to clear cache: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of(
-                    "success", false,
-                    "message", "Failed to clear cache: " + e.getMessage()
-            ));
+            return ResponseEntity.status(500).body(ResponseWrapper.error("Failed to clear cache: " + e.getMessage()));
         }
     }
 

@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.dashboard.DashboardService;
 import uz.hemis.service.dashboard.dto.DashboardResponse;
 
@@ -279,16 +280,16 @@ public class DashboardController {
             )
         )
     })
-    public ResponseEntity<DashboardResponse> getDashboardStats() {
+    public ResponseEntity<ResponseWrapper<DashboardResponse>> getDashboardStats() {
         log.info("📊 Dashboard statistics requested");
-        
+
         DashboardResponse stats = dashboardService.getDashboardStats();
-        
+
         // Add HTTP cache headers (client-side caching)
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.maxAge(30, TimeUnit.MINUTES)  // Browser cache: 30 min
                         .cachePublic()                                    // Shareable cache
                         .mustRevalidate())                                // Revalidate when stale
-                .body(stats);
+                .body(ResponseWrapper.success(stats));
     }
 }

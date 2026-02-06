@@ -233,7 +233,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,mappings
+        include: health,info,metrics,mappings,liquibase
 
   endpoint:
     health:
@@ -241,6 +241,10 @@ management:
 
   health:
     db:
+      enabled: true
+    diskspace:
+      enabled: true
+    redis:
       enabled: true
 
 # =====================================================
@@ -271,6 +275,28 @@ hemis:
   swagger:
     # Base URL for Swagger UI server selector
     server-url: ${SWAGGER_SERVER_URL:http://localhost:${SERVER_PORT:8081}}
+
+  # Audit Logging Configuration
+  audit:
+    enabled: ${AUDIT_ENABLED:true}
+    datasource:
+      url: jdbc:postgresql://${AUDIT_DB_HOST:localhost}:${AUDIT_DB_PORT:5434}/${AUDIT_DB_NAME:hemis_audit}
+      username: ${AUDIT_DB_USER:hemis_audit}
+      password: ${AUDIT_DB_PASSWORD:audit_secret}
+    # Qaysi endpointlarni log qilmaslik
+    exclude-patterns:
+      - /actuator/**
+      - /swagger-ui/**
+      - /v3/api-docs/**
+      - /favicon.ico
+    # Request/response body max hajmi (bayt)
+    max-body-size: 10240
+    # Sensitive maydonlarni redact qilish
+    redact-fields:
+      - password
+      - token
+      - secret
+      - authorization
 
   # API Configuration
   api:
