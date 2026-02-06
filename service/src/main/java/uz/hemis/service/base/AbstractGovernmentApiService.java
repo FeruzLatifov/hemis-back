@@ -212,7 +212,7 @@ public abstract class AbstractGovernmentApiService {
 
             // Use HttpsURLConnection directly (same as old-hemis MyRequest)
             // RestTemplate loses error body on HTTPS 4xx/5xx responses
-            java.net.URL urlObj = new java.net.URL(url);
+            java.net.URL urlObj = java.net.URI.create(url).toURL();
             javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) urlObj.openConnection();
             conn.setInstanceFollowRedirects(true);
             conn.setRequestMethod("POST");
@@ -284,7 +284,7 @@ public abstract class AbstractGovernmentApiService {
         try {
             disableSslVerification();
 
-            java.net.URL urlObj = new java.net.URL(url);
+            java.net.URL urlObj = java.net.URI.create(url).toURL();
             javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) urlObj.openConnection();
             conn.setInstanceFollowRedirects(true);
             conn.setRequestMethod("GET");

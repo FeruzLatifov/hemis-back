@@ -9,6 +9,7 @@ import uz.hemis.common.port.cache.DistributedCachePort;
 
 import javax.net.ssl.*;
 import java.io.OutputStream;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
@@ -105,7 +106,7 @@ public class BimmTokenService {
                     username, password
             );
 
-            URL urlObj = new URL(oauth2Url);
+            URL urlObj = URI.create(oauth2Url).toURL();
             HttpsURLConnection conn = (HttpsURLConnection) urlObj.openConnection();
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);

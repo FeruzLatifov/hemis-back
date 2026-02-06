@@ -95,6 +95,8 @@ public interface StudentMapper {
     @Mapping(target = "specialityBachelor", ignore = true)
     @Mapping(target = "specialityMaster", ignore = true)
     @Mapping(target = "specialityDoctoral", ignore = true)
+    @Mapping(target = "povertyLevel", ignore = true)
+    @Mapping(target = "grantType", ignore = true)
     Student toEntity(StudentDto dto);
 
     /**
@@ -137,6 +139,8 @@ public interface StudentMapper {
     @Mapping(target = "specialityBachelor", ignore = true)
     @Mapping(target = "specialityMaster", ignore = true)
     @Mapping(target = "specialityDoctoral", ignore = true)
+    @Mapping(target = "povertyLevel", ignore = true)
+    @Mapping(target = "grantType", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(StudentDto dto, @MappingTarget Student student);
 
@@ -171,6 +175,8 @@ public interface StudentMapper {
     @Mapping(target = "specialityBachelor", ignore = true)
     @Mapping(target = "specialityMaster", ignore = true)
     @Mapping(target = "specialityDoctoral", ignore = true)
+    @Mapping(target = "povertyLevel", ignore = true)
+    @Mapping(target = "grantType", ignore = true)
     @BeanMapping(
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
             nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS
