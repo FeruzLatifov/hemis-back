@@ -185,6 +185,7 @@ public class AuditAspect {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private String extractEntityName(Object result) {
         if (result == null) return null;
         Map<String, Object> map;
