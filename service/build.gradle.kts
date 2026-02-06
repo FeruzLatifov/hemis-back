@@ -12,6 +12,7 @@ dependencies {
     // Spring Boot dependencies
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework:spring-context")
+    implementation("org.springframework:spring-aspects")
     implementation("org.springframework.boot:spring-boot-starter-cache")
     implementation("org.springframework.boot:spring-boot-starter-web")
 

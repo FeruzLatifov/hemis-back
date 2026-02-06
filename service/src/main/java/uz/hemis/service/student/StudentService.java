@@ -23,6 +23,9 @@ import uz.hemis.common.dto.student.StudentIdRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import uz.hemis.common.audit.Audited;
+import uz.hemis.common.audit.AuditAction;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
@@ -228,6 +231,7 @@ public class StudentService {
      * @return created student DTO (or existing if duplicate detected)
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.CREATE, entity = "Student", entityClass = Student.class)
     @Transactional
     @CachePut(value = "students", key = "#result.id")
     public StudentDto create(StudentDto studentDto) {
@@ -413,6 +417,7 @@ public class StudentService {
      * @throws ResourceNotFoundException if student not found
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.UPDATE, entity = "Student", entityClass = Student.class, keyArg = "id")
     @Transactional
     @CachePut(value = "students", key = "#id")
     @CacheEvict(value = "students", key = "'pinfl:' + #result.pinfl")
@@ -463,6 +468,7 @@ public class StudentService {
      * @return updated student DTO
      * @throws ResourceNotFoundException if student not found
      */
+    @Audited(action = AuditAction.UPDATE, entity = "Student", entityClass = Student.class, keyArg = "id")
     @Transactional
     public StudentDto partialUpdate(UUID id, StudentDto studentDto) {
         log.info("Partial update for student ID: {}", id);
@@ -509,6 +515,7 @@ public class StudentService {
      * @throws ResourceNotFoundException if student not found
      * @throws ValidationException if user not authorized to delete this student
      */
+    @Audited(action = AuditAction.DELETE, entity = "Student", entityClass = Student.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "students", allEntries = true)
     public StudentDto softDelete(UUID id, String userUniversityCode) {

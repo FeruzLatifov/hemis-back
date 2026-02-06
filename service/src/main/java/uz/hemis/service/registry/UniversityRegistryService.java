@@ -16,6 +16,9 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 
+import uz.hemis.common.audit.Audited;
+import uz.hemis.common.audit.AuditAction;
+
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -173,6 +176,7 @@ public class UniversityRegistryService {
     /**
      * Create new university (WRITES TO MASTER)
      */
+    @Audited(action = AuditAction.CREATE, entity = "University", entityClass = University.class)
     @Transactional
     @CacheEvict(value = {"universitiesSearch","universityDictionaries"}, allEntries = true)
     public UniversityDto createUniversity(uz.hemis.service.registry.dto.UniversityRequestDto request) {
@@ -197,6 +201,7 @@ public class UniversityRegistryService {
     /**
      * Update existing university (WRITES TO MASTER)
      */
+    @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     @Caching(evict = {
         @CacheEvict(value="universitiesSearch", allEntries=true),
@@ -222,6 +227,7 @@ public class UniversityRegistryService {
     /**
      * Delete university (soft delete - WRITES TO MASTER)
      */
+    @Audited(action = AuditAction.DELETE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     @Caching(evict = {
         @CacheEvict(value="universitiesSearch", allEntries=true),

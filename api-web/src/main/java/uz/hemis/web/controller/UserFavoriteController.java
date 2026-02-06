@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.domain.entity.UserFavorite;
 import uz.hemis.service.favorite.UserFavoriteService;
 
@@ -113,12 +114,12 @@ public class UserFavoriteController {
             description = "Unauthorized - Token topilmadi yoki yaroqsiz"
         )
     })
-    public ResponseEntity<List<UserFavorite>> getFavorites(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ResponseWrapper<List<UserFavorite>>> getFavorites(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         log.debug("GET /api/v1/web/favorites - userId: {}", userId);
 
         List<UserFavorite> favorites = favoriteService.getUserFavorites(userId);
-        return ResponseEntity.ok(favorites);
+        return ResponseEntity.ok(ResponseWrapper.success(favorites));
     }
 
     // =====================================================
@@ -178,7 +179,7 @@ public class UserFavoriteController {
             description = "Unauthorized - Token topilmadi yoki yaroqsiz"
         )
     })
-    public ResponseEntity<?> addFavorite(
+    public ResponseEntity<ResponseWrapper<UserFavorite>> addFavorite(
             @AuthenticationPrincipal Jwt jwt,
             @RequestBody Map<String, String> body
     ) {
@@ -187,18 +188,18 @@ public class UserFavoriteController {
         log.debug("POST /api/v1/web/favorites - userId: {}, menuCode: {}", userId, menuCode);
 
         if (menuCode == null || menuCode.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "menuCode is required"));
+            return ResponseEntity.badRequest().body(ResponseWrapper.error("menuCode is required"));
         }
 
         try {
             UserFavorite favorite = favoriteService.addFavorite(userId, menuCode);
-            return ResponseEntity.ok(favorite);
+            return ResponseEntity.ok(ResponseWrapper.success(favorite));
         } catch (IllegalArgumentException e) {
             log.warn("Add favorite failed - duplicate: userId: {}, menuCode: {}", userId, menuCode);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseWrapper.error(e.getMessage()));
         } catch (IllegalStateException e) {
             log.warn("Add favorite failed - limit reached: userId: {}", userId);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.badRequest().body(ResponseWrapper.error(e.getMessage()));
         }
     }
 

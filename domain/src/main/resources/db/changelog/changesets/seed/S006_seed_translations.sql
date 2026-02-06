@@ -2,7 +2,7 @@
 -- S006: SEED TRANSLATIONS (gettext model)
 -- =====================================================
 -- Author: hemis-team
--- Date: 2025-01-20 (Rewritten)
+-- Date: 2025-01-20 (Rewritten, refreshed 2026-02-06)
 -- Purpose: Complete i18n system translations
 --
 -- KEY CONVENTION (gettext model):
@@ -690,11 +690,12 @@ PERFORM _seed_msg('label', '1,000,000+ users',      '1,000,000+ foydalanuvchilar
 PERFORM _seed_msg('label', '4 management modules',  '4 ta boshqaruv moduli',        '4 та бошқарув модули',      '4 модуля управления');
 PERFORM _seed_msg('label', 'Ministry of Higher Education, Science and Innovations', 'Oliy ta''lim, fan va innovatsiyalar vazirligi', 'Олий таълим, фан ва инновациялар вазирлиги', 'Министерство высшего образования, науки и инноваций');
 
+-- =====================================================
+-- i18n fixes (2026-02-05)
+-- =====================================================
+PERFORM _seed_msg('label', 'PhD/DSc',                'PhD/DSc',                      'PhD/DSc',                   'PhD/DSc');
+PERFORM _seed_msg('label', 'UZBMB URL',              'UZBMB URL',                    'UZBMB URL',                 'URL UZBMB');
+PERFORM _seed_msg('action', 'Search by {{field}}...', '{{field}} bo''yicha qidirish...', '{{field}} бўйича қидириш...', 'Поиск по {{field}}...');
 
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- CLEANUP
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-DROP FUNCTION IF EXISTS _seed_msg(TEXT, TEXT, TEXT, TEXT, TEXT);
 
 END $$;

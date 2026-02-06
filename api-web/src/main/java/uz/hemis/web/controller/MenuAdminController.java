@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.domain.entity.MenuAuditLog;
 import uz.hemis.service.menu.MenuAdminService;
 import uz.hemis.service.menu.dto.MenuAdminRequest;
@@ -128,12 +129,12 @@ public class MenuAdminController {
         description = "Successfully retrieved all menus",
         content = @Content(schema = @Schema(implementation = MenuAdminResponse.class))
     )
-    public ResponseEntity<List<MenuAdminResponse>> getAllMenus(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ResponseWrapper<List<MenuAdminResponse>>> getAllMenus(@AuthenticationPrincipal Jwt jwt) {
         String requester = jwt != null ? jwt.getSubject() : "unknown";
         log.debug("GET /api/v1/web/admin/menus - requester: {}", requester);
 
         List<MenuAdminResponse> menus = menuAdminService.getAllMenus();
-        return ResponseEntity.ok(menus);
+        return ResponseEntity.ok(ResponseWrapper.success(menus));
     }
 
     /**
@@ -166,7 +167,7 @@ public class MenuAdminController {
             description = "Menu not found with given ID"
         )
     })
-    public ResponseEntity<MenuAdminResponse> getMenuById(
+    public ResponseEntity<ResponseWrapper<MenuAdminResponse>> getMenuById(
         @Parameter(description = "Menu UUID", example = "00000000-0000-0000-0000-000000000001")
         @PathVariable UUID id,
         @AuthenticationPrincipal Jwt jwt
@@ -175,7 +176,7 @@ public class MenuAdminController {
         log.debug("GET /api/v1/web/admin/menus/{} - requester: {}", id, requester);
 
         MenuAdminResponse menu = menuAdminService.getMenuById(id);
-        return ResponseEntity.ok(menu);
+        return ResponseEntity.ok(ResponseWrapper.success(menu));
     }
 
     /**
@@ -201,7 +202,7 @@ public class MenuAdminController {
             description = "Menu not found with given code"
         )
     })
-    public ResponseEntity<MenuAdminResponse> getMenuByCode(
+    public ResponseEntity<ResponseWrapper<MenuAdminResponse>> getMenuByCode(
         @Parameter(description = "Menu code", example = "dashboard")
         @PathVariable String code,
         @AuthenticationPrincipal Jwt jwt
@@ -210,7 +211,7 @@ public class MenuAdminController {
         log.debug("GET /api/v1/web/admin/menus/by-code/{} - requester: {}", code, requester);
 
         MenuAdminResponse menu = menuAdminService.getMenuByCode(code);
-        return ResponseEntity.ok(menu);
+        return ResponseEntity.ok(ResponseWrapper.success(menu));
     }
 
     // =====================================================
@@ -264,7 +265,7 @@ public class MenuAdminController {
             description = "Forbidden - Missing system.menus.manage permission"
         )
     })
-    public ResponseEntity<MenuAdminResponse> createMenu(
+    public ResponseEntity<ResponseWrapper<MenuAdminResponse>> createMenu(
         @Valid @RequestBody MenuAdminRequest request,
         @AuthenticationPrincipal Jwt jwt
     ) {
@@ -272,7 +273,7 @@ public class MenuAdminController {
         log.info("POST /api/v1/web/admin/menus - code: {} - requester: {}", request.getCode(), requester);
 
         MenuAdminResponse created = menuAdminService.createMenu(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
     }
 
     // =====================================================
@@ -317,7 +318,7 @@ public class MenuAdminController {
             description = "Menu not found"
         )
     })
-    public ResponseEntity<MenuAdminResponse> updateMenu(
+    public ResponseEntity<ResponseWrapper<MenuAdminResponse>> updateMenu(
         @Parameter(description = "Menu UUID to update")
         @PathVariable UUID id,
         @Valid @RequestBody MenuAdminRequest request,
@@ -327,7 +328,7 @@ public class MenuAdminController {
         log.info("PUT /api/v1/web/admin/menus/{} - code: {} - requester: {}", id, request.getCode(), requester);
 
         MenuAdminResponse updated = menuAdminService.updateMenu(id, request);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(ResponseWrapper.success(updated));
     }
 
     // =====================================================
@@ -409,7 +410,7 @@ public class MenuAdminController {
         responseCode = "200",
         description = "Active status toggled successfully"
     )
-    public ResponseEntity<MenuAdminResponse> toggleActive(
+    public ResponseEntity<ResponseWrapper<MenuAdminResponse>> toggleActive(
         @Parameter(description = "Menu UUID")
         @PathVariable UUID id,
         @AuthenticationPrincipal Jwt jwt
@@ -418,7 +419,7 @@ public class MenuAdminController {
         log.info("PATCH /api/v1/web/admin/menus/{}/toggle - requester: {}", id, requester);
 
         MenuAdminResponse updated = menuAdminService.toggleActive(id);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(ResponseWrapper.success(updated));
     }
 
     // =====================================================
@@ -450,7 +451,7 @@ public class MenuAdminController {
         responseCode = "200",
         description = "Menu reordered successfully"
     )
-    public ResponseEntity<Map<String, Object>> reorderMenu(
+    public ResponseEntity<ResponseWrapper<String>> reorderMenu(
         @Parameter(description = "Menu UUID")
         @PathVariable UUID id,
         @Parameter(description = "New order number", example = "5")
@@ -461,12 +462,7 @@ public class MenuAdminController {
         log.info("PATCH /api/v1/web/admin/menus/{}/reorder - newOrder: {} - requester: {}", id, newOrder, requester);
 
         menuAdminService.reorderMenu(id, newOrder);
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "message", "Menu reordered successfully",
-            "menuId", id,
-            "newOrder", newOrder
-        ));
+        return ResponseEntity.ok(ResponseWrapper.success("Menu reordered successfully"));
     }
 
     // =====================================================
@@ -495,18 +491,13 @@ public class MenuAdminController {
         responseCode = "200",
         description = "Cache cleared successfully"
     )
-    public ResponseEntity<Map<String, Object>> clearCache(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ResponseWrapper<String>> clearCache(@AuthenticationPrincipal Jwt jwt) {
         String requester = jwt != null ? jwt.getSubject() : "unknown";
         log.info("POST /api/v1/web/admin/menus/cache/clear - requester: {}", requester);
 
         menuAdminService.clearCache();
 
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "message", "Menu cache cleared successfully (L1 + L2)",
-            "clearedBy", requester,
-            "timestamp", System.currentTimeMillis()
-        ));
+        return ResponseEntity.ok(ResponseWrapper.success("Menu cache cleared successfully (L1 + L2)"));
     }
 
     // =====================================================
@@ -571,7 +562,7 @@ public class MenuAdminController {
         responseCode = "200",
         description = "Menu structure imported successfully"
     )
-    public ResponseEntity<Map<String, Object>> importMenuStructure(
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> importMenuStructure(
         @RequestBody String json,
         @AuthenticationPrincipal Jwt jwt
     ) {
@@ -580,13 +571,10 @@ public class MenuAdminController {
 
         int count = menuAdminService.importMenuStructure(json);
 
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "message", "Menu structure imported successfully",
+        return ResponseEntity.ok(ResponseWrapper.success(Map.of(
             "importedCount", count,
-            "importedBy", requester,
-            "timestamp", System.currentTimeMillis()
-        ));
+            "importedBy", requester
+        ), "Menu structure imported successfully"));
     }
 
     // =====================================================
@@ -616,7 +604,7 @@ public class MenuAdminController {
         responseCode = "200",
         description = "Audit logs retrieved successfully"
     )
-    public ResponseEntity<List<MenuAuditLog>> getAuditLogs(
+    public ResponseEntity<ResponseWrapper<List<MenuAuditLog>>> getAuditLogs(
         @Parameter(description = "Menu UUID")
         @PathVariable UUID id,
         @AuthenticationPrincipal Jwt jwt
@@ -625,7 +613,7 @@ public class MenuAdminController {
         log.debug("GET /api/v1/web/admin/menus/{}/audit-logs - requester: {}", id, requester);
 
         List<MenuAuditLog> auditLogs = menuAdminService.getAuditLogs(id);
-        return ResponseEntity.ok(auditLogs);
+        return ResponseEntity.ok(ResponseWrapper.success(auditLogs));
     }
 
     /**
@@ -648,7 +636,7 @@ public class MenuAdminController {
         responseCode = "200",
         description = "Recent audit logs retrieved successfully"
     )
-    public ResponseEntity<List<MenuAuditLog>> getRecentAuditLogs(
+    public ResponseEntity<ResponseWrapper<List<MenuAuditLog>>> getRecentAuditLogs(
         @Parameter(description = "Number of days to look back", example = "7")
         @RequestParam(defaultValue = "7") int days,
         @AuthenticationPrincipal Jwt jwt
@@ -657,6 +645,6 @@ public class MenuAdminController {
         log.debug("GET /api/v1/web/admin/menus/audit-logs/recent?days={} - requester: {}", days, requester);
 
         List<MenuAuditLog> auditLogs = menuAdminService.getRecentAuditLogs(days);
-        return ResponseEntity.ok(auditLogs);
+        return ResponseEntity.ok(ResponseWrapper.success(auditLogs));
     }
 }

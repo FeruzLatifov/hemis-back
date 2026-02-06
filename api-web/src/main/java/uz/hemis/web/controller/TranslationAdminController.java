@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.shared.I18nService;
 import uz.hemis.service.admin.TranslationAdminService;
 import uz.hemis.common.dto.system.TranslationDto;
@@ -161,7 +162,7 @@ public class TranslationAdminController {
             """,
         tags = {"Translation Admin"}
     )
-    public ResponseEntity<Map<String, Object>> listTranslations(
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> listTranslations(
         @Parameter(
             description = "Filter by category (menu, table, filters, actions, etc.)",
             example = "menu",
@@ -205,14 +206,14 @@ public class TranslationAdminController {
             category, search, active, pageable
         );
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", translations.getContent());
-        response.put("currentPage", translations.getNumber());
-        response.put("totalItems", translations.getTotalElements());
-        response.put("totalPages", translations.getTotalPages());
-        response.put("pageSize", translations.getSize());
+        Map<String, Object> pageData = new HashMap<>();
+        pageData.put("content", translations.getContent());
+        pageData.put("currentPage", translations.getNumber());
+        pageData.put("totalItems", translations.getTotalElements());
+        pageData.put("totalPages", translations.getTotalPages());
+        pageData.put("pageSize", translations.getSize());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ResponseWrapper.success(pageData));
     }
 
     @GetMapping("/{id}")
@@ -246,7 +247,7 @@ public class TranslationAdminController {
             """,
         tags = {"Translation Admin"}
     )
-    public ResponseEntity<TranslationDto> getTranslation(
+    public ResponseEntity<ResponseWrapper<TranslationDto>> getTranslation(
         @Parameter(
             description = "Translation UUID",
             example = "550e8400-e29b-41d4-a716-446655440000",
@@ -257,7 +258,7 @@ public class TranslationAdminController {
         log.info("GET /api/v1/web/system/translation/{}", id);
 
         return translationService.getTranslationById(id)
-            .map(ResponseEntity::ok)
+            .map(dto -> ResponseEntity.ok(ResponseWrapper.success(dto)))
             .orElse(ResponseEntity.notFound().build());
     }
 
@@ -306,7 +307,7 @@ public class TranslationAdminController {
             """,
         tags = {"Translation Admin"}
     )
-    public ResponseEntity<TranslationDto> updateTranslation(
+    public ResponseEntity<ResponseWrapper<TranslationDto>> updateTranslation(
         @Parameter(
             description = "Translation UUID",
             example = "550e8400-e29b-41d4-a716-446655440000",
@@ -350,7 +351,7 @@ public class TranslationAdminController {
 
             // Reload with translations and return DTO
             return translationService.getTranslationById(id)
-                .map(ResponseEntity::ok)
+                .map(dto -> ResponseEntity.ok(ResponseWrapper.success(dto)))
                 .orElse(ResponseEntity.notFound().build());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -365,22 +366,17 @@ public class TranslationAdminController {
     @Operation(summary = "Toggle active status", description = "Enable/disable translation")
     @PatchMapping("/{id}/toggle-active")
     @PreAuthorize("hasAuthority('system.translation.manage')")
-    public ResponseEntity<Map<String, Object>> toggleActive(@PathVariable UUID id) {
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> toggleActive(@PathVariable UUID id) {
         log.info("PATCH /api/v1/admin/translations/{}/toggle-active", id);
 
         try {
             TranslationDto updated = translationService.toggleActive(id);
 
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Active status toggled successfully",
+            return ResponseEntity.ok(ResponseWrapper.success(Map.of(
                 "active", updated.getIsActive()
-            ));
+            ), "Active status toggled successfully"));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(ResponseWrapper.error(e.getMessage()));
         }
     }
 
@@ -436,7 +432,7 @@ public class TranslationAdminController {
     )
     @PostMapping("/cache/clear")
     @PreAuthorize("hasAuthority('system.translation.view')")
-    public ResponseEntity<Map<String, Object>> clearCache() {
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> clearCache() {
         log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         log.info("🔄 Translation cache clear triggered by admin");
         log.info("   Pod: {}", podName);
@@ -466,30 +462,22 @@ public class TranslationAdminController {
             String localized = i18nService.getMessage("Translation cache cleared on all servers", language);
 
             // Build response
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", localized);
-            response.put("timestamp", System.currentTimeMillis());
-            response.put("pod", podName);
-            response.put("scope", "distributed");
-            response.put("cacheType", "TwoLevelCache (L1 Caffeine + L2 Redis)");
-            response.put("elapsedMs", elapsed);
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("timestamp", System.currentTimeMillis());
+            responseData.put("pod", podName);
+            responseData.put("scope", "distributed");
+            responseData.put("cacheType", "TwoLevelCache (L1 Caffeine + L2 Redis)");
+            responseData.put("elapsedMs", elapsed);
 
             log.info("✅ Cache cleared successfully in {}ms", elapsed);
             log.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ResponseWrapper.success(responseData, localized));
 
         } catch (Exception e) {
             log.error("❌ Translation cache clear failed", e);
 
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Cache clear failed: " + e.getMessage());
-            errorResponse.put("timestamp", System.currentTimeMillis());
-            errorResponse.put("pod", podName);
-
-            return ResponseEntity.status(500).body(errorResponse);
+            return ResponseEntity.status(500).body(ResponseWrapper.error("Cache clear failed: " + e.getMessage()));
         }
     }
 
@@ -500,19 +488,19 @@ public class TranslationAdminController {
     @Operation(summary = "Export to properties", description = "Export translations to properties file format")
     @PostMapping("/export")
     @PreAuthorize("hasAuthority('system.translation.view')")
-    public ResponseEntity<Map<String, Object>> exportToProperties(
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> exportToProperties(
         @RequestParam(defaultValue = "uz-UZ") String language
     ) {
         log.info("POST /api/v1/admin/translations/export - language={}", language);
 
         Map<String, String> properties = translationService.exportToProperties(language);
 
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "language", language,
-            "count", properties.size(),
-            "properties", properties
-        ));
+        Map<String, Object> data = new HashMap<>();
+        data.put("language", language);
+        data.put("count", properties.size());
+        data.put("properties", properties);
+
+        return ResponseEntity.ok(ResponseWrapper.success(data));
     }
 
     /**
@@ -523,12 +511,12 @@ public class TranslationAdminController {
         description = "Regenerate static properties files for fallback support (manual button)")
     @PostMapping("/properties/regenerate")
     @PreAuthorize("hasAuthority('system.translation.manage')")
-    public ResponseEntity<Map<String, Object>> regeneratePropertiesFiles() {
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> regeneratePropertiesFiles() {
         log.info("POST /api/v1/admin/translations/properties/regenerate");
 
         Map<String, Object> results = translationService.regeneratePropertiesFiles();
 
-        return ResponseEntity.ok(results);
+        return ResponseEntity.ok(ResponseWrapper.success(results));
     }
 
     // =====================================================
@@ -601,7 +589,7 @@ public class TranslationAdminController {
     )
     @GetMapping("/stats")
     @PreAuthorize("hasAuthority('system.translation.view')")
-    public ResponseEntity<Map<String, Object>> getStatistics() {
+    public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStatistics() {
         log.info("GET /api/v1/web/system/translation/stats");
 
         // Translation statistics
@@ -631,7 +619,7 @@ public class TranslationAdminController {
         response.put("pod", podName);
         response.put("timestamp", System.currentTimeMillis());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ResponseWrapper.success(response));
     }
 
 }

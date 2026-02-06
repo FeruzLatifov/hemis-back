@@ -7,6 +7,7 @@
 
 plugins {
     java
+    jacoco
     id("org.springframework.boot") version "4.0.2" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
 }
@@ -96,6 +97,37 @@ subprojects {
     }
 
     // =====================================================
+    // JaCoCo Coverage Configuration
+    // =====================================================
+
+    apply(plugin = "jacoco")
+
+    // Skip JaCoCo for modules without test sources
+    val hasTests = file("src/test").exists() &&
+        (fileTree("src/test") { include("**/*.java", "**/*.kt") }).files.isNotEmpty()
+
+    tasks.withType<JacocoReport> {
+        dependsOn(tasks.named("test"))
+        onlyIf { hasTests }
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+        }
+    }
+
+    tasks.withType<JacocoCoverageVerification> {
+        onlyIf { hasTests }
+        violationRules {
+            rule {
+                limit {
+                    minimum = "0.70".toBigDecimal()
+                }
+            }
+        }
+    }
+
+    // =====================================================
     // Test Configuration
     // =====================================================
 
@@ -131,6 +163,11 @@ subprojects {
             events("passed", "skipped", "failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
             showStandardStreams = false
+        }
+
+        // JaCoCo agent — only finalize if test sources exist
+        if (hasTests) {
+            finalizedBy(tasks.named("jacocoTestReport"))
         }
     }
 }

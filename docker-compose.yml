@@ -33,6 +33,30 @@ services:
       retries: 5
 
   # =====================================================
+  # Audit Database (Alohida PostgreSQL)
+  # =====================================================
+  hemis-audit-db:
+    image: postgres:16-alpine
+    container_name: hemis-audit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${AUDIT_DB_NAME:-hemis_audit}
+      POSTGRES_USER: ${AUDIT_DB_USER:-hemis_audit}
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_secret}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${AUDIT_DB_PORT:-5434}:5432"
+    volumes:
+      - audit-pg-data:/var/lib/postgresql/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AUDIT_DB_USER:-hemis_audit}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================================================
   # Redis Cache
   # =====================================================
   redis:
@@ -111,6 +135,8 @@ networks:
 volumes:
   postgres-data:
     name: hemis-backend-postgres-data
+  audit-pg-data:
+    name: hemis-audit-postgres-data
   redis-data:
     name: hemis-backend-redis-data
   backend-logs:

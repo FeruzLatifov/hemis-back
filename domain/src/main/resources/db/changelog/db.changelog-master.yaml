@@ -340,6 +340,38 @@ databaseChangeLog:
             splitStatements: false
 
   - changeSet:
+      id: S007_seed_i18n_audit_logs
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: changesets/seed/S007_seed_i18n_audit_logs.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S007_seed_i18n_audit_logs_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: S008_seed_i18n_audit_diff
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: changesets/seed/S008_seed_i18n_audit_diff.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S008_seed_i18n_audit_diff_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
       id: tag-seed-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}

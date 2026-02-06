@@ -16,6 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.menu.MenuService;
 import uz.hemis.service.menu.PermissionService;
 import uz.hemis.service.menu.dto.MenuResponse;
@@ -117,7 +118,7 @@ public class MenuController {
             description = "Unauthorized - Token missing or invalid"
         )
     })
-    public ResponseEntity<MenuResponse> getMenu(
+    public ResponseEntity<ResponseWrapper<MenuResponse>> getMenu(
         @Parameter(
             description = "Locale code (BCP-47 format)",
             example = "uz-UZ",
@@ -137,7 +138,7 @@ public class MenuController {
         log.debug("GET /api/v1/web/menu - userId: {}, locale: {} (validated: {})", userId, locale, validatedLocale);
 
         MenuResponse menu = menuService.getMenuForUser(userId, validatedLocale);
-        return ResponseEntity.ok(menu);
+        return ResponseEntity.ok(ResponseWrapper.success(menu));
     }
 
     @PostMapping("/check-access")
@@ -182,7 +183,7 @@ public class MenuController {
             description = "Unauthorized"
         )
     })
-    public ResponseEntity<Map<String, Boolean>> checkAccess(
+    public ResponseEntity<ResponseWrapper<Map<String, Boolean>>> checkAccess(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Path to check",
             content = @Content(
@@ -203,7 +204,7 @@ public class MenuController {
         // ✅ FIX: Use UUID overload instead of username overload
         boolean accessible = permissionService.canAccessPath(userId, path);
 
-        return ResponseEntity.ok(Map.of("accessible", accessible));
+        return ResponseEntity.ok(ResponseWrapper.success(Map.of("accessible", accessible)));
     }
 
     /**
@@ -212,19 +213,14 @@ public class MenuController {
      */
     @PostMapping("/clear-cache")
     @PreAuthorize("hasAuthority('system.view')")
-    public ResponseEntity<Map<String, Object>> clearCache(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ResponseWrapper<String>> clearCache(@AuthenticationPrincipal Jwt jwt) {
         String requester = jwt != null ? jwt.getSubject() : "unknown";
         log.info("POST /api/v1/web/menu/clear-cache requested by {}", requester);
 
         cacheEvictionService.evictAllMenus();
         cacheEvictionService.evictAllPermissions();
 
-        return ResponseEntity.ok(Map.of(
-            "success", true,
-            "message", "Menu cache cleared across Redis + JVM",
-            "requestedBy", requester,
-            "timestamp", System.currentTimeMillis()
-        ));
+        return ResponseEntity.ok(ResponseWrapper.success("Menu cache cleared across Redis + JVM"));
     }
 
     /**
@@ -239,7 +235,7 @@ public class MenuController {
      */
     @GetMapping("/structure")
     @PreAuthorize("hasAuthority('system.menu.view')")  // ✅ FIX: Admin-only authorization
-    public ResponseEntity<MenuResponse> getStructure(
+    public ResponseEntity<ResponseWrapper<MenuResponse>> getStructure(
         @RequestParam(defaultValue = "uz-UZ") String locale,
         @AuthenticationPrincipal Jwt jwt
     ) {
@@ -252,6 +248,6 @@ public class MenuController {
 
         // ✅ FIX: Use UUID overload
         MenuResponse menu = menuService.getMenuForUser(userId, validatedLocale);
-        return ResponseEntity.ok(menu);
+        return ResponseEntity.ok(ResponseWrapper.success(menu));
     }
 }

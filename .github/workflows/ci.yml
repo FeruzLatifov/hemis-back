@@ -1,0 +1,107 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'hemis-back/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'hemis-back/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: hemis-back
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: hemis_test
+          POSTGRES_USER: hemis
+          POSTGRES_PASSWORD: hemis_test_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      TESTS_ENABLED: true
+      DB_MASTER_HOST: localhost
+      DB_MASTER_PORT: 5432
+      DB_MASTER_NAME: hemis_test
+      DB_MASTER_USERNAME: hemis
+      DB_MASTER_PASSWORD: hemis_test_pass
+      DB_REPLICA_HOST: localhost
+      DB_REPLICA_PORT: 5432
+      DB_REPLICA_NAME: hemis_test
+      DB_REPLICA_USERNAME: hemis
+      DB_REPLICA_PASSWORD: hemis_test_pass
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      JWT_SECRET: dGVzdC1zZWNyZXQta2V5LWZvci1jaS1waXBlbGluZS1oZW1pcy1iYWNrZW5kLXRlc3Rpbmc=
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
+
+      - name: Compile
+        run: ./gradlew classes testClasses
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Generate JaCoCo report
+        if: always()
+        run: ./gradlew jacocoTestReport
+
+      - name: Verify coverage threshold
+        run: ./gradlew jacocoTestCoverageVerification
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage
+          path: hemis-back/**/build/reports/jacoco/
+          retention-days: 7
+
+      - name: Build
+        run: ./gradlew clean build -x test
