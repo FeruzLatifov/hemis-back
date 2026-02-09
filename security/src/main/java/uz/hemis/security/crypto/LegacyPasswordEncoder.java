@@ -6,24 +6,29 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Base64;
+import java.util.HexFormat;
 
 /**
- * Legacy Password Encoder - Supports both CUBA Platform and BCrypt formats
+ * Legacy Password Encoder - Supports CUBA Platform (MD5, SHA-1, PBKDF2) and BCrypt formats
  *
- * <p><strong>CUBA Platform Format:</strong> PBKDF2WithHmacSHA1</p>
- * <ul>
- *   <li>Format: hash:salt:iteration (colon-separated)</li>
- *   <li>Example: dGVzdA==:c2FsdA==:1000</li>
- *   <li>Used in old-hemis (sec_user table)</li>
- * </ul>
+ * <p><strong>Supported Formats:</strong></p>
+ * <ol>
+ *   <li><strong>BCrypt:</strong> $2a$10$... (new system - users table)</li>
+ *   <li><strong>CUBA MD5:</strong> 32-char hex string (old-hemis default - CUBA 7.x)</li>
+ *   <li><strong>CUBA SHA-1:</strong> 40-char hex string (older CUBA versions)</li>
+ *   <li><strong>CUBA PBKDF2:</strong> hash:salt:iteration (colon-separated)</li>
+ * </ol>
  *
- * <p><strong>BCrypt Format:</strong></p>
+ * <p><strong>Detection Logic:</strong></p>
  * <ul>
- *   <li>Format: $2a$10$... (standard BCrypt)</li>
- *   <li>Used in new system (users table)</li>
+ *   <li>Starts with $2a$/$2b$/$2y$ → BCrypt</li>
+ *   <li>Contains ":" with 3 parts → PBKDF2</li>
+ *   <li>32-char hex string → MD5</li>
+ *   <li>40-char hex string → SHA-1</li>
  * </ul>
  */
 @Slf4j
@@ -32,6 +37,10 @@ public class LegacyPasswordEncoder implements PasswordEncoder {
     private final BCryptPasswordEncoder bcryptEncoder = new BCryptPasswordEncoder();
     private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
     private static final int KEY_LENGTH = 160; // 160 bits = 20 bytes
+
+    // Hex pattern: only 0-9, a-f, A-F
+    private static final java.util.regex.Pattern HEX_PATTERN =
+            java.util.regex.Pattern.compile("^[0-9a-fA-F]+$");
 
     @Override
     public String encode(CharSequence rawPassword) {
@@ -46,31 +55,126 @@ public class LegacyPasswordEncoder implements PasswordEncoder {
             return false;
         }
 
-        // Check if BCrypt format ($2a$, $2b$, $2y$)
-        if (encodedPassword.startsWith("$2a$") ||
-            encodedPassword.startsWith("$2b$") ||
-            encodedPassword.startsWith("$2y$")) {
+        // 1. Check if BCrypt format ($2a$, $2b$, $2y$)
+        if (isBCrypt(encodedPassword)) {
             log.debug("Using BCrypt encoder for password verification");
             return bcryptEncoder.matches(rawPassword, encodedPassword);
         }
 
-        // Otherwise, assume CUBA Platform format (hash:salt:iteration)
-        log.debug("Using CUBA Platform encoder for password verification");
-        return matchesCubaFormat(rawPassword, encodedPassword);
+        // 2. Check if CUBA PBKDF2 format (hash:salt:iteration)
+        if (encodedPassword.contains(":")) {
+            log.debug("Using CUBA PBKDF2 encoder for password verification");
+            return matchesCubaPbkdf2(rawPassword, encodedPassword);
+        }
+
+        // 3. Check if MD5 hash (32-char hex)
+        if (encodedPassword.length() == 32 && isHex(encodedPassword)) {
+            log.debug("Using CUBA MD5 encoder for password verification");
+            return matchesMd5(rawPassword, encodedPassword);
+        }
+
+        // 4. Check if SHA-1 hash (40-char hex)
+        if (encodedPassword.length() == 40 && isHex(encodedPassword)) {
+            log.debug("Using CUBA SHA-1 encoder for password verification");
+            return matchesSha1(rawPassword, encodedPassword);
+        }
+
+        // 5. Unknown format
+        log.error("Unknown password format (length={}, prefix={})",
+                encodedPassword.length(),
+                encodedPassword.substring(0, Math.min(10, encodedPassword.length())));
+        return false;
     }
 
+    // =====================================================
+    // Format Detection Helpers
+    // =====================================================
+
+    private boolean isBCrypt(String encoded) {
+        return encoded.startsWith("$2a$") ||
+               encoded.startsWith("$2b$") ||
+               encoded.startsWith("$2y$");
+    }
+
+    private boolean isHex(String value) {
+        return HEX_PATTERN.matcher(value).matches();
+    }
+
+    // =====================================================
+    // MD5 Verification (CUBA 7.x Default)
+    // =====================================================
+
     /**
-     * Verify password against CUBA Platform format
+     * Verify password against CUBA MD5 format
+     *
+     * <p>CUBA Platform 7.x default encryption: plain MD5 hash</p>
+     * <p>Format: 32-character lowercase hexadecimal string</p>
+     *
+     * @param rawPassword plain text password
+     * @param encodedPassword MD5 hex hash (32 chars)
+     * @return true if password matches
+     */
+    private boolean matchesMd5(CharSequence rawPassword, String encodedPassword) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hashBytes = md.digest(rawPassword.toString().getBytes());
+            String computedHash = HexFormat.of().formatHex(hashBytes);
+
+            boolean matches = encodedPassword.equalsIgnoreCase(computedHash);
+            log.debug("MD5 password match: {}", matches);
+            return matches;
+        } catch (NoSuchAlgorithmException e) {
+            log.error("MD5 algorithm not available: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    // =====================================================
+    // SHA-1 Verification (Older CUBA versions)
+    // =====================================================
+
+    /**
+     * Verify password against CUBA SHA-1 format
+     *
+     * <p>Older CUBA Platform versions used SHA-1 hash</p>
+     * <p>Format: 40-character lowercase hexadecimal string</p>
+     *
+     * @param rawPassword plain text password
+     * @param encodedPassword SHA-1 hex hash (40 chars)
+     * @return true if password matches
+     */
+    private boolean matchesSha1(CharSequence rawPassword, String encodedPassword) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] hashBytes = md.digest(rawPassword.toString().getBytes());
+            String computedHash = HexFormat.of().formatHex(hashBytes);
+
+            boolean matches = encodedPassword.equalsIgnoreCase(computedHash);
+            log.debug("SHA-1 password match: {}", matches);
+            return matches;
+        } catch (NoSuchAlgorithmException e) {
+            log.error("SHA-1 algorithm not available: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    // =====================================================
+    // PBKDF2 Verification (CUBA Platform alternative)
+    // =====================================================
+
+    /**
+     * Verify password against CUBA PBKDF2 format
      *
      * @param rawPassword plain text password
      * @param encodedPassword CUBA format: hash:salt:iteration
      * @return true if password matches
      */
-    private boolean matchesCubaFormat(CharSequence rawPassword, String encodedPassword) {
+    private boolean matchesCubaPbkdf2(CharSequence rawPassword, String encodedPassword) {
         try {
             String[] parts = encodedPassword.split(":");
             if (parts.length != 3) {
-                log.error("Invalid CUBA password format (expected hash:salt:iteration): {}", encodedPassword);
+                log.error("Invalid CUBA PBKDF2 format (expected hash:salt:iteration): length={}",
+                        parts.length);
                 return false;
             }
 
@@ -82,29 +186,24 @@ public class LegacyPasswordEncoder implements PasswordEncoder {
             byte[] salt = Base64.getDecoder().decode(saltBase64);
 
             // Hash the raw password with same salt and iterations
-            byte[] computedHash = hashPassword(rawPassword.toString(), salt, iterations);
+            byte[] computedHash = hashPbkdf2(rawPassword.toString(), salt, iterations);
             String computedHashBase64 = Base64.getEncoder().encodeToString(computedHash);
 
             boolean matches = storedHash.equals(computedHashBase64);
-            log.debug("CUBA password match: {} (iterations: {})", matches, iterations);
+            log.debug("PBKDF2 password match: {} (iterations: {})", matches, iterations);
 
             return matches;
 
         } catch (Exception e) {
-            log.error("Error verifying CUBA password: {}", e.getMessage(), e);
+            log.error("Error verifying CUBA PBKDF2 password: {}", e.getMessage(), e);
             return false;
         }
     }
 
     /**
      * Hash password using PBKDF2WithHmacSHA1 (CUBA Platform algorithm)
-     *
-     * @param password plain text password
-     * @param salt salt bytes
-     * @param iterations iteration count
-     * @return hashed password bytes
      */
-    private byte[] hashPassword(String password, byte[] salt, int iterations)
+    private byte[] hashPbkdf2(String password, byte[] salt, int iterations)
             throws NoSuchAlgorithmException, InvalidKeySpecException {
 
         PBEKeySpec spec = new PBEKeySpec(
@@ -120,9 +219,7 @@ public class LegacyPasswordEncoder implements PasswordEncoder {
 
     @Override
     public boolean upgradeEncoding(String encodedPassword) {
-        // Suggest upgrading from CUBA format to BCrypt
-        return !encodedPassword.startsWith("$2a$") &&
-               !encodedPassword.startsWith("$2b$") &&
-               !encodedPassword.startsWith("$2y$");
+        // Suggest upgrading from any legacy format to BCrypt
+        return !isBCrypt(encodedPassword);
     }
 }
