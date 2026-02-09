@@ -32,12 +32,14 @@ public class StudentCertificateEntityController {
     @GetMapping("/{id}")
     @Operation(summary = "Get student certificate by ID")
     public ResponseEntity<Map<String, Object>> getStudentCertificate(
-            @Parameter(description = "Student certificate ID") @PathVariable UUID id) {
+            @Parameter(description = "Student certificate ID") @PathVariable UUID id,
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
         Optional<StudentCertificate> studentCertificateOpt = studentService.findStudentCertificateById(id);
         if (studentCertificateOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(studentService.toStudentCertificateMap(studentCertificateOpt.get(), false));
+        return ResponseEntity.ok(studentService.toStudentCertificateMap(studentCertificateOpt.get(), returnNulls, view));
     }
 
     @PutMapping("/{id}")
@@ -92,7 +94,7 @@ public class StudentCertificateEntityController {
         Page<StudentCertificate> page = studentService.findAllStudentCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()
-                .map(e -> studentService.toStudentCertificateMap(e, false))
+                .map(e -> studentService.toStudentCertificateMap(e, false, view))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
@@ -106,6 +108,7 @@ public class StudentCertificateEntityController {
         int limit = (int) searchParams.getOrDefault("limit", 50);
         int offset = (int) searchParams.getOrDefault("offset", 0);
         String sortParam = (String) searchParams.get("sort");
+        String viewParam = (String) searchParams.get("view");
 
         Sort sorting = Sort.unsorted();
         if (sortParam != null && !sortParam.isEmpty()) {
@@ -119,7 +122,7 @@ public class StudentCertificateEntityController {
         Page<StudentCertificate> page = studentService.findAllStudentCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()
-                .map(e -> studentService.toStudentCertificateMap(e, false))
+                .map(e -> studentService.toStudentCertificateMap(e, false, viewParam))
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -133,13 +136,14 @@ public class StudentCertificateEntityController {
     @Operation(summary = "Get all student certificates")
     public ResponseEntity<List<Map<String, Object>>> getAllStudentCertificates(
             @Parameter(description = "Limit") @RequestParam(defaultValue = "50") int limit,
-            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") int offset) {
+            @Parameter(description = "Offset") @RequestParam(defaultValue = "0") int offset,
+            @Parameter(description = "View") @RequestParam(required = false) String view) {
 
         Pageable pageable = PageRequest.of(offset / limit, limit);
         Page<StudentCertificate> page = studentService.findAllStudentCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()
-                .map(e -> studentService.toStudentCertificateMap(e, false))
+                .map(e -> studentService.toStudentCertificateMap(e, false, view))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);

@@ -220,6 +220,8 @@ public class StudentLegacyDto {
         private String bankInfo;
         private String accreditationInfo;
 
+        private Boolean addAcademicMobileStudent;
+
         private SimpleReferenceDto universityType;
         private SimpleReferenceDto ownership;
         private SimpleReferenceDto versionType;

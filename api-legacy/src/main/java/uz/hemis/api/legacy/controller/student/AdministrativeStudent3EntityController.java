@@ -46,7 +46,7 @@ public class AdministrativeStudent3EntityController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(studentService.toAdministrativeStudent3Map(entity.get(), returnNulls));
+        return ResponseEntity.ok(studentService.toAdministrativeStudent3Map(entity.get(), returnNulls, view));
     }
 
     @PutMapping("/{entityId}")
@@ -113,7 +113,7 @@ public class AdministrativeStudent3EntityController {
         Page<AdministrativeStudent3> entityPage = studentService.findAllAdministrativeStudent3(pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> studentService.toAdministrativeStudent3Map(e, returnNulls))
+            .map(e -> studentService.toAdministrativeStudent3Map(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -148,7 +148,7 @@ public class AdministrativeStudent3EntityController {
         Page<AdministrativeStudent3> entityPage = studentService.findAllAdministrativeStudent3(pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> studentService.toAdministrativeStudent3Map(e, returnNulls))
+            .map(e -> studentService.toAdministrativeStudent3Map(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -179,7 +179,7 @@ public class AdministrativeStudent3EntityController {
         Page<AdministrativeStudent3> entityPage = studentService.findAllAdministrativeStudent3(pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> studentService.toAdministrativeStudent3Map(e, returnNulls))
+            .map(e -> studentService.toAdministrativeStudent3Map(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 

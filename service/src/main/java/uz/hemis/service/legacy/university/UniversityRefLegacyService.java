@@ -91,8 +91,7 @@ public class UniversityRefLegacyService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ICT_EQUIPMENT_ENTITY_NAME);
 
-        String instanceName = "ICT-" + entity.getUniversity() + "-" + entity.getEducationYear();
-        map.put("_instanceName", instanceName);
+        map.put("_instanceName", "com.company.hemishe.entity.RIctEquipment-" + entity.getId() + " [detached]");
 
         map.put("id", entity.getId());
 
@@ -167,10 +166,7 @@ public class UniversityRefLegacyService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", LABORATORIES_ENTITY_NAME);
 
-        String instanceName = entity.getSpecialityName() != null
-            ? entity.getSpecialityName()
-            : "Laboratories-" + entity.getId();
-        map.put("_instanceName", instanceName);
+        map.put("_instanceName", "com.company.hemishe.entity.RLaboratories-" + entity.getId() + " [detached]");
 
         map.put("id", entity.getId());
 
@@ -271,7 +267,7 @@ public class UniversityRefLegacyService {
         map.put("id", e.getId() != null ? e.getId().toString() : null);
 
         CubaEntityMapHelper.putIfNotNull(map, "active", e.getActive(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "educationType", e.getEducationType(), returnNulls);
+        // OLD-HEMIS: educationType reference field default view da qaytarilmaydi
         CubaEntityMapHelper.putIfNotNull(map, "version", e.getVersion(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "deletedBy", e.getDeletedBy(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "deleteTs", e.getDeleteTs() != null ? e.getDeleteTs().toString() : null, returnNulls);
@@ -422,9 +418,7 @@ public class UniversityRefLegacyService {
 
         CubaEntityMapHelper.putIfNotNull(map, "groupId", entity.getGroupId(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "groupName", entity.getGroupName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_educationType", entity.getEducationType(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_educationYear", entity.getEducationYear(), returnNulls);
+        // OLD-HEMIS: _university, _educationType, _educationYear reference fieldlar default view da qaytarilmaydi
         CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
 
         return map;
@@ -542,17 +536,15 @@ public class UniversityRefLegacyService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", SPECIALTY_ENTITY_NAME);
 
+        // OLD-HEMIS: @NamePattern("%s %s|specialityCode,specialityName") - code space name
         String instanceName = entity.getCode() != null ?
-            entity.getCode() + " - " + entity.getName() : "Specialty-" + entity.getId();
+            entity.getCode() + " " + entity.getName() : "Specialty-" + entity.getId();
         map.put("_instanceName", instanceName);
 
         map.put("id", entity.getId());
         CubaEntityMapHelper.putIfNotNull(map, "specialityCode", entity.getCode(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "specialityName", entity.getName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_faculty", entity.getFaculty(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_educationType", entity.getEducationType(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_educationYear", entity.getEducationYear(), returnNulls);
+        // OLD-HEMIS: _university, _faculty, _educationType, _educationYear reference fieldlar default view da qaytarilmaydi
         CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
 
         return map;
@@ -724,6 +716,7 @@ public class UniversityRefLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "name", entity.getName(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "gpaEdit", entity.getGpaEdit(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "addForeignStudent", entity.getAddForeignStudent(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "addAcademicMobileStudent", entity.getAddAcademicMobileStudent(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "addTransferStudent", entity.getAddTransferStudent(), returnNulls);
 
         CubaEntityMapHelper.putIfNotNull(map, "mailAddress", entity.getMailAddress(), returnNulls);

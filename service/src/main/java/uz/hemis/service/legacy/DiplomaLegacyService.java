@@ -121,37 +121,32 @@ public class DiplomaLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "academicRecord", entity.getAcademicRecord(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
 
+        // OLD-HEMIS: department only in view mode
         if (useNestedObjects && entity.getDepartment() != null) {
             Map<String, Object> dept = fetchDepartment(entity.getDepartment());
             map.put("department", dept != null ? dept : createMinimalNestedObject("hemishe_EUniversityDepartment", entity.getDepartment(), entity.getDepartment()));
-        } else {
-            CubaEntityMapHelper.putIfNotNull(map, "department", entity.getDepartment(), returnNulls);
         }
 
         CubaEntityMapHelper.putIfNotNull(map, "totalAcload", entity.getTotalAcload(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "avgGrade", entity.getAvgGrade(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "specialityName", entity.getSpecialityName(), returnNulls);
 
-        // diplomCategory -> diplomBlankCategory (nested object)
+        // diplomCategory -> diplomBlankCategory (nested object, only in view mode)
         if (useNestedObjects && entity.getDiplomCategory() != null) {
             Map<String, Object> cat = fetchDiplomBlankCategory(entity.getDiplomCategory());
             map.put("diplomBlankCategory", cat != null ? cat : createMinimalNestedObject("hemishe_HDiplomBlankCategory", entity.getDiplomCategory(), entity.getDiplomCategory()));
-        } else {
-            CubaEntityMapHelper.putIfNotNull(map, "diplomCategory", entity.getDiplomCategory(), returnNulls);
         }
 
+        // OLD-HEMIS: educationYear only in view mode
         if (useNestedObjects && entity.getEducationYear() != null) {
             Map<String, Object> ey = fetchEducationYear(entity.getEducationYear());
             map.put("educationYear", ey != null ? ey : createMinimalNestedObject("hemishe_HEducationYear", entity.getEducationYear(), entity.getEducationYear()));
-        } else {
-            CubaEntityMapHelper.putIfNotNull(map, "educationYear", entity.getEducationYear(), returnNulls);
         }
 
+        // OLD-HEMIS: educationType only in view mode
         if (useNestedObjects && entity.getEducationType() != null) {
             Map<String, Object> et = fetchEducationType(entity.getEducationType());
             map.put("educationType", et != null ? et : createMinimalNestedObject("hemishe_HEducationType", entity.getEducationType(), entity.getEducationType()));
-        } else {
-            CubaEntityMapHelper.putIfNotNull(map, "educationType", entity.getEducationType(), returnNulls);
         }
 
         CubaEntityMapHelper.putIfNotNull(map, "totalCredit", entity.getTotalCredit(), returnNulls);
@@ -166,7 +161,7 @@ public class DiplomaLegacyService {
                 Map<String, Object> bgs = fetchBlankGenerateStatus(entity.getBlankGenerateStatusCode());
                 map.put("blankGenerateStatus", bgs != null ? bgs : createMinimalNestedObject("hemishe_HDiplomBlankGenerateStatus", entity.getBlankGenerateStatusCode(), entity.getBlankGenerateStatusCode()));
             } else if (Boolean.TRUE.equals(returnNulls)) {
-                map.put("blankGenerateStatus", null);
+                map.put("blankGenerateStatus", uz.hemis.common.JsonNull.INSTANCE);
             }
         } else {
             CubaEntityMapHelper.putIfNotNull(map, "blankGenerateStatusCode", entity.getBlankGenerateStatusCode(), returnNulls);

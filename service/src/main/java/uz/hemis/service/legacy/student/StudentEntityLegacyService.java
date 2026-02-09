@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.*;
 import uz.hemis.domain.repository.*;
 import uz.hemis.service.legacy.CubaEntityMapHelper;
+import uz.hemis.service.legacy.CubaNestedObjectLoader;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
 import uz.hemis.service.legacy.SoftDeleteRestoreLegacyService;
 
@@ -51,6 +52,7 @@ public class StudentEntityLegacyService {
 
     private final ReferenceDataLegacyService referenceDataService;
     private final SoftDeleteRestoreLegacyService softDeleteRestoreService;
+    private final CubaNestedObjectLoader nestedObjectLoader;
 
     // =====================================================
     // StudentCertificate
@@ -76,16 +78,44 @@ public class StudentEntityLegacyService {
     }
 
     public Map<String, Object> toStudentCertificateMap(StudentCertificate entity, Boolean returnNulls) {
+        return toStudentCertificateMap(entity, returnNulls, null);
+    }
+
+    public Map<String, Object> toStudentCertificateMap(StudentCertificate entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", entity.getId());
         map.put("_entityName", "hemishe_EStudentCertificate");
-        map.put("_instanceName", entity.getSerialNumber());
-        CubaEntityMapHelper.putIfNotNull(map, "university", entity.getUniversity(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "student", entity.getStudent(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "certificateType", entity.getCertificateType(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "certificateName", entity.getCertificateName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "certificateGrade", entity.getCertificateGrade(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "certificateSubject", entity.getCertificateSubject(), returnNulls);
+        map.put("_instanceName", "com.company.hemishe.entity.EStudentCertificate-" + entity.getId() + " [detached]");
+
+        // Reference fields: faqat view mode da qaytariladi
+        boolean useNested = view != null && !view.isEmpty();
+        if (useNested) {
+            // OLD-HEMIS: university and student are full nested objects in view mode
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversityForTeacher(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", null);
+            }
+            if (entity.getStudent() != null) {
+                Map<String, Object> studentMap = nestedObjectLoader.loadStudentForDiploma(entity.getStudent());
+                if (studentMap != null) {
+                    // OLD-HEMIS certificate view: nested classifiers have basic format (no nameRu/nameEn/active)
+                    stripClassifierExtras(studentMap);
+                }
+                map.put("student", studentMap);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("student", null);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "certificateType", entity.getCertificateType(),
+                    "hemishe_h_certificate_type", "HCertificateType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "certificateName", entity.getCertificateName(),
+                    "hemishe_h_certificate_names", "HCertificateNames", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "certificateGrade", entity.getCertificateGrade(),
+                    "hemishe_h_certificate_grades", "HCertificateGrades", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "certificateSubject", entity.getCertificateSubject(),
+                    "hemishe_h_certificate_subjects", "HCertificateSubjects", returnNulls);
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "issueDate", entity.getIssueDate(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "validDate", entity.getValidDate(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "serialNumber", entity.getSerialNumber(), returnNulls);
@@ -94,6 +124,27 @@ public class StudentEntityLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
         return map;
+    }
+
+    /**
+     * Strip nameRu, nameEn, active from nested classifier objects in a student map.
+     * OLD-HEMIS certificate view returns classifiers with basic format only.
+     */
+    @SuppressWarnings("unchecked")
+    private void stripClassifierExtras(Map<String, Object> map) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object val = entry.getValue();
+            if (val instanceof Map) {
+                Map<String, Object> nested = (Map<String, Object>) val;
+                if (nested.containsKey("_entityName")) {
+                    nested.remove("nameRu");
+                    nested.remove("nameEn");
+                    nested.remove("active");
+                    // Recursively strip nested objects inside this classifier
+                    stripClassifierExtras(nested);
+                }
+            }
+        }
     }
 
     public void updateStudentCertificateFromMap(StudentCertificate entity, Map<String, Object> data) {
@@ -229,10 +280,36 @@ public class StudentEntityLegacyService {
     }
 
     public Map<String, Object> toAdministrativeStudent3Map(AdministrativeStudent3 entity, Boolean returnNulls) {
+        return toAdministrativeStudent3Map(entity, returnNulls, null);
+    }
+
+    public Map<String, Object> toAdministrativeStudent3Map(AdministrativeStudent3 entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", "hemishe_RIAdministrativeStudent3");
         map.put("_instanceName", buildAdministrativeStudent3InstanceName(entity));
         map.put("id", entity.getId());
+
+        boolean useNested = view != null && !view.isEmpty();
+
+        // OLD-HEMIS: reference fieldlar faqat view mode da qaytariladi
+        // student nested object
+        if (useNested && entity.getStudent() != null) {
+            Map<String, Object> studentObj = nestedObjectLoader.loadStudentForDiploma(entity.getStudent());
+            map.put("student", studentObj != null ? studentObj : entity.getStudent().toString());
+        }
+
+        // university nested object (FK stores UUID, not code)
+        if (useNested && entity.getUniversity() != null) {
+            Map<String, Object> uniObj = nestedObjectLoader.loadUniversityByUuid(entity.getUniversity());
+            map.put("university", uniObj != null ? uniObj : entity.getUniversity());
+        }
+
+        // educationYear nested object (FK stores UUID, resolve via h_education_year.id)
+        if (useNested && entity.getEducationYear() != null) {
+            Map<String, Object> eyObj = nestedObjectLoader.loadClassifier("hemishe_h_education_year", "HEducationYear", String.valueOf(entity.getEducationYear()));
+            map.put("educationYear", eyObj != null ? eyObj : entity.getEducationYear());
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "mastersUniversityName", entity.getMastersUniversityName(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "company", entity.getCompany(), returnNulls);
@@ -445,19 +522,7 @@ public class StudentEntityLegacyService {
         map.put("id", entity.getId());
         CubaEntityMapHelper.putIfNotNull(map, "square", entity.getSquare(), returnNulls);
 
-        // university - nested object
-        if (entity.getUniversity() != null) {
-            map.put("university", buildUniversityObject(entity.getUniversity()));
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("university", null);
-        }
-
-        // educationYear - nested object
-        if (entity.getEducationYear() != null) {
-            map.put("educationYear", buildEducationYearObject(entity.getEducationYear()));
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("educationYear", null);
-        }
+        // OLD-HEMIS: university va educationYear reference fieldlar default view da qaytarilmaydi
 
         CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         return map;
@@ -604,7 +669,7 @@ public class StudentEntityLegacyService {
     public Map<String, Object> toExpelMap(Expel entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", "hemishe_RExpel");
-        map.put("_instanceName", entity.getUniversityName() != null ? entity.getUniversityName() : entity.getId().toString());
+        map.put("_instanceName", "com.company.hemishe.entity.RExpel-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
         CubaEntityMapHelper.putIfNotNull(map, "universityCode", entity.getUniversityCode(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "universityName", entity.getUniversityName(), returnNulls);

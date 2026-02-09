@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.*;
 import uz.hemis.domain.repository.*;
+import uz.hemis.service.legacy.CubaNestedObjectLoader;
 import uz.hemis.service.legacy.SoftDeleteRestoreLegacyService;
 
 import java.time.LocalDate;
@@ -46,6 +47,7 @@ public class EmployeeRefLegacyService {
     private final UniversityEmployeeStatusTypeRepository universityEmployeeStatusTypeRepository;
     private final UniversityEmployeeTypeRepository universityEmployeeTypeRepository;
     private final SoftDeleteRestoreLegacyService softDeleteRestoreService;
+    private final CubaNestedObjectLoader nestedObjectLoader;
     private final AdministrativeEmployee1Repository administrativeEmployee1Repository;
     private final AdministrativeEmployee2Repository administrativeEmployee2Repository;
     private final AdministrativeEmployee3Repository administrativeEmployee3Repository;
@@ -169,13 +171,9 @@ public class EmployeeRefLegacyService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", cert.getId());
         map.put("_entityName", EMPLOYEE_CERTIFICATE_ENTITY);
-        map.put("_instanceName", cert.getSerialNumber());
-        map.put("university", cert.getUniversity());
-        map.put("employee", cert.getEmployee());
-        map.put("certificateType", cert.getCertificateType());
-        map.put("certificateName", cert.getCertificateName());
-        map.put("certificateGrade", cert.getCertificateGrade());
-        map.put("certificateSubject", cert.getCertificateSubject());
+        map.put("_instanceName", "com.company.hemishe.entity.EEmpoyeeCertificate-" + cert.getId() + " [detached]");
+        // OLD-HEMIS: default view da reference fieldlar qaytarilmaydi
+        // university, employee, certificateType, certificateName, certificateGrade, certificateSubject
         map.put("issueDate", cert.getIssueDate());
         map.put("validDate", cert.getValidDate());
         map.put("serialNumber", cert.getSerialNumber());

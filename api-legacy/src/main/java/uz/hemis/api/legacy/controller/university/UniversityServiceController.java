@@ -103,37 +103,36 @@ public class UniversityServiceController {
     private Map<String, Object> buildUniversityMap(University u) {
         Map<String, Object> item = new LinkedHashMap<>();
         item.put("_entityName", UNIVERSITY_ENTITY_NAME);
-        item.put("_instanceName", u.getCode() + "-" + u.getName());
         item.put("id", u.getCode());
 
         if (u.getStudentUrl() != null) item.put("studentUrl", u.getStudentUrl());
         item.put("code", u.getCode());
 
         if (u.getSoato() != null) {
-            Map<String, Object> soatoObj = nestedObjectLoader.loadSoato(u.getSoato());
-            if (soatoObj != null) item.put("soato", soatoObj);
+            item.put("soato", strip(nestedObjectLoader.loadSoato(u.getSoato())));
         }
 
         if (u.getUniversityActivityStatus() != null) {
-            item.put("universityActivityStatus", nestedObjectLoader.loadClassifier(
-                "hemishe_h_university_activity_status", "HUniversityActivityStatus", u.getUniversityActivityStatus()));
+            item.put("universityActivityStatus", strip(nestedObjectLoader.loadClassifier(
+                "hemishe_h_university_activity_status", "HUniversityActivityStatus", u.getUniversityActivityStatus())));
         }
 
         if (u.getUniversityType() != null) {
-            item.put("universityType", nestedObjectLoader.loadClassifier(
-                "hemishe_h_university_type", "HUniversityType", u.getUniversityType()));
+            item.put("universityType", strip(nestedObjectLoader.loadClassifier(
+                "hemishe_h_university_type", "HUniversityType", u.getUniversityType())));
         }
 
         if (u.getTin() != null) item.put("tin", u.getTin());
 
         if (u.getSoatoRegion() != null) {
-            Map<String, Object> soatoRegionObj = nestedObjectLoader.loadSoato(u.getSoatoRegion());
-            if (soatoRegionObj != null) item.put("soatoRegion", soatoRegionObj);
+            item.put("soatoRegion", strip(nestedObjectLoader.loadSoato(u.getSoatoRegion())));
         }
 
         if (u.getUniversityVersion() != null) {
-            item.put("versionType", nestedObjectLoader.loadClassifierWithNames(
-                "hemishe_h_hemis_version_type", "HHemisVersionType", u.getUniversityVersion()));
+            Map<String, Object> vt = nestedObjectLoader.loadClassifier(
+                "hemishe_h_hemis_version_type", "HHemisVersionType", u.getUniversityVersion());
+            if (vt != null) { vt.remove("_instanceName"); vt.put("active", true); }
+            item.put("versionType", vt);
         }
 
         item.put("addStudent", u.getAddStudent() != null ? u.getAddStudent() : true);
@@ -142,8 +141,10 @@ public class UniversityServiceController {
         item.put("active", u.getActive() != null ? u.getActive() : false);
 
         if (u.getUniversityContractCategory() != null) {
-            item.put("universityContractCategory", nestedObjectLoader.loadClassifierWithNames(
-                "hemishe_h_university_contract_category", "HUniversityContractCategory", u.getUniversityContractCategory()));
+            Map<String, Object> ucc = nestedObjectLoader.loadClassifier(
+                "hemishe_h_university_contract_category", "HUniversityContractCategory", u.getUniversityContractCategory());
+            if (ucc != null) { ucc.remove("_instanceName"); ucc.put("active", true); }
+            item.put("universityContractCategory", ucc);
         }
 
         item.put("version", u.getVersion() != null ? u.getVersion() : 1);
@@ -153,18 +154,24 @@ public class UniversityServiceController {
         item.put("allowTransferOutside", u.getAllowTransferOutside() != null ? u.getAllowTransferOutside() : true);
 
         if (u.getOwnership() != null) {
-            item.put("ownership", nestedObjectLoader.loadClassifier(
-                "hemishe_h_ownership", "HOwnership", u.getOwnership()));
+            item.put("ownership", strip(nestedObjectLoader.loadClassifier(
+                "hemishe_h_ownership", "HOwnership", u.getOwnership())));
         }
 
         item.put("name", u.getName());
         item.put("gpaEdit", u.getGpaEdit() != null ? u.getGpaEdit() : false);
 
         if (u.getUniversityBelongsTo() != null) {
-            item.put("belongsTo", nestedObjectLoader.loadClassifier(
-                "hemishe_h_university_belongs_to", "HUniversityBelongsTo", u.getUniversityBelongsTo()));
+            item.put("belongsTo", strip(nestedObjectLoader.loadClassifier(
+                "hemishe_h_university_belongs_to", "HUniversityBelongsTo", u.getUniversityBelongsTo())));
         }
 
         return item;
+    }
+
+    /** Old-hemis university/get: nested objects don't include _instanceName */
+    private Map<String, Object> strip(Map<String, Object> map) {
+        if (map != null) map.remove("_instanceName");
+        return map;
     }
 }

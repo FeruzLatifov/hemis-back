@@ -76,7 +76,7 @@ public class FinanceEntityLegacyService {
     public Map<String, Object> toScholarshipAmountMap(ScholarshipAmount entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", SCHOLARSHIP_AMOUNT_ENTITY);
-        map.put("_instanceName", "ScholarshipAmount-" + entity.getId());
+        map.put("_instanceName", "com.company.hemishe.entity.EStudentScholarshipAmount-" + entity.getId() + " [detached]");
         map.put("id", entity.getId());
         putIfNotNull(map, "_studentScholarship", entity.getStudentScholarship(), returnNulls);
         putIfNotNull(map, "month", entity.getMonth(), returnNulls);
@@ -141,7 +141,7 @@ public class FinanceEntityLegacyService {
     public Map<String, Object> toScholarshipMap(Scholarship entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", SCHOLARSHIP_ENTITY);
-        map.put("_instanceName", SCHOLARSHIP_ENTITY + "-" + entity.getId());
+        map.put("_instanceName", "com.company.hemishe.entity.EStudentScholarshipFull-" + entity.getId() + " [detached]");
         map.put("id", entity.getId());
         putIfNotNull(map, "_student", entity.getStudent(), returnNulls);
         putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
@@ -272,85 +272,11 @@ public class FinanceEntityLegacyService {
 
         putIfNotNull(map, "date", entity.getDate(), returnNulls);
 
-        // educationType (nested object)
-        if (entity.getEducationType() != null) {
-            Map<String, Object> nested = nestedObjectLoader.loadClassifier(
-                    "hemishe_h_education_type", "HEducationType", entity.getEducationType());
-            if (nested != null) {
-                addInstanceName(nested, entity.getEducationType());
-                map.put("educationType", nested);
-            }
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("educationType", null);
-        }
-
-        // university (nested object)
-        if (entity.getUniversity() != null) {
-            Map<String, Object> nested = nestedObjectLoader.loadUniversity(entity.getUniversity());
-            if (nested != null) map.put("university", nested);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("university", null);
-        }
-
-        // educationYear (nested object)
-        if (entity.getEducationYear() != null) {
-            Map<String, Object> nested = nestedObjectLoader.loadClassifier(
-                    "hemishe_h_education_year", "HEducationYear", entity.getEducationYear());
-            if (nested != null) {
-                String name = nested.get("name") != null ? nested.get("name").toString() : entity.getEducationYear();
-                nested.put("_instanceName", name);
-                map.put("educationYear", nested);
-            }
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("educationYear", null);
-        }
-
-        // educationForm (nested object)
-        if (entity.getEducationForm() != null) {
-            Map<String, Object> nested = nestedObjectLoader.loadClassifier(
-                    "hemishe_h_education_form", "HEducationForm", entity.getEducationForm());
-            if (nested != null) {
-                addInstanceName(nested, entity.getEducationForm());
-                map.put("educationForm", nested);
-            }
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("educationForm", null);
-        }
-
-        // faculty (nested object)
-        if (entity.getFaculty() != null) {
-            Map<String, Object> nested = nestedObjectLoader.loadDepartment(entity.getFaculty());
-            if (nested != null) map.put("faculty", nested);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("faculty", null);
-        }
+        // OLD-HEMIS: reference fieldlar (educationType, university, educationYear, educationForm,
+        // faculty, course, semester) default view da qaytarilmaydi
 
         putIfNotNull(map, "dailyCount", entity.getDailyCount(), returnNulls);
         putIfNotNull(map, "total", entity.getTotal(), returnNulls);
-
-        // course (nested object)
-        if (entity.getCourse() != null) {
-            Map<String, Object> nested = nestedObjectLoader.loadClassifier(
-                    "hemishe_h_course", "HCourse", entity.getCourse());
-            if (nested != null) {
-                addInstanceName(nested, entity.getCourse());
-                map.put("course", nested);
-            }
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("course", null);
-        }
-
-        // semester (nested object)
-        if (entity.getSemester() != null) {
-            Map<String, Object> nested = nestedObjectLoader.loadClassifier(
-                    "hemishe_h_semester", "HSemester", entity.getSemester());
-            if (nested != null) {
-                addInstanceName(nested, entity.getSemester());
-                map.put("semester", nested);
-            }
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("semester", null);
-        }
 
         return map;
     }

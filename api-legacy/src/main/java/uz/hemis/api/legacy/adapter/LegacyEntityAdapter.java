@@ -64,7 +64,7 @@ public class LegacyEntityAdapter {
 
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", entityName);
-        map.put("_instanceName", getInstanceName(dto));
+        map.put("_instanceName", getInstanceName(dto, entityName));
 
         Field[] fields = dto.getClass().getDeclaredFields();
         for (Field field : fields) {
@@ -275,8 +275,98 @@ public class LegacyEntityAdapter {
         }
     }
 
-    private String getInstanceName(Object dto) {
+    /**
+     * Old-hemis @NamePattern mapping for classifiers.
+     * "code_space_name" = "%s %s|code,name"; "code_dash_name" = "%s - %s|code,name";
+     * "code_hyphen_name" = "%s-%s|code,name"; "name" = "%s|name"
+     */
+    private static final Map<String, String> CLASSIFIER_NAME_PATTERNS = Map.ofEntries(
+        // BaseCodeNameEntity: "%s %s|code,name"
+        Map.entry("hemishe_HEducationType", "code_space_name"),
+        Map.entry("hemishe_HEducationForm", "code_space_name"),
+        Map.entry("hemishe_HCourse", "code_space_name"),
+        Map.entry("hemishe_HAdmissionType", "code_space_name"),
+        Map.entry("hemishe_HAcademicDegree", "code_space_name"),
+        Map.entry("hemishe_HAcademicReason", "code_space_name"),
+        Map.entry("hemishe_HCountry", "code_space_name"),
+        Map.entry("hemishe_HExamFinish", "code_space_name"),
+        Map.entry("hemishe_HResourceType", "code_space_name"),
+        Map.entry("hemishe_HScienceBranch", "code_space_name"),
+        Map.entry("hemishe_HCertificateLanguage", "code_space_name"),
+        Map.entry("hemishe_HTerrain", "code_space_name"),
+        Map.entry("hemishe_HUniversityBelongsTo", "code_space_name"),
+        Map.entry("hemishe_HTeacherConductionForm", "code_space_name"),
+        Map.entry("hemishe_HScholarshipDecreeType", "code_space_name"),
+        Map.entry("hemishe_HAttandanceSetting", "code_space_name"),
+        Map.entry("hemishe_HHemisVersionType", "code_space_name"),
+        Map.entry("hemishe_HDoctoralStudentStatus", "code_space_name"),
+        Map.entry("hemishe_HDoctoralStudentType", "code_space_name"),
+        Map.entry("hemishe_HPublicationLocality", "code_space_name"),
+        Map.entry("hemishe_HPublicationScientificType", "code_space_name"),
+        Map.entry("hemishe_HGender", "code_space_name"),
+        Map.entry("hemishe_HNationality", "code_space_name"),
+        Map.entry("hemishe_HStudentSocialType", "code_space_name"),
+        Map.entry("hemishe_HEducationLanguage", "code_space_name"),
+        Map.entry("hemishe_HAccomodation", "code_space_name"),
+        Map.entry("hemishe_HStudentLivingStatus", "code_space_name"),
+        Map.entry("hemishe_HStudentRoomMateType", "code_space_name"),
+        Map.entry("hemishe_HStudentStatusType", "code_space_name"),
+        Map.entry("hemishe_HOwnership", "code_space_name"),
+        Map.entry("hemishe_HStudentType", "code_space_name"),
+        Map.entry("hemishe_HStudentAchievementType", "code_space_name"),
+        Map.entry("hemishe_HCitizenship", "code_space_name"),
+        // "%s - %s|code,name"
+        Map.entry("hemishe_HPaymentForm", "code_dash_name"),
+        Map.entry("hemishe_HDiplomBlankGenerateStatus", "code_dash_name"),
+        Map.entry("hemishe_HSpecialityBachelor", "code_dash_name"),
+        Map.entry("hemishe_HSpecialityMaster", "code_dash_name"),
+        Map.entry("hemishe_HSpecialityOrdinatura", "code_dash_name"),
+        Map.entry("hemishe_HStipendRate", "code_dash_name"),
+        Map.entry("hemishe_HStipendRateCategory", "code_dash_name"),
+        // "%s-%s|code,name"
+        Map.entry("hemishe_HUniversityActivityStatus", "code_hyphen_name")
+    );
+
+    /**
+     * OLD-HEMIS: entities without @NamePattern get CUBA class name format
+     * "com.company.hemishe.entity.ClassName-UUID [detached]"
+     */
+    private static final Set<String> CUBA_CLASS_NAME_ENTITIES = Set.of(
+        "hemishe_RAcademicScore",
+        "hemishe_EStudentScholarshipFull",
+        "hemishe_EStudentScholarshipAmount",
+        "hemishe_RIAcademicEducationalWork"
+    );
+
+    /**
+     * CUBA entity name to old-hemis Java class name mapping
+     */
+    private static final Map<String, String> CUBA_CLASS_NAMES = Map.of(
+        "hemishe_RAcademicScore", "RAcademicScore",
+        "hemishe_EStudentScholarshipFull", "EStudentScholarshipFull",
+        "hemishe_EStudentScholarshipAmount", "EStudentScholarshipAmount",
+        "hemishe_RIAcademicEducationalWork", "RIAcademicEducationalWork"
+    );
+
+    private String getInstanceName(Object dto, String entityName) {
         try {
+            // Check if this is a classifier entity with a known NamePattern
+            String pattern = CLASSIFIER_NAME_PATTERNS.get(entityName);
+            if (pattern != null) {
+                return buildClassifierInstanceName(dto, pattern);
+            }
+
+            // OLD-HEMIS: entities without @NamePattern use CUBA class name format
+            if (CUBA_CLASS_NAME_ENTITIES.contains(entityName)) {
+                Field idField = findField(dto.getClass(), "id");
+                if (idField != null) {
+                    idField.setAccessible(true);
+                    Object idVal = idField.get(dto);
+                    String className = CUBA_CLASS_NAMES.getOrDefault(entityName, entityName);
+                    return "com.company.hemishe.entity." + className + "-" + idVal + " [detached]";
+                }
+            }
+
             // First try to call getFullname() method (for StudentDto)
             try {
                 java.lang.reflect.Method fullnameMethod = dto.getClass().getMethod("getFullname");
@@ -314,6 +404,35 @@ public class LegacyEntityAdapter {
         } catch (Exception e) {
             return dto.toString();
         }
+    }
+
+    /**
+     * Build _instanceName for classifier entities using old-hemis @NamePattern format.
+     */
+    private String buildClassifierInstanceName(Object dto, String pattern) throws Exception {
+        Field codeField = findField(dto.getClass(), "code", "id");
+        Field nameField = findField(dto.getClass(), "name");
+
+        String code = "";
+        String name = "";
+
+        if (codeField != null) {
+            codeField.setAccessible(true);
+            Object val = codeField.get(dto);
+            if (val != null) code = val.toString();
+        }
+        if (nameField != null) {
+            nameField.setAccessible(true);
+            Object val = nameField.get(dto);
+            if (val != null) name = val.toString();
+        }
+
+        return switch (pattern) {
+            case "code_space_name" -> code + " " + name;
+            case "code_dash_name" -> code + " - " + name;
+            case "code_hyphen_name" -> code + "-" + name;
+            default -> name;
+        };
     }
 
     private Field findField(Class<?> clazz, String... names) {

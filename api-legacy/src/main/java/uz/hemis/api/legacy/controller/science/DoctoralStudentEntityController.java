@@ -99,7 +99,7 @@ public class DoctoralStudentEntityController {
             return ResponseEntity.status(404).body(error);
         }
 
-        return ResponseEntity.ok(toMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(toMap(entity.get(), returnNulls, view));
     }
 
     // =====================================================
@@ -424,14 +424,23 @@ public class DoctoralStudentEntityController {
     // =====================================================
 
     private String buildInstanceName(DoctoralStudent entity) {
-        String fullName = entity.getFullName();
-        return fullName != null ? fullName : "DoctoralStudent-" + entity.getId();
+        // OLD-HEMIS @NamePattern("%s %s|secondName,firstName")
+        String secondName = entity.getSecondName();
+        String firstName = entity.getFirstName();
+        if (secondName != null && firstName != null) return secondName + " " + firstName;
+        if (secondName != null) return secondName;
+        if (firstName != null) return firstName;
+        return "";
     }
 
     /**
      * Entity -> OLD-HEMIS Map formatiga o'girish
      */
     private Map<String, Object> toMap(DoctoralStudent entity, Boolean returnNulls) {
+        return toMap(entity, returnNulls, null);
+    }
+
+    private Map<String, Object> toMap(DoctoralStudent entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ENTITY_NAME);
         map.put("_instanceName", buildInstanceName(entity));
@@ -465,36 +474,39 @@ public class DoctoralStudentEntityController {
 
         putIfNotNull(map, "studentIdNumber", entity.getStudentIdNumber(), returnNulls);
 
-        // Classifiers as nested objects (OLD-HEMIS format)
-        putClassifier(map, "paymentForm", entity.getPaymentForm(), returnNulls);
-        putClassifier(map, "nationality", entity.getNationality(), returnNulls);
-        putClassifier(map, "gender", entity.getGender(), returnNulls);
-        putClassifier(map, "country", entity.getCountry(), returnNulls);
-        putClassifier(map, "soato", entity.getSoato(), returnNulls);
-        putClassifier(map, "doctoralStudentType", entity.getDoctoralStudentType(), returnNulls);
-        putClassifier(map, "doctorateStudentStatus", entity.getDoctorateStudentStatus(), returnNulls);
-        putClassifier(map, "scienceBranch", entity.getScienceBranch(), returnNulls);
+        // OLD-HEMIS: reference/classifier fields faqat view mode da qaytariladi
+        boolean useNested = view != null && !view.isEmpty();
 
-        // Location
+        // OLD-HEMIS: classifier/reference fieldlar faqat view mode da qaytariladi
+        if (useNested) {
+            putClassifier(map, "paymentForm", entity.getPaymentForm(), returnNulls);
+            putClassifier(map, "nationality", entity.getNationality(), returnNulls);
+            putClassifier(map, "gender", entity.getGender(), returnNulls);
+            putClassifier(map, "country", entity.getCountry(), returnNulls);
+            putClassifier(map, "soato", entity.getSoato(), returnNulls);
+            putClassifier(map, "doctoralStudentType", entity.getDoctoralStudentType(), returnNulls);
+            putClassifier(map, "doctorateStudentStatus", entity.getDoctorateStudentStatus(), returnNulls);
+            putClassifier(map, "scienceBranch", entity.getScienceBranch(), returnNulls);
+            putIfNotNull(map, "university", entity.getUniversity(), returnNulls);
+            putIfNotNull(map, "department", entity.getDepartment(), returnNulls);
+
+            // Speciality as nested object with id
+            if (entity.getSpeciality() != null) {
+                Map<String, Object> specMap = new LinkedHashMap<>();
+                specMap.put("id", entity.getSpeciality().toString());
+                map.put("speciality", specMap);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("speciality", null);
+            }
+        }
+
+        // Scalar fields — always returned
         putIfNotNull(map, "province", entity.getProvince(), returnNulls);
         putIfNotNull(map, "district", entity.getDistrict(), returnNulls);
-
-        // Other fields
         putIfNotNull(map, "level", entity.getLevel(), returnNulls);
-        putIfNotNull(map, "university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "department", entity.getDepartment(), returnNulls);
         putIfNotNull(map, "position", entity.getPosition(), returnNulls);
         putIfNotNull(map, "active", entity.getActive(), returnNulls);
         putIfNotNull(map, "uId", entity.getUId(), returnNulls);
-
-        // Speciality as nested object with id
-        if (entity.getSpeciality() != null) {
-            Map<String, Object> specMap = new LinkedHashMap<>();
-            specMap.put("id", entity.getSpeciality().toString());
-            map.put("speciality", specMap);
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("speciality", null);
-        }
 
         // Audit fields
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);

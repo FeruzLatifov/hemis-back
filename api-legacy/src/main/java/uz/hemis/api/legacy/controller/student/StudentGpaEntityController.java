@@ -159,7 +159,7 @@ public class StudentGpaEntityController {
     })
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "View nomi", example = "eStudentGpa-view")
-            @RequestParam(value = "view", required = false, defaultValue = "eStudentGpa-view") String view,
+            @RequestParam(value = "view", required = false) String view,
             @Parameter(description = "Maksimum natijalar soni", example = "100")
             @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
             @Parameter(description = "Boshlang'ich pozitsiya", example = "0")
@@ -167,7 +167,7 @@ public class StudentGpaEntityController {
 
         log.info("[CUBA Entity] hemishe_EStudentGpa: view={}, limit={}, offset={}", view, limit, offset);
 
-        List<Map<String, Object>> result = studentGpaService.findAll(limit, offset);
+        List<Map<String, Object>> result = studentGpaService.findAll(limit, offset, view);
 
         log.info("[CUBA Entity] hemishe_EStudentGpa: {} records returned", result.size());
         return ResponseEntity.ok(result);

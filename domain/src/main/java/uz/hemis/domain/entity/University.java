@@ -334,6 +334,13 @@ public class University implements Serializable {
     @Column(name = "add_transfer_student")
     private Boolean addTransferStudent;
 
+    /**
+     * Add academic mobile student flag
+     * Column: add_academic_mobile_student BOOLEAN
+     */
+    @Column(name = "add_academic_mobile_student")
+    private Boolean addAcademicMobileStudent;
+
     // NOTE: _version_type column exists in DB but NOT mapped to entity
     // Reason: CUBA legacy field, not used in new system
     // Hibernate would include it in SELECT even with insertable=false, updatable=false

@@ -40,10 +40,11 @@ public class CubaNestedObjectLoader {
             Map<String, Object> row = jdbcTemplate.queryForMap(
                     "SELECT code, name FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL", code);
             Map<String, Object> obj = new LinkedHashMap<>();
-            obj.put("_entityName", "hemishe_" + entityName);
-            // OLD-HEMIS: _instanceName format is "code name"
+            String fullEntityName = "hemishe_" + entityName;
+            obj.put("_entityName", fullEntityName);
+            // OLD-HEMIS: _instanceName format based on @NamePattern
             String name = row.get("name") != null ? str(row.get("name")) : "";
-            obj.put("_instanceName", str(row.get("code")) + " " + name);
+            obj.put("_instanceName", buildInstanceName(fullEntityName, str(row.get("code")), name));
             obj.put("id", str(row.get("code")));
             // OLD-HEMIS compatibility: include code field
             obj.put("code", str(row.get("code")));
@@ -65,7 +66,6 @@ public class CubaNestedObjectLoader {
      * Load classifier with additional name fields (name_ru, name_en, active)
      * Used for: hemis_version_type, university_contract_category, etc.
      * OLD-HEMIS compatibility: includes nameRu, nameEn, active fields
-     * _instanceName format: "code name" (e.g., "11 To'liq")
      */
     public Map<String, Object> loadClassifierWithNames(String tableName, String entityName, String code) {
         if (code == null || code.isEmpty()) return null;
@@ -73,12 +73,14 @@ public class CubaNestedObjectLoader {
             Map<String, Object> row = jdbcTemplate.queryForMap(
                     "SELECT code, name, name_ru, name_en, active FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL", code);
             Map<String, Object> obj = new LinkedHashMap<>();
-            obj.put("_entityName", "hemishe_" + entityName);
-            // OLD-HEMIS: _instanceName format is "code name"
+            String fullEntityName = "hemishe_" + entityName;
+            obj.put("_entityName", fullEntityName);
+            // OLD-HEMIS: _instanceName format based on @NamePattern
             String name = row.get("name") != null ? str(row.get("name")) : "";
-            obj.put("_instanceName", str(row.get("code")) + " " + name);
+            obj.put("_instanceName", buildInstanceName(fullEntityName, str(row.get("code")), name));
             obj.put("id", str(row.get("code")));
-            // OLD-HEMIS compatibility: include nameRu, nameEn with JsonNull for null/empty values
+            // OLD-HEMIS compatibility: include code, nameRu, nameEn with JsonNull for null/empty values
+            obj.put("code", str(row.get("code")));
             Object nameRu = row.get("name_ru");
             obj.put("nameRu", (nameRu != null && !nameRu.toString().isEmpty()) ? str(nameRu) : JsonNull.INSTANCE);
             obj.put("name", name);
@@ -164,7 +166,31 @@ public class CubaNestedObjectLoader {
     }
 
     /**
-     * Load classifier with _instanceName format "code name"
+     * OLD-HEMIS @NamePattern: entity lar uchun _instanceName formatini aniqlash
+     * "name" = "%s|name" (faqat name); "code_dash_name" = "%s - %s|code,name"
+     * Qolganlari default "code_space_name" = "%s %s|code,name"
+     */
+    private static final Set<String> NAME_ONLY_ENTITIES = Set.of(
+        "hemishe_HEducationYear", "hemishe_HTransferType",
+        "hemishe_HCertificateNames", "hemishe_HCertificateGrades",
+        "hemishe_HCertificateSubjects", "hemishe_HCertificateType",
+        "hemishe_HDepartmentType"
+    );
+    private static final Set<String> CODE_DASH_NAME_ENTITIES = Set.of(
+        "hemishe_HPaymentForm", "hemishe_HDiplomBlankGenerateStatus",
+        "hemishe_HSpecialityBachelor", "hemishe_HSpecialityMaster",
+        "hemishe_HSpecialityOrdinatura", "hemishe_HStipendRate",
+        "hemishe_HStipendRateCategory"
+    );
+
+    private String buildInstanceName(String entityName, String code, String name) {
+        if (NAME_ONLY_ENTITIES.contains(entityName)) return name;
+        if (CODE_DASH_NAME_ENTITIES.contains(entityName)) return code + " - " + name;
+        return code + " " + name;
+    }
+
+    /**
+     * Load classifier with _instanceName format based on OLD-HEMIS @NamePattern
      * Used by TeacherEntityController for classifiers in eTeacher-view
      * OLD-HEMIS compatibility: includes nameRu, nameEn, active fields
      */
@@ -176,13 +202,15 @@ public class CubaNestedObjectLoader {
             Map<String, Object> nested = new LinkedHashMap<>();
             nested.put("_entityName", entityName);
             String name = row.get("name") != null ? row.get("name").toString() : "";
-            nested.put("_instanceName", code + " " + name);
+            nested.put("_instanceName", buildInstanceName(entityName, code, name));
             nested.put("id", code);
-            // OLD-HEMIS compatibility: include nameRu, nameEn, active fields
-            nested.put("nameRu", row.get("name_ru"));
+            // OLD-HEMIS compatibility: include code, nameRu, nameEn, active fields
+            nested.put("code", code);
+            // OLD-HEMIS: null values must be serialized (returnNulls=true in views)
+            nested.put("nameRu", row.get("name_ru") != null ? row.get("name_ru") : JsonNull.INSTANCE);
             nested.put("name", name);
             nested.put("active", row.get("active") != null ? row.get("active") : true);
-            nested.put("nameEn", row.get("name_en"));
+            nested.put("nameEn", row.get("name_en") != null ? row.get("name_en") : JsonNull.INSTANCE);
             return nested;
         } catch (EmptyResultDataAccessException e) {
             Map<String, Object> nested = new LinkedHashMap<>();
@@ -236,7 +264,7 @@ public class CubaNestedObjectLoader {
             Map<String, Object> row = jdbcTemplate.queryForMap(
                     "SELECT code, name, tin, address, student_url, teacher_url, active, " +
                     "add_student, accreditation_edit, allow_grouping, allow_transfer_outside, one_id, gpa_edit, " +
-                    "add_foreign_student, grading_system, uzbmb_url, university_url, mail_address, bank_info, cadastre, accreditation_info, add_transfer_student " +
+                    "add_foreign_student, grading_system, uzbmb_url, university_url, mail_address, bank_info, cadastre, accreditation_info, add_transfer_student, add_academic_mobile_student " +
                     "FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL", universityCode);
 
             // OLD-HEMIS field order for Teacher university (24 fields, NO nested objects)
@@ -265,6 +293,7 @@ public class CubaNestedObjectLoader {
             uni.put("name", str(row.get("name")));
             uni.put("gpaEdit", row.get("gpa_edit") != null ? row.get("gpa_edit") : false);
             uni.put("addTransferStudent", row.get("add_transfer_student") != null ? row.get("add_transfer_student") : JsonNull.INSTANCE);
+            uni.put("addAcademicMobileStudent", row.get("add_academic_mobile_student") != null ? row.get("add_academic_mobile_student") : JsonNull.INSTANCE);
 
             return uni;
         } catch (EmptyResultDataAccessException e) {
@@ -287,7 +316,7 @@ public class CubaNestedObjectLoader {
                     "add_student, accreditation_edit, allow_grouping, allow_transfer_outside, one_id, gpa_edit, " +
                     "_university_type, _ownership, _university_contract_category, _soato, _soato_region, " +
                     "_university_activity_status, _university_belongs_to, _university_version, " +
-                    "add_foreign_student, grading_system, uzbmb_url, university_url, mail_address, bank_info, accreditation_info " +
+                    "add_foreign_student, grading_system, uzbmb_url, university_url, mail_address, bank_info, accreditation_info, add_transfer_student, add_academic_mobile_student " +
                     "FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL", universityCode);
 
             // OLD-HEMIS field order for university nested object
@@ -346,6 +375,7 @@ public class CubaNestedObjectLoader {
             uni.put("name", str(row.get("name")));
             uni.put("gpaEdit", row.get("gpa_edit") != null ? row.get("gpa_edit") : false);
             uni.put("addTransferStudent", row.get("add_transfer_student") != null ? row.get("add_transfer_student") : JsonNull.INSTANCE);
+            uni.put("addAcademicMobileStudent", row.get("add_academic_mobile_student") != null ? row.get("add_academic_mobile_student") : JsonNull.INSTANCE);
             // belongsTo
             if (row.get("_university_belongs_to") != null)
                 uni.put("belongsTo", loadClassifier("hemishe_h_university_belongs_to", "HUniversityBelongsTo", str(row.get("_university_belongs_to"))));
@@ -360,6 +390,28 @@ public class CubaNestedObjectLoader {
     }
 
     /**
+     * Load university by UUID (CUBA id column) - resolves UUID to code then loads full object
+     * Used when FK stores university UUID instead of code
+     */
+    public Map<String, Object> loadUniversityByUuid(UUID universityUuid) {
+        if (universityUuid == null) return null;
+        try {
+            String code = jdbcTemplate.queryForObject(
+                    "SELECT code FROM hemishe_e_university WHERE id = ?::uuid AND delete_ts IS NULL",
+                    String.class, universityUuid);
+            return loadUniversity(code);
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_EUniversity");
+            nested.put("id", universityUuid.toString());
+            return nested;
+        } catch (Exception e) {
+            log.debug("University by UUID load error (uuid={}): {}", universityUuid, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Load department object
      * Used by Teacher, Diploma controllers
      */
@@ -367,13 +419,19 @@ public class CubaNestedObjectLoader {
         if (departmentCode == null || departmentCode.isEmpty()) return null;
         try {
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name_uz, university_code FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL", departmentCode);
+                    "SELECT code, name_uz, university_code, _deparment_type FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL", departmentCode);
             Map<String, Object> nested = new LinkedHashMap<>();
             nested.put("_entityName", "hemishe_EUniversityDepartment");
             nested.put("_instanceName", row.get("name_uz"));
             nested.put("id", str(row.get("code")));
             nested.put("code", str(row.get("code")));
+            nested.put("nameUz", row.get("name_uz"));
             nested.put("name", row.get("name_uz"));
+
+            // deparmentType nested classifier (OLD-HEMIS typo preserved)
+            if (row.get("_deparment_type") != null) {
+                nested.put("deparmentType", loadClassifierNameOnly("hemishe_h_department_type", "HDepartmentType", str(row.get("_deparment_type"))));
+            }
 
             // Nested university inside department
             String uniCode = row.get("university_code") != null ? row.get("university_code").toString() : null;
@@ -411,7 +469,8 @@ public class CubaNestedObjectLoader {
             String nameUz = row.get("name_uz") != null ? str(row.get("name_uz")) : "";
             soato.put("_instanceName", row.get("code") + " - " + nameUz);
             soato.put("id", row.get("code"));
-            // OLD-HEMIS compatibility: include active field
+            // OLD-HEMIS compatibility: include code and active fields
+            soato.put("code", str(row.get("code")));
             soato.put("active", row.get("active") != null ? row.get("active") : true);
             soato.put("name_ru", row.get("name_ru") != null ? str(row.get("name_ru")) : "");
             soato.put("name_uz", nameUz);
@@ -458,13 +517,15 @@ public class CubaNestedObjectLoader {
         if (soatoCode == null || soatoCode.isEmpty()) return null;
         try {
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name_uz, parent_code FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL", soatoCode);
+                    "SELECT code, name_uz, name_ru, parent_code, active FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL", soatoCode);
             Map<String, Object> nested = new LinkedHashMap<>();
             nested.put("_entityName", "hemishe_HSoato");
             nested.put("_instanceName", row.get("code") + " - " + row.get("name_uz"));
             nested.put("id", row.get("code"));
             nested.put("code", row.get("code"));
-            // OLD-HEMIS compatibility: NO name_ru for top-level soato
+            // OLD-HEMIS compatibility: include active and name_ru
+            nested.put("active", row.get("active") != null ? row.get("active") : true);
+            nested.put("name_ru", row.get("name_ru"));
 
             // parent_code nested object
             Object parentCode = row.get("parent_code");
@@ -478,6 +539,8 @@ public class CubaNestedObjectLoader {
                     parent.put("_instanceName", parentRow.get("code") + " - " + parentRow.get("name_uz"));
                     parent.put("id", parentRow.get("code"));
                     parent.put("code", parentRow.get("code"));
+                    // OLD-HEMIS: parent_code.parent_code = null (one level deep)
+                    parent.put("parent_code", null);
                     parent.put("name_uz", parentRow.get("name_uz"));
                     nested.put("parent_code", parent);
                 } catch (EmptyResultDataAccessException ex) {
@@ -528,6 +591,23 @@ public class CubaNestedObjectLoader {
             return;
         }
         Map<String, Object> nested = loadClassifier(tableName, entityName, code);
+        if (nested != null) {
+            map.put(key, nested);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            map.put(key, null);
+        }
+    }
+
+    /**
+     * Helper: put nested classifier with nameRu, nameEn, active fields (name-only _instanceName)
+     * Used for: certificate sub-entities (HCertificateType, HCertificateNames, HCertificateGrades, HCertificateSubjects)
+     */
+    public void putNestedWithNames(Map<String, Object> map, String key, String code, String tableName, String entityName, Boolean returnNulls) {
+        if (code == null || code.isEmpty()) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put(key, null);
+            return;
+        }
+        Map<String, Object> nested = loadClassifierNameOnly(tableName, entityName, code);
         if (nested != null) {
             map.put(key, nested);
         } else if (Boolean.TRUE.equals(returnNulls)) {
@@ -702,6 +782,8 @@ public class CubaNestedObjectLoader {
             result.put("transferUniversity", row.get("transfer_university"));
             result.put("version", row.get("version"));
 
+            // OLD-HEMIS: returnNulls=true — null values must be serialized
+            result.replaceAll((k, v) -> v == null ? JsonNull.INSTANCE : v);
             return result;
         } catch (EmptyResultDataAccessException e) {
             Map<String, Object> result = new LinkedHashMap<>();

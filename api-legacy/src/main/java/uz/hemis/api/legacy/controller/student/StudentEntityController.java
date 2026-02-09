@@ -510,12 +510,22 @@ public class StudentEntityController {
         Page<StudentDto> page = studentService.findAll(pageRequest);
 
         // Convert to CUBA format with view support
+        List<StudentDto> dtos = page.getContent();
         List<Map<String, Object>> cubaMaps = adapter.toMapList(
-            page.getContent(),
+            dtos,
             ENTITY_NAME,
             returnNulls,
             view
         );
+
+        // OLD-HEMIS compatibility: speciality qaytariladi (adapter _speciality sifatida o'tkazib yuboradi)
+        for (int i = 0; i < cubaMaps.size(); i++) {
+            Map<String, Object> map = cubaMaps.get(i);
+            StudentDto dto = dtos.get(i);
+            if (dto.getSpeciality() != null) {
+                map.put("speciality", dto.getSpeciality());
+            }
+        }
 
         // Add count header if requested (CUBA compatibility)
         if (Boolean.TRUE.equals(returnCount)) {

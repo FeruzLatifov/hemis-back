@@ -394,7 +394,12 @@ public class UniversityDepartmentTypeController {
             // Service handles soft-deleted entity restoration via native query
             HUniversityDepartmentType saved = classifierService.createOrRestoreDepartmentType(code, name, nameRu, nameEn);
 
-            return ResponseEntity.ok(classifierService.toDepartmentTypeMap(saved, false));
+            // OLD-HEMIS: POST returns minimal response (no code/name/active)
+            Map<String, Object> result = classifierService.toDepartmentTypeMap(saved, false);
+            result.remove("code");
+            result.remove("name");
+            result.remove("active");
+            return ResponseEntity.ok(result);
 
         } catch (Exception e) {
             log.error("CREATE xatosi: {}", e.getMessage(), e);

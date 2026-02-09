@@ -209,6 +209,9 @@ public class PublicationCriteriaEntityController {
         scienceService.updatePublicationCriteriaFromMap(entity, body);
         PublicationCriteria saved = scienceService.savePublicationCriteria(entity);
 
-        return ResponseEntity.ok(scienceService.toPublicationCriteriaMap(saved, returnNulls));
+        // OLD-HEMIS: POST doesn't return 'active' field
+        Map<String, Object> result = scienceService.toPublicationCriteriaMap(saved, returnNulls);
+        result.remove("active");
+        return ResponseEntity.ok(result);
     }
 }

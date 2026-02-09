@@ -98,7 +98,7 @@ public class EmployeeJobsEntityController {
             log.warn("EmployeeJob not found: id={}", entityId);
             Map<String, Object> errorResponse = new LinkedHashMap<>();
             errorResponse.put("error", "Entity not found");
-            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id=" + entityId + " is not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
             return ResponseEntity.status(404).body(errorResponse);
         }
 
@@ -214,7 +214,7 @@ public class EmployeeJobsEntityController {
             log.warn("EmployeeJob not found for deletion: id={}", entityId);
             Map<String, Object> errorResponse = new LinkedHashMap<>();
             errorResponse.put("error", "Entity not found");
-            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id=" + entityId + " is not found");
+            errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
             return ResponseEntity.status(404).body(errorResponse);
         }
 

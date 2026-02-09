@@ -27,16 +27,9 @@ public class ExternalIntegrationService {
         return result;
     }
     public Map<String, Object> getUzasboScholarship(String inn, Integer year, Integer month) {
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("inn", inn);
-        data.put("year", year);
-        data.put("month", month);
-        data.put("scholarships", Collections.emptyList());
-        data.put("message", "UzASBO scholarship data");
-
         LinkedHashMap<String, Object> result = new LinkedHashMap<>();
         result.put("success", true);
-        result.put("data", data);
+        result.put("data", Collections.emptyList());
         return result;
     }
 }

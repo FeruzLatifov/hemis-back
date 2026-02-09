@@ -48,42 +48,48 @@ public class DiplomBlankLegacyService {
             blank.put("_entityName", "hemishe_EDiplomBlank");
             blank.put("id", str(row.get("id")));
 
-            // blankGenerateStatus
+            // blankGenerateStatus (old-hemis: no _instanceName in nested objects)
             String bgsCode = str(row.get("blank_generate_status_code"));
             if (bgsCode != null) {
-                blank.put("blankGenerateStatus", nestedObjectLoader.loadClassifier(
+                blank.put("blankGenerateStatus", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_diplom_blank_generate_status",
-                        "HDiplomBlankGenerateStatus", bgsCode));
+                        "HDiplomBlankGenerateStatus", bgsCode)));
             }
 
             // blankYear
             String yearCode = str(row.get("_blank_year"));
             if (yearCode != null) {
-                blank.put("blankYear", nestedObjectLoader.loadClassifier(
+                blank.put("blankYear", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_education_year",
-                        "HEducationYear", yearCode));
+                        "HEducationYear", yearCode)));
             }
 
             // blankStatus
             String statusCode = str(row.get("_blank_status"));
             if (statusCode != null) {
-                blank.put("blankStatus", nestedObjectLoader.loadClassifier(
+                blank.put("blankStatus", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_diplom_blank_status",
-                        "HDiplomBlankStatus", statusCode));
+                        "HDiplomBlankStatus", statusCode)));
             }
 
-            // educationType (has name_en)
+            // educationType (old-hemis: basic format + nameEn, without nameRu/active)
             String eduTypeCode = str(row.get("_education_type"));
             if (eduTypeCode != null) {
-                blank.put("educationType", nestedObjectLoader.loadClassifierWithNames(
+                Map<String, Object> eduType = nestedObjectLoader.loadClassifierWithNames(
                         "hemishe_h_education_type",
-                        "HEducationType", eduTypeCode));
+                        "HEducationType", eduTypeCode);
+                if (eduType != null) {
+                    eduType.remove("_instanceName");
+                    eduType.remove("nameRu");
+                    eduType.remove("active");
+                }
+                blank.put("educationType", eduType);
             }
 
             // university
             String uniCode = str(row.get("_university"));
             if (uniCode != null) {
-                blank.put("university", nestedObjectLoader.loadUniversity(uniCode));
+                blank.put("university", stripInstanceName(nestedObjectLoader.loadUniversity(uniCode)));
             }
 
             blank.put("version", row.get("version"));
@@ -93,9 +99,9 @@ public class DiplomBlankLegacyService {
             // blankCategory
             String catCode = str(row.get("_blank_category"));
             if (catCode != null) {
-                blank.put("blankCategory", nestedObjectLoader.loadClassifier(
+                blank.put("blankCategory", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_diplom_blank_category",
-                        "HDiplomBlankCategory", catCode));
+                        "HDiplomBlankCategory", catCode)));
             }
 
             blanks.add(blank);
@@ -139,6 +145,11 @@ public class DiplomBlankLegacyService {
             WHERE id = ?::uuid
             """;
         jdbcTemplate.update(updateSql, statusCode, reason, id);
+    }
+
+    private Map<String, Object> stripInstanceName(Map<String, Object> map) {
+        if (map != null) map.remove("_instanceName");
+        return map;
     }
 
     private String str(Object obj) {

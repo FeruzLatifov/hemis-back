@@ -90,7 +90,7 @@ public class ProjectEntityController {
             return ResponseEntity.status(404).body(error);
         }
 
-        return ResponseEntity.ok(scienceService.toProjectMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(scienceService.toProjectMap(entity.get(), returnNulls, view));
     }
 
     // =====================================================
@@ -187,7 +187,7 @@ public class ProjectEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> scienceService.toProjectMap(e, returnNulls))
+            .map(e -> scienceService.toProjectMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -217,7 +217,7 @@ public class ProjectEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> scienceService.toProjectMap(e, returnNulls))
+            .map(e -> scienceService.toProjectMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -241,7 +241,7 @@ public class ProjectEntityController {
         if (limit == null) {
             List<Project> allEntities = scienceService.findAllProject();
             List<Map<String, Object>> result = allEntities.stream()
-                .map(e -> scienceService.toProjectMap(e, returnNulls))
+                .map(e -> scienceService.toProjectMap(e, returnNulls, view))
                 .collect(Collectors.toList());
 
             if (Boolean.TRUE.equals(returnCount)) {
@@ -266,7 +266,7 @@ public class ProjectEntityController {
         Page<Project> entityPage = scienceService.findAllProject(pageRequest);
 
         List<Map<String, Object>> result = entityPage.getContent().stream()
-            .map(e -> scienceService.toProjectMap(e, returnNulls))
+            .map(e -> scienceService.toProjectMap(e, returnNulls, view))
             .collect(Collectors.toList());
 
         if (Boolean.TRUE.equals(returnCount)) {

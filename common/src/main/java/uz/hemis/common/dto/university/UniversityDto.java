@@ -289,4 +289,25 @@ public class UniversityDto implements Serializable {
      */
     @JsonProperty("grading_system")
     private Boolean gradingSystem;
+
+    /**
+     * OneID integration flag
+     * JSON: "one_id"
+     */
+    @JsonProperty("one_id")
+    private Boolean oneId;
+
+    /**
+     * Add transfer student flag
+     * JSON: "add_transfer_student"
+     */
+    @JsonProperty("add_transfer_student")
+    private Boolean addTransferStudent;
+
+    /**
+     * Add academic mobile student flag
+     * JSON: "add_academic_mobile_student"
+     */
+    @JsonProperty("add_academic_mobile_student")
+    private Boolean addAcademicMobileStudent;
 }

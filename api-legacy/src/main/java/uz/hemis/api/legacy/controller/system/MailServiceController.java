@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -230,9 +231,21 @@ public class MailServiceController {
         emailResponse.put("verify_code", request.get("verify_code"));
         emailResponse.put("email", request.get("email"));
 
+        // Build sms response object (OLD-HEMIS: detail is an array of validation error objects)
+        Map<String, Object> smsResponse = new LinkedHashMap<>();
+        String phoneValue = request.get("phone") != null ? request.get("phone").toString() : "";
+        Map<String, Object> validationError = new LinkedHashMap<>();
+        validationError.put("type", "value_error");
+        validationError.put("loc", List.of("body", "phone_number"));
+        validationError.put("msg", "Value error, Telefon raqami faqat raqamlardan iborat bo'lishi kerak.");
+        validationError.put("input", phoneValue);
+        validationError.put("ctx", Map.of("error", Map.of()));
+        smsResponse.put("detail", List.of(validationError));
+
         // Build main response with LinkedHashMap to preserve field order
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("email", emailResponse);
+        response.put("sms", smsResponse);
 
         log.debug("Verify code response: {}", response);
         return ResponseEntity.ok(response);

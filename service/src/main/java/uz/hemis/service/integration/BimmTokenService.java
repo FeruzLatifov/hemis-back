@@ -4,11 +4,13 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import uz.hemis.common.port.cache.DistributedCachePort;
 
 import javax.net.ssl.*;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -39,8 +41,10 @@ import java.util.Map;
 public class BimmTokenService {
 
     private final DistributedCachePort cachePort;
+    private final JdbcTemplate jdbcTemplate;
 
     private static final String CACHE_KEY = "bimm:oauth2:token";
+    private static final String DB_TOKEN_KEY = "bimm-token";
     private static final Duration TOKEN_TTL = Duration.ofSeconds(864000); // 10 days
 
     @Value("${hemis.integration.bimm.oauth2.url:https://api-mspd.edu.uz/auth/token}")
@@ -82,23 +86,33 @@ public class BimmTokenService {
             return cachedToken;
         }
 
-        // 2. Fetch new token from BIMM OAuth2 API
+        // 2. Try to get from database (old-hemis stores token in hemishe_s_settings)
+        String dbToken = getTokenFromDatabase();
+        if (dbToken != null && !dbToken.isEmpty()) {
+            log.info("Using BIMM token from database (hemishe_s_settings)");
+            cachePort.store(CACHE_KEY, dbToken, TOKEN_TTL);
+            return dbToken;
+        }
+
+        // 3. Fetch new token from BIMM OAuth2 API
         // Uses HttpsURLConnection directly (same as old-hemis MyTokenServiceBean.oauth2Token)
         log.info("Fetching new BIMM OAuth2 token from: {}", oauth2Url);
 
         try {
-            // Disable SSL verification (old-hemis MyRequest does this per-request)
-            TrustManager[] trustAllCerts = new TrustManager[]{
-                    new X509TrustManager() {
-                        public X509Certificate[] getAcceptedIssuers() { return null; }
-                        public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-                        public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-                    }
-            };
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+            // Disable SSL verification for HTTPS URLs
+            if (oauth2Url.startsWith("https")) {
+                TrustManager[] trustAllCerts = new TrustManager[]{
+                        new X509TrustManager() {
+                            public X509Certificate[] getAcceptedIssuers() { return null; }
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                        }
+                };
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, trustAllCerts, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+            }
 
             // Old-hemis format: form-urlencoded with empty grant_type, scope, client_id, client_secret
             String body = String.format(
@@ -107,7 +121,7 @@ public class BimmTokenService {
             );
 
             URL urlObj = URI.create(oauth2Url).toURL();
-            HttpsURLConnection conn = (HttpsURLConnection) urlObj.openConnection();
+            HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
@@ -130,7 +144,7 @@ public class BimmTokenService {
 
                 if (responseBody != null && responseBody.containsKey("access_token")) {
                     String accessToken = responseBody.get("access_token").toString();
-                    // 3. Cache token
+                    // Cache token
                     cachePort.store(CACHE_KEY, accessToken, TOKEN_TTL);
                     log.info("BIMM OAuth2 token fetched and cached (TTL: {} seconds)", TOKEN_TTL.getSeconds());
                     return accessToken;
@@ -156,5 +170,22 @@ public class BimmTokenService {
     public void invalidateToken() {
         cachePort.delete(CACHE_KEY);
         log.info("BIMM token cache invalidated");
+    }
+
+    /**
+     * Get BIMM token from old-hemis database (hemishe_s_settings table).
+     * Old-hemis stores the token with key 'bimm-token' and refreshes it daily.
+     * This ensures hemis-back can use the same token as old-hemis during migration.
+     */
+    private String getTokenFromDatabase() {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT value_ FROM hemishe_s_settings WHERE key_ = ? AND date_ > now() - interval '10 days'",
+                    String.class, DB_TOKEN_KEY
+            );
+        } catch (Exception e) {
+            log.debug("BIMM token not found in database: {}", e.getMessage());
+            return null;
+        }
     }
 }

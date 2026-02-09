@@ -8,7 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.*;
 import uz.hemis.domain.repository.*;
+import uz.hemis.common.JsonNull;
 import uz.hemis.service.legacy.CubaEntityMapHelper;
+import uz.hemis.service.legacy.CubaNestedObjectLoader;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -46,6 +48,7 @@ public class ScienceEntityLegacyService {
     private final ResearchActivityRepository researchActivityRepository;
     private final ProjectExecutorRepository projectExecutorRepository;
     private final ProjectRepository projectRepository;
+    private final CubaNestedObjectLoader nestedObjectLoader;
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
 
@@ -81,9 +84,7 @@ public class ScienceEntityLegacyService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", PC_ENTITY);
 
-        String instanceName = entity.getPublicationTypeTable() != null
-            ? entity.getPublicationTypeTable()
-            : "PublicationCriteria-" + entity.getId();
+        String instanceName = "com.company.hemishe.entity.EPublicationCriteria-" + entity.getId() + " [detached]";
         map.put("_instanceName", instanceName);
 
         map.put("id", entity.getId());
@@ -91,6 +92,10 @@ public class ScienceEntityLegacyService {
 
         putIfNotNull(map, "active", entity.getActive(), returnNulls);
         putIfNotNull(map, "publicationTypeTable", entity.getPublicationTypeTable(), returnNulls);
+        putIfNotNull(map, "publicationScientificType", entity.getPublicationScientificType(), returnNulls);
+        putIfNotNull(map, "publicationMethodicalType", entity.getPublicationMethodicalType(), returnNulls);
+        putIfNotNull(map, "inPublicationDatabase", entity.getInPublicationDatabase(), returnNulls);
+        putIfNotNull(map, "publicationPropertyType", entity.getPublicationPropertyType(), returnNulls);
         putIfNotNull(map, "markValue", entity.getMarkValue(), returnNulls);
 
         return map;
@@ -281,15 +286,10 @@ public class ScienceEntityLegacyService {
         putIfNotNull(map, "publisher", entity.getPublisher(), returnNulls);
         putIfNotNull(map, "authors", entity.getAuthors(), returnNulls);
         putIfNotNull(map, "uId", entity.getUId(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
+        // OLD-HEMIS: underscore-prefixed reference fields excluded from default view
         putIfNotNull(map, "sourceName", entity.getSourceName(), returnNulls);
-        putIfNotNull(map, "_methodical_publication_type", entity.getMethodicalPublicationType(), returnNulls);
-        putIfNotNull(map, "_publication_database", entity.getPublicationDatabase(), returnNulls);
-        putIfNotNull(map, "_employee", entity.getEmployee(), returnNulls);
         putIfNotNull(map, "position", entity.getPosition(), returnNulls);
-        putIfNotNull(map, "_translations", entity.getTranslations(), returnNulls);
         putIfNotNull(map, "isCheckedDate", entity.getIsCheckedDate(), returnNulls);
-        putIfNotNull(map, "_education_year", entity.getEducationYear(), returnNulls);
 
         putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
         putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
@@ -728,12 +728,18 @@ public class ScienceEntityLegacyService {
     }
 
     public Map<String, Object> toProjectMap(Project entity, Boolean returnNulls) {
+        return toProjectMap(entity, returnNulls, null);
+    }
+
+    public Map<String, Object> toProjectMap(Project entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", P_ENTITY);
 
         String instanceName = entity.getName() != null ? entity.getName() : "Project-" + entity.getId();
         map.put("_instanceName", instanceName);
         map.put("id", entity.getId() != null ? entity.getId().toString() : null);
+
+        boolean useNested = view != null && !view.isEmpty();
 
         if (entity.getContractDate() != null) {
             map.put("contractDate", entity.getContractDate().format(DATE_FORMAT));
@@ -750,15 +756,46 @@ public class ScienceEntityLegacyService {
         map.put("projectNumber", entity.getProjectNumber());
         map.put("contractNumber", entity.getContractNumber());
 
+        // Nested objects when view is provided
+        if (useNested) {
+            if (entity.getProjectCurrency() != null) {
+                map.put("projectCurrency", nestedObjectLoader.loadClassifier("hemishe_h_project_currency", "HProjectCurrency", entity.getProjectCurrency()));
+            } else {
+                map.put("projectCurrency", JsonNull.INSTANCE);
+            }
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else {
+                map.put("university", JsonNull.INSTANCE);
+            }
+            if (entity.getProjectType() != null) {
+                map.put("projectType", nestedObjectLoader.loadClassifier("hemishe_h_project_type", "HProjectType", entity.getProjectType()));
+            } else {
+                map.put("projectType", JsonNull.INSTANCE);
+            }
+            if (entity.getLocality() != null) {
+                map.put("locality", nestedObjectLoader.loadClassifier("hemishe_h_locality", "HLocality", entity.getLocality()));
+            } else {
+                map.put("locality", JsonNull.INSTANCE);
+            }
+            if (entity.getDepartment() != null) {
+                map.put("department", nestedObjectLoader.loadDepartment(entity.getDepartment()));
+            } else {
+                map.put("department", JsonNull.INSTANCE);
+            }
+        }
+
         map.put("active", entity.getActive());
         map.put("version", entity.getVersion());
         map.put("deletedBy", entity.getDeletedBy());
         map.put("deleteTs", entity.getDeleteTs() != null ? entity.getDeleteTs().toString() : null);
 
-        map.put("uId", entity.getUId());
-        map.put("translations", entity.getTranslations());
+        // OLD-HEMIS: null fields included only in view mode (returnNulls=true)
+        Object nullVal = useNested ? JsonNull.INSTANCE : null;
+        map.put("uId", entity.getUId() != null ? entity.getUId() : nullVal);
+        map.put("translations", entity.getTranslations() != null ? entity.getTranslations() : nullVal);
         map.put("name", entity.getName());
-        map.put("position", entity.getPosition());
+        map.put("position", entity.getPosition() != null ? entity.getPosition() : nullVal);
 
         if (entity.getStartDate() != null) {
             map.put("startDate", entity.getStartDate().format(DATE_FORMAT));

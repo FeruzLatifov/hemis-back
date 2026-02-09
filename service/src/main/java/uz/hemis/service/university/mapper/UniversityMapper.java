@@ -83,6 +83,7 @@ public interface UniversityMapper extends UniversityDtoConverter {
     @Mapping(target = "gradingSystem", ignore = true)
     @Mapping(target = "addForeignStudent", ignore = true)
     @Mapping(target = "addTransferStudent", ignore = true)
+    @Mapping(target = "addAcademicMobileStudent", ignore = true)
     University toEntity(UniversityDto dto);
 
     /**
@@ -119,6 +120,7 @@ public interface UniversityMapper extends UniversityDtoConverter {
     @Mapping(target = "gradingSystem", ignore = true)
     @Mapping(target = "addForeignStudent", ignore = true)
     @Mapping(target = "addTransferStudent", ignore = true)
+    @Mapping(target = "addAcademicMobileStudent", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(UniversityDto dto, @MappingTarget University university);
 }

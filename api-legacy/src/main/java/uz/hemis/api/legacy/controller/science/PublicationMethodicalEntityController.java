@@ -214,6 +214,9 @@ public class PublicationMethodicalEntityController {
         scienceService.updatePublicationMethodicalFromMap(entity, body);
         PublicationMethodical saved = scienceService.savePublicationMethodical(entity);
 
-        return ResponseEntity.ok(scienceService.toPublicationMethodicalMap(saved, returnNulls));
+        // OLD-HEMIS: POST doesn't return 'name' field
+        Map<String, Object> result = scienceService.toPublicationMethodicalMap(saved, returnNulls);
+        result.remove("name");
+        return ResponseEntity.ok(result);
     }
 }

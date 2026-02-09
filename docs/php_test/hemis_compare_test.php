@@ -134,38 +134,64 @@ if (!$oldToken) { echo "\nOld-hemis (8082) ga ulanib bo'lmadi!\n"; exit(1); }
 if (!$newToken) { echo "\nNew hemis-back (8081) ga ulanib bo'lmadi!\n"; exit(1); }
 
 // ============================================
-// Ma'lumotlarni olish
+// Ma'lumotlarni olish (try-catch — bazada ustun yo'q bo'lsa ham test davom etadi)
 // ============================================
-$student = \common\models\student\EStudent::find()
-    ->where(['not', ['_uid' => null]])
-    ->andWhere(['not', ['_uid' => '']])
-    ->limit(1)->one();
-
-$department = \common\models\structure\EDepartment::find()
-    ->where(['not', ['_qid' => null]])
-    ->limit(1)->one();
-
-$specialty = \common\models\student\ESpecialty::find()->limit(1)->one();
-
-$employee = \common\models\employee\EEmployee::find()
-    ->where(['not', ['_uid' => null]])
-    ->andWhere(['not', ['_uid' => '']])
-    ->limit(1)->one();
-
-$gpaStudents = \common\models\student\EStudent::find()
-    ->where(['not', ['_uid' => null]])
-    ->andWhere(['not', ['_uid' => '']])
-    ->select(['id', '_uid'])
-    ->limit(20)
-    ->asArray()
-    ->all();
-
+$student = null;
+$department = null;
+$specialty = null;
+$employee = null;
+$gpaStudents = [];
 $gpa = null;
-foreach ($gpaStudents as $gs) {
-    $gpa = \common\models\performance\EStudentGpa::find()
-        ->where(['_student' => $gs['id']])
+
+try {
+    $student = \common\models\student\EStudent::find()
+        ->where(['not', ['_uid' => null]])
+        ->andWhere(['not', ['_uid' => '']])
         ->limit(1)->one();
-    if ($gpa) break;
+} catch (\Exception $e) {
+    echo "WARNING: Student query failed: " . $e->getMessage() . "\n";
+}
+
+try {
+    $department = \common\models\structure\EDepartment::find()
+        ->where(['not', ['_qid' => null]])
+        ->limit(1)->one();
+} catch (\Exception $e) {
+    echo "WARNING: Department query failed: " . $e->getMessage() . "\n";
+}
+
+try {
+    $specialty = \common\models\student\ESpecialty::find()->limit(1)->one();
+} catch (\Exception $e) {
+    echo "WARNING: Specialty query failed: " . $e->getMessage() . "\n";
+}
+
+try {
+    $employee = \common\models\employee\EEmployee::find()
+        ->where(['not', ['_uid' => null]])
+        ->andWhere(['not', ['_uid' => '']])
+        ->limit(1)->one();
+} catch (\Exception $e) {
+    echo "WARNING: Employee query failed: " . $e->getMessage() . "\n";
+}
+
+try {
+    $gpaStudents = \common\models\student\EStudent::find()
+        ->where(['not', ['_uid' => null]])
+        ->andWhere(['not', ['_uid' => '']])
+        ->select(['id', '_uid'])
+        ->limit(20)
+        ->asArray()
+        ->all();
+
+    foreach ($gpaStudents as $gs) {
+        $gpa = \common\models\performance\EStudentGpa::find()
+            ->where(['_student' => $gs['id']])
+            ->limit(1)->one();
+        if ($gpa) break;
+    }
+} catch (\Exception $e) {
+    echo "WARNING: GPA query failed: " . $e->getMessage() . "\n";
 }
 
 // ============================================
@@ -174,13 +200,19 @@ foreach ($gpaStudents as $gs) {
 
 // 1. Student update
 if ($student) {
-    $studentData = \common\components\hemis\sync\StudentUpdater::getSyncData($student);
-    testEndpoint(
-        'StudentUpdater::updateModel',
-        'POST', 'v2/entities/hemishe_EStudent/',
-        $studentData, $oldToken, $newToken,
-        $pass, $fail, $skip, $results
-    );
+    try {
+        $studentData = \common\components\hemis\sync\StudentUpdater::getSyncData($student);
+        testEndpoint(
+            'StudentUpdater::updateModel',
+            'POST', 'v2/entities/hemishe_EStudent/',
+            $studentData, $oldToken, $newToken,
+            $pass, $fail, $skip, $results
+        );
+    } catch (\Exception $e) {
+        echo "\n--- StudentUpdater::updateModel ---\n  ERROR (getSyncData): " . $e->getMessage() . "\n";
+        $skip++;
+        $results[] = ['name' => 'StudentUpdater::updateModel', 'status' => 'SKIP', 'reason' => 'getSyncData error: ' . $e->getMessage()];
+    }
 }
 
 // 2. Student GET (validate)
@@ -230,22 +262,35 @@ if ($department && $department->_qid) {
 
 // 6. Specialty update
 if ($specialty) {
-    $specData = \common\components\hemis\sync\SpecialtyUpdater::getSyncData($specialty);
-    testEndpoint(
-        'SpecialtyUpdater::updateModel',
-        'POST', 'v2/entities/hemishe_EUniversitySpeciality/',
-        $specData, $oldToken, $newToken,
-        $pass, $fail, $skip, $results
-    );
+    try {
+        $specData = \common\components\hemis\sync\SpecialtyUpdater::getSyncData($specialty);
+        testEndpoint(
+            'SpecialtyUpdater::updateModel',
+            'POST', 'v2/entities/hemishe_EUniversitySpeciality/',
+            $specData, $oldToken, $newToken,
+            $pass, $fail, $skip, $results
+        );
+    } catch (\Exception $e) {
+        echo "\n--- SpecialtyUpdater ---\n  ERROR (getSyncData): " . $e->getMessage() . "\n";
+        $skip++;
+        $results[] = ['name' => 'SpecialtyUpdater::updateModel', 'status' => 'SKIP', 'reason' => 'getSyncData error: ' . $e->getMessage()];
+    }
 }
 
 // 7. Specialty GET (service endpoint)
-testEndpoint(
-    'Specialty GET /services/speciality/get',
-    'GET', 'v2/services/speciality/get?university=' . \common\components\hemis\sync\BaseApiUpdater::getUniversity() . '&type=11&year=2020',
-    null, $oldToken, $newToken,
-    $pass, $fail, $skip, $results
-);
+try {
+    $univCode = \common\components\hemis\sync\BaseApiUpdater::getUniversity();
+    testEndpoint(
+        'Specialty GET /services/speciality/get',
+        'GET', 'v2/services/speciality/get?university=' . $univCode . '&type=11&year=2020',
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+} catch (\Exception $e) {
+    echo "\n--- Specialty GET ---\n  ERROR: " . $e->getMessage() . "\n";
+    $skip++;
+    $results[] = ['name' => 'Specialty GET /services/speciality/get', 'status' => 'SKIP', 'reason' => 'getUniversity error: ' . $e->getMessage()];
+}
 
 // 8. Employee GET
 if ($employee && $employee->_uid) {
@@ -259,13 +304,19 @@ if ($employee && $employee->_uid) {
 
 // 9. Employee update
 if ($employee) {
-    $empData = \common\components\hemis\sync\EmployeeUpdater::getSyncData($employee);
-    testEndpoint(
-        'EmployeeUpdater::updateModel',
-        'PUT', 'v2/entities/hemishe_ETeacher/' . $employee->_uid,
-        $empData, $oldToken, $newToken,
-        $pass, $fail, $skip, $results
-    );
+    try {
+        $empData = \common\components\hemis\sync\EmployeeUpdater::getSyncData($employee);
+        testEndpoint(
+            'EmployeeUpdater::updateModel',
+            'PUT', 'v2/entities/hemishe_ETeacher/' . $employee->_uid,
+            $empData, $oldToken, $newToken,
+            $pass, $fail, $skip, $results
+        );
+    } catch (\Exception $e) {
+        echo "\n--- EmployeeUpdater ---\n  ERROR (getSyncData): " . $e->getMessage() . "\n";
+        $skip++;
+        $results[] = ['name' => 'EmployeeUpdater::updateModel', 'status' => 'SKIP', 'reason' => 'getSyncData error: ' . $e->getMessage()];
+    }
 }
 
 // 10. University update - getSyncData mavjud emas, manual data yaratamiz
@@ -293,24 +344,37 @@ testEndpoint(
 
 // 12. GPA update
 if ($gpa) {
-    $gpaData = \common\components\hemis\sync\StudentGpaUpdater::getSyncData($gpa);
-    testEndpoint(
-        'StudentGpaUpdater::updateModel',
-        'POST', 'v2/services/student/gpa/',
-        $gpaData, $oldToken, $newToken,
-        $pass, $fail, $skip, $results
-    );
+    try {
+        $gpaData = \common\components\hemis\sync\StudentGpaUpdater::getSyncData($gpa);
+        testEndpoint(
+            'StudentGpaUpdater::updateModel',
+            'POST', 'v2/services/student/gpa/',
+            $gpaData, $oldToken, $newToken,
+            $pass, $fail, $skip, $results
+        );
+    } catch (\Exception $e) {
+        echo "\n--- StudentGpaUpdater ---\n  ERROR (getSyncData): " . $e->getMessage() . "\n";
+        $skip++;
+        $results[] = ['name' => 'StudentGpaUpdater::updateModel', 'status' => 'SKIP', 'reason' => 'getSyncData error: ' . $e->getMessage()];
+    }
 }
 
 // 13. Student ID generate
 if ($student) {
-    testEndpoint(
-        'Student ID generate/check',
-        'POST', 'v2/services/student/id/',
-        ['pinfl' => $student->passport_pin, 'university' => ['code' => \common\components\hemis\sync\BaseApiUpdater::getUniversity()]],
-        $oldToken, $newToken,
-        $pass, $fail, $skip, $results
-    );
+    try {
+        $univCode2 = \common\components\hemis\sync\BaseApiUpdater::getUniversity();
+        testEndpoint(
+            'Student ID generate/check',
+            'POST', 'v2/services/student/id/',
+            ['pinfl' => $student->passport_pin, 'university' => ['code' => $univCode2]],
+            $oldToken, $newToken,
+            $pass, $fail, $skip, $results
+        );
+    } catch (\Exception $e) {
+        echo "\n--- Student ID generate ---\n  ERROR: " . $e->getMessage() . "\n";
+        $skip++;
+        $results[] = ['name' => 'Student ID generate/check', 'status' => 'SKIP', 'reason' => 'Error: ' . $e->getMessage()];
+    }
 }
 
 // 14. Group entity
@@ -331,13 +395,19 @@ try {
 
 // 15. Student update (PUT - mavjud studentni yangilash)
 if ($student && $student->_uid) {
-    testEndpoint(
-        'Student PUT (update)',
-        'PUT', 'v2/entities/hemishe_EStudent/' . $student->_uid,
-        \common\components\hemis\sync\StudentUpdater::getSyncData($student),
-        $oldToken, $newToken,
-        $pass, $fail, $skip, $results
-    );
+    try {
+        $studentPutData = \common\components\hemis\sync\StudentUpdater::getSyncData($student);
+        testEndpoint(
+            'Student PUT (update)',
+            'PUT', 'v2/entities/hemishe_EStudent/' . $student->_uid,
+            $studentPutData, $oldToken, $newToken,
+            $pass, $fail, $skip, $results
+        );
+    } catch (\Exception $e) {
+        echo "\n--- Student PUT ---\n  ERROR (getSyncData): " . $e->getMessage() . "\n";
+        $skip++;
+        $results[] = ['name' => 'Student PUT (update)', 'status' => 'SKIP', 'reason' => 'getSyncData error: ' . $e->getMessage()];
+    }
 }
 
 // 16. Classifier endpoints
@@ -366,6 +436,113 @@ testEndpoint(
     'Classifier: educationYear',
     'GET', 'v2/entities/hemishe_HEducationYear?limit=3',
     null, $oldToken, $newToken,
+    $pass, $fail, $skip, $results
+);
+
+// ============================================
+// QO'SHIMCHA TESTLAR — Tashqi xizmatlar va boshqa endpointlar
+// ============================================
+
+// 17. Captcha — getNumericCaptcha (auth kerak emas, lekin token bilan ham ishlaydi)
+testEndpoint(
+    'Captcha: getNumericCaptcha',
+    'GET', 'v2/services/captcha/getNumericCaptcha',
+    null, $oldToken, $newToken,
+    $pass, $fail, $skip, $results
+);
+
+// 18. University config
+testEndpoint(
+    'University: config',
+    'GET', 'v2/services/university/config',
+    null, $oldToken, $newToken,
+    $pass, $fail, $skip, $results
+);
+
+// 19. University GET by code
+if ($univ) {
+    testEndpoint(
+        'University: get by code',
+        'GET', 'v2/services/university/get?code=' . $univ->code,
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+}
+
+// 20. Passport data — getDataByPinflBirthdate (tashqi GUVD xizmatiga bog'liq)
+if ($student && $student->passport_pin) {
+    testEndpoint(
+        'Passport: getDataByPinflBirthdate',
+        'GET', 'v2/services/passport-data/getDataByPinflBirthdate?pinfl=' . $student->passport_pin,
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+}
+
+// 21. Passport data — getDataBySN (tashqi GUVD xizmatiga bog'liq)
+if ($student && $student->passport_pin) {
+    testEndpoint(
+        'Passport: getDataBySN',
+        'GET', 'v2/services/passport-data/getDataBySN?pinfl=' . $student->passport_pin,
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+}
+
+// 22. Passport data — getAddress (tashqi GUVD xizmatiga bog'liq)
+if ($student && $student->passport_pin) {
+    testEndpoint(
+        'Passport: getAddress',
+        'GET', 'v2/services/passport-data/getAddress?pinfl=' . $student->passport_pin,
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+}
+
+// 23. BIMM — certificate (tashqi BIMM xizmatiga bog'liq)
+if ($student && $student->passport_pin) {
+    testEndpoint(
+        'BIMM: certificate',
+        'GET', 'v2/services/bimm/certificate?pinfl=' . $student->passport_pin,
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+}
+
+// 24. BIMM — academicDegree (tashqi BIMM xizmatiga bog'liq)
+if ($employee && $employee->passport_pin) {
+    testEndpoint(
+        'BIMM: academicDegree',
+        'GET', 'v2/services/bimm/academicDegree?pinfl=' . $employee->passport_pin,
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+}
+
+// 25. Employment — workbook (tashqi xizmatga bog'liq)
+if ($employee && $employee->passport_pin) {
+    testEndpoint(
+        'Employment: workbook',
+        'GET', 'v2/services/employment/workbook?pinfl=' . $employee->passport_pin,
+        null, $oldToken, $newToken,
+        $pass, $fail, $skip, $results
+    );
+}
+
+// 26. LegalEntity — bankRequisites (stub endpoint)
+testEndpoint(
+    'LegalEntity: bankRequisites',
+    'GET', 'v2/services/legalentity/bankRequisites?inn=123456789',
+    null, $oldToken, $newToken,
+    $pass, $fail, $skip, $results
+);
+
+// 27. Send — verifyCode
+testEndpoint(
+    'Send: verifyCode',
+    'POST', 'v2/services/send/verifyCode',
+    ['id' => '1', 'email' => 'test@test.com', 'verify_code' => '12345'],
+    $oldToken, $newToken,
     $pass, $fail, $skip, $results
 );
 

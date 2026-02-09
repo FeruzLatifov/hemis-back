@@ -190,6 +190,56 @@ public class ClassifierLegacyService {
     // ==================== Shared CUBA Map Builder ====================
 
     /**
+     * NamePattern map — old-hemis @NamePattern ga mos.
+     * "name" = faqat name; "code_space_name" = code + " " + name;
+     * "code_dash_name" = code + " - " + name; "code_hyphen_name" = code + "-" + name
+     */
+    private static final Map<String, String> NAME_PATTERN_MAP = Map.ofEntries(
+        // BaseCodeNameEntity: "%s %s|code,name"
+        Map.entry("hemishe_HEducationType", "code_space_name"),
+        Map.entry("hemishe_HEducationForm", "code_space_name"),
+        Map.entry("hemishe_HCourse", "code_space_name"),
+        Map.entry("hemishe_HAdmissionType", "code_space_name"),
+        Map.entry("hemishe_HAcademicDegree", "code_space_name"),
+        Map.entry("hemishe_HAcademicReason", "code_space_name"),
+        Map.entry("hemishe_HCountry", "code_space_name"),
+        Map.entry("hemishe_HExamFinish", "code_space_name"),
+        Map.entry("hemishe_HResourceType", "code_space_name"),
+        Map.entry("hemishe_HScienceBranch", "code_space_name"),
+        Map.entry("hemishe_HCertificateLanguage", "code_space_name"),
+        Map.entry("hemishe_HTerrain", "code_space_name"),
+        Map.entry("hemishe_HUniversityBelongsTo", "code_space_name"),
+        Map.entry("hemishe_HTeacherConductionForm", "code_space_name"),
+        Map.entry("hemishe_HScholarshipDecreeType", "code_space_name"),
+        Map.entry("hemishe_HAttandanceSetting", "code_space_name"),
+        Map.entry("hemishe_HHemisVersionType", "code_space_name"),
+        // "%s - %s|code,name"
+        Map.entry("hemishe_HPaymentForm", "code_dash_name"),
+        Map.entry("hemishe_HDiplomBlankGenerateStatus", "code_dash_name"),
+        Map.entry("hemishe_HSpecialityBachelor", "code_dash_name"),
+        Map.entry("hemishe_HSpecialityMaster", "code_dash_name"),
+        Map.entry("hemishe_HSpecialityOrdinatura", "code_dash_name"),
+        Map.entry("hemishe_HStipendRate", "code_dash_name"),
+        Map.entry("hemishe_HStipendRateCategory", "code_dash_name"),
+        // "%s-%s|code,name"
+        Map.entry("hemishe_HUniversityActivityStatus", "code_hyphen_name")
+        // All others default to "name" only
+    );
+
+    /**
+     * Build _instanceName based on old-hemis @NamePattern for each entity.
+     */
+    private static String buildInstanceName(String entityName, String code, String name) {
+        String pattern = NAME_PATTERN_MAP.getOrDefault(entityName, "name");
+        return switch (pattern) {
+            case "code_space_name" -> code + " " + name;
+            case "code_dash_name" -> code + " - " + name;
+            case "code_hyphen_name" -> code + "-" + name;
+            default -> name;
+        };
+    }
+
+    /**
      * Convert classifier entity to CUBA-compatible Map
      */
     public Map<String, Object> classifierToMap(String entityName, String code, String name,
@@ -201,7 +251,7 @@ public class ClassifierLegacyService {
 
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", entityName);
-        map.put("_instanceName", name);
+        map.put("_instanceName", buildInstanceName(entityName, code, name));
         map.put("code", code);
         map.put("name", name);
 
@@ -430,7 +480,21 @@ public class ClassifierLegacyService {
             case "hemishe_h_student_room_mate_type" -> "hemishe_HStudentRoomMateType";
             case "hemishe_h_student_status_type" -> "hemishe_HStudentStatusType";
             case "hemishe_h_country" -> "hemishe_HCountry";
-            default -> null;
+            default -> {
+                // Generic conversion: hemishe_h_academic_degree -> hemishe_HAcademicDegree
+                if (tableName.startsWith("hemishe_h_")) {
+                    String suffix = tableName.substring("hemishe_h_".length());
+                    StringBuilder sb = new StringBuilder("hemishe_H");
+                    boolean capitalizeNext = true;
+                    for (char c : suffix.toCharArray()) {
+                        if (c == '_') { capitalizeNext = true; continue; }
+                        sb.append(capitalizeNext ? Character.toUpperCase(c) : c);
+                        capitalizeNext = false;
+                    }
+                    yield sb.toString();
+                }
+                yield null;
+            }
         };
     }
 
@@ -688,6 +752,14 @@ public class ClassifierLegacyService {
             items = Collections.emptyList();
         }
 
+        // Add _entityName to each item (CUBA compatibility)
+        String entityName = getCubaEntityName(tableName);
+        if (entityName != null) {
+            for (Map<String, Object> item : items) {
+                item.put("_entityName", entityName);
+            }
+        }
+
         Map<String, Object> classifierData = new LinkedHashMap<>();
         classifierData.put("title", getClassifierTitle(classifierName));
         classifierData.put("version", version);
@@ -822,7 +894,7 @@ public class ClassifierLegacyService {
             case "h_student_status_type" -> "Talaba holatlari";
             case "h_university_department_type" -> "Bo'lim turlari";
             case "h_teacher_position_type" -> "O'qituvchi lavozimlari";
-            case "h_academic_degree" -> "Ilmiy darajalar";
+            case "h_academic_degree" -> "Ilmiy darajalar turlari";
             case "h_academic_rank" -> "Ilmiy unvonlar";
             case "h_employment_form" -> "Bandlik shakllari";
             case "h_employment_type" -> "Bandlik turlari";

@@ -247,6 +247,8 @@ public class StudentMetaEntityController {
         StudentMetaDto created = studentMetaService.create(dto);
         Map<String, Object> cubaMap = adapter.toMap(created, ENTITY_NAME, returnNulls);
         cubaMap.put("_instanceName", buildInstanceName(created));
+        // OLD-HEMIS: POST doesn't return 'active' field
+        cubaMap.remove("active");
 
         return ResponseEntity.ok(cubaMap);
     }

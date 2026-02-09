@@ -141,6 +141,7 @@ public class LegacyUserInfoResponse implements Serializable {
         private String locale;
 
         @JsonProperty("university")
+        @JsonInclude(JsonInclude.Include.NON_NULL)
         @Schema(description = "University code", example = "401")
         private String university;
     }

@@ -413,15 +413,20 @@ public class StudentGpaService {
      * @return List of GPA records in CUBA format
      */
     public List<Map<String, Object>> findAll(int limit, int offset) {
-        log.info("Finding all GPA records: limit={}, offset={}", limit, offset);
+        return findAll(limit, offset, null);
+    }
+
+    public List<Map<String, Object>> findAll(int limit, int offset, String view) {
+        log.info("Finding all GPA records: limit={}, offset={}, view={}", limit, offset, view);
 
         Page<StudentGpa> page = studentGpaRepository.findAll(
                 PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1))
         );
 
         List<Map<String, Object>> result = new ArrayList<>();
+        boolean useNested = view != null && !view.isEmpty();
         for (StudentGpa gpa : page.getContent()) {
-            result.add(toLegacyMap(gpa));
+            result.add(toLegacyMap(gpa, useNested));
         }
 
         return result;
@@ -511,6 +516,10 @@ public class StudentGpaService {
      * <p>Matches exact field structure from old-hemis response</p>
      */
     private Map<String, Object> toLegacyMap(StudentGpa gpa) {
+        return toLegacyMap(gpa, false);
+    }
+
+    private Map<String, Object> toLegacyMap(StudentGpa gpa, boolean includeNested) {
         Map<String, Object> map = new LinkedHashMap<>();
 
         // Entity metadata
@@ -522,17 +531,19 @@ public class StudentGpaService {
         map.put("debtSubjects", gpa.getDebtSubjects() != null ? gpa.getDebtSubjects() : 0);
         map.put("method", gpa.getMethod());
 
-        // Nested: level (hemishe_HCourse)
-        map.put("level", loadCourseLevel(gpa.getLevelCode()));
+        // Reference fields: faqat view mode da qaytariladi
+        if (includeNested) {
+            map.put("level", loadCourseLevel(gpa.getLevelCode()));
+        }
 
         map.put("creditSum", gpa.getCreditSum());
         map.put("subjects", gpa.getSubjects());
 
-        // Nested: educationYear (hemishe_HEducationYear)
-        map.put("educationYear", loadEducationYear(gpa.getEducationYearCode()));
-
-        // Nested: studentId (hemishe_EStudent with name fields)
-        map.put("studentId", loadStudent(gpa.getStudentId()));
+        // Reference fields: faqat view mode da qaytariladi
+        if (includeNested) {
+            map.put("educationYear", loadEducationYear(gpa.getEducationYearCode()));
+            map.put("studentId", loadStudent(gpa.getStudentId()));
+        }
 
         map.put("gpa", gpa.getGpa());
 

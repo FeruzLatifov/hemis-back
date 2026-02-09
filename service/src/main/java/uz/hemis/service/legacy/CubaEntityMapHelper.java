@@ -1,5 +1,7 @@
 package uz.hemis.service.legacy;
 
+import uz.hemis.common.JsonNull;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -231,8 +233,13 @@ public final class CubaEntityMapHelper {
      * Puts the value into the map if it is non-null, or if {@code returnNulls} is true.
      */
     public static void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
-        if (value != null || Boolean.TRUE.equals(returnNulls)) {
+        if (value != null) {
             map.put(key, value);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            // OLD-HEMIS: Jackson NON_NULL global config skips null values,
+            // but CUBA returnNulls=true requires null fields in response.
+            // JsonNull.INSTANCE serializes as JSON null while bypassing NON_NULL filter.
+            map.put(key, JsonNull.INSTANCE);
         }
     }
 }

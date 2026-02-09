@@ -380,7 +380,17 @@ public class ScienceDoctorateEntityLegacyService {
     public Map<String, Object> toDoctoralStudentMap(DoctoralStudent entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", DOCTORAL_STUDENT_ENTITY);
-        map.put("_instanceName", entity.getFullName() != null ? entity.getFullName() : "");
+        // OLD-HEMIS @NamePattern("%s %s|secondName,firstName") — faqat familiya + ism, patronymic yo'q
+        String instanceName = "";
+        if (entity.getSecondName() != null) {
+            instanceName = entity.getSecondName();
+            if (entity.getFirstName() != null) {
+                instanceName += " " + entity.getFirstName();
+            }
+        } else if (entity.getFirstName() != null) {
+            instanceName = entity.getFirstName();
+        }
+        map.put("_instanceName", instanceName);
         map.put("id", entity.getId() != null ? entity.getId().toString() : null);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         putIfNotNull(map, "firstName", entity.getFirstName(), returnNulls);
@@ -544,7 +554,7 @@ public class ScienceDoctorateEntityLegacyService {
     public Map<String, Object> toDoctoralStudentStatusMap(DoctoralStudentStatus entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", DOCTORAL_STUDENT_STATUS_ENTITY);
-        map.put("_instanceName", entity.getName());
+        map.put("_instanceName", entity.getCode() + " " + entity.getName());
         map.put("id", entity.getCode());
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
         putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
@@ -620,7 +630,7 @@ public class ScienceDoctorateEntityLegacyService {
     public Map<String, Object> toDoctoralStudentTypeMap(DoctoralStudentType entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", DOCTORAL_STUDENT_TYPE_ENTITY);
-        map.put("_instanceName", entity.getName());
+        map.put("_instanceName", entity.getCode() + " " + entity.getName());
         map.put("id", entity.getCode());
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
         putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
@@ -696,7 +706,7 @@ public class ScienceDoctorateEntityLegacyService {
     public Map<String, Object> toPublicationLocalityMap(PublicationLocality entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", PUBLICATION_LOCALITY_ENTITY);
-        map.put("_instanceName", entity.getName());
+        map.put("_instanceName", entity.getCode() + " " + entity.getName());
         map.put("id", entity.getCode());
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
         putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);

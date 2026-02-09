@@ -312,7 +312,6 @@ public class BillingServiceController {
         for (Object p : pinflList) {
             LinkedHashMap<String, Object> item = new LinkedHashMap<>();
             item.put("pinfl", p != null ? p.toString() : "");
-            item.put("fullname", "");
             dataList.add(item);
         }
         response.put("data", dataList);

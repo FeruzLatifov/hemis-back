@@ -301,10 +301,7 @@ public class AcademicEntityLegacyService {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", EDUCATION_MATERIALS_ENTITY);
 
-        String instanceName = entity.getSpecialityName() != null
-            ? entity.getSpecialityName()
-            : "EducationMaterials-" + entity.getId();
-        map.put("_instanceName", instanceName);
+        map.put("_instanceName", "com.company.hemishe.entity.REducationMaterials-" + entity.getId() + " [detached]");
 
         map.put("id", entity.getId());
 
@@ -368,17 +365,8 @@ public class AcademicEntityLegacyService {
         putIfNotNull(map, "certificateDate", entity.getCertificateDate(), returnNulls);
         putIfNotNull(map, "authorFullname", entity.getAuthorFullname(), returnNulls);
 
-        if (entity.getUniversity() != null) {
-            map.put("university", buildUniversityObject(entity.getUniversity()));
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("university", null);
-        }
-
-        if (entity.getEducationYear() != null) {
-            map.put("educationYear", buildEducationYearObject(entity.getEducationYear()));
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("educationYear", null);
-        }
+        // OLD-HEMIS: university va educationYear reference fieldlar default view da qaytarilmaydi
+        // Ular faqat underscore-prefixed (_university, _educationYear) sifatida saqlanadi
 
         putIfNotNull(map, "bookName", entity.getBookName(), returnNulls);
         putIfNotNull(map, "specialityCode", entity.getSpecialityCode(), returnNulls);
@@ -455,7 +443,7 @@ public class AcademicEntityLegacyService {
     public Map<String, Object> toAcademicGroupMap(AcademicGroup entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ACADEMIC_GROUP_ENTITY);
-        map.put("_instanceName", entity.getUniversityName() != null ? entity.getUniversityName() : entity.getId().toString());
+        map.put("_instanceName", "com.company.hemishe.entity.RAcademicGroup-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
         putIfNotNull(map, "universityCode", entity.getUniversityCode(), returnNulls);
         putIfNotNull(map, "universityName", entity.getUniversityName(), returnNulls);
@@ -515,7 +503,7 @@ public class AcademicEntityLegacyService {
     public Map<String, Object> toAcademicSubjectsMap(AcademicSubjects entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ACADEMIC_SUBJECTS_ENTITY);
-        map.put("_instanceName", entity.getCurriculumName() != null ? entity.getCurriculumName() : entity.getId().toString());
+        map.put("_instanceName", "com.company.hemishe.entity.RAcademicSubjects-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
         putIfNotNull(map, "universityCode", entity.getUniversityCode(), returnNulls);
         putIfNotNull(map, "universityName", entity.getUniversityName(), returnNulls);
@@ -579,7 +567,7 @@ public class AcademicEntityLegacyService {
     public Map<String, Object> toRAcademicAttendanceMap(RAcademicAttendance entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", R_ACADEMIC_ATTENDANCE_ENTITY);
-        map.put("_instanceName", entity.getUniversityName() != null ? entity.getUniversityName() : entity.getId().toString());
+        map.put("_instanceName", "com.company.hemishe.entity.RAcademicAttendance-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
         putIfNotNull(map, "universityCode", entity.getUniversityCode(), returnNulls);
         putIfNotNull(map, "universityName", entity.getUniversityName(), returnNulls);
@@ -657,33 +645,14 @@ public class AcademicEntityLegacyService {
 
         putIfNotNull(map, "studentCount", entity.getStudentCount(), returnNulls);
 
-        // university - nested object
-        if (entity.getUniversity() != null) {
-            map.put("university", buildUniversityObject(entity.getUniversity()));
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("university", null);
-        }
+        // OLD-HEMIS: university, educationYear, course reference fieldlar default view da qaytarilmaydi
 
         putIfNotNull(map, "document", entity.getDocument(), returnNulls);
         putIfNotNull(map, "subjects", entity.getSubjects(), returnNulls);
 
-        // educationYear - nested object
-        if (entity.getEducationYear() != null) {
-            map.put("educationYear", buildEducationYearObject(entity.getEducationYear()));
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("educationYear", null);
-        }
-
         putIfNotNull(map, "languageName", entity.getLanguageName(), returnNulls);
         putIfNotNull(map, "specialityCode", entity.getSpecialityCode(), returnNulls);
         putIfNotNull(map, "specialityName", entity.getSpecialityName(), returnNulls);
-
-        // course - nested object
-        if (entity.getCourse() != null) {
-            map.put("course", buildCourseObject(entity.getCourse()));
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("course", null);
-        }
 
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
 

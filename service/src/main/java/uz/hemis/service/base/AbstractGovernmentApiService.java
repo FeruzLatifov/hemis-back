@@ -15,6 +15,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.net.ssl.*;
+import java.net.HttpURLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -208,12 +209,14 @@ public abstract class AbstractGovernmentApiService {
         log.debug("Proxy POST - Service: {}, URL: {}", serviceName, url);
 
         try {
-            disableSslVerification();
+            if (url.startsWith("https")) {
+                disableSslVerification();
+            }
 
-            // Use HttpsURLConnection directly (same as old-hemis MyRequest)
+            // Use HttpURLConnection directly (same as old-hemis MyRequest)
             // RestTemplate loses error body on HTTPS 4xx/5xx responses
             java.net.URL urlObj = java.net.URI.create(url).toURL();
-            javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) urlObj.openConnection();
+            HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
             conn.setInstanceFollowRedirects(true);
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
@@ -222,8 +225,8 @@ public abstract class AbstractGovernmentApiService {
             conn.setConnectTimeout(30000);
             conn.setReadTimeout(30000);
 
-            // Write body
-            String bodyJson = objectMapper.writeValueAsString(jsonBody);
+            // Write body — if already a String, use as-is; otherwise serialize
+            String bodyJson = (jsonBody instanceof String) ? (String) jsonBody : objectMapper.writeValueAsString(jsonBody);
             try (java.io.OutputStream os = conn.getOutputStream()) {
                 os.write(bodyJson.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             }
@@ -282,10 +285,12 @@ public abstract class AbstractGovernmentApiService {
         log.debug("Proxy GET - Service: {}, URL: {}", serviceName, url);
 
         try {
-            disableSslVerification();
+            if (url.startsWith("https")) {
+                disableSslVerification();
+            }
 
             java.net.URL urlObj = java.net.URI.create(url).toURL();
-            javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) urlObj.openConnection();
+            HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
             conn.setInstanceFollowRedirects(true);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Content-Type", "application/json");

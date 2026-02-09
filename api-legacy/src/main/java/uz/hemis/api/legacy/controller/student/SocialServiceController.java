@@ -9,9 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.integration.GuvdTokenService;
+import uz.hemis.service.student.SocialService;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -30,12 +29,10 @@ import java.util.*;
 public class SocialServiceController {
 
     private final GuvdTokenService guvdTokenService;
+    private final SocialService socialService;
 
     /**
      * Check single register status
-     *
-     * OLD-HEMIS response format:
-     * {"success":true,"data":{"status":"BAD_REQUEST","timestamp":"31-01-2026 11:51:32","message":"{...}"}}
      */
     @GetMapping("/singleRegister")
     @Operation(summary = "Yagona reestr tekshirish")
@@ -43,18 +40,7 @@ public class SocialServiceController {
     public ResponseEntity<?> singleRegister(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
         log.info("[CUBA Service] social/singleRegister: pinfl={}", pinfl);
-
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss"));
-
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("status", "BAD_REQUEST");
-        data.put("timestamp", timestamp);
-        data.put("message", "{\"statusCode\":\"400\",\"statusDescription\":\"PF-84 ga asosan Kam ta'minlanganlik ma'lumotnomasi berish to'xtatildi.\"}");
-
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("success", true);
-        response.put("data", data);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(socialService.singleRegister(pinfl));
     }
 
     /**
@@ -66,11 +52,7 @@ public class SocialServiceController {
     public ResponseEntity<?> daftarFull(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
         log.info("[CUBA Service] social/daftarFull: pinfl={}", pinfl);
-
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("success", true);
-        response.put("data", new LinkedHashMap<>());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(socialService.daftarFull(pinfl));
     }
 
     /**
@@ -82,18 +64,11 @@ public class SocialServiceController {
     public ResponseEntity<?> daftarShort(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
         log.info("[CUBA Service] social/daftarShort: pinfl={}", pinfl);
-
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("success", true);
-        response.put("data", new LinkedHashMap<>());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(socialService.daftarShort(pinfl));
     }
 
     /**
      * Get women support information
-     *
-     * OLD-HEMIS response format:
-     * {"success":true,"data":{"timestamp":"2026-01-31 04:51:32","status":200,"data":{"results":[]}}}
      */
     @GetMapping("/women")
     @Operation(summary = "Ayollar qo'llab-quvvatlash ma'lumotlari")
@@ -102,21 +77,7 @@ public class SocialServiceController {
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl,
             @Parameter(description = "Hujjat seriya va raqami", required = false) @RequestParam(required = false) String sn) {
         log.info("[CUBA Service] social/women: pinfl={}, sn={}", pinfl, sn);
-
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-        LinkedHashMap<String, Object> results = new LinkedHashMap<>();
-        results.put("results", List.of());
-
-        LinkedHashMap<String, Object> data = new LinkedHashMap<>();
-        data.put("timestamp", timestamp);
-        data.put("status", 200);
-        data.put("data", results);
-
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("success", true);
-        response.put("data", data);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(socialService.women(pinfl, sn));
     }
 
     /**
@@ -130,11 +91,7 @@ public class SocialServiceController {
             @Parameter(description = "Seriya", required = false) @RequestParam(required = false) String seria,
             @Parameter(description = "Raqam", required = false) @RequestParam(required = false) String number) {
         log.info("[CUBA Service] social/young: pinfl={}, seria={}, number={}", pinfl, seria, number);
-
-        LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-        response.put("success", true);
-        response.put("data", new LinkedHashMap<>());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(socialService.young(pinfl, seria, number));
     }
 
     /**

@@ -158,7 +158,7 @@ public class VerificationService {
             String sql = """
                 SELECT code, name, student_url, teacher_url, tin, address, active,
                        add_student, allow_grouping, allow_transfer_outside,
-                       accreditation_edit, gpa_edit, version
+                       accreditation_edit, gpa_edit, one_id, version
                 FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL
                 """;
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
@@ -178,6 +178,7 @@ public class VerificationService {
             uni.put("allowTransferOutside", row.get("allow_transfer_outside"));
             uni.put("accreditationEdit", row.get("accreditation_edit"));
             uni.put("gpaEdit", row.get("gpa_edit"));
+            uni.put("oneId", row.get("one_id"));
             uni.put("version", row.get("version"));
 
             return uni;
@@ -204,9 +205,6 @@ public class VerificationService {
                     ref.put("_entityName", "hemishe_HVerificationType");
                     ref.put("id", vt.getCode());
                     ref.put("code", vt.getCode());
-                    ref.put("name", vt.getName());
-                    ref.put("nameRu", vt.getNameRu());
-                    ref.put("nameEn", vt.getNameEn());
                     ref.put("version", vt.getVersion());
                     return ref;
                 })

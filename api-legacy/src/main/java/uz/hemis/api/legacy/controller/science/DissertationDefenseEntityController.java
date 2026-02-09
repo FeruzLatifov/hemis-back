@@ -434,17 +434,14 @@ public class DissertationDefenseEntityController {
             map.put("defenseDate", null);
         }
 
-        // doctorateStudent - to'liq nested object (view=eDissertationDefense-view)
-        if (entity.getDoctorateStudent() != null) {
-            if (VIEW_DISSERTATION_DEFENSE.equals(view)) {
+        // doctorateStudent - to'liq nested object (faqat view=eDissertationDefense-view da)
+        // OLD-HEMIS: default view da reference fieldlar qaytarilmaydi
+        if (VIEW_DISSERTATION_DEFENSE.equals(view)) {
+            if (entity.getDoctorateStudent() != null) {
                 map.put("doctorateStudent", buildDoctoralStudentMap(entity.getDoctorateStudent()));
-            } else {
-                Map<String, Object> docStudentMap = new LinkedHashMap<>();
-                docStudentMap.put("id", entity.getDoctorateStudent().toString());
-                map.put("doctorateStudent", docStudentMap);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("doctorateStudent", null);
             }
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("doctorateStudent", null);
         }
 
         // approvedDate - date format
@@ -456,17 +453,14 @@ public class DissertationDefenseEntityController {
 
         putIfNotNull(map, "diplomaNumber", entity.getDiplomaNumber(), returnNulls);
 
-        // speciality - to'liq nested object (view=eDissertationDefense-view)
-        if (entity.getSpeciality() != null) {
-            if (VIEW_DISSERTATION_DEFENSE.equals(view)) {
+        // speciality - to'liq nested object (faqat view=eDissertationDefense-view da)
+        // OLD-HEMIS: default view da reference fieldlar qaytarilmaydi
+        if (VIEW_DISSERTATION_DEFENSE.equals(view)) {
+            if (entity.getSpeciality() != null) {
                 map.put("speciality", getSpecialityDoctoralMap(entity.getSpeciality()));
-            } else {
-                Map<String, Object> specMap = new LinkedHashMap<>();
-                specMap.put("id", entity.getSpeciality().toString());
-                map.put("speciality", specMap);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("speciality", null);
             }
-        } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("speciality", null);
         }
 
         // defense_place - OLD-HEMIS uses snake_case!

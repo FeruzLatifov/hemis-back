@@ -11,10 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import uz.hemis.common.JsonNull;
 import uz.hemis.common.exception.ResourceNotFoundException;
 
 import java.util.*;
@@ -105,6 +107,39 @@ public class LegacyExceptionHandler {
     }
 
     /**
+     * Handle missing @RequestParam for service endpoints
+     * OLD-HEMIS: service endpoints with wrong/missing params return 404 "Service method not found"
+     * because CUBA resolves service methods by parameter signature
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingParam(
+            MissingServletRequestParameterException ex,
+            HttpServletRequest request
+    ) {
+        String path = request.getRequestURI();
+        log.debug("Missing param at {}: {}", path, ex.getMessage());
+
+        Map<String, Object> error = new LinkedHashMap<>();
+        // /services/* endpoints: OLD-HEMIS returns 404 "Service method not found"
+        if (path.contains("/services/")) {
+            String servicePart = path.substring(path.indexOf("/services/") + "/services/".length());
+            String[] parts = servicePart.split("/", 2);
+            String service = parts.length > 0 ? parts[0] : "unknown";
+            String method = parts.length > 1 ? parts[1].split("/")[0].split("\\?")[0] : "unknown";
+            error.put("error", "Service method not found");
+            // OLD-HEMIS: includes request parameter names in error details
+            String paramNames = String.join(",", Collections.list(request.getParameterNames()));
+            error.put("details", service + "." + method + "(" + paramNames + ")");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        }
+
+        // Entity endpoints: return 400
+        error.put("error", "Missing parameter");
+        error.put("details", "Required parameter '" + ex.getParameterName() + "' is not present");
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    /**
      * Handle Jakarta Constraint Violations
      * OLD-HEMIS format: array of {message, messageTemplate, path, invalidValue}
      */
@@ -153,32 +188,82 @@ public class LegacyExceptionHandler {
 
     /**
      * Handle DB constraint violations (duplicate key, FK violations, etc.)
-     * OLD-HEMIS format: array of {id, message}
+     * OLD-HEMIS format for not-null: {message, messageTemplate, path, invalidValue}
+     * OLD-HEMIS format for others: {id, message}
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<List<Map<String, String>>> handleDataIntegrity(
+    public ResponseEntity<List<Map<String, Object>>> handleDataIntegrity(
             DataIntegrityViolationException ex,
             HttpServletRequest request
     ) {
         log.error("Data integrity violation at {}: {}", request.getRequestURI(), ex.getMessage());
 
-        List<Map<String, String>> errors = new ArrayList<>();
-        Map<String, String> error = new LinkedHashMap<>();
-        error.put("id", "database");
-
+        List<Map<String, Object>> errors = new ArrayList<>();
         String msg = ex.getMostSpecificCause().getMessage();
-        if (msg != null && msg.contains("duplicate key")) {
-            error.put("message", "Duplicate entry: record already exists");
-        } else if (msg != null && msg.contains("not-null")) {
-            error.put("message", "Required field is missing");
-        } else if (msg != null && msg.contains("foreign key")) {
-            error.put("message", "Referenced record not found");
+
+        if (msg != null && msg.contains("not-null")) {
+            // OLD-HEMIS: NotNull constraint → CUBA bean validation format
+            // PostgreSQL: 'null value in column "column_name" of relation "table" violates not-null constraint'
+            String columnName = extractColumnName(msg);
+            String fieldName = columnToFieldName(columnName);
+
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("message", "\u0434\u043e\u043b\u0436\u043d\u043e \u0431\u044b\u0442\u044c \u0437\u0430\u0434\u0430\u043d\u043e"); // "должно быть задано"
+            error.put("messageTemplate", "{javax.validation.constraints.NotNull.message}");
+            error.put("path", fieldName);
+            error.put("invalidValue", JsonNull.INSTANCE);
+            errors.add(error);
         } else {
-            error.put("message", "Data integrity violation");
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("id", "database");
+            if (msg != null && msg.contains("duplicate key")) {
+                error.put("message", "Duplicate entry: record already exists");
+            } else if (msg != null && msg.contains("foreign key")) {
+                error.put("message", "Referenced record not found");
+            } else {
+                error.put("message", "Data integrity violation");
+            }
+            errors.add(error);
         }
-        errors.add(error);
 
         return ResponseEntity.badRequest().body(errors);
+    }
+
+    /**
+     * Extract column name from PostgreSQL not-null violation message
+     * Pattern: 'null value in column "column_name" of relation ...'
+     */
+    private String extractColumnName(String message) {
+        if (message == null) return "unknown";
+        int start = message.indexOf("column \"");
+        if (start >= 0) {
+            start += "column \"".length();
+            int end = message.indexOf("\"", start);
+            if (end > start) return message.substring(start, end);
+        }
+        return "unknown";
+    }
+
+    /**
+     * Convert DB column name to CUBA field name
+     * "_university" → "university"; "student_id" → "studentId"; "author_fullname" → "authorFullname"
+     */
+    private String columnToFieldName(String column) {
+        if (column == null || column.isEmpty()) return "unknown";
+        // Remove leading underscore (FK reference columns like _university)
+        if (column.startsWith("_")) column = column.substring(1);
+        // Remove trailing _id, _code suffixes
+        if (column.endsWith("_id")) column = column.substring(0, column.length() - 3);
+        if (column.endsWith("_code")) column = column.substring(0, column.length() - 5);
+        // snake_case to camelCase
+        StringBuilder sb = new StringBuilder();
+        boolean nextUpper = false;
+        for (char c : column.toCharArray()) {
+            if (c == '_') { nextUpper = true; continue; }
+            sb.append(nextUpper ? Character.toUpperCase(c) : c);
+            nextUpper = false;
+        }
+        return sb.toString();
     }
 
     /**
@@ -218,7 +303,9 @@ public class LegacyExceptionHandler {
             String service = parts.length > 0 ? parts[0] : "unknown";
             String method = parts.length > 1 ? parts[1].split("/")[0] : "unknown";
             error.put("error", "Service method not found");
-            error.put("details", service + "." + method + "()");
+            // OLD-HEMIS: includes request parameter names in error details
+            String paramNames = String.join(",", Collections.list(request.getParameterNames()));
+            error.put("details", service + "." + method + "(" + paramNames + ")");
         }
         // /app/rest/v2/entities/* — entity not found format
         else if (path.contains("/entities/")) {
