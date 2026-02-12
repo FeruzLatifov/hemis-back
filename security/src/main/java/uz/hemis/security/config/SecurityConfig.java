@@ -90,7 +90,7 @@ public class SecurityConfig {
     private String jwtSecret;
 
     // ✅ SECURITY FIX #7: CORS allowed origins from environment
-    @Value("${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://localhost:9000}")
+    @Value("${CORS_ALLOWED_ORIGINS:}")
     private String corsAllowedOrigins;
 
     /**
@@ -212,10 +212,6 @@ public class SecurityConfig {
                         // Test healthcheck (anonymous - old-hemis: anonymousAllowed)
                         .requestMatchers("/app/rest/v2/services/test/healthcheck").permitAll()
 
-                        // TEST: ProjectExecutor endpoint (temporarily public for testing)
-                        .requestMatchers("/app/rest/v2/entities/hemishe_EProjectExecutor/**").permitAll()
-                        .requestMatchers("/app/rest/v2/entities/hemishe_EProjectExecutor").permitAll()
-
                         // University API endpoints (JWT required)
                         // Note: Universities send JWT in Authorization header
                         .requestMatchers("/app/rest/v2/**").authenticated()
@@ -272,6 +268,13 @@ public class SecurityConfig {
             } catch (IllegalArgumentException e) {
                 // If not base64, use as is
                 keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+            }
+            if (keyBytes.length < 32) {
+                throw new IllegalStateException(
+                    "JWT secret must be at least 32 bytes (256 bits) for HS256. " +
+                    "Current: " + keyBytes.length + " bytes. " +
+                    "Set hemis.security.jwt.secret with a Base64-encoded 256-bit key."
+                );
             }
             SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
             return NimbusJwtDecoder.withSecretKey(secretKey)

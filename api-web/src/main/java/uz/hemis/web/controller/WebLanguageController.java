@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.system.LanguageDto;
 import uz.hemis.common.dto.ResponseWrapper;
@@ -51,6 +52,7 @@ import java.util.stream.Collectors;
 @Tag(name = "14.Tillar", description = "Language management - Available languages, locale settings")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class WebLanguageController {
 
     private final LanguageService languageService;

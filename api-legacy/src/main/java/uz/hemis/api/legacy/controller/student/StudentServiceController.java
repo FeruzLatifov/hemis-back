@@ -872,27 +872,14 @@ public class StudentServiceController {
             @Parameter(description = "Limit (max 1000)") @RequestParam(defaultValue = "100") int limit,
             @Parameter(description = "Offset") @RequestParam(defaultValue = "0") int offset) {
         log.info("[CUBA Service] student/tashkentStudents: limit={}, offset={}", limit, offset);
-        Map<String, Object> response = new java.util.LinkedHashMap<>();
         if (limit > 1000) {
+            Map<String, Object> response = new java.util.LinkedHashMap<>();
             response.put("success", false);
             response.put("code", "bad_request");
             response.put("data", "Max limit is 1000");
             return ResponseEntity.ok(response);
         }
-        List<Map<String, Object>> data = studentService.getTashkentStudents(limit, offset);
-        if (data != null && !data.isEmpty()) {
-            response.put("success", true);
-            response.put("code", "ok");
-            response.put("count", studentService.getTashkentStudentsCount());
-            response.put("limit", limit);
-            response.put("offset", offset);
-            response.put("data", data);
-        } else {
-            response.put("success", false);
-            response.put("code", "not_found");
-            response.put("data", "Student not found!");
-        }
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(studentService.getTashkentStudentsResult(limit, offset));
     }
 
     /**

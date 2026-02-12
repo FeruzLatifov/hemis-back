@@ -423,7 +423,8 @@ public class GlobalExceptionHandler {
         }
 
         // Capture to Sentry (auto-captures if enabled)
-        String eventId = Sentry.captureException(ex).toString();
+        Object sentryId = Sentry.captureException(ex);
+        String eventId = sentryId != null ? sentryId.toString() : null;
 
         ErrorResponse error = ErrorResponse.of(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),

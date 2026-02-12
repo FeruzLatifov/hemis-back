@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -60,6 +61,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/web/auth")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class WebAuthController {
 
     private final AuthenticationManager authenticationManager;

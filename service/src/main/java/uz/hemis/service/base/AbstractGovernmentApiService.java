@@ -259,9 +259,10 @@ public abstract class AbstractGovernmentApiService {
 
         } catch (Exception e) {
             log.error("{} - External API call failed: {}", serviceName, e.getMessage(), e);
+            // Old-hemis pattern: catch(Exception e) { result.put("success", false); result.put("data", e.getMessage()); }
+            // No "code" field — just success + data (exception message, typically hostname)
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("success", false);
-            error.put("code", 500);
             error.put("data", e.getMessage());
             return error;
         }
@@ -324,9 +325,9 @@ public abstract class AbstractGovernmentApiService {
 
         } catch (Exception e) {
             log.error("{} - External API call failed: {}", serviceName, e.getMessage(), e);
+            // Old-hemis pattern: catch(Exception e) { result.put("success", false); result.put("data", e.getMessage()); }
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("success", false);
-            error.put("code", 500);
             error.put("data", e.getMessage());
             return error;
         }

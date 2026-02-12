@@ -19,7 +19,7 @@ public class WebAuthCookieService {
     @Value("${app.security.cookie.secure:false}")
     private boolean cookieSecure;
 
-    @Value("${app.security.cookie.same-site:Lax}")
+    @Value("${app.security.cookie.same-site:Strict}")
     private String cookieSameSite;
 
     /**

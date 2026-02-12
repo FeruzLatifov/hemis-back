@@ -307,22 +307,22 @@ hemis:
   integration:
     guvd:
       oauth2:
-        url: ${GUVD_OAUTH2_URL:https://iskm.egov.uz:9444/oauth2/token}
+        url: ${GUVD_OAUTH2_URL:}
         client-id: ${GUVD_CLIENT_ID:}
         client-secret: ${GUVD_CLIENT_SECRET:}
         username: ${GUVD_USERNAME:}
         password: ${GUVD_PASSWORD:}
-      passport-api-url: ${GUVD_PASSPORT_API_URL:https://apimgw.egov.uz:8243/gcp/docrest/v1}
-      address-api-url: ${GUVD_ADDRESS_API_URL:https://apimgw.egov.uz:8243/mvd/services/address/info/pin/v1}
+      passport-api-url: ${GUVD_PASSPORT_API_URL:}
+      address-api-url: ${GUVD_ADDRESS_API_URL:}
 
     # BIMM Integration (api-mspd.edu.uz)
     bimm:
       oauth2:
-        url: ${BIMM_OAUTH2_URL:https://api-mspd.edu.uz/auth/token}
+        url: ${BIMM_OAUTH2_URL:}
         username: ${BIMM_OAUTH2_USERNAME:}
         password: ${BIMM_OAUTH2_PASSWORD:}
       api:
-        base-url: ${BIMM_API_URL:https://api-mspd.edu.uz}
+        base-url: ${BIMM_API_URL:}
 
   # External API Configuration (Government Services)
   external:

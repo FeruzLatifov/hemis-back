@@ -60,6 +60,16 @@ public class UserLoadingAdapter implements UserLoadingPort {
         return userRepository.findByUsername(username).isPresent();
     }
 
+    @Override
+    @Transactional
+    public void updatePassword(String username, String newEncodedPassword) {
+        userRepository.findByUsername(username).ifPresent(user -> {
+            log.info("Upgrading password hash to BCrypt for user: {}", username);
+            user.setPassword(newEncodedPassword);
+            userRepository.save(user);
+        });
+    }
+
     /**
      * Convert User entity to LoadedUser DTO
      *

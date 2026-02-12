@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.registry.FacultyRegistryService;
@@ -70,6 +72,7 @@ import java.time.format.DateTimeFormatter;
 @SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class FacultyRegistryController {
 
     private final FacultyRegistryService facultyRegistryService;
@@ -280,7 +283,7 @@ public class FacultyRegistryController {
                 example = "00001",
                 required = true
             )
-            @PathVariable String universityCode,
+            @PathVariable @NotBlank String universityCode,
             
             @Parameter(
                 description = "Search query (faculty name or code)",
@@ -390,7 +393,7 @@ public class FacultyRegistryController {
                 example = "00001-01",
                 required = true
             )
-            @PathVariable String code
+            @PathVariable @NotBlank String code
     ) {
         log.info("GET /api/v1/web/registry/faculties/{}", code);
 

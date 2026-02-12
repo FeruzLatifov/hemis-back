@@ -51,4 +51,16 @@ public interface UserLoadingPort {
      * @return true if user exists
      */
     boolean existsByUsername(String username);
+
+    /**
+     * Update user's password hash (for transparent rehashing).
+     *
+     * <p>Called by Spring Security when a legacy password (MD5/SHA-1/PBKDF2)
+     * is successfully verified — the password is re-hashed with BCrypt
+     * and saved, so subsequent logins use the stronger algorithm.</p>
+     *
+     * @param username login username
+     * @param newEncodedPassword BCrypt-encoded password
+     */
+    void updatePassword(String username, String newEncodedPassword);
 }

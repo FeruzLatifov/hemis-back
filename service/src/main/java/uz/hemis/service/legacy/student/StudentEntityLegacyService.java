@@ -292,21 +292,21 @@ public class StudentEntityLegacyService {
         boolean useNested = view != null && !view.isEmpty();
 
         // OLD-HEMIS: reference fieldlar faqat view mode da qaytariladi
-        // student nested object
+        // student nested object — _minimal view + specialityBachelor, specialityMaster, paymentForm
         if (useNested && entity.getStudent() != null) {
-            Map<String, Object> studentObj = nestedObjectLoader.loadStudentForDiploma(entity.getStudent());
+            Map<String, Object> studentObj = nestedObjectLoader.loadStudentMinimalWithSpeciality(entity.getStudent());
             map.put("student", studentObj != null ? studentObj : entity.getStudent().toString());
         }
 
-        // university nested object (FK stores UUID, not code)
+        // university nested object (FK stores code as varchar, not UUID)
         if (useNested && entity.getUniversity() != null) {
-            Map<String, Object> uniObj = nestedObjectLoader.loadUniversityByUuid(entity.getUniversity());
+            Map<String, Object> uniObj = nestedObjectLoader.loadUniversity(entity.getUniversity());
             map.put("university", uniObj != null ? uniObj : entity.getUniversity());
         }
 
-        // educationYear nested object (FK stores UUID, resolve via h_education_year.id)
+        // educationYear nested object (FK stores code as varchar)
         if (useNested && entity.getEducationYear() != null) {
-            Map<String, Object> eyObj = nestedObjectLoader.loadClassifier("hemishe_h_education_year", "HEducationYear", String.valueOf(entity.getEducationYear()));
+            Map<String, Object> eyObj = nestedObjectLoader.loadClassifier("hemishe_h_education_year", "HEducationYear", entity.getEducationYear());
             map.put("educationYear", eyObj != null ? eyObj : entity.getEducationYear());
         }
 
@@ -323,16 +323,16 @@ public class StudentEntityLegacyService {
 
     public void updateAdministrativeStudent3FromMap(AdministrativeStudent3 entity, Map<String, Object> data) {
         if (data.containsKey("university")) {
-            entity.setUniversity(CubaEntityMapHelper.extractUuid(data.get("university")));
+            entity.setUniversity(CubaEntityMapHelper.extractCodeOrId(data.get("university")));
         }
         if (data.containsKey("educationYear")) {
-            entity.setEducationYear(CubaEntityMapHelper.extractUuid(data.get("educationYear")));
+            entity.setEducationYear(CubaEntityMapHelper.extractCodeOrId(data.get("educationYear")));
         }
         if (data.containsKey("student")) {
             entity.setStudent(CubaEntityMapHelper.extractUuid(data.get("student")));
         }
         if (data.containsKey("educationType")) {
-            entity.setEducationType(CubaEntityMapHelper.extractUuid(data.get("educationType")));
+            entity.setEducationType(CubaEntityMapHelper.extractCodeOrId(data.get("educationType")));
         }
         if (data.containsKey("company")) {
             entity.setCompany(CubaEntityMapHelper.getStringValue(data.get("company")));

@@ -127,6 +127,10 @@ subprojects {
         }
     }
 
+    tasks.named("check") {
+        dependsOn(tasks.withType<JacocoCoverageVerification>())
+    }
+
     // =====================================================
     // Test Configuration
     // =====================================================

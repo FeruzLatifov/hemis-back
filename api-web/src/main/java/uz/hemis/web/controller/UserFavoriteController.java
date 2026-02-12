@@ -8,10 +8,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
@@ -63,6 +65,7 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class UserFavoriteController {
 
     private final UserFavoriteService favoriteService;
@@ -233,7 +236,7 @@ public class UserFavoriteController {
     })
     public ResponseEntity<Void> removeFavorite(
             @AuthenticationPrincipal Jwt jwt,
-            @PathVariable String code
+            @PathVariable @NotBlank String code
     ) {
         UUID userId = UUID.fromString(jwt.getSubject());
         log.debug("DELETE /api/v1/web/favorites/{} - userId: {}", code, userId);

@@ -4,16 +4,16 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 import uz.hemis.common.port.cache.DistributedCachePort;
 
+import javax.net.ssl.*;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
@@ -42,7 +42,6 @@ import java.util.Map;
 @Slf4j
 public class GuvdTokenService {
 
-    private final RestTemplate restTemplate;
     private final DistributedCachePort cachePort;
 
     // Cache key
@@ -88,6 +87,8 @@ public class GuvdTokenService {
      * If cache is expired or empty, fetches new token from GUVD OAuth2 API.
      * </p>
      *
+     * <p>Old-hemis pattern: MyTokenServiceBean.oauth2Token(url, client, secret, username, password)</p>
+     *
      * @return OAuth2 access token
      */
     @SuppressWarnings("unchecked")
@@ -95,57 +96,72 @@ public class GuvdTokenService {
         // 1. Try to get from cache
         String cachedToken = cachePort.<String>retrieve(CACHE_KEY).orElse(null);
         if (cachedToken != null && !cachedToken.isEmpty()) {
-            log.debug("✅ Using cached GUVD token");
+            log.debug("Using cached GUVD token");
             return cachedToken;
         }
 
         // 2. Fetch new token from GUVD OAuth2 API
-        log.info("🔄 Fetching new GUVD OAuth2 token from: {}", oauth2Url);
+        log.info("Fetching new GUVD OAuth2 token from: {}", oauth2Url);
 
         try {
-            // Build Basic Auth header
+            // Disable SSL verification (government APIs may have self-signed certs)
+            if (oauth2Url.startsWith("https")) {
+                TrustManager[] trustAllCerts = new TrustManager[]{
+                        new X509TrustManager() {
+                            public X509Certificate[] getAcceptedIssuers() { return null; }
+                            public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                        }
+                };
+                SSLContext sc = SSLContext.getInstance("SSL");
+                sc.init(null, trustAllCerts, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+            }
+
+            // Old-hemis pattern: Basic Auth + form-urlencoded
             String credentials = clientId + ":" + clientSecret;
-            String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+            String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+            String body = String.format("grant_type=password&username=%s&password=%s", username, password);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            headers.set("Authorization", "Basic " + encodedCredentials);
+            java.net.URL urlObj = URI.create(oauth2Url).toURL();
+            HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.setRequestProperty("Authorization", "Basic " + encodedCredentials);
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(30000);
 
-            // Build form data
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("grant_type", "password");
-            formData.add("username", username);
-            formData.add("password", password);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(body.getBytes(StandardCharsets.UTF_8));
+            }
 
-            HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(formData, headers);
+            int statusCode = conn.getResponseCode();
+            if (statusCode == 200) {
+                String responseStr = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+                conn.disconnect();
 
-            // Call OAuth2 endpoint
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    oauth2Url,
-                    entity,
-                    Map.class
-            );
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                Map<String, Object> responseBody = mapper.readValue(responseStr, Map.class);
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map<String, Object> responseBody = response.getBody();
-                String accessToken = (String) responseBody.get("access_token");
-
-                if (accessToken != null && !accessToken.isEmpty()) {
-                    // 3. Cache token
+                if (responseBody != null && responseBody.containsKey("access_token")) {
+                    String accessToken = responseBody.get("access_token").toString();
                     cachePort.store(CACHE_KEY, accessToken, TOKEN_TTL);
-                    log.info("✅ GUVD OAuth2 token fetched and cached (TTL: {} seconds)", TOKEN_TTL.getSeconds());
+                    log.info("GUVD OAuth2 token fetched and cached (TTL: {} seconds)", TOKEN_TTL.getSeconds());
                     return accessToken;
                 } else {
-                    log.error("❌ GUVD OAuth2 response missing access_token");
+                    log.error("GUVD OAuth2 response missing access_token");
                     return null;
                 }
             } else {
-                log.error("❌ GUVD OAuth2 request failed with status: {}", response.getStatusCode());
+                conn.disconnect();
+                log.error("GUVD OAuth2 request failed with status: {}", statusCode);
                 return null;
             }
 
         } catch (Exception e) {
-            log.error("❌ Error fetching GUVD OAuth2 token", e);
+            log.error("Error fetching GUVD OAuth2 token", e);
             return null;
         }
     }

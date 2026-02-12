@@ -8,15 +8,16 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import uz.hemis.service.shared.BimmService;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -38,9 +39,12 @@ import java.util.Map;
  */
 @Tag(name = "52.Mail", description = "Email va tasdiqlash kodi xizmatlari")
 @RestController
+@RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
 public class MailServiceController {
+
+    private final BimmService bimmService;
 
     /**
      * Send email - OLD-HEMIS format
@@ -212,9 +216,10 @@ public class MailServiceController {
                     value = """
                         {
                             "id": "999999",
-                            "phone": "",
+                            "phone": "+998901234567",
                             "email": "kanet4u@gmail.com",
-                            "verify_code": "123456"
+                            "verify_code": "123456",
+                            "hash": ""
                         }
                         """
                 )
@@ -222,30 +227,52 @@ public class MailServiceController {
         )
         @RequestBody Map<String, Object> request
     ) {
-        log.info("POST /services/send/verifyCode - email: {}, phone: {}, id: {}",
-            request.get("email"), request.get("phone"), request.get("id"));
+        String id = request.get("id") != null ? request.get("id").toString() : "";
+        String phone = request.get("phone") != null ? request.get("phone").toString() : "";
+        String email = request.get("email") != null ? request.get("email").toString() : "";
+        String verifyCode = request.get("verify_code") != null ? request.get("verify_code").toString() : "";
+        String hash = request.get("hash") != null ? request.get("hash").toString() : "";
 
-        // Build email response object with LinkedHashMap to preserve field order
-        Map<String, Object> emailResponse = new LinkedHashMap<>();
-        emailResponse.put("success", true);
-        emailResponse.put("verify_code", request.get("verify_code"));
-        emailResponse.put("email", request.get("email"));
+        log.info("POST /services/send/verifyCode - email: {}, phone: {}, id: {}", email, phone, id);
 
-        // Build sms response object (OLD-HEMIS: detail is an array of validation error objects)
-        Map<String, Object> smsResponse = new LinkedHashMap<>();
-        String phoneValue = request.get("phone") != null ? request.get("phone").toString() : "";
-        Map<String, Object> validationError = new LinkedHashMap<>();
-        validationError.put("type", "value_error");
-        validationError.put("loc", List.of("body", "phone_number"));
-        validationError.put("msg", "Value error, Telefon raqami faqat raqamlardan iborat bo'lishi kerak.");
-        validationError.put("input", phoneValue);
-        validationError.put("ctx", Map.of("error", Map.of()));
-        smsResponse.put("detail", List.of(validationError));
-
-        // Build main response with LinkedHashMap to preserve field order
+        // Old-hemis: SendServiceBean.verifyCode(id, phone, email, verify_code, hash)
         Map<String, Object> response = new LinkedHashMap<>();
-        response.put("email", emailResponse);
-        response.put("sms", smsResponse);
+
+        // SMS — old-hemis calls bimmService.smsUserPay() via sendSms()
+        if (phone != null && !phone.isEmpty()) {
+            Object smsResponse;
+            try {
+                if (!hash.isEmpty() && hash.length() != 11) {
+                    // Old-hemis: incorrect_hash_data check
+                    Map<String, Object> hashError = new LinkedHashMap<>();
+                    hashError.put("success", false);
+                    hashError.put("code", "incorrect_hash_data");
+                    smsResponse = hashError;
+                } else {
+                    String smsBody = hash.isEmpty()
+                            ? String.format("HEMIS tizimida %s ID li foydalanuvchining parolini yangilash uchun tasdiqlash kodi: %s", id, verifyCode)
+                            : String.format("HEMIS tizimida %s PIN kodi orqali parolni yangilaysiz. %s", verifyCode, hash);
+                    smsResponse = bimmService.smsUserPay(smsBody, phone);
+                }
+            } catch (Exception e) {
+                Map<String, Object> smsError = new LinkedHashMap<>();
+                smsError.put("success", false);
+                smsError.put("code", "service_not_available");
+                smsError.put("e", e.getMessage());
+                smsResponse = smsError;
+            }
+            response.put("sms", smsResponse);
+        }
+
+        // Email — old-hemis uses CUBA emailService, we use stub that returns success:false
+        // (SMTP not configured in test env, same as old-hemis which also fails)
+        if (email != null && !email.isEmpty()) {
+            Map<String, Object> emailResponse = new LinkedHashMap<>();
+            emailResponse.put("success", false);
+            emailResponse.put("verify_code", verifyCode);
+            emailResponse.put("email", email);
+            response.put("email", emailResponse);
+        }
 
         log.debug("Verify code response: {}", response);
         return ResponseEntity.ok(response);

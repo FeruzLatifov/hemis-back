@@ -24,14 +24,12 @@ import java.util.UUID;
 @Setter
 public class AdministrativeStudent3 extends BaseEntity {
 
-    // FK fields - Custom type handles String<->UUID conversion for PostgreSQL
+    // FK fields — _university and _education_year are VARCHAR (code), not UUID
     @Column(name = "_university", nullable = false)
-    @Type(StringToUuidType.class)
-    private UUID university;
+    private String university;
 
     @Column(name = "_education_year", nullable = false)
-    @Type(StringToUuidType.class)
-    private UUID educationYear;
+    private String educationYear;
 
     @Column(name = "_student")
     @Type(StringToUuidType.class)
@@ -47,6 +45,5 @@ public class AdministrativeStudent3 extends BaseEntity {
     private String mastersUniversityName;
 
     @Column(name = "_education_type")
-    @Type(StringToUuidType.class)
-    private UUID educationType;
+    private String educationType;
 }

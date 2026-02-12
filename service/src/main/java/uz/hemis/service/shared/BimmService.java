@@ -40,6 +40,19 @@ public class BimmService extends AbstractGovernmentApiService {
     private String apiBaseUrl;
 
     /**
+     * Get BIMM token — returns token or empty string.
+     * Old-hemis sends "Bearer null" when token is null; we send actual request too
+     * so that the error response matches old-hemis behavior exactly.
+     */
+    private String getTokenOrEmpty() {
+        String token = bimmTokenService.getToken();
+        // Old-hemis: token = myTokenService.getBimmToken() → can be null
+        // Then does: "Bearer " + token → "Bearer null"
+        // We replicate: send request even with bad token, API returns error, we proxy it
+        return token != null ? token : "null";
+    }
+
+    /**
      * Check disability status
      *
      * <p>Old-hemis: POST https://api-mspd.edu.uz/disability/disability-pinfl-document</p>
@@ -53,10 +66,7 @@ public class BimmService extends AbstractGovernmentApiService {
     public Object disabilityCheck(String pinfl, String document) {
         log.info("Checking disability status - PINFL: {}, Document: {}", pinfl, document);
 
-        String token = bimmTokenService.getToken();
-        if (token == null) {
-            return tokenError("BimmService.disabilityCheck");
-        }
+        String token = getTokenOrEmpty();
 
         Map<String, String> body = new LinkedHashMap<>();
         body.put("pinfl", pinfl);
@@ -81,10 +91,7 @@ public class BimmService extends AbstractGovernmentApiService {
     public Object provertyRegister(String pinfl) {
         log.info("Checking poverty register - PINFL: {}", pinfl);
 
-        String token = bimmTokenService.getToken();
-        if (token == null) {
-            return tokenError("BimmService.provertyRegister");
-        }
+        String token = getTokenOrEmpty();
 
         Map<String, String> body = new LinkedHashMap<>();
         body.put("pinfl", pinfl);
@@ -107,11 +114,7 @@ public class BimmService extends AbstractGovernmentApiService {
     public Object certificate(String pinfl) {
         log.info("Fetching certificate info - PINFL: {}", pinfl);
 
-        String token = bimmTokenService.getToken();
-        if (token == null) {
-            return tokenError("BimmService.certificate");
-        }
-
+        String token = getTokenOrEmpty();
         String url = apiBaseUrl + "/dtm/certificate-info?pinfl=" + pinfl;
 
         return proxyExternalApiGet(url, token, "BimmService.certificate");
@@ -130,10 +133,7 @@ public class BimmService extends AbstractGovernmentApiService {
     public Object academicDegree(String pinfl) {
         log.info("Fetching academic degree info - PINFL: {}", pinfl);
 
-        String token = bimmTokenService.getToken();
-        if (token == null) {
-            return tokenError("BimmService.academicDegree");
-        }
+        String token = getTokenOrEmpty();
 
         Map<String, String> body = new LinkedHashMap<>();
         body.put("pinfl", pinfl);
@@ -157,10 +157,7 @@ public class BimmService extends AbstractGovernmentApiService {
     public Object teacherTraining(String pinfl) {
         log.info("Fetching teacher training info - PINFL: {}", pinfl);
 
-        String token = bimmTokenService.getToken();
-        if (token == null) {
-            return tokenError("BimmService.teacherTraining");
-        }
+        String token = getTokenOrEmpty();
 
         Map<String, String> body = new LinkedHashMap<>();
         body.put("pinfl", pinfl);
@@ -171,12 +168,52 @@ public class BimmService extends AbstractGovernmentApiService {
         );
     }
 
-    private Map<String, Object> tokenError(String serviceName) {
-        log.error("{} - BIMM token not available", serviceName);
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("success", false);
-        error.put("code", 401);
-        error.put("data", "BIMM token not available");
-        return error;
+    /**
+     * Send SMS via BIMM API
+     *
+     * <p>Old-hemis: POST https://api-mspd.edu.uz/sms/user-pays</p>
+     * <p>Body: {"message": "X", "phone_number": "Y"}</p>
+     * <p>Response: getBodyAsMap() — raw proxy</p>
+     *
+     * @param message SMS text
+     * @param phone Phone number
+     * @return raw API response (object)
+     */
+    public Object smsUserPay(String message, String phone) {
+        log.info("Sending SMS via BIMM - phone: {}", phone);
+
+        String token = getTokenOrEmpty();
+
+        // Old-hemis sends raw JSON string body (not object)
+        String body = String.format("{\n    \"message\": \"%s\",\n    \"phone_number\": \"%s\"\n}", message, phone);
+
+        return proxyExternalApiPost(
+                apiBaseUrl + "/sms/user-pays",
+                body, token, "BimmService.smsUserPay"
+        );
+    }
+
+    /**
+     * Get bank requisites by INN
+     *
+     * <p>Old-hemis: POST https://api-mspd.edu.uz/legalentity/legalentity-bankrequisites/</p>
+     * <p>Body: {"tin": "X"}</p>
+     * <p>Response: getBodyAsMap() — raw proxy</p>
+     *
+     * @param inn INN (TIN)
+     * @return raw API response (object)
+     */
+    public Object bankRequisites(String inn) {
+        log.info("Fetching bank requisites - INN: {}", inn);
+
+        String token = getTokenOrEmpty();
+
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("tin", inn);
+
+        return proxyExternalApiPost(
+                apiBaseUrl + "/legalentity/legalentity-bankrequisites/",
+                body, token, "BimmService.bankRequisites"
+        );
     }
 }

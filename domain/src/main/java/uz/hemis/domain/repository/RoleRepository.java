@@ -1,5 +1,6 @@
 package uz.hemis.domain.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -116,6 +117,30 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
      */
     @Query("SELECT r FROM Role r WHERE r.roleType = 'UNIVERSITY' AND r.deletedAt IS NULL ORDER BY r.name")
     List<Role> findAllUniversityRoles();
+
+    // =====================================================
+    // Eager-Fetch Queries (N+1 Prevention)
+    // =====================================================
+
+    /**
+     * Find all active roles with permissions eagerly loaded.
+     * Use this when you need to access role.getPermissions() to avoid N+1.
+     *
+     * @return List of active roles with permissions pre-loaded
+     */
+    @EntityGraph(attributePaths = {"permissions"})
+    @Query("SELECT DISTINCT r FROM Role r WHERE r.deletedAt IS NULL AND r.active = true ORDER BY r.name")
+    List<Role> findAllActiveWithPermissions();
+
+    /**
+     * Find role by code with permissions eagerly loaded.
+     *
+     * @param code Role code
+     * @return Role with permissions if found
+     */
+    @EntityGraph(attributePaths = {"permissions"})
+    @Query("SELECT r FROM Role r WHERE r.code = :code AND r.deletedAt IS NULL")
+    Optional<Role> findByCodeWithPermissions(@Param("code") String code);
 
     // =====================================================
     // Permission-Related Queries

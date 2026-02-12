@@ -9,9 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
+import uz.hemis.service.shared.BimmService;
 
 /**
  * Legal Entity Service Controller - OLD-HEMIS Compatible
@@ -28,6 +26,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class LegalEntityServiceController {
+
+    private final BimmService bimmService;
 
     /**
      * Bank rekvizitlarini INN bo'yicha olish
@@ -57,8 +57,6 @@ public class LegalEntityServiceController {
     ) {
         log.info("GET /app/rest/v2/services/legalentity/bankRequisites - inn={}", inn);
 
-        // Old-hemis returns empty object {} when external API is not available or no data found
-        // DEFERRED: Requires external API (api-mspd.edu.uz) integration specification
-        return ResponseEntity.ok(new LinkedHashMap<>());
+        return ResponseEntity.ok(bimmService.bankRequisites(inn));
     }
 }

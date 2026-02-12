@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -20,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.university.UniversityDto;
@@ -82,6 +85,7 @@ import java.util.Map;
 @SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class RegistryUniversityController {
 
     private final UniversityRegistryService universityRegistryService;
@@ -188,7 +192,7 @@ public class RegistryUniversityController {
     })
     public ResponseEntity<ResponseWrapper<UniversityDto>> getUniversity(
             @Parameter(description = "University code")
-            @PathVariable String id
+            @PathVariable @NotBlank String id
     ) {
         log.info("GET /api/v1/web/registry/universities/{}", id);
 
@@ -331,7 +335,7 @@ public class RegistryUniversityController {
         @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
     })
     public ResponseEntity<ResponseWrapper<UniversityDto>> createUniversity(
-            @RequestBody UniversityRequestDto request
+            @Valid @RequestBody UniversityRequestDto request
     ) {
         log.info("POST /api/v1/web/registry/universities - Creating: {}", request.getName());
 
@@ -358,8 +362,8 @@ public class RegistryUniversityController {
         @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
     })
     public ResponseEntity<ResponseWrapper<UniversityDto>> updateUniversity(
-            @PathVariable String code,
-            @RequestBody UniversityRequestDto request
+            @PathVariable @NotBlank String code,
+            @Valid @RequestBody UniversityRequestDto request
     ) {
         log.info("PUT /api/v1/web/registry/universities/{} - Updating", code);
 
@@ -385,7 +389,7 @@ public class RegistryUniversityController {
         @ApiResponse(responseCode = "404", description = "University not found"),
         @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
     })
-    public ResponseEntity<Void> deleteUniversity(@PathVariable String code) {
+    public ResponseEntity<Void> deleteUniversity(@PathVariable @NotBlank String code) {
         log.info("DELETE /api/v1/web/registry/universities/{}", code);
 
         universityRegistryService.deleteUniversity(code);

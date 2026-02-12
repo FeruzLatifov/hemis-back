@@ -197,18 +197,31 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Only apply to API endpoints
+     * Apply rate limiting to ALL API endpoints.
+     * Skip only static resources, health checks, and documentation.
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
 
-        // Don't rate limit health checks
+        // Skip health checks and actuator info
         if (path.startsWith("/actuator/health") || path.startsWith("/actuator/info")) {
             return true;
         }
 
-        // Only rate limit API endpoints
-        return !path.startsWith("/app/rest/v2/services");
+        // Skip Swagger/OpenAPI documentation
+        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-resources") || path.startsWith("/webjars/")) {
+            return true;
+        }
+
+        // Skip static resources
+        if (path.endsWith(".css") || path.endsWith(".js") || path.endsWith(".png")
+                || path.endsWith(".ico") || path.endsWith(".svg")) {
+            return true;
+        }
+
+        // Rate limit ALL API endpoints (legacy + modern)
+        return !path.startsWith("/app/rest/") && !path.startsWith("/api/");
     }
 }

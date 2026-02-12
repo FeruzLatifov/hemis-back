@@ -194,6 +194,32 @@ public class CubaNestedObjectLoader {
      * Used by TeacherEntityController for classifiers in eTeacher-view
      * OLD-HEMIS compatibility: includes nameRu, nameEn, active fields
      */
+    /**
+     * Load classifier _minimal view — only _entityName, _instanceName, id
+     * Used for nested references with view="_minimal"
+     */
+    public Map<String, Object> loadClassifierMinimal(String tableName, String entityName, String code) {
+        if (code == null || code.isEmpty()) return null;
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT code, name FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL", code);
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", entityName);
+            String name = row.get("name") != null ? row.get("name").toString() : "";
+            nested.put("_instanceName", buildInstanceName(entityName, code, name));
+            nested.put("id", code);
+            return nested;
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", entityName);
+            nested.put("id", code);
+            return nested;
+        } catch (Exception e) {
+            log.debug("Classifier minimal load error ({}, code={}): {}", tableName, code, e.getMessage());
+            return null;
+        }
+    }
+
     public Map<String, Object> loadClassifierFull(String tableName, String entityName, String code) {
         if (code == null || code.isEmpty()) return null;
         try {
@@ -616,6 +642,66 @@ public class CubaNestedObjectLoader {
     }
 
     /**
+     * Load student _minimal view + specialityBachelor, specialityMaster, paymentForm
+     * Used by rIAdministrativeStudent3-view
+     */
+    public Map<String, Object> loadStudentMinimalWithSpeciality(UUID studentId) {
+        if (studentId == null) return null;
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    """
+                    SELECT id, code, firstname, lastname, fathername,
+                           _payment_form, _speciality_bachelor, _speciality_master
+                    FROM hemishe_e_student WHERE id = ? AND delete_ts IS NULL
+                    """,
+                    studentId);
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("_entityName", "hemishe_EStudent");
+            String instanceName = String.format("%s %s %s",
+                    row.get("lastname") != null ? row.get("lastname") : "",
+                    row.get("firstname") != null ? row.get("firstname") : "",
+                    row.get("fathername") != null ? row.get("fathername") : "").trim();
+            result.put("_instanceName", instanceName);
+            result.put("id", row.get("id"));
+
+            // OLD-HEMIS _minimal view includes @NamePattern fields
+            result.put("specialityMaster", null); // always present (returnNulls=true)
+            result.put("lastname", row.get("lastname"));
+            result.put("firstname", row.get("firstname"));
+
+            // paymentForm — _minimal view (5 fields: _entityName, _instanceName, id, code, name)
+            if (row.get("_payment_form") != null) {
+                Map<String, Object> pfObj = loadClassifier("hemishe_h_payment_form", "HPaymentForm", String.valueOf(row.get("_payment_form")));
+                if (pfObj != null) result.put("paymentForm", pfObj);
+            }
+
+            result.put("fathername", row.get("fathername"));
+
+            // specialityBachelor — _minimal view
+            putSpecialityOrNull(result, "specialityBachelor", row.get("_speciality_bachelor"),
+                    "hemishe_HSpecialityBachelor", "hemishe_h_speciality_bachelor");
+            // specialityMaster — already set above as null, override if present
+            if (row.get("_speciality_master") != null) {
+                putSpecialityOrNull(result, "specialityMaster", row.get("_speciality_master"),
+                        "hemishe_HSpecialityMaster", "hemishe_h_speciality_master");
+            }
+
+            // OLD-HEMIS: returnNulls=true — null values must be serialized as JSON null
+            result.replaceAll((k, v) -> v == null ? JsonNull.INSTANCE : v);
+            return result;
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("_entityName", "hemishe_EStudent");
+            result.put("_instanceName", studentId.toString());
+            result.put("id", studentId);
+            return result;
+        } catch (Exception e) {
+            log.debug("Student minimal load error (id={}): {}", studentId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Load student object for diploma view (full format with 48+ fields)
      * OLD-HEMIS formatida to'liq student objectni qaytaradi
      */
@@ -641,7 +727,8 @@ public class CubaNestedObjectLoader {
                            enroll_order_date, enroll_order_name, verified, points,
                            roommate_count, decree_info_name, decree_info_number, decree_info_date,
                            passport_given_date, status, _current_education_year_code,
-                           status_education_year_code, _graduation_year
+                           status_education_year_code, _graduation_year,
+                           _speciality_bachelor, _speciality_master
                     FROM hemishe_e_student WHERE id = ? AND delete_ts IS NULL
                     """,
                     studentId);
@@ -687,6 +774,12 @@ public class CubaNestedObjectLoader {
             // Additional nested classifiers for full 48-field support
             putClassifierIfNotNull(result, "paymentForm", row.get("_payment_form"),
                     "hemishe_HPaymentForm", "hemishe_h_payment_form");
+            // speciality bachelor/master — FK is UUID, lookup by id
+            // Always include keys (old-hemis returnNulls=true → null serialized)
+            putSpecialityOrNull(result, "specialityBachelor", row.get("_speciality_bachelor"),
+                    "hemishe_HSpecialityBachelor", "hemishe_h_speciality_bachelor");
+            putSpecialityOrNull(result, "specialityMaster", row.get("_speciality_master"),
+                    "hemishe_HSpecialityMaster", "hemishe_h_speciality_master");
             putClassifierIfNotNull(result, "gender", row.get("_gender"),
                     "hemishe_HGender", "hemishe_h_gender");
             putClassifierIfNotNull(result, "citizenship", row.get("_citizenship"),
@@ -804,6 +897,38 @@ public class CubaNestedObjectLoader {
         Map<String, Object> nested = loadClassifierFull(tableName, entityName, String.valueOf(code));
         if (nested != null) {
             map.put(key, nested);
+        }
+    }
+
+    /**
+     * Load speciality by UUID id — for specialityBachelor/specialityMaster (PK is UUID, not code)
+     * Returns _minimal view: _entityName, _instanceName, id, code, name
+     * Always puts key (null if not found — matches old-hemis returnNulls=true)
+     */
+    private void putSpecialityOrNull(Map<String, Object> map, String key, Object uuidVal,
+                                      String entityName, String tableName) {
+        if (uuidVal == null) {
+            map.put(key, null);
+            return;
+        }
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT id, code, name FROM " + sanitizeTableName(tableName) + " WHERE id = ?::uuid AND delete_ts IS NULL",
+                    uuidVal);
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", entityName);
+            String name = row.get("name") != null ? row.get("name").toString() : "";
+            String code = row.get("code") != null ? row.get("code").toString() : "";
+            nested.put("_instanceName", code + " - " + name);
+            nested.put("id", row.get("id"));
+            nested.put("code", code);
+            nested.put("name", name);
+            map.put(key, nested);
+        } catch (EmptyResultDataAccessException e) {
+            map.put(key, null);
+        } catch (Exception e) {
+            log.debug("Speciality load error ({}, id={}): {}", tableName, uuidVal, e.getMessage());
+            map.put(key, null);
         }
     }
 

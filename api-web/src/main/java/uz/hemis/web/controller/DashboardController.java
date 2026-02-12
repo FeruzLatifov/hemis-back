@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.dashboard.DashboardService;
@@ -66,6 +67,7 @@ import java.util.concurrent.TimeUnit;
 @SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class DashboardController {
 
     private final DashboardService dashboardService;

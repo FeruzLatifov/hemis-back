@@ -68,16 +68,18 @@ public class FacultyRegistryService {
             return Page.empty(pageable);
         }
 
-        String dataSql = 
+        String dataSql =
             "SELECT parent.code, parent.name_uz, " +
             "  (SELECT COUNT(*) FROM hemishe_r_university_department f WHERE f.parent_id = parent.id AND f._department_type = '11') as faculty_count, " +
             "  (SELECT COUNT(*) FROM hemishe_r_university_department f WHERE f.parent_id = parent.id AND f._department_type = '11') as active_count " +
             "FROM hemishe_r_university_department parent " +
             "WHERE parent._department_type = '0' " +
             "ORDER BY parent.name_uz ASC " +
-            "LIMIT " + pageable.getPageSize() + " OFFSET " + pageable.getOffset();
+            "LIMIT ? OFFSET ?";
 
         Query dataQuery = entityManager.createNativeQuery(dataSql);
+        dataQuery.setParameter(1, pageable.getPageSize());
+        dataQuery.setParameter(2, pageable.getOffset());
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = dataQuery.getResultList();
@@ -128,16 +130,18 @@ public class FacultyRegistryService {
             return Page.empty(pageable);
         }
 
-        String dataSql = 
+        String dataSql =
             "SELECT d.code, d.name_uz, d.name_ru, parent.code, parent.name_uz, true " +
             "FROM hemishe_r_university_department d " +
             "INNER JOIN hemishe_r_university_department parent ON parent.id = d.parent_id " +
             "WHERE d._department_type = '11' AND parent.code = ? " +
             "ORDER BY d.name_uz ASC " +
-            "LIMIT " + pageable.getPageSize() + " OFFSET " + pageable.getOffset();
-        
+            "LIMIT ? OFFSET ?";
+
         Query dataQuery = entityManager.createNativeQuery(dataSql);
         dataQuery.setParameter(1, universityCode);
+        dataQuery.setParameter(2, pageable.getPageSize());
+        dataQuery.setParameter(3, pageable.getOffset());
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = dataQuery.getResultList();

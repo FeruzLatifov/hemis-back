@@ -6,10 +6,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
@@ -30,6 +32,7 @@ import java.util.Map;
 @PreAuthorize("hasAuthority('audit.view')")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class AuditLogController {
 
     private final AuditService auditService;
@@ -72,7 +75,7 @@ public class AuditLogController {
             @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getActivityDetail(
-            @PathVariable String id) {
+            @PathVariable @NotBlank String id) {
         Map<String, Object> detail = auditService.getActivityDetail(id);
         if (detail == null) {
             return ResponseEntity.status(404).body(ResponseWrapper.error("Activity log not found"));
@@ -94,9 +97,9 @@ public class AuditLogController {
     })
     public ResponseEntity<ResponseWrapper<PageResponse<Map<String, Object>>>> getEntityHistory(
             @Parameter(description = "Entity turi (masalan: University, Student)")
-            @PathVariable String entityType,
+            @PathVariable @NotBlank String entityType,
             @Parameter(description = "Entity ID yoki kodi")
-            @PathVariable String entityId,
+            @PathVariable @NotBlank String entityId,
             @Parameter(description = "Sahifa raqami (0-indexed)")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Sahifa hajmi")
@@ -132,7 +135,7 @@ public class AuditLogController {
     @GetMapping("/errors/{id}")
     @Operation(summary = "Error log tafsiloti", description = "Stack trace bilan")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getErrorDetail(
-            @PathVariable String id) {
+            @PathVariable @NotBlank String id) {
         Map<String, Object> detail = auditService.getErrorDetail(id);
         if (detail == null) {
             return ResponseEntity.status(404).body(ResponseWrapper.error("Error log not found"));

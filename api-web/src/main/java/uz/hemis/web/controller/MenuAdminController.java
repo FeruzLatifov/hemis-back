@@ -9,11 +9,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -94,6 +96,7 @@ import java.util.UUID;
 @PreAuthorize("hasAuthority('system.menus.manage')")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class MenuAdminController {
 
     private final MenuAdminService menuAdminService;
@@ -204,7 +207,7 @@ public class MenuAdminController {
     })
     public ResponseEntity<ResponseWrapper<MenuAdminResponse>> getMenuByCode(
         @Parameter(description = "Menu code", example = "dashboard")
-        @PathVariable String code,
+        @PathVariable @NotBlank String code,
         @AuthenticationPrincipal Jwt jwt
     ) {
         String requester = jwt != null ? jwt.getSubject() : "unknown";

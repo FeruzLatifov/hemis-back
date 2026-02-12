@@ -8,10 +8,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.shared.I18nService;
@@ -64,6 +66,7 @@ import java.util.Map;
 @Tag(name = "I18n API", description = "Internationalization (i18n) API for multi-language support")
 @RequiredArgsConstructor
 @Slf4j
+@Validated
 public class WebI18nController {
 
     private final I18nService i18nService;
@@ -292,7 +295,7 @@ public class WebI18nController {
     })
     public ResponseEntity<ResponseWrapper<String>> getMessage(
         @Parameter(description = "Message key (natural English text)", example = "Save")
-        @PathVariable String key,
+        @PathVariable @NotBlank String key,
         @Parameter(description = "Language code", example = "ru-RU")
         @RequestParam(defaultValue = "uz-UZ") String lang
     ) {
@@ -331,7 +334,7 @@ public class WebI18nController {
     })
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getMessagesByCategory(
         @Parameter(description = "Message category", example = "action")
-        @PathVariable String category,
+        @PathVariable @NotBlank String category,
         @Parameter(description = "Language code", example = "uz-UZ")
         @RequestParam(defaultValue = "uz-UZ") String lang
     ) {
