@@ -145,6 +145,27 @@ public class CubaFilterHelper {
     }
 
     /**
+     * Check if filter is empty (null, empty conditions array, or no conditions).
+     * Used to decide between DB-level pagination vs in-memory filter.
+     */
+    @SuppressWarnings("unchecked")
+    public boolean isEmptyFilter(String filterJson) {
+        if (filterJson == null || filterJson.isEmpty()) {
+            return true;
+        }
+        try {
+            Map<String, Object> filterMap = objectMapper.readValue(filterJson, new TypeReference<>() {});
+            Object conditions = filterMap.get("conditions");
+            if (conditions instanceof List) {
+                return ((List<?>) conditions).isEmpty();
+            }
+            return !filterMap.containsKey("conditions");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Extract integer from body or use default
      */
     public int extractInt(Map<String, Object> body, String key, Integer queryParam, int defaultValue) {

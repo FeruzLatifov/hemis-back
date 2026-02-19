@@ -308,9 +308,11 @@ public class SecurityConfig {
 
         // Ensure key is at least 256 bits (32 bytes) for HS256
         if (keyBytes.length < 32) {
-            byte[] paddedKey = new byte[32];
-            System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 32));
-            keyBytes = paddedKey;
+            throw new IllegalStateException(
+                "JWT secret must be at least 32 bytes (256 bits) for HS256. " +
+                "Current: " + keyBytes.length + " bytes. " +
+                "Set hemis.security.jwt.secret with a Base64-encoded 256-bit key."
+            );
         }
 
         SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");

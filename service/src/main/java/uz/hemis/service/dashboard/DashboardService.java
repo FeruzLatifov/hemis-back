@@ -68,10 +68,10 @@ public class DashboardService {
      */
     private OverviewStatsDto getOverviewStats() {
         String sql = """
-            SELECT 
+            SELECT
               -- Total counts
               COUNT(*) as total_students,
-              COUNT(DISTINCT university_code) as total_universities,
+              (SELECT COUNT(*) FROM hemishe_e_university WHERE delete_ts IS NULL) as total_universities,
               
               -- By status (O'qimoqda, Bitirgan, Chetlashgan, etc.)
               COUNT(CASE WHEN status_code = '11' THEN 1 END) as active_students,
@@ -91,53 +91,39 @@ public class DashboardService {
               -- Single-roundtrip additional totals (subselects)
               (SELECT COUNT(*) FROM hemishe_e_employee_job WHERE delete_ts IS NULL) as total_teachers,
               (SELECT COUNT(*) FROM hemishe_e_student_diploma WHERE delete_ts IS NULL) as total_diplomas,
-              (SELECT COUNT(*) FROM hemishe_e_project) as total_projects,
-              (SELECT COUNT(*) FROM hemishe_e_publication_scientific) as total_publications
-            FROM hemishe_r_student_full 
+              (SELECT COUNT(*) FROM hemishe_e_project WHERE delete_ts IS NULL) as total_projects,
+              (SELECT COUNT(*) FROM hemishe_e_publication_scientific WHERE delete_ts IS NULL) as total_publications
+            FROM hemishe_r_student_full
             WHERE (is_expel IS NULL OR is_expel = false)
             """;
 
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
             OverviewStatsDto dto = new OverviewStatsDto();
-            
+
             // Total counts
             dto.setTotalStudents(rs.getLong("total_students"));
             dto.setTotalUniversities(rs.getInt("total_universities"));
-            
+
             // By status
-            dto.setActiveStudents(rs.getLong("active_students"));           // O'qimoqda
-            dto.setGraduatedStudents(rs.getLong("graduated_students"));     // Bitirgan
-            dto.setExpelledStudents(rs.getLong("expelled_students"));       // Chetlashgan
-            dto.setAcademicLeaveStudents(rs.getLong("academic_leave_students")); // Akademik ta'til
-            dto.setCancelledStudents(rs.getLong("cancelled_students"));     // Bekor qilingan
-            
+            dto.setActiveStudents(rs.getLong("active_students"));
+            dto.setGraduatedStudents(rs.getLong("graduated_students"));
+            dto.setExpelledStudents(rs.getLong("expelled_students"));
+            dto.setAcademicLeaveStudents(rs.getLong("academic_leave_students"));
+            dto.setCancelledStudents(rs.getLong("cancelled_students"));
+
             // Payment type (only active students)
             dto.setGrantStudents(rs.getLong("grant_students"));
             dto.setContractStudents(rs.getLong("contract_students"));
-            
+
             // Gender (only active students)
             dto.setMaleCount(rs.getLong("male_count"));
             dto.setFemaleCount(rs.getLong("female_count"));
 
-            // Calculate teacher count from employee table
-            String teacherSql = "SELECT COUNT(*) FROM hemishe_e_employee_job WHERE delete_ts IS NULL";
-            Long teacherCount = jdbcTemplate.queryForObject(teacherSql, Long.class);
-            dto.setTotalTeachers(teacherCount != null ? teacherCount : 0L);
-
-            // Calculate diploma count
-            String diplomaSql = "SELECT COUNT(*) FROM hemishe_e_student_diploma WHERE delete_ts IS NULL";
-            Long diplomaCount = jdbcTemplate.queryForObject(diplomaSql, Long.class);
-            dto.setTotalDiplomas(diplomaCount != null ? diplomaCount : 0L);
-
-            // Calculate project count
-            String projectSql = "SELECT COUNT(*) FROM hemishe_e_project";
-            Long projectCount = jdbcTemplate.queryForObject(projectSql, Long.class);
-            dto.setTotalProjects(projectCount != null ? projectCount : 0L);
-
-            // Calculate publication count
-            String publicationSql = "SELECT COUNT(*) FROM hemishe_e_publication_scientific";
-            Long publicationCount = jdbcTemplate.queryForObject(publicationSql, Long.class);
-            dto.setTotalPublications(publicationCount != null ? publicationCount : 0L);
+            // Additional totals (from subselects — single roundtrip)
+            dto.setTotalTeachers(rs.getLong("total_teachers"));
+            dto.setTotalDiplomas(rs.getLong("total_diplomas"));
+            dto.setTotalProjects(rs.getLong("total_projects"));
+            dto.setTotalPublications(rs.getLong("total_publications"));
 
             return dto;
         });

@@ -69,7 +69,7 @@ public class IctEquipmentEntityController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(universityRefService.toIctEquipmentMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(universityRefService.toIctEquipmentMap(entity.get(), returnNulls, view));
     }
 
     @PutMapping("/{entityId}")
@@ -128,7 +128,7 @@ public class IctEquipmentEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> universityRefService.toIctEquipmentMap(e, returnNulls))
+            .map(e -> universityRefService.toIctEquipmentMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -155,7 +155,7 @@ public class IctEquipmentEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> universityRefService.toIctEquipmentMap(e, returnNulls))
+            .map(e -> universityRefService.toIctEquipmentMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -187,7 +187,7 @@ public class IctEquipmentEntityController {
         Page<IctEquipment> entityPage = universityRefService.findAllIctEquipment(pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> universityRefService.toIctEquipmentMap(e, returnNulls))
+            .map(e -> universityRefService.toIctEquipmentMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 

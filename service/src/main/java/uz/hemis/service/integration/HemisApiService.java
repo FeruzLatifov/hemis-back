@@ -115,9 +115,6 @@ public class HemisApiService {
                 return notAuthenticatedResponse();
             }
 
-            // Disable SSL verification (api.hemis.uz may have self-signed cert)
-            disableSslVerification();
-
             // Build URL
             String url = String.format("%s/api/integration/hemis/studentAndContractInfo/%s",
                     properties.getBaseUrl(), pinfl);
@@ -131,9 +128,9 @@ public class HemisApiService {
 
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
 
-            // Call external API
-            ResponseEntity<String> response = restTemplate.exchange(
-                    url, HttpMethod.GET, requestEntity, String.class);
+            // Call external API (use gov RestTemplate for HTTPS with self-signed certs)
+            ResponseEntity<String> response = uz.hemis.service.base.AbstractGovernmentApiService
+                    .getGovRestTemplate().exchange(url, HttpMethod.GET, requestEntity, String.class);
 
             String body = response.getBody();
             log.debug("[HEMIS API] Response status: {}", response.getStatusCode());
@@ -209,8 +206,6 @@ public class HemisApiService {
 
         // Get fresh token
         try {
-            disableSslVerification();
-
             String authUrl = properties.getBaseUrl() + "/api/user/auth";
             log.info("[HEMIS API] Authenticating at: {}", authUrl);
 
@@ -225,8 +220,9 @@ public class HemisApiService {
 
             HttpEntity<Map<String, String>> requestEntity = new HttpEntity<>(authBody, headers);
 
-            ResponseEntity<String> response = restTemplate.exchange(
-                    authUrl, HttpMethod.POST, requestEntity, String.class);
+            // Use gov RestTemplate for HTTPS with self-signed certs
+            ResponseEntity<String> response = uz.hemis.service.base.AbstractGovernmentApiService
+                    .getGovRestTemplate().exchange(authUrl, HttpMethod.POST, requestEntity, String.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 @SuppressWarnings("unchecked")
@@ -260,37 +256,4 @@ public class HemisApiService {
         return error;
     }
 
-    /**
-     * Disable SSL verification
-     *
-     * <p><strong>WARNING:</strong> Only use for trusted APIs with self-signed certs</p>
-     * <p>In production, add the certificate to Java truststore instead</p>
-     */
-    private void disableSslVerification() {
-        try {
-            TrustManager[] trustAllCerts = new TrustManager[]{
-                    new X509TrustManager() {
-                        public X509Certificate[] getAcceptedIssuers() {
-                            return null;
-                        }
-
-                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                        }
-
-                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                        }
-                    }
-            };
-
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-            HostnameVerifier allHostsValid = (hostname, session) -> true;
-            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-
-        } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            log.error("[HEMIS API] Failed to disable SSL verification", e);
-        }
-    }
 }

@@ -124,6 +124,15 @@ public class TeacherEntityController {
 
         log.info("GET /search - filter: [{}], offset: {}, limit: {}", filter, offset, limit);
 
+        // Agar filter bo'sh bo'lsa — to'g'ridan-to'g'ri DB paginatsiya
+        if (filterHelper.isEmptyFilter(filter)) {
+            int page = offset / Math.max(limit, 1);
+            PageRequest pageRequest = PageRequest.of(page, limit);
+            return ResponseEntity.ok(teacherService.findAll(pageRequest).getContent().stream()
+                .map(e -> teacherService.toTeacherMap(e, returnNulls, view))
+                .collect(Collectors.toList()));
+        }
+
         List<Teacher> allEntities = teacherService.findAll();
         log.info("Total teachers in DB: {}", allEntities.size());
 
@@ -152,6 +161,15 @@ public class TeacherEntityController {
         String filterJson = filterHelper.extractFilterFromBody(body);
 
         log.debug("POST search - offset: {}, limit: {}, filter: {}", effectiveOffset, effectiveLimit, filterJson);
+
+        // Agar filter bo'sh yoki conditions bo'sh bo'lsa — to'g'ridan-to'g'ri DB paginatsiya
+        if (filterHelper.isEmptyFilter(filterJson)) {
+            int page = effectiveOffset / Math.max(effectiveLimit, 1);
+            PageRequest pageRequest = PageRequest.of(page, effectiveLimit);
+            return ResponseEntity.ok(teacherService.findAll(pageRequest).getContent().stream()
+                .map(e -> teacherService.toTeacherMap(e, returnNulls, view))
+                .collect(Collectors.toList()));
+        }
 
         List<Teacher> allEntities = teacherService.findAll();
         List<Teacher> result = filterHelper.applyFilterAndPagination(

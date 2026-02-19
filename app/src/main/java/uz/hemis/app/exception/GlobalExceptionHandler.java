@@ -417,8 +417,7 @@ public class GlobalExceptionHandler {
         if (isLegacyEndpoint(request)) {
             java.util.Map<String, String> legacyError = new java.util.LinkedHashMap<>();
             legacyError.put("error", "Server error");
-            // DEBUG: xatolik tafsilotlari
-            legacyError.put("details", ex.getClass().getSimpleName() + ": " + ex.getMessage());
+            legacyError.put("details", "");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(legacyError);
         }
 

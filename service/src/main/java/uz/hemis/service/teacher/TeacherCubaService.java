@@ -3,10 +3,14 @@ package uz.hemis.service.teacher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.service.base.CubaResponseHelper;
+import uz.hemis.domain.entity.EmployeeJobs;
 import uz.hemis.domain.entity.Teacher;
+import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
 
+import java.time.LocalDate;
 import java.util.*;
 
 /**
@@ -42,6 +46,7 @@ import java.util.*;
 public class TeacherCubaService {
 
     private final TeacherRepository teacherRepository;
+    private final EmployeeJobsRepository employeeJobsRepository;
 
     /**
      * Get teacher ID by data
@@ -160,49 +165,92 @@ public class TeacherCubaService {
      * @param jobData Job data map
      * @return Success or error response
      */
-    public Map<String, Object> addJob(Map<String, Object> jobData) {
-        log.info("Adding job to teacher - Job data: {}", jobData);
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> addJob(Map<String, Object> requestBody) {
+        log.info("Adding job to teacher - request: {}", requestBody);
 
-        if (jobData == null || jobData.isEmpty()) {
-            return CubaResponseHelper.errorResponse("invalid_parameter", "Job data required");
+        // Extract job data from wrapper
+        Map<String, Object> job = (Map<String, Object>) requestBody.get("job");
+        if (job == null) {
+            job = requestBody;
         }
 
-        // Validate required fields
-        String teacherId = (String) jobData.get("teacher_id");
-        if (CubaResponseHelper.isEmpty(teacherId)) {
-            return CubaResponseHelper.errorResponse("invalid_parameter", "teacher_id required");
+        // Extract employee UUID from job.employee.id or job.employee (string)
+        UUID employeeId = extractUuid(job.get("employee"));
+        if (employeeId == null) {
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
+            error.put("message", "employee required");
+            return error;
         }
 
-        // DEFERRED: Implement actual job creation when EEmployeeJobs entity exists
-        // For now, validate that teacher exists
+        // Create EmployeeJobs entity
+        EmployeeJobs entity = new EmployeeJobs();
+        entity.setEmployee(employeeId);
+        entity.setUniversity(extractCode(job.get("university")));
+        entity.setDepartment(extractCode(job.get("department")));
+        entity.setEmployeeType(extractCode(job.get("employeeType")));
+        entity.setEmployeePosition(extractCode(job.get("employeePosition")));
+        entity.setEmployeeRate(extractCode(job.get("employeeRate")));
+        entity.setEmployeeForm(extractCode(job.get("employeeForm")));
+        entity.setEmployeeStatus(extractCode(job.get("employeeStatus")));
+        entity.setTag(job.get("tag") != null ? job.get("tag").toString() : null);
+        entity.setJobStartDate(parseDate(job.get("jobStartDate")));
+        entity.setJobEndDate(parseDate(job.get("jobEndDate")));
+        entity.setContractDate(parseDate(job.get("contractDate")));
+        entity.setContractNumber(job.get("contractNumber") != null ? job.get("contractNumber").toString() : null);
+        entity.setDecreeDate(parseDate(job.get("decreeDate")));
+        entity.setDecreeNumber(job.get("decreeNumber") != null ? job.get("decreeNumber").toString() : null);
+
         try {
-            UUID uuid = UUID.fromString(teacherId);
-            Optional<Teacher> teacher = teacherRepository.findById(uuid);
+            EmployeeJobs saved = employeeJobsRepository.saveAndFlush(entity);
+            log.info("Job created: id={}, employee={}", saved.getId(), employeeId);
 
-            if (teacher.isEmpty()) {
-                return CubaResponseHelper.notFoundResponse("Teacher");
-            }
-
-            // DEFERRED: Create and save EEmployeeJobs entity
-            // EEmployeeJobs job = new EEmployeeJobs();
-            // job.setTeacher(teacher.get());
-            // job.setUniversity(jobData.get("university"));
-            // ... set other fields
-            // employeeJobsRepository.save(job);
-
-            Map<String, Object> result = new HashMap<>();
+            Map<String, Object> result = new LinkedHashMap<>();
             result.put("success", true);
-            result.put("message", "Job added successfully (mock implementation)");
-            result.put("teacher_id", teacherId);
-
-            log.warn("addJob() is mock implementation - EEmployeeJobs entity not created yet");
-
+            result.put("message", "Lavozim muvaffaqiyatli qo'shildi");
+            result.put("id", saved.getId().toString());
             return result;
 
-        } catch (IllegalArgumentException e) {
-            log.error("Invalid teacher ID: {}", teacherId);
-            return CubaResponseHelper.errorResponse("invalid_id", "Invalid teacher ID format");
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.warn("Constraint violation on addJob: {}", e.getMessage());
+            // Old-hemis format: {success: false, message: "Xodimda bunday lavozim mavjud", data: error_details}
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
+            error.put("message", "Xodimda bunday lavozim mavjud");
+            error.put("data", e.getMostSpecificCause().getMessage());
+            return error;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private UUID extractUuid(Object value) {
+        if (value == null) return null;
+        if (value instanceof String s) return s.isEmpty() ? null : UUID.fromString(s);
+        if (value instanceof Map) {
+            Object id = ((Map<String, Object>) value).get("id");
+            if (id == null) return null;
+            return id instanceof String s ? (s.isEmpty() ? null : UUID.fromString(s)) : null;
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractCode(Object value) {
+        if (value == null) return null;
+        if (value instanceof String s) return s.isEmpty() ? null : s;
+        if (value instanceof Map) {
+            Object code = ((Map<String, Object>) value).get("code");
+            return code != null ? code.toString() : null;
+        }
+        return value.toString();
+    }
+
+    private LocalDate parseDate(Object value) {
+        if (value == null) return null;
+        if (value instanceof LocalDate ld) return ld;
+        String str = value.toString();
+        return str.isEmpty() ? null : LocalDate.parse(str);
     }
 
     /**

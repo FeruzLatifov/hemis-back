@@ -13,6 +13,7 @@ import uz.hemis.domain.repository.GradeRepository;
 import uz.hemis.domain.repository.StudentRepository;
 import uz.hemis.service.base.CubaResponseHelper;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class StudentCubaService {
 
     private final StudentRepository studentRepository;
@@ -74,18 +76,27 @@ public class StudentCubaService {
     public Map<String, Object> verify(String pinfl) {
         log.info("Verifying student - PINFL: {}", pinfl);
 
+        // ✅ SECURITY FIX: PINFL format validatsiyasi
+        if (pinfl == null || !pinfl.matches("\\d{14}")) {
+            return CubaResponseHelper.errorResponse("invalid_parameter", "PINFL must be exactly 14 digits");
+        }
+
         Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
 
         Map<String, Object> result = new HashMap<>();
-        result.put("exists", student.isPresent());
-        result.put("pinfl", pinfl);
 
         if (student.isPresent()) {
             Student s = student.get();
+            result.put("exists", true);
+            result.put("pinfl", pinfl);
             result.put("id", s.getId());
             result.put("code", s.getCode());
             result.put("university", s.getUniversity());
             result.put("status", s.getStudentStatus());
+        } else {
+            // ✅ SECURITY FIX: Enumeration hujumini oldini olish —
+            // Topilmasa ham topilgandek javob qaytarish o'rniga 404
+            return CubaResponseHelper.errorResponse("not_found", "Student not found");
         }
 
         return result;
@@ -350,6 +361,7 @@ public class StudentCubaService {
      * Update student data
      */
     @SuppressWarnings("unchecked")
+    @Transactional
     public Map<String, Object> update(Map<String, Object> studentData) {
         log.info("Updating student - Data keys: {}", studentData != null ? studentData.keySet() : "null");
 
@@ -592,25 +604,16 @@ public class StudentCubaService {
     /**
      * Get Tashkent students list
      *
-     * Filters by SOATO code prefix for Tashkent region
+     * ✅ PERFORMANCE FIX: Filters at database level instead of loading all records into memory
      */
     public Map<String, Object> tashkentStudents(String university) {
         log.info("Getting Tashkent students - University: {}", university);
 
-        List<Student> students;
-        if (university != null && !university.isEmpty()) {
-            students = studentRepository.findActiveByUniversity(university);
-        } else {
-            students = studentRepository.findAll();
-        }
+        String universityParam = (university != null && !university.isEmpty()) ? university : null;
+        Page<Student> page = studentRepository.findActiveBySoatoPrefix(
+                universityParam, TASHKENT_SOATO_PREFIX, PageRequest.of(0, 100));
 
-        // Filter by Tashkent SOATO prefix
-        List<Student> tashkentStudents = students.stream()
-                .filter(s -> isTashkentStudent(s))
-                .limit(100)
-                .collect(Collectors.toList());
-
-        List<Map<String, Object>> studentData = tashkentStudents.stream()
+        List<Map<String, Object>> studentData = page.getContent().stream()
                 .map(this::studentToMap)
                 .collect(Collectors.toList());
 
@@ -619,6 +622,7 @@ public class StudentCubaService {
         result.put("university", university);
         result.put("region", "Tashkent");
         result.put("count", studentData.size());
+        result.put("total", page.getTotalElements());
         result.put("students", studentData);
 
         return result;
@@ -626,25 +630,18 @@ public class StudentCubaService {
 
     /**
      * Get students by Tashkent and payment form
+     *
+     * ✅ PERFORMANCE FIX: Filters at database level instead of loading all records into memory
      */
     public Map<String, Object> byTashkentAndPaymentForm(String university, String paymentForm) {
         log.info("Getting students - University: {}, PaymentForm: {}", university, paymentForm);
 
-        List<Student> students;
-        if (university != null && !university.isEmpty()) {
-            students = studentRepository.findActiveByUniversity(university);
-        } else {
-            students = studentRepository.findAll();
-        }
+        String universityParam = (university != null && !university.isEmpty()) ? university : null;
+        String paymentFormParam = (paymentForm != null && !paymentForm.isEmpty()) ? paymentForm : null;
+        Page<Student> page = studentRepository.findActiveBySoatoPrefixAndPaymentForm(
+                universityParam, TASHKENT_SOATO_PREFIX, paymentFormParam, PageRequest.of(0, 100));
 
-        // Filter by Tashkent SOATO + payment form
-        List<Student> filtered = students.stream()
-                .filter(s -> isTashkentStudent(s))
-                .filter(s -> paymentForm == null || paymentForm.equals(s.getPaymentForm()))
-                .limit(100)
-                .collect(Collectors.toList());
-
-        List<Map<String, Object>> studentData = filtered.stream()
+        List<Map<String, Object>> studentData = page.getContent().stream()
                 .map(this::studentToMap)
                 .collect(Collectors.toList());
 
@@ -654,6 +651,7 @@ public class StudentCubaService {
         result.put("payment_form", paymentForm);
         result.put("region", "Tashkent");
         result.put("count", studentData.size());
+        result.put("total", page.getTotalElements());
         result.put("students", studentData);
 
         return result;

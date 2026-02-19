@@ -60,7 +60,7 @@ public class UniversityEntityController {
             error.put("details", "Entity hemishe_EUniversity with id " + entityId + " not found");
             return ResponseEntity.status(404).body(error);
         }
-        Map<String, Object> result = universityService.toUniversityMap(entity.get(), returnNulls);
+        Map<String, Object> result = universityService.toUniversityMap(entity.get(), returnNulls, view);
 
         // OLD-HEMIS compatibility: Replace null values with JsonNull.INSTANCE
         // This ensures Jackson serializes them as "field": null instead of omitting
@@ -127,7 +127,7 @@ public class UniversityEntityController {
             req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
         );
         return ResponseEntity.ok(result.stream()
-            .map(e -> universityService.toUniversityMap(e, returnNulls))
+            .map(e -> universityService.toUniversityMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -152,7 +152,7 @@ public class UniversityEntityController {
             req -> filterHelper.getPropertyByReflection(req.entity(), req.property())
         );
         return ResponseEntity.ok(result.stream()
-            .map(e -> universityService.toUniversityMap(e, returnNulls))
+            .map(e -> universityService.toUniversityMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -189,7 +189,7 @@ public class UniversityEntityController {
         }
 
         List<Map<String, Object>> result = entities.stream()
-            .map(e -> universityService.toUniversityMap(e, returnNulls))
+            .map(e -> universityService.toUniversityMap(e, returnNulls, view))
             .collect(Collectors.toList());
 
         log.info("Jami {} ta OTM topildi", result.size());

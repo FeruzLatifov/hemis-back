@@ -94,6 +94,7 @@ public class UniversityDepartmentLegacyService {
         map.put("_instanceName", instanceName);
 
         map.put("id", entity.getCode());
+        map.put("code", entity.getCode());
 
         if (view != null && !"_local".equals(view)) {
             // OLD-HEMIS view mode: parent comes before university
@@ -130,9 +131,7 @@ public class UniversityDepartmentLegacyService {
             map.put("nameRu", entity.getNameRu() != null ? entity.getNameRu() : (Boolean.TRUE.equals(returnNulls) ? JsonNull.INSTANCE : null));
             map.put("status", entity.getStatus());
         } else {
-            // Non-view mode: include code, version and standard field order
-            map.put("code", entity.getCode());
-            CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+            // _local view: only local scalar fields (no code/version — CUBA system fields)
             CubaEntityMapHelper.putIfNotNull(map, "nameUz", entity.getNameUz(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "status", entity.getStatus(), returnNulls);

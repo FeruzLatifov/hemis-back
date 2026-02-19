@@ -95,7 +95,8 @@ public class DiplomaLegacyService {
         map.put("_instanceName", "com.company.hemishe.entity.EStudentDiploma-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
 
-        boolean useNestedObjects = view != null && !view.isEmpty();
+        boolean useNestedObjects = view != null && !view.isEmpty() && !"_local".equals(view);
+        boolean isLocalView = "_local".equals(view);
 
         // Entity fields - with nested objects when view is provided
         if (useNestedObjects) {
@@ -107,6 +108,9 @@ public class DiplomaLegacyService {
             }
             if (entity.getStudent() != null) {
                 Map<String, Object> student = fetchStudent(entity.getStudent());
+                if (student != null) {
+                    stripStudentForDiploma(student);
+                }
                 map.put("student", student != null ? student : createMinimalNestedObject("hemishe_EStudent", entity.getStudent(), entity.getStudent().toString()));
             } else if (Boolean.TRUE.equals(returnNulls)) {
                 map.put("student", null);
@@ -124,6 +128,9 @@ public class DiplomaLegacyService {
         // OLD-HEMIS: department only in view mode
         if (useNestedObjects && entity.getDepartment() != null) {
             Map<String, Object> dept = fetchDepartment(entity.getDepartment());
+            if (dept != null) {
+                stripDepartmentForDiploma(dept);
+            }
             map.put("department", dept != null ? dept : createMinimalNestedObject("hemishe_EUniversityDepartment", entity.getDepartment(), entity.getDepartment()));
         }
 
@@ -137,9 +144,10 @@ public class DiplomaLegacyService {
             map.put("diplomBlankCategory", cat != null ? cat : createMinimalNestedObject("hemishe_HDiplomBlankCategory", entity.getDiplomCategory(), entity.getDiplomCategory()));
         }
 
-        // OLD-HEMIS: educationYear only in view mode
+        // OLD-HEMIS: educationYear only in view mode (without .code field)
         if (useNestedObjects && entity.getEducationYear() != null) {
             Map<String, Object> ey = fetchEducationYear(entity.getEducationYear());
+            if (ey != null) ey.remove("code");
             map.put("educationYear", ey != null ? ey : createMinimalNestedObject("hemishe_HEducationYear", entity.getEducationYear(), entity.getEducationYear()));
         }
 
@@ -163,27 +171,26 @@ public class DiplomaLegacyService {
             } else if (Boolean.TRUE.equals(returnNulls)) {
                 map.put("blankGenerateStatus", uz.hemis.common.JsonNull.INSTANCE);
             }
-        } else {
-            CubaEntityMapHelper.putIfNotNull(map, "blankGenerateStatusCode", entity.getBlankGenerateStatusCode(), returnNulls);
         }
 
         CubaEntityMapHelper.putIfNotNull(map, "studyDuration", entity.getStudyDuration(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "graduationDate", entity.getGraduationDate(), returnNulls);
 
-        // admissionYear - old-hemis da object sifatida qaytariladi
+        // admissionYear - old-hemis da object sifatida qaytariladi (without .code field)
         if (useNestedObjects && entity.getAdmissionYear() != null) {
             Map<String, Object> ay = fetchEducationYear(entity.getAdmissionYear());
+            if (ay != null) ay.remove("code");
             map.put("admissionYear", ay != null ? ay : createMinimalNestedObject("hemishe_HEducationYear", entity.getAdmissionYear(), entity.getAdmissionYear()));
-        } else {
-            CubaEntityMapHelper.putIfNotNull(map, "admissionYear", entity.getAdmissionYear(), returnNulls);
         }
 
-        // Audit fields
-        CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
+        // Audit fields — CUBA _local view doesn't include system fields
+        if (!isLocalView) {
+            CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
+        }
 
         return map;
     }
@@ -602,6 +609,63 @@ public class DiplomaLegacyService {
         result.put("_instanceName", instanceName);
         result.put("id", id);
         return result;
+    }
+
+    // ==================== DIPLOMA STRIPPING ====================
+
+    /**
+     * Strip extra fields from student nested object in diploma view.
+     * OLD-HEMIS diploma student only has: basic fields + educationYear/educationForm/paymentForm (without code)
+     * Does NOT have: gender, citizenship, nationality, educationType, course, studentStatus,
+     * country, accomodation, language, socialCategory, studentType, admissionType, roommateType,
+     * livingStatus, statusEducationYear, currentSoato, university, faculty, specialityBachelor, specialityMaster
+     */
+    @SuppressWarnings("unchecked")
+    private void stripStudentForDiploma(Map<String, Object> student) {
+        // Remove classifiers that OLD-HEMIS diploma student doesn't include
+        String[] classifiersToRemove = {
+            "gender", "citizenship", "nationality", "educationType", "course",
+            "studentStatus", "country", "accomodation", "language", "socialCategory",
+            "studentType", "admissionType", "roommateType", "livingStatus",
+            "statusEducationYear", "currentSoato", "university", "faculty",
+            "specialityBachelor", "specialityMaster", "currentTerrain", "terrain",
+            "povertyLevel", "grantType", "transferType", "transferCountry",
+            "expelReason", "academicReason", "academicMobileType", "graduationYear",
+            "currentEducationYear"
+        };
+        for (String field : classifiersToRemove) {
+            student.remove(field);
+        }
+
+        // Strip .code from remaining classifiers (educationYear, educationForm, paymentForm)
+        stripCodeFromNested(student, "educationYear");
+        stripCodeFromNested(student, "educationForm");
+        stripCodeFromNested(student, "paymentForm");
+
+        // Strip .code from soato
+        stripCodeFromNested(student, "soato");
+    }
+
+    /**
+     * Strip extra fields from department nested object in diploma view.
+     * OLD-HEMIS diploma department only has: _entityName, _instanceName, id, nameUz
+     */
+    @SuppressWarnings("unchecked")
+    private void stripDepartmentForDiploma(Map<String, Object> dept) {
+        dept.remove("code");
+        dept.remove("nameRu");
+        dept.remove("status");
+        // NOTE: deparmentType is kept — OLD-HEMIS diploma department includes deparmentType (4 fields)
+        dept.remove("parent");
+        dept.remove("university");
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stripCodeFromNested(Map<String, Object> parent, String key) {
+        Object obj = parent.get(key);
+        if (obj instanceof Map) {
+            ((Map<String, Object>) obj).remove("code");
+        }
     }
 
     // ==================== HELPER METHODS ====================

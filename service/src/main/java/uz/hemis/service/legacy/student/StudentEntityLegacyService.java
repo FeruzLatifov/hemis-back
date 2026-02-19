@@ -90,17 +90,16 @@ public class StudentEntityLegacyService {
         // Reference fields: faqat view mode da qaytariladi
         boolean useNested = view != null && !view.isEmpty();
         if (useNested) {
-            // OLD-HEMIS: university and student are full nested objects in view mode
+            // OLD-HEMIS: university is full nested object in certificate view (with soato, universityType, etc.)
             if (entity.getUniversity() != null) {
-                map.put("university", nestedObjectLoader.loadUniversityForTeacher(entity.getUniversity()));
+                map.put("university", nestedObjectLoader.loadUniversityFull(entity.getUniversity()));
             } else if (Boolean.TRUE.equals(returnNulls)) {
                 map.put("university", null);
             }
             if (entity.getStudent() != null) {
                 Map<String, Object> studentMap = nestedObjectLoader.loadStudentForDiploma(entity.getStudent());
                 if (studentMap != null) {
-                    // OLD-HEMIS certificate view: nested classifiers have basic format (no nameRu/nameEn/active)
-                    stripClassifierExtras(studentMap);
+                    postProcessStudentForCertificate(studentMap);
                 }
                 map.put("student", studentMap);
             } else if (Boolean.TRUE.equals(returnNulls)) {
@@ -127,21 +126,130 @@ public class StudentEntityLegacyService {
     }
 
     /**
-     * Strip nameRu, nameEn, active from nested classifier objects in a student map.
-     * OLD-HEMIS certificate view returns classifiers with basic format only.
+     * Post-process student nested object for certificate view.
+     * OLD-HEMIS certificate student format:
+     * - ALL null reference fields present (academicMobileType=null, etc.)
+     * - Classifiers with basic format only (NO nameRu/nameEn/active/code)
+     * - Full university (with all fields, not minimal 5-field version)
      */
     @SuppressWarnings("unchecked")
-    private void stripClassifierExtras(Map<String, Object> map) {
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
+    private void postProcessStudentForCertificate(Map<String, Object> student) {
+        // 1. Add missing null reference fields that OLD-HEMIS always includes
+        Object jsonNull = uz.hemis.common.JsonNull.INSTANCE;
+        String[] nullFields = {
+            "currentEducationYear", "academicMobileType", "transferCountry", "povertyLevel",
+            "admissionType", "specialityOrdinatura", "academicReason", "livingStatus",
+            "roommateType", "expelReason", "stipendRate", "transferType",
+            "doctoralStudentType", "specialityDoctoral", "graduationYear", "studentSuccess"
+        };
+        for (String field : nullFields) {
+            student.putIfAbsent(field, jsonNull);
+        }
+        // studentSuccess is an empty array in OLD-HEMIS
+        if (student.get("studentSuccess") == jsonNull) {
+            student.put("studentSuccess", new java.util.ArrayList<>());
+        }
+
+        // 2. Replace minimal university with full university (loadUniversityForTeacher format)
+        Object uniObj = student.get("university");
+        if (uniObj instanceof Map) {
+            Map<String, Object> uniMap = (Map<String, Object>) uniObj;
+            Object uniCode = uniMap.get("code");
+            if (uniCode == null) uniCode = uniMap.get("id");
+            if (uniCode != null) {
+                Map<String, Object> fullUni = nestedObjectLoader.loadUniversityForTeacher(String.valueOf(uniCode));
+                if (fullUni != null) {
+                    student.put("university", fullUni);
+                }
+            }
+        }
+
+        // 3. Selectively strip classifier fields to match OLD-HEMIS student view format
+        // Each classifier has specific fields; loadClassifierFull returns all, so strip extras per entity
+        stripClassifierFieldsForCertStudent(student);
+
+        // 4. Strip faculty extras — OLD-HEMIS cert student faculty only has basic department fields
+        Object facultyObj = student.get("faculty");
+        if (facultyObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> fac = (Map<String, Object>) facultyObj;
+            fac.remove("status");
+            fac.remove("deparmentType");
+            fac.remove("parent");
+            fac.remove("university");
+        }
+
+        // 5. Strip name_ru from currentSoato — OLD-HEMIS cert student currentSoato doesn't have name_ru
+        Object currentSoatoObj = student.get("currentSoato");
+        if (currentSoatoObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> cs = (Map<String, Object>) currentSoatoObj;
+            cs.remove("name_ru");
+            cs.remove("active");
+        }
+
+        // 6. Replace terrain/currentTerrain with proper objects including nested soato
+        replaceTerrain(student, "terrain", false);
+        replaceTerrain(student, "currentTerrain", true);
+    }
+
+    /**
+     * Replace basic classifier terrain with a full terrain object including nested soato.
+     */
+    @SuppressWarnings("unchecked")
+    private void replaceTerrain(Map<String, Object> student, String field, boolean includeNameRuInSoato) {
+        Object terrainObj = student.get(field);
+        if (terrainObj instanceof Map) {
+            Map<String, Object> terrainMap = (Map<String, Object>) terrainObj;
+            String terrainCode = (String) terrainMap.get("id");
+            if (terrainCode == null) terrainCode = (String) terrainMap.get("code");
+            if (terrainCode != null) {
+                Map<String, Object> fullTerrain = nestedObjectLoader.loadTerrainWithSoato(terrainCode, includeNameRuInSoato);
+                if (fullTerrain != null) {
+                    student.put(field, fullTerrain);
+                }
+            }
+        }
+    }
+
+    // Classifiers that keep nameRu and nameEn (in addition to code)
+    private static final java.util.Set<String> CLASSIFIERS_KEEP_NAME_RU_EN = java.util.Set.of(
+            "hemishe_HEducationType", "hemishe_HEducationYear");
+    // Classifiers that keep active
+    private static final java.util.Set<String> CLASSIFIERS_KEEP_ACTIVE = java.util.Set.of(
+            "hemishe_HEducationType", "hemishe_HStudentSocialType");
+    // All known student classifiers (strip extras from these; leave other entities alone)
+    private static final java.util.Set<String> STUDENT_CLASSIFIER_ENTITIES = java.util.Set.of(
+            "hemishe_HCountry", "hemishe_HEducationLanguage", "hemishe_HEducationForm",
+            "hemishe_HCourse", "hemishe_HPaymentForm", "hemishe_HCitizenship",
+            "hemishe_HNationality", "hemishe_HAccomodation", "hemishe_HStudentLivingStatus",
+            "hemishe_HStudentRoomMateType", "hemishe_HExpel", "hemishe_HAcademicReason",
+            "hemishe_HAcademicMobileType", "hemishe_HGrantType", "hemishe_HAdmissionType",
+            "hemishe_HTransferType", "hemishe_HDoctoralStudentType", "hemishe_HStipendRate",
+            "hemishe_HStudentType", "hemishe_HPovertyLevel", "hemishe_HGender",
+            "hemishe_HStudentStatusType", "hemishe_HEducationType", "hemishe_HStudentSocialType",
+            "hemishe_HEducationYear");
+
+    /**
+     * Selectively strip classifier extras to match OLD-HEMIS student view format.
+     * All classifiers keep: code. Additional fields depend on entity type.
+     */
+    @SuppressWarnings("unchecked")
+    private void stripClassifierFieldsForCertStudent(Map<String, Object> student) {
+        for (Map.Entry<String, Object> entry : student.entrySet()) {
             Object val = entry.getValue();
             if (val instanceof Map) {
                 Map<String, Object> nested = (Map<String, Object>) val;
-                if (nested.containsKey("_entityName")) {
-                    nested.remove("nameRu");
-                    nested.remove("nameEn");
-                    nested.remove("active");
-                    // Recursively strip nested objects inside this classifier
-                    stripClassifierExtras(nested);
+                String entityName = (String) nested.get("_entityName");
+                if (entityName != null && STUDENT_CLASSIFIER_ENTITIES.contains(entityName)) {
+                    // All student classifiers keep code; selectively strip others
+                    if (!CLASSIFIERS_KEEP_NAME_RU_EN.contains(entityName)) {
+                        nested.remove("nameRu");
+                        nested.remove("nameEn");
+                    }
+                    if (!CLASSIFIERS_KEEP_ACTIVE.contains(entityName)) {
+                        nested.remove("active");
+                    }
                 }
             }
         }

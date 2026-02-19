@@ -275,7 +275,7 @@ public class CacheVersionService {
     public java.util.Map<String, Long> getAllVersions() {
         java.util.Map<String, Long> versions = new java.util.HashMap<>();
 
-        String[] namespaces = {"i18n", "menu", "userPermissions", "stats", "universitiesSearch", "universityDictionaries"};
+        String[] namespaces = {"i18n", "menu", "userPermissions", "stats", "universitiesSearch", "universityDictionaries", "studentsListSearch", "studentsListCount", "studentStats", "studentDictionaries"};
 
         for (String namespace : namespaces) {
             versions.put(namespace, getCurrentVersion(namespace));

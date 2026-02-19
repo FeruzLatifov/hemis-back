@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  */
 @Tag(name = "06.Xodim lavozimlari")
 @RestController
-@RequestMapping("/app/rest/v2/entities/hemishe_EEmployeeJob")
+@RequestMapping({"/app/rest/v2/entities/hemishe_EEmployeeJobs", "/app/rest/v2/entities/hemishe_EEmployeeJob"})
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -57,7 +57,7 @@ public class EmployeeJobsEntityController {
     private final EmployeeJobsLegacyService employeeJobsService;
     private final LegacySecurityHelper securityHelper;
 
-    private static final String ENTITY_NAME = "hemishe_EEmployeeJob";
+    private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
     @GetMapping("/{entityId}")
     @Operation(

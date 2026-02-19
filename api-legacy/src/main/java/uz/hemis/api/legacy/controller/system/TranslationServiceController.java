@@ -21,7 +21,7 @@ import java.util.*;
 /**
  * Translation/Transcript Service Controller
  *
- * <p><strong>URL Pattern:</strong> {@code /app/rest/v2/services/translate/*} and {@code /app/rest/v2/services/transcript/*}</p>
+ * <p><strong>URL Pattern:</strong> {@code /app/rest/v2/services/translate/*}</p>
  *
  * @since 2.0.0
  */
@@ -79,24 +79,6 @@ public class TranslationServiceController {
         response.put("translations", translations);
 
         log.info("Filterdan keyin {} ta tarjima topildi", translations.size());
-        return ResponseEntity.ok(response);
-    }
-
-    @Tag(name = "54.Transkript", description = "Transkript va o'quv natijalari")
-    @GetMapping("/transcript/get")
-    @Operation(
-        summary = "Transkript ariza",
-        description = "Talaba transkript ariza ma'lumotlarini olish"
-    )
-    public ResponseEntity<Map<String, Object>> getTranscript(
-        @Parameter(description = "Ariza ID", required = true) @RequestParam UUID applicationId
-    ) {
-        log.info("GET /services/transcript/get - applicationId: {}", applicationId);
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("success", true);
-        response.put("transcript", Map.of("id", applicationId));
-
         return ResponseEntity.ok(response);
     }
 

@@ -35,6 +35,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // Apache HttpClient5 (for RestTemplate with custom SSL/connection pooling)
+    implementation("org.apache.httpcomponents.client5:httpclient5")
+
     // PostgreSQL Driver
     runtimeOnly("org.postgresql:postgresql")
 

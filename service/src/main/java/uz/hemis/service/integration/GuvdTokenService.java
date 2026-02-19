@@ -9,8 +9,11 @@ import uz.hemis.common.port.cache.DistributedCachePort;
 
 import javax.net.ssl.*;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -44,9 +47,11 @@ public class GuvdTokenService {
 
     private final DistributedCachePort cachePort;
 
-    // Cache key
+    // Cache keys
     private static final String CACHE_KEY = "guvd:oauth2:token";
+    private static final String FAILURE_CACHE_KEY = "guvd:oauth2:token:failure";
     private static final Duration TOKEN_TTL = Duration.ofHours(1); // 1 hour cache
+    private static final Duration FAILURE_TTL = Duration.ofMinutes(5); // 5 min negative cache
 
     // Configuration from .env
     @Value("${hemis.integration.guvd.oauth2.url:https://iskm.egov.uz:9444/oauth2/token}")
@@ -85,11 +90,12 @@ public class GuvdTokenService {
      * <p>
      * Token is cached in Redis for 1 hour.
      * If cache is expired or empty, fetches new token from GUVD OAuth2 API.
+     * Failed fetches are negatively cached for 5 minutes to avoid hammering unreachable hosts.
      * </p>
      *
      * <p>Old-hemis pattern: MyTokenServiceBean.oauth2Token(url, client, secret, username, password)</p>
      *
-     * @return OAuth2 access token
+     * @return OAuth2 access token, or null if unavailable
      */
     @SuppressWarnings("unchecked")
     public String getToken() {
@@ -100,25 +106,24 @@ public class GuvdTokenService {
             return cachedToken;
         }
 
-        // 2. Fetch new token from GUVD OAuth2 API
+        // 2. Check negative cache — don't retry if recent fetch failed
+        String failureMarker = cachePort.<String>retrieve(FAILURE_CACHE_KEY).orElse(null);
+        if (failureMarker != null) {
+            log.debug("GUVD token fetch skipped — recent failure ({}), retry after {} min", failureMarker, FAILURE_TTL.toMinutes());
+            return null;
+        }
+
+        // 3. Check if credentials are configured
+        if (clientId == null || clientId.isBlank() || clientSecret == null || clientSecret.isBlank()) {
+            log.debug("GUVD OAuth2 credentials not configured, skipping token fetch");
+            cachePort.store(FAILURE_CACHE_KEY, "not_configured", FAILURE_TTL);
+            return null;
+        }
+
+        // 4. Fetch new token from GUVD OAuth2 API
         log.info("Fetching new GUVD OAuth2 token from: {}", oauth2Url);
 
         try {
-            // Disable SSL verification (government APIs may have self-signed certs)
-            if (oauth2Url.startsWith("https")) {
-                TrustManager[] trustAllCerts = new TrustManager[]{
-                        new X509TrustManager() {
-                            public X509Certificate[] getAcceptedIssuers() { return null; }
-                            public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-                            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-                        }
-                };
-                SSLContext sc = SSLContext.getInstance("SSL");
-                sc.init(null, trustAllCerts, new SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
-            }
-
             // Old-hemis pattern: Basic Auth + form-urlencoded
             String credentials = clientId + ":" + clientSecret;
             String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
@@ -126,6 +131,12 @@ public class GuvdTokenService {
 
             java.net.URL urlObj = URI.create(oauth2Url).toURL();
             HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+            // Per-connection SSL bypass for government APIs with self-signed certs
+            if (conn instanceof HttpsURLConnection httpsConn) {
+                javax.net.ssl.SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
+                httpsConn.setSSLSocketFactory(sc.getSocketFactory());
+                httpsConn.setHostnameVerifier((hostname, session) -> true);
+            }
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
@@ -152,16 +163,31 @@ public class GuvdTokenService {
                     return accessToken;
                 } else {
                     log.error("GUVD OAuth2 response missing access_token");
+                    cachePort.store(FAILURE_CACHE_KEY, "no_access_token", FAILURE_TTL);
                     return null;
                 }
             } else {
                 conn.disconnect();
                 log.error("GUVD OAuth2 request failed with status: {}", statusCode);
+                cachePort.store(FAILURE_CACHE_KEY, "http_" + statusCode, FAILURE_TTL);
                 return null;
             }
 
+        } catch (UnknownHostException e) {
+            // DNS resolution failure — host unreachable (expected in dev/test environments)
+            log.warn("GUVD OAuth2 host unreachable: {} — token fetch disabled for {} min",
+                    e.getMessage(), FAILURE_TTL.toMinutes());
+            cachePort.store(FAILURE_CACHE_KEY, "dns_" + e.getMessage(), FAILURE_TTL);
+            return null;
+        } catch (ConnectException | SocketTimeoutException e) {
+            // Network connectivity issues — host reachable but connection failed/timed out
+            log.warn("GUVD OAuth2 connection failed: {} — retry in {} min",
+                    e.getMessage(), FAILURE_TTL.toMinutes());
+            cachePort.store(FAILURE_CACHE_KEY, "network_" + e.getClass().getSimpleName(), FAILURE_TTL);
+            return null;
         } catch (Exception e) {
-            log.error("Error fetching GUVD OAuth2 token", e);
+            log.error("Error fetching GUVD OAuth2 token: {}", e.getMessage());
+            cachePort.store(FAILURE_CACHE_KEY, "error_" + e.getClass().getSimpleName(), FAILURE_TTL);
             return null;
         }
     }
@@ -171,6 +197,7 @@ public class GuvdTokenService {
      */
     public void invalidateToken() {
         cachePort.delete(CACHE_KEY);
-        log.info("🗑️ GUVD token cache invalidated");
+        cachePort.delete(FAILURE_CACHE_KEY);
+        log.info("GUVD token cache invalidated");
     }
 }

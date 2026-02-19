@@ -35,10 +35,21 @@ public class CubaNestedObjectLoader {
      * @return CUBA-format map or null
      */
     public Map<String, Object> loadClassifier(String tableName, String entityName, String code) {
+        return loadClassifier(tableName, entityName, code, false);
+    }
+
+    /**
+     * Load classifier with optional version field.
+     * Service endpoints (diplom-blank, etc.) pass includeVersion=true.
+     * Entity endpoints use the default (false) to match old-hemis entity format.
+     */
+    public Map<String, Object> loadClassifier(String tableName, String entityName, String code, boolean includeVersion) {
         if (code == null || code.isEmpty()) return null;
         try {
-            Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL", code);
+            String sql = includeVersion
+                    ? "SELECT code, name, version FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL"
+                    : "SELECT code, name FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
             Map<String, Object> obj = new LinkedHashMap<>();
             String fullEntityName = "hemishe_" + entityName;
             obj.put("_entityName", fullEntityName);
@@ -49,6 +60,7 @@ public class CubaNestedObjectLoader {
             // OLD-HEMIS compatibility: include code field
             obj.put("code", str(row.get("code")));
             obj.put("name", name);
+            if (includeVersion && row.get("version") != null) obj.put("version", row.get("version"));
             return obj;
         } catch (EmptyResultDataAccessException e) {
             // Return minimal object with just id
@@ -68,10 +80,20 @@ public class CubaNestedObjectLoader {
      * OLD-HEMIS compatibility: includes nameRu, nameEn, active fields
      */
     public Map<String, Object> loadClassifierWithNames(String tableName, String entityName, String code) {
+        return loadClassifierWithNames(tableName, entityName, code, false);
+    }
+
+    /**
+     * Load classifier with name fields and optional version.
+     * Service endpoints pass includeVersion=true.
+     */
+    public Map<String, Object> loadClassifierWithNames(String tableName, String entityName, String code, boolean includeVersion) {
         if (code == null || code.isEmpty()) return null;
         try {
-            Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name, name_ru, name_en, active FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL", code);
+            String sql = includeVersion
+                    ? "SELECT code, name, name_ru, name_en, active, version FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL"
+                    : "SELECT code, name, name_ru, name_en, active FROM " + sanitizeTableName(tableName) + " WHERE code = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
             Map<String, Object> obj = new LinkedHashMap<>();
             String fullEntityName = "hemishe_" + entityName;
             obj.put("_entityName", fullEntityName);
@@ -87,6 +109,7 @@ public class CubaNestedObjectLoader {
             obj.put("active", row.get("active") != null ? row.get("active") : true);
             Object nameEn = row.get("name_en");
             obj.put("nameEn", (nameEn != null && !nameEn.toString().isEmpty()) ? str(nameEn) : JsonNull.INSTANCE);
+            if (includeVersion && row.get("version") != null) obj.put("version", row.get("version"));
             return obj;
         } catch (EmptyResultDataAccessException e) {
             Map<String, Object> obj = new LinkedHashMap<>();
@@ -174,7 +197,7 @@ public class CubaNestedObjectLoader {
         "hemishe_HEducationYear", "hemishe_HTransferType",
         "hemishe_HCertificateNames", "hemishe_HCertificateGrades",
         "hemishe_HCertificateSubjects", "hemishe_HCertificateType",
-        "hemishe_HDepartmentType"
+        "hemishe_HDepartmentType", "hemishe_HExpel"
     );
     private static final Set<String> CODE_DASH_NAME_ENTITIES = Set.of(
         "hemishe_HPaymentForm", "hemishe_HDiplomBlankGenerateStatus",
@@ -254,10 +277,20 @@ public class CubaNestedObjectLoader {
      * Used by UniversityDepartment, Teacher, Diploma controllers
      */
     public Map<String, Object> loadUniversity(String universityCode) {
+        return loadUniversity(universityCode, false);
+    }
+
+    /**
+     * Load university with optional version.
+     * Service endpoints (diplom-blank) pass includeVersion=true.
+     */
+    public Map<String, Object> loadUniversity(String universityCode, boolean includeVersion) {
         if (universityCode == null || universityCode.isEmpty()) return null;
         try {
-            Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL", universityCode);
+            String sql = includeVersion
+                    ? "SELECT code, name, version FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL"
+                    : "SELECT code, name FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, universityCode);
             Map<String, Object> nested = new LinkedHashMap<>();
             nested.put("_entityName", "hemishe_EUniversity");
             // OLD-HEMIS: _instanceName format is "code-name"
@@ -265,6 +298,7 @@ public class CubaNestedObjectLoader {
             nested.put("id", str(row.get("code")));
             nested.put("code", str(row.get("code")));
             nested.put("name", row.get("name"));
+            if (includeVersion && row.get("version") != null) nested.put("version", row.get("version"));
             return nested;
         } catch (EmptyResultDataAccessException e) {
             Map<String, Object> nested = new LinkedHashMap<>();
@@ -290,36 +324,37 @@ public class CubaNestedObjectLoader {
             Map<String, Object> row = jdbcTemplate.queryForMap(
                     "SELECT code, name, tin, address, student_url, teacher_url, active, " +
                     "add_student, accreditation_edit, allow_grouping, allow_transfer_outside, one_id, gpa_edit, " +
-                    "add_foreign_student, grading_system, uzbmb_url, university_url, mail_address, bank_info, cadastre, accreditation_info, add_transfer_student, add_academic_mobile_student " +
+                    "grading_system, accreditation_info, uzbmb_url, university_url, add_academic_mobile_student, " +
+                    "bank_info, mail_address, add_foreign_student, add_transfer_student " +
                     "FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL", universityCode);
 
-            // OLD-HEMIS field order for Teacher university (24 fields, NO nested objects)
+            // OLD-HEMIS field order for Teacher university (NO nested objects like soato, universityType)
             Map<String, Object> uni = new LinkedHashMap<>();
             uni.put("_entityName", "hemishe_EUniversity");
             uni.put("_instanceName", row.get("code") + "-" + row.get("name"));
             uni.put("id", str(row.get("code")));
             uni.put("studentUrl", row.get("student_url") != null ? str(row.get("student_url")) : JsonNull.INSTANCE);
-            uni.put("gradingSystem", row.get("grading_system") != null ? row.get("grading_system") : JsonNull.INSTANCE);
+            uni.put("gradingSystem", row.get("grading_system") != null ? row.get("grading_system") : false);
             uni.put("accreditationInfo", row.get("accreditation_info") != null ? str(row.get("accreditation_info")) : JsonNull.INSTANCE);
             uni.put("uzbmbUrl", row.get("uzbmb_url") != null ? str(row.get("uzbmb_url")) : JsonNull.INSTANCE);
             uni.put("tin", row.get("tin") != null ? str(row.get("tin")) : JsonNull.INSTANCE);
             uni.put("universityUrl", row.get("university_url") != null ? str(row.get("university_url")) : JsonNull.INSTANCE);
             uni.put("addStudent", row.get("add_student") != null ? row.get("add_student") : true);
-            uni.put("bankInfo", row.get("bank_info") != null ? str(row.get("bank_info")) : JsonNull.INSTANCE);
             uni.put("address", row.get("address") != null ? str(row.get("address")) : JsonNull.INSTANCE);
             uni.put("accreditationEdit", row.get("accreditation_edit") != null ? row.get("accreditation_edit") : false);
             uni.put("active", row.get("active") != null ? row.get("active") : false);
-            uni.put("mailAddress", row.get("mail_address") != null ? str(row.get("mail_address")) : JsonNull.INSTANCE);
-            uni.put("cadastre", row.get("cadastre") != null ? str(row.get("cadastre")) : JsonNull.INSTANCE);
             uni.put("oneId", row.get("one_id") != null ? row.get("one_id") : true);
             uni.put("allowGrouping", row.get("allow_grouping") != null ? row.get("allow_grouping") : true);
-            uni.put("addForeignStudent", row.get("add_foreign_student") != null ? row.get("add_foreign_student") : JsonNull.INSTANCE);
             uni.put("teacherUrl", row.get("teacher_url") != null ? str(row.get("teacher_url")) : JsonNull.INSTANCE);
             uni.put("allowTransferOutside", row.get("allow_transfer_outside") != null ? row.get("allow_transfer_outside") : true);
             uni.put("name", str(row.get("name")));
             uni.put("gpaEdit", row.get("gpa_edit") != null ? row.get("gpa_edit") : false);
-            uni.put("addTransferStudent", row.get("add_transfer_student") != null ? row.get("add_transfer_student") : JsonNull.INSTANCE);
             uni.put("addAcademicMobileStudent", row.get("add_academic_mobile_student") != null ? row.get("add_academic_mobile_student") : JsonNull.INSTANCE);
+            uni.put("bankInfo", row.get("bank_info") != null ? str(row.get("bank_info")) : JsonNull.INSTANCE);
+            uni.put("mailAddress", row.get("mail_address") != null ? str(row.get("mail_address")) : JsonNull.INSTANCE);
+            uni.put("cadastre", JsonNull.INSTANCE);
+            uni.put("addForeignStudent", row.get("add_foreign_student") != null ? row.get("add_foreign_student") : JsonNull.INSTANCE);
+            uni.put("addTransferStudent", row.get("add_transfer_student") != null ? row.get("add_transfer_student") : JsonNull.INSTANCE);
 
             return uni;
         } catch (EmptyResultDataAccessException e) {
@@ -352,7 +387,7 @@ public class CubaNestedObjectLoader {
             uni.put("_instanceName", row.get("code") + "-" + row.get("name"));
             uni.put("id", str(row.get("code")));
             uni.put("studentUrl", row.get("student_url") != null ? str(row.get("student_url")) : JsonNull.INSTANCE);
-            uni.put("gradingSystem", row.get("grading_system") != null ? row.get("grading_system") : JsonNull.INSTANCE);
+            uni.put("gradingSystem", row.get("grading_system") != null ? row.get("grading_system") : false);
             uni.put("accreditationInfo", row.get("accreditation_info") != null ? str(row.get("accreditation_info")) : JsonNull.INSTANCE);
 
             // soato nested
@@ -445,25 +480,61 @@ public class CubaNestedObjectLoader {
         if (departmentCode == null || departmentCode.isEmpty()) return null;
         try {
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name_uz, university_code, _deparment_type FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL", departmentCode);
+                    "SELECT code, name_uz, name_ru, university_code, _deparment_type, status, parent_code FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL", departmentCode);
             Map<String, Object> nested = new LinkedHashMap<>();
             nested.put("_entityName", "hemishe_EUniversityDepartment");
             nested.put("_instanceName", row.get("name_uz"));
             nested.put("id", str(row.get("code")));
             nested.put("code", str(row.get("code")));
             nested.put("nameUz", row.get("name_uz"));
-            nested.put("name", row.get("name_uz"));
+            nested.put("nameRu", row.get("name_ru") != null ? str(row.get("name_ru")) : JsonNull.INSTANCE);
+            nested.put("status", row.get("status") != null ? row.get("status") : true);
 
             // deparmentType nested classifier (OLD-HEMIS typo preserved)
             if (row.get("_deparment_type") != null) {
-                nested.put("deparmentType", loadClassifierNameOnly("hemishe_h_department_type", "HDepartmentType", str(row.get("_deparment_type"))));
+                Map<String, Object> deptType = loadClassifierNameOnly("hemishe_h_university_department_type", "HUniversityDepartmentType", str(row.get("_deparment_type")));
+                if (deptType != null) {
+                    // OLD-HEMIS department.deparmentType doesn't include nameEn/nameRu
+                    deptType.remove("nameEn");
+                    deptType.remove("nameRu");
+                    nested.put("deparmentType", deptType);
+                }
             }
 
-            // Nested university inside department
+            // Parent department — OLD-HEMIS returns null for departments without parent
+            String parentCode = row.get("parent_code") != null ? str(row.get("parent_code")) : null;
+            if (parentCode != null) {
+                Map<String, Object> parentDept = loadClassifier("hemishe_e_university_department", "EUniversityDepartment", parentCode);
+                nested.put("parent", parentDept != null ? parentDept : JsonNull.INSTANCE);
+            } else {
+                nested.put("parent", JsonNull.INSTANCE);
+            }
+
+            // Nested university inside department — OLD-HEMIS compatible
+            // Uses loadUniversityFull() but strips fields OLD doesn't include in department.university
             String uniCode = row.get("university_code") != null ? row.get("university_code").toString() : null;
             if (uniCode != null) {
-                Map<String, Object> uniNested = loadUniversity(uniCode);
-                if (uniNested != null) nested.put("university", uniNested);
+                Map<String, Object> uniNested = loadUniversityFull(uniCode);
+                if (uniNested != null) {
+                    // Remove scalar fields not in OLD-HEMIS department.university
+                    uniNested.remove("accreditationInfo");
+                    uniNested.remove("addForeignStudent");
+                    uniNested.remove("addTransferStudent");
+                    uniNested.remove("bankInfo");
+                    uniNested.remove("cadastre");
+                    uniNested.remove("mailAddress");
+                    uniNested.remove("parentUniversity");
+                    uniNested.remove("terrain");
+                    uniNested.remove("universityUrl");
+                    uniNested.remove("uzbmbUrl");
+                    // Strip .code from soato/soatoRegion sub-objects
+                    stripCodeField(uniNested, "soato");
+                    stripCodeField(uniNested, "soatoRegion");
+                    // Strip .code/.nameEn/.nameRu from classifier sub-objects
+                    stripClassifierExtraFields(uniNested, "versionType");
+                    stripClassifierExtraFields(uniNested, "universityContractCategory");
+                    nested.put("university", uniNested);
+                }
             }
 
             return nested;
@@ -565,8 +636,8 @@ public class CubaNestedObjectLoader {
                     parent.put("_instanceName", parentRow.get("code") + " - " + parentRow.get("name_uz"));
                     parent.put("id", parentRow.get("code"));
                     parent.put("code", parentRow.get("code"));
-                    // OLD-HEMIS: parent_code.parent_code = null (one level deep)
-                    parent.put("parent_code", null);
+                    // OLD-HEMIS: parent_code.parent_code = null (one level deep, must serialize as null)
+                    parent.put("parent_code", JsonNull.INSTANCE);
                     parent.put("name_uz", parentRow.get("name_uz"));
                     nested.put("parent_code", parent);
                 } catch (EmptyResultDataAccessException ex) {
@@ -604,6 +675,45 @@ public class CubaNestedObjectLoader {
             return nested;
         } catch (Exception e) {
             log.debug("SOATO terrain load error (code={}): {}", soatoCode, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Load terrain with nested soato sub-object.
+     * Used for StudentCertificate student's terrain/currentTerrain fields.
+     *
+     * @param terrainCode terrain code (from hemishe_h_terrain)
+     * @param includeNameRuInSoato true for currentTerrain (soato has name_ru), false for terrain (no name_ru)
+     */
+    public Map<String, Object> loadTerrainWithSoato(String terrainCode, boolean includeNameRuInSoato) {
+        if (terrainCode == null || terrainCode.isEmpty()) return null;
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT code, name, name_ru, _soato FROM hemishe_h_terrain WHERE code = ? AND delete_ts IS NULL", terrainCode);
+            String code = str(row.get("code"));
+            String name = str(row.get("name"));
+            Map<String, Object> terrain = new LinkedHashMap<>();
+            terrain.put("_entityName", "hemishe_HTerrain");
+            terrain.put("_instanceName", code + " " + name);
+            terrain.put("id", code);
+            terrain.put("code", code);
+            // Load nested soato
+            String soatoCode = str(row.get("_soato"));
+            if (soatoCode != null && !soatoCode.isEmpty()) {
+                Map<String, Object> soato = loadSoatoForTerrain(soatoCode);
+                if (soato != null) {
+                    if (!includeNameRuInSoato) {
+                        soato.remove("name_ru");
+                    }
+                    terrain.put("soato", soato);
+                }
+            }
+            terrain.put("nameRu", row.get("name_ru"));
+            terrain.put("name", name);
+            return terrain;
+        } catch (Exception e) {
+            log.debug("Terrain with soato load error (code={}): {}", terrainCode, e.getMessage());
             return null;
         }
     }
@@ -741,7 +851,7 @@ public class CubaNestedObjectLoader {
             result.put("_instanceName", instanceName);
             result.put("id", row.get("id"));
             result.put("isGraduate", row.get("is_graduate"));
-            result.put("statusOrderDate", row.get("status_order_date"));
+            result.put("statusOrderDate", formatDate(row.get("status_order_date")));
             result.put("decreeInfoName", row.get("decree_info_name"));
             result.put("groupId", row.get("group_id"));
 
@@ -759,7 +869,7 @@ public class CubaNestedObjectLoader {
             result.put("serialNumber", row.get("serial_number"));
             result.put("active", row.get("active"));
             result.put("statusOrderCategory", row.get("status_order_category"));
-            result.put("decreeInfoDate", row.get("decree_info_date"));
+            result.put("decreeInfoDate", formatDate(row.get("decree_info_date")));
             result.put("lastname", row.get("lastname"));
             result.put("groupName", row.get("group_name"));
             result.put("statusOrderNumber", row.get("status_order_number"));
@@ -767,7 +877,7 @@ public class CubaNestedObjectLoader {
             result.put("status", row.get("status"));
             result.put("enrollOrderName", row.get("enroll_order_name"));
             result.put("pinfl", row.get("pinfl"));
-            result.put("birthday", row.get("birthday"));
+            result.put("birthday", formatDate(row.get("birthday")));
             result.put("firstname", row.get("firstname"));
             result.put("code", row.get("code"));
 
@@ -857,18 +967,18 @@ public class CubaNestedObjectLoader {
 
             result.put("parentPhone", row.get("parent_phone"));
             result.put("speciality", row.get("_speciality"));
-            result.put("enrollOrderDate", row.get("enroll_order_date"));
+            result.put("enrollOrderDate", formatDate(row.get("enroll_order_date")));
             result.put("enrollOrderNumber", row.get("enroll_order_number"));
             result.put("roommateCount", row.get("roommate_count"));
             result.put("isDuplicate", row.get("is_duplicate"));
             result.put("email", row.get("email"));
             result.put("address", row.get("address"));
-            result.put("eduStartDate", row.get("edu_start_date"));
-            result.put("passportGivenDate", row.get("passport_given_date"));
+            result.put("eduStartDate", formatDate(row.get("edu_start_date")));
+            result.put("passportGivenDate", formatDate(row.get("passport_given_date")));
             result.put("verified", row.get("verified"));
             result.put("currentAddress", row.get("current_address"));
             result.put("fathername", row.get("fathername"));
-            result.put("graduationDate", row.get("graduation_date"));
+            result.put("graduationDate", formatDate(row.get("graduation_date")));
             result.put("statusOrderName", row.get("status_order_name"));
             result.put("enrollOrderCategory", row.get("enroll_order_category"));
             result.put("studyDuration", row.get("study_duration"));
@@ -943,7 +1053,52 @@ public class CubaNestedObjectLoader {
         return tableName;
     }
 
+    @SuppressWarnings("unchecked")
+    private void stripCodeField(Map<String, Object> parent, String key) {
+        Object obj = parent.get(key);
+        if (obj instanceof Map) {
+            ((Map<String, Object>) obj).remove("code");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stripClassifierExtraFields(Map<String, Object> parent, String key) {
+        Object obj = parent.get(key);
+        if (obj instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) obj;
+            map.remove("code");
+            map.remove("nameEn");
+            map.remove("nameRu");
+        }
+    }
+
     private String str(Object obj) {
         return obj != null ? String.valueOf(obj) : null;
+    }
+
+    /**
+     * Format date/timestamp to yyyy-MM-dd string (OLD-HEMIS format).
+     * Handles java.sql.Timestamp, java.sql.Date, LocalDate, LocalDateTime.
+     */
+    private String formatDate(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.sql.Timestamp ts) {
+            return ts.toLocalDateTime().toLocalDate().toString();
+        }
+        if (obj instanceof java.sql.Date d) {
+            return d.toLocalDate().toString();
+        }
+        if (obj instanceof java.time.LocalDateTime ldt) {
+            return ldt.toLocalDate().toString();
+        }
+        if (obj instanceof java.time.LocalDate ld) {
+            return ld.toString();
+        }
+        // Fallback: try to extract date part from string like "2023-06-14T00:00:00"
+        String s = obj.toString();
+        if (s.length() >= 10 && s.charAt(4) == '-' && s.charAt(7) == '-') {
+            return s.substring(0, 10);
+        }
+        return s;
     }
 }

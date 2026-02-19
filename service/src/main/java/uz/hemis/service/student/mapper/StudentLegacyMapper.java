@@ -91,6 +91,7 @@ public class StudentLegacyMapper {
 
         // Points field
         dto.setPoints(student.getPoints());
+        dto.setRoommateCount(student.getRoommateCount());
 
         dto.setFullname(buildFullname(student));
         dto.setInstanceName(buildFullname(student));
@@ -123,7 +124,7 @@ public class StudentLegacyMapper {
         dto.setLivingStatus(loadSimpleReference("hemishe_h_student_living_status", "hemishe_HStudentLivingStatus", student.getLivingStatus()));
         dto.setRoommateType(loadSimpleReference("hemishe_h_student_room_mate_type", "hemishe_HStudentRoomMateType", student.getRoommateType()));
         dto.setStipendRate(loadSimpleReference("hemishe_h_stipend_rate", "hemishe_HStipendRate", student.getStipendRate()));
-        dto.setExpelReason(loadSimpleReference("hemishe_h_expel_reason", "hemishe_HExpel", student.getExpelReason()));
+        dto.setExpelReason(loadSimpleReference("hemishe_h_expel", "hemishe_HExpel", student.getExpelReason()));
         dto.setDoctoralStudentType(loadSimpleReference("hemishe_h_doctoral_student_type", "hemishe_HDoctoralStudentType", student.getDoctoralStudentType()));
         // OLD-HEMIS compatibility: These fields ARE returned by OLD-HEMIS in view mode (with null values)
         dto.setAdmissionType(loadSimpleReference("hemishe_h_admission_type", "hemishe_HAdmissionType", student.getAdmissionType()));
@@ -172,7 +173,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name, name_ru, name_en, active FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name, name_ru, name_en, active, version FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.SimpleReferenceDto ref = new StudentLegacyDto.SimpleReferenceDto();
@@ -187,6 +188,9 @@ public class StudentLegacyMapper {
             } else if ("hemishe_HPaymentForm".equals(entityName)) {
                 // Payment form uses "12 - To'lov-shartnoma" format with dash
                 ref.setInstanceName(code + " - " + (name != null ? name : ""));
+            } else if ("hemishe_HExpel".equals(entityName)) {
+                // OLD-HEMIS: expelReason _instanceName is name-only (no code prefix)
+                ref.setInstanceName(name != null ? name : "");
             } else {
                 ref.setInstanceName(code + " " + (name != null ? name : ""));
             }
@@ -204,7 +208,6 @@ public class StudentLegacyMapper {
                 case "hemishe_HAccomodation":
                 case "hemishe_HStudentLivingStatus":
                 case "hemishe_HStudentRoomMateType":
-                case "hemishe_HExpel":
                 case "hemishe_HAcademicReason":
                 case "hemishe_HAcademicMobileType":
                 case "hemishe_HGrantType":
@@ -216,6 +219,10 @@ public class StudentLegacyMapper {
                 case "hemishe_HPovertyLevel":
                     // These return: code (no nameRu, nameEn, active)
                     ref.setCode(code);
+                    break;
+                case "hemishe_HExpel":
+                    // OLD-HEMIS: expelReason returns active (no code, nameRu, nameEn)
+                    ref.setActive(getBoolean(row, "active"));
                     break;
                 case "hemishe_HEducationType":
                     // Returns: code, nameRu, nameEn, active
@@ -256,6 +263,9 @@ public class StudentLegacyMapper {
                     ref.setCode(code);
                     break;
             }
+
+            // OLD-HEMIS service endpoints include version in ALL classifiers
+            ref.setVersion(getInteger(row, "version"));
 
             return ref;
         } catch (Exception e) {
@@ -336,7 +346,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz, version FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.FacultyReferenceDto faculty = new StudentLegacyDto.FacultyReferenceDto();
@@ -345,6 +355,7 @@ public class StudentLegacyMapper {
             String nameUz = (String) row.get("name_uz");
             faculty.setNameUz(nameUz);
             faculty.setInstanceName(nameUz != null ? nameUz : code);
+            faculty.setVersion(getInteger(row, "version"));
 
             return faculty;
         } catch (Exception e) {
@@ -363,7 +374,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name_uz, name_ru, parent_code FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz, name_ru, parent_code, version FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
@@ -374,6 +385,7 @@ public class StudentLegacyMapper {
             // OLD-HEMIS compatibility: top-level soato HAS name_ru
             soato.setNameRu((String) row.get("name_ru"));
             soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
+            soato.setVersion(getInteger(row, "version"));
 
             // OLD-HEMIS compatibility: top-level soato HAS parent_code
             String parentCode = (String) row.get("parent_code");
@@ -398,7 +410,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name_uz FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz, version FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
@@ -408,6 +420,7 @@ public class StudentLegacyMapper {
             soato.setNameUz(soatoNameUz);
             // OLD-HEMIS compatibility: parent_code object has NO name_ru, NO nested parent_code
             soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
+            soato.setVersion(getInteger(row, "version"));
 
             return soato;
         } catch (Exception e) {
@@ -426,7 +439,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name_uz, name_ru, parent_code FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz, name_ru, parent_code, version FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
@@ -436,6 +449,7 @@ public class StudentLegacyMapper {
             soato.setNameUz(soatoNameUz);
             soato.setNameRu((String) row.get("name_ru"));
             soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
+            soato.setVersion(getInteger(row, "version"));
 
             // parent_code as nested object
             String parentCode = (String) row.get("parent_code");
@@ -460,7 +474,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name_uz, name_ru, parent_code FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz, name_ru, parent_code, version FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.SoatoReferenceDto soato = new StudentLegacyDto.SoatoReferenceDto();
@@ -470,6 +484,7 @@ public class StudentLegacyMapper {
             soato.setNameUz(soatoNameUz);
             soato.setNameRu((String) row.get("name_ru"));
             soato.setInstanceName(code + " - " + (soatoNameUz != null ? soatoNameUz : ""));
+            soato.setVersion(getInteger(row, "version"));
 
             // parent_code as nested object
             String parentCode = (String) row.get("parent_code");
@@ -494,7 +509,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name, name_ru, _soato FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
+            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, soatoCode);
 
             String tCode = (String) row.get("code");
@@ -505,6 +520,7 @@ public class StudentLegacyMapper {
             terrain.setName(tName);
             terrain.setNameRu((String) row.get("name_ru"));
             terrain.setInstanceName(tCode + " " + (tName != null ? tName : ""));
+            terrain.setVersion(getInteger(row, "version"));
 
             // OLD-HEMIS compatibility: terrain.soato NO name_ru
             terrain.setSoato(loadSoatoForTerrain(soatoCode));
@@ -526,7 +542,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name, name_ru, _soato FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
+            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, soatoCode);
 
             String tCode = (String) row.get("code");
@@ -537,6 +553,7 @@ public class StudentLegacyMapper {
             terrain.setName(tName);
             terrain.setNameRu((String) row.get("name_ru"));
             terrain.setInstanceName(tCode + " " + (tName != null ? tName : ""));
+            terrain.setVersion(getInteger(row, "version"));
 
             // OLD-HEMIS compatibility: currentTerrain.soato HAS name_ru
             terrain.setSoato(loadSoatoForCurrentTerrain(soatoCode));
@@ -598,7 +615,7 @@ public class StudentLegacyMapper {
             spec.setCode(specCode);
             spec.setName(specName);
             spec.setInstanceName(specCode + " - " + (specName != null ? specName : ""));
-            // OLD-HEMIS compatibility: specialityBachelor does NOT have version
+            spec.setVersion(getInteger(row, "version"));
             return spec;
         } catch (Exception e) {
             log.debug("Failed to load speciality {}: {}", uuid, e.getMessage());
@@ -915,6 +932,62 @@ public class StudentLegacyMapper {
         r.put("isGraduate", student.getIsGraduate());
 
         return r;
+    }
+
+    /**
+     * Convert Student entity to Map for SERVICE endpoints (student/validate, student/id).
+     * OLD-HEMIS service endpoints: NO _instanceName, NO createdBy/updatedBy, but HAVE version.
+     */
+    public Map<String, Object> toLegacyMapForService(Student student) {
+        Map<String, Object> map = toLegacyMap(student);
+        if (map == null) return null;
+        // Service endpoints don't include _instanceName at any level
+        // and don't include createdBy/updatedBy
+        map.remove("_instanceName");
+        map.remove("createdBy");
+        map.remove("updatedBy");
+        removeInstanceNamesRecursive(map);
+        // OLD-HEMIS service endpoints: soato objects don't have name_ru
+        removeNameRuFromSoatoRecursive(map);
+        return map;
+    }
+
+    /**
+     * Remove _instanceName from all nested Map objects recursively.
+     */
+    @SuppressWarnings("unchecked")
+    private void removeInstanceNamesRecursive(Map<String, Object> map) {
+        for (Object value : map.values()) {
+            if (value instanceof Map) {
+                Map<String, Object> nested = (Map<String, Object>) value;
+                nested.remove("_instanceName");
+                removeInstanceNamesRecursive(nested);
+            }
+        }
+    }
+
+    /**
+     * Remove name_ru from specific SOATO fields for service endpoints.
+     * OLD-HEMIS: soato and terrain.soato have NO name_ru;
+     * but currentSoato and currentTerrain.soato KEEP name_ru.
+     */
+    @SuppressWarnings("unchecked")
+    private void removeNameRuFromSoatoRecursive(Map<String, Object> map) {
+        // soato (main field) — no name_ru
+        Object soato = map.get("soato");
+        if (soato instanceof Map) {
+            ((Map<String, Object>) soato).remove("name_ru");
+        }
+        // terrain.soato — no name_ru
+        Object terrain = map.get("terrain");
+        if (terrain instanceof Map) {
+            Object terrainSoato = ((Map<String, Object>) terrain).get("soato");
+            if (terrainSoato instanceof Map) {
+                ((Map<String, Object>) terrainSoato).remove("name_ru");
+            }
+        }
+        // currentSoato — KEEP name_ru
+        // currentTerrain.soato — KEEP name_ru
     }
 
     private String lookupSpecialityCode(String tableName, java.util.UUID uuid) {

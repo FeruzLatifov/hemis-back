@@ -40,7 +40,7 @@ import java.util.Map;
  */
 @Tag(name = "54.Transkript", description = "Transkript va akademik o'zlashtirish xizmatlari")
 @RestController
-@RequestMapping("/services/transcript")
+@RequestMapping("/app/rest/v2/services/transcript")
 @RequiredArgsConstructor
 @Slf4j
 public class TranscriptServiceController {
@@ -126,6 +126,7 @@ public class TranscriptServiceController {
         log.info("GET /services/transcript/get - pinfl: {}", pinfl);
 
         // Build response using LinkedHashMap for consistent field order
+        // OLD-HEMIS format: {success, data, code}
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
 
@@ -134,6 +135,7 @@ public class TranscriptServiceController {
         data.put("message", "Transcript data");
 
         response.put("data", data);
+        response.put("code", 200);
 
         log.info("Transcript data returned for PINFL: {}", pinfl);
         return ResponseEntity.ok(response);

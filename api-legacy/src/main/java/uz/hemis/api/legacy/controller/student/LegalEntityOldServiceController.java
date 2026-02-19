@@ -118,9 +118,8 @@ public class LegalEntityOldServiceController {
             String auth = "Basic " + basic;
             String urlParameters = "grant_type=password&username=" + gnkUsername + "&password=" + gnkPassword;
 
-            disableSsl();
-
             HttpsURLConnection connection = (HttpsURLConnection) URI.create(gnkTokenUrl).toURL().openConnection();
+            applyGovSsl(connection);
             connection.setInstanceFollowRedirects(true);
             connection.setRequestProperty("Authorization", auth);
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
@@ -153,9 +152,8 @@ public class LegalEntityOldServiceController {
 
     private String callGnkApi(String body, String token) {
         try {
-            disableSsl();
-
             HttpsURLConnection connection = (HttpsURLConnection) URI.create(gnkApiUrl).toURL().openConnection();
+            applyGovSsl(connection);
             connection.setInstanceFollowRedirects(true);
             connection.setRequestProperty("Authorization", "Bearer " + token);
             connection.setRequestProperty("Content-Type", "application/json");
@@ -180,17 +178,12 @@ public class LegalEntityOldServiceController {
         }
     }
 
-    private void disableSsl() throws Exception {
-        TrustManager[] trustAllCerts = new TrustManager[]{
-                new X509TrustManager() {
-                    public X509Certificate[] getAcceptedIssuers() { return null; }
-                    public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-                    public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-                }
-        };
-        SSLContext sc = SSLContext.getInstance("SSL");
-        sc.init(null, trustAllCerts, new SecureRandom());
-        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-        HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+    /**
+     * Apply per-connection SSL bypass for government APIs with self-signed certs.
+     */
+    private void applyGovSsl(HttpsURLConnection conn) {
+        javax.net.ssl.SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
+        conn.setSSLSocketFactory(sc.getSocketFactory());
+        conn.setHostnameVerifier((hostname, session) -> true);
     }
 }

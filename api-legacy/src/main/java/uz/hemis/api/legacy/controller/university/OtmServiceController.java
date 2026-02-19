@@ -10,7 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.integration.OtmIntegrationService;
 
+import uz.hemis.api.legacy.util.LegacySecurityHelper;
+
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,13 +32,14 @@ import java.util.Map;
  */
 @Tag(name = "64.OTM", description = "Oliy ta'lim muassasasi ma'lumotlari xizmatlari")
 @RestController
-@RequestMapping("/services/otm")
+@RequestMapping("/app/rest/v2/services/otm")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
 public class OtmServiceController {
 
     private final OtmIntegrationService otmIntegrationService;
+    private final LegacySecurityHelper securityHelper;
 
     /**
      * Get student info by ID (student_id string format from OLD-HEMIS)
@@ -58,6 +62,9 @@ public class OtmServiceController {
     ) {
         log.info("GET /services/otm/studentInfoById - studentId: {}", studentId);
         Map<String, Object> data = otmIntegrationService.getStudentInfoById(studentId);
+        if (data == null) {
+            return ResponseEntity.ok(wrapErrorResponse("Talaba topilmadi"));
+        }
         return ResponseEntity.ok(wrapResponse(data));
     }
 
@@ -79,7 +86,11 @@ public class OtmServiceController {
         @RequestParam String pinfl
     ) {
         log.info("GET /services/otm/studentInfoByPinfl - pinfl: {}", pinfl);
-        Map<String, Object> data = otmIntegrationService.getStudentInfoByPinfl(pinfl);
+        String universityCode = securityHelper.getUniversityCodeFromContext();
+        Map<String, Object> data = otmIntegrationService.getStudentInfoByPinfl(pinfl, universityCode);
+        if (data == null) {
+            return ResponseEntity.ok(wrapErrorResponse("Talaba topilmadi"));
+        }
         return ResponseEntity.ok(wrapResponse(data));
     }
 
@@ -111,16 +122,29 @@ public class OtmServiceController {
     }
 
     /**
-     * Wraps response data in {success, data} format for OLD-HEMIS compatibility.
-     * Uses LinkedHashMap to ensure consistent field order (success first, then data).
+     * Wraps response data in {success, data, code} format for OLD-HEMIS compatibility.
+     * Uses LinkedHashMap to ensure consistent field order.
      *
      * @param data The data to wrap
-     * @return LinkedHashMap with "success" and "data" keys
+     * @return LinkedHashMap with "success", "data", and "code" keys
      */
     private Map<String, Object> wrapResponse(Object data) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
         response.put("data", data);
+        response.put("code", 200);
+        return response;
+    }
+
+    /**
+     * Wraps error response in OLD-HEMIS format: {success: false, error, data: [], code: 404}
+     */
+    private Map<String, Object> wrapErrorResponse(String errorMessage) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", false);
+        response.put("error", errorMessage);
+        response.put("data", List.of());
+        response.put("code", 404);
         return response;
     }
 }

@@ -23,6 +23,7 @@ import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Abstract Base Class for Government API Services
@@ -84,9 +85,6 @@ public abstract class AbstractGovernmentApiService {
         log.debug("Calling external API - Service: {}, URL: {}", serviceName, baseUrl);
 
         try {
-            // Disable SSL verification (government APIs may have self-signed certs)
-            disableSslVerification();
-
             // Build URL with query parameters
             UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
             if (params != null) {
@@ -96,8 +94,8 @@ public abstract class AbstractGovernmentApiService {
 
             log.debug("Full URL: {}", url);
 
-            // Call external API
-            String response = restTemplate.getForObject(url, String.class);
+            // Call external API (use gov RestTemplate for HTTPS with self-signed certs)
+            String response = getGovRestTemplate().getForObject(url, String.class);
 
             log.debug("External API response: {}", response);
 
@@ -147,8 +145,6 @@ public abstract class AbstractGovernmentApiService {
         log.debug("Calling external API (POST) - Service: {}, URL: {}", serviceName, baseUrl);
 
         try {
-            disableSslVerification();
-
             // Build URL with query parameters
             UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(baseUrl);
             if (params != null) {
@@ -161,8 +157,8 @@ public abstract class AbstractGovernmentApiService {
             headers.add("Content-Type", "application/json");
             HttpEntity<Object> requestEntity = new HttpEntity<>(body, headers);
 
-            // Call external API
-            ResponseEntity<String> responseEntity = restTemplate.exchange(
+            // Call external API (use gov RestTemplate for HTTPS with self-signed certs)
+            ResponseEntity<String> responseEntity = getGovRestTemplate().exchange(
                     url, HttpMethod.POST, requestEntity, String.class);
 
             String response = responseEntity.getBody();
@@ -209,14 +205,12 @@ public abstract class AbstractGovernmentApiService {
         log.debug("Proxy POST - Service: {}, URL: {}", serviceName, url);
 
         try {
-            if (url.startsWith("https")) {
-                disableSslVerification();
-            }
-
             // Use HttpURLConnection directly (same as old-hemis MyRequest)
             // RestTemplate loses error body on HTTPS 4xx/5xx responses
             java.net.URL urlObj = java.net.URI.create(url).toURL();
             HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+            // Apply per-connection SSL bypass for government APIs with self-signed certs
+            applyGovSsl(conn);
             conn.setInstanceFollowRedirects(true);
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
@@ -286,12 +280,10 @@ public abstract class AbstractGovernmentApiService {
         log.debug("Proxy GET - Service: {}, URL: {}", serviceName, url);
 
         try {
-            if (url.startsWith("https")) {
-                disableSslVerification();
-            }
-
             java.net.URL urlObj = java.net.URI.create(url).toURL();
             HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+            // Apply per-connection SSL bypass for government APIs with self-signed certs
+            applyGovSsl(conn);
             conn.setInstanceFollowRedirects(true);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Content-Type", "application/json");
@@ -369,21 +361,22 @@ public abstract class AbstractGovernmentApiService {
      * Tries to parse error body as JSON; falls back to raw string.
      */
     private Object buildProxyErrorResponse(int statusCode, String responseBody) {
-        // Try to parse error body as JSON (BIMM API returns JSON errors)
+        // Old-hemis pattern: always return {success: false, data: errorInfo}
+        Map<String, Object> error = new LinkedHashMap<>();
+        error.put("success", false);
+        // Try to parse error body as JSON — keeps data as parsed object (for callEgov wrappers)
         if (responseBody != null && !responseBody.isBlank()) {
             try {
                 Object parsed = parseJsonResponse(responseBody);
                 if (parsed != null) {
-                    return parsed;
+                    error.put("data", parsed);
+                    return error;
                 }
             } catch (JsonProcessingException ignored) {
-                // Not valid JSON, wrap in error map
+                // Not valid JSON, use raw string
             }
         }
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("success", false);
-        error.put("code", statusCode);
-        error.put("data", responseBody);
+        error.put("data", responseBody != null ? responseBody : "");
         return error;
     }
 
@@ -443,46 +436,114 @@ public abstract class AbstractGovernmentApiService {
         return data;
     }
 
+    // Cached SSLContext for government APIs with self-signed certs (thread-safe, created once)
+    private static final AtomicReference<SSLContext> GOV_SSL_CONTEXT = new AtomicReference<>();
+    private static final HostnameVerifier GOV_HOSTNAME_VERIFIER = (hostname, session) -> true;
+
     /**
-     * Disable SSL certificate verification
+     * Get a trust-all SSLContext for government APIs with self-signed certificates.
      *
-     * <p><strong>WARNING:</strong> This is insecure!</p>
-     * <p>Only use for government APIs with self-signed certificates</p>
-     * <p>In production, add government certificate to Java truststore:</p>
+     * <p><strong>IMPORTANT:</strong> This does NOT modify global JVM defaults.
+     * SSL bypass is applied only per-connection via {@link #applyGovSsl(HttpURLConnection)}.</p>
+     *
+     * <p>In production, the proper fix is to add government certificates to the Java truststore:</p>
      * <pre>
      * keytool -import -alias gov-api -file cert.crt -keystore $JAVA_HOME/lib/security/cacerts
      * </pre>
-     *
-     * <p><strong>OPTIMIZATION:</strong> Centralized SSL handling (one place, not duplicated)</p>
      */
-    protected void disableSslVerification() {
+    /**
+     * Static accessor for other services that need government SSL context.
+     */
+    public static SSLContext getGovSslContextStatic() {
+        return getGovSslContext();
+    }
+
+    private static SSLContext getGovSslContext() {
+        SSLContext ctx = GOV_SSL_CONTEXT.get();
+        if (ctx != null) return ctx;
+
         try {
-            // Create trust manager that trusts all certificates
             TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
-                        public X509Certificate[] getAcceptedIssuers() {
-                            return null;
-                        }
-
-                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                        }
-
-                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                        }
+                        public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {}
                     }
             };
-
-            // Install the all-trusting trust manager
-            SSLContext sc = SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-            // Disable hostname verification
-            HostnameVerifier allHostsValid = (hostname, session) -> true;
-            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-
+            ctx = SSLContext.getInstance("TLS");
+            ctx.init(null, trustAllCerts, new SecureRandom());
+            GOV_SSL_CONTEXT.compareAndSet(null, ctx);
+            return GOV_SSL_CONTEXT.get();
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
-            log.error("Failed to disable SSL verification", e);
+            throw new IllegalStateException("Failed to create government SSL context", e);
+        }
+    }
+
+    /**
+     * Apply trust-all SSL to a specific connection (NOT globally).
+     * Only affects HttpsURLConnection instances; plain HTTP is a no-op.
+     */
+    protected void applyGovSsl(HttpURLConnection conn) {
+        if (conn instanceof HttpsURLConnection httpsConn) {
+            httpsConn.setSSLSocketFactory(getGovSslContext().getSocketFactory());
+            httpsConn.setHostnameVerifier(GOV_HOSTNAME_VERIFIER);
+        }
+    }
+
+    /**
+     * @deprecated Use {@link #applyGovSsl(HttpURLConnection)} for per-connection SSL bypass.
+     * This method is kept for backward compatibility but now delegates to per-connection approach.
+     */
+    @Deprecated(since = "2.1.0", forRemoval = true)
+    protected void disableSslVerification() {
+        // No-op: SSL bypass is now applied per-connection via applyGovSsl()
+        // Keeping this method to avoid breaking subclasses that override it
+        log.debug("disableSslVerification() called - SSL bypass is now per-connection, this is a no-op");
+    }
+
+    // Cached RestTemplate for government APIs with SSL bypass (lazy, thread-safe)
+    private static final AtomicReference<RestTemplate> GOV_REST_TEMPLATE = new AtomicReference<>();
+
+    /**
+     * Get a RestTemplate configured with trust-all SSL for government APIs.
+     * Does NOT modify the global JVM SSLContext.
+     */
+    public static RestTemplate getGovRestTemplate() {
+        RestTemplate rt = GOV_REST_TEMPLATE.get();
+        if (rt != null) return rt;
+
+        try {
+            SSLContext sslContext = getGovSslContext();
+            org.apache.hc.client5.http.impl.classic.CloseableHttpClient httpClient =
+                    org.apache.hc.client5.http.impl.classic.HttpClients.custom()
+                            .setConnectionManager(
+                                    org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder.create()
+                                            .setTlsSocketStrategy(
+                                                    new org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy(
+                                                            sslContext,
+                                                            org.apache.hc.client5.http.ssl.NoopHostnameVerifier.INSTANCE)
+                                            )
+                                            .setMaxConnTotal(50)
+                                            .setMaxConnPerRoute(10)
+                                            .build()
+                            )
+                            .setDefaultRequestConfig(
+                                    org.apache.hc.client5.http.config.RequestConfig.custom()
+                                            .setConnectionRequestTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                                            .setResponseTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                                            .build()
+                            )
+                            .build();
+
+            rt = new RestTemplate(new org.springframework.http.client.HttpComponentsClientHttpRequestFactory(httpClient));
+            GOV_REST_TEMPLATE.compareAndSet(null, rt);
+            return GOV_REST_TEMPLATE.get();
+        } catch (Exception e) {
+            // Fallback to regular RestTemplate if Apache HttpClient is unavailable
+            log.warn("Failed to create government RestTemplate with custom SSL, falling back to default", e);
+            rt = new RestTemplate();
+            GOV_REST_TEMPLATE.compareAndSet(null, rt);
+            return GOV_REST_TEMPLATE.get();
         }
     }
 

@@ -424,7 +424,7 @@ public class StudentGpaService {
         );
 
         List<Map<String, Object>> result = new ArrayList<>();
-        boolean useNested = view != null && !view.isEmpty();
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
         for (StudentGpa gpa : page.getContent()) {
             result.add(toLegacyMap(gpa, useNested));
         }

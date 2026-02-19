@@ -158,7 +158,8 @@ public class VerificationService {
             String sql = """
                 SELECT code, name, student_url, teacher_url, tin, address, active,
                        add_student, allow_grouping, allow_transfer_outside,
-                       accreditation_edit, gpa_edit, one_id, version
+                       accreditation_edit, gpa_edit, one_id, version,
+                       add_academic_mobile_student
                 FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL
                 """;
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
@@ -180,6 +181,7 @@ public class VerificationService {
             uni.put("gpaEdit", row.get("gpa_edit"));
             uni.put("oneId", row.get("one_id"));
             uni.put("version", row.get("version"));
+            uni.put("addAcademicMobileStudent", row.get("add_academic_mobile_student"));
 
             return uni;
         } catch (Exception e) {

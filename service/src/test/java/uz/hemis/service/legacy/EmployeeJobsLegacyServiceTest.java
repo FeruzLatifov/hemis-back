@@ -140,9 +140,10 @@ class EmployeeJobsLegacyServiceTest {
         );
 
         assertThat(result).containsKey("_entityName");
-        assertThat(result.get("_entityName")).isEqualTo("hemishe_EEmployeeJob");
+        assertThat(result.get("_entityName")).isEqualTo("hemishe_EEmployeeJobs");
         assertThat(result.get("id")).isEqualTo(entityId);
-        assertThat(result.get("version")).isEqualTo(1);
+        // OLD-HEMIS: version is NOT included in eEmployeeJobs-view
+        assertThat(result).doesNotContainKey("version");
     }
 
     // =====================================================

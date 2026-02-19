@@ -53,7 +53,7 @@ public class EducationMaterialsEntityController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(academicService.toEducationMaterialsMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(academicService.toEducationMaterialsMap(entity.get(), returnNulls, view));
     }
 
     @PutMapping("/{entityId}")
@@ -112,7 +112,7 @@ public class EducationMaterialsEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> academicService.toEducationMaterialsMap(e, returnNulls))
+            .map(e -> academicService.toEducationMaterialsMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -139,7 +139,7 @@ public class EducationMaterialsEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> academicService.toEducationMaterialsMap(e, returnNulls))
+            .map(e -> academicService.toEducationMaterialsMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -171,7 +171,7 @@ public class EducationMaterialsEntityController {
         Page<EducationMaterials> entityPage = academicService.findAllEducationMaterials(pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> academicService.toEducationMaterialsMap(e, returnNulls))
+            .map(e -> academicService.toEducationMaterialsMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 

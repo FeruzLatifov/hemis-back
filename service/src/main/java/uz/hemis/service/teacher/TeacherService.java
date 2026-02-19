@@ -148,12 +148,15 @@ public class TeacherService {
             return result;
         }
 
-        Optional<Teacher> teacher = teacherRepository.findByPinfl(pinfl);
+        // Use findAllByPinfl — same PINFL may exist at multiple universities
+        List<Teacher> teachers = teacherRepository.findAllByPinfl(pinfl);
+        Optional<Teacher> teacher = teachers.stream().findFirst();
         if (!teacher.isPresent()) {
-            // Try by serial number using JPA Example query
+            // Try by serial number
             Teacher probe = new Teacher();
             probe.setSerialNumber(pinfl);
-            teacher = teacherRepository.findOne(Example.of(probe));
+            List<Teacher> bySerial = teacherRepository.findAll(Example.of(probe));
+            teacher = bySerial.stream().findFirst();
         }
 
         if (teacher.isPresent()) {

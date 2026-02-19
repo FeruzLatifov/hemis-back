@@ -60,26 +60,51 @@ public class FacultyRegistryService {
     public Page<FacultyGroupRowDto> getFacultyGroups(String q, Boolean status, Pageable pageable) {
         log.debug("Getting faculty groups: q={}, status={}, page={}", q, status, pageable.getPageNumber());
 
-        String countSql = "SELECT COUNT(DISTINCT code) FROM hemishe_r_university_department WHERE _department_type = '0'";
+        String searchLike = (q != null && !q.isBlank()) ? "%" + q.trim().toLowerCase() + "%" : null;
+
+        // Uses hemishe_e_university (has delete_ts) for proper soft-delete filtering
+        StringBuilder where = new StringBuilder("WHERE u.delete_ts IS NULL ");
+        List<Object> params = new ArrayList<>();
+        int paramIdx = 1;
+
+        if (searchLike != null) {
+            where.append("AND (LOWER(u.name) LIKE ? OR LOWER(u.code) LIKE ?) ");
+            params.add(searchLike);
+            params.add(searchLike);
+            paramIdx += 2;
+        }
+
+        // Count query
+        String countSql = "SELECT COUNT(*) FROM hemishe_e_university u " + where;
         Query countQuery = entityManager.createNativeQuery(countSql);
+        for (int i = 0; i < params.size(); i++) {
+            countQuery.setParameter(i + 1, params.get(i));
+        }
         long total = ((Number) countQuery.getSingleResult()).longValue();
 
         if (total == 0) {
             return Page.empty(pageable);
         }
 
+        // Data query — faculty counts from hemishe_e_university_department (has delete_ts, status)
+        // Note: legacy typo _deparment_type in entity table
         String dataSql =
-            "SELECT parent.code, parent.name_uz, " +
-            "  (SELECT COUNT(*) FROM hemishe_r_university_department f WHERE f.parent_id = parent.id AND f._department_type = '11') as faculty_count, " +
-            "  (SELECT COUNT(*) FROM hemishe_r_university_department f WHERE f.parent_id = parent.id AND f._department_type = '11') as active_count " +
-            "FROM hemishe_r_university_department parent " +
-            "WHERE parent._department_type = '0' " +
-            "ORDER BY parent.name_uz ASC " +
+            "SELECT u.code, u.name, " +
+            "  (SELECT COUNT(*) FROM hemishe_e_university_department d " +
+            "   WHERE d.university_code = u.code AND d._deparment_type = '11' AND d.delete_ts IS NULL) as faculty_count, " +
+            "  (SELECT COUNT(*) FROM hemishe_e_university_department d " +
+            "   WHERE d.university_code = u.code AND d._deparment_type = '11' AND d.delete_ts IS NULL AND d.status = true) as active_count " +
+            "FROM hemishe_e_university u " +
+            where +
+            "ORDER BY u.name ASC " +
             "LIMIT ? OFFSET ?";
 
         Query dataQuery = entityManager.createNativeQuery(dataSql);
-        dataQuery.setParameter(1, pageable.getPageSize());
-        dataQuery.setParameter(2, pageable.getOffset());
+        for (int i = 0; i < params.size(); i++) {
+            dataQuery.setParameter(i + 1, params.get(i));
+        }
+        dataQuery.setParameter(paramIdx, pageable.getPageSize());
+        dataQuery.setParameter(paramIdx + 1, pageable.getOffset());
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = dataQuery.getResultList();
@@ -110,38 +135,67 @@ public class FacultyRegistryService {
      * @return Page of faculties
      */
     public Page<FacultyRowDto> getFacultiesByUniversity(
-        String universityCode, 
-        String q, 
-        Boolean status, 
+        String universityCode,
+        String q,
+        Boolean status,
         Pageable pageable
     ) {
         log.debug("Getting faculties for university: code={}, q={}, status={}", universityCode, q, status);
 
-        String countSql = 
-            "SELECT COUNT(*) FROM hemishe_r_university_department d " +
-            "INNER JOIN hemishe_r_university_department parent ON parent.id = d.parent_id " +
-            "WHERE d._department_type = '11' AND parent.code = ?";
-        
+        String searchLike = (q != null && !q.isBlank()) ? "%" + q.trim().toLowerCase() + "%" : null;
+
+        // Uses hemishe_e_university_department (has delete_ts, status) with hemishe_e_university
+        // Note: legacy typo _deparment_type in entity table
+        StringBuilder where = new StringBuilder(
+            "WHERE d._deparment_type = '11' AND d.delete_ts IS NULL AND u.code = ? ");
+        List<Object> params = new ArrayList<>();
+        params.add(universityCode);
+        int paramIdx = 2;
+
+        if (searchLike != null) {
+            where.append("AND (LOWER(d.name_uz) LIKE ? OR LOWER(d.code) LIKE ?) ");
+            params.add(searchLike);
+            params.add(searchLike);
+            paramIdx += 2;
+        }
+
+        if (status != null) {
+            where.append("AND d.status = ? ");
+            params.add(status);
+            paramIdx++;
+        }
+
+        // Count query
+        String countSql =
+            "SELECT COUNT(*) FROM hemishe_e_university_department d " +
+            "INNER JOIN hemishe_e_university u ON u.code = d.university_code " +
+            where;
+
         Query countQuery = entityManager.createNativeQuery(countSql);
-        countQuery.setParameter(1, universityCode);
+        for (int i = 0; i < params.size(); i++) {
+            countQuery.setParameter(i + 1, params.get(i));
+        }
         long total = ((Number) countQuery.getSingleResult()).longValue();
 
         if (total == 0) {
             return Page.empty(pageable);
         }
 
+        // Data query
         String dataSql =
-            "SELECT d.code, d.name_uz, d.name_ru, parent.code, parent.name_uz, true " +
-            "FROM hemishe_r_university_department d " +
-            "INNER JOIN hemishe_r_university_department parent ON parent.id = d.parent_id " +
-            "WHERE d._department_type = '11' AND parent.code = ? " +
+            "SELECT d.code, d.name_uz, d.name_ru, u.code, u.name, d.status " +
+            "FROM hemishe_e_university_department d " +
+            "INNER JOIN hemishe_e_university u ON u.code = d.university_code " +
+            where +
             "ORDER BY d.name_uz ASC " +
             "LIMIT ? OFFSET ?";
 
         Query dataQuery = entityManager.createNativeQuery(dataSql);
-        dataQuery.setParameter(1, universityCode);
-        dataQuery.setParameter(2, pageable.getPageSize());
-        dataQuery.setParameter(3, pageable.getOffset());
+        for (int i = 0; i < params.size(); i++) {
+            dataQuery.setParameter(i + 1, params.get(i));
+        }
+        dataQuery.setParameter(paramIdx, pageable.getPageSize());
+        dataQuery.setParameter(paramIdx + 1, pageable.getOffset());
 
         @SuppressWarnings("unchecked")
         List<Object[]> results = dataQuery.getResultList();
@@ -173,13 +227,15 @@ public class FacultyRegistryService {
     public Optional<FacultyDetailDto> getFacultyDetail(String code) {
         log.debug("Getting faculty detail: code={}", code);
 
-        String sql = "SELECT d.code, d.name_uz, d.name_ru, parent.code, parent.name_uz, " +
-                    "true, d._department_type, dt.name, CAST(d.parent_id AS VARCHAR), d.keys_, " +
-                    "null, null, null, null, 0 " +
-                    "FROM hemishe_r_university_department d " +
-                    "LEFT JOIN hemishe_r_university_department parent ON parent.id = d.parent_id " +
-                    "LEFT JOIN hemishe_h_university_department_type dt ON d._department_type = dt.code " +
-                    "WHERE d.code = ?";
+        // Uses entity tables with proper delete_ts/status columns
+        // Note: legacy typo _deparment_type in entity table
+        String sql = "SELECT d.code, d.name_uz, d.name_ru, u.code, u.name, " +
+                    "d.status, d._deparment_type, dt.name, d.parent_code, d.path, " +
+                    "d.create_ts, d.created_by, d.update_ts, d.updated_by, d.version " +
+                    "FROM hemishe_e_university_department d " +
+                    "LEFT JOIN hemishe_e_university u ON u.code = d.university_code " +
+                    "LEFT JOIN hemishe_h_university_department_type dt ON d._deparment_type = dt.code " +
+                    "WHERE d.code = ? AND d.delete_ts IS NULL";
 
         Query query = entityManager.createNativeQuery(sql);
         query.setParameter(1, code);

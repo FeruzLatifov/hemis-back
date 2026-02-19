@@ -69,7 +69,7 @@ public class LaboratoriesEntityController {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(universityRefService.toLaboratoriesMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(universityRefService.toLaboratoriesMap(entity.get(), returnNulls, view));
     }
 
     @PutMapping("/{entityId}")
@@ -128,7 +128,7 @@ public class LaboratoriesEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> universityRefService.toLaboratoriesMap(e, returnNulls))
+            .map(e -> universityRefService.toLaboratoriesMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -155,7 +155,7 @@ public class LaboratoriesEntityController {
         );
 
         return ResponseEntity.ok(result.stream()
-            .map(e -> universityRefService.toLaboratoriesMap(e, returnNulls))
+            .map(e -> universityRefService.toLaboratoriesMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 
@@ -187,7 +187,7 @@ public class LaboratoriesEntityController {
         Page<Laboratories> entityPage = universityRefService.findAllLaboratories(pageRequest);
 
         return ResponseEntity.ok(entityPage.getContent().stream()
-            .map(e -> universityRefService.toLaboratoriesMap(e, returnNulls))
+            .map(e -> universityRefService.toLaboratoriesMap(e, returnNulls, view))
             .collect(Collectors.toList()));
     }
 

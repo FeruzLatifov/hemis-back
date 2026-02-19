@@ -137,6 +137,24 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // University dictionaries (static): 6 hours
         redisCacheConfigurations.put("universityDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
 
+        // Student list search cache (lightweight DTO, paged + filters): 30 minutes
+        redisCacheConfigurations.put("studentsListSearch", defaultConfig.entryTtl(DASHBOARD_TTL));
+
+        // Student list COUNT cache (shared across pages, same filter = same count): 30 minutes
+        redisCacheConfigurations.put("studentsListCount", defaultConfig.entryTtl(DASHBOARD_TTL));
+
+        // Student stats cache: 30 minutes
+        redisCacheConfigurations.put("studentStats", defaultConfig.entryTtl(DASHBOARD_TTL));
+
+        // Student duplicate stats cache: 1 hour (heavy query, rarely changes)
+        redisCacheConfigurations.put("studentDuplicateStats", defaultConfig.entryTtl(Duration.ofHours(1)));
+
+        // Student duplicate list cache (paged): 30 minutes
+        redisCacheConfigurations.put("studentDuplicates", defaultConfig.entryTtl(DASHBOARD_TTL));
+
+        // Student dictionaries (static): 6 hours
+        redisCacheConfigurations.put("studentDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+
         // Create Redis cache manager (L2)
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

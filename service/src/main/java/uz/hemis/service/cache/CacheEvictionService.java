@@ -429,6 +429,38 @@ public class CacheEvictionService {
         }
     }
 
+    /**
+     * Evict student search cache
+     */
+    public void evictStudentSearch() {
+        log.info("Evicting student search cache");
+
+        org.springframework.cache.Cache searchCache = cacheManager.getCache("studentsListSearch");
+        if (searchCache != null) {
+            searchCache.clear();
+        }
+        org.springframework.cache.Cache countCache = cacheManager.getCache("studentsListCount");
+        if (countCache != null) {
+            countCache.clear();
+        }
+        org.springframework.cache.Cache statsCache = cacheManager.getCache("studentStats");
+        if (statsCache != null) {
+            statsCache.clear();
+        }
+    }
+
+    /**
+     * Evict student dictionaries cache
+     */
+    public void evictStudentDictionaries() {
+        log.info("Evicting student dictionaries cache");
+
+        org.springframework.cache.Cache dictCache = cacheManager.getCache("studentDictionaries");
+        if (dictCache != null) {
+            dictCache.clear();
+        }
+    }
+
     // =====================================================
     // Utility Methods
     // =====================================================

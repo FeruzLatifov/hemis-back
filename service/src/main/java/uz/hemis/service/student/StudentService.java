@@ -139,6 +139,16 @@ public class StudentService {
     }
 
     /**
+     * Find all student entities (paginated) - for legacy endpoints needing entity access
+     *
+     * @param pageable pagination parameters
+     * @return page of student entities
+     */
+    public Page<Student> findAllEntities(Pageable pageable) {
+        return studentRepository.findAll(pageable);
+    }
+
+    /**
      * Find students by university code
      *
      * @param universityCode university code
@@ -718,13 +728,19 @@ public class StudentService {
      * OLD-HEMIS: StudentServiceBean.students(university, limit, offset)
      * Paginated student list, max 1000
      */
-    public List<Map<String, Object>> getStudentsByUniversityFlat(String university, int limit, int offset) {
+    public Map<String, Object> getStudentsByUniversityFlatWithCount(String university, int limit, int offset) {
         int safeLimit = Math.min(limit, 1000);
         List<Student> students = studentRepository.findStudentsByUniversityPaginated(university, safeLimit, offset);
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<Map<String, Object>> data = new ArrayList<>();
         for (Student s : students) {
-            result.add(studentLegacyMapper.toLegacyMap(s));
+            data.add(studentLegacyMapper.toLegacyMapForService(s));
         }
+        // Total count (active + academic leave statuses)
+        long count = studentRepository.countByUniversityAndStudentStatus(university, "11")
+                   + studentRepository.countByUniversityAndStudentStatus(university, "16");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("data", data);
+        result.put("count", count);
         return result;
     }
 
@@ -1511,7 +1527,7 @@ public class StudentService {
             result.put("success", true);
             result.put("code", code);
             result.put("message", message);
-            result.put("data", studentLegacyMapper.toLegacyMap(student));
+            result.put("data", studentLegacyMapper.toLegacyMapForService(student));
 
             return result;
 
@@ -1591,6 +1607,19 @@ public class StudentService {
             return result;
         }
 
+        // Step 1b: Validate citizenship code exists in classifier
+        try {
+            jdbcTemplate.queryForMap(
+                    "SELECT code FROM hemishe_h_citizenship WHERE code = ? AND delete_ts IS NULL",
+                    data.getCitizenship());
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            log.warn("Citizenship code not found: {}", data.getCitizenship());
+            result.put("success", false);
+            result.put("message", "Citizenship value not available!");
+            result.put("data", data);
+            return result;
+        }
+
         // Step 2: Determine ID data (PINFL for Uzbeks, serial for foreigners)
         String idData;
         if ("11".equals(data.getCitizenship())) {
@@ -1605,8 +1634,7 @@ public class StudentService {
             log.warn("Student is already active: {}", activeStudent.get().getCode());
             result.put("success", false);
             result.put("message", "Student is active!");
-            result.put("is_active", true);
-            result.put("student", studentLegacyMapper.toLegacyDto(activeStudent.get()));
+            result.put("data", studentLegacyMapper.toLegacyMapForService(activeStudent.get()));
             return result;
         }
 
@@ -1618,7 +1646,7 @@ public class StudentService {
             result.put("success", true);
             result.put("is_new", false);
             result.put("unique_id", student.getCode());
-            result.put("student", studentLegacyMapper.toLegacyDto(student));
+            result.put("data", studentLegacyMapper.toLegacyMapForService(student));
             return result;
         }
 
@@ -1647,7 +1675,7 @@ public class StudentService {
             result.put("is_new", true);
             result.put("unique_id", uniqueCode);
             result.put("university", universityCode);
-            result.put("student", studentLegacyMapper.toLegacyDto(saved));
+            result.put("data", studentLegacyMapper.toLegacyMapForService(saved));
             return result;
 
         } catch (Exception ex) {

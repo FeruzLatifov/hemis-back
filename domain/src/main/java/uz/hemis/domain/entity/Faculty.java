@@ -50,10 +50,9 @@ public class Faculty extends BaseEntity {
     private String name;
 
     /**
-     * Short name
-     * Column: short_name VARCHAR(255)
+     * Short name — not in legacy DB
      */
-    @Column(name = "short_name", length = 255)
+    @jakarta.persistence.Transient
     private String shortName;
 
     // =====================================================
@@ -75,11 +74,9 @@ public class Faculty extends BaseEntity {
     // =====================================================
 
     /**
-     * Faculty type code
-     * Column: _faculty_type VARCHAR(32)
-     * References: hemishe_h_faculty_type.code
+     * Faculty type code — not in legacy DB
      */
-    @Column(name = "_faculty_type", length = 32)
+    @jakarta.persistence.Transient
     private String facultyType;
 
     // =====================================================
@@ -87,10 +84,9 @@ public class Faculty extends BaseEntity {
     // =====================================================
 
     /**
-     * Active flag
-     * Column: active BOOLEAN
+     * Active flag — not in legacy DB, computed from delete_ts
      */
-    @Column(name = "active")
+    @jakarta.persistence.Transient
     private Boolean active;
 
     // =====================================================

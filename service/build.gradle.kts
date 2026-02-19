@@ -31,6 +31,9 @@ dependencies {
     // Spring Security (for SecurityContextHolder in audit trail)
     implementation("org.springframework.security:spring-security-core")
 
+    // Apache HttpClient5 (for SSL-bypassing RestTemplate in government API calls)
+    implementation("org.apache.httpcomponents.client5:httpclient5")
+
     // Swagger/OpenAPI annotations for DTOs
     compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:3.0.1")
 

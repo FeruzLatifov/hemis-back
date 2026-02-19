@@ -23,6 +23,7 @@ import uz.hemis.common.dto.TokenResponse;
 import uz.hemis.security.config.LegacyOAuthClientProperties;
 import uz.hemis.security.service.TokenService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +76,7 @@ public class LegacyOAuthTokenController {
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
     private final LegacyOAuthClientProperties oauthClientProperties;
+    private final uz.hemis.security.service.RateLimitService rateLimitService;
 
     /**
      * Token olish (Password Grant) - Asosiy endpoint
@@ -204,9 +206,10 @@ public class LegacyOAuthTokenController {
             @RequestParam("grant_type") String grantType,
             @RequestParam(value = "username", required = false) String username,
             @RequestParam(value = "password", required = false) String password,
-            @RequestParam(value = "refresh_token", required = false) String refreshToken
+            @RequestParam(value = "refresh_token", required = false) String refreshToken,
+            HttpServletRequest request
     ) {
-        return processTokenRequest(authorization, grantType, username, password, refreshToken);
+        return processTokenRequest(authorization, grantType, username, password, refreshToken, request);
     }
 
     /**
@@ -224,21 +227,36 @@ public class LegacyOAuthTokenController {
     )
     public ResponseEntity<?> tokenJson(
             @RequestHeader(value = "Authorization", required = false) String authorization,
-            @RequestBody Map<String, String> body
+            @RequestBody Map<String, String> body,
+            HttpServletRequest request
     ) {
         return processTokenRequest(
                 authorization,
                 body.get("grant_type"),
                 body.get("username"),
                 body.get("password"),
-                body.get("refresh_token")
+                body.get("refresh_token"),
+                request
         );
     }
 
     private ResponseEntity<?> processTokenRequest(
-            String authorization, String grantType, String username, String password, String refreshToken
+            String authorization, String grantType, String username, String password,
+            String refreshToken, HttpServletRequest request
     ) {
         log.info("Legacy token request - grant_type: {}, username: {}", grantType, username);
+
+        // ✅ SECURITY FIX: Rate limiting for legacy token endpoint
+        String clientIp = getClientIp(request);
+        if ("password".equals(grantType) && !rateLimitService.isAllowed(clientIp)) {
+            log.warn("Rate limit exceeded for legacy token endpoint - IP: {}", clientIp);
+            long retryAfter = rateLimitService.getSecondsUntilReset(clientIp);
+            return ResponseEntity
+                    .status(HttpStatus.TOO_MANY_REQUESTS)
+                    .header("Retry-After", String.valueOf(retryAfter))
+                    .body(errorResponse("rate_limit_exceeded",
+                            "Too many login attempts. Try again in " + retryAfter + " seconds"));
+        }
 
         try {
             // Client autentifikatsiyasini tekshirish (Basic auth)
@@ -386,6 +404,21 @@ public class LegacyOAuthTokenController {
      * @param description xatolik tavsifi
      * @return xatolik map
      */
+    /**
+     * Mijoz IP manzilini aniqlash (proxy ortida ham)
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty()) {
+            return xRealIp;
+        }
+        return request.getRemoteAddr();
+    }
+
     private Map<String, String> errorResponse(String error, String description) {
         Map<String, String> response = new HashMap<>();
         response.put("error", error);

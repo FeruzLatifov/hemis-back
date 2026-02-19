@@ -298,28 +298,27 @@ public class AcademicEntityLegacyService {
     }
 
     public Map<String, Object> toEducationMaterialsMap(EducationMaterials entity, Boolean returnNulls) {
+        return toEducationMaterialsMap(entity, returnNulls, null);
+    }
+
+    public Map<String, Object> toEducationMaterialsMap(EducationMaterials entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", EDUCATION_MATERIALS_ENTITY);
-
         map.put("_instanceName", "com.company.hemishe.entity.REducationMaterials-" + entity.getId() + " [detached]");
-
         map.put("id", entity.getId());
 
-        putIfNotNull(map, "university_code", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "education_year_code", entity.getEducationYear(), returnNulls);
-        putIfNotNull(map, "speciality_id", entity.getSpecialityId(), returnNulls);
-        putIfNotNull(map, "speciality_code", entity.getSpecialityCode(), returnNulls);
-        putIfNotNull(map, "speciality_name", entity.getSpecialityName(), returnNulls);
-        putIfNotNull(map, "subject_count", entity.getSubjectCount(), returnNulls);
-        putIfNotNull(map, "textbooks_count", entity.getTextbooksCount(), returnNulls);
-        putIfNotNull(map, "created_materials_grade", entity.getCreatedMaterialsGrade(), returnNulls);
+        boolean isLocal = "_local".equals(view);
 
-        putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        if (!isLocal) {
+            putIfNotNull(map, "universityCode", entity.getUniversity(), returnNulls);
+            putIfNotNull(map, "educationYearCode", entity.getEducationYear(), returnNulls);
+        }
+        putIfNotNull(map, "specialityId", entity.getSpecialityId(), returnNulls);
+        putIfNotNull(map, "specialityCode", entity.getSpecialityCode(), returnNulls);
+        putIfNotNull(map, "specialityName", entity.getSpecialityName(), returnNulls);
+        putIfNotNull(map, "subjectCount", entity.getSubjectCount(), returnNulls);
+        putIfNotNull(map, "textbooksCount", entity.getTextbooksCount(), returnNulls);
+        putIfNotNull(map, "createdMaterialsGrade", entity.getCreatedMaterialsGrade(), returnNulls);
 
         return map;
     }

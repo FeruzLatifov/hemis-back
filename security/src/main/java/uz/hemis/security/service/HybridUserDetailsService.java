@@ -215,4 +215,13 @@ public class HybridUserDetailsService implements UserDetailsService, UserDetails
      */
     // DEFERRED: Implement getMigrationStats() method for monitoring dashboard
     // =====================================================
+
+    @Override
+    public UserDetails updatePassword(UserDetails user, String newPassword) {
+        // Delegate to new system's password update
+        if (customUserDetailsService instanceof UserDetailsPasswordService) {
+            return ((UserDetailsPasswordService) customUserDetailsService).updatePassword(user, newPassword);
+        }
+        throw new UnsupportedOperationException("Password update not supported");
+    }
 }

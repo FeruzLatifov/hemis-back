@@ -196,50 +196,134 @@ public class StudentEntityController {
 
         Student student = studentOpt.get();
         Map<String, Object> cubaMap = studentLegacyMapper.toLegacyMap(student);
+        cubaMap = postProcessStudentLegacyMap(cubaMap, returnNulls);
 
+        return ResponseEntity.ok(cubaMap);
+    }
+
+    /**
+     * Post-process a student legacy map for OLD-HEMIS compatibility.
+     * Adds null fields for missing references, handles university nested fields,
+     * removes NEW-hemis-only fields, and reorders to match OLD-HEMIS field order.
+     *
+     * Used by both getById (expanded view) and getAll (expanded view).
+     */
+    private Map<String, Object> postProcessStudentLegacyMap(Map<String, Object> cubaMap, Boolean returnNulls) {
         // OLD-HEMIS compatibility: ALWAYS add null fields for missing reference objects
         // (OLD-HEMIS returns null fields regardless of returnNulls parameter in view mode)
         Object jsonNull = JsonNull.INSTANCE;
-        // Reference fields that might be null
+        // Reference fields that OLD-HEMIS eStudent-view returns as null when absent.
+        // Includes ALL fields confirmed from OLD-HEMIS PHP test comparison.
         String[] refFields = {
-            "country", "educationType", "educationYear", "educationForm",
+            "currentEducationYear", "country", "educationType", "educationYear", "educationForm",
             "language", "socialCategory", "studentStatus", "citizenship", "gender",
             "nationality", "paymentForm", "grantType", "studentType", "course",
-            "accomodation", "livingStatus", "roommateType", "statusEducationYear",
-            "currentEducationYear", "expelReason", "stipendRate", "doctoralStudentType",
-            "university", "faculty", "soato", "currentSoato", "terrain", "currentTerrain",
-            "specialityBachelor", "specialityMaster", "specialityDoctoral",
-            "specialityOrdinatura", "academicMobileType", "povertyLevel",
-            "graduationYear", "academicReason",
-            // Transfer and admission fields (OLD-HEMIS returns null in view mode)
-            "admissionType", "transferCountry", "transferType", "transferUniversity",
-            // Additional OLD-HEMIS fields
+            "accomodation", "statusEducationYear",
+            "university", "faculty", "soato", "terrain", "currentSoato", "currentTerrain",
+            "specialityBachelor", "specialityMaster", "specialityDoctoral", "specialityOrdinatura",
             "decreeInfoName", "decreeInfoNumber", "decreeInfoDate",
-            "status", "speciality", "roommateCount",
-            "eduStartDate", "graduationDate", "studyDuration"
+            "academicMobileType", "transferCountry", "povertyLevel",
+            "graduationYear", "admissionType", "academicReason",
+            "livingStatus", "roommateType", "status",
+            "expelReason", "stipendRate", "doctoralStudentType",
+            "roommateCount", "eduStartDate", "transferUniversity",
+            "graduationDate", "transferType", "studyDuration", "speciality",
+            "points", "isDuplicate"
         };
         for (String field : refFields) {
             cubaMap.putIfAbsent(field, jsonNull);
         }
 
-        // University nested fields - OLD-HEMIS returns null for these
+        // OLD-HEMIS compatibility: scalar fields that should be returned as null when absent
+        // Jackson NON_NULL strips null values from ObjectMapper serialization in toLegacyMap(),
+        // so we must add them back when returnNulls=true (old-hemis returns all fields in view mode)
+        if (Boolean.TRUE.equals(returnNulls)) {
+            String[] scalarFields = {
+                "pinfl", "serialNumber", "birthday", "phone", "email", "address",
+                "currentAddress", "parentPhone", "responsiblePersonPhone", "geoAddress",
+                "passportGivenDate", "tag", "fathername", "groupId", "groupName",
+                "enrollOrderName", "enrollOrderDate", "enrollOrderNumber", "enrollOrderCategory",
+                "statusOrderName", "statusOrderDate", "statusOrderNumber", "statusOrderCategory",
+                "isGraduate", "verified"
+            };
+            for (String field : scalarFields) {
+                cubaMap.putIfAbsent(field, jsonNull);
+            }
+        }
+
+        // Remove .code from specific nested classifiers where OLD-HEMIS doesn't include it
+        // (most classifiers in OLD DO have .code — only these 4 don't)
+        String[] noCodeClassifiers = {"educationType", "educationYear", "faculty", "grantType"};
+        for (String field : noCodeClassifiers) {
+            Object obj = cubaMap.get(field);
+            if (obj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> nested = (Map<String, Object>) obj;
+                nested.remove("code");
+            }
+        }
+
+        // Remove name_ru from soato nested object (OLD-HEMIS doesn't include it)
+        Object soatoObj = cubaMap.get("soato");
+        if (soatoObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> soatoMap = (Map<String, Object>) soatoObj;
+            soatoMap.remove("name_ru");
+        }
+
+        // Remove name_ru from currentSoato (OLD-HEMIS doesn't include it)
+        Object cSoatoObj = cubaMap.get("currentSoato");
+        if (cSoatoObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> cSoatoMap = (Map<String, Object>) cSoatoObj;
+            cSoatoMap.remove("name_ru");
+        }
+
+        // Strip .code, .soato.parent_code from terrain (OLD-HEMIS doesn't include them)
+        stripTerrainExtras(cubaMap, "terrain");
+        // Strip .code, .soato.parent_code from currentTerrain
+        stripTerrainExtras(cubaMap, "currentTerrain");
+
+        // University nested fields cleanup — remove only code/version, add missing null fields
         Object uniObj = cubaMap.get("university");
         if (uniObj instanceof Map) {
             @SuppressWarnings("unchecked")
             Map<String, Object> uniMap = (Map<String, Object>) uniObj;
+            uniMap.remove("code");
+            uniMap.remove("version");
+            // OLD-HEMIS returns these fields as null when absent (DTO @JsonInclude(NON_NULL) strips them)
             String[] uniNullFields = {
                 "gradingSystem", "accreditationInfo", "uzbmbUrl", "universityUrl",
                 "bankInfo", "mailAddress", "cadastre", "addForeignStudent", "addTransferStudent"
-                // Note: OLD-HEMIS does NOT include terrain and parentUniversity in university object
             };
-            for (String field : uniNullFields) {
-                uniMap.putIfAbsent(field, jsonNull);
+            for (String f : uniNullFields) {
+                uniMap.putIfAbsent(f, jsonNull);
             }
-            // Remove version field - OLD-HEMIS doesn't return it
-            uniMap.remove("version");
-            // versionType and universityContractCategory nested fields
-            addClassifierNullFields(uniMap, "versionType", jsonNull);
-            addClassifierNullFields(uniMap, "universityContractCategory", jsonNull);
+            // versionType and universityContractCategory — add nameRu/nameEn, strip code
+            Object vtObj = uniMap.get("versionType");
+            if (vtObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> vtMap = (Map<String, Object>) vtObj;
+                vtMap.putIfAbsent("nameRu", jsonNull);
+                vtMap.putIfAbsent("nameEn", jsonNull);
+                vtMap.remove("code");
+            }
+            Object uccObj = uniMap.get("universityContractCategory");
+            if (uccObj instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> uccMap = (Map<String, Object>) uccObj;
+                uccMap.putIfAbsent("nameRu", jsonNull);
+                uccMap.putIfAbsent("nameEn", jsonNull);
+                uccMap.remove("code");
+            }
+        }
+
+        // Remove .code from statusEducationYear (OLD doesn't include it)
+        Object seObj = cubaMap.get("statusEducationYear");
+        if (seObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> seMap = (Map<String, Object>) seObj;
+            seMap.remove("code");
         }
 
         // OLD-HEMIS compatibility: Remove fields that NEW-hemis adds but OLD-hemis doesn't have
@@ -255,10 +339,52 @@ public class StudentEntityController {
             cubaMap.remove(field);
         }
 
+        // OLD-HEMIS compatibility: Strip version from ALL nested classifier/reference objects
+        // (entity endpoints don't have version in classifiers, only service endpoints do)
+        stripVersionFromNestedObjects(cubaMap);
+
         // OLD-HEMIS compatibility: Reorder fields to match OLD-HEMIS exact order
         cubaMap = reorderFieldsToMatchOldHemis(cubaMap);
 
-        return ResponseEntity.ok(cubaMap);
+        return cubaMap;
+    }
+
+    /**
+     * Strip .code and .soato.parent_code from terrain/currentTerrain nested objects.
+     * OLD-HEMIS entity view doesn't include these fields in terrain objects.
+     */
+    @SuppressWarnings("unchecked")
+    private void stripTerrainExtras(Map<String, Object> cubaMap, String terrainField) {
+        Object terrainObj = cubaMap.get(terrainField);
+        if (terrainObj instanceof Map) {
+            Map<String, Object> terrainMap = (Map<String, Object>) terrainObj;
+            terrainMap.remove("code");
+            // Strip soato.parent_code inside terrain; strip name_ru only from terrain (NOT currentTerrain)
+            Object terrainSoatoObj = terrainMap.get("soato");
+            if (terrainSoatoObj instanceof Map) {
+                Map<String, Object> terrainSoatoMap = (Map<String, Object>) terrainSoatoObj;
+                terrainSoatoMap.remove("parent_code");
+                if ("terrain".equals(terrainField)) {
+                    terrainSoatoMap.remove("name_ru");
+                }
+            }
+        }
+    }
+
+    /**
+     * Remove "version" from all nested Map objects (classifiers, soato, terrain, etc.)
+     * Entity endpoints don't include version in nested objects (only service endpoints do).
+     */
+    @SuppressWarnings("unchecked")
+    private void stripVersionFromNestedObjects(Map<String, Object> map) {
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof Map) {
+                Map<String, Object> nested = (Map<String, Object>) value;
+                nested.remove("version");
+                stripVersionFromNestedObjects(nested);
+            }
+        }
     }
 
     /**
@@ -507,30 +633,40 @@ public class StudentEntityController {
 
         // Service layer with pagination
         PageRequest pageRequest = PageRequest.of(offset / limit, limit, sorting);
-        Page<StudentDto> page = studentService.findAll(pageRequest);
+        List<Map<String, Object>> cubaMaps;
+        long totalElements;
 
-        // Convert to CUBA format with view support
-        List<StudentDto> dtos = page.getContent();
-        List<Map<String, Object>> cubaMaps = adapter.toMapList(
-            dtos,
-            ENTITY_NAME,
-            returnNulls,
-            view
-        );
+        if (view != null && !VIEW_LOCAL.equals(view)) {
+            // Expanded view — use StudentLegacyMapper for nested classifier objects (like getById does)
+            Page<Student> entityPage = studentService.findAllEntities(pageRequest);
+            totalElements = entityPage.getTotalElements();
+            cubaMaps = new ArrayList<>();
+            for (Student student : entityPage.getContent()) {
+                Map<String, Object> cubaMap = studentLegacyMapper.toLegacyMap(student);
+                cubaMap = postProcessStudentLegacyMap(cubaMap, returnNulls);
+                cubaMaps.add(cubaMap);
+            }
+        } else {
+            // _local view or no view — flat DTO (existing logic)
+            Page<StudentDto> page = studentService.findAll(pageRequest);
+            totalElements = page.getTotalElements();
+            List<StudentDto> dtos = page.getContent();
+            cubaMaps = adapter.toMapList(dtos, ENTITY_NAME, returnNulls, view);
 
-        // OLD-HEMIS compatibility: speciality qaytariladi (adapter _speciality sifatida o'tkazib yuboradi)
-        for (int i = 0; i < cubaMaps.size(); i++) {
-            Map<String, Object> map = cubaMaps.get(i);
-            StudentDto dto = dtos.get(i);
-            if (dto.getSpeciality() != null) {
-                map.put("speciality", dto.getSpeciality());
+            // OLD-HEMIS compatibility: speciality qaytariladi (adapter _speciality sifatida o'tkazib yuboradi)
+            for (int i = 0; i < cubaMaps.size(); i++) {
+                Map<String, Object> map = cubaMaps.get(i);
+                StudentDto dto = dtos.get(i);
+                if (dto.getSpeciality() != null) {
+                    map.put("speciality", dto.getSpeciality());
+                }
             }
         }
 
         // Add count header if requested (CUBA compatibility)
         if (Boolean.TRUE.equals(returnCount)) {
             return ResponseEntity.ok()
-                .header("X-Total-Count", String.valueOf(page.getTotalElements()))
+                .header("X-Total-Count", String.valueOf(totalElements))
                 .body(cubaMaps);
         }
 
@@ -663,4 +799,5 @@ public class StudentEntityController {
             map.putIfAbsent("active", map.get("active") != null ? map.get("active") : true);
         }
     }
+
 }

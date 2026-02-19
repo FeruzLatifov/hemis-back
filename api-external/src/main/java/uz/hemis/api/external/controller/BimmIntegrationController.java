@@ -4,9 +4,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -44,6 +48,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
+@Validated
 public class BimmIntegrationController {
 
     /**
@@ -64,11 +69,11 @@ public class BimmIntegrationController {
     )
     public ResponseEntity<Map<String, Object>> disabilityCheck(
             @Parameter(description = "PINFL (14-digit personal identification number)", required = true)
-            @RequestParam String pinfl,
+            @RequestParam @NotBlank @Pattern(regexp = "\\d{14}", message = "PINFL must be exactly 14 digits") String pinfl,
             @Parameter(description = "Document number for verification", required = true)
-            @RequestParam String document
+            @RequestParam @NotBlank @Size(max = 50) String document
     ) {
-        log.info("BIMM disabilityCheck - pinfl: {}, document: {}", pinfl, document);
+        log.info("BIMM disabilityCheck - pinfl: {}****, document: {}", pinfl.substring(0, Math.min(4, pinfl.length())), document);
 
         // TODO: Implement BIMM API integration
         // - Connect to BIMM web service
@@ -102,9 +107,9 @@ public class BimmIntegrationController {
     )
     public ResponseEntity<Map<String, Object>> provertyRegister(
             @Parameter(description = "PINFL (14-digit personal identification number)", required = true)
-            @RequestParam String pinfl
+            @RequestParam @NotBlank @Pattern(regexp = "\\d{14}", message = "PINFL must be exactly 14 digits") String pinfl
     ) {
-        log.info("BIMM provertyRegister - pinfl: {}", pinfl);
+        log.info("BIMM provertyRegister - pinfl: {}****", pinfl.substring(0, Math.min(4, pinfl.length())));
 
         // TODO: Implement BIMM API integration
         Map<String, Object> response = new LinkedHashMap<>();
@@ -134,9 +139,9 @@ public class BimmIntegrationController {
     )
     public ResponseEntity<Map<String, Object>> certificate(
             @Parameter(description = "PINFL (14-digit personal identification number)", required = true)
-            @RequestParam String pinfl
+            @RequestParam @NotBlank @Pattern(regexp = "\\d{14}", message = "PINFL must be exactly 14 digits") String pinfl
     ) {
-        log.info("BIMM certificate - pinfl: {}", pinfl);
+        log.info("BIMM certificate - pinfl: {}****", pinfl.substring(0, Math.min(4, pinfl.length())));
 
         // TODO: Implement BIMM API integration
         Map<String, Object> response = new LinkedHashMap<>();
@@ -166,9 +171,9 @@ public class BimmIntegrationController {
     )
     public ResponseEntity<Map<String, Object>> academicDegree(
             @Parameter(description = "PINFL (14-digit personal identification number)", required = true)
-            @RequestParam String pinfl
+            @RequestParam @NotBlank @Pattern(regexp = "\\d{14}", message = "PINFL must be exactly 14 digits") String pinfl
     ) {
-        log.info("BIMM academicDegree - pinfl: {}", pinfl);
+        log.info("BIMM academicDegree - pinfl: {}****", pinfl.substring(0, Math.min(4, pinfl.length())));
 
         // TODO: Implement BIMM API integration
         Map<String, Object> response = new LinkedHashMap<>();
@@ -199,9 +204,9 @@ public class BimmIntegrationController {
     )
     public ResponseEntity<Map<String, Object>> teacherTraining(
             @Parameter(description = "PINFL (14-digit personal identification number)", required = true)
-            @RequestParam String pinfl
+            @RequestParam @NotBlank @Pattern(regexp = "\\d{14}", message = "PINFL must be exactly 14 digits") String pinfl
     ) {
-        log.info("BIMM teacherTraining - pinfl: {}", pinfl);
+        log.info("BIMM teacherTraining - pinfl: {}****", pinfl.substring(0, Math.min(4, pinfl.length())));
 
         // TODO: Implement BIMM API integration
         Map<String, Object> response = new LinkedHashMap<>();

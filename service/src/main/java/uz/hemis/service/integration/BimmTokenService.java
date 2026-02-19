@@ -99,21 +99,6 @@ public class BimmTokenService {
         log.info("Fetching new BIMM OAuth2 token from: {}", oauth2Url);
 
         try {
-            // Disable SSL verification for HTTPS URLs
-            if (oauth2Url.startsWith("https")) {
-                TrustManager[] trustAllCerts = new TrustManager[]{
-                        new X509TrustManager() {
-                            public X509Certificate[] getAcceptedIssuers() { return null; }
-                            public void checkClientTrusted(X509Certificate[] certs, String authType) {}
-                            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
-                        }
-                };
-                SSLContext sc = SSLContext.getInstance("SSL");
-                sc.init(null, trustAllCerts, new SecureRandom());
-                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
-            }
-
             // Old-hemis format: form-urlencoded with empty grant_type, scope, client_id, client_secret
             String body = String.format(
                     "grant_type=&username=%s&password=%s&scope=&client_id=&client_secret=",
@@ -122,6 +107,12 @@ public class BimmTokenService {
 
             URL urlObj = URI.create(oauth2Url).toURL();
             HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
+            // Per-connection SSL bypass for government APIs with self-signed certs
+            if (conn instanceof HttpsURLConnection httpsConn) {
+                SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
+                httpsConn.setSSLSocketFactory(sc.getSocketFactory());
+                httpsConn.setHostnameVerifier((hostname, session) -> true);
+            }
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");

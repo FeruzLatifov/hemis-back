@@ -3,6 +3,7 @@ package uz.hemis.domain.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -35,7 +36,7 @@ import java.util.UUID;
  */
 @Repository
 @Transactional(readOnly = true)
-public interface StudentRepository extends JpaRepository<Student, UUID> {
+public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpecificationExecutor<Student> {
 
     // =====================================================
     // Basic Queries
@@ -558,6 +559,63 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
      */
     @Query(value = "SELECT * FROM hemishe_e_student WHERE _university = :university AND _student_status IN ('11','16') AND delete_ts IS NULL ORDER BY create_ts DESC LIMIT :lim OFFSET :off", nativeQuery = true)
     List<Student> findStudentsByUniversityPaginated(@Param("university") String university, @Param("lim") int limit, @Param("off") int offset);
+
+    // =====================================================
+    // SOATO-based Queries (Region Filtering)
+    // =====================================================
+
+    /**
+     * Find active students by SOATO prefix (e.g., Tashkent = '1726')
+     * Filtered at database level instead of loading all records into memory.
+     *
+     * @param universityCode university code (nullable for all universities)
+     * @param soatoPrefix SOATO code prefix (e.g., '1726' for Tashkent)
+     * @param pageable pagination parameters
+     * @return page of students matching SOATO prefix
+     */
+    @Query(value = "SELECT * FROM hemishe_e_student WHERE " +
+           "(:university IS NULL OR _university = :university) " +
+           "AND (soato LIKE :soatoPrefix || '%' OR _soato LIKE :soatoPrefix || '%') " +
+           "AND _student_status IN ('10','11','12','13','14','15') " +
+           "AND delete_ts IS NULL",
+           countQuery = "SELECT COUNT(*) FROM hemishe_e_student WHERE " +
+           "(:university IS NULL OR _university = :university) " +
+           "AND (soato LIKE :soatoPrefix || '%' OR _soato LIKE :soatoPrefix || '%') " +
+           "AND _student_status IN ('10','11','12','13','14','15') " +
+           "AND delete_ts IS NULL",
+           nativeQuery = true)
+    Page<Student> findActiveBySoatoPrefix(
+            @Param("university") String universityCode,
+            @Param("soatoPrefix") String soatoPrefix,
+            Pageable pageable);
+
+    /**
+     * Find active students by SOATO prefix and payment form
+     *
+     * @param universityCode university code (nullable)
+     * @param soatoPrefix SOATO code prefix
+     * @param paymentForm payment form code (nullable)
+     * @param pageable pagination parameters
+     * @return page of students
+     */
+    @Query(value = "SELECT * FROM hemishe_e_student WHERE " +
+           "(:university IS NULL OR _university = :university) " +
+           "AND (soato LIKE :soatoPrefix || '%' OR _soato LIKE :soatoPrefix || '%') " +
+           "AND (:paymentForm IS NULL OR _payment_form = :paymentForm) " +
+           "AND _student_status IN ('10','11','12','13','14','15') " +
+           "AND delete_ts IS NULL",
+           countQuery = "SELECT COUNT(*) FROM hemishe_e_student WHERE " +
+           "(:university IS NULL OR _university = :university) " +
+           "AND (soato LIKE :soatoPrefix || '%' OR _soato LIKE :soatoPrefix || '%') " +
+           "AND (:paymentForm IS NULL OR _payment_form = :paymentForm) " +
+           "AND _student_status IN ('10','11','12','13','14','15') " +
+           "AND delete_ts IS NULL",
+           nativeQuery = true)
+    Page<Student> findActiveBySoatoPrefixAndPaymentForm(
+            @Param("university") String universityCode,
+            @Param("soatoPrefix") String soatoPrefix,
+            @Param("paymentForm") String paymentForm,
+            Pageable pageable);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

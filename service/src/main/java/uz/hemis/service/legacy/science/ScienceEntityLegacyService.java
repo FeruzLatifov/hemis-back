@@ -759,7 +759,8 @@ public class ScienceEntityLegacyService {
         // Nested objects when view is provided
         if (useNested) {
             if (entity.getProjectCurrency() != null) {
-                map.put("projectCurrency", nestedObjectLoader.loadClassifier("hemishe_h_project_currency", "HProjectCurrency", entity.getProjectCurrency()));
+                Map<String, Object> pc = nestedObjectLoader.loadClassifier("hemishe_h_project_currency", "HProjectCurrency", entity.getProjectCurrency());
+                map.put("projectCurrency", pc != null ? pc : JsonNull.INSTANCE);
             } else {
                 map.put("projectCurrency", JsonNull.INSTANCE);
             }
@@ -774,7 +775,8 @@ public class ScienceEntityLegacyService {
                 map.put("projectType", JsonNull.INSTANCE);
             }
             if (entity.getLocality() != null) {
-                map.put("locality", nestedObjectLoader.loadClassifier("hemishe_h_locality", "HLocality", entity.getLocality()));
+                Map<String, Object> loc = nestedObjectLoader.loadClassifier("hemishe_h_locality", "HLocality", entity.getLocality());
+                map.put("locality", loc != null ? loc : JsonNull.INSTANCE);
             } else {
                 map.put("locality", JsonNull.INSTANCE);
             }

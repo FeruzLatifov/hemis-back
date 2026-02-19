@@ -88,53 +88,59 @@ public class UniversityRefLegacyService {
     }
 
     public Map<String, Object> toIctEquipmentMap(IctEquipment entity, Boolean returnNulls) {
+        return toIctEquipmentMap(entity, returnNulls, null);
+    }
+
+    public Map<String, Object> toIctEquipmentMap(IctEquipment entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ICT_EQUIPMENT_ENTITY_NAME);
-
         map.put("_instanceName", "com.company.hemishe.entity.RIctEquipment-" + entity.getId() + " [detached]");
-
         map.put("id", entity.getId());
 
-        CubaEntityMapHelper.putIfNotNull(map, "university_code", entity.getUniversity(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "education_year_code", entity.getEducationYear(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "room_count", entity.getRoomCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "valid_projector_count", entity.getValidProjectorCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "invalid_projector_count", entity.getInvalidProjectorCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "total_count", entity.getTotalCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "total_grade", entity.getTotalGrade(), returnNulls);
+        // OLD-HEMIS _local: faqat data fieldlar (camelCase), ref va audit yo'q
+        boolean isLocal = "_local".equals(view);
 
-        // Audit fields
-        CubaEntityMapHelper.putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        if (!isLocal) {
+            CubaEntityMapHelper.putIfNotNull(map, "universityCode", entity.getUniversity(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "educationYearCode", entity.getEducationYear(), returnNulls);
+        }
+        CubaEntityMapHelper.putIfNotNull(map, "roomCount", entity.getRoomCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "validProjectorCount", entity.getValidProjectorCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "invalidProjectorCount", entity.getInvalidProjectorCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "totalCount", entity.getTotalCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "totalGrade", entity.getTotalGrade(), returnNulls);
 
         return map;
     }
 
     public void updateIctEquipmentFromMap(IctEquipment entity, Map<String, Object> map) {
-        if (map.containsKey("university_code")) {
-            entity.setUniversity(CubaEntityMapHelper.getStringValue(map.get("university_code")));
+        if (map.containsKey("universityCode") || map.containsKey("university_code")) {
+            entity.setUniversity(CubaEntityMapHelper.getStringValue(
+                map.containsKey("universityCode") ? map.get("universityCode") : map.get("university_code")));
         }
-        if (map.containsKey("education_year_code")) {
-            entity.setEducationYear(CubaEntityMapHelper.getStringValue(map.get("education_year_code")));
+        if (map.containsKey("educationYearCode") || map.containsKey("education_year_code")) {
+            entity.setEducationYear(CubaEntityMapHelper.getStringValue(
+                map.containsKey("educationYearCode") ? map.get("educationYearCode") : map.get("education_year_code")));
         }
-        if (map.containsKey("room_count")) {
-            entity.setRoomCount(CubaEntityMapHelper.getIntegerValue(map.get("room_count")));
+        if (map.containsKey("roomCount") || map.containsKey("room_count")) {
+            entity.setRoomCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("roomCount") ? map.get("roomCount") : map.get("room_count")));
         }
-        if (map.containsKey("valid_projector_count")) {
-            entity.setValidProjectorCount(CubaEntityMapHelper.getIntegerValue(map.get("valid_projector_count")));
+        if (map.containsKey("validProjectorCount") || map.containsKey("valid_projector_count")) {
+            entity.setValidProjectorCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("validProjectorCount") ? map.get("validProjectorCount") : map.get("valid_projector_count")));
         }
-        if (map.containsKey("invalid_projector_count")) {
-            entity.setInvalidProjectorCount(CubaEntityMapHelper.getIntegerValue(map.get("invalid_projector_count")));
+        if (map.containsKey("invalidProjectorCount") || map.containsKey("invalid_projector_count")) {
+            entity.setInvalidProjectorCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("invalidProjectorCount") ? map.get("invalidProjectorCount") : map.get("invalid_projector_count")));
         }
-        if (map.containsKey("total_count")) {
-            entity.setTotalCount(CubaEntityMapHelper.getIntegerValue(map.get("total_count")));
+        if (map.containsKey("totalCount") || map.containsKey("total_count")) {
+            entity.setTotalCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("totalCount") ? map.get("totalCount") : map.get("total_count")));
         }
-        if (map.containsKey("total_grade")) {
-            entity.setTotalGrade(CubaEntityMapHelper.getIntegerValue(map.get("total_grade")));
+        if (map.containsKey("totalGrade") || map.containsKey("total_grade")) {
+            entity.setTotalGrade(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("totalGrade") ? map.get("totalGrade") : map.get("total_grade")));
         }
     }
 
@@ -163,77 +169,88 @@ public class UniversityRefLegacyService {
     }
 
     public Map<String, Object> toLaboratoriesMap(Laboratories entity, Boolean returnNulls) {
+        return toLaboratoriesMap(entity, returnNulls, null);
+    }
+
+    public Map<String, Object> toLaboratoriesMap(Laboratories entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", LABORATORIES_ENTITY_NAME);
-
         map.put("_instanceName", "com.company.hemishe.entity.RLaboratories-" + entity.getId() + " [detached]");
-
         map.put("id", entity.getId());
 
-        CubaEntityMapHelper.putIfNotNull(map, "university_code", entity.getUniversity(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "education_year_code", entity.getEducationYear(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "speciality_id", entity.getSpecialityId(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "speciality_code", entity.getSpecialityCode(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "speciality_name", entity.getSpecialityName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "student_count", entity.getStudentCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "valid_laboratories_count", entity.getValidLaboratoriesCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "valid_workshops_count", entity.getValidWorkshopsCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "invalid_laboratories_count", entity.getInvalidLaboratoriesCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "invalid_workshops_count", entity.getInvalidWorkshopsCount(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "total_laboratories", entity.getTotalLaboratories(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "total_workshops", entity.getTotalWorkshops(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "total_grade", entity.getTotalGrade(), returnNulls);
+        boolean isLocal = "_local".equals(view);
 
-        // Audit fields
-        CubaEntityMapHelper.putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "updateTs", entity.getUpdateTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "updatedBy", entity.getUpdatedBy(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        if (!isLocal) {
+            CubaEntityMapHelper.putIfNotNull(map, "universityCode", entity.getUniversity(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "educationYearCode", entity.getEducationYear(), returnNulls);
+        }
+        CubaEntityMapHelper.putIfNotNull(map, "specialityId", entity.getSpecialityId(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "specialityCode", entity.getSpecialityCode(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "specialityName", entity.getSpecialityName(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "studentCount", entity.getStudentCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "validLaboratoriesCount", entity.getValidLaboratoriesCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "validWorkshopsCount", entity.getValidWorkshopsCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "invalidLaboratoriesCount", entity.getInvalidLaboratoriesCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "invalidWorkshopsCount", entity.getInvalidWorkshopsCount(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "totalLaboratories", entity.getTotalLaboratories(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "totalWorkshops", entity.getTotalWorkshops(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "totalGrade", entity.getTotalGrade(), returnNulls);
 
         return map;
     }
 
     public void updateLaboratoriesFromMap(Laboratories entity, Map<String, Object> map) {
-        if (map.containsKey("university_code")) {
-            entity.setUniversity(CubaEntityMapHelper.getStringValue(map.get("university_code")));
+        if (map.containsKey("universityCode") || map.containsKey("university_code")) {
+            entity.setUniversity(CubaEntityMapHelper.getStringValue(
+                map.containsKey("universityCode") ? map.get("universityCode") : map.get("university_code")));
         }
-        if (map.containsKey("education_year_code")) {
-            entity.setEducationYear(CubaEntityMapHelper.getStringValue(map.get("education_year_code")));
+        if (map.containsKey("educationYearCode") || map.containsKey("education_year_code")) {
+            entity.setEducationYear(CubaEntityMapHelper.getStringValue(
+                map.containsKey("educationYearCode") ? map.get("educationYearCode") : map.get("education_year_code")));
         }
-        if (map.containsKey("speciality_id")) {
-            entity.setSpecialityId(CubaEntityMapHelper.getStringValue(map.get("speciality_id")));
+        if (map.containsKey("specialityId") || map.containsKey("speciality_id")) {
+            entity.setSpecialityId(CubaEntityMapHelper.getStringValue(
+                map.containsKey("specialityId") ? map.get("specialityId") : map.get("speciality_id")));
         }
-        if (map.containsKey("speciality_code")) {
-            entity.setSpecialityCode(CubaEntityMapHelper.getStringValue(map.get("speciality_code")));
+        if (map.containsKey("specialityCode") || map.containsKey("speciality_code")) {
+            entity.setSpecialityCode(CubaEntityMapHelper.getStringValue(
+                map.containsKey("specialityCode") ? map.get("specialityCode") : map.get("speciality_code")));
         }
-        if (map.containsKey("speciality_name")) {
-            entity.setSpecialityName(CubaEntityMapHelper.getStringValue(map.get("speciality_name")));
+        if (map.containsKey("specialityName") || map.containsKey("speciality_name")) {
+            entity.setSpecialityName(CubaEntityMapHelper.getStringValue(
+                map.containsKey("specialityName") ? map.get("specialityName") : map.get("speciality_name")));
         }
-        if (map.containsKey("student_count")) {
-            entity.setStudentCount(CubaEntityMapHelper.getIntegerValue(map.get("student_count")));
+        if (map.containsKey("studentCount") || map.containsKey("student_count")) {
+            entity.setStudentCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("studentCount") ? map.get("studentCount") : map.get("student_count")));
         }
-        if (map.containsKey("valid_laboratories_count")) {
-            entity.setValidLaboratoriesCount(CubaEntityMapHelper.getIntegerValue(map.get("valid_laboratories_count")));
+        if (map.containsKey("validLaboratoriesCount") || map.containsKey("valid_laboratories_count")) {
+            entity.setValidLaboratoriesCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("validLaboratoriesCount") ? map.get("validLaboratoriesCount") : map.get("valid_laboratories_count")));
         }
-        if (map.containsKey("valid_workshops_count")) {
-            entity.setValidWorkshopsCount(CubaEntityMapHelper.getIntegerValue(map.get("valid_workshops_count")));
+        if (map.containsKey("validWorkshopsCount") || map.containsKey("valid_workshops_count")) {
+            entity.setValidWorkshopsCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("validWorkshopsCount") ? map.get("validWorkshopsCount") : map.get("valid_workshops_count")));
         }
-        if (map.containsKey("invalid_laboratories_count")) {
-            entity.setInvalidLaboratoriesCount(CubaEntityMapHelper.getIntegerValue(map.get("invalid_laboratories_count")));
+        if (map.containsKey("invalidLaboratoriesCount") || map.containsKey("invalid_laboratories_count")) {
+            entity.setInvalidLaboratoriesCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("invalidLaboratoriesCount") ? map.get("invalidLaboratoriesCount") : map.get("invalid_laboratories_count")));
         }
-        if (map.containsKey("invalid_workshops_count")) {
-            entity.setInvalidWorkshopsCount(CubaEntityMapHelper.getIntegerValue(map.get("invalid_workshops_count")));
+        if (map.containsKey("invalidWorkshopsCount") || map.containsKey("invalid_workshops_count")) {
+            entity.setInvalidWorkshopsCount(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("invalidWorkshopsCount") ? map.get("invalidWorkshopsCount") : map.get("invalid_workshops_count")));
         }
-        if (map.containsKey("total_laboratories")) {
-            entity.setTotalLaboratories(CubaEntityMapHelper.getIntegerValue(map.get("total_laboratories")));
+        if (map.containsKey("totalLaboratories") || map.containsKey("total_laboratories")) {
+            entity.setTotalLaboratories(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("totalLaboratories") ? map.get("totalLaboratories") : map.get("total_laboratories")));
         }
-        if (map.containsKey("total_workshops")) {
-            entity.setTotalWorkshops(CubaEntityMapHelper.getIntegerValue(map.get("total_workshops")));
+        if (map.containsKey("totalWorkshops") || map.containsKey("total_workshops")) {
+            entity.setTotalWorkshops(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("totalWorkshops") ? map.get("totalWorkshops") : map.get("total_workshops")));
         }
-        if (map.containsKey("total_grade")) {
-            entity.setTotalGrade(CubaEntityMapHelper.getIntegerValue(map.get("total_grade")));
+        if (map.containsKey("totalGrade") || map.containsKey("total_grade")) {
+            entity.setTotalGrade(CubaEntityMapHelper.getIntegerValue(
+                map.containsKey("totalGrade") ? map.get("totalGrade") : map.get("total_grade")));
         }
     }
 
@@ -689,6 +706,10 @@ public class UniversityRefLegacyService {
     }
 
     public Map<String, Object> toUniversityMap(University entity, Boolean returnNulls) {
+        return toUniversityMap(entity, returnNulls, null);
+    }
+
+    public Map<String, Object> toUniversityMap(University entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", UNIVERSITY_ENTITY_NAME);
 
@@ -699,7 +720,10 @@ public class UniversityRefLegacyService {
 
         CubaEntityMapHelper.putIfNotNull(map, "studentUrl", entity.getStudentUrl(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "gradingSystem", entity.getGradingSystem(), returnNulls);
-        map.put("code", entity.getCode());
+        // code is same as id (PK) — only include for non-_local views
+        if (!"_local".equals(view)) {
+            map.put("code", entity.getCode());
+        }
         CubaEntityMapHelper.putIfNotNull(map, "uzbmbUrl", entity.getUzbmbUrl(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "tin", entity.getTin(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "universityUrl", entity.getUniversityUrl(), returnNulls);
@@ -708,7 +732,10 @@ public class UniversityRefLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "accreditationEdit", entity.getAccreditationEdit(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "cadastre", entity.getCadastre(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+        // version is a system field — only include for non-_local views
+        if (!"_local".equals(view)) {
+            CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+        }
         CubaEntityMapHelper.putIfNotNull(map, "oneId", entity.getOneId(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "allowGrouping", entity.getAllowGrouping(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "teacherUrl", entity.getTeacherUrl(), returnNulls);

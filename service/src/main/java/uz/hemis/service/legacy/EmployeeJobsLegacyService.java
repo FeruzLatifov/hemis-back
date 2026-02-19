@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.EmployeeJobs;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
 
+import uz.hemis.common.JsonNull;
+
 import java.util.*;
 
 /**
@@ -32,7 +34,7 @@ public class EmployeeJobsLegacyService {
     private final CubaNestedObjectLoader nestedObjectLoader;
     private final EmployeeJobsRepository employeeJobsRepository;
 
-    private static final String ENTITY_NAME = "hemishe_EEmployeeJob";
+    private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
     // ==================== CRUD Operations ====================
 
@@ -110,31 +112,44 @@ public class EmployeeJobsLegacyService {
         map.put("_instanceName", buildInstanceName(employee, department, employeeRate));
         map.put("id", entityId);
 
-        putIfNotNull(map, "contractDate", contractDate, returnNulls);
-        putIfNotNull(map, "jobStartDate", jobStartDate, returnNulls);
-        putIfNotNull(map, "contractNumber", contractNumber, returnNulls);
+        // _local = faqat scalar fieldlar (CUBA _local view)
+        // default (no view) = scalar + employee basic reference
+        // custom view = to'liq nested objectlar (eEmployeeJobs-view)
+        boolean isLocalView = "_local".equals(view);
+        boolean useFullView = view != null && !view.isEmpty() && !isLocalView;
 
-        putNestedEmployee(map, employee, returnNulls);
-
-        putIfNotNull(map, "version", version, returnNulls);
-        putIfNotNull(map, "decreeDate", decreeDate, returnNulls);
-        putIfNotNull(map, "decreeNumber", decreeNumber, returnNulls);
-
-        putNestedRate(map, employeeRate, returnNulls);
-        putIfNotNull(map, "tag", tag, returnNulls);
-        putNestedDepartment(map, department, returnNulls);
+        // OLD-HEMIS eEmployeeJobs-view field order
         putIfNotNull(map, "jobEndDate", jobEndDate, returnNulls);
-
-        boolean useFullView = view != null && !view.isEmpty();
+        putIfNotNull(map, "contractDate", contractDate, returnNulls);
         if (useFullView) {
             putNestedUniversity(map, university, returnNulls);
-            putNestedClassifier(map, "employeeType", "hemishe_h_university_employee_type",
-                    "hemishe_HUniversityEmployeeType", employeeType, returnNulls);
-            putNestedClassifier(map, "employeePosition", "hemishe_h_teacher_position_type",
-                    "hemishe_HTeacherPositionType", employeePosition, returnNulls);
+        }
+        putIfNotNull(map, "jobStartDate", jobStartDate, returnNulls);
+        if (useFullView) {
             putNestedEmployeeForm(map, employeeForm, returnNulls);
+        }
+        putIfNotNull(map, "contractNumber", contractNumber, returnNulls);
+        if (useFullView) {
+            // Full employee with birthday, code, gender, academicDegree, academicRank
+            putNestedEmployee(map, employee, returnNulls);
             putNestedClassifier(map, "employeeStatus", "hemishe_h_university_employee_status_type",
                     "hemishe_HUniversityEmployeeStatusType", employeeStatus, returnNulls);
+        } else if (!isLocalView) {
+            // Default view: basic employee reference only
+            putNestedEmployeeBasic(map, employee, returnNulls);
+        }
+        putIfNotNull(map, "decreeDate", decreeDate, returnNulls);
+        putIfNotNull(map, "decreeNumber", decreeNumber, returnNulls);
+        if (useFullView) {
+            putNestedClassifier(map, "employeeType", "hemishe_h_university_employee_type",
+                    "hemishe_HUniversityEmployeeType", employeeType, returnNulls);
+            putNestedRate(map, employeeRate, returnNulls);
+            putNestedClassifier(map, "employeePosition", "hemishe_h_teacher_position_type",
+                    "hemishe_HTeacherPositionType", employeePosition, returnNulls);
+        }
+        putIfNotNull(map, "tag", tag, returnNulls);
+        if (useFullView) {
+            putNestedDepartment(map, department, returnNulls);
         }
 
         return map;
@@ -150,10 +165,9 @@ public class EmployeeJobsLegacyService {
         if (departmentCode != null && !departmentCode.isEmpty()) {
             try {
                 Map<String, Object> row = jdbcTemplate.queryForMap(
-                        "SELECT name_uz, name FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
+                        "SELECT name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
                         departmentCode);
-                String deptName = row.get("name_uz") != null ? row.get("name_uz").toString() :
-                        (row.get("name") != null ? row.get("name").toString() : null);
+                String deptName = row.get("name_uz") != null ? row.get("name_uz").toString() : null;
                 if (deptName != null && !deptName.isEmpty()) {
                     sb.append(" ").append(deptName);
                 }
@@ -189,12 +203,12 @@ public class EmployeeJobsLegacyService {
         }
         try {
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT first_name, second_name, third_name FROM hemishe_e_teacher WHERE id = ? AND delete_ts IS NULL",
+                    "SELECT firstname, lastname, fathername FROM hemishe_e_teacher WHERE id = ? AND delete_ts IS NULL",
                     employeeId);
             String fullName = buildFullName(
-                    str(row.get("first_name")),
-                    str(row.get("second_name")),
-                    str(row.get("third_name")));
+                    str(row.get("firstname")),
+                    str(row.get("lastname")),
+                    str(row.get("fathername")));
             return fullName.toUpperCase();
         } catch (EmptyResultDataAccessException e) {
             return "Employee-" + employeeId;
@@ -205,131 +219,146 @@ public class EmployeeJobsLegacyService {
     }
 
     /**
-     * Load nested employee object (hemishe_ETeacher).
+     * Load basic employee reference (CUBA default view — id, name fields only, no classifiers).
      */
-    public void putNestedEmployee(Map<String, Object> map, UUID employeeId, Boolean returnNulls) {
+    private void putNestedEmployeeBasic(Map<String, Object> map, UUID employeeId, Boolean returnNulls) {
         if (employeeId == null) {
-            if (Boolean.TRUE.equals(returnNulls)) map.put("employee", null);
+            if (Boolean.TRUE.equals(returnNulls)) map.put("employee", JsonNull.INSTANCE);
             return;
         }
         try {
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT id, first_name, second_name, third_name, version FROM hemishe_e_teacher WHERE id = ? AND delete_ts IS NULL",
+                    "SELECT id, firstname, lastname, fathername " +
+                    "FROM hemishe_e_teacher WHERE id = ? AND delete_ts IS NULL",
                     employeeId);
-            String fullName = buildFullName(str(row.get("first_name")), str(row.get("second_name")), str(row.get("third_name")));
+            String fullName = buildFullName(str(row.get("firstname")), str(row.get("lastname")), str(row.get("fathername")));
             Map<String, Object> nested = new LinkedHashMap<>();
             nested.put("_entityName", "hemishe_ETeacher");
             nested.put("_instanceName", fullName);
             nested.put("id", row.get("id"));
-            nested.put("firstname", row.get("first_name"));
-            nested.put("version", row.get("version") != null ? ((Number) row.get("version")).intValue() : 1);
-            nested.put("lastname", row.get("second_name"));
-            nested.put("fathername", row.get("third_name"));
+            nested.put("firstname", row.get("firstname"));
+            nested.put("lastname", row.get("lastname"));
+            nested.put("fathername", row.get("fathername"));
+            nested.put("fullname", fullName);
+            map.put("employee", nested);
+        } catch (Exception e) {
+            log.debug("Failed to fetch employee basic: {}", e.getMessage());
+            map.put("employee", buildFallbackEmployee(employeeId));
+        }
+    }
+
+    /**
+     * Load nested employee object (hemishe_ETeacher).
+     */
+    public void putNestedEmployee(Map<String, Object> map, UUID employeeId, Boolean returnNulls) {
+        if (employeeId == null) {
+            if (Boolean.TRUE.equals(returnNulls)) map.put("employee", JsonNull.INSTANCE);
+            return;
+        }
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT id, firstname, lastname, fathername, code, birthday, " +
+                    "_gender, _academic_degree, _academic_rank " +
+                    "FROM hemishe_e_teacher WHERE id = ? AND delete_ts IS NULL",
+                    employeeId);
+            String fullName = buildFullName(str(row.get("firstname")), str(row.get("lastname")), str(row.get("fathername")));
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_ETeacher");
+            nested.put("_instanceName", fullName);
+            nested.put("id", row.get("id"));
+            // OLD-HEMIS eEmployeeJobs-view field order: birthday, firstname, code, gender, academicDegree, academicRank, lastname, fathername, fullname
+            nested.put("birthday", row.get("birthday"));
+            nested.put("firstname", row.get("firstname"));
+            nested.put("code", str(row.get("code")));
+            putEmployeeClassifier(nested, "gender", str(row.get("_gender")),
+                    "hemishe_h_gender", "HGender");
+            putEmployeeClassifier(nested, "academicDegree", str(row.get("_academic_degree")),
+                    "hemishe_h_academic_degree", "HAcademicDegree");
+            putEmployeeClassifier(nested, "academicRank", str(row.get("_academic_rank")),
+                    "hemishe_h_academic_rank", "HAcademicRank");
+            nested.put("lastname", row.get("lastname"));
+            nested.put("fathername", row.get("fathername"));
             nested.put("fullname", fullName);
             map.put("employee", nested);
         } catch (EmptyResultDataAccessException e) {
             // Employee topilmadi - OLD-HEMIS compatible fallback
-            // Note: Jackson non_null bo'lgani uchun null maydonlar ko'rinmaydi
-            // Shu sababli empty string ishlatamiz
-            String fallbackName = "Employee-" + employeeId;
-            Map<String, Object> nested = new LinkedHashMap<>();
-            nested.put("_entityName", "hemishe_ETeacher");
-            nested.put("_instanceName", fallbackName);
-            nested.put("id", employeeId);
-            nested.put("firstname", "");
-            nested.put("version", 1);
-            nested.put("lastname", "");
-            nested.put("fathername", "");
-            nested.put("fullname", fallbackName);
-            map.put("employee", nested);
+            map.put("employee", buildFallbackEmployee(employeeId));
         } catch (Exception e) {
             log.debug("Failed to fetch employee: {}", e.getMessage());
-            // Employee xatosi - OLD-HEMIS compatible fallback
-            String fallbackName = "Employee-" + employeeId;
-            Map<String, Object> nested = new LinkedHashMap<>();
-            nested.put("_entityName", "hemishe_ETeacher");
-            nested.put("_instanceName", fallbackName);
-            nested.put("id", employeeId);
-            nested.put("firstname", "");
-            nested.put("version", 1);
-            nested.put("lastname", "");
-            nested.put("fathername", "");
-            nested.put("fullname", fallbackName);
-            map.put("employee", nested);
+            map.put("employee", buildFallbackEmployee(employeeId));
         }
+    }
+
+    /**
+     * Put classifier nested object inside employee map (gender, academicDegree, academicRank).
+     */
+    private void putEmployeeClassifier(Map<String, Object> nested, String key, String code,
+                                        String tableName, String entityName) {
+        if (code != null && !code.isEmpty()) {
+            Map<String, Object> obj = nestedObjectLoader.loadClassifier(tableName, entityName, code);
+            if (obj != null) {
+                nested.put(key, obj);
+                return;
+            }
+        }
+        nested.put(key, JsonNull.INSTANCE);
     }
 
     private void putNestedUniversity(Map<String, Object> map, String universityCode, Boolean returnNulls) {
         if (universityCode == null || universityCode.isEmpty()) {
-            if (Boolean.TRUE.equals(returnNulls)) map.put("university", null);
+            if (Boolean.TRUE.equals(returnNulls)) map.put("university", JsonNull.INSTANCE);
             return;
         }
-        Map<String, Object> nested = nestedObjectLoader.loadUniversity(universityCode);
+        // OLD-HEMIS eEmployeeJobs-view: full university (14+ fields) based on Teacher format
+        Map<String, Object> nested = nestedObjectLoader.loadUniversityForTeacher(universityCode);
         if (nested != null) {
+            // Strip fields not present in OLD-HEMIS eEmployeeJobs-view university
+            nested.remove("accreditationInfo");
+            nested.remove("uzbmbUrl");
+            nested.remove("universityUrl");
+            nested.remove("bankInfo");
+            nested.remove("mailAddress");
+            nested.remove("cadastre");
+            nested.remove("addForeignStudent");
+            nested.remove("addTransferStudent");
             map.put("university", nested);
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("university", null);
+            map.put("university", JsonNull.INSTANCE);
         }
     }
 
     private void putNestedDepartment(Map<String, Object> map, String departmentCode, Boolean returnNulls) {
         if (departmentCode == null || departmentCode.isEmpty()) {
-            if (Boolean.TRUE.equals(returnNulls)) map.put("department", null);
+            if (Boolean.TRUE.equals(returnNulls)) map.put("department", JsonNull.INSTANCE);
             return;
         }
-        try {
-            Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name_uz, name, version FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
-                    departmentCode);
-            String deptName = row.get("name_uz") != null ? row.get("name_uz").toString() :
-                    (row.get("name") != null ? row.get("name").toString() : "");
-            Map<String, Object> nested = new LinkedHashMap<>();
-            nested.put("_entityName", "hemishe_EUniversityDepartment");
-            nested.put("_instanceName", deptName);
-            nested.put("id", str(row.get("code")));
-            nested.put("code", str(row.get("code")));
-            nested.put("version", row.get("version") != null ? ((Number) row.get("version")).intValue() : 1);
-            nested.put("nameUz", deptName);
+        // OLD-HEMIS eEmployeeJobs-view: full department with university, deparmentType, nameRu, status
+        Map<String, Object> nested = nestedObjectLoader.loadDepartment(departmentCode);
+        if (nested != null) {
+            // Strip fields not in OLD-HEMIS eEmployeeJobs-view department
+            nested.remove("code");
+            nested.remove("parent");
             map.put("department", nested);
-        } catch (EmptyResultDataAccessException e) {
-            // Department topilmadi - fallback with code as name
-            Map<String, Object> nested = new LinkedHashMap<>();
-            nested.put("_entityName", "hemishe_EUniversityDepartment");
-            nested.put("_instanceName", departmentCode);
-            nested.put("id", departmentCode);
-            nested.put("code", departmentCode);
-            nested.put("version", 1);
-            nested.put("nameUz", departmentCode); // null o'rniga code ishlatamiz
-            map.put("department", nested);
-        } catch (Exception e) {
-            log.debug("Failed to fetch department: {}", e.getMessage());
-            Map<String, Object> nested = new LinkedHashMap<>();
-            nested.put("_entityName", "hemishe_EUniversityDepartment");
-            nested.put("_instanceName", departmentCode);
-            nested.put("id", departmentCode);
-            nested.put("code", departmentCode);
-            nested.put("version", 1);
-            nested.put("nameUz", departmentCode); // null o'rniga code ishlatamiz
-            map.put("department", nested);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            map.put("department", JsonNull.INSTANCE);
         }
     }
 
     private void putNestedRate(Map<String, Object> map, String rateCode, Boolean returnNulls) {
         if (rateCode == null || rateCode.isEmpty()) {
-            if (Boolean.TRUE.equals(returnNulls)) map.put("employeeRate", null);
+            if (Boolean.TRUE.equals(returnNulls)) map.put("employeeRate", JsonNull.INSTANCE);
             return;
         }
         try {
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name, version FROM hemishe_h_university_employee_rate WHERE code = ? AND delete_ts IS NULL",
+                    "SELECT code, name FROM hemishe_h_university_employee_rate WHERE code = ? AND delete_ts IS NULL",
                     rateCode);
             Map<String, Object> nested = new LinkedHashMap<>();
             nested.put("_entityName", "hemishe_HUniversityEmployeeRate");
             nested.put("_instanceName", str(row.get("name")));
             nested.put("id", str(row.get("code")));
-            nested.put("code", str(row.get("code")));
+            // OLD-HEMIS: code and version NOT included in eEmployeeJobs-view
             nested.put("name", str(row.get("name")));
-            nested.put("version", row.get("version") != null ? ((Number) row.get("version")).intValue() : 1);
             map.put("employeeRate", nested);
         } catch (EmptyResultDataAccessException e) {
             Map<String, Object> nested = new LinkedHashMap<>();
@@ -348,7 +377,7 @@ public class EmployeeJobsLegacyService {
     private void putNestedClassifier(Map<String, Object> map, String key, String tableName,
                                      String entityName, String code, Boolean returnNulls) {
         if (code == null || code.isEmpty()) {
-            if (Boolean.TRUE.equals(returnNulls)) map.put(key, null);
+            if (Boolean.TRUE.equals(returnNulls)) map.put(key, JsonNull.INSTANCE);
             return;
         }
         Map<String, Object> nested = nestedObjectLoader.loadClassifier(tableName, entityName.replace("hemishe_", ""), code);
@@ -356,22 +385,39 @@ public class EmployeeJobsLegacyService {
             // Override _entityName to use full name format
             nested.put("_entityName", entityName);
             nested.put("_instanceName", nested.get("name"));
+            // OLD-HEMIS doesn't include .code in EmployeeJobs classifiers
+            nested.remove("code");
             map.put(key, nested);
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put(key, null);
+            map.put(key, JsonNull.INSTANCE);
         }
     }
 
     private void putNestedEmployeeForm(Map<String, Object> map, String formCode, Boolean returnNulls) {
         if (formCode == null || formCode.isEmpty()) {
-            if (Boolean.TRUE.equals(returnNulls)) map.put("employeeForm", null);
+            if (Boolean.TRUE.equals(returnNulls)) map.put("employeeForm", JsonNull.INSTANCE);
             return;
         }
-        Map<String, Object> nested = new LinkedHashMap<>();
-        nested.put("_entityName", "hemishe_HEmployeeForm");
-        nested.put("id", formCode);
-        nested.put("code", formCode);
-        map.put("employeeForm", nested);
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT code, name FROM hemishe_h_university_employee_form WHERE code = ? AND delete_ts IS NULL",
+                    formCode);
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_HUniversityEmployeeForm");
+            String name = row.get("name") != null ? str(row.get("name")) : "";
+            nested.put("_instanceName", formCode + " " + name);
+            nested.put("id", formCode);
+            nested.put("name", name);
+            map.put("employeeForm", nested);
+        } catch (EmptyResultDataAccessException e) {
+            Map<String, Object> nested = new LinkedHashMap<>();
+            nested.put("_entityName", "hemishe_HUniversityEmployeeForm");
+            nested.put("id", formCode);
+            map.put("employeeForm", nested);
+        } catch (Exception e) {
+            log.debug("Failed to fetch employeeForm: {}", e.getMessage());
+            if (Boolean.TRUE.equals(returnNulls)) map.put("employeeForm", JsonNull.INSTANCE);
+        }
     }
 
     private String buildFullName(String firstName, String secondName, String thirdName) {
@@ -389,9 +435,35 @@ public class EmployeeJobsLegacyService {
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {
-        if (value != null || Boolean.TRUE.equals(returnNulls)) {
+        if (value != null) {
             map.put(key, value);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            // Jackson NON_NULL global config skips null values,
+            // JsonNull.INSTANCE serializes as JSON null while bypassing NON_NULL filter.
+            map.put(key, JsonNull.INSTANCE);
         }
+    }
+
+    /**
+     * Build fallback employee nested object when teacher not found in DB.
+     * Matches OLD-HEMIS eEmployeeJobs-view employee field structure.
+     */
+    private Map<String, Object> buildFallbackEmployee(UUID employeeId) {
+        String fallbackName = "Employee-" + employeeId;
+        Map<String, Object> nested = new LinkedHashMap<>();
+        nested.put("_entityName", "hemishe_ETeacher");
+        nested.put("_instanceName", fallbackName);
+        nested.put("id", employeeId);
+        nested.put("birthday", JsonNull.INSTANCE);
+        nested.put("firstname", "");
+        nested.put("code", JsonNull.INSTANCE);
+        nested.put("gender", JsonNull.INSTANCE);
+        nested.put("academicDegree", JsonNull.INSTANCE);
+        nested.put("academicRank", JsonNull.INSTANCE);
+        nested.put("lastname", "");
+        nested.put("fathername", "");
+        nested.put("fullname", fallbackName);
+        return nested;
     }
 
     private String str(Object obj) {

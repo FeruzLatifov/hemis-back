@@ -372,6 +372,83 @@ databaseChangeLog:
             splitStatements: false
 
   - changeSet:
+      id: S009_seed_classifier_permissions
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      changes:
+        - sqlFile:
+            path: changesets/seed/S009_seed_classifier_permissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S009_seed_classifier_permissions_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: S010_seed_classifier_menus
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      changes:
+        - sqlFile:
+            path: changesets/seed/S010_seed_classifier_menus.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S010_seed_classifier_menus_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: S011_seed_i18n_classifiers
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: changesets/seed/S011_seed_i18n_classifiers.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S011_seed_i18n_classifiers_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: S012_seed_student_permissions
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      changes:
+        - sqlFile:
+            path: changesets/seed/S012_seed_student_permissions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S012_seed_student_permissions_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: S013_seed_i18n_duplicates
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: changesets/seed/S013_seed_i18n_duplicates.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S013_seed_i18n_duplicates_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
       id: tag-seed-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}
@@ -401,42 +478,91 @@ databaseChangeLog:
             splitStatements: false
 
   - changeSet:
-      id: M002_fix_permission_leak
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Fix SQL operator precedence bug that leaked system.* permissions to non-admin roles"
-      changes:
-        - sqlFile:
-            path: changesets/migration/M002_fix_permission_leak.sql
-            relativeToChangelogFile: true
-            splitStatements: false
-      rollback:
-        - sqlFile:
-            path: changesets/migration/M002_fix_permission_leak_rollback.sql
-            relativeToChangelogFile: true
-            splitStatements: false
-
-  - changeSet:
-      id: M003_fix_changelog_filenames
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Standardize databasechangelog filenames to match logicalFilePath"
-      runOnChange: true
-      changes:
-        - sqlFile:
-            path: changesets/migration/M003_fix_changelog_filenames.sql
-            relativeToChangelogFile: true
-            splitStatements: false
-      rollback:
-        - sqlFile:
-            path: changesets/migration/M003_fix_changelog_filenames_rollback.sql
-            relativeToChangelogFile: true
-            splitStatements: false
-
-  - changeSet:
       id: tag-v1.0.0
       author: hemis-team
       logicalFilePath: ${changelog.path}
       changes:
         - tagDatabase:
             tag: v1.0.0
+
+  # ── v2.0 Performance & Features ─────────────────────────────────
+
+  - changeSet:
+      id: M002_student_performance_indexes
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Filter, trigram, pagination, prefix indexes on hemishe_e_student"
+      changes:
+        - sqlFile:
+            path: changesets/migration/M002_student_performance_indexes.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/migration/M002_student_performance_indexes_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: M003_student_duplicates
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Duplicates menu, covering index, materialized view for PINFL analysis"
+      changes:
+        - sqlFile:
+            path: changesets/migration/M003_student_duplicates.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/migration/M003_student_duplicates_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: S014_seed_i18n_transfers
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: changesets/seed/S014_seed_i18n_transfers.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S014_seed_i18n_transfers_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: M004_student_transfer_detection
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Upgrade MV with INTERNAL_TRANSFER and EXTERNAL_TRANSFER categories"
+      changes:
+        - sqlFile:
+            path: changesets/migration/M004_student_transfer_detection.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/migration/M004_student_transfer_detection_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: S015_seed_i18n_directions
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      changes:
+        - sqlFile:
+            path: changesets/seed/S015_seed_i18n_directions.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/seed/S015_seed_i18n_directions_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false

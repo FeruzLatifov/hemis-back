@@ -65,6 +65,7 @@ public class UniversityServiceController {
             result.put("allowGrouping", uni.getAllowGrouping() != null ? uni.getAllowGrouping() : true);
             result.put("allowTransferOutside", uni.getAllowTransferOutside() != null ? uni.getAllowTransferOutside() : true);
             result.put("oneId", true);
+            result.put("addAcademicMobileStudentField", uni.getAddAcademicMobileStudent() != null ? uni.getAddAcademicMobileStudent() : false);
 
             return ResponseEntity.ok(result);
         } catch (ResourceNotFoundException e) {
@@ -160,6 +161,7 @@ public class UniversityServiceController {
 
         item.put("name", u.getName());
         item.put("gpaEdit", u.getGpaEdit() != null ? u.getGpaEdit() : false);
+        item.put("addAcademicMobileStudent", u.getAddAcademicMobileStudent() != null ? u.getAddAcademicMobileStudent() : false);
 
         if (u.getUniversityBelongsTo() != null) {
             item.put("belongsTo", strip(nestedObjectLoader.loadClassifier(

@@ -62,14 +62,20 @@ public class TwoLevelCacheManager implements CacheManager {
      *   <li><strong>stats:</strong> 100 entries - Low volume (aggregated data)</li>
      * </ul>
      */
-    private static final Map<String, Long> CACHE_MAX_SIZES = Map.of(
-        "i18n", 5000L,              // Translation cache - High volume (full translations)
-        "i18n-scope", 2000L,        // Scope-based translations - Progressive loading
-        "menu", 1000L,              // User menu cache
-        "userPermissions", 1000L,   // User permissions cache
-        "stats", 100L,              // Dashboard statistics
-        "universitiesSearch", 500L, // University search results
-        "universityDictionaries", 200L // Static reference data
+    private static final Map<String, Long> CACHE_MAX_SIZES = Map.ofEntries(
+        Map.entry("i18n", 5000L),              // Translation cache - High volume (full translations)
+        Map.entry("i18n-scope", 2000L),        // Scope-based translations - Progressive loading
+        Map.entry("menu", 1000L),              // User menu cache
+        Map.entry("userPermissions", 1000L),   // User permissions cache
+        Map.entry("stats", 100L),              // Dashboard statistics
+        Map.entry("universitiesSearch", 500L), // University search results
+        Map.entry("universityDictionaries", 200L), // Static reference data
+        Map.entry("studentsListSearch", 500L), // Student list search results (lightweight DTO, paged)
+        Map.entry("studentsListCount", 50L),   // Student list COUNT cache (shared across pages)
+        Map.entry("studentStats", 100L),       // Student statistics
+        Map.entry("studentDictionaries", 200L), // Student filter dictionaries
+        Map.entry("studentDuplicateStats", 50L), // Duplicate stats (per university)
+        Map.entry("studentDuplicates", 200L)   // Duplicate list (paged)
     );
 
     private static final long DEFAULT_CAFFEINE_MAX_SIZE = 1000L;

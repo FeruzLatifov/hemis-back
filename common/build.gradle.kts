@@ -19,6 +19,9 @@ dependencies {
     // Jakarta Validation API
     api("jakarta.validation:jakarta.validation-api")
 
+    // Swagger/OpenAPI annotations (@Schema)
+    api("io.swagger.core.v3:swagger-annotations-jakarta:2.2.28")
+
     // SLF4J for logging
     api("org.slf4j:slf4j-api")
 

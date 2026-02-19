@@ -91,6 +91,107 @@ public class ClassifierLegacyService {
         put("h_country", "hemishe_h_country");
     }};
 
+    /**
+     * OLD-HEMIS /info endpoint uchun classifiers — aniq OLD nomlar va tartib (93 ta).
+     * Key: OLD API dagi classifier nomi, Value: hozirgi DB table nomi.
+     * null = maxsus holat (h_university — repository orqali).
+     */
+    private static final LinkedHashMap<String, String> OLD_CLASSIFIER_MAP = new LinkedHashMap<>() {{
+        put("h_admission_type", "hemishe_h_admission_type");
+        put("h_transfer_type", "hemishe_h_transfer_type");
+        put("h_external_service_type", "hemishe_h_external_service_type");
+        put("h_grant_type", "hemishe_h_grant_type");
+        put("h_poverty_level", "hemishe_h_poverty_level");
+        put("h_certificate_grades", "hemishe_h_certificate_grades");
+        put("h_certificate_subjects", "hemishe_h_certificate_subjects");
+        put("h_certificate_names", "hemishe_h_certificate_names");
+        put("h_certificate_type", "hemishe_h_certificate_type");
+        put("h_hemis_version_type", "hemishe_h_hemis_version_type");
+        put("h_outside_activity", "hemishe_h_outside_activities");
+        put("h_outside_activities", "hemishe_h_outside_activities");
+        put("h_scholarship_decree_type", "hemishe_h_scholarship_decree_type");
+        put("h_resource_type", "hemishe_h_resource_type");
+        put("h_internship_type", "hemishe_h_internship_type");
+        put("h_internship_form", "hemishe_h_internship_form");
+        put("h_conduction_form", "hemishe_h_teacher_conduction_form");
+        put("h_terrain", "hemishe_h_terrain");
+        put("h_stipend_rate_category", "hemishe_h_stipend_rate_category");
+        put("h_speciality_ordinatura", "hemishe_h_speciality_ordinatura");
+        put("h_academic_mobile_type", "hemishe_h_academic_mobile_type");
+        put("h_contract_class", "hemishe_h_contract_types");
+        put("h_student_living_status", "hemishe_h_student_living_status");
+        put("h_student_roommate_type", "hemishe_h_student_room_mate_type");
+        put("h_student_type", "hemishe_h_student_type");
+        put("h_sport_type", "hemishe_h_sport_type");
+        put("h_graduate_inactive_type", "hemishe_h_graduate_inactive_type");
+        put("h_graduate_fields_type", "hemishe_h_graduate_fields_type");
+        put("h_diplom_blank_status", "hemishe_h_diplom_blank_status");
+        put("h_diplom_blank_category", "hemishe_h_diplom_blank_category");
+        put("h_contract_summa_type", "hemishe_h_contract_summa_type");
+        put("h_contract_type", "hemishe_h_contract_type");
+        put("h_decree_type", "hemishe_h_decree_type");
+        put("h_scientific_platform", "hemishe_h_scholar_database");
+        put("h_doctorate_student_status", "hemishe_h_doctoral_student_status");
+        put("h_education_year", "hemishe_h_education_year");
+        put("h_semester", "hemishe_h_semester_list");
+        put("h_science_branch", "hemishe_h_speciality_doctoral");
+        put("h_exam_finish", "hemishe_h_exam_finish");
+        put("h_final_exam_type", "hemishe_h_final_exam_type");
+        put("h_locality_type", "hemishe_h_locality_type");
+        put("h_academic_reason", "hemishe_h_academic_reason");
+        put("h_attendance_setting", "hemishe_h_attandance_setting");
+        put("h_university", null); // Special: repository-based
+        put("h_country", "hemishe_h_country");
+        put("h_soato", "hemishe_h_soato");
+        put("h_nationality", "hemishe_h_nationality");
+        put("h_citizenship_type", "hemishe_h_citizenship");
+        put("h_gender", "hemishe_h_gender");
+        put("h_bachelor_speciality", "hemishe_h_speciality_bachelor");
+        put("h_master_speciality", "hemishe_h_speciality_master");
+        put("h_university_form", "hemishe_h_university_type");
+        put("h_ownership", "hemishe_h_ownership");
+        put("h_structure_type", "hemishe_h_university_department_type");
+        put("h_employee_type", "hemishe_h_university_employee_type");
+        put("h_teacher_status", "hemishe_h_university_employee_status_type");
+        put("h_employment_staff", "hemishe_h_university_employee_rate");
+        put("h_employment_form", "hemishe_h_employment_form");
+        put("h_teacher_position_type", "hemishe_h_teacher_position_type");
+        put("h_qualification", "hemishe_h_qualification");
+        put("h_teacher_success", "hemishe_h_teacher_achievement_type");
+        put("h_academic_degree", "hemishe_h_academic_degree");
+        put("h_academic_rank", "hemishe_h_academic_rank");
+        put("h_student_status", "hemishe_h_student_status_type");
+        put("h_student_success", "hemishe_h_student_achievement_type");
+        put("h_expel_reason", "hemishe_h_expel");
+        put("h_accommodation", "hemishe_h_accomodation");
+        put("h_doctoral_student_type", "hemishe_h_doctoral_student_type");
+        put("h_social_category", "hemishe_h_student_social_type");
+        put("h_education_type", "hemishe_h_education_type");
+        put("h_education_form", "hemishe_h_education_form");
+        put("h_language", "hemishe_h_education_language");
+        put("h_marking_system", "hemishe_h_grade_system_type");
+        put("h_grade_type", "hemishe_h_score_type");
+        put("h_exam_type", "hemishe_h_exam_type");
+        put("h_course", "hemishe_h_course");
+        put("h_semestr_type", "hemishe_h_semester");
+        put("h_education_week_type", "hemishe_h_education_week_type");
+        put("h_subject_block", "hemishe_h_subject_block");
+        put("h_subject_type", "hemishe_h_subject_type");
+        put("h_training_type", "hemishe_h_class_type");
+        put("h_project_type", "hemishe_h_project_type");
+        put("h_locality", "hemishe_h_project_locality");
+        put("h_project_currency", "hemishe_h_currency");
+        put("h_project_executor_type", "hemishe_h_project_executor_type");
+        put("h_scientific_publication_type", "hemishe_h_publication_type");
+        put("h_methodical_publication_type", "hemishe_h_methodical_publication_type");
+        put("h_patient_type", "hemishe_h_patient_type");
+        put("h_publication_database", "hemishe_h_publication_database");
+        put("h_payment_form", "hemishe_h_payment_form");
+        put("h_stipend_rate", "hemishe_h_stipend_rate");
+        put("h_auditorium_type", "hemishe_h_auditorium_type");
+        put("h_device_type", "hemishe_h_device_type");
+    }};
+
     // ==================== EducationType ====================
 
     public List<EducationType> findAllEducationTypes() {
@@ -281,23 +382,45 @@ public class ClassifierLegacyService {
     // ==================== Dynamic Classifier Methods ====================
 
     /**
-     * Get all classifiers with items (OLD-HEMIS /allItems endpoint)
+     * Get all classifiers with items (OLD-HEMIS /allItems endpoint).
+     * Uses OLD_CLASSIFIER_MAP to return exactly 93 classifiers matching old-hemis.
      */
     public Map<String, Object> getAllClassifiersWithItems() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("success", true);
 
         List<Map<String, Object>> classifiersList = new ArrayList<>();
-        List<String> tables = getClassifierTables();
 
-        for (String table : tables) {
+        for (Map.Entry<String, String> entry : OLD_CLASSIFIER_MAP.entrySet()) {
+            String oldApiName = entry.getKey();
+            String tableName = entry.getValue();
+
             try {
-                Map<String, Object> classifierData = getClassifierWithItems(table);
+                // Special case: h_university (repository-based)
+                if (tableName == null) {
+                    if ("h_university".equals(oldApiName)) {
+                        Map<String, Object> uniData = getUniversityClassifier();
+                        if (uniData != null) {
+                            // Extract classifier from wrapper
+                            Object clf = uniData.get("classifier");
+                            if (clf instanceof Map) {
+                                classifiersList.add((Map<String, Object>) clf);
+                            }
+                        }
+                    }
+                    continue;
+                }
+
+                if (!tableExists(tableName)) {
+                    continue;
+                }
+
+                Map<String, Object> classifierData = getClassifierWithItems(tableName, oldApiName);
                 if (classifierData != null) {
                     classifiersList.add(classifierData);
                 }
             } catch (Exception e) {
-                log.debug("Error loading classifier {}: {}", table, e.getMessage());
+                log.debug("Error loading classifier {}: {}", oldApiName, e.getMessage());
             }
         }
 
@@ -306,23 +429,39 @@ public class ClassifierLegacyService {
     }
 
     /**
-     * Get all classifiers info (metadata only) (OLD-HEMIS /info endpoint)
+     * Get all classifiers info (metadata only) (OLD-HEMIS /info endpoint).
+     * Uses OLD_CLASSIFIER_MAP to return exactly the same 93 classifier names
+     * and order as old-hemis for backward compatibility.
      */
     public Map<String, Object> getAllClassifiersInfo() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("success", true);
 
         List<Map<String, Object>> classifiersList = new ArrayList<>();
-        List<String> tables = getClassifierTables();
 
-        for (String table : tables) {
+        for (Map.Entry<String, String> entry : OLD_CLASSIFIER_MAP.entrySet()) {
+            String oldApiName = entry.getKey();
+            String tableName = entry.getValue();
+
             try {
-                Map<String, Object> classifierInfo = getClassifierInfo(table);
+                if (tableName == null) {
+                    // Special case: h_university (repository-based)
+                    if ("h_university".equals(oldApiName)) {
+                        classifiersList.add(getUniversityClassifierInfo());
+                    }
+                    continue;
+                }
+
+                if (!tableExists(tableName)) {
+                    continue;
+                }
+
+                Map<String, Object> classifierInfo = getClassifierInfoWithName(tableName, oldApiName);
                 if (classifierInfo != null) {
                     classifiersList.add(classifierInfo);
                 }
             } catch (Exception e) {
-                log.debug("Error loading classifier info {}: {}", table, e.getMessage());
+                log.debug("Error loading classifier info {}: {}", oldApiName, e.getMessage());
             }
         }
 
@@ -436,12 +575,21 @@ public class ClassifierLegacyService {
             items = Collections.emptyList();
         }
 
-        // Add _entityName to each item (CUBA compatibility)
+        // Add _entityName and build parent nested objects (CUBA compatibility)
         String entityName = getCubaEntityName(tableName);
-        if (entityName != null) {
-            for (Map<String, Object> item : items) {
+        for (Map<String, Object> item : items) {
+            if (entityName != null) {
                 item.put("_entityName", entityName);
             }
+            // CUBA: id field must always exist — use code if no UUID id column
+            if (!item.containsKey("id") && item.containsKey("code")) {
+                item.put("id", item.get("code"));
+            }
+            // Build nested parent object from flat parent fields (self-join result)
+            buildParentNestedObject(item, entityName);
+            // Remove null-valued keys — Jackson NON_NULL will skip them anyway,
+            // but explicit removal prevents them from appearing if serialization changes
+            item.values().removeIf(v -> v == null);
         }
 
         Map<String, Object> classifierData = new LinkedHashMap<>();
@@ -453,6 +601,41 @@ public class ClassifierLegacyService {
         Map<String, Object> wrapper = new LinkedHashMap<>();
         wrapper.put(apiKey, classifierData);
         return wrapper;
+    }
+
+    /**
+     * Convert flat parentId/parentCode/parentName fields into nested parent object.
+     * OLD-HEMIS returns parent as: { "_entityName", "_instanceName", "id", "code", "name", "nameEn", "nameRu", "version", "isChecked" }
+     */
+    private void buildParentNestedObject(Map<String, Object> item, String entityName) {
+        Object parentId = item.remove("parentId");
+        Object parentCode = item.remove("parentCode");
+        Object parentName = item.remove("parentName");
+        Object parentNameEn = item.remove("parentNameEn");
+        Object parentNameRu = item.remove("parentNameRu");
+        Object parentVersion = item.remove("parentVersion");
+        Object parentIsChecked = item.remove("parentIsChecked");
+        Object parentActive = item.remove("parentActive");
+
+        if (parentId == null) {
+            return; // no parent — don't add null parent field
+        }
+
+        Map<String, Object> parent = new LinkedHashMap<>();
+        if (entityName != null) {
+            parent.put("_entityName", entityName);
+            parent.put("_instanceName", parentCode != null ? parentCode.toString() + " " + parentName : parentName);
+        }
+        parent.put("id", parentId.toString());
+        parent.put("code", parentCode);
+        parent.put("name", parentName);
+        if (parentNameEn != null) parent.put("nameEn", parentNameEn);
+        if (parentNameRu != null) parent.put("nameRu", parentNameRu);
+        parent.put("version", parentVersion);
+        if (parentIsChecked != null) parent.put("isChecked", parentIsChecked);
+        if (parentActive != null) parent.put("active", parentActive);
+
+        item.put("parent", parent);
     }
 
     private String getCubaEntityName(String tableName) {
@@ -726,7 +909,11 @@ public class ClassifierLegacyService {
     }
 
     private Map<String, Object> getClassifierWithItems(String tableName) {
-        String classifierName = tableName.replace("hemishe_", "");
+        return getClassifierWithItems(tableName, null);
+    }
+
+    private Map<String, Object> getClassifierWithItems(String tableName, String apiName) {
+        String classifierName = apiName != null ? apiName : tableName.replace("hemishe_", "");
         boolean hasVersion = columnExists(tableName, "version");
         boolean hasActive = columnExists(tableName, "active");
         boolean hasDeleteTs = columnExists(tableName, "delete_ts");
@@ -752,12 +939,18 @@ public class ClassifierLegacyService {
             items = Collections.emptyList();
         }
 
-        // Add _entityName to each item (CUBA compatibility)
+        // Add _entityName, id (CUBA compatibility: id = code if no UUID id column)
         String entityName = getCubaEntityName(tableName);
-        if (entityName != null) {
-            for (Map<String, Object> item : items) {
+        for (Map<String, Object> item : items) {
+            if (entityName != null) {
                 item.put("_entityName", entityName);
             }
+            // CUBA: id field must always exist — use code if no UUID id column
+            if (!item.containsKey("id") && item.containsKey("code")) {
+                item.put("id", item.get("code"));
+            }
+            buildParentNestedObject(item, entityName);
+            item.values().removeIf(v -> v == null);
         }
 
         Map<String, Object> classifierData = new LinkedHashMap<>();
@@ -769,6 +962,55 @@ public class ClassifierLegacyService {
         Map<String, Object> wrapper = new LinkedHashMap<>();
         wrapper.put(classifierName, classifierData);
         return wrapper;
+    }
+
+    /**
+     * Get classifier info using a custom API name (for OLD-HEMIS name mapping).
+     */
+    private Map<String, Object> getClassifierInfoWithName(String tableName, String apiName) {
+        boolean hasVersion = columnExists(tableName, "version");
+        boolean hasDeleteTs = columnExists(tableName, "delete_ts");
+
+        String countSql = buildCountSql(tableName, hasVersion, hasDeleteTs);
+        Map<String, Object> countResult;
+        try {
+            countResult = jdbcTemplate.queryForMap(countSql);
+        } catch (Exception e) {
+            log.debug("Error counting {}: {}", tableName, e.getMessage());
+            return null;
+        }
+
+        long count = ((Number) countResult.get("cnt")).longValue();
+        int version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).intValue() : 1;
+
+        Map<String, Object> classifierInfo = new LinkedHashMap<>();
+        classifierInfo.put("title", getClassifierTitle(apiName));
+        classifierInfo.put("version", version);
+        classifierInfo.put("count", count);
+
+        Map<String, Object> wrapper = new LinkedHashMap<>();
+        wrapper.put(apiName, classifierInfo);
+        return wrapper;
+    }
+
+    /**
+     * Get university classifier info (metadata only, for /info endpoint).
+     */
+    private Map<String, Object> getUniversityClassifierInfo() {
+        try {
+            long count = universityRepository.count();
+            Map<String, Object> classifierInfo = new LinkedHashMap<>();
+            classifierInfo.put("title", "Oliy ta'lim muassasalari ro'yxati");
+            classifierInfo.put("version", 1);
+            classifierInfo.put("count", count);
+
+            Map<String, Object> wrapper = new LinkedHashMap<>();
+            wrapper.put("h_university", classifierInfo);
+            return wrapper;
+        } catch (Exception e) {
+            log.debug("Error getting university classifier info: {}", e.getMessage());
+            return null;
+        }
     }
 
     private Map<String, Object> getClassifierInfo(String tableName) {
@@ -845,65 +1087,138 @@ public class ClassifierLegacyService {
     }
 
     private String buildItemsSql(String tableName, boolean hasActive, boolean hasDeleteTs) {
+        boolean hasParentUuid = columnExists(tableName, "_parent");
+        boolean hasParentCode = columnExists(tableName, "parent_code");
+
         StringBuilder sql = new StringBuilder("SELECT ");
+        String alias = hasParentUuid ? "t." : "";
         // UUID id (speciality tables have UUID primary key)
         if (columnExists(tableName, "id")) {
-            sql.append("id, ");
+            sql.append(alias).append("id, ");
         }
-        sql.append("code, name");
+        sql.append(alias).append("code, ").append(alias).append("name");
         // Additional columns for CUBA compatibility
-        if (columnExists(tableName, "name_en")) sql.append(", name_en as \"nameEn\"");
-        if (columnExists(tableName, "name_ru")) sql.append(", name_ru as \"nameRu\"");
-        if (hasActive) sql.append(", active");
-        if (columnExists(tableName, "is_checked")) sql.append(", is_checked as \"isChecked\"");
-        if (columnExists(tableName, "parent_code")) sql.append(", parent_code as \"parentCode\"");
-        sql.append(", COALESCE(version, 1) as version FROM ").append(tableName);
-        if (hasDeleteTs) {
-            sql.append(" WHERE delete_ts IS NULL");
+        if (columnExists(tableName, "name_en")) sql.append(", ").append(alias).append("name_en as \"nameEn\"");
+        if (columnExists(tableName, "name_ru")) sql.append(", ").append(alias).append("name_ru as \"nameRu\"");
+        if (hasActive) sql.append(", ").append(alias).append("active");
+        if (columnExists(tableName, "is_checked")) sql.append(", ").append(alias).append("is_checked as \"isChecked\"");
+        if (hasParentCode) sql.append(", ").append(alias).append("parent_code as \"parentCode\"");
+        sql.append(", COALESCE(").append(alias).append("version, 1) as version");
+        // Self-join for _parent UUID: fetch parent entity fields
+        if (hasParentUuid) {
+            sql.append(", p.id as \"parentId\", p.code as \"parentCode\"");
+            sql.append(", p.name as \"parentName\"");
+            if (columnExists(tableName, "name_en")) sql.append(", p.name_en as \"parentNameEn\"");
+            if (columnExists(tableName, "name_ru")) sql.append(", p.name_ru as \"parentNameRu\"");
+            sql.append(", COALESCE(p.version, 1) as \"parentVersion\"");
+            if (columnExists(tableName, "is_checked")) sql.append(", p.is_checked as \"parentIsChecked\"");
+            if (hasActive) sql.append(", p.active as \"parentActive\"");
         }
-        sql.append(" ORDER BY code");
+        sql.append(" FROM ").append(tableName);
+        if (hasParentUuid) {
+            sql.append(" t LEFT JOIN ").append(tableName).append(" p ON t._parent = p.id");
+        }
+        if (hasDeleteTs) {
+            sql.append(hasParentUuid ? " WHERE t.delete_ts IS NULL" : " WHERE delete_ts IS NULL");
+        }
+        sql.append(" ORDER BY ").append(hasParentUuid ? "t." : "").append("code");
         return sql.toString();
     }
 
     private String getClassifierTitle(String classifierName) {
         return switch (classifierName) {
-            // OLD-HEMIS hokimiyat classifiers (exact titles)
-            case "h_education_type" -> "Ta'lim turlari";
-            case "h_education_form" -> "Ta'lim shakllari";
-            case "h_education_year" -> "O'quv yillar ro'yxati";
-            case "h_university" -> "Oliy ta'lim muassasalari ro'yxati";
-            case "h_ownership" -> "OTM mulkchilik shakllari";
-            case "h_course" -> "O'quv kurslari";
-            case "h_nationality" -> "Millatlar nomlari";
-            case "h_citizenship_type" -> "Fuqarolik holatlari turlari";
-            case "h_social_category" -> "Talabalarning ijtimoiy toifalari";
-            case "h_gender" -> "Jins turlari";
-            case "h_student_type" -> "Talaba toifalari";
-            case "h_payment_form" -> "To'lov turlari";
-            case "h_stipend_rate" -> "Stipendiya turlari";
-            case "h_language" -> "Ta'lim tillari";
-            case "h_accommodation" -> "Talabalar yashash joylari turlari";
+            case "h_admission_type" -> "Qabul turlari";
+            case "h_transfer_type" -> "O'tkazish turlari";
+            case "h_external_service_type" -> "Tashqi xizmat turlari";
+            case "h_grant_type" -> "Grant turlari";
+            case "h_poverty_level" -> "Kam ta'minlanganlik darajasi";
+            case "h_certificate_grades" -> "Attestat baholari";
+            case "h_certificate_subjects" -> "Attestat fanlari";
+            case "h_certificate_names" -> "Attestat nomlari";
+            case "h_certificate_type" -> "Attestat turlari";
+            case "h_hemis_version_type" -> "HEMIS versiya turlari";
+            case "h_outside_activity", "h_outside_activities" -> "Auditoriyadan tashqari mashg'ulotlar";
+            case "h_scholarship_decree_type" -> "Stipendiya qaror turlari";
+            case "h_resource_type" -> "Resurs turlari";
+            case "h_internship_type" -> "Amaliyot turlari";
+            case "h_internship_form" -> "Amaliyot shakllari";
+            case "h_conduction_form" -> "Dars o'tkazish shakllari";
+            case "h_terrain" -> "Joylashgan hudud turi";
+            case "h_stipend_rate_category" -> "Stipendiya stavka toifalari";
+            case "h_speciality_ordinatura" -> "Ordinatura mutaxassisliklari";
+            case "h_academic_mobile_type" -> "Akademik mobillik turlari";
+            case "h_contract_class" -> "Shartnoma sinflari";
             case "h_student_living_status" -> "Talaba yashash joyi statusi";
             case "h_student_roommate_type" -> "Birgalikda yashaydiganlar toifasi";
-            case "h_student_status" -> "Talaba statusi turlari";
-            case "h_soato" -> "Viloyat va tumanlar";
+            case "h_student_type" -> "Talaba toifalari";
+            case "h_sport_type" -> "Sport turlari";
+            case "h_graduate_inactive_type" -> "Bitiruvchi nofaol turlari";
+            case "h_graduate_fields_type" -> "Bitiruvchi soha turlari";
+            case "h_diplom_blank_status" -> "Diplom blank holati";
+            case "h_diplom_blank_category" -> "Diplom blank toifasi";
+            case "h_contract_summa_type" -> "Shartnoma summa turlari";
+            case "h_contract_type" -> "Shartnoma turlari";
+            case "h_decree_type" -> "Buyruq turlari";
+            case "h_scientific_platform" -> "Ilmiy platformalar";
+            case "h_doctorate_student_status" -> "Doktorant holatlari";
+            case "h_education_year" -> "O'quv yillar ro'yxati";
+            case "h_semester" -> "Semestrlar";
+            case "h_science_branch" -> "Fan tarmoqlari";
+            case "h_exam_finish" -> "Imtihon yakunlash turlari";
+            case "h_final_exam_type" -> "Yakuniy imtihon turlari";
+            case "h_locality_type" -> "Joylashuv turlari";
+            case "h_academic_reason" -> "Akademik ta'til sabablari";
+            case "h_attendance_setting" -> "Davomat sozlamalari";
+            case "h_university" -> "Oliy ta'lim muassasalari ro'yxati";
             case "h_country" -> "Davlatlar nomlari";
-            // Other classifiers
-            case "h_citizenship" -> "Fuqaroliklar";
-            case "h_education_language" -> "Ta'lim tillari";
-            case "h_student_status_type" -> "Talaba holatlari";
-            case "h_university_department_type" -> "Bo'lim turlari";
-            case "h_teacher_position_type" -> "O'qituvchi lavozimlari";
-            case "h_academic_degree" -> "Ilmiy darajalar turlari";
-            case "h_academic_rank" -> "Ilmiy unvonlar";
-            case "h_employment_form" -> "Bandlik shakllari";
-            case "h_employment_type" -> "Bandlik turlari";
-            case "h_specialty_direction" -> "Mutaxassislik yo'nalishlari";
-            case "h_transfer_type" -> "O'tkazish turlari";
-            case "h_admission_type" -> "Qabul turlari";
-            case "h_student_success" -> "Talaba yutuqlari turlari";
+            case "h_soato" -> "Viloyat va tumanlar";
+            case "h_nationality" -> "Millatlar nomlari";
+            case "h_citizenship_type" -> "Fuqarolik holatlari turlari";
+            case "h_gender" -> "Jins turlari";
             case "h_bachelor_speciality" -> "Bakalavriat ta'lim yo'nalishlari";
             case "h_master_speciality" -> "Magistratura mutaxassisliklari";
+            case "h_university_form" -> "OTM shakllari";
+            case "h_ownership" -> "OTM mulkchilik shakllari";
+            case "h_structure_type" -> "Bo'lim turlari";
+            case "h_employee_type" -> "Xodim turlari";
+            case "h_teacher_status" -> "O'qituvchi holatlari";
+            case "h_employment_staff" -> "Xodim shtat turlari";
+            case "h_employment_form" -> "Bandlik shakllari";
+            case "h_teacher_position_type" -> "O'qituvchi lavozimlari";
+            case "h_qualification" -> "Malaka toifalari";
+            case "h_teacher_success" -> "O'qituvchi yutuqlari turlari";
+            case "h_academic_degree" -> "Ilmiy darajalar turlari";
+            case "h_academic_rank" -> "Ilmiy unvonlar";
+            case "h_student_status" -> "Talaba statusi turlari";
+            case "h_student_success" -> "Talaba yutuqlari turlari";
+            case "h_expel_reason" -> "Chetlatish sabablari";
+            case "h_accommodation" -> "Talabalar yashash joylari turlari";
+            case "h_doctoral_student_type" -> "Doktorant turlari";
+            case "h_social_category" -> "Talabalarning ijtimoiy toifalari";
+            case "h_education_type" -> "Ta'lim turlari";
+            case "h_education_form" -> "Ta'lim shakllari";
+            case "h_language" -> "Ta'lim tillari";
+            case "h_marking_system" -> "Baholash tizimlari";
+            case "h_grade_type" -> "Baho turlari";
+            case "h_exam_type" -> "Imtihon turlari";
+            case "h_course" -> "O'quv kurslari";
+            case "h_semestr_type" -> "Semestr turlari";
+            case "h_education_week_type" -> "Ta'lim hafta turlari";
+            case "h_subject_block" -> "Fan bloklari";
+            case "h_subject_type" -> "Fan turlari";
+            case "h_training_type" -> "Mashg'ulot turlari";
+            case "h_project_type" -> "Loyiha turlari";
+            case "h_locality" -> "Joylashuvlar";
+            case "h_project_currency" -> "Valyutalar";
+            case "h_project_executor_type" -> "Loyiha ijrochi turlari";
+            case "h_scientific_publication_type" -> "Ilmiy nashr turlari";
+            case "h_methodical_publication_type" -> "Metodik nashr turlari";
+            case "h_patient_type" -> "Bemor turlari";
+            case "h_publication_database" -> "Nashr bazalari";
+            case "h_payment_form" -> "To'lov turlari";
+            case "h_stipend_rate" -> "Stipendiya turlari";
+            case "h_auditorium_type" -> "Auditoriya turlari";
+            case "h_device_type" -> "Qurilma turlari";
             default -> classifierName.replace("h_", "").replace("_", " ");
         };
     }

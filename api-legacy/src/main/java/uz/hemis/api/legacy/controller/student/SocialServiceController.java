@@ -134,20 +134,11 @@ public class SocialServiceController {
                     birthDocument != null ? birthDocument : "",
                     birthDate != null ? birthDate : "");
 
-            // Use AbstractGovernmentApiService pattern (HttpsURLConnection)
-            javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[]{
-                    new javax.net.ssl.X509TrustManager() {
-                        public java.security.cert.X509Certificate[] getAcceptedIssuers() { return null; }
-                        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
-                        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
-                    }
-            };
-            javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
-
+            // Per-connection SSL bypass for government APIs with self-signed certs
             javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) java.net.URI.create("https://apimgw.egov.uz:8243/minzdrav/vtek/v4/birthdoc").toURL().openConnection();
+            javax.net.ssl.SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
+            conn.setSSLSocketFactory(sc.getSocketFactory());
+            conn.setHostnameVerifier((hostname, session) -> true);
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
             conn.setRequestProperty("Content-Type", "application/json");

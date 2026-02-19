@@ -53,7 +53,7 @@ public class DiplomBlankLegacyService {
             if (bgsCode != null) {
                 blank.put("blankGenerateStatus", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_diplom_blank_generate_status",
-                        "HDiplomBlankGenerateStatus", bgsCode)));
+                        "HDiplomBlankGenerateStatus", bgsCode, true)));
             }
 
             // blankYear
@@ -61,7 +61,7 @@ public class DiplomBlankLegacyService {
             if (yearCode != null) {
                 blank.put("blankYear", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_education_year",
-                        "HEducationYear", yearCode)));
+                        "HEducationYear", yearCode, true)));
             }
 
             // blankStatus
@@ -69,7 +69,7 @@ public class DiplomBlankLegacyService {
             if (statusCode != null) {
                 blank.put("blankStatus", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_diplom_blank_status",
-                        "HDiplomBlankStatus", statusCode)));
+                        "HDiplomBlankStatus", statusCode, true)));
             }
 
             // educationType (old-hemis: basic format + nameEn, without nameRu/active)
@@ -77,7 +77,7 @@ public class DiplomBlankLegacyService {
             if (eduTypeCode != null) {
                 Map<String, Object> eduType = nestedObjectLoader.loadClassifierWithNames(
                         "hemishe_h_education_type",
-                        "HEducationType", eduTypeCode);
+                        "HEducationType", eduTypeCode, true);
                 if (eduType != null) {
                     eduType.remove("_instanceName");
                     eduType.remove("nameRu");
@@ -89,7 +89,7 @@ public class DiplomBlankLegacyService {
             // university
             String uniCode = str(row.get("_university"));
             if (uniCode != null) {
-                blank.put("university", stripInstanceName(nestedObjectLoader.loadUniversity(uniCode)));
+                blank.put("university", stripInstanceName(nestedObjectLoader.loadUniversity(uniCode, true)));
             }
 
             blank.put("version", row.get("version"));
@@ -101,7 +101,7 @@ public class DiplomBlankLegacyService {
             if (catCode != null) {
                 blank.put("blankCategory", stripInstanceName(nestedObjectLoader.loadClassifier(
                         "hemishe_h_diplom_blank_category",
-                        "HDiplomBlankCategory", catCode)));
+                        "HDiplomBlankCategory", catCode, true)));
             }
 
             blanks.add(blank);

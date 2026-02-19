@@ -7,104 +7,128 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.document.DiplomaService;
 
-import java.util.Map;
+import java.util.*;
 
 /**
  * Diploma Service Controller - CUBA REST API Compatible
  *
  * <p><strong>URL Pattern:</strong> {@code /app/rest/v2/services/diploma/*}</p>
  *
- * <p><strong>Legacy Compatibility:</strong></p>
- * <ul>
- *   <li>Matches OLD-HEMIS CUBA service pattern</li>
- *   <li>200+ universities depend on /byhash endpoint for QR diploma verification</li>
- *   <li>Used by employers and government agencies for diploma authentication</li>
- * </ul>
- *
- * <p><strong>Methods:</strong></p>
- * <ul>
- *   <li>info - Get diploma by number</li>
- *   <li>byhash - Verify diploma by QR hash</li>
- * </ul>
- *
  * @since 2.0.0
  */
 @Tag(name = "70.Qo'shimcha xizmatlar", description = "Diploma tekshirish va ma'lumotlar xizmatlari")
 @RestController
-@RequestMapping("/services/diploma")
+@RequestMapping("/app/rest/v2/services/diploma")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
 public class DiplomaServiceController {
 
     private final DiplomaService diplomaService;
+    private final JdbcTemplate jdbcTemplate;
 
     /**
-     * Get diploma info
+     * Get diploma info by PINFL
      *
-     * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/diploma/info</p>
-     *
-     * @param number diploma number
-     * @return diploma information
+     * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/diploma/info?pinfl=...</p>
      */
     @GetMapping("/info")
-    @Operation(summary = "Get diploma info", description = "Returns diploma information by number")
-    public ResponseEntity<Map<String, Object>> info(
-            @Parameter(description = "Diploma number")
-            @RequestParam String number
+    @Operation(summary = "Diploma ma'lumotlarini PINFL orqali olish")
+    public ResponseEntity<?> info(
+            @Parameter(description = "Talabaning PINFL raqami")
+            @RequestParam String pinfl
     ) {
-        log.info("GET /services/diploma/info - number: {}", number);
+        log.info("GET /services/diploma/info - pinfl: {}****", pinfl.length() > 4 ? pinfl.substring(0, 4) : pinfl);
 
-        return diplomaService.findEntityByDiplomaNumber(number)
-                .map(diploma -> ResponseEntity.ok(diplomaService.toDiplomaInfoMap(diploma)))
-                .orElse(ResponseEntity.notFound().build());
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "SELECT d.id, d.diploma_number, d.register_number, d.register_date, " +
+                "d._speciality, d.speciality_name, d._university, d.active, d._diplom_category, " +
+                "d._education_type, d._education_year, d.total_credit, d.total_acload, d.avg_grade, " +
+                "s.firstname, s.lastname, s.fathername, s.pinfl " +
+                "FROM hemishe_e_student_diploma d " +
+                "JOIN hemishe_e_student s ON s.id = d._student " +
+                "WHERE s.pinfl = ? AND d.delete_ts IS NULL AND s.delete_ts IS NULL " +
+                "ORDER BY d.create_ts DESC",
+                pinfl
+        );
+
+        if (rows.isEmpty()) {
+            // OLD-HEMIS format: wraps error inside data array
+            Map<String, Object> innerError = new LinkedHashMap<>();
+            innerError.put("success", false);
+            innerError.put("error", pinfl + " JSHSHIRga ega talaba uchun diplom topilmadi");
+            innerError.put("data", List.of());
+            innerError.put("code", 404);
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", true);
+            response.put("status", 200);
+            response.put("count", 1);
+            response.put("data", List.of(innerError));
+            return ResponseEntity.ok(response);
+        }
+
+        List<Map<String, Object>> diplomas = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("_entityName", "hemishe_EStudentDiploma");
+            map.put("id", row.get("id"));
+            map.put("diplomaNumber", row.get("diploma_number"));
+            map.put("registerNumber", row.get("register_number"));
+            map.put("registerDate", row.get("register_date"));
+            map.put("speciality", row.get("_speciality"));
+            map.put("specialityName", row.get("speciality_name"));
+            map.put("university", row.get("_university"));
+            map.put("active", row.get("active"));
+            map.put("diplomCategory", row.get("_diplom_category"));
+            map.put("educationType", row.get("_education_type"));
+            map.put("educationYear", row.get("_education_year"));
+            map.put("totalCredit", row.get("total_credit"));
+            map.put("totalAcload", row.get("total_acload"));
+            map.put("avgGrade", row.get("avg_grade"));
+
+            Map<String, Object> student = new LinkedHashMap<>();
+            student.put("firstname", row.get("firstname"));
+            student.put("lastname", row.get("lastname"));
+            student.put("fathername", row.get("fathername"));
+            student.put("pinfl", row.get("pinfl"));
+            map.put("student", student);
+
+            diplomas.add(map);
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("status", 200);
+        response.put("count", diplomas.size());
+        response.put("data", diplomas);
+
+        return ResponseEntity.ok(response);
     }
 
     /**
      * Get diploma by hash (QR code verification)
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/diploma/byhash</p>
-     *
-     * <p>This endpoint is used by employers and government agencies to verify diploma authenticity
-     * by scanning the QR code on the diploma.</p>
-     *
-     * <p><strong>Example Response:</strong></p>
-     * <pre>
-     * {
-     *   "id": "uuid",
-     *   "number": "12345678",
-     *   "series": "AB",
-     *   "studentFullName": "Aliyev Ali Alievich",
-     *   "studentPinfl": "12345678901234",
-     *   "universityName": "Toshkent Davlat Texnika Universiteti",
-     *   "specialtyName": "Dasturiy injiniring (5140700)",
-     *   "issueDate": "2024-06-15",
-     *   "diplomaHash": "71d6a9e0436cfb3aaa9fee3f88844b42",
-     *   "status": "ACTIVE",
-     *   "verified": true
-     * }
-     * </pre>
-     *
-     * @param hash diploma hash from QR code
-     * @return diploma information or 404 if not found
      */
     @GetMapping("/byhash")
     @Operation(
             summary = "Get diploma by hash",
-            description = "Verifies diploma authenticity using QR code hash. Used by employers and government agencies."
+            description = "Verifies diploma authenticity using QR code hash."
     )
     public ResponseEntity<Map<String, Object>> byHash(
-            @Parameter(description = "Diploma hash from QR code", example = "71d6a9e0436cfb3aaa9fee3f88844b42")
+            @Parameter(description = "Diploma hash from QR code")
             @RequestParam String hash
     ) {
         log.info("GET /services/diploma/byhash - hash: {}", hash);
 
         return diplomaService.findEntityByDiplomaHash(hash)
                 .map(diploma -> {
-                    log.info("Diploma verified successfully - number: {}, hash: {}", diploma.getDiplomaNumber(), hash);
+                    log.info("Diploma verified - number: {}", diploma.getDiplomaNumber());
                     return ResponseEntity.ok(diplomaService.toDiplomaVerificationMap(diploma));
                 })
                 .orElseGet(() -> {

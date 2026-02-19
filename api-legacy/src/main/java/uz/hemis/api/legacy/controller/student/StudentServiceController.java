@@ -23,6 +23,7 @@ import uz.hemis.service.student.StudentService;
 import uz.hemis.service.student.VerificationService;
 import uz.hemis.service.integration.HemisApiService;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -846,11 +847,13 @@ public class StudentServiceController {
             response.put("data", "Max limit is 1000");
             return ResponseEntity.ok(response);
         }
-        List<Map<String, Object>> data = studentService.getStudentsByUniversityFlat(university, limit, offset);
+        Map<String, Object> result = studentService.getStudentsByUniversityFlatWithCount(university, limit, offset);
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> data = (List<Map<String, Object>>) result.get("data");
         if (data != null && !data.isEmpty()) {
             response.put("success", true);
             response.put("code", "ok");
-            response.put("count", data.size());
+            response.put("count", result.get("count"));
             response.put("limit", limit);
             response.put("offset", offset);
             response.put("data", data);
@@ -916,9 +919,27 @@ public class StudentServiceController {
     @Operation(summary = "Stipendiya tekshirish", description = "PostgreSQL stipend_check() funktsiyasi orqali tekshirish")
     public ResponseEntity<?> checkScholarship(
             @Parameter(description = "INN (TIN)") @RequestParam String tin,
-            @Parameter(description = "PINFL lar (vergul bilan ajratilgan)") @RequestParam String pinfls) {
+            @Parameter(description = "PINFL lar (JSON array)") @RequestParam String pinfls) {
         log.info("[CUBA Service] student/checkScholarship: tin={}, pinfls={}", tin, pinfls);
-        String[] pinflArray = pinfls.split(",");
+        // OLD-HEMIS (CUBA): pinfls is a JSON array parameter like ["pinfl1","pinfl2"]
+        String trimmed = pinfls.trim();
+        if (!trimmed.startsWith("[")) {
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Invalid parameter value");
+            error.put("details", "Invalid parameter value for pinfls");
+            return ResponseEntity.status(400).body(error);
+        }
+        // Parse JSON array
+        String[] pinflArray;
+        try {
+            pinflArray = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(trimmed, String[].class);
+        } catch (Exception e) {
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Invalid parameter value");
+            error.put("details", "Invalid parameter value for pinfls");
+            return ResponseEntity.status(400).body(error);
+        }
         Map<String, Object> result = studentService.checkScholarshipNative(tin, pinflArray);
         return ResponseEntity.ok(result);
     }

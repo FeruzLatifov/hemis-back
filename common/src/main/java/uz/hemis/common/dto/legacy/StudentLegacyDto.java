@@ -150,6 +150,8 @@ public class StudentLegacyDto {
     private TerrainReferenceDto currentTerrain;
     private SpecialityReferenceDto specialityBachelor;
 
+    private Integer roommateCount;
+
     // Empty list for CUBA compatibility
     private List<Object> studentSuccess = List.of();
 
@@ -187,7 +189,8 @@ public class StudentLegacyDto {
         "_entityName", "_instanceName", "id", "studentUrl", "code", "universityType", "tin", "versionType",
         "addStudent", "address", "accreditationEdit", "active", "universityContractCategory",
         "version", "oneId", "allowGrouping", "teacherUrl", "allowTransferOutside", "ownership", "name", "gpaEdit",
-        "addForeignStudent", "gradingSystem", "uzbmbUrl", "universityUrl", "mailAddress", "bankInfo", "accreditationInfo"
+        "addForeignStudent", "gradingSystem", "uzbmbUrl", "universityUrl", "mailAddress", "bankInfo", "accreditationInfo",
+        "addAcademicMobileStudent"
     })
     public static class UniversityReferenceDto {
         @JsonProperty("_entityName")

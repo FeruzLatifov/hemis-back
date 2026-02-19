@@ -151,11 +151,7 @@ public class TeacherLegacyService {
             putClassifier(map, "academicRank", entity.getAcademicRank(),
                     "hemishe_HAcademicRank", "hemishe_h_academic_rank", returnNulls);
             List<Map<String, Object>> jobs = loadJobs(entity.getCode(), entity.getUniversity(), returnNulls);
-            if (!jobs.isEmpty()) {
-                map.put("jobs", jobs);
-            } else if (Boolean.TRUE.equals(returnNulls)) {
-                map.put("jobs", Collections.emptyList());
-            }
+            map.put("jobs", jobs);
             CubaEntityMapHelper.putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);
             putClassifier(map, "employeeType", entity.getEmployeeType(),
@@ -170,20 +166,21 @@ public class TeacherLegacyService {
             // OLD-HEMIS compatibility: do NOT include fullname, version, deletedBy, deleteTs
         } else {
             // Default view (not _local, not eTeacher-view)
+            // OLD-HEMIS field order: pinfl, birthday, firstname, code, tag, serialNumber, address, version, lastname, fathername, phone, employeeYear, fullname
             CubaEntityMapHelper.putIfNotNull(map, "pinfl", entity.getPinfl(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "birthday", entity.getBirthDate(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "firstname", entity.getFirstName(), returnNulls);
-            CubaEntityMapHelper.putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);
-            CubaEntityMapHelper.putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "code", entity.getCode(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "tag", entity.getTag(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "serialNumber", entity.getSerialNumber(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "address", entity.getAddress(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "lastname", entity.getSecondName(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "fathername", entity.getThirdName(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "phone", entity.getPhone(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "employeeYear", entity.getEmployeeYear(), returnNulls);
-            // OLD-HEMIS compatibility: include fullname, deletedBy, deleteTs (these exist in OLD)
             CubaEntityMapHelper.putIfNotNull(map, "fullname", entity.getFullName(), returnNulls);
-            CubaEntityMapHelper.putIfNotNull(map, "deletedBy", null, returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
         }
 
@@ -319,7 +316,6 @@ public class TeacherLegacyService {
                 job.put("_instanceName", instanceName);
 
                 job.put("id", row.get("id") != null ? row.get("id").toString() : null);
-                // jobEndDate - must be included even if null (OLD-HEMIS format)
                 Object jobEndDate = row.get("job_end_date");
                 job.put("jobEndDate", jobEndDate != null ? formatDate(jobEndDate) : JsonNull.INSTANCE);
                 job.put("contractDate", formatDate(row.get("contract_date")));
@@ -382,7 +378,7 @@ public class TeacherLegacyService {
             }
             return jobsList;
         } catch (Exception e) {
-            log.debug("Could not fetch jobs for teacher {}: {}", teacherCode, e.getMessage());
+            log.warn("Could not fetch jobs for teacher {}: {}", teacherCode, e.getMessage(), e);
             return Collections.emptyList();
         }
     }
@@ -432,17 +428,18 @@ public class TeacherLegacyService {
     private Map<String, Object> loadJobDepartment(String deptCode) {
         if (deptCode == null) return null;
         try {
+            // _department column stores code (PK of hemishe_e_university_department)
             Map<String, Object> row = jdbcTemplate.queryForMap(
-                    "SELECT code, name_uz, _parent, _department_type FROM hemishe_e_university_department " +
+                    "SELECT code, name_uz, parent_code, _deparment_type FROM hemishe_e_university_department " +
                     "WHERE code = ? AND delete_ts IS NULL", deptCode);
             Map<String, Object> dept = new LinkedHashMap<>();
             dept.put("_entityName", "hemishe_EUniversityDepartment");
             dept.put("_instanceName", row.get("name_uz"));
             dept.put("id", row.get("code"));
-            dept.put("parent", null); // OLD-HEMIS returns null for parent
+            dept.put("parent", JsonNull.INSTANCE); // OLD-HEMIS returns null for parent
 
             // deparmentType classifier
-            String typeCode = row.get("_department_type") != null ? row.get("_department_type").toString() : null;
+            String typeCode = row.get("_deparment_type") != null ? row.get("_deparment_type").toString() : null;
             if (typeCode != null) {
                 try {
                     Map<String, Object> typeRow = jdbcTemplate.queryForMap(
@@ -456,14 +453,14 @@ public class TeacherLegacyService {
                     typeObj.put("name", typeName);
                     dept.put("deparmentType", typeObj);
                 } catch (Exception e) {
-                    log.debug("deparmentType load error: {}", e.getMessage());
+                    log.warn("deparmentType load error for code {}: {}", typeCode, e.getMessage(), e);
                 }
             }
 
             dept.put("nameUz", row.get("name_uz"));
             return dept;
         } catch (Exception e) {
-            log.debug("loadJobDepartment error: {}", e.getMessage());
+            log.warn("loadJobDepartment error for code {}: {}", deptCode, e.getMessage(), e);
             return null;
         }
     }

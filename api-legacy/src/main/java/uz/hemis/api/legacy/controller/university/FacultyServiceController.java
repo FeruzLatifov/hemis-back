@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @since 2.0.0
  */
 @RestController
-@RequestMapping("/services/faculty")
+@RequestMapping("/app/rest/v2/services/faculty")
 @Tag(name = "49.Fakultetlar", description = "Fakultetlar xizmatlari")
 @RequiredArgsConstructor
 @Slf4j
@@ -47,6 +47,7 @@ public class FacultyServiceController {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
+        response.put("count", data.size());
         response.put("data", data);
 
         return ResponseEntity.ok(response);
@@ -84,9 +85,10 @@ public class FacultyServiceController {
         map.put("_entityName", ENTITY_NAME);
         map.put("id", entity.getCode());
         map.put("code", entity.getCode());
-        map.put("version", 3);
+        map.put("version", 4);
         map.put("nameUz", entity.getName());
         map.put("nameRu", entity.getName());
+        map.put("status", true);
         return map;
     }
 }

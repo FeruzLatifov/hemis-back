@@ -82,7 +82,7 @@ public class FacultyRegistryController {
     // =====================================================
 
     @GetMapping("/groups")
-    @PreAuthorize("hasAuthority('data.structure.view')")
+    @PreAuthorize("hasAuthority('institutions.faculties.view')")
     @Operation(
         summary = "Get university groups (Tree root level)",
         description = """
@@ -196,7 +196,7 @@ public class FacultyRegistryController {
     // =====================================================
 
     @GetMapping("/by-university/{universityCode}")
-    @PreAuthorize("hasAuthority('data.structure.view')")
+    @PreAuthorize("hasAuthority('institutions.faculties.view')")
     @Operation(
         summary = "Get faculties by university (Tree child level)",
         description = """
@@ -320,7 +320,7 @@ public class FacultyRegistryController {
     // =====================================================
 
     @GetMapping("/{code}")
-    @PreAuthorize("hasAuthority('data.structure.view')")
+    @PreAuthorize("hasAuthority('institutions.faculties.view')")
     @Operation(
         summary = "Get faculty detail by code",
         description = """
@@ -410,7 +410,7 @@ public class FacultyRegistryController {
     // =====================================================
 
     @PostMapping("/export")
-    @PreAuthorize("hasAuthority('data.structure.view')")
+    @PreAuthorize("hasAuthority('institutions.faculties.view')")
     @Operation(
         summary = "Export faculties to CSV file",
         description = """
@@ -572,7 +572,7 @@ public class FacultyRegistryController {
     // =====================================================
 
     @GetMapping("/dictionaries")
-    @PreAuthorize("hasAuthority('data.structure.view')")
+    @PreAuthorize("hasAuthority('institutions.faculties.view')")
     @Operation(
         summary = "Get filter dictionaries (Cached)",
         description = """
