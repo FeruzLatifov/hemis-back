@@ -56,9 +56,8 @@ pipeline {
                         --namespace ${NAMESPACE} \
                         --set image.repository=${IMAGE_NAME} \
                         --set image.tag=${IMAGE_TAG} \
-                        --set replicaCount=1 \
                         --wait \
-                        --timeout 5m
+                        --timeout 8m
                 """
             }
         }

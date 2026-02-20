@@ -8,14 +8,17 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit | default 3 }}
   selector:
     matchLabels:
       {{- include "hemis-back.selectorLabels" . | nindent 6 }}
   strategy:
     type: {{ .Values.strategy.type }}
+    {{- if eq .Values.strategy.type "RollingUpdate" }}
     rollingUpdate:
       maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
       maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+    {{- end }}
   template:
     metadata:
       labels:
@@ -50,9 +53,19 @@ spec:
               value: {{ .Values.springProfiles | quote }}
             - name: JAVA_OPTS
               value: {{ .Values.javaOpts | quote }}
+            - name: SPRING_LIQUIBASE_ENABLED
+              value: "false"
           envFrom:
             - secretRef:
                 name: {{ .Values.existingSecret }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.probes.startup.path }}
+              port: {{ .Values.probes.startup.port }}
+            initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.startup.failureThreshold }}
           livenessProbe:
             httpGet:
               path: {{ .Values.probes.liveness.path }}

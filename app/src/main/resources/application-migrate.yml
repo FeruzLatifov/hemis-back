@@ -1,0 +1,8 @@
+## Migration-only profil
+## Web server ishga tushmaydi, faqat Liquibase migration ishlaydi.
+## Helm pre-upgrade Job bu profil bilan ishga tushadi.
+spring:
+  main:
+    web-application-type: none
+  liquibase:
+    enabled: true
