@@ -18,7 +18,7 @@ spring:
   # =====================================================
   main:
     lazy-initialization: false  # Global lazy disabled
-    allow-bean-definition-overriding: false
+    allow-bean-definition-overriding: true
 
   # =====================================================
   # DataSource Configuration (Master/Replica)
