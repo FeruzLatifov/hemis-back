@@ -6,6 +6,12 @@ spring:
     web-application-type: none
   liquibase:
     enabled: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+  jpa:
+    hibernate:
+      ddl-auto: none
   datasource:
     master:
       hikari:
