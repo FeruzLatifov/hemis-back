@@ -57,6 +57,8 @@ spec:
               value: {{ .Values.javaOpts | quote }}
             - name: SPRING_LIQUIBASE_ENABLED
               value: "false"
+            - name: AUDIT_ENABLED
+              value: {{ .Values.audit.enabled | quote }}
           envFrom:
             - secretRef:
                 name: {{ .Values.existingSecret }}

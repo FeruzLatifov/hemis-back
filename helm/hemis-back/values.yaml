@@ -51,6 +51,9 @@ javaOpts: "-Xms512m -Xmx1536m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 
 revisionHistoryLimit: 3
 
+audit:
+  enabled: false  # Set to true after creating test_ministry_audit database
+
 migration:
   enabled: true
   activeDeadlineSeconds: 600

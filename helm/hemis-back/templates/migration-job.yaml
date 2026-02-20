@@ -33,6 +33,8 @@ spec:
               value: "{{ .Values.springProfiles }},migrate"
             - name: JAVA_OPTS
               value: {{ .Values.javaOpts | quote }}
+            - name: AUDIT_ENABLED
+              value: "false"
           envFrom:
             - secretRef:
                 name: {{ .Values.existingSecret }}
