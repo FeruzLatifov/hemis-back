@@ -25,7 +25,11 @@ RUN chmod +x gradlew
 COPY common/build.gradle.kts common/build.gradle.kts
 COPY domain/build.gradle.kts domain/build.gradle.kts
 COPY security/build.gradle.kts security/build.gradle.kts
-COPY admin-api/build.gradle.kts admin-api/build.gradle.kts
+COPY service/build.gradle.kts service/build.gradle.kts
+COPY api-legacy/build.gradle.kts api-legacy/build.gradle.kts
+COPY api-web/build.gradle.kts api-web/build.gradle.kts
+COPY api-external/build.gradle.kts api-external/build.gradle.kts
+COPY api-university/build.gradle.kts api-university/build.gradle.kts
 COPY app/build.gradle.kts app/build.gradle.kts
 
 # Download dependencies (cache this layer if build files don't change)
@@ -35,7 +39,11 @@ RUN ./gradlew dependencies --no-daemon || true
 COPY common/src common/src
 COPY domain/src domain/src
 COPY security/src security/src
-COPY admin-api/src admin-api/src
+COPY service/src service/src
+COPY api-legacy/src api-legacy/src
+COPY api-web/src api-web/src
+COPY api-external/src api-external/src
+COPY api-university/src api-university/src
 COPY app/src app/src
 
 # Build application (skip tests for faster build)
@@ -69,7 +77,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
-    CMD curl -f http://localhost:8082/actuator/health || exit 1
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # JVM optimization flags
 ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
