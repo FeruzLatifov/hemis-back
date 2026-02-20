@@ -19,7 +19,7 @@ spring:
     # - @Transactional (readOnly=false or default)
     # =====================================================
     master:
-      jdbc-url: ${DB_MASTER_URL}
+      jdbc-url: jdbc:postgresql://${DB_MASTER_HOST}:${DB_MASTER_PORT:5432}/${DB_MASTER_NAME}?stringtype=unspecified
       username: ${DB_MASTER_USERNAME}
       password: ${DB_MASTER_PASSWORD}
       driver-class-name: org.postgresql.Driver
@@ -47,7 +47,7 @@ spring:
     # - High availability for reads
     # =====================================================
     replica:
-      jdbc-url: ${DB_REPLICA_URL}
+      jdbc-url: jdbc:postgresql://${DB_REPLICA_HOST}:${DB_REPLICA_PORT:5432}/${DB_REPLICA_NAME}?stringtype=unspecified
       username: ${DB_REPLICA_USERNAME}
       password: ${DB_REPLICA_PASSWORD}
       driver-class-name: org.postgresql.Driver
