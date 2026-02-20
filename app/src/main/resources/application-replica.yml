@@ -31,7 +31,7 @@ spring:
         connection-timeout: 30000  # 30 seconds
         idle-timeout: 600000  # 10 minutes
         max-lifetime: 1800000  # 30 minutes
-        auto-commit: false  # Required for transactions
+        auto-commit: true  # PgBouncer transaction mode requires auto-commit=true; Spring @Transactional handles BEGIN/COMMIT
         read-only: false  # Master is read-write
 
         # Performance tuning
