@@ -12,7 +12,7 @@ pipeline {
         NAMESPACE     = 'new-ministry'
         RELEASE_NAME  = 'hemis-back'
         CHART_DIR     = 'helm/hemis-back'
-        KUBECONFIG    = '/var/lib/jenkins/.kube/config'
+        KUBECONFIG    = '/home/jenkins/.kube/config'
     }
 
     stages {
