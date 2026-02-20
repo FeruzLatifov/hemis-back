@@ -34,7 +34,7 @@ pipeline {
         stage('Push to Harbor') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: 'harbor-credentials',
+                    credentialsId: 'harbor-ministry-back',
                     usernameVariable: 'HARBOR_USER',
                     passwordVariable: 'HARBOR_PASS'
                 )]) {
