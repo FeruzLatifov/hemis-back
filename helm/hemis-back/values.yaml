@@ -25,6 +25,12 @@ ingress:
       pathType: Prefix
     - path: /app/
       pathType: Prefix
+    - path: /swagger-ui/
+      pathType: Prefix
+    - path: /v3/api-docs/
+      pathType: Prefix
+    - path: /actuator/
+      pathType: Prefix
 
 resources:
   requests:
@@ -52,7 +58,7 @@ javaOpts: "-Xms512m -Xmx1536m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
 revisionHistoryLimit: 3
 
 audit:
-  enabled: false  # Set to true after creating test_ministry_audit database
+  enabled: true  # Requires test_ministry_audit database and PgBouncer config
 
 migration:
   enabled: true
