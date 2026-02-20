@@ -53,7 +53,7 @@ revisionHistoryLimit: 3
 
 migration:
   enabled: true
-  activeDeadlineSeconds: 300
+  activeDeadlineSeconds: 600
 
 probes:
   startup:

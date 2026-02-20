@@ -6,3 +6,9 @@ spring:
     web-application-type: none
   liquibase:
     enabled: true
+  datasource:
+    master:
+      hikari:
+        data-source-properties:
+          socketTimeout: 600
+        leak-detection-threshold: 0
