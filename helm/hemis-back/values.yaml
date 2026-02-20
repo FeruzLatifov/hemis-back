@@ -29,8 +29,6 @@ ingress:
       pathType: Prefix
     - path: /v3/api-docs/
       pathType: Prefix
-    - path: /actuator/
-      pathType: Prefix
 
 resources:
   requests:
