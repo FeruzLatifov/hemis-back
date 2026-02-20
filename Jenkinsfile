@@ -9,10 +9,10 @@ pipeline {
 
     environment {
         IMAGE_NAME    = 'harbor.e-edu.uz/ministry-back/hemis-back'
-        IMAGE_TAG     = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'unknown'}"
         NAMESPACE     = 'new-ministry'
         RELEASE_NAME  = 'hemis-back'
         CHART_DIR     = 'helm/hemis-back'
+        KUBECONFIG    = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
@@ -27,62 +27,59 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}:${IMAGE_TAG}", '--no-cache .')
-                }
+                sh "docker build --no-cache -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
         stage('Push to Harbor') {
             steps {
-                script {
-                    docker.withRegistry('https://harbor.e-edu.uz', 'harbor-credentials') {
-                        docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push()
-                        docker.image("${IMAGE_NAME}:${IMAGE_TAG}").push('latest')
-                    }
+                withCredentials([usernamePassword(
+                    credentialsId: 'harbor-credentials',
+                    usernameVariable: 'HARBOR_USER',
+                    passwordVariable: 'HARBOR_PASS'
+                )]) {
+                    sh """
+                        echo \$HARBOR_PASS | docker login harbor.e-edu.uz -u \$HARBOR_USER --password-stdin
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                        docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest
+                        docker push ${IMAGE_NAME}:latest
+                        docker logout harbor.e-edu.uz
+                    """
                 }
             }
         }
 
         stage('Deploy to K8s') {
             steps {
-                script {
-                    sh """
-                        helm upgrade --install ${RELEASE_NAME} ${CHART_DIR} \
-                            --namespace ${NAMESPACE} \
-                            --set image.repository=${IMAGE_NAME} \
-                            --set image.tag=${IMAGE_TAG} \
-                            --wait \
-                            --timeout 5m
-                    """
-                }
+                sh """
+                    helm upgrade --install ${RELEASE_NAME} ${CHART_DIR} \
+                        --namespace ${NAMESPACE} \
+                        --set image.repository=${IMAGE_NAME} \
+                        --set image.tag=${IMAGE_TAG} \
+                        --set replicaCount=1 \
+                        --wait \
+                        --timeout 5m
+                """
             }
         }
 
         stage('Verify') {
             steps {
-                script {
-                    sh """
-                        kubectl rollout status deployment/${RELEASE_NAME} \
-                            --namespace ${NAMESPACE} \
-                            --timeout=3m
-                    """
-                }
+                sh """
+                    kubectl rollout status deployment/${RELEASE_NAME} \
+                        --namespace ${NAMESPACE} \
+                        --timeout=3m
+                """
             }
         }
     }
 
     post {
         failure {
-            script {
-                sh """
-                    helm rollback ${RELEASE_NAME} 0 \
-                        --namespace ${NAMESPACE} \
-                        --wait || true
-                """
-            }
+            sh "helm rollback ${RELEASE_NAME} 0 --namespace ${NAMESPACE} --wait || true"
         }
         always {
+            sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
             cleanWs()
         }
     }
