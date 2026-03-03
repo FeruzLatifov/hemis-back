@@ -2,8 +2,8 @@
 -- S006: SEED TRANSLATIONS (gettext model)
 -- =====================================================
 -- Author: hemis-team
--- Date: 2025-01-20 (Rewritten, refreshed 2026-02-06)
--- Purpose: Complete i18n system translations
+-- Date: 2025-01-20 (Consolidated 2026-02-25)
+-- Purpose: ALL i18n translations for the entire application
 --
 -- KEY CONVENTION (gettext model):
 --   message_key = English text (UNIQUE, serves as en-US translation)
@@ -11,7 +11,7 @@
 --   Translations: uz-UZ, oz-UZ, ru-RU stored in system_message_translations
 --   en-US translation = message_key itself
 --
--- CATEGORIES (for admin panel grouping only):
+-- CATEGORIES:
 --   action     - Button/action labels (Save, Cancel, Delete...)
 --   status     - Status labels (Active, Inactive...)
 --   label      - Form/UI labels (Name, Code, Date...)
@@ -22,6 +22,9 @@
 --   confirm    - Confirmation dialogs
 --   auth       - Authentication related
 --   menu       - Navigation menu items
+--   error      - Error messages
+--
+-- CONSOLIDATED FROM: S006, S007, S008, S011, S013, S014, S015, S017
 -- =====================================================
 
 DO $$
@@ -39,12 +42,13 @@ CREATE OR REPLACE FUNCTION _seed_msg(
 DECLARE _id UUID;
 BEGIN
     -- Insert or update the base message (default = Uzbek Latin)
-    INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at)
-    VALUES (gen_random_uuid(), _cat, _key, _uz, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at, created_by, updated_by)
+    VALUES (gen_random_uuid(), _cat, _key, _uz, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system')
     ON CONFLICT (message_key) DO UPDATE SET
         message = EXCLUDED.message,
         category = EXCLUDED.category,
-        updated_at = CURRENT_TIMESTAMP
+        updated_at = CURRENT_TIMESTAMP,
+        updated_by = 'system'
     RETURNING id INTO _id;
 
     -- en-US (key = English text itself)
@@ -366,7 +370,7 @@ PERFORM _seed_msg('menu', 'Economy',                'Xo''jalik',                
 -- System submenus
 PERFORM _seed_msg('menu', 'Temporary',              'Vaqtinchalik',                 'Вақтинчалик',               'Временные');
 PERFORM _seed_msg('menu', 'Translations',           'Tarjimalar',                   'Таржималар',                'Переводы');
-PERFORM _seed_msg('menu', 'University users',       'OTM foydalanuvchilari',        'ОТМ фойдаланувчилари',      'Пользователи ВУЗа');
+PERFORM _seed_msg('menu', 'Users',                  'Foydalanuvchilar',             'Фойдаланувчилар',           'Пользователи');
 PERFORM _seed_msg('menu', 'API Logs',               'API log''lar',                  'API журнал',                'API логи');
 PERFORM _seed_msg('menu', 'Report updates',         'Hisobot yangilanishlari',      'Ҳисоботларни янгилаш',      'Обновления отчётов');
 
@@ -573,7 +577,7 @@ PERFORM _seed_msg('label', 'Student list',           'Talabalar ro''yxati',     
 PERFORM _seed_msg('table', 'Full name',              'FIO',                          'ФИО',                       'ФИО');
 PERFORM _seed_msg('table', 'Specialty',              'Mutaxassislik',                'Мутахассислик',             'Специальность');
 PERFORM _seed_msg('table', 'Course',                 'Kurs',                         'Курс',                      'Курс');
-PERFORM _seed_msg('table', 'Education type',         'Ta''lim turi',                  'Таълим тури',               'Вид обучения');
+PERFORM _seed_msg('table', 'Education type',         'Ta''lim turi',                  'Таълим тури',               'Тип образования');
 PERFORM _seed_msg('table', 'Payment',                'To''lov',                       'Тўлов',                     'Оплата');
 PERFORM _seed_msg('table', 'Payment form',           'To''lov shakli',                'Тўлов шакли',               'Форма оплаты');
 PERFORM _seed_msg('label', 'Contract',               'Kontrakt',                     'Контракт',                  'Контракт');
@@ -640,7 +644,7 @@ PERFORM _seed_msg('validation', 'HEI type is required', 'OTM turi majburiy',    
 PERFORM _seed_msg('validation', 'Invalid URL',       'Noto''g''ri URL',                 'Нотўғри URL',               'Некорректный URL');
 PERFORM _seed_msg('label', 'Full name of HEI',       'OTM to''liq nomi',                'ОТМ тўлиқ номи',            'Полное название ВУЗа');
 PERFORM _seed_msg('label', 'Full address',            'To''liq manzil',                  'Тўлиқ манзил',              'Полный адрес');
-PERFORM _seed_msg('label', 'Allow external transfer', 'Tashqi o''tkazmalarga ruxsat',    'Ташқи ўтказмаларга рухсат',  'Разрешить внешние переводы');
+-- Note: 'Allow external transfer' already defined at line 276 (table category) — not duplicated here
 PERFORM _seed_msg('error', 'Failed to load dictionaries', 'Lug''atlar yuklanmadi',       'Луғатлар юкланмади',        'Не удалось загрузить справочники');
 PERFORM _seed_msg('error', 'Failed to update university', 'OTM yangilanmadi',            'ОТМ янгиланмади',           'Не удалось обновить ВУЗ');
 PERFORM _seed_msg('error', 'Failed to create university', 'OTM yaratilmadi',             'ОТМ яратилмади',            'Не удалось создать ВУЗ');
@@ -698,4 +702,257 @@ PERFORM _seed_msg('label', 'UZBMB URL',              'UZBMB URL',               
 PERFORM _seed_msg('action', 'Search by {{field}}...', '{{field}} bo''yicha qidirish...', '{{field}} бўйича қидириш...', 'Поиск по {{field}}...');
 
 
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 6: AUDIT LOGS (from S007)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Sahifa sarlavhalari
+PERFORM _seed_msg('menu', 'Audit Logs', 'Audit loglar', 'Аудит логлар', 'Журнал аудита');
+PERFORM _seed_msg('label', 'Activity Log', 'Faoliyat logi', 'Фаолият логи', 'Журнал действий');
+PERFORM _seed_msg('label', 'Request Log', 'So''rovlar logi', 'Сўровлар логи', 'Журнал запросов');
+PERFORM _seed_msg('label', 'Error Log', 'Xatolar logi', 'Хатолар логи', 'Журнал ошибок');
+PERFORM _seed_msg('label', 'Login Log', 'Kirish logi', 'Кириш логи', 'Журнал входов');
+
+-- Jadval ustunlari
+PERFORM _seed_msg('table', 'User', 'Foydalanuvchi', 'Фойдаланувчи', 'Пользователь');
+PERFORM _seed_msg('table', 'Action', 'Harakat', 'Ҳаракат', 'Действие');
+PERFORM _seed_msg('table', 'Entity Type', 'Ob''yekt turi', 'Объект тури', 'Тип объекта');
+PERFORM _seed_msg('table', 'Entity Name', 'Ob''yekt nomi', 'Объект номи', 'Название объекта');
+PERFORM _seed_msg('table', 'IP Address', 'IP manzil', 'IP манзил', 'IP адрес');
+PERFORM _seed_msg('table', 'Method', 'Metod', 'Метод', 'Метод');
+PERFORM _seed_msg('table', 'URI', 'URI', 'URI', 'URI');
+PERFORM _seed_msg('table', 'Status Code', 'Status kodi', 'Статус коди', 'Код статуса');
+PERFORM _seed_msg('table', 'Response Time', 'Javob vaqti', 'Жавоб вақти', 'Время ответа');
+PERFORM _seed_msg('table', 'Error Type', 'Xato turi', 'Хато тури', 'Тип ошибки');
+PERFORM _seed_msg('table', 'Error Message', 'Xato xabari', 'Хато хабари', 'Сообщение ошибки');
+PERFORM _seed_msg('table', 'Event Type', 'Hodisa turi', 'Ҳодиса тури', 'Тип события');
+PERFORM _seed_msg('table', 'Failure Reason', 'Xatolik sababi', 'Хатолик сабаби', 'Причина ошибки');
+PERFORM _seed_msg('table', 'Timestamp', 'Vaqt', 'Вақт', 'Время');
+PERFORM _seed_msg('table', 'User Agent', 'User Agent', 'User Agent', 'User Agent');
+PERFORM _seed_msg('table', 'Session ID', 'Sessiya ID', 'Сессия ID', 'ID сессии');
+PERFORM _seed_msg('table', 'Request ID', 'So''rov ID', 'Сўров ID', 'ID запроса');
+
+-- Tafsilot
+PERFORM _seed_msg('label', 'Old Value', 'Eski qiymat', 'Эски қиймат', 'Старое значение');
+PERFORM _seed_msg('label', 'New Value', 'Yangi qiymat', 'Янги қиймат', 'Новое значение');
+PERFORM _seed_msg('label', 'Changed Fields', 'O''zgargan maydonlar', 'Ўзгарган майдонлар', 'Изменённые поля');
+PERFORM _seed_msg('label', 'Stack Trace', 'Stack trace', 'Stack trace', 'Трассировка стека');
+PERFORM _seed_msg('label', 'Request Body', 'So''rov tanasi', 'Сўров танаси', 'Тело запроса');
+PERFORM _seed_msg('label', 'Response Body', 'Javob tanasi', 'Жавоб танаси', 'Тело ответа');
+PERFORM _seed_msg('label', 'Query String', 'So''rov parametrlari', 'Сўров параметрлари', 'Параметры запроса');
+
+-- Harakatlar
+PERFORM _seed_msg('action', 'View Details', 'Tafsilotlarni ko''rish', 'Тафсилотларни кўриш', 'Просмотр деталей');
+PERFORM _seed_msg('action', 'Export Logs', 'Loglarni eksport qilish', 'Логларни экспорт қилиш', 'Экспорт журналов');
+PERFORM _seed_msg('action', 'Refresh data', 'Yangilash', 'Янгилаш', 'Обновить данные');
+
+-- Filtrlar
+PERFORM _seed_msg('label', 'Filter by user', 'Foydalanuvchi bo''yicha filtrlash', 'Фойдаланувчи бўйича фильтрлаш', 'Фильтр по пользователю');
+PERFORM _seed_msg('label', 'Filter by action', 'Harakat bo''yicha filtrlash', 'Ҳаракат бўйича фильтрлаш', 'Фильтр по действию');
+PERFORM _seed_msg('label', 'Filter by date', 'Sana bo''yicha filtrlash', 'Сана бўйича фильтрлаш', 'Фильтр по дате');
+PERFORM _seed_msg('label', 'Date range', 'Sana oralig''i', 'Сана оралиғи', 'Диапазон дат');
+
+-- Statistika
+PERFORM _seed_msg('label', 'Statistics', 'Statistika', 'Статистика', 'Статистика');
+PERFORM _seed_msg('label', 'Top Users', 'Eng faol foydalanuvchilar', 'Энг фаол фойдаланувчилар', 'Топ пользователей');
+PERFORM _seed_msg('label', 'Top Endpoints', 'Eng ko''p so''rovlar', 'Энг кўп сўровлар', 'Топ эндпоинтов');
+PERFORM _seed_msg('label', 'Error Rate', 'Xatolar darajasi', 'Хатолар даражаси', 'Частота ошибок');
+PERFORM _seed_msg('label', 'Total Activities', 'Jami faoliyatlar', 'Жами фаолиятлар', 'Всего действий');
+PERFORM _seed_msg('label', 'Total Requests', 'Jami so''rovlar', 'Жами сўровлар', 'Всего запросов');
+PERFORM _seed_msg('label', 'Total Errors', 'Jami xatolar', 'Жами хатолар', 'Всего ошибок');
+PERFORM _seed_msg('label', 'Total Logins', 'Jami kirishlar', 'Жами киришлар', 'Всего входов');
+
+-- Login event types
+PERFORM _seed_msg('status', 'Login Success', 'Muvaffaqiyatli kirish', 'Муваффақиятли кириш', 'Успешный вход');
+PERFORM _seed_msg('status', 'Login Failed', 'Muvaffaqiyatsiz kirish', 'Муваффақиятсиз кириш', 'Неудачный вход');
+PERFORM _seed_msg('status', 'Logout', 'Chiqish', 'Чиқиш', 'Выход');
+PERFORM _seed_msg('status', 'Token Refresh', 'Token yangilash', 'Токен янгилаш', 'Обновление токена');
+PERFORM _seed_msg('status', 'Session Expired', 'Sessiya tugadi', 'Сессия тугади', 'Сессия истекла');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 7: AUDIT DIFF (from S008)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Diff Viewer labels
+-- Note: 'Changed Fields', 'Old Value', 'New Value' already defined in PART 6 — not duplicated here
+PERFORM _seed_msg('label', 'Field', 'Maydon', 'Майдон', 'Поле');
+PERFORM _seed_msg('label', 'Value', 'Qiymat', 'Қиймат', 'Значение');
+PERFORM _seed_msg('label', 'Unchanged Fields', 'O''zgarmagan maydonlar', 'Ўзгармаган майдонлар', 'Неизмененные поля');
+
+-- Entity History
+PERFORM _seed_msg('label', 'Entity History', 'O''zgarishlar tarixi', 'Ўзгаришлар тарихи', 'История изменений');
+
+-- Date Range Filter
+PERFORM _seed_msg('label', 'Today', 'Bugun', 'Бугун', 'Сегодня');
+PERFORM _seed_msg('label', 'Last 7 days', 'Oxirgi 7 kun', 'Охирги 7 кун', 'Последние 7 дней');
+PERFORM _seed_msg('label', 'Last 30 days', 'Oxirgi 30 kun', 'Охирги 30 кун', 'Последние 30 дней');
+PERFORM _seed_msg('label', 'All time', 'Barcha vaqt', 'Барча вақт', 'Все время');
+PERFORM _seed_msg('label', 'Date from', 'Dan', 'Дан', 'С');
+PERFORM _seed_msg('label', 'Date to', 'Gacha', 'Гача', 'По');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 8: CLASSIFIERS (from S011)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- New category menu names
+PERFORM _seed_msg('menu', 'Financial', 'Moliyaviy', 'Молиявий', 'Финансовые');
+PERFORM _seed_msg('menu', 'Diploma', 'Diplom', 'Диплом', 'Дипломы');
+PERFORM _seed_msg('menu', 'Specialities', 'Mutaxassisliklar', 'Мутахассисликлар', 'Специальности');
+
+-- Classifier CRUD messages
+PERFORM _seed_msg('message', 'Classifier item created', 'Element muvaffaqiyatli yaratildi', 'Элемент муваффақиятли яратилди', 'Элемент успешно создан');
+PERFORM _seed_msg('message', 'Classifier item updated', 'Element muvaffaqiyatli yangilandi', 'Элемент муваффақиятли янгиланди', 'Элемент успешно обновлен');
+PERFORM _seed_msg('message', 'Classifier item deleted', 'Element muvaffaqiyatli o''chirildi', 'Элемент муваффақиятли ўчирилди', 'Элемент успешно удален');
+PERFORM _seed_msg('message', 'Classifier not found', 'Klasifikator topilmadi', 'Классификатор топилмади', 'Классификатор не найден');
+PERFORM _seed_msg('message', 'Item already exists', 'Bu kodli element allaqachon mavjud', 'Бу кодли элемент аллақачон мавжуд', 'Элемент с таким кодом уже существует');
+PERFORM _seed_msg('message', 'Read-only classifier', 'Bu klasifikator faqat o''qish uchun', 'Бу классификатор фақат ўқиш учун', 'Этот классификатор только для чтения');
+
+-- Classifier-specific labels
+PERFORM _seed_msg('label', 'Editable', 'Tahrirlanadigan', 'Таҳрирланадиган', 'Редактируемый');
+PERFORM _seed_msg('label', 'Read only', 'Faqat o''qish', 'Фақат ўқиш', 'Только чтение');
+PERFORM _seed_msg('label', 'Hierarchical', 'Ierarxik', 'Иерархик', 'Иерархический');
+PERFORM _seed_msg('label', 'Items count', 'Elementlar soni', 'Элементлар сони', 'Количество элементов');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 9: DUPLICATE DETECTION (from S013)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Page title and description
+PERFORM _seed_msg('menu', 'Duplicates', 'Dublikatlar', 'Дубликатлар', 'Дубликаты');
+PERFORM _seed_msg('label', 'Students with duplicate PINFL analysis', 'PINFL dublikatli talabalar tahlili', 'ПИНФЛ дубликатли талабалар таҳлили', 'Анализ студентов с дублирующимися ПИНФЛ');
+
+-- Stats cards
+PERFORM _seed_msg('label', 'Total duplicate PINFLs', 'Jami dublikat PINFLlar', 'Жами дубликат ПИНФЛлар', 'Всего дублирующихся ПИНФЛ');
+PERFORM _seed_msg('label', 'Cross university', 'Boshqa OTMda', 'Бошқа ОТМда', 'В другом ВУЗе');
+PERFORM _seed_msg('label', 'Same university', 'Bitta OTMda', 'Битта ОТМда', 'В одном ВУЗе');
+PERFORM _seed_msg('label', 'Multi level', 'Turli bosqich', 'Турли босқич', 'Разные уровни');
+PERFORM _seed_msg('status', 'Normal', 'Normal', 'Нормал', 'Нормально');
+
+-- Table and groups
+PERFORM _seed_msg('label', 'records', 'yozuv', 'ёзув', 'записей');
+PERFORM _seed_msg('label', 'universities', 'OTM', 'ОТМ', 'ВУЗов');
+PERFORM _seed_msg('message', '{{count}} groups found', '{{count}} guruh topildi', '{{count}} гуруҳ топилди', '{{count}} групп найдено');
+PERFORM _seed_msg('message', 'No duplicate records found', 'Dublikat yozuvlar topilmadi', 'Дубликат ёзувлар топилмади', 'Дублирующиеся записи не найдены');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 10: TRANSFER DETECTION (from S014)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Transfer category labels
+PERFORM _seed_msg('label', 'Internal transfer', 'Ichki ko''chirish', 'Ички кўчириш', 'Внутренний перевод');
+PERFORM _seed_msg('label', 'External transfer', 'Tashqi ko''chirish', 'Ташқи кўчириш', 'Внешний перевод');
+
+-- Speciality label for detail drawer
+PERFORM _seed_msg('label', 'Speciality', 'Mutaxassislik', 'Мутахассислик', 'Специальность');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 11: DIRECTIONS (from S015)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Page description
+-- Note: 'Directions' already defined in PART 3 — not duplicated here
+PERFORM _seed_msg('label', 'Speciality statistics by education type', 'Ta''lim turi bo''yicha mutaxassislik statistikasi', 'Таълим тури бўйича мутахассислик статистикаси', 'Статистика специальностей по типу образования');
+
+-- Summary cards
+PERFORM _seed_msg('label', 'Total specialities', 'Jami mutaxassisliklar', 'Жами мутахассисликлар', 'Всего специальностей');
+PERFORM _seed_msg('label', 'With students', 'Talabasi bor', 'Талабаси бор', 'Со студентами');
+PERFORM _seed_msg('label', 'Without students', 'Talabasi yo''q', 'Талабаси йўқ', 'Без студентов');
+PERFORM _seed_msg('label', 'Total students in specialities', 'Mutaxassisliklardagi jami talabalar', 'Мутахассисликлардаги жами талабалар', 'Всего студентов в специальностях');
+
+-- Education types
+PERFORM _seed_msg('label', 'Ordinatura', 'Ordinatura', 'Ординатура', 'Ординатура');
+
+-- Table columns
+-- Note: 'Education type' already defined in PART 4, 'Expelled' already defined in PART 4 — not duplicated here
+PERFORM _seed_msg('table', 'Speciality code', 'Mutaxassislik kodi', 'Мутахассислик коди', 'Код специальности');
+PERFORM _seed_msg('table', 'Speciality name', 'Mutaxassislik nomi', 'Мутахассислик номи', 'Название специальности');
+PERFORM _seed_msg('table', 'Total students', 'Jami talabalar', 'Жами талабалар', 'Всего студентов');
+PERFORM _seed_msg('table', 'Active students', 'Faol talabalar', 'Фаол талабалар', 'Активные студенты');
+PERFORM _seed_msg('label', 'Graduated', 'Bitirganlar', 'Битирганлар', 'Выпускники');
+
+-- Filters
+PERFORM _seed_msg('label', 'Search by speciality...', 'Mutaxassislik bo''yicha qidirish...', 'Мутахассислик бўйича қидириш...', 'Поиск по специальности...');
+PERFORM _seed_msg('label', 'Has students', 'Talabasi bor', 'Талабаси бор', 'Есть студенты');
+PERFORM _seed_msg('label', 'No students', 'Talabasi yo''q', 'Талабаси йўқ', 'Без студентов');
+
+-- Results
+PERFORM _seed_msg('message', '{{count}} specialities found', '{{count}} mutaxassislik topildi', '{{count}} мутахассислик топилди', '{{count}} специальностей найдено');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- PART 12: USER MANAGEMENT (from S017)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Page & Search
+PERFORM _seed_msg('label',   'Search users...',                'Foydalanuvchilarni qidirish...',          'Фойдаланувчиларни қидириш...',             'Поиск пользователей...');
+PERFORM _seed_msg('action',  'Create user',                    'Foydalanuvchi yaratish',                  'Фойдаланувчи яратиш',                     'Создать пользователя');
+PERFORM _seed_msg('action',  'Edit user',                      'Foydalanuvchini tahrirlash',              'Фойдаланувчини таҳрирлаш',                 'Редактировать пользователя');
+PERFORM _seed_msg('label',   'Update user profile and roles',  'Profilni va rollarni yangilash',          'Профилни ва ролларни янгилаш',             'Обновить профиль и роли');
+PERFORM _seed_msg('label',   'Create a new system user',       'Yangi tizim foydalanuvchisi yaratish',    'Янги тизим фойдаланувчиси яратиш',         'Создать нового пользователя');
+
+-- Delete Confirmation
+PERFORM _seed_msg('action',  'Delete user',                           'O''chirish',                             'Ўчириш',                                  'Удалить пользователя');
+PERFORM _seed_msg('confirm', 'Are you sure you want to delete user',  'Haqiqatan ham o''chirmoqchimisiz',       'Ҳақиқатан ҳам ўчирмоқчимисиз',            'Вы уверены что хотите удалить');
+PERFORM _seed_msg('confirm', 'This action cannot be undone.',         'Bu amalni ortga qaytarib bo''lmaydi.',   'Бу амални ортга қайтариб бўлмайди.',       'Это действие нельзя отменить.');
+
+-- Empty States
+PERFORM _seed_msg('message', 'No users found',                        'Foydalanuvchilar topilmadi',             'Фойдаланувчилар топилмади',                'Пользователи не найдены');
+PERFORM _seed_msg('message', 'No users have been created yet',        'Hali foydalanuvchi yaratilmagan',        'Ҳали фойдаланувчи яратилмаган',            'Пользователи еще не созданы');
+PERFORM _seed_msg('message', 'Try changing your search or filters',   'Qidiruv yoki filterni o''zgartiring',    'Қидирув ёки филтрни ўзгартиринг',          'Измените поиск или фильтры');
+
+-- Filters
+PERFORM _seed_msg('label',   'All roles',                      'Barcha rollar',                           'Барча роллар',                             'Все роли');
+PERFORM _seed_msg('label',   'All statuses',                   'Barcha holatlar',                         'Барча ҳолатлар',                           'Все статусы');
+PERFORM _seed_msg('label',   'All universities',               'Barcha universitetlar',                   'Барча университетлар',                     'Все университеты');
+
+-- Success Messages
+PERFORM _seed_msg('message', 'User successfully created',      'Foydalanuvchi muvaffaqiyatli yaratildi',  'Фойдаланувчи муваффақиятли яратилди',      'Пользователь успешно создан');
+PERFORM _seed_msg('message', 'User successfully updated',      'Foydalanuvchi muvaffaqiyatli yangilandi', 'Фойдаланувчи муваффақиятли янгиланди',     'Пользователь успешно обновлён');
+PERFORM _seed_msg('message', 'User successfully deleted',      'Foydalanuvchi muvaffaqiyatli o''chirildi','Фойдаланувчи муваффақиятли ўчирилди',      'Пользователь успешно удалён');
+PERFORM _seed_msg('message', 'Password successfully changed',  'Parol muvaffaqiyatli o''zgartirildi',     'Парол муваффақиятли ўзгартирилди',         'Пароль успешно изменён');
+PERFORM _seed_msg('message', 'Account successfully unlocked',  'Hisob muvaffaqiyatli ochildi',            'Ҳисоб муваффақиятли очилди',               'Аккаунт успешно разблокирован');
+PERFORM _seed_msg('message', 'User status updated',            'Holat yangilandi',                        'Ҳолат янгиланди',                          'Статус обновлён');
+
+-- Password Dialog
+PERFORM _seed_msg('action',     'Change password',                                                'Parolni o''zgartirish',                 'Паролни ўзгартириш',                    'Изменить пароль');
+PERFORM _seed_msg('label',      'Change password for',                                            'Parol o''zgartirish',                   'Парол ўзгартириш',                      'Изменить пароль для');
+PERFORM _seed_msg('label',      'New password',                                                   'Yangi parol',                           'Янги парол',                            'Новый пароль');
+PERFORM _seed_msg('label',      'Confirm password',                                               'Parolni tasdiqlang',                    'Паролни тасдиқланг',                    'Подтвердите пароль');
+PERFORM _seed_msg('validation', 'Password must be at least 8 characters',                         'Parol kamida 8 belgidan iborat',        'Парол камида 8 белгидан иборат',        'Пароль минимум 8 символов');
+-- Note: 'Passwords do not match' already defined in PART 1 — not duplicated here
+
+-- Form Fields
+PERFORM _seed_msg('validation', 'Username must be 3-50 characters, letters, digits, _, ., -',     '3-50 belgi, harf, raqam, _, ., -',      '3-50 белги, ҳарф, рақам, _, ., -',      '3-50 символов, буквы, цифры, _, ., -');
+-- Note: 'University code' already defined in PART 2 — not duplicated here
+PERFORM _seed_msg('label',      'Select university',                                              'Universitetni tanlang',                 'Университетни танланг',                  'Выберите университет');
+PERFORM _seed_msg('label',      'Leave empty for system administrators',                          'Tizim adminlari uchun bo''sh qoldiring','Тизим админлари учун бўш қолдиринг',    'Оставьте пустым для админов');
+PERFORM _seed_msg('message',    'No roles available',                                             'Rollar mavjud emas',                    'Роллар мавжуд эмас',                    'Роли недоступны');
+PERFORM _seed_msg('validation', 'At least one role is required',                                  'Kamida bitta rol kerak',                'Камида битта рол керак',                'Требуется минимум одна роль');
+
+-- Status Actions
+PERFORM _seed_msg('action', 'Disable',  'O''chirish',       'Ўчириш',          'Отключить');
+PERFORM _seed_msg('action', 'Enable',   'Yoqish',           'Ёқиш',            'Включить');
+PERFORM _seed_msg('action', 'Unlock',   'Qulfni ochish',    'Қулфни очиш',     'Разблокировать');
+PERFORM _seed_msg('status', 'Locked',   'Qulflangan',       'Қулфланган',       'Заблокирован');
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- CLEANUP: Drop helper function
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DROP FUNCTION IF EXISTS _seed_msg(TEXT, TEXT, TEXT, TEXT, TEXT);
+
+END $$;
+
+-- =====================================================
+-- Verification
+-- =====================================================
+DO $$
+DECLARE _count INT;
+BEGIN
+    SELECT COUNT(*) INTO _count FROM system_messages
+    WHERE category IN (
+        'action', 'status', 'label', 'message', 'validation',
+        'table', 'pagination', 'confirm', 'auth', 'menu', 'error'
+    );
+    RAISE NOTICE 'S006: Total translation keys seeded: % (expected: 616)', _count;
 END $$;

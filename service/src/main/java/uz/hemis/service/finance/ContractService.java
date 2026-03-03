@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.finance.ContractDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -74,6 +76,7 @@ public class ContractService {
         return sum != null ? sum : BigDecimal.ZERO;
     }
 
+    @Audited(action = AuditAction.CREATE, entity = "Contract", entityClass = Contract.class)
     @Transactional
     @CachePut(value = "contracts", key = "#result.id")
     public ContractDto create(ContractDto contractDto) {
@@ -90,6 +93,7 @@ public class ContractService {
         return contractMapper.toDto(saved);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Contract", entityClass = Contract.class, keyArg = "id")
     @Transactional
     @CachePut(value = "contracts", key = "#id")
     public ContractDto update(UUID id, ContractDto contractDto) {
@@ -104,6 +108,7 @@ public class ContractService {
         return contractMapper.toDto(updated);
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Contract", entityClass = Contract.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "contracts", allEntries = true)
     public void softDelete(UUID id) {

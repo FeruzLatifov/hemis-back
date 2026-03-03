@@ -39,6 +39,7 @@ BEGIN
             time_zone,
             time_zone_auto,
             user_type,
+            entity_code,
             university_id,
             group_id,
             group_names,
@@ -70,7 +71,8 @@ BEGIN
             old.language_,
             old.time_zone,
             old.time_zone_auto,
-            'SYSTEM',
+            CASE WHEN old._university IS NOT NULL AND old._university != '' THEN 'UNIVERSITY' ELSE 'SYSTEM' END,
+            old._university,
             old._university,
             old.group_id,
             old.group_names,
@@ -98,6 +100,9 @@ BEGIN
             full_name = EXCLUDED.full_name,
             enabled = EXCLUDED.enabled,
             active = EXCLUDED.active,
+            entity_code = EXCLUDED.entity_code,
+            university_id = EXCLUDED.university_id,
+            user_type = CASE WHEN EXCLUDED.university_id IS NOT NULL AND EXCLUDED.university_id != '' THEN 'UNIVERSITY' ELSE users.user_type END,
             updated_at = CURRENT_TIMESTAMP,
             updated_by = 'migration-sync';
 
@@ -133,16 +138,38 @@ WHERE u.username = 'admin'
   )
 ON CONFLICT DO NOTHING;
 
+-- =====================================================
+-- DATA FIX: Sync entity_code and user_type for migrated users
+-- Migrated users have university_id set but entity_code NULL
+-- and user_type = 'SYSTEM' even when they belong to a university
+-- =====================================================
+UPDATE users
+SET entity_code = university_id,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = 'migration-sync'
+WHERE university_id IS NOT NULL
+  AND (entity_code IS NULL OR entity_code = '');
+
+UPDATE users
+SET user_type = 'UNIVERSITY',
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = 'migration-sync'
+WHERE university_id IS NOT NULL
+  AND user_type = 'SYSTEM';
+
 -- Verification
 DO $$
 DECLARE
     total_users INTEGER;
     migrated_users INTEGER;
     with_university INTEGER;
+    synced_entity_code INTEGER;
 BEGIN
     SELECT COUNT(*) INTO total_users FROM users;
     SELECT COUNT(*) INTO migrated_users FROM users WHERE created_by = 'migration';
     SELECT COUNT(*) INTO with_university FROM users WHERE university_id IS NOT NULL;
-    RAISE NOTICE 'M001 Complete: % total users (% migrated, % with university)',
-        total_users, migrated_users, with_university;
+    SELECT COUNT(*) INTO synced_entity_code
+    FROM users WHERE entity_code IS NOT NULL AND university_id IS NOT NULL;
+    RAISE NOTICE 'M001 Complete: % total users (% migrated, % with university, % entity_code synced)',
+        total_users, migrated_users, with_university, synced_entity_code;
 END $$;

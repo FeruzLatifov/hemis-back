@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.system.TranslationDto;
 import uz.hemis.domain.entity.SystemMessage;
 import uz.hemis.domain.entity.SystemMessageTranslation;
@@ -160,6 +162,7 @@ public class TranslationAdminService {
     /**
      * Update existing translation
      */
+    @Audited(action = AuditAction.UPDATE, entity = "SystemMessage", entityClass = SystemMessage.class, keyArg = "id")
     @Transactional
     public SystemMessage updateTranslation(
         UUID id,
@@ -208,6 +211,7 @@ public class TranslationAdminService {
     /**
      * Toggle translation active status
      */
+    @Audited(action = AuditAction.UPDATE, entity = "SystemMessage", entityClass = SystemMessage.class, keyArg = "id")
     @Transactional
     public TranslationDto toggleActive(UUID id) {
         log.info("Toggling translation active status: id={}", id);

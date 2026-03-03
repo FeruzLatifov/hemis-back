@@ -142,6 +142,8 @@ public class SecurityConfig {
                         .ignoringRequestMatchers(
                                 "/api/v1/web/auth/login",      // Public login endpoint
                                 "/api/v1/web/auth/refresh",    // Public refresh endpoint
+                                "/api/v1/web/auth/forgot-password",  // Password reset request
+                                "/api/v1/web/auth/reset-password",   // Password reset with token
                                 "/app/rest/v2/oauth/token",    // Legacy OAuth endpoint
                                 "/app/rest/v2/services/captcha/**", // Captcha endpoints (public)
                                 "/app/rest/v2/services/classifiers/info",     // Classifier info (PHP kod auth headersiz yuboradi)
@@ -189,14 +191,12 @@ public class SecurityConfig {
                         .requestMatchers("/app/rest/v2/services/classifiers/info").permitAll()
                         .requestMatchers("/app/rest/v2/services/classifiers/allItems").permitAll()
 
-                        // Admin Auth endpoints (PUBLIC - for admin login - DEPRECATED)
-                        .requestMatchers("/app/rest/v2/auth/**").permitAll()
-                        .requestMatchers("/api/admin/login", "/api/admin/logout").permitAll()
-
                         // Web Auth endpoints
-                        // Only login + refresh are public; others require valid JWT
+                        // Only login + refresh + password reset are public; others require valid JWT
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/web/auth/**").authenticated()
 
                         // I18n endpoints (PUBLIC - login sahifasi uchun ham tarjima kerak)

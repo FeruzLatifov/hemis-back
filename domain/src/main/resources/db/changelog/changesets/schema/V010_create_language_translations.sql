@@ -1,5 +1,5 @@
 -- =====================================================
--- V012: CREATE LANGUAGE_TRANSLATIONS TABLE
+-- V010: CREATE LANGUAGE_TRANSLATIONS TABLE
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2025-01-23

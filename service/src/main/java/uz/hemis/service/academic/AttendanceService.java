@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.AttendanceDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Attendance;
@@ -27,6 +29,7 @@ public class AttendanceService {
     private final AttendanceRepository attendanceRepository;
     private final AttendanceMapper attendanceMapper;
 
+    @Audited(action = AuditAction.CREATE, entity = "Attendance", entityClass = Attendance.class)
     @Transactional
     public AttendanceDto create(AttendanceDto dto) {
         Attendance attendance = attendanceMapper.toEntity(dto);
@@ -64,6 +67,7 @@ public class AttendanceService {
         return attendanceRepository.countPresentByStudent(studentId);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Attendance", entityClass = Attendance.class, keyArg = "id")
     @Transactional
     public AttendanceDto update(UUID id, AttendanceDto dto) {
         Attendance existing = attendanceRepository.findById(id)
@@ -72,6 +76,7 @@ public class AttendanceService {
         return attendanceMapper.toDto(attendanceRepository.save(existing));
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Attendance", entityClass = Attendance.class, keyArg = "id")
     @Transactional
     public void softDelete(UUID id) {
         Attendance attendance = attendanceRepository.findById(id)

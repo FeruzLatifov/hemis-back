@@ -1,7 +1,9 @@
 -- =====================================================
 -- Rollback S006: REMOVE ALL SEEDED TRANSLATIONS
 -- =====================================================
--- Removes all translations seeded by S006 across all categories
+-- Removes ALL translations seeded by S006 (consolidated)
+-- This is safe because S006 is the ONLY i18n seed file
+-- after consolidation of S007, S008, S011, S013, S014, S015, S017
 -- Safe rollback - checks if tables exist first
 -- =====================================================
 
@@ -45,4 +47,7 @@ BEGIN
         GET DIAGNOSTICS _deleted_messages = ROW_COUNT;
         RAISE NOTICE 'S006 Rollback: Deleted % message rows', _deleted_messages;
     END IF;
+
+    -- Clean up helper function if it exists (in case rollback runs mid-seed)
+    DROP FUNCTION IF EXISTS _seed_msg(TEXT, TEXT, TEXT, TEXT, TEXT);
 END $$;

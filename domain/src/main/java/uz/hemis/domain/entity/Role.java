@@ -2,6 +2,7 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
 import uz.hemis.common.enums.RoleCode;
 import uz.hemis.common.enums.RoleType;
 
@@ -35,6 +36,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "roles")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor

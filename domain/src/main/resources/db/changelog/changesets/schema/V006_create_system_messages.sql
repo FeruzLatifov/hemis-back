@@ -13,9 +13,11 @@ CREATE TABLE system_messages (
     message TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
-    -- Timestamps
+    -- Audit fields
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_by VARCHAR(50),
     deleted_at TIMESTAMP,
     deleted_by VARCHAR(50)
 );
@@ -27,5 +29,5 @@ COMMENT ON COLUMN system_messages.deleted_at IS 'Soft delete timestamp (null = a
 
 -- Indexes
 CREATE INDEX idx_system_messages_category ON system_messages(category);
-CREATE INDEX idx_system_messages_key ON system_messages(message_key);
+-- message_key UNIQUE constraint already creates a B-tree index
 CREATE INDEX idx_system_messages_deleted_at ON system_messages(deleted_at) WHERE deleted_at IS NULL;

@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.ScheduleDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Schedule;
@@ -27,6 +29,7 @@ public class ScheduleService {
     private final ScheduleRepository scheduleRepository;
     private final ScheduleMapper scheduleMapper;
 
+    @Audited(action = AuditAction.CREATE, entity = "Schedule", entityClass = Schedule.class)
     @Transactional
     public ScheduleDto create(ScheduleDto dto) {
         Schedule schedule = scheduleMapper.toEntity(dto);
@@ -61,6 +64,7 @@ public class ScheduleService {
                 .stream().map(scheduleMapper::toDto).collect(Collectors.toList());
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Schedule", entityClass = Schedule.class, keyArg = "id")
     @Transactional
     public ScheduleDto update(UUID id, ScheduleDto dto) {
         Schedule existing = scheduleRepository.findById(id)
@@ -69,6 +73,7 @@ public class ScheduleService {
         return scheduleMapper.toDto(scheduleRepository.save(existing));
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Schedule", entityClass = Schedule.class, keyArg = "id")
     @Transactional
     public void softDelete(UUID id) {
         Schedule schedule = scheduleRepository.findById(id)

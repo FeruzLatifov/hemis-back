@@ -26,6 +26,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.MDC;
+import org.springframework.context.ApplicationEventPublisher;
+import uz.hemis.common.audit.AuditContext;
+import uz.hemis.common.audit.LoginEvent;
 import uz.hemis.security.service.RateLimitService;
 import uz.hemis.security.service.TokenBlacklistService;
 import uz.hemis.security.service.UserPermissionCacheService;
@@ -73,6 +77,7 @@ public class WebAuthController {
     private final WebClientIpResolver clientIpResolver;
     private final WebAccountStatusValidator accountValidator;
     private final WebUserProfileService userProfileService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ==========================================================
     //  POST /login
@@ -127,8 +132,16 @@ public class WebAuthController {
             // Set HTTPOnly cookies (tokens NOT in response body)
             cookieService.setAuthCookies(httpResponse, tokens.accessToken(), tokens.refreshToken());
 
+            // Reset failed attempts on successful login
+            accountValidator.resetFailedAttempts(username);
+
             rateLimitService.reset(clientIp);
             log.info("Login successful - user: {}, {} permissions", username, permissions.size());
+
+            eventPublisher.publishEvent(LoginEvent.builder()
+                    .context(buildAuditContext(httpRequest, userId, username))
+                    .eventType(LoginEvent.LoginEventType.LOGIN_SUCCESS)
+                    .build());
 
             return ResponseEntity.ok(LoginResponse.builder()
                     .tokenType("Bearer")
@@ -137,24 +150,46 @@ public class WebAuthController {
 
         } catch (DisabledException e) {
             log.warn("Login blocked - account disabled: {}", username);
+            eventPublisher.publishEvent(LoginEvent.builder()
+                    .context(buildAuditContext(httpRequest, null, username))
+                    .eventType(LoginEvent.LoginEventType.LOGIN_FAILED)
+                    .failureReason("Account disabled")
+                    .build());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(LoginResponse.builder()
                     .error("account_disabled")
                     .errorDescription("Akkaunt faolsizlantirilgan. Administrator bilan bog'laning.")
                     .build());
         } catch (LockedException e) {
             log.warn("Login blocked - account locked: {}", username);
+            eventPublisher.publishEvent(LoginEvent.builder()
+                    .context(buildAuditContext(httpRequest, null, username))
+                    .eventType(LoginEvent.LoginEventType.LOGIN_FAILED)
+                    .failureReason("Account locked")
+                    .build());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(LoginResponse.builder()
                     .error("account_locked")
                     .errorDescription("Akkaunt bloklangan. Administrator bilan bog'laning.")
                     .build());
         } catch (BadCredentialsException | UsernameNotFoundException e) {
+            // Record failed attempt and potentially lock account
+            accountValidator.recordFailedAttempt(username);
             log.warn("Login failed - bad credentials: {}", username);
+            eventPublisher.publishEvent(LoginEvent.builder()
+                    .context(buildAuditContext(httpRequest, null, username))
+                    .eventType(LoginEvent.LoginEventType.LOGIN_FAILED)
+                    .failureReason("Bad credentials")
+                    .build());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(LoginResponse.builder()
                     .error("invalid_credentials")
                     .errorDescription("Noto'g'ri foydalanuvchi nomi yoki parol.")
                     .build());
         } catch (Exception e) {
             log.error("Web login failed - username: {}", username, e);
+            eventPublisher.publishEvent(LoginEvent.builder()
+                    .context(buildAuditContext(httpRequest, null, username))
+                    .eventType(LoginEvent.LoginEventType.LOGIN_FAILED)
+                    .failureReason(e.getClass().getSimpleName() + ": " + e.getMessage())
+                    .build());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(LoginResponse.builder()
                     .error("server_error")
                     .errorDescription("Server xatolik yuz berdi. Iltimos, qayta urinib ko'ring.")
@@ -172,13 +207,21 @@ public class WebAuthController {
             @RequestHeader(value = "Authorization", required = false) String authHeader,
             @CookieValue(value = "accessToken", required = false) String accessTokenCookie,
             @CookieValue(value = "refreshToken", required = false) String refreshTokenCookie,
+            HttpServletRequest httpRequest,
             HttpServletResponse httpResponse
     ) {
         log.info("Web logout request");
 
         // Blacklist access token
         String accessToken = extractBearerToken(authHeader, accessTokenCookie);
+        UUID logoutUserId = null;
+        String logoutUsername = null;
         if (accessToken != null) {
+            try {
+                Jwt jwt = tokenService.decode(accessToken);
+                logoutUserId = parseUserId(jwt.getSubject());
+                logoutUsername = jwt.getClaimAsString("username");
+            } catch (Exception ignored) { }
             blacklistToken(accessToken, true);
         }
 
@@ -190,6 +233,11 @@ public class WebAuthController {
         // Clear cookies
         cookieService.clearAuthCookies(httpResponse);
         log.info("Logout successful");
+
+        eventPublisher.publishEvent(LoginEvent.builder()
+                .context(buildAuditContext(httpRequest, logoutUserId, logoutUsername))
+                .eventType(LoginEvent.LoginEventType.LOGOUT)
+                .build());
 
         return ResponseEntity.ok(Map.of("success", true, "message", "Logged out successfully"));
     }
@@ -250,6 +298,12 @@ public class WebAuthController {
             }
 
             log.info("Token refreshed for userId: {}", userId);
+
+            eventPublisher.publishEvent(LoginEvent.builder()
+                    .context(buildAuditContext(null, userId, username))
+                    .eventType(LoginEvent.LoginEventType.TOKEN_REFRESH)
+                    .build());
+
             return ResponseEntity.ok(Map.of("success", true, "message", "Tokens refreshed"));
 
         } catch (WebAccountStatusValidator.AccountDisabledException e) {
@@ -373,5 +427,20 @@ public class WebAuthController {
 
     private ResponseEntity<Map<String, Object>> unauthorized(String error, String message) {
         return ResponseEntity.status(401).body(Map.of("error", error, "message", message));
+    }
+
+    private AuditContext buildAuditContext(HttpServletRequest request, UUID userId, String username) {
+        AuditContext.AuditContextBuilder builder = AuditContext.builder()
+                .userId(userId)
+                .username(username)
+                .requestId(MDC.get("requestId"));
+
+        if (request != null) {
+            builder.ip(clientIpResolver.resolve(request))
+                   .userAgent(request.getHeader("User-Agent"))
+                   .endpoint(request.getRequestURI());
+        }
+
+        return builder.build();
     }
 }

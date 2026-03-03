@@ -17,7 +17,10 @@ import java.util.*;
 
 /**
  * Audit loglarni o'qish va statistika xizmati.
- * Alohida audit DB dan JdbcTemplate orqali o'qiydi.
+ * Audit REPLICA DB dan JdbcTemplate orqali o'qiydi.
+ *
+ * <p>Yozish (INSERT) AuditRepository orqali master ga boradi.
+ * Bu service faqat READ operatsiyalar — replica dan o'qiydi.</p>
  */
 @Slf4j
 @Service
@@ -25,7 +28,7 @@ import java.util.*;
 @ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditService {
 
-    @Qualifier("auditJdbcTemplate")
+    @Qualifier("auditReadJdbcTemplate")
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 

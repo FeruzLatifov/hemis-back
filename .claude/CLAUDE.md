@@ -1,200 +1,108 @@
 # HEMIS Backend – Project Memory
 
-<!--
-This memory file is loaded by Claude Code at startup.  Keep it concise and update it regularly.  See the official
-Claude docs for guidance on memory files.
--->
-
 ## Project Overview
 
-HEMIS Backend is a modular monolith built with Java 21 and Spring Boot.  It implements a clean architecture with separate
-layers for API, service, domain and security and preserves backwards compatibility with the legacy CUBA platform.
+HEMIS Backend — Java 21 + Spring Boot modular monolith. Clean architecture: API → Service → Domain → Common.
+Legacy CUBA platform bilan 100% backward compatibility saqlanadi.
 
-### Golden Rules
+**Stack:** Spring Boot 4.0.2, PostgreSQL 18, Redis 7, Liquibase 4.31.1, MapStruct, Lombok
 
-- **No manual schema changes** – all database changes must be made through Liquibase changesets; never alter the legacy
-  `ministry.sql` schema directly.
-- **Service layer** – controllers must delegate to services; business logic belongs in the service layer, not controllers.
-- **Security by default** – all endpoints require authentication & authorization (`@PreAuthorize`) and input validation.
-- **Swagger & tests** – every endpoint must be documented using Swagger annotations and covered by integration tests;
-  unit tests are required for service methods; maintain ≥ 70 % coverage.
-- **Idempotent migrations** – migrations must use `IF NOT EXISTS` and include rollbacks; test migrations on staging before
-  production.
-- **Backward compatibility** – do not break existing APIs or rename legacy fields; migrations must not remove or rename
-  columns.
+## Daily Commands
 
-### Daily Commands
+```bash
+./gradlew clean build           # Build
+./gradlew :app:bootRun          # Run (port 8081)
+./gradlew test                  # Tests (TESTS_ENABLED=true kerak)
+./gradlew :domain:liquibaseUpdate    # Apply migrations
+./gradlew :domain:liquibaseStatus    # Migration status
+```
 
-- Build the project: `./gradlew clean build`
-- Run the application: `./gradlew :app:bootRun`
-- Run all tests: `./gradlew test`
-- Apply migrations: `./gradlew :domain:liquibaseUpdate`
-- Check migration status: `./gradlew :domain:liquibaseStatus`
+## Test Credentials
 
-### Test Credentials (API Testing)
+- **Manba:** `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html`
+- **Token:** `POST /app/rest/v2/oauth/token` (Basic Auth credentials `.env` da)
 
-API endpointlarni test qilish uchun login/parol ma'lumotlari:
-- **Manba fayl:** `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` (default credentials shu faylda)
-- **Token olish:** `POST /app/rest/v2/oauth/token` endpoint (Basic Auth credentials `.env` faylda)
+## Environment
 
-### Adding a New Endpoint
+`.env` fayldan o'qiladi (`.gitignore` ga qo'shilgan, commit qilmang):
 
-Follow this checklist when adding a new REST endpoint:
+| Variable | Tavsif |
+|----------|--------|
+| `SERVER_PORT` | HTTP port (default: 8081) |
+| `DB_MASTER_*` / `DB_REPLICA_*` | PostgreSQL master/replica connection |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` | Redis (cache + token store) |
+| `TESTS_ENABLED` | `true` bo'lmasa testlar ishlamaydi |
+| `hemis.security.jwt.secret` | JWT signing secret (HS256) |
 
-- Create a controller annotated with `@RestController` and define request/response DTOs.
-- Define a service interface and implementation; apply `@PreAuthorize` on service methods.
-- Add a repository when data access is needed; avoid direct repository calls in controllers.
-- Document the controller with `@Tag`, `@Operation` and `@ApiResponses` for each endpoint.
-- Write integration tests covering success and error cases (200, 201, 400, 401, 403, 404).
-- Write unit tests for the service.
-- Test the endpoint in Swagger UI before committing.
+## JWT
 
-### Writing a Migration
+- **Algorithm:** HS256 (lokal) yoki RS256 (`JWT_JWK_SET_URI` orqali)
+- **Access token:** 12 soat, **Refresh token:** 7 kun
+- **Claims:** `sub` (user ID), `username`, `scope` — rollar Redis da cache qilinadi
 
-- Create files `XX-description.sql` and `XX-description-rollback.sql` in
-  `domain/src/main/resources/db/changelog/changesets`.
-- Use idempotent DDL and DML (e.g., `CREATE TABLE IF NOT EXISTS`, `INSERT … ON CONFLICT DO NOTHING`).
-- Always write a corresponding rollback script.
-- Add the changesets to `db.changelog-master.yaml` in order.
-- Use `liquibaseRollbackSQL` to preview rollbacks; test forward/rollback locally and on staging.
+## Actuator Endpoints
 
-### Do Not
+| Endpoint | Access |
+|----------|--------|
+| `/actuator/health`, `/actuator/info` | Public |
+| `/actuator/metrics`, `/actuator/liquibase` | JWT (protected) |
+| `/actuator/env` | Admin only |
 
-- Do **not** modify or drop legacy tables or columns.
-- Do **not** bypass the service layer.
-- Do **not** remove existing fields or change API URLs.
-- Do **not** commit code without Swagger documentation and tests.
-- Do **not** hardcode secrets or credentials.
-
-### Environment & Runtime
-
-This application reads its configuration from environment variables and an optional `.env` file at the project root.
-Before running or testing, load these variables using a tool such as `direnv` or your IDE.  Key variables include:
-
-- **`SERVER_PORT`** – overrides the default HTTP port (`8081`).  Set this to `8080` for backward
-  compatibility with legacy clients or choose any free port for development.
-- **`DB_MASTER_*` and `DB_REPLICA_*`** – connection details (host, port, name, username, password) for the
-  master (write) and replica (read) PostgreSQL databases.  These must point at an existing `ministry.sql`
-  schema; never rename or drop tables or columns when migrating.
-- **`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`** – location of the Redis instance used for caching and
-  legacy token storage.
-- **`TESTS_ENABLED`** – set to `true` to enable unit and integration tests.  If this flag is absent or set
-  to `false`, the Gradle `test` task will abort.  Tests automatically load variables from `.env` and use
-  either an in-memory H2 database (app module) or the master database (service and security modules); never
-  point tests at a production database.
-
-Create a `.env` file for local development and add it to `.gitignore`.  Do **not** commit `.env` to version
-control.
-
-### JWT Notes
-
-The security module issues stateless JSON Web Tokens (JWTs) signed with **HS256** (HMAC-SHA256).  Important points:
-
-- **Signing secret** – provided via `hemis.security.jwt.secret` in your environment.  Keep this value
-  secret; never commit it to the repository.
-- **Expiration** – access tokens expire after **12 hours** by default (`hemis.security.jwt.expiration`).  Refresh
-  tokens expire after **7 days** (`hemis.security.jwt.refresh-expiration`).  You can override these values via
-  environment variables.
-- **Claims** – tokens include the subject (`sub`, user ID), `username` and `scope`.  User roles and
-  permissions are not stored in the token; they are cached in Redis by user ID.
-- **External validation** – the application can optionally validate tokens issued by an external identity
-  provider by specifying `JWT_JWK_SET_URI` or `JWT_ISSUER_URI`.  When these are set, the resource server uses
-  RS256 key material from the JWK set.  Leave them blank to use the local HS256 secret.
-
-### Monitoring & Observability
-
-Spring Boot Actuator is enabled for health checks and metrics.  Endpoints:
-
-- `GET /actuator/health` – application health (public)
-- `GET /actuator/info` – build information (public)
-- `GET /actuator/metrics` – JVM and application metrics (protected)
-- `GET /actuator/liquibase` – migration status (protected)
-- `GET /actuator/env` – environment variables (admin only)
-
-Only the health and info endpoints are publicly accessible.  All other actuator endpoints require a valid
-JWT with administrative privileges.  Do not expose sensitive information in logs or metrics.
-
-### Legacy & Migration Notes
-
-This project modernises the old HEMIS backend while keeping existing clients running.  The `api-legacy`
-module exposes the old CUBA REST endpoints **unchanged**.  **Do not** rename URLs, change HTTP methods,
-modify parameter names or adjust JSON structures in legacy controllers.  Use the service layer to adapt
-legacy behaviour without breaking compatibility.
-
-Database changes must be additive.  When migrating data from `ministry.sql`, use Liquibase to add new
-tables or columns without renaming or deleting existing structures.  Migrations must be idempotent and
-reversible.  Refer to the original system (`old-hemis.zip`) and the exported API definitions
-(`hemis_backend.json`) when uncertain about legacy behaviour.
+---
 
 ## CRITICAL: "Porting" vs "Migration"
 
-### 1. ENDPOINT PORTING (Controller Porting)
-**What:** Porting REST endpoints from old-hemis to api-legacy module
-**Triggers:** `PORT: GET /services/tax/rent` or URL pattern (`/services/*`, `/app/rest/*`)
-**Files:**
-- `/home/adm1n/startup/old_hemis.json` - Old-hemis API hujjati (Swagger/OpenAPI)
-- `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` - Test interfeysi
-- Controller.java - Yangi controller fayl
-**Output:** Java controller + Swagger + Tests
-**Keywords:** "PORT", "endpoint", "controller", "REST API"
+Bu ikki **butunlay boshqa** ish turi — aralashtirib yubormaslik!
+
+### 1. ENDPOINT PORTING (Controller ko'chirish)
+
+**Nima:** Old-hemis REST endpointlarni api-legacy modulga ko'chirish
+**Trigger:** `PORT: GET /services/tax/rent` yoki `/services/*`, `/app/rest/*` URL pattern
+**Fayllar:**
+- `/home/adm1n/startup/old_hemis.json` — Old API hujjati
+- `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` — Test UI
+**Natija:** Controller.java + Swagger + Test buttons
 
 ### 2. DATABASE MIGRATION (Liquibase)
-**What:** Database schema changes using Liquibase changesets
-**Triggers:** "database", "schema", "table", "column", "changeset", "liquibase", "ALTER", "CREATE"
-**Files:** `V*.sql`, `db.changelog-master.yaml`
-**Output:** SQL changeset + Rollback script
-**Keywords:** "MIGRATE", "migration", "schema", "table", "column"
 
-**These are COMPLETELY DIFFERENT!** Do not confuse them.
+**Nima:** Database schema o'zgartirish
+**Trigger:** "database", "schema", "table", "column", "changeset", "liquibase"
+**Fayllar:** `domain/src/main/resources/db/changelog/changesets/`
+**Natija:** SQL changeset + Rollback script
 
 ---
 
-## Legacy Endpoint Porting (Controller Porting)
+## Porting Triggers
 
-**IMPORTANT:** Endpoint Porting is triggered ONLY when user provides endpoint URL:
+| Format | Misol |
+|--------|-------|
+| `PORT:` prefix (tavsiya) | `PORT: GET /services/tax/rent` |
+| URL pattern | `GET /app/rest/v2/services/tax/rent` |
+| Batch | `PORT:` + bir nechta URL (har biri yangi qatorda) |
 
-### Porting Triggers:
-1. **`PORT: GET /services/tax/rent`** — Explicit endpoint porting (RECOMMENDED)
-2. **`GET /app/rest/v2/services/tax/rent`** — URL pattern match (`/services/*` or `/app/rest/*`)
-3. **`PORT:` + multiple URLs** — Batch endpoint porting
+**Porting ishlamaydigan holatlar:** oddiy savol, code review, schema o'zgartirish, arxitektura haqida savol.
 
-**Do NOT trigger endpoint porting for:**
-- Regular development questions
-- Code reviews
-- Database schema changes (use "migrate" keyword for Liquibase!)
-- General questions about architecture
+Porting trigger bo'lganda Claude avtomatik:
+1. `old_hemis.json` dan metadata oladi
+2. `rest-services.xml` dan parametrlar o'qiydi
+3. Dublikat tekshiradi
+4. Controller + Swagger generatsiya qiladi
+5. `endpoint_tester.html` ga test buttonlar qo'shadi
 
----
-
-When endpoint porting is triggered, Claude Code automatically:
-1. Extracts metadata from `/home/adm1n/startup/old_hemis.json` (tag, name, description)
-2. Reads parameters from `rest-services.xml`
-3. Checks for duplicates (skips if already ported)
-4. Generates controller with Swagger docs (Uzbek language)
-5. Adds 3-button test interface to `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` (new/old/compare)
-6. Creates porting report
-
-**For complete endpoint porting workflow, see:** `@ENDPOINT_PORTING_GUIDE.md`
-
-**Quick examples:**
-- Existing endpoint: `PORT: GET /services/tax/rent` — Auto-detects tag from `/home/adm1n/startup/old_hemis.json`
-- New endpoint: `PORT: GET /services/attendance/check` + `TAG: 09.Davomat` — Creates new category
-- Batch porting: `PORT:` + multiple URLs (one per line) — Processes sequentially
+**Batafsil workflow:** `@ENDPOINT_PORTING_GUIDE.md`
 
 ---
 
 ## Further Reading
 
-This file provides a high-level summary.  For more details consult:
+| Fayl | Maqsad |
+|------|--------|
+| `@ENDPOINT_PORTING_GUIDE.md` | Old-hemis endpoint ko'chirish workflow |
+| `@LIQUIBASE_GUIDE.md` | Database migration yaratish |
+| `@architecture.md` | Modul diagrammalari, DB routing, cache, deploy |
+| `@context.md` | Biznes domain, tech stack, API modullari |
+| `@rules.md` | Kodlash standartlari, modul qoidalari |
+| `@MANDATORY_REQUIREMENTS.md` | Swagger, test environment, kod misollari, PR checklist |
+| `@MENU_GUIDE.md` | Menu + i18n + xavfsizlik arxitekturasi |
 
-- **Legacy Endpoint Porting:** `@ENDPOINT_PORTING_GUIDE.md` — **User endpoint porting workflow** (PORT: GET /services/...)
-- **Database Migration (Liquibase):** `@LIQUIBASE_GUIDE.md` — **Schema changes** (ALTER TABLE, CREATE TABLE)
-- Detailed architecture and business context: `@context.md`
-- Complete coding standards: `@rules.md`
-- Swagger documentation guide: `@SWAGGER_GUIDE.md`
-- Testing guide: `@TESTING_GUIDE.md`
-- System architecture diagrams: `@architecture.md`
-
-**Note:** "Porting" = copying endpoints from old-hemis; "Migration" = database schema changes (Liquibase)
-
-Referencing these files using the `@` syntax allows Claude Code to import them on demand.
+`@` sintaksisi fayllarni on-demand import qiladi.

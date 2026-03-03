@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.enums.RoleType;
 import uz.hemis.domain.entity.Role;
 
 import java.util.List;
@@ -100,7 +101,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
      * @return List of roles
      */
     @Query("SELECT r FROM Role r WHERE r.roleType = :roleType AND r.deletedAt IS NULL ORDER BY r.name")
-    List<Role> findByRoleType(@Param("roleType") String roleType);
+    List<Role> findByRoleType(@Param("roleType") RoleType roleType);
 
     /**
      * Find all system roles (SYSTEM type)
@@ -165,6 +166,31 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     List<Role> findByPermissionCode(@Param("permissionCode") String permissionCode);
 
     // =====================================================
+    // User Count Queries (for admin UI)
+    // =====================================================
+
+    /**
+     * Find role by ID with permissions eagerly loaded.
+     * Use this for single role detail views.
+     */
+    @EntityGraph(attributePaths = {"permissions"})
+    @Query("SELECT r FROM Role r WHERE r.id = :id AND r.deletedAt IS NULL")
+    Optional<Role> findByIdWithPermissions(@Param("id") UUID id);
+
+    /**
+     * Count users per role for all active roles.
+     * Returns [roleId, count] pairs to avoid N+1 when building role list.
+     */
+    @Query("SELECT r.id, COUNT(u) FROM Role r LEFT JOIN r.users u WHERE r.deletedAt IS NULL AND r.active = true GROUP BY r.id")
+    List<Object[]> countUsersPerRole();
+
+    /**
+     * Count users for a specific role (avoids loading full users collection).
+     */
+    @Query("SELECT COUNT(u) FROM Role r JOIN r.users u WHERE r.id = :roleId")
+    int countUsersByRoleId(@Param("roleId") UUID roleId);
+
+    // =====================================================
     // Statistics Queries
     // =====================================================
 
@@ -183,7 +209,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
      * @return Number of roles
      */
     @Query("SELECT COUNT(r) FROM Role r WHERE r.roleType = :roleType AND r.deletedAt IS NULL")
-    long countByRoleType(@Param("roleType") String roleType);
+    long countByRoleType(@Param("roleType") RoleType roleType);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

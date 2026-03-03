@@ -1,5 +1,5 @@
 -- =====================================================
--- V5: COMPLETE MENU SYSTEM
+-- V008: COMPLETE MENU SYSTEM
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2025-01-20 (Optimized)
@@ -8,12 +8,13 @@
 -- Contents:
 -- PART 1: Menu table schema
 -- PART 2: Seed complete menu structure
--- PART 2.5: User favorites table
--- PART 3: Menu audit logs table
--- PART 4: Verification
+-- PART 3: Verification
 --
--- Strategy: SINGLE MENU DEPLOYMENT UNIT
--- - Table, data, and audit together
+-- Note: user_favorites (V008b) and menu_audit_logs (V008c)
+-- extracted to separate files for granularity (1 file = 1 table)
+--
+-- Strategy: MENU DEPLOYMENT UNIT
+-- - Table schema + seed data together (logical unit)
 -- - Hierarchical structure with parent-child
 -- - Permission-based access control
 -- - i18n support via i18n_key
@@ -1221,7 +1222,7 @@ INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_a
 VALUES (
     '20000009-0000-0000-0000-000000000002',
     'sys-users',
-    'University users',
+    'Users',
     '/system/users',
     'users',
     'system.users.view',
@@ -1286,121 +1287,29 @@ VALUES (
     updated_at = CURRENT_TIMESTAMP;
 
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- PART 2.5: USER FAVORITES TABLE
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-CREATE TABLE IF NOT EXISTS user_favorites (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
-    menu_code VARCHAR(100) NOT NULL,
-    order_number INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user_favorites_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    CONSTRAINT uq_user_favorites UNIQUE (user_id, menu_code)
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_favorites_user ON user_favorites(user_id);
-
-COMMENT ON TABLE user_favorites IS 'User favorite menu items for quick access';
-COMMENT ON COLUMN user_favorites.menu_code IS 'Menu code reference (not FK for flexibility)';
-
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- PART 3: MENU AUDIT LOGS
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
--- ================================================
--- Migration: V9 - Create Menu Audit Logs Table
--- Description: Audit trail for menu CRUD operations
--- Author: System Architect
--- Date: 2025-01-19
--- ================================================
-
-CREATE TABLE IF NOT EXISTS menu_audit_logs (
-    -- Primary Key
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-    -- Audit Fields
-    menu_id UUID,  -- NULL for bulk operations
-    action VARCHAR(50) NOT NULL,  -- CREATE, UPDATE, DELETE, REORDER, ACTIVATE, DEACTIVATE, RESTORE
-    changed_by VARCHAR(255) NOT NULL,
-    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    -- Change Snapshots (JSONB for flexible schema)
-    old_value JSONB,  -- Before state (NULL for CREATE)
-    new_value JSONB,  -- After state (NULL for DELETE)
-
-    -- Additional Context
-    ip_address VARCHAR(45),
-    user_agent VARCHAR(500),
-    notes TEXT,
-
-    -- Constraints
-    CONSTRAINT menu_audit_logs_action_check CHECK (action IN (
-        'CREATE', 'UPDATE', 'DELETE', 'REORDER',
-        'ACTIVATE', 'DEACTIVATE', 'RESTORE',
-        'BULK_UPDATE', 'IMPORT_CREATE', 'IMPORT_UPDATE'
-    ))
-);
-
--- Indexes for Performance
-CREATE INDEX IF NOT EXISTS idx_menu_audit_menu_id ON menu_audit_logs(menu_id);
-CREATE INDEX IF NOT EXISTS idx_menu_audit_action ON menu_audit_logs(action);
-CREATE INDEX IF NOT EXISTS idx_menu_audit_changed_by ON menu_audit_logs(changed_by);
-CREATE INDEX IF NOT EXISTS idx_menu_audit_changed_at ON menu_audit_logs(changed_at DESC);
-
--- JSONB Indexes for Fast Queries
-CREATE INDEX IF NOT EXISTS idx_menu_audit_old_value_gin ON menu_audit_logs USING gin(old_value);
-CREATE INDEX IF NOT EXISTS idx_menu_audit_new_value_gin ON menu_audit_logs USING gin(new_value);
-
--- Comments
-COMMENT ON TABLE menu_audit_logs IS 'Audit trail for menu structure changes (WHO changed WHAT and WHEN)';
-COMMENT ON COLUMN menu_audit_logs.menu_id IS 'Menu ID (NULL for bulk operations)';
-COMMENT ON COLUMN menu_audit_logs.action IS 'Action type: CREATE, UPDATE, DELETE, REORDER, ACTIVATE, DEACTIVATE, RESTORE';
-COMMENT ON COLUMN menu_audit_logs.changed_by IS 'Username from SecurityContext';
-COMMENT ON COLUMN menu_audit_logs.changed_at IS 'Timestamp of change';
-COMMENT ON COLUMN menu_audit_logs.old_value IS 'Before snapshot (JSONB) - NULL for CREATE';
-COMMENT ON COLUMN menu_audit_logs.new_value IS 'After snapshot (JSONB) - NULL for DELETE';
-COMMENT ON COLUMN menu_audit_logs.ip_address IS 'IP address of requester (optional)';
-COMMENT ON COLUMN menu_audit_logs.user_agent IS 'User agent string (optional)';
-COMMENT ON COLUMN menu_audit_logs.notes IS 'Admin notes or reason for change';
-
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- PART 4: VERIFICATION
+-- PART 3: VERIFICATION
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 DO $$
 DECLARE
     menu_count INTEGER;
     root_menu_count INTEGER;
-    audit_table_exists BOOLEAN;
 BEGIN
     -- Count menus
     SELECT COUNT(*) INTO menu_count FROM menus WHERE deleted_at IS NULL;
     SELECT COUNT(*) INTO root_menu_count FROM menus WHERE parent_id IS NULL AND deleted_at IS NULL;
 
-    -- Check audit table
-    SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables
-        WHERE table_schema = 'public' AND table_name = 'menu_audit_logs'
-    ) INTO audit_table_exists;
-
     -- Success log
     RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
-    RAISE NOTICE '✅ V5: COMPLETE MENU SYSTEM DEPLOYED';
+    RAISE NOTICE 'V008: MENU SYSTEM DEPLOYED';
     RAISE NOTICE '   Total menus: %', menu_count;
     RAISE NOTICE '   Root menus: %', root_menu_count;
     RAISE NOTICE '   Child menus: %', menu_count - root_menu_count;
-    RAISE NOTICE '   Audit logging: %', CASE WHEN audit_table_exists THEN 'ENABLED' ELSE 'DISABLED' END;
 
     -- Validation
     IF menu_count < 10 THEN
-        RAISE WARNING '⚠️  Expected at least 10 menus, found %', menu_count;
+        RAISE WARNING 'Expected at least 10 menus, found %', menu_count;
     END IF;
 
-    IF NOT audit_table_exists THEN
-        RAISE WARNING '⚠️  Menu audit logs table not created!';
-    END IF;
-
-    RAISE NOTICE '   Status: READY FOR LANGUAGE CONFIG (V6)';
     RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
 END $$;

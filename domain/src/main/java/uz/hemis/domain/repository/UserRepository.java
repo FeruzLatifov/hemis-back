@@ -1,11 +1,16 @@
 package uz.hemis.domain.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.User;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -131,6 +136,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     boolean existsByUsername(String username);
 
+    /**
+     * Find user by email (for password reset)
+     *
+     * @param email email address
+     * @return user if found
+     */
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email) AND u.enabled = true")
+    Optional<User> findByEmail(@Param("email") String email);
+
     // =====================================================
     // University Queries
     // =====================================================
@@ -207,6 +221,56 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<String> findUniversityCodeById(@Param("userId") UUID userId);
 
     // =====================================================
+    // Admin Filtered Queries
+    // =====================================================
+
+    /**
+     * Find all users with filters (paginated)
+     *
+     * <p>Service layer must convert null strings to empty strings before calling this method
+     * to avoid Hibernate JPQL null parameter type inference issues
+     * (PostgreSQL receives null String as bytea, causing "function lower(bytea) does not exist").</p>
+     * <p>Role filter uses subquery to avoid collection JOIN in main query,
+     * which would cause in-memory pagination (HHH90003004).</p>
+     * <p>University is eagerly loaded via @EntityGraph (ManyToOne — no pagination issue).
+     * Roles are lazy loaded within @Transactional.</p>
+     *
+     * @param search search term (username or fullName, case-insensitive). Empty string = no filter.
+     * @param role role code filter. Empty string = no filter.
+     * @param university entity code filter. Empty string = no filter.
+     * @param enabled enabled status filter. Null = no filter.
+     * @param pageable pagination parameters
+     * @return page of users matching filters
+     */
+    @EntityGraph(attributePaths = {"university"})
+    @Query("SELECT u FROM User u " +
+           "WHERE (:search = '' OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "       OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:role = '' OR u IN (SELECT u2 FROM User u2 JOIN u2.roleSet r2 WHERE r2.code = :role)) " +
+           "AND (:university = '' OR u.entityCode = :university) " +
+           "AND (:enabled IS NULL OR u.enabled = :enabled)")
+    Page<User> findAllFiltered(@Param("search") String search,
+                               @Param("role") String role,
+                               @Param("university") String university,
+                               @Param("enabled") Boolean enabled,
+                               Pageable pageable);
+
+    /**
+     * Find user by ID with roles and university eagerly fetched
+     *
+     * <p>Used by UserAdminService for user detail/edit</p>
+     *
+     * @param id user ID (UUID)
+     * @return user with roles and university
+     */
+    @Query("SELECT DISTINCT u FROM User u " +
+           "LEFT JOIN FETCH u.roleSet r " +
+           "LEFT JOIN FETCH r.permissions " +
+           "LEFT JOIN FETCH u.university " +
+           "WHERE u.id = :id")
+    Optional<User> findByIdWithRolesAndUniversity(@Param("id") UUID id);
+
+    // =====================================================
     // Cache Warmup Queries
     // =====================================================
 
@@ -230,6 +294,40 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                    "LIMIT :limit",
            nativeQuery = true)
     List<String> findSampleUsernamesByRoleCode(@Param("roleCode") String roleCode, @Param("limit") int limit);
+
+    // =====================================================
+    // Account Lockout (Atomic Updates)
+    // =====================================================
+
+    /**
+     * Atomically increment failed_attempts and lock account if threshold reached.
+     *
+     * <p>Single UPDATE avoids read-modify-write race conditions and
+     * OptimisticLockException conflicts with @Version.</p>
+     *
+     * @param username login username
+     * @param maxAttempts threshold to lock account
+     * @return number of rows updated (0 if user not found)
+     */
+    @Modifying
+    @Query(value = "UPDATE users SET failed_attempts = COALESCE(failed_attempts, 0) + 1, " +
+                   "account_non_locked = CASE WHEN COALESCE(failed_attempts, 0) + 1 >= :maxAttempts THEN false ELSE account_non_locked END " +
+                   "WHERE username = :username AND deleted_at IS NULL",
+           nativeQuery = true)
+    int incrementFailedAttemptsAndLockIfNeeded(@Param("username") String username,
+                                               @Param("maxAttempts") int maxAttempts);
+
+    /**
+     * Atomically reset failed_attempts on successful login.
+     *
+     * @param username login username
+     * @return number of rows updated
+     */
+    @Modifying
+    @Query(value = "UPDATE users SET failed_attempts = 0 " +
+                   "WHERE username = :username AND deleted_at IS NULL AND failed_attempts > 0",
+           nativeQuery = true)
+    int resetFailedAttemptsByUsername(@Param("username") String username);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

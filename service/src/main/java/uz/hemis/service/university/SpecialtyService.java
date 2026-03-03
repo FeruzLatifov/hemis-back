@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.university.SpecialtyDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -35,6 +37,7 @@ public class SpecialtyService {
     private final SpecialtyMapper specialtyMapper;
     private final UniversityRepository universityRepository;
 
+    @Audited(action = AuditAction.CREATE, entity = "Specialty", entityClass = Specialty.class)
     @Transactional
     public SpecialtyDto create(SpecialtyDto dto) {
         log.debug("Creating specialty: {}", dto);
@@ -113,6 +116,7 @@ public class SpecialtyService {
         return specialtyRepository.findByUniversityAndEducationType(universityCode, typeCode, pageable).map(specialtyMapper::toDto);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Specialty", entityClass = Specialty.class, keyArg = "id")
     @Transactional
     public SpecialtyDto update(UUID id, SpecialtyDto dto) {
         Specialty existing = specialtyRepository.findById(id)
@@ -122,6 +126,7 @@ public class SpecialtyService {
         return specialtyMapper.toDto(updated);
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Specialty", entityClass = Specialty.class, keyArg = "id")
     @Transactional
     public void delete(UUID id) {
         Specialty specialty = specialtyRepository.findById(id)

@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.GradeDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -29,6 +31,7 @@ public class GradeService {
     private final CourseRepository courseRepository;
     private final UniversityRepository universityRepository;
 
+    @Audited(action = AuditAction.CREATE, entity = "Grade", entityClass = Grade.class)
     @Transactional
     public GradeDto create(GradeDto dto) {
         validateForCreate(dto);
@@ -76,6 +79,7 @@ public class GradeService {
         return gradeRepository.calculateGPA(studentId);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Grade", entityClass = Grade.class, keyArg = "id")
     @Transactional
     public GradeDto update(UUID id, GradeDto dto) {
         Grade existing = gradeRepository.findById(id)
@@ -87,6 +91,7 @@ public class GradeService {
         return gradeMapper.toDto(gradeRepository.save(existing));
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Grade", entityClass = Grade.class, keyArg = "id")
     @Transactional
     public void softDelete(UUID id) {
         Grade grade = gradeRepository.findById(id)

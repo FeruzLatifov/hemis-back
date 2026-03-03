@@ -1,162 +1,91 @@
-# HEMIS Backend – Core Coding Standards
-
-> **Mandatory coding standards for all contributions**  
-> **Last Updated:** 2025‑11‑15
+# HEMIS Backend – Coding Standards
 
 ---
 
-## 🎯 Golden Rules
-
-These rules apply across all modules and MUST be followed at all times:
+## Golden Rules
 
 1. **Stability first:** Do not break existing behaviour or APIs. Backward compatibility with legacy systems is mandatory.
-2. **No direct schema changes:** All database alterations must be performed through Liquibase migrations. Never run `ALTER`, `DROP` or `RENAME` on legacy tables.
-3. **Service layer required:** Controllers must delegate to services; business logic lives in services. Repositories should never be called directly from controllers.
-4. **Security by default:** All endpoints require authentication and authorisation. Input must be validated; do not use raw SQL or expose internal exceptions.
-5. **Documentation & tests mandatory:** Every endpoint requires Swagger annotations and an integration test. Every service method requires a unit test. Minimum test coverage is 70 %.
-6. **Idempotent migrations:** Migration scripts must be safe to run multiple times and include rollback instructions. Always test forward and rollback on staging before production.
-7. **No hardcoded secrets:** Use environment variables or configuration; never commit secrets to the repository.
+2. **No direct schema changes:** All database alterations via Liquibase migrations. Never `ALTER`, `DROP` or `RENAME` on legacy tables.
+3. **Service layer required:** Controllers delegate to services. Repositories never called directly from controllers.
+4. **Security by default:** All endpoints require authentication and authorisation. Validate input; no raw SQL; no exposed internal exceptions.
+5. **Documentation & tests mandatory:** Every endpoint → Swagger annotations + integration test. Every service method → unit test. Minimum coverage 70%.
+6. **Idempotent migrations:** Safe to run multiple times; always include rollback. Test forward + rollback on staging first.
+7. **No hardcoded secrets:** Use environment variables; never commit secrets.
 
 ---
 
-## 📁 Module Guidelines
+## Module Guidelines
 
-### `common` – Shared DTOs and utilities
+### `common` — DTOs, exceptions, utilities
+- Use Lombok (`@Value`, `@Builder`, `@Data`) and Jackson (`@JsonProperty`) for legacy field names
+- NO Spring dependencies, NO business logic, NO entity classes
 
-**Purpose:** Houses plain data objects and helper classes used across modules.
+### `domain` — Entities, repositories, migrations
+**Entities:**
+- Map exactly to legacy tables: `@Table(name="...")`, `@Column(name="...")`
+- Extend `BaseEntity` for audit fields. Define indexes with `@Index`
+- Never rename/drop existing columns — add new columns instead
+- Do NOT use `@Data` on entities (lazy loading / equality issues)
 
-- ✅ **Do:**
-  - Create DTOs using Lombok annotations such as `@Value`, `@Builder` or `@Data`.
-  - Use Jackson annotations (`@JsonProperty`) to maintain legacy field names.
-  - Document public APIs with JavaDoc.
-- ❌ **Don’t:**
-  - Include Spring dependencies or business logic.
-  - Use entity classes from the domain module.
-  - Put services or repositories here.
+**Repositories:**
+- Extend `JpaRepository<Entity, ID>`. Use method naming conventions (`findByEmail`, `existsById`)
+- `@Query` for complex queries. Prefer pagination/projections for large collections
+- Soft-delete instead of hard-delete
 
-### `domain` – Entities, repositories, migrations
+**Migrations:**
+- Path: `domain/src/main/resources/db/changelog/changesets/`
+- Naming: `20251115-01-add-photo-column`. Always provide rollback
+- Idempotent: `IF NOT EXISTS`, `ON CONFLICT DO NOTHING`
+- Never modify existing changesets — create new ones. See `@LIQUIBASE_GUIDE.md`
 
-**Purpose:** Defines the persistence model and manages database interactions.
+### `security` — Authentication & authorisation
+- `@PreAuthorize` on service methods for permissions
+- Cache user authorities in Redis. BCrypt for passwords; never store plain text
+- Security config stays in this module — don't duplicate in controllers
 
-**Entity Rules:**
+### `service` — Business logic
+- `@Service` + `@Transactional`. Use `readOnly=true` for queries
+- `@Valid` for input validation. MapStruct for entity ↔ DTO mapping
+- Throw custom exceptions (`ResourceNotFoundException`, `ValidationException`) — don't return nulls
+- NO business logic in controllers or repositories
 
-- Map entities exactly to legacy tables using `@Table(name="...")` and `@Column(name="...")`.
-- Extend `BaseEntity` for audit fields (`createdAt`, `updatedAt`).
-- Define indexes with `@Index`.
-- Avoid renaming or dropping existing columns; add new columns instead.
-
-**Repository Rules:**
-
-- Extend `JpaRepository<Entity, ID>` or `CrudRepository`.
-- Use method naming conventions (`findByEmail`, `existsById`).
-- Add `@Query` annotations for complex queries and use projections to limit result size.
-- Avoid eager fetching and prefer pagination or projections for large collections.
-- Implement soft‑delete behaviour instead of overriding delete methods.
-
-**Migration Rules:**
-
-- Store changesets in `domain/src/main/resources/db/changelog/changesets/`.
-- Use sequential IDs such as `20251115-01-add-photo-column`.
-- Provide a rollback for every change.
-- Use idempotent statements (`IF NOT EXISTS`, `ON CONFLICT DO NOTHING`).
-- Do not modify existing changesets; create new ones for each change.
-- See `LIQUIBASE_GUIDE.md` for detailed instructions.
-
-### `security` – Authentication & authorisation
-
-**Purpose:** Manages JWT, permission checks and security configuration.
-
-- Use `@PreAuthorize` annotations on service methods to enforce permissions.
-- Validate JWT tokens and cache user authorities.
-- Encode passwords with BCrypt; never store plain text.
-- Keep security configuration in a dedicated module; do not duplicate in controllers.
-
-### `service` – Business logic
-
-**Purpose:** Encapsulates domain operations, validation and transactions.
-
-- Annotate classes with `@Service` and methods with `@Transactional` as needed.
-- Use `readOnly=true` for queries and default transactions for writes.
-- Validate input using `@Valid` and custom validators.
-- Convert entities to DTOs using MapStruct mappers before returning responses.
-- Throw and handle custom exceptions (`ResourceNotFoundException`, `ValidationException`) rather than returning nulls.
-- Do not perform business logic in controllers or repositories.
-
-### `api-web`, `api-legacy`, `api-external` – Presentation layer
-
-**Purpose:** Exposes RESTful endpoints for web clients, legacy consumers and external integrations.
-
-- Annotate controllers with `@RestController` and set a base `@RequestMapping`.
-- Return responses wrapped in `ResponseWrapper<T>` and appropriate HTTP status codes.
-- Apply Swagger annotations (`@Tag`, `@Operation`, `@ApiResponses`, `@Parameter`) to every endpoint.
-- Validate input parameters and request bodies using `@Valid`.
-- Do not place business logic in controllers; call service methods instead.
-- Write integration tests for each endpoint covering success, validation errors, unauthorised and forbidden scenarios.
-- For legacy controllers (`api-legacy`), maintain backwards‑compatible URLs, JSON structures and HTTP statuses.
+### `api-web`, `api-legacy`, `api-external` — Presentation layer
+- `@RestController` + `@RequestMapping`. Return `ResponseWrapper<T>` with proper HTTP status codes
+- Swagger annotations on EVERY endpoint: `@Tag`, `@Operation`, `@ApiResponses`, `@Parameter`
+- `@Valid` on request bodies. Integration test for each endpoint (success + error scenarios)
+- `api-legacy`: maintain backwards-compatible URLs, JSON structures and HTTP statuses
 
 ---
 
-## 🧑‍💻 Technical Standards
+## Technical Standards
 
 ### Exception Handling
-
-- Create a hierarchy of custom exceptions for business errors (e.g. `ResourceNotFoundException`, `ValidationException`).
-- Use `@RestControllerAdvice` with `@ExceptionHandler` methods to centralise error handling and return structured error responses.
-- Provide error codes, messages and timestamps in error payloads.
+- Custom exception hierarchy (`ResourceNotFoundException`, `ValidationException`, etc.)
+- `@RestControllerAdvice` + `@ExceptionHandler` for structured error responses
+- Include error code, message, timestamp in payloads
 
 ### Validation
-
-- Leverage Jakarta Bean Validation (JSR 380) annotations (`@NotBlank`, `@Email`, `@Positive`, `@Past`) on DTO fields.
-- Create custom constraints (e.g. `@UniqueEmail`) when business rules require additional validation.
-- Validate input at the service boundary rather than in controllers.
+- Jakarta Bean Validation: `@NotBlank`, `@Email`, `@Positive`, `@Past` on DTO fields
+- Custom constraints (e.g. `@UniqueEmail`) for business rules
+- Validate at service boundary, not controllers
 
 ### Transactions
-
-- Mark methods that modify data with `@Transactional` to ensure atomicity.
-- Use `readOnly=true` for read operations to route to read replicas.
-- Avoid manual transaction management or `REQUIRES_NEW` propagation unless absolutely necessary.
-- Let Spring’s transaction manager handle rollbacks by throwing exceptions.
+- `@Transactional` on write methods. `readOnly=true` routes to read replica
+- Avoid `REQUIRES_NEW` unless absolutely necessary
+- Let Spring handle rollbacks via exception throwing
 
 ### Logging
+- SLF4J + Logback with `@Slf4j`. Levels: DEBUG (dev), INFO (business events), WARN (recoverable), ERROR (errors)
+- Audit create/update/delete at INFO level. Structured key-value pairs when possible
+- NEVER log passwords, tokens, personal data. No `System.out.println`
 
-- Use SLF4J with Logback; annotate classes with `@Slf4j`.
-- Log at appropriate levels: `DEBUG` for development details, `INFO` for business events, `WARN` for recoverable issues and `ERROR` for errors.
-- Never log sensitive information such as passwords, tokens or personal data.
-- Do not use `System.out.println` for logging.
+### MapStruct Mapping
+- `@Mapper(componentModel = "spring")`. Methods for single + collection conversion
+- Ignore ID and audit fields on create/update: `@Mapping(target="id", ignore=true)`
+- `@BeanMapping(nullValuePropertyMappingStrategy = IGNORE)` for partial updates
 
-### Mapping between Entities and DTOs
-
-- Use MapStruct (`@Mapper(componentModel = "spring")`) to generate boilerplate mappers.
-- Provide methods for converting single objects and collections.
-- When mapping create/update DTOs to entities, ignore ID and audit fields (`@Mapping(target="id", ignore=true)`).
-- Write custom mapping methods where needed (e.g. ignoring relationships to avoid lazy loading issues).
-
-### Code Style & Conventions
-
-- Use **PascalCase** for classes and **camelCase** for methods and variables.
-- Use 4 spaces for indentation; no tabs.
-- Keep line length under 120 characters and break long expressions at logical points.
-- Order imports: JDK, third‑party, Spring, then project packages.
-- Name packages in lowercase (e.g. `uz.hemis.service.impl`).
-- Use `@RequiredArgsConstructor` for constructor injection and Lombok on DTOs (`@Data`, `@Builder`, `@Value`).
-- Avoid using Lombok’s `@Data` on JPA entities to prevent lazy loading and equality issues.
-
-### Logging & Monitoring
-
-- Audit important user actions (e.g. create, update, delete) at `INFO` level.
-- Use structured logging with key–value pairs when possible.
-- Integrate with application performance monitoring (APM) tools to trace requests and capture errors.
-
----
-
-## 📦 Further Standards
-
-- **Documentation:** See `SWAGGER_GUIDE.md` for required Swagger annotations and examples.
-- **Testing:** See `TESTING_GUIDE.md` for mandatory unit and integration testing practices.
-- **Test Credentials:** API test uchun login/parol ma'lumotlari `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` faylidan olinadi. Token olish: `POST /app/rest/v2/oauth/token` endpoint.
-- **Migrations:** See `LIQUIBASE_GUIDE.md` for detailed database migration instructions.
-- **Architecture & Context:** See `architecture.md` and `context.md` for system design and project background.
-
----
-
-**Remember:** clean, consistent and well‑tested code saves time in the long run. Following these standards ensures maintainability and reliability of the HEMIS backend.
+### Code Style
+- **PascalCase** classes, **camelCase** methods/variables, **lowercase** packages
+- 4 spaces indentation; max 120 chars per line
+- Import order: JDK → third-party → Spring → project
+- `@RequiredArgsConstructor` for constructor injection

@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.document.DiplomaDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -317,6 +319,7 @@ public class DiplomaService {
      * @return created diploma DTO
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.CREATE, entity = "Diploma", entityClass = Diploma.class)
     @Transactional
     @CachePut(value = "diplomas", key = "#result.id")
     public DiplomaDto create(DiplomaDto diplomaDto) {
@@ -372,6 +375,7 @@ public class DiplomaService {
      * @throws ResourceNotFoundException if diploma not found
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.UPDATE, entity = "Diploma", entityClass = Diploma.class, keyArg = "id")
     @Transactional
     @CachePut(value = "diplomas", key = "#id")
     @CacheEvict(value = "diplomas", key = "'number:' + #result.diplomaNumber")
@@ -435,6 +439,7 @@ public class DiplomaService {
      * @param id diploma ID
      * @throws ResourceNotFoundException if diploma not found
      */
+    @Audited(action = AuditAction.DELETE, entity = "Diploma", entityClass = Diploma.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "diplomas", allEntries = true)
     public void softDelete(UUID id) {

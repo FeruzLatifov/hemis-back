@@ -11,6 +11,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.university.DepartmentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -239,6 +241,7 @@ public class DepartmentService {
      * @return created department DTO
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.CREATE, entity = "Department", entityClass = Department.class)
     @Transactional
     @CachePut(value = "departments", key = "#result.id")
     public DepartmentDto create(DepartmentDto departmentDto) {
@@ -283,6 +286,7 @@ public class DepartmentService {
      * @throws ResourceNotFoundException if department not found
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.UPDATE, entity = "Department", entityClass = Department.class, keyArg = "id")
     @Transactional
     @CachePut(value = "departments", key = "#id")
     @CacheEvict(value = "departments", key = "'code:' + #result.departmentCode")
@@ -335,6 +339,7 @@ public class DepartmentService {
      * @param id department ID
      * @throws ResourceNotFoundException if department not found
      */
+    @Audited(action = AuditAction.DELETE, entity = "Department", entityClass = Department.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "departments", allEntries = true)
     public void softDelete(UUID id) {

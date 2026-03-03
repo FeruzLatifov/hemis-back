@@ -8,6 +8,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -206,6 +208,7 @@ public class UniversityService {
      * @return created university DTO
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.CREATE, entity = "University", entityClass = University.class)
     @Transactional
     public UniversityDto create(UniversityDto dto) {
         log.info("Creating new university with code: {}", dto.getCode());
@@ -255,6 +258,7 @@ public class UniversityService {
      * @throws ResourceNotFoundException if not found
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     public UniversityDto update(String code, UniversityDto dto) {
         log.info("Updating university with code: {}", code);
@@ -313,6 +317,7 @@ public class UniversityService {
      * @throws ResourceNotFoundException if not found
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     public UniversityDto partialUpdate(String code, UniversityDto dto) {
         log.info("Partially updating university with code: {}", code);
@@ -353,6 +358,7 @@ public class UniversityService {
      * @param code university code
      * @throws ResourceNotFoundException if not found
      */
+    @Audited(action = AuditAction.DELETE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     public void softDelete(String code) {
         log.info("Soft deleting university with code: {}", code);
@@ -375,6 +381,7 @@ public class UniversityService {
      * @param code university code
      * @throws ResourceNotFoundException if not found
      */
+    @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     public void restore(String code) {
         log.info("Restoring university with code: {}", code);

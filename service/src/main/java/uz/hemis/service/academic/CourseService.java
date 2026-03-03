@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.CourseDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -38,6 +40,7 @@ public class CourseService {
     private final CourseMapper courseMapper;
     private final UniversityRepository universityRepository;
 
+    @Audited(action = AuditAction.CREATE, entity = "Course", entityClass = Course.class)
     @Transactional
     public CourseDto create(CourseDto dto) {
         log.debug("Creating course: {}", dto);
@@ -128,6 +131,7 @@ public class CourseService {
         return courseRepository.findByUniversityAndSemester(universityCode, semester, pageable).map(courseMapper::toDto);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Course", entityClass = Course.class, keyArg = "id")
     @Transactional
     public CourseDto update(UUID id, CourseDto dto) {
         log.debug("Updating course: id={}", id);
@@ -157,6 +161,7 @@ public class CourseService {
         }
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Course", entityClass = Course.class, keyArg = "id")
     @Transactional
     public void softDelete(UUID id) {
         log.debug("Soft deleting course: {}", id);

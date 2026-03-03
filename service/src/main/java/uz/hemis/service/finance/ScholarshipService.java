@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.finance.ScholarshipDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Scholarship;
@@ -52,6 +54,7 @@ public class ScholarshipService {
         return scholarshipMapper.toDtoList(scholarships);
     }
 
+    @Audited(action = AuditAction.CREATE, entity = "Scholarship", entityClass = Scholarship.class)
     @Transactional
     public ScholarshipDto create(ScholarshipDto scholarshipDto) {
         log.info("Creating scholarship");
@@ -61,6 +64,7 @@ public class ScholarshipService {
         return scholarshipMapper.toDto(saved);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Scholarship", entityClass = Scholarship.class, keyArg = "id")
     @Transactional
     public ScholarshipDto update(UUID id, ScholarshipDto scholarshipDto) {
         log.info("Updating scholarship: {}", id);
@@ -72,6 +76,7 @@ public class ScholarshipService {
         return scholarshipMapper.toDto(updated);
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Scholarship", entityClass = Scholarship.class, keyArg = "id")
     @Transactional
     public void softDelete(UUID id) {
         log.warn("Soft deleting scholarship: {}", id);

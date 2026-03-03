@@ -3,11 +3,16 @@ package uz.hemis.app.exception;
 import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import uz.hemis.common.audit.AuditContext;
+import uz.hemis.common.audit.ErrorEvent;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.access.AccessDeniedException;
@@ -42,8 +47,11 @@ import java.util.stream.Collectors;
  */
 @RestControllerAdvice
 @Order(Ordered.LOWEST_PRECEDENCE)
+@RequiredArgsConstructor
 @Slf4j
 public class GlobalExceptionHandler {
+
+    private final ApplicationEventPublisher eventPublisher;
 
     // =====================================================
     // Custom Business Exceptions
@@ -413,6 +421,9 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Unhandled exception: {} - {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
 
+        // Publish ErrorEvent for audit logging
+        publishErrorEvent(ex, request);
+
         // OLD-HEMIS format for legacy endpoints
         if (isLegacyEndpoint(request)) {
             java.util.Map<String, String> legacyError = new java.util.LinkedHashMap<>();
@@ -484,6 +495,36 @@ public class GlobalExceptionHandler {
     // =====================================================
     // Helper Methods
     // =====================================================
+
+    /**
+     * Publish ErrorEvent for audit logging (500 errors only)
+     */
+    private void publishErrorEvent(Exception ex, HttpServletRequest request) {
+        try {
+            // Build stack trace (truncated to 4000 chars)
+            java.io.StringWriter sw = new java.io.StringWriter();
+            ex.printStackTrace(new java.io.PrintWriter(sw));
+            String stackTrace = sw.toString();
+            if (stackTrace.length() > 4000) {
+                stackTrace = stackTrace.substring(0, 4000);
+            }
+
+            eventPublisher.publishEvent(ErrorEvent.builder()
+                    .context(AuditContext.builder()
+                            .ip(request.getRemoteAddr())
+                            .userAgent(request.getHeader("User-Agent"))
+                            .requestId(MDC.get("requestId"))
+                            .endpoint(request.getRequestURI())
+                            .build())
+                    .errorType(ex.getClass().getSimpleName())
+                    .errorMessage(ex.getMessage())
+                    .stackTrace(stackTrace)
+                    .endpoint(request.getMethod() + " " + request.getRequestURI())
+                    .build());
+        } catch (Exception e) {
+            log.warn("Failed to publish error audit event: {}", e.getMessage());
+        }
+    }
 
     /**
      * Check if request is for legacy CUBA endpoints

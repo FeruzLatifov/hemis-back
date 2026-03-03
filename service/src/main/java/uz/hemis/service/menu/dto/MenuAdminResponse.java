@@ -31,7 +31,7 @@ public class MenuAdminResponse {
     @Schema(description = "Unique menu code", example = "system-users")
     private String code;
 
-    @Schema(description = "Translation key for i18n (English text, gettext model)", example = "University users")
+    @Schema(description = "Translation key for i18n (English text, gettext model)", example = "Users")
     private String i18nKey;
 
     @Schema(description = "Navigation URL", example = "/system/users", nullable = true)

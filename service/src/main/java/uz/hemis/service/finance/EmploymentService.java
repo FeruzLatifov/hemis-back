@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.finance.EmploymentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -75,6 +77,7 @@ public class EmploymentService {
         return employmentRepository.findByUniversityAndStatus(universityCode, status, pageable).map(employmentMapper::toDto);
     }
 
+    @Audited(action = AuditAction.CREATE, entity = "Employment", entityClass = Employment.class)
     @Transactional
     @CachePut(value = "employments", key = "#result.id")
     public EmploymentDto create(EmploymentDto employmentDto) {
@@ -91,6 +94,7 @@ public class EmploymentService {
         return employmentMapper.toDto(saved);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Employment", entityClass = Employment.class, keyArg = "id")
     @Transactional
     @CachePut(value = "employments", key = "#id")
     public EmploymentDto update(UUID id, EmploymentDto employmentDto) {
@@ -105,6 +109,7 @@ public class EmploymentService {
         return employmentMapper.toDto(updated);
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Employment", entityClass = Employment.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "employments", allEntries = true)
     public void softDelete(UUID id) {

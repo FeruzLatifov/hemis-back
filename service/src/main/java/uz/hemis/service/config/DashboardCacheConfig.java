@@ -97,6 +97,7 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // JSON serialization with JavaTimeModule support
         com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
         objectMapper.registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule());
+        objectMapper.registerModule(new PageJacksonModule());
         objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.activateDefaultTyping(
             objectMapper.getPolymorphicTypeValidator(),

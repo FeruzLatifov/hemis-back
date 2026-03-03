@@ -9,6 +9,8 @@ import uz.hemis.domain.entity.User;
 import uz.hemis.domain.repository.SecUserRepository;
 import uz.hemis.domain.repository.UserRepository;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -64,6 +66,33 @@ public class WebAccountStatusValidator {
         } else {
             validateLegacyUser(userId, decodedToken);
         }
+    }
+
+    // ---------------------------------------------------------------
+    // Account Lockout
+    // ---------------------------------------------------------------
+
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+
+    /**
+     * Record a failed login attempt. Locks account after {@value MAX_FAILED_ATTEMPTS} failures.
+     * Uses atomic UPDATE to avoid race conditions with @Version optimistic locking.
+     */
+    @Transactional
+    public void recordFailedAttempt(String username) {
+        int updated = userRepository.incrementFailedAttemptsAndLockIfNeeded(username, MAX_FAILED_ATTEMPTS);
+        if (updated > 0) {
+            log.warn("Recorded failed login attempt for: {}", username);
+        }
+    }
+
+    /**
+     * Reset failed attempts on successful login.
+     * Uses atomic UPDATE to avoid race conditions.
+     */
+    @Transactional
+    public void resetFailedAttempts(String username) {
+        userRepository.resetFailedAttemptsByUsername(username);
     }
 
     // ---------------------------------------------------------------

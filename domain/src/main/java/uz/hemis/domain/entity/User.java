@@ -3,7 +3,9 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.common.enums.UserType;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +46,10 @@ import java.util.Set;
 public class User extends ModernBaseEntity {
 
     private static final long serialVersionUID = 1L;
+
+    @jakarta.persistence.Version
+    @Column(name = "version")
+    private Long version;
 
     // =====================================================
     // Authentication Fields
@@ -98,6 +104,7 @@ public class User extends ModernBaseEntity {
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+    @BatchSize(size = 50)
     private Set<Role> roleSet = new HashSet<>();
 
     /**
@@ -131,6 +138,15 @@ public class User extends ModernBaseEntity {
      */
     @Column(name = "entity_code", length = 255)
     private String entityCode;
+
+    /**
+     * User type (SYSTEM, UNIVERSITY, MINISTRY, ORGANIZATION)
+     * Column: user_type VARCHAR(50) NOT NULL DEFAULT 'SYSTEM'
+     * CHECK constraint in DB: user_type IN ('SYSTEM', 'UNIVERSITY', 'MINISTRY', 'ORGANIZATION')
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type", nullable = false, length = 50)
+    private UserType userType = UserType.SYSTEM;
 
     // =====================================================
     // Personal Information (Optional)

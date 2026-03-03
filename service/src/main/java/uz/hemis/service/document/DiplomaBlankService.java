@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.document.DiplomaBlankDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
@@ -278,6 +280,7 @@ public class DiplomaBlankService {
      * @return created diploma blank DTO
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.CREATE, entity = "DiplomaBlank", entityClass = DiplomaBlank.class)
     @Transactional
     @CachePut(value = "diplomaBlanks", key = "#result.id")
     public DiplomaBlankDto create(DiplomaBlankDto diplomaBlankDto) {
@@ -322,6 +325,7 @@ public class DiplomaBlankService {
      * @throws ResourceNotFoundException if diploma blank not found
      * @throws ValidationException if validation fails
      */
+    @Audited(action = AuditAction.UPDATE, entity = "DiplomaBlank", entityClass = DiplomaBlank.class, keyArg = "id")
     @Transactional
     @CachePut(value = "diplomaBlanks", key = "#id")
     @CacheEvict(value = "diplomaBlanks", key = "'code:' + #result.blankCode")
@@ -366,6 +370,7 @@ public class DiplomaBlankService {
      * @return updated diploma blank DTO
      * @throws ResourceNotFoundException if diploma blank not found
      */
+    @Audited(action = AuditAction.UPDATE, entity = "DiplomaBlank", entityClass = DiplomaBlank.class, keyArg = "id")
     @Transactional
     @CachePut(value = "diplomaBlanks", key = "#id")
     public DiplomaBlankDto updateStatus(UUID id, String newStatus) {
@@ -404,6 +409,7 @@ public class DiplomaBlankService {
      * @param id diploma blank ID
      * @throws ResourceNotFoundException if diploma blank not found
      */
+    @Audited(action = AuditAction.DELETE, entity = "DiplomaBlank", entityClass = DiplomaBlank.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "diplomaBlanks", allEntries = true)
     public void softDelete(UUID id) {
