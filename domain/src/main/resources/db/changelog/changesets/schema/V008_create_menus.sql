@@ -10,8 +10,7 @@
 -- PART 2: Seed complete menu structure
 -- PART 3: Verification
 --
--- Note: user_favorites (V008b) and menu_audit_logs (V008c)
--- extracted to separate files for granularity (1 file = 1 table)
+-- Note: user_favorites (V008b) extracted to separate file for granularity (1 file = 1 table)
 --
 -- Strategy: MENU DEPLOYMENT UNIT
 -- - Table schema + seed data together (logical unit)
@@ -51,6 +50,9 @@ CREATE TABLE IF NOT EXISTS menus (
     -- Ordering
     order_number INTEGER NOT NULL DEFAULT 0,    -- Display order within same parent
 
+    -- Classification
+    menu_type VARCHAR(20) NOT NULL DEFAULT 'main', -- Menu type: 'main' or 'system'
+
     -- Status
     is_active BOOLEAN NOT NULL DEFAULT true,       -- Enable/disable menu item
 
@@ -64,7 +66,8 @@ CREATE TABLE IF NOT EXISTS menus (
     -- Constraints
     CONSTRAINT fk_menus_parent FOREIGN KEY (parent_id) REFERENCES menus(id) ON DELETE CASCADE,
     CONSTRAINT chk_menus_code_not_empty CHECK (code <> ''),
-    CONSTRAINT chk_menus_i18n_key_not_empty CHECK (i18n_key <> '')
+    CONSTRAINT chk_menus_i18n_key_not_empty CHECK (i18n_key <> ''),
+    CONSTRAINT chk_menus_menu_type CHECK (menu_type IN ('main', 'system'))
 );
 
 -- =====================================================
@@ -86,6 +89,12 @@ CREATE INDEX IF NOT EXISTS idx_menus_deleted_at ON menus(deleted_at) WHERE delet
 -- Index for permission-based queries
 CREATE INDEX IF NOT EXISTS idx_menus_permission ON menus(permission) WHERE permission IS NOT NULL;
 
+-- Covering index: active children by parent, ordered (most common query)
+CREATE INDEX IF NOT EXISTS idx_menus_parent_order_active ON menus(parent_id, order_number) WHERE deleted_at IS NULL AND is_active = true;
+
+-- Index for menu type filtering (system vs main)
+CREATE INDEX IF NOT EXISTS idx_menus_type_order ON menus(menu_type, order_number) WHERE deleted_at IS NULL AND is_active = true;
+
 -- =====================================================
 -- COMMENTS FOR DOCUMENTATION
 -- =====================================================
@@ -98,6 +107,7 @@ COMMENT ON COLUMN menus.icon IS 'Icon name for UI rendering (e.g., home, databas
 COMMENT ON COLUMN menus.permission IS 'Required permission code (null = public access)';
 COMMENT ON COLUMN menus.parent_id IS 'Parent menu ID for hierarchical structure (null = root level)';
 COMMENT ON COLUMN menus.order_number IS 'Display order within same parent (lower = first)';
+COMMENT ON COLUMN menus.menu_type IS 'Menu type: main (regular) or system (shown below separator)';
 COMMENT ON COLUMN menus.is_active IS 'Menu item active status (false = hidden from users)';
 COMMENT ON COLUMN menus.deleted_at IS 'Soft delete timestamp (null = not deleted)';
 
@@ -311,8 +321,8 @@ VALUES (
     parent_id = EXCLUDED.parent_id,
     updated_at = CURRENT_TIMESTAMP;
 
--- system
-INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
+-- system (menu_type = 'system' — shown below separator in sidebar)
+INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, menu_type, parent_id, created_at, updated_at)
 VALUES (
     '10000000-0000-0000-0000-000000000009',
     'system',
@@ -322,6 +332,7 @@ VALUES (
     'system.view',
     9,
     true,
+    'system',
     NULL,
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
@@ -331,6 +342,7 @@ VALUES (
     icon = EXCLUDED.icon,
     permission = EXCLUDED.permission,
     order_number = EXCLUDED.order_number,
+    menu_type = EXCLUDED.menu_type,
     parent_id = EXCLUDED.parent_id,
     updated_at = CURRENT_TIMESTAMP;
 
@@ -1240,16 +1252,39 @@ VALUES (
     parent_id = EXCLUDED.parent_id,
     updated_at = CURRENT_TIMESTAMP;
 
--- sys-logs
+-- sys-roles
 INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
 VALUES (
     '20000009-0000-0000-0000-000000000003',
+    'sys-roles',
+    'Roles',
+    '/system/roles',
+    'shield',
+    'roles.manage',
+    3,
+    true,
+    '10000000-0000-0000-0000-000000000009',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+) ON CONFLICT (code) DO UPDATE SET
+    i18n_key = EXCLUDED.i18n_key,
+    url = EXCLUDED.url,
+    icon = EXCLUDED.icon,
+    permission = EXCLUDED.permission,
+    order_number = EXCLUDED.order_number,
+    parent_id = EXCLUDED.parent_id,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- sys-logs
+INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
+VALUES (
+    '20000009-0000-0000-0000-000000000004',
     'sys-logs',
     'API Logs',
     '/system/logs',
     'file-text',
     'system.logs.view',
-    3,
+    4,
     true,
     '10000000-0000-0000-0000-000000000009',
     CURRENT_TIMESTAMP,
@@ -1266,13 +1301,13 @@ VALUES (
 -- sys-report-updates
 INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
 VALUES (
-    '20000009-0000-0000-0000-000000000004',
+    '20000009-0000-0000-0000-000000000005',
     'sys-report-updates',
     'Report updates',
     '/system/report-updates',
     'refresh-cw',
     'system.report-update.view',
-    4,
+    5,
     true,
     '10000000-0000-0000-0000-000000000009',
     CURRENT_TIMESTAMP,

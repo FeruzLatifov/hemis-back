@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.service.integration.GuvdTokenService;
+import uz.hemis.service.integration.ApiMspdTokenService;
 import uz.hemis.service.student.SocialService;
 
 import java.util.*;
@@ -16,7 +16,7 @@ import java.util.*;
 /**
  * Social Service Controller - CUBA REST API Compatible
  *
- * <p>Integration with Social Protection services</p>
+ * <p>Integration with Social Protection services via API-MSPD (172.18.9.171)</p>
  * <p>OLD-HEMIS response formatiga 100% mos</p>
  *
  * @since 2.0.0
@@ -28,7 +28,7 @@ import java.util.*;
 @Slf4j
 public class SocialServiceController {
 
-    private final GuvdTokenService guvdTokenService;
+    private final ApiMspdTokenService apiMspdTokenService;
     private final SocialService socialService;
 
     /**
@@ -114,63 +114,46 @@ public class SocialServiceController {
         LinkedHashMap<String, Object> result = new LinkedHashMap<>();
 
         try {
-            String token = guvdTokenService.getToken();
+            String token = apiMspdTokenService.getAccessToken();
             if (token == null) {
                 result.put("success", false);
-                result.put("data", "GUVD token not available");
+                result.put("data", "API-MSPD token not available");
                 return ResponseEntity.ok(result);
             }
 
-            String body = String.format("""
-                {
-                    "transaction_id":"1234",
-                    "pin":"%s",
-                    "purpose":"",
-                    "consent":"true",
-                    "birth_document":"%s",
-                    "birth_date": "%s"
-                }""",
-                    pinfl,
-                    birthDocument != null ? birthDocument : "",
-                    birthDate != null ? birthDate : "");
+            // API-MSPD /disability/disability-pinfl-document/ yoki /disability-document-birth-date/
+            String baseUrl = apiMspdTokenService.getBaseUrl();
+            String url;
+            Map<String, String> body = new LinkedHashMap<>();
 
-            // Per-connection SSL bypass for government APIs with self-signed certs
-            javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection) java.net.URI.create("https://apimgw.egov.uz:8243/minzdrav/vtek/v4/birthdoc").toURL().openConnection();
-            javax.net.ssl.SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
-            conn.setSSLSocketFactory(sc.getSocketFactory());
-            conn.setHostnameVerifier((hostname, session) -> true);
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Authorization", "Bearer " + token);
-            conn.setConnectTimeout(30000);
-            conn.setReadTimeout(30000);
-
-            try (java.io.OutputStream os = conn.getOutputStream()) {
-                os.write(body.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            if (pinfl != null && !pinfl.isBlank()) {
+                // PINFL + document
+                url = baseUrl + "/disability/disability-pinfl-document/";
+                body.put("pinfl", pinfl);
+                body.put("document", birthDocument != null ? birthDocument : "");
+            } else {
+                // document + birth_date
+                url = baseUrl + "/disability/disability-document-birth-date/";
+                body.put("document", birthDocument != null ? birthDocument : "");
+                body.put("birth_date", birthDate != null ? birthDate : "");
             }
 
-            int statusCode = conn.getResponseCode();
-            java.io.InputStream stream = statusCode >= 400 ? conn.getErrorStream() : conn.getInputStream();
-            String responseStr = stream != null
-                    ? new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
-                    : "";
-            conn.disconnect();
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
 
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            Object responseData;
-            try {
-                responseData = mapper.readValue(responseStr, Object.class);
-            } catch (Exception ex) {
-                responseData = responseStr;
-            }
+            org.springframework.http.HttpEntity<Map<String, String>> entity =
+                    new org.springframework.http.HttpEntity<>(body, headers);
+
+            log.info("Calling API-MSPD: POST {}", url);
+            var response = new org.springframework.web.client.RestTemplate()
+                    .postForEntity(url, entity, Object.class);
 
             result.put("success", true);
-            result.put("data", responseData);
+            result.put("data", response.getBody());
 
         } catch (Exception e) {
-            log.error("Error calling VTEK API", e);
+            log.error("Error calling VTEK API via API-MSPD", e);
             result.put("success", false);
             result.put("data", e.getMessage());
         }

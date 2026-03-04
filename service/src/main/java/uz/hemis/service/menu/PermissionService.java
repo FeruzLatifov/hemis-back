@@ -2,10 +2,10 @@ package uz.hemis.service.menu;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.Permission;
-import uz.hemis.domain.entity.Role;
 import uz.hemis.domain.entity.User;
 import uz.hemis.domain.repository.UserRepository;
 
@@ -45,8 +45,10 @@ public class PermissionService {
      *   <li>✅ Uses eager fetch (findByIdWithPermissions)</li>
      *   <li>✅ 1 query instead of 3-5 queries</li>
      *   <li>✅ No lazy loading triggers</li>
+     *   <li>✅ Cached per user (TTL managed by Spring Cache config)</li>
      * </ul>
      */
+    @Cacheable(value = "userPermissions", key = "#userId")
     public List<String> getUserPermissions(UUID userId) {
         // ✅ FIX: Use eager fetch to avoid N+1 queries
         Optional<User> userOpt = userRepository.findByIdWithPermissions(userId);

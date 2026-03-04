@@ -53,6 +53,9 @@ public class GlobalExceptionHandler {
 
     private final ApplicationEventPublisher eventPublisher;
 
+    @org.springframework.beans.factory.annotation.Value("${hemis.audit.enabled:false}")
+    private boolean auditEnabled;
+
     // =====================================================
     // Custom Business Exceptions
     // =====================================================
@@ -500,6 +503,7 @@ public class GlobalExceptionHandler {
      * Publish ErrorEvent for audit logging (500 errors only)
      */
     private void publishErrorEvent(Exception ex, HttpServletRequest request) {
+        if (!auditEnabled) return;
         try {
             // Build stack trace (truncated to 4000 chars)
             java.io.StringWriter sw = new java.io.StringWriter();
@@ -509,13 +513,30 @@ public class GlobalExceptionHandler {
                 stackTrace = stackTrace.substring(0, 4000);
             }
 
+            String clientIp = MDC.get("clientIp");
+
+            // User context — kim xato qilganini aniqlash
+            AuditContext.AuditContextBuilder ctxBuilder = AuditContext.builder()
+                    .ip(clientIp != null ? clientIp : request.getRemoteAddr())
+                    .userAgent(request.getHeader("User-Agent"))
+                    .requestId(MDC.get("requestId"))
+                    .endpoint(request.getRequestURI());
+
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                String name = auth.getName();
+                if (name != null) {
+                    try {
+                        ctxBuilder.userId(java.util.UUID.fromString(name));
+                    } catch (IllegalArgumentException ignored) {
+                        ctxBuilder.username(name);
+                    }
+                }
+            }
+
             eventPublisher.publishEvent(ErrorEvent.builder()
-                    .context(AuditContext.builder()
-                            .ip(request.getRemoteAddr())
-                            .userAgent(request.getHeader("User-Agent"))
-                            .requestId(MDC.get("requestId"))
-                            .endpoint(request.getRequestURI())
-                            .build())
+                    .context(ctxBuilder.build())
                     .errorType(ex.getClass().getSimpleName())
                     .errorMessage(ex.getMessage())
                     .stackTrace(stackTrace)

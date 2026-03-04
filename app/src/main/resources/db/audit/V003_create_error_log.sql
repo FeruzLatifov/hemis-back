@@ -22,3 +22,6 @@ CREATE TABLE IF NOT EXISTS error_log (
 CREATE INDEX IF NOT EXISTS idx_error_type ON error_log (error_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_error_user ON error_log (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_error_created ON error_log (created_at DESC);
+
+-- Immutability: audit loglar o'zgartirilmasligi va o'chirilmasligi kerak
+REVOKE UPDATE, DELETE ON error_log FROM PUBLIC;

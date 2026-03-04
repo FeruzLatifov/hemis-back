@@ -32,3 +32,6 @@ CREATE INDEX IF NOT EXISTS idx_activity_entity ON activity_log (entity_type, ent
 CREATE INDEX IF NOT EXISTS idx_activity_action ON activity_log (action, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_request ON activity_log (request_id);
 CREATE INDEX IF NOT EXISTS idx_activity_created ON activity_log (created_at DESC);
+
+-- Immutability: audit loglar o'zgartirilmasligi va o'chirilmasligi kerak
+REVOKE UPDATE, DELETE ON activity_log FROM PUBLIC;

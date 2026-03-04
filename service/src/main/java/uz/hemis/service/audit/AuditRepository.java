@@ -2,9 +2,9 @@ package uz.hemis.service.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -12,6 +12,7 @@ import uz.hemis.common.audit.*;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,13 +22,20 @@ import java.util.Map;
  */
 @Slf4j
 @Repository
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditRepository {
 
-    @Qualifier("auditJdbcTemplate")
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+
+    @Value("${hemis.audit.redact-fields:pinfl,passport_number,passport,inn,phone}")
+    private String redactFieldsConfig;
+
+    public AuditRepository(@Qualifier("auditJdbcTemplate") JdbcTemplate jdbcTemplate,
+                           ObjectMapper objectMapper) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.objectMapper = objectMapper;
+    }
 
     public void saveActivity(ActivityEvent event) {
         try {
@@ -108,15 +116,31 @@ public class AuditRepository {
     private String toJson(Map<String, Object> map) {
         if (map == null || map.isEmpty()) return null;
         try {
-            return objectMapper.writeValueAsString(map);
+            return objectMapper.writeValueAsString(redactSensitiveFields(map));
         } catch (JsonProcessingException e) {
             log.warn("Failed to serialize to JSON: {}", e.getMessage());
             return null;
         }
     }
 
+    private Map<String, Object> redactSensitiveFields(Map<String, Object> map) {
+        if (map == null || redactFieldsConfig == null || redactFieldsConfig.isBlank()) return map;
+        List<String> redactFields = List.of(redactFieldsConfig.split(","));
+        Map<String, Object> result = new LinkedHashMap<>(map);
+        for (String field : redactFields) {
+            String key = field.trim();
+            if (result.containsKey(key) && result.get(key) != null) {
+                String val = result.get(key).toString();
+                result.put(key, val.length() > 4 ? val.substring(0, 4) + "****" : "****");
+            }
+        }
+        return result;
+    }
+
     private String toTextArray(List<String> list) {
         if (list == null || list.isEmpty()) return null;
-        return "{" + String.join(",", list.stream().map(s -> "\"" + s + "\"").toList()) + "}";
+        return "{" + String.join(",", list.stream()
+                .map(s -> "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
+                .toList()) + "}";
     }
 }

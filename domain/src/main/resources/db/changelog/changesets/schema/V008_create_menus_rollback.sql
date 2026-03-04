@@ -1,8 +1,7 @@
 -- =====================================================
 -- Rollback V008: DROP MENUS TABLE
 -- =====================================================
--- Note: user_favorites (V008b) and menu_audit_logs (V008c)
--- have their own rollback scripts
+-- Note: user_favorites (V008b) has its own rollback script
 -- =====================================================
 
 DO $$

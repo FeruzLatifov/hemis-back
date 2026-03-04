@@ -403,8 +403,10 @@ public class ClassifierLegacyService {
                         if (uniData != null) {
                             // Extract classifier from wrapper
                             Object clf = uniData.get("classifier");
-                            if (clf instanceof Map) {
-                                classifiersList.add((Map<String, Object>) clf);
+                            if (clf instanceof Map<?, ?> clfMap) {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> typedMap = (Map<String, Object>) clfMap;
+                                classifiersList.add(typedMap);
                             }
                         }
                     }

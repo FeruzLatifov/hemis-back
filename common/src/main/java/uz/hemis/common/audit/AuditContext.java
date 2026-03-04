@@ -1,14 +1,16 @@
 package uz.hemis.common.audit;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 import java.util.UUID;
 
 /**
  * Audit context — kim, qayerdan, qaysi so'rov.
+ *
+ * <p>Immutable: thread-safe, @Async xavfsiz.</p>
  */
-@Data
+@Value
 @Builder
 public class AuditContext {
     private UUID userId;

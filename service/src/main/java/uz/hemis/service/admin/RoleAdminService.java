@@ -57,18 +57,15 @@ public class RoleAdminService {
 
         // Sort
         if (pageable.getSort().isSorted()) {
-            pageable.getSort().forEach(order -> {
+            for (var order : pageable.getSort()) {
                 Comparator<Role> cmp = switch (order.getProperty()) {
                     case "code" -> Comparator.comparing(Role::getCode, String.CASE_INSENSITIVE_ORDER);
                     case "roleType" -> Comparator.comparing(r -> r.getRoleType().name());
                     case "createdAt" -> Comparator.comparing(Role::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()));
                     default -> Comparator.comparing(Role::getName, String.CASE_INSENSITIVE_ORDER);
                 };
-                if (order.isDescending()) {
-                    cmp = cmp.reversed();
-                }
-                allRoles.sort(cmp);
-            });
+                allRoles.sort(order.isDescending() ? cmp.reversed() : cmp);
+            }
         } else {
             allRoles.sort(Comparator.comparing(Role::getName, String.CASE_INSENSITIVE_ORDER));
         }

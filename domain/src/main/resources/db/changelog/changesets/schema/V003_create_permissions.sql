@@ -41,8 +41,7 @@ COMMENT ON COLUMN permissions.code IS 'Unique permission code (e.g., students.vi
 COMMENT ON COLUMN permissions.version IS 'Optimistic locking version (JPA @Version)';
 COMMENT ON COLUMN permissions.deleted_at IS 'Soft delete timestamp (null = active)';
 
--- Indexes
-CREATE INDEX idx_permissions_code ON permissions(code);
+-- Indexes (permissions.code UNIQUE already creates B-tree index)
 CREATE INDEX idx_permissions_resource ON permissions(resource);
 CREATE INDEX idx_permissions_category ON permissions(category);
 CREATE INDEX idx_permissions_resource_action ON permissions(resource, action);

@@ -1,7 +1,7 @@
 package uz.hemis.common.audit;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 import java.time.Instant;
 import java.util.List;
@@ -9,8 +9,10 @@ import java.util.Map;
 
 /**
  * CRUD operatsiya audit event — activity_log jadvaliga yoziladi.
+ *
+ * <p>Immutable: @Async orqali boshqa threadga o'tganda thread-safe.</p>
  */
-@Data
+@Value
 @Builder
 public class ActivityEvent {
     private AuditContext context;

@@ -36,8 +36,7 @@ COMMENT ON TABLE roles IS 'System roles for RBAC';
 COMMENT ON COLUMN roles.version IS 'Optimistic locking version (JPA @Version)';
 COMMENT ON COLUMN roles.deleted_at IS 'Soft delete timestamp (null = active)';
 
--- Indexes
-CREATE INDEX idx_roles_code ON roles(code);
+-- Indexes (roles.code UNIQUE already creates B-tree index)
 CREATE INDEX idx_roles_active ON roles(active) WHERE active = TRUE;
 CREATE INDEX idx_roles_role_type ON roles(role_type);
 CREATE INDEX idx_roles_deleted_at ON roles(deleted_at) WHERE deleted_at IS NULL;

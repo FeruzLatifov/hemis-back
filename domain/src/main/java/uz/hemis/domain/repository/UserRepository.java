@@ -311,7 +311,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     @Modifying
     @Query(value = "UPDATE users SET failed_attempts = COALESCE(failed_attempts, 0) + 1, " +
-                   "account_non_locked = CASE WHEN COALESCE(failed_attempts, 0) + 1 >= :maxAttempts THEN false ELSE account_non_locked END " +
+                   "account_non_locked = CASE WHEN COALESCE(failed_attempts, 0) + 1 >= :maxAttempts THEN false ELSE account_non_locked END, " +
+                   "locked_at = CASE WHEN COALESCE(failed_attempts, 0) + 1 >= :maxAttempts THEN NOW() ELSE locked_at END " +
                    "WHERE username = :username AND deleted_at IS NULL",
            nativeQuery = true)
     int incrementFailedAttemptsAndLockIfNeeded(@Param("username") String username,
@@ -324,10 +325,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return number of rows updated
      */
     @Modifying
-    @Query(value = "UPDATE users SET failed_attempts = 0 " +
+    @Query(value = "UPDATE users SET failed_attempts = 0, locked_at = NULL, account_non_locked = true " +
                    "WHERE username = :username AND deleted_at IS NULL AND failed_attempts > 0",
            nativeQuery = true)
     int resetFailedAttemptsByUsername(@Param("username") String username);
+
+    /**
+     * Auto-unlock accounts where lock has expired (15 minutes).
+     *
+     * @param minutesAgo threshold: accounts locked before this are unlocked
+     * @return number of rows updated
+     */
+    @Modifying
+    @Query(value = "UPDATE users SET account_non_locked = true, failed_attempts = 0, locked_at = NULL " +
+                   "WHERE account_non_locked = false AND locked_at IS NOT NULL " +
+                   "AND locked_at < NOW() - CAST(:minutesAgo || ' minutes' AS INTERVAL) " +
+                   "AND deleted_at IS NULL",
+           nativeQuery = true)
+    int autoUnlockExpiredAccounts(@Param("minutesAgo") int minutesAgo);
 
     // =====================================================
     // NOTE: NO DELETE METHODS

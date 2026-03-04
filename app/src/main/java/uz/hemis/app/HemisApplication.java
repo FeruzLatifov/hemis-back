@@ -37,6 +37,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableCaching
 @EnableJpaAuditing
 @org.springframework.scheduling.annotation.EnableScheduling
+@org.springframework.scheduling.annotation.EnableAsync
 @SpringBootApplication(scanBasePackages = {
         "uz.hemis.common",
         "uz.hemis.security",

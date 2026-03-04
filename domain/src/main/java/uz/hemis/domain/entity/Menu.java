@@ -170,6 +170,22 @@ public class Menu extends ModernBaseEntity {
     private Integer orderNumber = 0;
 
     // =====================================================
+    // Classification Fields
+    // =====================================================
+
+    /**
+     * Menu type (MAIN / SYSTEM)
+     * Column: menu_type VARCHAR(20) NOT NULL DEFAULT 'main'
+     *
+     * <p>{@link MenuType#MAIN} = regular menu (default, shown in main section)</p>
+     * <p>{@link MenuType#SYSTEM} = system menu (shown below separator)</p>
+     * <p>Allows frontend to separate menu sections without hardcoded logic</p>
+     */
+    @Convert(converter = MenuType.Converter.class)
+    @Column(name = "menu_type", nullable = false, length = 20)
+    private MenuType menuType = MenuType.MAIN;
+
+    // =====================================================
     // Status Fields
     // =====================================================
 

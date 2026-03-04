@@ -22,21 +22,21 @@ public class AuditEventListener {
 
     private final AuditRepository auditRepository;
 
-    @Async
+    @Async("auditTaskExecutor")
     @EventListener
     public void handleActivity(ActivityEvent event) {
         log.debug("Audit activity: {} {} {}", event.getAction(), event.getEntityType(), event.getEntityId());
         auditRepository.saveActivity(event);
     }
 
-    @Async
+    @Async("auditTaskExecutor")
     @EventListener
     public void handleError(ErrorEvent event) {
         log.debug("Audit error: {} at {}", event.getErrorType(), event.getEndpoint());
         auditRepository.saveError(event);
     }
 
-    @Async
+    @Async("auditTaskExecutor")
     @EventListener
     public void handleLogin(LoginEvent event) {
         AuditContext ctx = event.getContext();

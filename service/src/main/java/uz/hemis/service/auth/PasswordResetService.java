@@ -12,17 +12,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.exception.BadRequestException;
-import uz.hemis.domain.entity.PasswordHistory;
 import uz.hemis.domain.entity.PasswordResetToken;
 import uz.hemis.domain.entity.User;
-import uz.hemis.domain.repository.PasswordHistoryRepository;
 import uz.hemis.domain.repository.PasswordResetTokenRepository;
 import uz.hemis.domain.repository.UserRepository;
 
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.Properties;
 
 @Service
@@ -32,7 +29,6 @@ public class PasswordResetService {
 
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
-    private final PasswordHistoryRepository passwordHistoryRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Value("${hemis.mail.smtp.host:mail.hemis.uz}")
@@ -107,8 +103,8 @@ public class PasswordResetService {
      */
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        if (newPassword == null || newPassword.length() < 8) {
-            throw new BadRequestException("Password must be at least 8 characters.");
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new BadRequestException("Password must be at least 6 characters.");
         }
 
         PasswordResetToken resetToken = tokenRepository.findByTokenAndUsedFalse(token)
@@ -126,24 +122,10 @@ public class PasswordResetService {
 
         User user = resetToken.getUser();
 
-        // Check password history
-        List<PasswordHistory> history = passwordHistoryRepository.findTop5ByUserOrderByCreatedAtDesc(user);
-        for (PasswordHistory ph : history) {
-            if (passwordEncoder.matches(newPassword, ph.getPasswordHash())) {
-                throw new BadRequestException("Password was recently used. Choose a different password.");
-            }
-        }
-
         // Update password
         String encodedPassword = passwordEncoder.encode(newPassword);
         user.setPassword(encodedPassword);
         userRepository.save(user);
-
-        // Save to password history
-        PasswordHistory ph = new PasswordHistory();
-        ph.setUser(user);
-        ph.setPasswordHash(encodedPassword);
-        passwordHistoryRepository.save(ph);
 
         // Invalidate all other unused tokens for this user
         tokenRepository.markAllUnusedAsUsedByUser(user);

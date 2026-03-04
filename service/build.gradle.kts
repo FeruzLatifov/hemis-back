@@ -28,6 +28,9 @@ dependencies {
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    // Mail (jakarta.mail for PasswordResetService)
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+
     // Spring Security (for SecurityContextHolder in audit trail)
     implementation("org.springframework.security:spring-security-core")
 

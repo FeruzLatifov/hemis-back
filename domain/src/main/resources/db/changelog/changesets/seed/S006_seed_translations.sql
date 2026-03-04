@@ -91,6 +91,8 @@ PERFORM _seed_msg('action', 'Create',              'Yaratish',           'Яра
 PERFORM _seed_msg('action', 'Update',              'Yangilash',          'Янгилаш',             'Обновить');
 PERFORM _seed_msg('action', 'Search',              'Qidirish',           'Қидириш',             'Поиск');
 PERFORM _seed_msg('action', 'Search...',           'Qidirish...',        'Қидириш...',          'Поиск...');
+PERFORM _seed_msg('action', 'Search menu...',      'Menyu qidirish...',  'Меню қидириш...',     'Поиск в меню...');
+PERFORM _seed_msg('message', 'Recently visited',   'So''nggi kirilganlar', 'Сўнгги кирилганлар', 'Недавно посещённые');
 PERFORM _seed_msg('action', 'Filter',              'Filtr',              'Филтр',               'Фильтр');
 PERFORM _seed_msg('action', 'Apply',               'Qo''llash',          'Қўллаш',              'Применить');
 PERFORM _seed_msg('action', 'Clear',               'Tozalash',           'Тозалаш',             'Очистить');
@@ -176,6 +178,7 @@ PERFORM _seed_msg('message', 'Saving...',                'Saqlanmoqda...',      
 PERFORM _seed_msg('message', 'Deleting...',              'O''chirilmoqda...',             'Ўчирилмоқда...',            'Удаление...');
 PERFORM _seed_msg('message', 'No data found',            'Ma''lumotlar topilmadi',        'Маълумотлар топилмади',     'Данные не найдены');
 PERFORM _seed_msg('message', 'No results found',         'Natija topilmadi',             'Натижа топилмади',          'Результаты не найдены');
+PERFORM _seed_msg('message', 'No menu items available',  'Menyu elementlari mavjud emas', 'Меню элементлари мавжуд эмас', 'Пункты меню отсутствуют');
 PERFORM _seed_msg('message', 'Successfully saved',       'Muvaffaqiyatli saqlandi',      'Муваффақиятли сақланди',    'Успешно сохранено');
 PERFORM _seed_msg('message', 'Successfully deleted',     'Muvaffaqiyatli o''chirildi',    'Муваффақиятли ўчирилди',    'Успешно удалено');
 PERFORM _seed_msg('message', 'Successfully updated',     'Muvaffaqiyatli yangilandi',    'Муваффақиятли янгиланди',   'Успешно обновлено');
@@ -371,6 +374,7 @@ PERFORM _seed_msg('menu', 'Economy',                'Xo''jalik',                
 PERFORM _seed_msg('menu', 'Temporary',              'Vaqtinchalik',                 'Вақтинчалик',               'Временные');
 PERFORM _seed_msg('menu', 'Translations',           'Tarjimalar',                   'Таржималар',                'Переводы');
 PERFORM _seed_msg('menu', 'Users',                  'Foydalanuvchilar',             'Фойдаланувчилар',           'Пользователи');
+PERFORM _seed_msg('menu', 'Roles',                  'Rollar',                       'Роллар',                    'Роли');
 PERFORM _seed_msg('menu', 'API Logs',               'API log''lar',                  'API журнал',                'API логи');
 PERFORM _seed_msg('menu', 'Report updates',         'Hisobot yangilanishlari',      'Ҳисоботларни янгилаш',      'Обновления отчётов');
 

@@ -11,6 +11,7 @@ import uz.hemis.domain.repository.UserRepository;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -72,7 +73,8 @@ public class WebAccountStatusValidator {
     // Account Lockout
     // ---------------------------------------------------------------
 
-    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final int MAX_FAILED_ATTEMPTS = 10;
+    private static final int AUTO_UNLOCK_MINUTES = 15;
 
     /**
      * Record a failed login attempt. Locks account after {@value MAX_FAILED_ATTEMPTS} failures.
@@ -103,8 +105,18 @@ public class WebAccountStatusValidator {
             throw new AccountDisabledException();
         }
         if (!Boolean.TRUE.equals(user.getAccountNonLocked())) {
-            log.warn("Refresh blocked - account locked: userId={}", userId);
-            throw new AccountLockedException();
+            // Auto-unlock: if locked_at + 15 min has passed, unlock automatically
+            LocalDateTime lockedAt = user.getLockedAt();
+            if (lockedAt != null && lockedAt.plusMinutes(AUTO_UNLOCK_MINUTES).isBefore(LocalDateTime.now())) {
+                log.info("Auto-unlocking expired lock for userId={}, lockedAt={}", userId, lockedAt);
+                user.setAccountNonLocked(true);
+                user.setFailedAttempts(0);
+                user.setLockedAt(null);
+                userRepository.save(user);
+            } else {
+                log.warn("Refresh blocked - account locked: userId={}", userId);
+                throw new AccountLockedException();
+            }
         }
         log.info("Account status OK - userId: {}", userId);
     }

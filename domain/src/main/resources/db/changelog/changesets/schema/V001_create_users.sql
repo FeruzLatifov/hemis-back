@@ -46,6 +46,7 @@ CREATE TABLE users (
     active BOOLEAN NOT NULL DEFAULT TRUE,
     account_non_locked BOOLEAN NOT NULL DEFAULT TRUE,
     failed_attempts INTEGER DEFAULT 0,
+    locked_at TIMESTAMP,
 
     -- Security Settings
     ip_mask VARCHAR(200),
@@ -76,6 +77,7 @@ CREATE TABLE users (
 COMMENT ON TABLE users IS 'Core user accounts for authentication';
 COMMENT ON COLUMN users.version IS 'Optimistic locking version (JPA @Version)';
 COMMENT ON COLUMN users.deleted_at IS 'Soft delete timestamp (null = active)';
+COMMENT ON COLUMN users.locked_at IS 'Timestamp when account was locked (auto-unlock after 15 min)';
 
 -- Indexes
 CREATE INDEX idx_users_username_lowercase ON users(username_lowercase);

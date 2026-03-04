@@ -81,6 +81,13 @@ public class MenuItem {
      */
     private String permission;
 
+    /**
+     * Menu type: "main" (default) or "system"
+     * <p>Frontend uses this to separate main menus from system menus</p>
+     */
+    @Builder.Default
+    private String menuType = "main";
+
     @Builder.Default
     private List<MenuItem> items = new ArrayList<>();
 

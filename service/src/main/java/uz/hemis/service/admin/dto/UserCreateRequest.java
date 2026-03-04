@@ -24,10 +24,8 @@ public class UserCreateRequest {
     private String username;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 100, message = "Password must be 8-100 characters")
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,}$",
-            message = "Password must contain at least one uppercase, one lowercase, one digit, and one special character")
-    @Schema(description = "Password (will be BCrypt hashed)", example = "P@ssw0rd!")
+    @Size(min = 6, max = 100, message = "Password must be 6-100 characters")
+    @Schema(description = "Password (will be BCrypt hashed)", example = "secret")
     private String password;
 
     @Size(max = 255, message = "Full name must be at most 255 characters")

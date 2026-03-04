@@ -7,6 +7,7 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLRestriction;
 import uz.hemis.common.enums.UserType;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -252,10 +253,20 @@ public class User extends ModernBaseEntity {
      * Column: failed_attempts INTEGER DEFAULT 0
      *
      * <p>Reset to 0 on successful login</p>
-     * <p>Lock account after 5 failed attempts</p>
+     * <p>Lock account after 10 failed attempts</p>
      */
     @Column(name = "failed_attempts")
     private Integer failedAttempts = 0;
+
+    /**
+     * Timestamp when the account was locked (auto-unlock after 15 minutes)
+     * Column: locked_at TIMESTAMP
+     *
+     * <p>Set when account gets locked due to failed attempts</p>
+     * <p>Used for auto-unlock: if lockedAt + 15 min &lt; now, auto-unlock</p>
+     */
+    @Column(name = "locked_at")
+    private LocalDateTime lockedAt;
 
     // =====================================================
     // Business Methods

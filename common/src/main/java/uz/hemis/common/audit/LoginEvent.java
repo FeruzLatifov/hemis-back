@@ -1,14 +1,16 @@
 package uz.hemis.common.audit;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Value;
 
 import java.time.Instant;
 
 /**
  * Autentifikatsiya hodisa audit event — login_log jadvaliga yoziladi.
+ *
+ * <p>Immutable: @Async orqali boshqa threadga o'tganda thread-safe.</p>
  */
-@Data
+@Value
 @Builder
 public class LoginEvent {
     private AuditContext context;

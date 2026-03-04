@@ -24,7 +24,6 @@ CREATE TABLE system_message_translations (
 -- Comments
 COMMENT ON TABLE system_message_translations IS 'Translations for system messages by language';
 
--- Indexes
+-- Indexes (uq_message_language UNIQUE already creates B-tree index on message_id, language)
 CREATE INDEX idx_smt_message_id ON system_message_translations(message_id);
 CREATE INDEX idx_smt_language ON system_message_translations(language);
-CREATE INDEX idx_smt_message_language ON system_message_translations(message_id, language);

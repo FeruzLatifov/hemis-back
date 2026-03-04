@@ -278,11 +278,16 @@ hemis:
 
   # Audit Logging Configuration
   audit:
-    enabled: ${AUDIT_ENABLED:true}
+    enabled: ${AUDIT_ENABLED:false}
     datasource:
-      url: jdbc:postgresql://${AUDIT_DB_HOST:localhost}:${AUDIT_DB_PORT:5434}/${AUDIT_DB_NAME:hemis_audit}
-      username: ${AUDIT_DB_USER:hemis_audit}
-      password: ${AUDIT_DB_PASSWORD:audit_secret}
+      master:
+        url: jdbc:postgresql://${AUDIT_DB_HOST:localhost}:${AUDIT_DB_PORT:5434}/${AUDIT_DB_NAME:hemis_audit}
+        username: ${AUDIT_DB_USER:hemis_audit}
+        password: ${AUDIT_DB_PASSWORD:audit_secret}
+      replica:
+        url: jdbc:postgresql://${AUDIT_DB_REPLICA_HOST:${AUDIT_DB_HOST:localhost}}:${AUDIT_DB_REPLICA_PORT:${AUDIT_DB_PORT:5434}}/${AUDIT_DB_REPLICA_NAME:${AUDIT_DB_NAME:hemis_audit}}
+        username: ${AUDIT_DB_REPLICA_USER:${AUDIT_DB_USER:hemis_audit}}
+        password: ${AUDIT_DB_REPLICA_PASSWORD:${AUDIT_DB_PASSWORD:audit_secret}}
     # Qaysi endpointlarni log qilmaslik
     exclude-patterns:
       - /actuator/**
@@ -315,7 +320,13 @@ hemis:
       passport-api-url: ${GUVD_PASSPORT_API_URL:}
       address-api-url: ${GUVD_ADDRESS_API_URL:}
 
-    # BIMM Integration (api-mspd.edu.uz)
+    # API-MSPD Gateway (172.18.9.171) — markazlashgan integratsiya gateway
+    api-mspd:
+      base-url: ${API_MSPD_BASE_URL:http://172.18.9.171}
+      username: ${API_MSPD_USERNAME:}
+      password: ${API_MSPD_PASSWORD:}
+
+    # BIMM Integration (api-mspd gateway orqali)
     bimm:
       oauth2:
         url: ${BIMM_OAUTH2_URL:}

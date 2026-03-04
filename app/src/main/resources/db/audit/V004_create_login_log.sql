@@ -19,3 +19,6 @@ CREATE INDEX IF NOT EXISTS idx_login_user ON login_log (username, created_at DES
 CREATE INDEX IF NOT EXISTS idx_login_event ON login_log (event_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_login_ip ON login_log (user_ip, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_login_created ON login_log (created_at DESC);
+
+-- Immutability: audit loglar o'zgartirilmasligi va o'chirilmasligi kerak
+REVOKE UPDATE, DELETE ON login_log FROM PUBLIC;

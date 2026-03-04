@@ -42,8 +42,7 @@ CREATE UNIQUE INDEX idx_languages_single_default
 ON languages(is_default)
 WHERE is_default = TRUE AND deleted_at IS NULL;
 
--- Other indexes
-CREATE INDEX idx_languages_code ON languages(code);
+-- Other indexes (languages.code UNIQUE already creates B-tree index)
 CREATE INDEX idx_languages_active ON languages(is_active) WHERE is_active = TRUE;
 CREATE INDEX idx_languages_position ON languages(position);
 CREATE INDEX idx_languages_deleted_at ON languages(deleted_at) WHERE deleted_at IS NULL;

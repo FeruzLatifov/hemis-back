@@ -13,19 +13,15 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.enums.UserType;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.PasswordHistory;
 import uz.hemis.domain.entity.Role;
 import uz.hemis.domain.entity.University;
 import uz.hemis.domain.entity.User;
-import uz.hemis.domain.repository.PasswordHistoryRepository;
 import uz.hemis.domain.repository.RoleRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.common.port.cache.CacheEvictionPort;
 import uz.hemis.service.admin.dto.*;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,7 +48,6 @@ public class UserAdminService {
     private final RoleRepository roleRepository;
     private final UniversityRepository universityRepository;
     private final PasswordEncoder passwordEncoder;
-    private final PasswordHistoryRepository passwordHistoryRepository;
     private final CacheEvictionPort cacheEvictionPort;
 
     // =====================================================
@@ -161,12 +156,6 @@ public class UserAdminService {
 
         User saved = userRepository.save(user);
 
-        // Save initial password to history
-        PasswordHistory ph = new PasswordHistory();
-        ph.setUser(saved);
-        ph.setPasswordHash(saved.getPassword());
-        passwordHistoryRepository.save(ph);
-
         log.info("User created: username={}, entityCode={}, roles={}, by={}",
                 saved.getUsername(), saved.getEntityCode(),
                 roles.stream().map(Role::getCode).collect(Collectors.joining(",")),
@@ -256,23 +245,9 @@ public class UserAdminService {
 
         validateWriteScope(caller, target);
 
-        // Check password history — prevent reuse of last 5 passwords
-        List<PasswordHistory> history = passwordHistoryRepository.findTop5ByUserOrderByCreatedAtDesc(target);
-        for (PasswordHistory ph : history) {
-            if (passwordEncoder.matches(newPassword, ph.getPasswordHash())) {
-                throw new BadRequestException("Password was recently used. Choose a different password.");
-            }
-        }
-
         String encodedPassword = passwordEncoder.encode(newPassword);
         target.setPassword(encodedPassword);
         userRepository.save(target);
-
-        // Save to password history
-        PasswordHistory ph = new PasswordHistory();
-        ph.setUser(target);
-        ph.setPasswordHash(encodedPassword);
-        passwordHistoryRepository.save(ph);
 
         log.info("Password changed for user: id={}, username={}, by={}", id, target.getUsername(), callerUserId);
     }
@@ -321,6 +296,7 @@ public class UserAdminService {
 
         target.setAccountNonLocked(true);
         target.setFailedAttempts(0);
+        target.setLockedAt(null);
         User saved = userRepository.save(target);
 
         log.info("Account unlocked: id={}, username={}, by={}", id, saved.getUsername(), callerUserId);

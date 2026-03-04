@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -21,10 +20,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import uz.hemis.common.Jackson2Response;
 import uz.hemis.service.shared.CaptchaService;
-import uz.hemis.service.integration.GuvdTokenService;
+import uz.hemis.service.integration.ApiMspdTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,16 +68,9 @@ import java.util.Map;
 public class PassportServiceController {
 
     private final CaptchaService captchaService;
-    private final GuvdTokenService guvdTokenService;
+    private final ApiMspdTokenService apiMspdTokenService;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
-
-    // GUVD API endpoints (from .env)
-    @Value("${hemis.integration.guvd.passport-api.url:https://apimgw.egov.uz:8243/gcp/docrest/v1}")
-    private String guvdPassportApiUrl;
-
-    @Value("${hemis.integration.guvd.address-api.url:https://apimgw.egov.uz:8243/mvd/services/address/info/pin/v1}")
-    private String guvdAddressApiUrl;
 
     /**
      * PINFL va seria/raqam bilan passport ma'lumotini olish
@@ -245,86 +238,8 @@ public class PassportServiceController {
             return ResponseEntity.ok(result);
         }
 
-        // 2. Get GUVD OAuth2 token
-        String guvdToken;
-        try {
-            guvdToken = guvdTokenService.getToken();
-            if (guvdToken == null) {
-                log.error("❌ Failed to get GUVD token");
-                ObjectNode result = objectMapper.createObjectNode();
-                result.put("success", false);
-                result.put("data", "GUVD token service unavailable");
-                result.putNull("address");
-                return ResponseEntity.ok(result);
-            }
-        } catch (Exception e) {
-            log.error("❌ Error getting GUVD token", e);
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", false);
-            result.put("data", e.getMessage());
-            result.putNull("address");
-            return ResponseEntity.ok(result);
-        }
-
-        // 3. Call GUVD Passport API
-        try {
-            // Build request body (same format as old-hemis)
-            String requestBody = String.format("""
-                    {
-                        "transaction_id": 1,
-                        "is_consent": "Y",
-                        "sender_pinfl": "12345678901234",
-                        "langId": 3,
-                        "document": "%s",
-                        "pinpp": "%s",
-                        "is_photo": "Y",
-                        "Sender": "M"
-                    }
-                    """, seriaNumber, pinfl);
-
-            // Set headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + guvdToken);
-
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-
-            log.info("📤 Calling GUVD Passport API: {}", guvdPassportApiUrl);
-            log.debug("Request body: {}", requestBody);
-
-            // Call GUVD API
-            ResponseEntity<Map> passportResponse = restTemplate.postForEntity(
-                    guvdPassportApiUrl,
-                    entity,
-                    Map.class
-            );
-
-            Map<String, Object> passportData = passportResponse.getBody();
-
-            // 4. Get address data
-            Object addressData = getAddress(pinfl, guvdToken);
-
-            // 5. Build response (same format as old-hemis)
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", true);
-            result.putPOJO("data", passportData);
-            if (addressData != null) {
-                result.putPOJO("address", addressData);
-            } else {
-                result.putNull("address");
-            }
-
-            log.info("✅ Successfully retrieved passport data for PINFL: {}", pinfl);
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            log.error("❌ Error calling GUVD API", e);
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", false);
-            result.put("data", e.getMessage());
-            result.putNull("address");
-            return ResponseEntity.ok(result);
-        }
+        // 2-5. Call API-MSPD gateway for passport + address data
+        return callApiMspdPerson(pinfl, seriaNumber, null);
     }
 
     /**
@@ -479,155 +394,229 @@ public class PassportServiceController {
             return ResponseEntity.badRequest().body(result);
         }
 
-        // 2. Get GUVD OAuth2 token
-        String guvdToken;
-        try {
-            guvdToken = guvdTokenService.getToken();
-            if (guvdToken == null) {
-                log.error("❌ Failed to get GUVD token");
-                ObjectNode result = objectMapper.createObjectNode();
-                result.put("success", false);
-                result.put("data", "GUVD token service unavailable");
-                result.putNull("address");
-                return ResponseEntity.status(500).body(result);
-            }
-        } catch (Exception e) {
-            log.error("❌ Error getting GUVD token", e);
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", false);
-            result.put("data", e.getMessage());
-            result.putNull("address");
-            return ResponseEntity.status(500).body(result);
+        // 2-5. Call API-MSPD gateway for passport + address data
+        // getDataBySNBirthdate: pinfl yo'q, document + birthdate
+        return callApiMspdPersonByDocBirthdate(seriaNumber, birthdate);
+    }
+
+    // =====================================================
+    // API-MSPD Gateway Integration Methods
+    // =====================================================
+
+    /**
+     * Call API-MSPD /person/pinpp-and-document/ (pinfl + document)
+     * Maps to getDataBySN endpoint.
+     */
+    private ResponseEntity<Object> callApiMspdPerson(String pinfl, String document, String birthdate) {
+        String token = apiMspdTokenService.getAccessToken();
+        if (token == null) {
+            return errorResponse("API-MSPD token service unavailable");
         }
 
-        // 3. Call GUVD Passport API (with document + birth_date, NO pinpp!)
+        String baseUrl = apiMspdTokenService.getBaseUrl();
         try {
-            // Build request body (same format as old-hemis - NO pinpp field!)
-            String requestBody = String.format("""
-                    {
-                        "transaction_id": 1,
-                        "is_consent": "Y",
-                        "sender_pinfl": "12345678901234",
-                        "langId": 3,
-                        "document": "%s",
-                        "birth_date": "%s",
-                        "is_photo": "Y",
-                        "Sender": "M"
-                    }
-                    """, seriaNumber, birthdate);
+            // 1. Get person data via API-MSPD
+            Map<String, String> body = new HashMap<>();
+            body.put("pinfl", pinfl);
+            body.put("document", document);
 
-            // Set headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + guvdToken);
+            headers.set("Authorization", "Bearer " + token);
 
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
 
-            log.info("📤 Calling GUVD Passport API: {}", guvdPassportApiUrl);
-            log.debug("Request body: {}", requestBody);
+            log.info("Calling API-MSPD: POST {}/person/pinpp-and-document/", baseUrl);
 
-            // Call GUVD API
-            ResponseEntity<Map> passportResponse = restTemplate.postForEntity(
-                    guvdPassportApiUrl,
+            ResponseEntity<Map> personResponse = restTemplate.postForEntity(
+                    baseUrl + "/person/pinpp-and-document/",
                     entity,
                     Map.class
             );
 
-            Map<String, Object> passportData = passportResponse.getBody();
-
-            // 4. Build response
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", true);
-            result.putPOJO("data", passportData);
-
-            // 5. Get address data (extract PINFL from passport response first)
-            // Old-hemis logic: if passport.data[0].current_pinpp exists, get address
-            Object addressData = null;
-            if (passportData != null && passportData.containsKey("data")) {
-                try {
-                    List<Map<String, Object>> dataList = (List<Map<String, Object>>) passportData.get("data");
-                    if (dataList != null && !dataList.isEmpty()) {
-                        Map<String, Object> firstData = dataList.get(0);
-                        if (firstData.containsKey("current_pinpp")) {
-                            String pinfl = (String) firstData.get("current_pinpp");
-                            addressData = getAddress(pinfl, guvdToken);
-                        }
-                    }
-                } catch (Exception e) {
-                    log.warn("⚠️ Could not extract PINFL from passport data for address lookup", e);
-                }
-            }
-
-            if (addressData != null) {
-                result.putPOJO("address", addressData);
-            } else {
-                result.putNull("address");
-            }
-
-            log.info("✅ Successfully retrieved passport data for seriaNumber={}, birthdate={}", seriaNumber, birthdate);
-            return ResponseEntity.ok(result);
+            Map<String, Object> mspdData = personResponse.getBody();
+            return buildOldHemisResponse(mspdData, pinfl, token, baseUrl);
 
         } catch (Exception e) {
-            log.error("❌ Error calling GUVD API", e);
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", false);
-            result.put("data", e.getMessage());
-            result.putNull("address");
-            return ResponseEntity.status(500).body(result);
+            log.error("Error calling API-MSPD person endpoint", e);
+            return errorResponse(e.getMessage());
         }
     }
 
     /**
-     * Get address data from GUVD Address API
-     *
-     * <p>Old-hemis compatible: returns error object on failure, not null</p>
-     *
-     * @param pinfl      PINFL
-     * @param guvdToken  GUVD OAuth2 token
-     * @return Address data or error object (never null for old-hemis compatibility)
+     * Call API-MSPD /person/document-and-birth-date/ (document + birthdate)
+     * Maps to getDataBySNBirthdate endpoint.
      */
-    private Object getAddress(String pinfl, String guvdToken) {
-        try {
-            // Build request body
-            String requestBody = String.format("""
-                    {
-                        "pinpp": "%s"
-                    }
-                    """, pinfl);
+    private ResponseEntity<Object> callApiMspdPersonByDocBirthdate(String document, String birthdate) {
+        String token = apiMspdTokenService.getAccessToken();
+        if (token == null) {
+            return errorResponse("API-MSPD token service unavailable");
+        }
 
-            // Set headers
+        String baseUrl = apiMspdTokenService.getBaseUrl();
+        try {
+            Map<String, String> body = new HashMap<>();
+            body.put("document", document);
+            body.put("birth_date", birthdate);
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + guvdToken);
+            headers.set("Authorization", "Bearer " + token);
 
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
 
-            log.info("📤 Calling GUVD Address API: {}", guvdAddressApiUrl);
+            log.info("Calling API-MSPD: POST {}/person/document-and-birth-date/", baseUrl);
 
-            // Call GUVD Address API
+            ResponseEntity<Map> personResponse = restTemplate.postForEntity(
+                    baseUrl + "/person/document-and-birth-date/",
+                    entity,
+                    Map.class
+            );
+
+            Map<String, Object> mspdData = personResponse.getBody();
+            // Extract pinfl from response for address lookup
+            String pinfl = extractPinflFromMspdResponse(mspdData);
+            return buildOldHemisResponse(mspdData, pinfl, token, baseUrl);
+
+        } catch (Exception e) {
+            log.error("Error calling API-MSPD person endpoint", e);
+            return errorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Call API-MSPD /person/pinpp-and-birth-date/ (pinfl + birthdate)
+     * Maps to getDataByPinflBirthdate endpoint.
+     */
+    private ResponseEntity<Object> callApiMspdPersonByPinflBirthdate(String pinfl, String birthdate) {
+        String token = apiMspdTokenService.getAccessToken();
+        if (token == null) {
+            return errorResponse("API-MSPD token service unavailable");
+        }
+
+        String baseUrl = apiMspdTokenService.getBaseUrl();
+        try {
+            Map<String, String> body = new HashMap<>();
+            body.put("pinfl", pinfl);
+            body.put("birth_date", birthdate);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+
+            log.info("Calling API-MSPD: POST {}/person/pinpp-and-birth-date/", baseUrl);
+
+            ResponseEntity<Map> personResponse = restTemplate.postForEntity(
+                    baseUrl + "/person/pinpp-and-birth-date/",
+                    entity,
+                    Map.class
+            );
+
+            Map<String, Object> mspdData = personResponse.getBody();
+            return buildOldHemisResponse(mspdData, pinfl, token, baseUrl);
+
+        } catch (Exception e) {
+            log.error("Error calling API-MSPD person endpoint", e);
+            return errorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Get address from API-MSPD /person/person-address/
+     */
+    private Object getAddressViaMspd(String pinfl, String token, String baseUrl) {
+        if (pinfl == null || pinfl.isBlank()) return null;
+        try {
+            Map<String, String> body = new HashMap<>();
+            body.put("pinfl", pinfl);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+
+            HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+
+            log.info("Calling API-MSPD: POST {}/person/person-address/", baseUrl);
+
             ResponseEntity<Map> addressResponse = restTemplate.postForEntity(
-                    guvdAddressApiUrl,
+                    baseUrl + "/person/person-address/",
                     entity,
                     Map.class
             );
 
             return addressResponse.getBody();
-
-        } catch (org.springframework.web.client.HttpServerErrorException e) {
-            // GUVD API returned error response - extract and return the error body directly
-            log.error("⚠️ GUVD Address API returned error: {}", e.getStatusCode());
-            try {
-                // Parse the error response body from GUVD
-                return objectMapper.readValue(e.getResponseBodyAsString(), Map.class);
-            } catch (Exception parseEx) {
-                // If parsing fails, create error object
-                log.error("⚠️ Failed to parse GUVD error response", parseEx);
-                return createAddressErrorObject(e.getMessage());
-            }
         } catch (Exception e) {
-            log.error("⚠️ Error getting address data", e);
+            log.warn("API-MSPD address call failed: {}", e.getMessage());
             return createAddressErrorObject(e.getMessage());
         }
+    }
+
+    /**
+     * Build old-hemis compatible response from API-MSPD data.
+     *
+     * API-MSPD returns: {message, status_code, result, data: {person}, comments}
+     * Old-hemis expects: {success: true, data: {result, data: [{person}], comments}, address: {...}}
+     */
+    private ResponseEntity<Object> buildOldHemisResponse(Map<String, Object> mspdData, String pinfl,
+                                                          String token, String baseUrl) {
+        if (mspdData == null) {
+            return errorResponse("No data received from API-MSPD");
+        }
+
+        // Check if API-MSPD returned success
+        String resultCode = mspdData.get("result") != null ? mspdData.get("result").toString() : null;
+        if (!"1".equals(resultCode)) {
+            return errorResponse(mspdData.get("message") != null ? mspdData.get("message").toString() : "Person not found");
+        }
+
+        // Re-wrap: api_mspd returns data as single object, old-hemis expects data array
+        Object personData = mspdData.get("data");
+        Map<String, Object> guvdLikeData = new HashMap<>();
+        guvdLikeData.put("result", resultCode);
+        guvdLikeData.put("data", personData != null ? List.of(personData) : List.of());
+        guvdLikeData.put("comments", mspdData.getOrDefault("comments", ""));
+
+        // Get address
+        Object addressData = getAddressViaMspd(pinfl, token, baseUrl);
+
+        // Build old-hemis response
+        ObjectNode result = objectMapper.createObjectNode();
+        result.put("success", true);
+        result.putPOJO("data", guvdLikeData);
+        if (addressData != null) {
+            result.putPOJO("address", addressData);
+        } else {
+            result.putNull("address");
+        }
+
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Extract PINFL from API-MSPD person response.
+     */
+    private String extractPinflFromMspdResponse(Map<String, Object> mspdData) {
+        if (mspdData == null) return null;
+        Object data = mspdData.get("data");
+        if (data instanceof Map) {
+            Object pinfl = ((Map<?, ?>) data).get("current_pinpp");
+            if (pinfl == null) pinfl = ((Map<?, ?>) data).get("current_pinfl");
+            return pinfl != null ? pinfl.toString() : null;
+        }
+        return null;
+    }
+
+    /**
+     * Error response in old-hemis format: {success: false, data: "message", address: null}
+     */
+    private ResponseEntity<Object> errorResponse(String message) {
+        ObjectNode result = objectMapper.createObjectNode();
+        result.put("success", false);
+        result.put("data", message);
+        result.putNull("address");
+        return ResponseEntity.ok(result);
     }
 
     /**
@@ -794,86 +783,8 @@ public class PassportServiceController {
             return ResponseEntity.ok(result);
         }
 
-        // 2. Get GUVD OAuth2 token
-        String guvdToken;
-        try {
-            guvdToken = guvdTokenService.getToken();
-            if (guvdToken == null) {
-                log.error("❌ Failed to get GUVD token");
-                ObjectNode result = objectMapper.createObjectNode();
-                result.put("success", false);
-                result.put("data", "GUVD token service unavailable");
-                result.putNull("address");
-                return ResponseEntity.ok(result);
-            }
-        } catch (Exception e) {
-            log.error("❌ Error getting GUVD token", e);
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", false);
-            result.put("data", e.getMessage());
-            result.putNull("address");
-            return ResponseEntity.ok(result);
-        }
-
-        // 3. Call GUVD Passport API (with pinpp + birth_date, NO document!)
-        try {
-            // Build request body (same format as old-hemis - pinpp + birth_date, NO document field!)
-            String requestBody = String.format("""
-                    {
-                        "transaction_id": 1,
-                        "is_consent": "Y",
-                        "sender_pinfl": "12345678901234",
-                        "langId": 3,
-                        "pinpp": "%s",
-                        "birth_date": "%s",
-                        "is_photo": "Y",
-                        "Sender": "M"
-                    }
-                    """, pinfl, birthdate);
-
-            // Set headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + guvdToken);
-
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-
-            log.info("📤 Calling GUVD Passport API: {}", guvdPassportApiUrl);
-            log.debug("Request body: {}", requestBody);
-
-            // Call GUVD API
-            ResponseEntity<Map> passportResponse = restTemplate.postForEntity(
-                    guvdPassportApiUrl,
-                    entity,
-                    Map.class
-            );
-
-            Map<String, Object> passportData = passportResponse.getBody();
-
-            // 4. Get address data (PINFL already provided in request)
-            Object addressData = getAddress(pinfl, guvdToken);
-
-            // 5. Build response (same format as old-hemis)
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", true);
-            result.putPOJO("data", passportData);
-            if (addressData != null) {
-                result.putPOJO("address", addressData);
-            } else {
-                result.putNull("address");
-            }
-
-            log.info("✅ Successfully retrieved passport data for PINFL: {}, birthdate: {}", pinfl, birthdate);
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            log.error("❌ Error calling GUVD API", e);
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", false);
-            result.put("data", e.getMessage());
-            result.putNull("address");
-            return ResponseEntity.ok(result);
-        }
+        // 2. Call API-MSPD (PINFL + birthdate)
+        return callApiMspdPersonByPinflBirthdate(pinfl, birthdate);
     }
 
     /**
@@ -959,72 +870,34 @@ public class PassportServiceController {
     ) {
         log.info("🔍 GET /app/rest/v2/services/passport-data/getAddress - pinfl={}", pinfl);
 
-        // 1. Get GUVD OAuth2 token
-        String guvdToken;
-        try {
-            guvdToken = guvdTokenService.getToken();
-            if (guvdToken == null) {
-                log.error("❌ Failed to get GUVD token");
-                ObjectNode result = objectMapper.createObjectNode();
-                result.put("success", false);
-                result.put("data", "GUVD token service unavailable");
-                return ResponseEntity.status(500).body(result);
-            }
-        } catch (Exception e) {
-            log.error("❌ Error getting GUVD token", e);
+        // 1. Get API-MSPD token
+        String token = apiMspdTokenService.getAccessToken();
+        if (token == null) {
+            log.error("❌ Failed to get API-MSPD token");
             ObjectNode result = objectMapper.createObjectNode();
             result.put("success", false);
-            result.put("data", e.getMessage());
-            return ResponseEntity.status(500).body(result);
+            result.put("data", "API-MSPD token service unavailable");
+            return ResponseEntity.ok(result);
         }
 
-        // 2. Call GUVD Address API
+        // 2. Call API-MSPD address endpoint
         try {
-            // Build request body
-            String requestBody = String.format("""
-                    {
-                        "pinpp": "%s"
-                    }
-                    """, pinfl);
+            String baseUrl = apiMspdTokenService.getBaseUrl();
+            Object addressData = getAddressViaMspd(pinfl, token, baseUrl);
 
-            // Set headers
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + guvdToken);
-
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-
-            log.info("📤 Calling GUVD Address API: {}", guvdAddressApiUrl);
-
-            // Call GUVD Address API
-            ResponseEntity<Map> addressResponse = restTemplate.postForEntity(
-                    guvdAddressApiUrl,
-                    entity,
-                    Map.class
-            );
-
-            // 3. Build response (same format as old-hemis: {success, data})
             ObjectNode result = objectMapper.createObjectNode();
             result.put("success", true);
-            result.putPOJO("data", addressResponse.getBody());
+            result.putPOJO("data", addressData);
 
             log.info("✅ Successfully retrieved address data for PINFL: {}", pinfl);
             return ResponseEntity.ok(result);
 
-        } catch (org.springframework.web.client.HttpServerErrorException e) {
-            // GUVD API returned error response
-            log.error("⚠️ GUVD Address API returned error: {}", e.getStatusCode());
-            ObjectNode result = objectMapper.createObjectNode();
-            result.put("success", false);
-            result.put("data", e.getMessage());
-            return ResponseEntity.ok(result);  // Return 200 with success=false (old-hemis compatible)
-
         } catch (Exception e) {
-            log.error("❌ Error calling GUVD Address API", e);
+            log.error("❌ Error calling API-MSPD Address API", e);
             ObjectNode result = objectMapper.createObjectNode();
             result.put("success", false);
             result.put("data", e.getMessage());
-            return ResponseEntity.ok(result);  // Return 200 with success=false (old-hemis compatible)
+            return ResponseEntity.ok(result);
         }
     }
 

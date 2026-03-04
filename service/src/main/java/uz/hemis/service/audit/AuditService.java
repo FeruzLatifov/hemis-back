@@ -1,7 +1,5 @@
 package uz.hemis.service.audit;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,9 +8,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import uz.hemis.common.dto.PageResponse;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.time.OffsetDateTime;
 import java.util.*;
 
 /**
@@ -30,7 +25,6 @@ public class AuditService {
 
     @Qualifier("auditReadJdbcTemplate")
     private final JdbcTemplate jdbcTemplate;
-    private final ObjectMapper objectMapper;
 
     // =====================================================
     // Activity Logs
@@ -108,28 +102,43 @@ public class AuditService {
     public Map<String, Object> getStats(String dateFrom, String dateTo) {
         Map<String, Object> stats = new LinkedHashMap<>();
 
-        String dateFilter = buildDateFilter(dateFrom, dateTo);
+        StringBuilder where = new StringBuilder("WHERE 1=1");
+        List<Object> params = new ArrayList<>();
+        if (dateFrom != null && !dateFrom.isBlank()) {
+            where.append(" AND created_at >= ?::timestamptz");
+            params.add(dateFrom);
+        }
+        if (dateTo != null && !dateTo.isBlank()) {
+            where.append(" AND created_at <= ?::timestamptz");
+            params.add(dateTo);
+        }
+
+        String whereStr = where.toString();
 
         // Total counts
-        stats.put("totalActivities", countTable("activity_log", dateFilter));
-        stats.put("totalErrors", countTable("error_log", dateFilter));
-        stats.put("totalLogins", countTable("login_log", dateFilter));
+        stats.put("totalActivities", countTable("activity_log", whereStr, params));
+        stats.put("totalErrors", countTable("error_log", whereStr, params));
+        stats.put("totalLogins", countTable("login_log", whereStr, params));
 
         // Top users (by activity)
+        List<Object> topUserParams = new ArrayList<>(params);
         stats.put("topUsers", jdbcTemplate.queryForList(
                 "SELECT username, COUNT(*) as count FROM activity_log " +
-                "WHERE username IS NOT NULL " + dateFilter +
-                " GROUP BY username ORDER BY count DESC LIMIT 10"));
+                whereStr + " AND username IS NOT NULL" +
+                " GROUP BY username ORDER BY count DESC LIMIT 10",
+                topUserParams.toArray()));
 
         // Error rates
         stats.put("errorsByType", jdbcTemplate.queryForList(
-                "SELECT error_type, COUNT(*) as count FROM error_log WHERE 1=1 " + dateFilter +
-                " GROUP BY error_type ORDER BY count DESC LIMIT 10"));
+                "SELECT error_type, COUNT(*) as count FROM error_log " + whereStr +
+                " GROUP BY error_type ORDER BY count DESC LIMIT 10",
+                params.toArray()));
 
         // Login stats
         stats.put("loginsByType", jdbcTemplate.queryForList(
-                "SELECT event_type, COUNT(*) as count FROM login_log WHERE 1=1 " + dateFilter +
-                " GROUP BY event_type ORDER BY count DESC"));
+                "SELECT event_type, COUNT(*) as count FROM login_log " + whereStr +
+                " GROUP BY event_type ORDER BY count DESC",
+                params.toArray()));
 
         return stats;
     }
@@ -226,20 +235,9 @@ public class AuditService {
         }
     }
 
-    private Long countTable(String table, String dateFilter) {
+    private Long countTable(String table, String where, List<Object> params) {
         return jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM " + table + " WHERE 1=1 " + dateFilter, Long.class);
-    }
-
-    private String buildDateFilter(String dateFrom, String dateTo) {
-        StringBuilder sb = new StringBuilder();
-        if (dateFrom != null && !dateFrom.isBlank()) {
-            sb.append(" AND created_at >= '").append(dateFrom.replace("'", "")).append("'::timestamptz");
-        }
-        if (dateTo != null && !dateTo.isBlank()) {
-            sb.append(" AND created_at <= '").append(dateTo.replace("'", "")).append("'::timestamptz");
-        }
-        return sb.toString();
+                "SELECT COUNT(*) FROM " + table + " " + where, Long.class, params.toArray());
     }
 
     private Map<String, Object> toCamelCaseKeys(Map<String, Object> map) {

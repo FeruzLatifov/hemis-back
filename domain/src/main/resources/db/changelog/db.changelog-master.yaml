@@ -165,7 +165,7 @@ databaseChangeLog:
       id: V008_create_menus
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "Menu table + seed structure. user_favorites and menu_audit_logs extracted to V008b/V008c"
+      comment: "Menu table + seed structure. user_favorites extracted to V008b"
       preConditions:
         - onFail: MARK_RAN
         - not:
@@ -202,25 +202,6 @@ databaseChangeLog:
             relativeToChangelogFile: true
             splitStatements: false
 
-  - changeSet:
-      id: V008c_create_menu_audit_logs
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      preConditions:
-        - onFail: MARK_RAN
-        - not:
-            tableExists:
-              tableName: menu_audit_logs
-      changes:
-        - sqlFile:
-            path: changesets/schema/V008c_create_menu_audit_logs.sql
-            relativeToChangelogFile: true
-            splitStatements: false
-      rollback:
-        - sqlFile:
-            path: changesets/schema/V008c_create_menu_audit_logs_rollback.sql
-            relativeToChangelogFile: true
-            splitStatements: false
 
   - changeSet:
       id: V009_create_languages
@@ -563,17 +544,33 @@ databaseChangeLog:
             splitStatements: false
 
   - changeSet:
-      id: M006_add_system_messages_audit_fields
+      id: M006_add_users_locked_at
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "Add created_by/updated_by to system_messages — no-op for fresh DBs (V006 updated), backward compat for existing DBs"
+      comment: "Add locked_at TIMESTAMP to users table for 15-minute auto-unlock feature — no-op for fresh DBs (V001 updated)"
       changes:
         - sqlFile:
-            path: changesets/migration/M006_add_system_messages_audit_fields.sql
+            path: changesets/migration/M006_add_users_locked_at.sql
             relativeToChangelogFile: true
             splitStatements: false
       rollback:
         - sqlFile:
-            path: changesets/migration/M006_add_system_messages_audit_fields_rollback.sql
+            path: changesets/migration/M006_add_users_locked_at_rollback.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+
+  - changeSet:
+      id: M007_add_menus_menu_type
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Add menu_type column to menus table — frontend uses this instead of hardcoded system menu detection. No-op for fresh DBs (V008 updated)"
+      changes:
+        - sqlFile:
+            path: changesets/migration/M007_add_menus_menu_type.sql
+            relativeToChangelogFile: true
+            splitStatements: false
+      rollback:
+        - sqlFile:
+            path: changesets/migration/M007_add_menus_menu_type_rollback.sql
             relativeToChangelogFile: true
             splitStatements: false

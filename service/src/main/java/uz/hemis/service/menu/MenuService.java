@@ -198,6 +198,7 @@ public class MenuService {
                     .url(item.getUrl())
                     .icon(item.getIcon())
                     .permission(item.getPermission())
+                    .menuType(item.getMenuType())
                     .active(item.getActive())
                     .order(item.getOrder())
                     .build();
@@ -362,6 +363,7 @@ public class MenuService {
             .url(menu.getUrl())
             .icon(menu.getIcon())
             .permission(menu.getPermission())
+            .menuType(menu.getMenuType().getValue())
             .active(menu.getActive())
             .order(menu.getOrderNumber())
             .build();
@@ -387,12 +389,6 @@ public class MenuService {
      *   <li>Publish Redis Pub/Sub event</li>
      *   <li>All pods receive event → clear L1 Caffeine cache</li>
      *   <li>Next request: cache miss → reload from database</li>
-     * </ul>
-     *
-     * <p><strong>Called By:</strong></p>
-     * <ul>
-     *   <li>MenuAdminService.create/update/delete/reorder</li>
-     *   <li>MenuAdminController.clearCache (manual)</li>
      * </ul>
      */
     public void invalidateMenuCache() {

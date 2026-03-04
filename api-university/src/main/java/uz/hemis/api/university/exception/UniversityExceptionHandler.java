@@ -42,7 +42,7 @@ public class UniversityExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidation(ValidationException ex) {
         log.warn("University API validation error: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+        return ResponseEntity.status(422)
                 .body(ErrorResponse.of(422, "VALIDATION_ERROR", ex.getMessage()));
     }
 }

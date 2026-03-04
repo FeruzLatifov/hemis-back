@@ -12,11 +12,10 @@ import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import uz.hemis.common.audit.*;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Parameter;
 import java.util.*;
 
@@ -31,6 +30,7 @@ import java.util.*;
 @Aspect
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditAspect {
 
     private final ApplicationEventPublisher eventPublisher;
@@ -54,14 +54,7 @@ public class AuditAspect {
         try {
             result = pjp.proceed();
         } catch (Exception e) {
-            // Xato bo'lsa ErrorEvent publish
-            eventPublisher.publishEvent(ErrorEvent.builder()
-                    .context(context)
-                    .errorType(e.getClass().getSimpleName())
-                    .errorMessage(e.getMessage())
-                    .stackTrace(getStackTrace(e))
-                    .endpoint(pjp.getSignature().toShortString())
-                    .build());
+            // ErrorEvent faqat GlobalExceptionHandler da publish qilinadi (duplicate oldini olish)
             throw e;
         }
 
@@ -233,10 +226,4 @@ public class AuditAspect {
         return changed.isEmpty() ? null : changed;
     }
 
-    private String getStackTrace(Exception e) {
-        StringWriter sw = new StringWriter();
-        e.printStackTrace(new PrintWriter(sw));
-        String trace = sw.toString();
-        return trace.length() > 4000 ? trace.substring(0, 4000) : trace;
-    }
 }
