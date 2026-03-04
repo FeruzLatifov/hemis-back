@@ -30,20 +30,22 @@ ingress:
     - path: /v3/api-docs/
       pathType: Prefix
 
+# Enterprise: Spring Boot + Hibernate + HikariCP pools + Redis + external integrations
 resources:
   requests:
-    cpu: 500m
-    memory: 1Gi
-  limits:
     cpu: "2"
-    memory: 2Gi
+    memory: 4Gi
+  limits:
+    cpu: "4"
+    memory: 6Gi
 
+# HPA: 2-6 pods, nagruzka bo'yicha avtomatik scale
 autoscaling:
   enabled: true
   minReplicas: 2
-  maxReplicas: 4
-  targetCPUUtilizationPercentage: 75
-  targetMemoryUtilizationPercentage: 80
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 75
 
 podDisruptionBudget:
   minAvailable: 1
@@ -51,12 +53,13 @@ podDisruptionBudget:
 springProfiles: "prod,redis,replica"
 existingSecret: new-ministry-back-env
 
-javaOpts: "-Xms512m -Xmx1536m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+# JVM: Xmx = 4g (66% of 6Gi limit), qolgani metaspace/threads/NIO uchun
+javaOpts: "-Xms2g -Xmx4g -XX:+UseContainerSupport -XX:MaxRAMPercentage=70.0 -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 
 revisionHistoryLimit: 3
 
 audit:
-  enabled: true  # Requires test_ministry_audit database and PgBouncer config
+  enabled: true
 
 migration:
   enabled: true
@@ -66,10 +69,10 @@ probes:
   startup:
     path: /actuator/health
     port: 8080
-    initialDelaySeconds: 10
+    initialDelaySeconds: 15
     periodSeconds: 10
     timeoutSeconds: 5
-    failureThreshold: 18
+    failureThreshold: 24
   liveness:
     path: /actuator/health
     port: 8080
