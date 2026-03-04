@@ -375,7 +375,7 @@ PERFORM _seed_msg('menu', 'Temporary',              'Vaqtinchalik',             
 PERFORM _seed_msg('menu', 'Translations',           'Tarjimalar',                   'Таржималар',                'Переводы');
 PERFORM _seed_msg('menu', 'Users',                  'Foydalanuvchilar',             'Фойдаланувчилар',           'Пользователи');
 PERFORM _seed_msg('menu', 'Roles',                  'Rollar',                       'Роллар',                    'Роли');
-PERFORM _seed_msg('menu', 'API Logs',               'API log''lar',                  'API журнал',                'API логи');
+PERFORM _seed_msg('menu', 'Audit Logs',              'Audit loglar',                  'Аудит логлар',              'Журнал аудита');
 PERFORM _seed_msg('menu', 'Report updates',         'Hisobot yangilanishlari',      'Ҳисоботларни янгилаш',      'Обновления отчётов');
 
 -- E-Reestr submenus

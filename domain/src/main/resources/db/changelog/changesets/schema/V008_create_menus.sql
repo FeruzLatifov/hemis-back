@@ -1280,10 +1280,10 @@ INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_a
 VALUES (
     '20000009-0000-0000-0000-000000000004',
     'sys-logs',
-    'API Logs',
+    'Audit Logs',
     '/system/logs',
-    'file-text',
-    'system.logs.view',
+    'scroll-text',
+    'audit.view',
     4,
     true,
     '10000000-0000-0000-0000-000000000009',
