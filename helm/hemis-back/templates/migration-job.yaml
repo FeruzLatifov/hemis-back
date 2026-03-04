@@ -32,7 +32,7 @@ spec:
             - name: SPRING_PROFILES_ACTIVE
               value: "{{ .Values.springProfiles }},migrate"
             - name: JAVA_OPTS
-              value: {{ .Values.javaOpts | quote }}
+              value: "-Xms256m -Xmx512m -XX:+UseG1GC"
             - name: AUDIT_ENABLED
               value: "false"
           envFrom:
