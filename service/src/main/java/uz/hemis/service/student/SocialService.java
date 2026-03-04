@@ -132,6 +132,7 @@ public class SocialService extends AbstractGovernmentApiService {
      * egov.uz ga to'g'ridan-to'g'ri GUVD token bilan (API-MSPD da yo'q endpointlar uchun)
      * TODO: api_mspd ga daftar routerlar qo'shilganda bu method o'chiriladi
      */
+    @SuppressWarnings("unchecked")
     private Object callEgovDirect(String url, String body, String serviceName) {
         Map<String, Object> result = new LinkedHashMap<>();
         try {
