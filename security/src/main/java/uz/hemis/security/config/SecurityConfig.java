@@ -195,6 +195,7 @@ public class SecurityConfig {
                         // Only login + refresh + password reset are public; others require valid JWT
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/forgot-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/web/auth/**").authenticated()

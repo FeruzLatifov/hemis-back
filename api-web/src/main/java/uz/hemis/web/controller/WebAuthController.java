@@ -212,7 +212,7 @@ public class WebAuthController {
     ) {
         log.info("Web logout request");
 
-        // Blacklist access token
+        // Extract and decode token BEFORE blacklisting
         String accessToken = extractBearerToken(authHeader, accessTokenCookie);
         UUID logoutUserId = null;
         String logoutUsername = null;
@@ -222,20 +222,23 @@ public class WebAuthController {
                 logoutUserId = parseUserId(jwt.getSubject());
                 logoutUsername = jwt.getClaimAsString("username");
             } catch (Exception ignored) { }
-            blacklistToken(accessToken, true);
         }
 
-        // Blacklist refresh token
+        // Now blacklist tokens (after extracting user info)
+        if (accessToken != null) {
+            blacklistToken(accessToken, true);
+        }
         if (refreshTokenCookie != null) {
             blacklistToken(refreshTokenCookie, false);
         }
 
         // Clear cookies
         cookieService.clearAuthCookies(httpResponse);
-        log.info("Logout successful");
+        log.info("Logout successful for user: {}", logoutUsername);
 
         eventPublisher.publishEvent(LoginEvent.builder()
-                .context(buildAuditContext(httpRequest, logoutUserId, logoutUsername))
+                .context(buildAuditContext(httpRequest, logoutUserId,
+                        logoutUsername != null ? logoutUsername : "unknown"))
                 .eventType(LoginEvent.LoginEventType.LOGOUT)
                 .build());
 
@@ -297,12 +300,7 @@ public class WebAuthController {
                 log.info("Old refresh token blacklisted: {}", oldJti);
             }
 
-            log.info("Token refreshed for userId: {}", userId);
-
-            eventPublisher.publishEvent(LoginEvent.builder()
-                    .context(buildAuditContext(null, userId, username))
-                    .eventType(LoginEvent.LoginEventType.TOKEN_REFRESH)
-                    .build());
+            log.debug("Token refreshed for userId: {}", userId);
 
             return ResponseEntity.ok(Map.of("success", true, "message", "Tokens refreshed"));
 
