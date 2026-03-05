@@ -212,36 +212,21 @@ public class WebAuthController {
     ) {
         log.info("Web logout request");
 
-        // Extract user info from token BEFORE blacklisting
-        // JWT payload ni validation siz o'qish (expired token ham bo'lishi mumkin)
+        // Extract user info from tokens BEFORE blacklisting
         String accessToken = extractBearerToken(authHeader, accessTokenCookie);
         UUID logoutUserId = null;
         String logoutUsername = null;
-        if (accessToken != null) {
-            try {
-                // Birinchi normal decode
-                Jwt jwt = tokenService.decode(accessToken);
-                logoutUserId = parseUserId(jwt.getSubject());
-                logoutUsername = jwt.getClaimAsString("username");
-            } catch (Exception e) {
-                // Token expired yoki invalid — payload ni qo'lda parse qilish
-                try {
-                    String[] parts = accessToken.split("\\.");
-                    if (parts.length == 3) {
-                        String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
-                        com.fasterxml.jackson.databind.JsonNode json =
-                                new com.fasterxml.jackson.databind.ObjectMapper().readTree(payload);
-                        if (json.has("username")) {
-                            logoutUsername = json.get("username").asText();
-                        }
-                        if (json.has("sub")) {
-                            logoutUserId = parseUserId(json.get("sub").asText());
-                        }
-                    }
-                } catch (Exception parseEx) {
-                    log.debug("Could not parse JWT payload for logout audit: {}", parseEx.getMessage());
-                }
-            }
+
+        // 1) Access token dan olishga harakat qilish
+        logoutUserId = extractUserIdFromToken(accessToken);
+        logoutUsername = extractUsernameFromToken(accessToken);
+
+        // 2) Refresh token dan fallback (access token da username bo'lmasligi mumkin)
+        if (logoutUsername == null && refreshTokenCookie != null) {
+            logoutUsername = extractUsernameFromToken(refreshTokenCookie);
+        }
+        if (logoutUserId == null && refreshTokenCookie != null) {
+            logoutUserId = extractUserIdFromToken(refreshTokenCookie);
         }
 
         // Now blacklist tokens (after extracting user info)
@@ -447,6 +432,49 @@ public class WebAuthController {
         return ResponseEntity.status(401).body(Map.of("error", error, "message", message));
     }
 
+    /**
+     * JWT dan username olish — avval decode, keyin Base64 fallback (expired token uchun).
+     */
+    private String extractUsernameFromToken(String token) {
+        if (token == null) return null;
+        try {
+            Jwt jwt = tokenService.decode(token);
+            return jwt.getClaimAsString("username");
+        } catch (Exception e) {
+            return parseJwtPayloadClaim(token, "username");
+        }
+    }
+
+    /**
+     * JWT dan userId olish — avval decode, keyin Base64 fallback (expired token uchun).
+     */
+    private UUID extractUserIdFromToken(String token) {
+        if (token == null) return null;
+        try {
+            Jwt jwt = tokenService.decode(token);
+            return parseUserId(jwt.getSubject());
+        } catch (Exception e) {
+            String sub = parseJwtPayloadClaim(token, "sub");
+            return sub != null ? parseUserId(sub) : null;
+        }
+    }
+
+    /**
+     * JWT payload ni Base64 decode qilib claim olish (validation siz — expired/invalid token uchun).
+     */
+    private String parseJwtPayloadClaim(String token, String claim) {
+        try {
+            String[] parts = token.split("\\.");
+            if (parts.length == 3) {
+                String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                com.fasterxml.jackson.databind.JsonNode json =
+                        new com.fasterxml.jackson.databind.ObjectMapper().readTree(payload);
+                return json.has(claim) ? json.get(claim).asText() : null;
+            }
+        } catch (Exception ignored) { }
+        return null;
+    }
+
     private AuditContext buildAuditContext(HttpServletRequest request, UUID userId, String username) {
         AuditContext.AuditContextBuilder builder = AuditContext.builder()
                 .userId(userId)
@@ -454,7 +482,11 @@ public class WebAuthController {
                 .requestId(MDC.get("requestId"));
 
         if (request != null) {
-            builder.ip(clientIpResolver.resolve(request))
+            String resolvedIp = clientIpResolver.resolve(request);
+            log.info("Audit IP: resolved={}, remoteAddr={}, X-Forwarded-For={}, X-Real-IP={}",
+                    resolvedIp, request.getRemoteAddr(),
+                    request.getHeader("X-Forwarded-For"), request.getHeader("X-Real-IP"));
+            builder.ip(resolvedIp)
                    .userAgent(request.getHeader("User-Agent"))
                    .endpoint(request.getRequestURI());
         }

@@ -46,13 +46,16 @@ public class WebAuthTokenService {
 
         // Access token
         String accessJti = UUID.randomUUID().toString();
-        JwtClaimsSet accessClaims = JwtClaimsSet.builder()
+        JwtClaimsSet.Builder accessBuilder = JwtClaimsSet.builder()
                 .issuer("hemis")
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(ACCESS_TOKEN_TTL))
                 .subject(userId.toString())
-                .id(accessJti)
-                .build();
+                .id(accessJti);
+        if (username != null) {
+            accessBuilder.claim("username", username);
+        }
+        JwtClaimsSet accessClaims = accessBuilder.build();
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, accessClaims)).getTokenValue();
 
         // Refresh token
