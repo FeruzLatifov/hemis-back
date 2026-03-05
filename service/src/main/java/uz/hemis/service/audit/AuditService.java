@@ -1,6 +1,5 @@
 package uz.hemis.service.audit;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -19,12 +18,14 @@ import java.util.*;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditService {
 
-    @Qualifier("auditReadJdbcTemplate")
     private final JdbcTemplate jdbcTemplate;
+
+    public AuditService(@Qualifier("auditReadJdbcTemplate") JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     // =====================================================
     // Activity Logs

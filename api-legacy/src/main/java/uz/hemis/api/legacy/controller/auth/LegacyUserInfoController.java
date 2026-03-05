@@ -136,6 +136,7 @@ public class LegacyUserInfoController {
                     .language(user.getLanguage() != null ? user.getLanguage() : "uz")
                     .instanceName(userService.buildInstanceName(user, universityName))
                     .locale(user.getLocale() != null ? user.getLocale() : "uz")
+                    .university(universityCode)
                     .build();
 
             log.info("Returning user info for: {} (university: {})", user.getUsername(), universityName);
