@@ -212,16 +212,36 @@ public class WebAuthController {
     ) {
         log.info("Web logout request");
 
-        // Extract and decode token BEFORE blacklisting
+        // Extract user info from token BEFORE blacklisting
+        // JWT payload ni validation siz o'qish (expired token ham bo'lishi mumkin)
         String accessToken = extractBearerToken(authHeader, accessTokenCookie);
         UUID logoutUserId = null;
         String logoutUsername = null;
         if (accessToken != null) {
             try {
+                // Birinchi normal decode
                 Jwt jwt = tokenService.decode(accessToken);
                 logoutUserId = parseUserId(jwt.getSubject());
                 logoutUsername = jwt.getClaimAsString("username");
-            } catch (Exception ignored) { }
+            } catch (Exception e) {
+                // Token expired yoki invalid — payload ni qo'lda parse qilish
+                try {
+                    String[] parts = accessToken.split("\\.");
+                    if (parts.length == 3) {
+                        String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+                        com.fasterxml.jackson.databind.JsonNode json =
+                                new com.fasterxml.jackson.databind.ObjectMapper().readTree(payload);
+                        if (json.has("username")) {
+                            logoutUsername = json.get("username").asText();
+                        }
+                        if (json.has("sub")) {
+                            logoutUserId = parseUserId(json.get("sub").asText());
+                        }
+                    }
+                } catch (Exception parseEx) {
+                    log.debug("Could not parse JWT payload for logout audit: {}", parseEx.getMessage());
+                }
+            }
         }
 
         // Now blacklist tokens (after extracting user info)
