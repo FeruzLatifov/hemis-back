@@ -29,21 +29,23 @@ public class WebClientIpResolver {
      */
     public String resolve(HttpServletRequest request) {
         String remoteAddr = request.getRemoteAddr();
+        String xff = request.getHeader("X-Forwarded-For");
+        String xRealIP = request.getHeader("X-Real-IP");
+
+        log.debug("IP resolve: remoteAddr={}, X-Forwarded-For={}, X-Real-IP={}", remoteAddr, xff, xRealIP);
 
         if (isTrustedProxy(remoteAddr)) {
-            String xForwardedFor = request.getHeader("X-Forwarded-For");
-            if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-                String clientIp = xForwardedFor.split(",")[0].trim();
+            if (xff != null && !xff.isEmpty()) {
+                String clientIp = xff.split(",")[0].trim();
                 log.debug("Trusted proxy ({}), using X-Forwarded-For: {}", remoteAddr, clientIp);
                 return clientIp;
             }
 
-            String xRealIP = request.getHeader("X-Real-IP");
             if (xRealIP != null && !xRealIP.isEmpty()) {
                 log.debug("Trusted proxy ({}), using X-Real-IP: {}", remoteAddr, xRealIP);
                 return xRealIP;
             }
-        } else if (request.getHeader("X-Forwarded-For") != null) {
+        } else if (xff != null) {
             log.warn("Untrusted client ({}) sent X-Forwarded-For header - IGNORED", remoteAddr);
         }
 

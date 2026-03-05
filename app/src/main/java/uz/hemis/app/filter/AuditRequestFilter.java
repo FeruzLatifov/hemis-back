@@ -68,14 +68,23 @@ public class AuditRequestFilter extends OncePerRequestFilter {
     }
 
     private String getClientIp(HttpServletRequest request) {
+        // forward-headers-strategy: framework bo'lganda
+        // ForwardedHeaderFilter X-Forwarded-For ni consume qiladi
+        // va getRemoteAddr() ni haqiqiy client IP ga o'zgartiradi.
+        // Shuning uchun birinchi X-Forwarded-For tekshiriladi (agar filter ishlamasa),
+        // keyin getRemoteAddr() (filter ishlasa yoki proxy bo'lmasa).
         String xff = request.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) {
-            return xff.split(",")[0].trim();
+            String clientIp = xff.split(",")[0].trim();
+            log.debug("Client IP from X-Forwarded-For: {} (remoteAddr: {})", clientIp, request.getRemoteAddr());
+            return clientIp;
         }
         String realIp = request.getHeader("X-Real-IP");
         if (realIp != null && !realIp.isBlank()) {
+            log.debug("Client IP from X-Real-IP: {} (remoteAddr: {})", realIp, request.getRemoteAddr());
             return realIp;
         }
+        log.debug("Client IP from remoteAddr: {} (no proxy headers)", request.getRemoteAddr());
         return request.getRemoteAddr();
     }
 
