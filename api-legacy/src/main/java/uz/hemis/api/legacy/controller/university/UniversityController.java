@@ -18,7 +18,9 @@ import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.university.UniversityDto;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * University REST Controller - API Layer
@@ -78,15 +80,17 @@ public class UniversityController {
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
     @GetMapping
-    public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getAllUniversities(
-            @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
-    ) {
-        log.info("GET /app/rest/v2/universities - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+    public ResponseEntity<Map<String, Object>> getAllUniversities() {
+        log.info("GET /app/rest/v2/universities - barcha universitetlar (old-hemis format)");
 
-        Page<UniversityDto> universities = universityService.findAll(pageable);
-        PageResponse<UniversityDto> pageResponse = PageResponse.of(universities);
+        List<UniversityDto> universities = universityService.findAllList();
 
-        return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", true);
+        result.put("count", universities.size());
+        result.put("data", universities);
+
+        return ResponseEntity.ok(result);
     }
 
     /**

@@ -140,6 +140,12 @@ public class DoctoralStudentServiceController {
                 existing = doctoralStudentService.findEntityByPassportNumber(serial);
             }
 
+            // Fetch personal data for Uzbek citizens (old-hemis compatible)
+            Map<String, Object> personalData = null;
+            if ("11".equals(citizenship)) {
+                personalData = fetchPersonalData(pinfl, serial);
+            }
+
             if (existing.isPresent()) {
                 DoctoralStudent student = existing.get();
                 log.info("Found existing doctoral student: {}", student.getStudentIdNumber());
@@ -147,6 +153,7 @@ public class DoctoralStudentServiceController {
                 result.put("is_new", false);
                 result.put("unique_id", student.getStudentIdNumber());
                 result.put("student", doctoralStudentService.toStudentMap(student));
+                result.put("personal_data", personalData);
                 return ResponseEntity.ok(result);
             }
 
@@ -185,6 +192,7 @@ public class DoctoralStudentServiceController {
             result.put("is_new", true);
             result.put("unique_id", saved.getStudentIdNumber());
             result.put("student", doctoralStudentService.toStudentMap(saved));
+            result.put("personal_data", personalData);
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
@@ -207,6 +215,41 @@ public class DoctoralStudentServiceController {
         inputData.put("year", safeString(data.get("year")));
         inputData.put("education_type", safeString(data.get("education_type")));
         return inputData;
+    }
+
+    /**
+     * Fetch personal data from MVD via talaba.edu.uz (old-hemis compatible).
+     */
+    private Map<String, Object> fetchPersonalData(String pinfl, String serial) {
+        try {
+            String url = "https://talaba.edu.uz/api/my_edu_uz/student_mvd_hemis.php?TOKEN=12345&pinfl="
+                    + pinfl + "&p_seriya=" + (serial != null ? serial : "");
+
+            javax.net.ssl.HttpsURLConnection conn = (javax.net.ssl.HttpsURLConnection)
+                    java.net.URI.create(url).toURL().openConnection();
+            javax.net.ssl.SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
+            conn.setSSLSocketFactory(sc.getSocketFactory());
+            conn.setHostnameVerifier((h, s) -> true);
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(15000);
+            conn.connect();
+
+            String json = new String(conn.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            conn.disconnect();
+
+            if (json.replaceAll("[^a-zA-Z0-9]", "").equalsIgnoreCase("no") || json.isBlank()) {
+                return null;
+            }
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = mapper.readValue(json, Map.class);
+            data.put("success", true);
+            return data;
+        } catch (Exception e) {
+            log.warn("Failed to fetch personal data for PINFL {}: {}", pinfl, e.getMessage());
+            return null;
+        }
     }
 
     private String safeString(Object obj) {

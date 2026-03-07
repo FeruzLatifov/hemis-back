@@ -566,7 +566,7 @@ public class ClassifierLegacyService {
         }
 
         long count = ((Number) countResult.get("cnt")).longValue();
-        int version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).intValue() : 1;
+        long version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).longValue() : 0;
 
         String itemsSql = buildItemsSql(tableName, hasActive, hasDeleteTs);
         List<Map<String, Object>> items;
@@ -687,26 +687,19 @@ public class ClassifierLegacyService {
      * Get university classifier for hokimiyat endpoint
      */
     private Map<String, Object> getUniversityClassifierForHokimiyat() {
-        List<uz.hemis.domain.entity.University> universities = universityRepository.findAll();
+        // Version: SUM (old-hemis compatible)
+        String statsSql = "SELECT COUNT(*) as cnt, COALESCE(SUM(COALESCE(version, 1)), 0) as ver " +
+                           "FROM hemishe_e_university WHERE delete_ts IS NULL";
+        Map<String, Object> stats = jdbcTemplate.queryForMap(statsSql);
+        long count = ((Number) stats.get("cnt")).longValue();
+        long versionSum = ((Number) stats.get("ver")).longValue();
 
-        List<Map<String, Object>> items = new ArrayList<>();
-        int maxVersion = 1;
-        for (uz.hemis.domain.entity.University uni : universities) {
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("code", uni.getCode());
-            item.put("name", uni.getName());
-            item.put("active", uni.getActive());
-            item.put("version", uni.getVersion());
-            items.add(item);
-            if (uni.getVersion() != null && uni.getVersion() > maxVersion) {
-                maxVersion = uni.getVersion();
-            }
-        }
+        List<Map<String, Object>> items = buildUniversityItems();
 
         Map<String, Object> classifierData = new LinkedHashMap<>();
         classifierData.put("title", "Oliy ta'lim muassasalari ro'yxati");
-        classifierData.put("version", maxVersion);
-        classifierData.put("count", universities.size());
+        classifierData.put("version", versionSum);
+        classifierData.put("count", count);
         classifierData.put("items", items);
 
         Map<String, Object> wrapper = new LinkedHashMap<>();
@@ -730,20 +723,7 @@ public class ClassifierLegacyService {
 
             try {
                 if ("h_university".equals(apiKey)) {
-                    List<uz.hemis.domain.entity.University> universities = universityRepository.findAll();
-                    int maxVersion = universities.stream()
-                            .filter(u -> u.getVersion() != null)
-                            .mapToInt(uz.hemis.domain.entity.University::getVersion)
-                            .max().orElse(1);
-
-                    Map<String, Object> classifierInfo = new LinkedHashMap<>();
-                    classifierInfo.put("title", "Oliy ta'lim muassasalari ro'yxati");
-                    classifierInfo.put("version", maxVersion);
-                    classifierInfo.put("count", universities.size());
-
-                    Map<String, Object> wrapper = new LinkedHashMap<>();
-                    wrapper.put(apiKey, classifierInfo);
-                    classifiersList.add(wrapper);
+                    classifiersList.add(getUniversityClassifierInfoCompat());
                     continue;
                 }
 
@@ -812,20 +792,7 @@ public class ClassifierLegacyService {
 
             try {
                 if ("h_university".equals(apiKey)) {
-                    List<uz.hemis.domain.entity.University> universities = universityRepository.findAll();
-                    int maxVersion = universities.stream()
-                            .filter(u -> u.getVersion() != null)
-                            .mapToInt(uz.hemis.domain.entity.University::getVersion)
-                            .max().orElse(1);
-
-                    Map<String, Object> classifierInfo = new LinkedHashMap<>();
-                    classifierInfo.put("title", "Oliy ta'lim muassasalari ro'yxati");
-                    classifierInfo.put("version", maxVersion);
-                    classifierInfo.put("count", universities.size());
-
-                    Map<String, Object> wrapper = new LinkedHashMap<>();
-                    wrapper.put(apiKey, classifierInfo);
-                    classifiersList.add(wrapper);
+                    classifiersList.add(getUniversityClassifierInfoCompat());
                     continue;
                 }
 
@@ -864,7 +831,7 @@ public class ClassifierLegacyService {
         }
 
         long count = ((Number) countResult.get("cnt")).longValue();
-        int version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).intValue() : 1;
+        long version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).longValue() : 0;
 
         Map<String, Object> classifierInfo = new LinkedHashMap<>();
         classifierInfo.put("title", getClassifierTitle(apiKey));
@@ -930,7 +897,7 @@ public class ClassifierLegacyService {
         }
 
         long count = ((Number) countResult.get("cnt")).longValue();
-        int version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).intValue() : 1;
+        long version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).longValue() : 0;
 
         String itemsSql = buildItemsSql(tableName, hasActive, hasDeleteTs);
         List<Map<String, Object>> items;
@@ -983,7 +950,7 @@ public class ClassifierLegacyService {
         }
 
         long count = ((Number) countResult.get("cnt")).longValue();
-        int version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).intValue() : 1;
+        long version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).longValue() : 0;
 
         Map<String, Object> classifierInfo = new LinkedHashMap<>();
         classifierInfo.put("title", getClassifierTitle(apiName));
@@ -997,13 +964,19 @@ public class ClassifierLegacyService {
 
     /**
      * Get university classifier info (metadata only, for /info endpoint).
+     * Uses SUM(version) — matching old-hemis.
      */
     private Map<String, Object> getUniversityClassifierInfo() {
         try {
-            long count = universityRepository.count();
+            String statsSql = "SELECT COUNT(*) as cnt, COALESCE(SUM(COALESCE(version, 1)), 0) as ver " +
+                               "FROM hemishe_e_university WHERE delete_ts IS NULL";
+            Map<String, Object> stats = jdbcTemplate.queryForMap(statsSql);
+            long count = ((Number) stats.get("cnt")).longValue();
+            long versionSum = ((Number) stats.get("ver")).longValue();
+
             Map<String, Object> classifierInfo = new LinkedHashMap<>();
             classifierInfo.put("title", "Oliy ta'lim muassasalari ro'yxati");
-            classifierInfo.put("version", 1);
+            classifierInfo.put("version", versionSum);
             classifierInfo.put("count", count);
 
             Map<String, Object> wrapper = new LinkedHashMap<>();
@@ -1013,6 +986,26 @@ public class ClassifierLegacyService {
             log.debug("Error getting university classifier info: {}", e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * University classifier info — reusable for hokimiyatInfo/stipendInfo endpoints.
+     */
+    private Map<String, Object> getUniversityClassifierInfoCompat() {
+        String statsSql = "SELECT COUNT(*) as cnt, COALESCE(SUM(COALESCE(version, 1)), 0) as ver " +
+                           "FROM hemishe_e_university WHERE delete_ts IS NULL";
+        Map<String, Object> stats = jdbcTemplate.queryForMap(statsSql);
+        long count = ((Number) stats.get("cnt")).longValue();
+        long versionSum = ((Number) stats.get("ver")).longValue();
+
+        Map<String, Object> classifierInfo = new LinkedHashMap<>();
+        classifierInfo.put("title", "Oliy ta'lim muassasalari ro'yxati");
+        classifierInfo.put("version", versionSum);
+        classifierInfo.put("count", count);
+
+        Map<String, Object> wrapper = new LinkedHashMap<>();
+        wrapper.put("h_university", classifierInfo);
+        return wrapper;
     }
 
     private Map<String, Object> getClassifierInfo(String tableName) {
@@ -1030,7 +1023,7 @@ public class ClassifierLegacyService {
         }
 
         long count = ((Number) countResult.get("cnt")).longValue();
-        int version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).intValue() : 1;
+        long version = countResult.get("ver") != null ? ((Number) countResult.get("ver")).longValue() : 0;
 
         Map<String, Object> classifierInfo = new LinkedHashMap<>();
         classifierInfo.put("title", getClassifierTitle(classifierName));
@@ -1043,26 +1036,20 @@ public class ClassifierLegacyService {
     }
 
     private Map<String, Object> getUniversityClassifier() {
-        List<uz.hemis.domain.entity.University> universities = universityRepository.findAll();
+        // Version: SUM (old-hemis uses SUM(version), not MAX)
+        String statsSql = "SELECT COUNT(*) as cnt, COALESCE(SUM(COALESCE(version, 1)), 0) as ver " +
+                           "FROM hemishe_e_university WHERE delete_ts IS NULL";
+        Map<String, Object> stats = jdbcTemplate.queryForMap(statsSql);
+        long count = ((Number) stats.get("cnt")).longValue();
+        long versionSum = ((Number) stats.get("ver")).longValue();
 
-        List<Map<String, Object>> items = new ArrayList<>();
-        int maxVersion = 1;
-        for (uz.hemis.domain.entity.University uni : universities) {
-            Map<String, Object> item = new LinkedHashMap<>();
-            item.put("code", uni.getCode());
-            item.put("name", uni.getName());
-            item.put("active", uni.getActive());
-            item.put("version", uni.getVersion());
-            items.add(item);
-            if (uni.getVersion() != null && uni.getVersion() > maxVersion) {
-                maxVersion = uni.getVersion();
-            }
-        }
+        // Build items with all fields (matching old-hemis hUniversity-view)
+        List<Map<String, Object>> items = buildUniversityItems();
 
         Map<String, Object> classifierData = new LinkedHashMap<>();
-        classifierData.put("title", "Oliy ta'lim muassasalari");
-        classifierData.put("version", maxVersion);
-        classifierData.put("count", universities.size());
+        classifierData.put("title", "Oliy ta'lim muassasalari ro'yxati");
+        classifierData.put("version", versionSum);
+        classifierData.put("count", count);
         classifierData.put("items", items);
 
         Map<String, Object> wrapper = new LinkedHashMap<>();
@@ -1074,10 +1061,154 @@ public class ClassifierLegacyService {
         return result;
     }
 
+    /**
+     * Build university items list using JDBC — matching old-hemis hUniversity-view.
+     * Includes all local fields + nested objects (soato, universityType,
+     * universityContractCategory, versionType).
+     */
+    private List<Map<String, Object>> buildUniversityItems() {
+        String sql = "SELECT u.code, u.name, u.active, u.tin, u.address, u.cadastre, " +
+                "u.university_url, u.student_url, u.teacher_url, u.uzbmb_url, " +
+                "u.gpa_edit, u.accreditation_edit, u.add_student, " +
+                "u.add_transfer_student, u.add_foreign_student, " +
+                "u.add_academic_mobile_student, u.allow_grouping, " +
+                "u.allow_transfer_outside, u.one_id, u.grading_system, " +
+                "u.mail_address, u.bank_info, u.accreditation_info, " +
+                "u._parent_university, u._terrain, " +
+                "COALESCE(u.version, 1) as version, " +
+                "u.create_ts, u.created_by, u.update_ts, u.updated_by, " +
+                "u._soato, u._soato_region, u._ownership, " +
+                "u._university_type, u._university_version, " +
+                "u._university_activity_status, u._university_belongs_to, " +
+                "u._university_contract_category, " +
+                // Nested: soato
+                "s.code as soato_code, s.name as soato_name, " +
+                // Nested: universityType
+                "ut.code as utype_code, ut.name as utype_name, " +
+                // Nested: universityContractCategory
+                "ucc.code as ucc_code, ucc.name as ucc_name, " +
+                // Nested: versionType
+                "vt.code as vtype_code, vt.name as vtype_name " +
+                "FROM hemishe_e_university u " +
+                "LEFT JOIN hemishe_h_soato s ON u._soato = s.code " +
+                "LEFT JOIN hemishe_h_university_type ut ON u._university_type = ut.code " +
+                "LEFT JOIN hemishe_h_university_contract_category ucc ON u._university_contract_category = ucc.code " +
+                "LEFT JOIN hemishe_h_hemis_version_type vt ON u._university_version = vt.code " +
+                "WHERE u.delete_ts IS NULL " +
+                "ORDER BY u.code";
+
+        List<Map<String, Object>> rows;
+        try {
+            rows = jdbcTemplate.queryForList(sql);
+        } catch (Exception e) {
+            log.warn("University JDBC query failed (JOINs), falling back to simple query: {}", e.getMessage());
+            // Fallback: without JOINs (if reference tables don't exist)
+            rows = jdbcTemplate.queryForList(
+                    "SELECT *, COALESCE(version, 1) as version FROM hemishe_e_university WHERE delete_ts IS NULL ORDER BY code");
+        }
+
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("_entityName", "hemishe_EUniversity");
+            item.put("_instanceName", row.get("code") + "-" + row.get("name"));
+            item.put("id", row.get("code"));
+
+            // All local/scalar fields (camelCase)
+            item.put("code", row.get("code"));
+            item.put("name", row.get("name"));
+            item.put("active", row.get("active"));
+            item.put("tin", row.get("tin"));
+            item.put("address", row.get("address"));
+            item.put("cadastre", row.get("cadastre"));
+            item.put("universityUrl", row.get("university_url"));
+            item.put("studentUrl", row.get("student_url"));
+            item.put("teacherUrl", row.get("teacher_url"));
+            item.put("uzbmbUrl", row.get("uzbmb_url"));
+            item.put("gpaEdit", row.get("gpa_edit"));
+            item.put("accreditationEdit", row.get("accreditation_edit"));
+            item.put("addStudent", row.get("add_student"));
+            item.put("addTransferStudent", row.get("add_transfer_student"));
+            item.put("addForeignStudent", row.get("add_foreign_student"));
+            item.put("addAcademicMobileStudent", row.get("add_academic_mobile_student"));
+            item.put("allowGrouping", row.get("allow_grouping"));
+            item.put("allowTransferOutside", row.get("allow_transfer_outside"));
+            item.put("oneId", row.get("one_id"));
+            item.put("gradingSystem", row.get("grading_system"));
+            item.put("mailAddress", row.get("mail_address"));
+            item.put("bankInfo", row.get("bank_info"));
+            item.put("accreditationInfo", row.get("accreditation_info"));
+            item.put("version", row.get("version"));
+
+            // Audit fields
+            Object createTs = row.get("create_ts");
+            if (createTs instanceof java.sql.Timestamp ts) {
+                item.put("createTs", ts.toLocalDateTime().format(CUBA_DT));
+            }
+            item.put("createdBy", row.get("created_by"));
+            Object updateTs = row.get("update_ts");
+            if (updateTs instanceof java.sql.Timestamp ts) {
+                item.put("updateTs", ts.toLocalDateTime().format(CUBA_DT));
+            }
+            item.put("updatedBy", row.get("updated_by"));
+
+            // Nested: soato (old-hemis hUniversity-view property)
+            if (row.get("soato_code") != null) {
+                Map<String, Object> soato = new LinkedHashMap<>();
+                soato.put("_entityName", "hemishe_HSoato");
+                soato.put("_instanceName", row.get("soato_code") + "-" + row.get("soato_name"));
+                soato.put("id", row.get("soato_code"));
+                soato.put("code", row.get("soato_code"));
+                soato.put("name", row.get("soato_name"));
+                item.put("soato", soato);
+            }
+
+            // Nested: universityType
+            if (row.get("utype_code") != null) {
+                Map<String, Object> uType = new LinkedHashMap<>();
+                uType.put("_entityName", "hemishe_HUniversityType");
+                uType.put("_instanceName", row.get("utype_code") + "-" + row.get("utype_name"));
+                uType.put("id", row.get("utype_code"));
+                uType.put("code", row.get("utype_code"));
+                uType.put("name", row.get("utype_name"));
+                item.put("universityType", uType);
+            }
+
+            // Nested: universityContractCategory
+            if (row.get("ucc_code") != null) {
+                Map<String, Object> ucc = new LinkedHashMap<>();
+                ucc.put("_entityName", "hemishe_HUniversityContractCategory");
+                ucc.put("_instanceName", row.get("ucc_code") + "-" + row.get("ucc_name"));
+                ucc.put("id", row.get("ucc_code"));
+                ucc.put("code", row.get("ucc_code"));
+                ucc.put("name", row.get("ucc_name"));
+                item.put("universityContractCategory", ucc);
+            }
+
+            // Nested: versionType
+            if (row.get("vtype_code") != null) {
+                Map<String, Object> vType = new LinkedHashMap<>();
+                vType.put("_entityName", "hemishe_HHemisVersionType");
+                vType.put("_instanceName", row.get("vtype_code") + "-" + row.get("vtype_name"));
+                vType.put("id", row.get("vtype_code"));
+                vType.put("code", row.get("vtype_code"));
+                vType.put("name", row.get("vtype_name"));
+                item.put("versionType", vType);
+            }
+
+            // Remove null values (CUBA style)
+            item.values().removeIf(v -> v == null);
+            items.add(item);
+        }
+
+        return items;
+    }
+
     private String buildCountSql(String tableName, boolean hasVersion, boolean hasDeleteTs) {
         StringBuilder sql = new StringBuilder("SELECT COUNT(*) as cnt");
         if (hasVersion) {
-            sql.append(", COALESCE(MAX(version), 1) as ver");
+            // OLD-HEMIS uses SUM(version), NOT MAX(version)
+            sql.append(", COALESCE(SUM(COALESCE(version, 1)), 0) as ver");
         } else {
             sql.append(", 1 as ver");
         }

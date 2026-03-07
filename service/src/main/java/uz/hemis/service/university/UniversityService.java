@@ -94,6 +94,18 @@ public class UniversityService {
     }
 
     /**
+     * Find all universities (no pagination — old-hemis compatible)
+     *
+     * @return list of all university DTOs
+     */
+    public List<UniversityDto> findAllList() {
+        log.debug("Finding all universities (no pagination)");
+
+        List<University> universities = universityRepository.findAll();
+        return universityMapper.toDtoList(universities);
+    }
+
+    /**
      * Find all universities (paginated)
      *
      * @param pageable pagination parameters

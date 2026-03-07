@@ -1541,12 +1541,81 @@ public class StudentService {
     }
 
     /**
-     * Check scholarship eligibility (POST format - used by checkScholarship2 endpoint)
+     * OLD-HEMIS: StudentServiceBean.checkScholarship2(tin, docOn, students)
+     *
+     * <p>Uses stipend_check2() PostgreSQL function to verify scholarship eligibility.</p>
+     * <p>Request: {"tin": "...", "docOn": "2024-01-15", "students": [{"pinfl": "...", "sum": "500000"}, ...]}</p>
      */
+    @SuppressWarnings("unchecked")
     public Object checkScholarship(Map<String, Object> request) {
-        log.info("Checking scholarship eligibility: {}", request);
-        String studentId = (String) request.get("studentId");
-        return Map.of("success", true, "eligible", true, "studentId", String.valueOf(studentId));
+        log.info("Checking scholarship2 eligibility: {}", request);
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        String tin = request.get("tin") != null ? request.get("tin").toString() : null;
+        String docOnStr = request.get("docOn") != null ? request.get("docOn").toString() : null;
+        Object studentsObj = request.get("students");
+
+        if (tin == null || !DIGITS_ONLY.matcher(tin).matches()) {
+            result.put("success", false);
+            result.put("data", "Bad request");
+            return result;
+        }
+
+        List<Map<String, Object>> studentsList;
+        if (studentsObj instanceof List) {
+            studentsList = (List<Map<String, Object>>) studentsObj;
+        } else {
+            result.put("success", false);
+            result.put("data", "Bad request");
+            return result;
+        }
+
+        if (studentsList.isEmpty()) {
+            result.put("success", false);
+            result.put("data", "Bad request");
+            return result;
+        }
+
+        try {
+            // Parse docOn and get first day of month (old-hemis: docOn.withDayOfMonth(1))
+            java.time.LocalDate docOn = java.time.LocalDate.parse(docOnStr);
+            java.time.LocalDate first = docOn.withDayOfMonth(1);
+            String dt = first.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+            // Build PINFL and SUM arrays
+            StringBuilder pinflArray = new StringBuilder();
+            StringBuilder sumArray = new StringBuilder();
+            for (int i = 0; i < studentsList.size(); i++) {
+                Map<String, Object> s = studentsList.get(i);
+                String pinfl = s.get("pinfl") != null ? s.get("pinfl").toString() : "";
+                String sum = s.get("sum") != null ? s.get("sum").toString() : "0";
+
+                if (!DIGITS_ONLY.matcher(pinfl).matches()) {
+                    result.put("success", false);
+                    result.put("data", "Bad request");
+                    return result;
+                }
+                if (i > 0) { pinflArray.append(","); sumArray.append(","); }
+                pinflArray.append("'").append(pinfl).append("'");
+                sumArray.append(sum);
+            }
+
+            String sql = "SELECT t.pinfl, t.fullname, t.data as statusId FROM (" +
+                    "SELECT r.pinfl, stipend_check2('" + tin + "', r.pinfl, r.amount, '" + dt + "') as data, " +
+                    "get_student_fullname_by_pinfl(r.pinfl) as fullname FROM (" +
+                    "SELECT UNNEST(ARRAY[" + pinflArray + "]) as pinfl, " +
+                    "UNNEST(ARRAY[" + sumArray + "]) as amount) r) t " +
+                    "WHERE t.\"data\" <> 0";
+
+            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql);
+            result.put("success", true);
+            result.put("students", items);
+        } catch (Exception e) {
+            log.error("Error in checkScholarship2", e);
+            result.put("success", false);
+            result.put("data", e.getMessage());
+        }
+        return result;
     }
 
     /**

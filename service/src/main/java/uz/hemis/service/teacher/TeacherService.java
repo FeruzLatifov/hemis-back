@@ -2,10 +2,13 @@ package uz.hemis.service.teacher;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.EmployeeJobs;
 import uz.hemis.domain.entity.Teacher;
 import uz.hemis.domain.entity.User;
+import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
 import uz.hemis.domain.repository.UserRepository;
 
@@ -28,6 +31,8 @@ public class TeacherService {
 
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final EmployeeJobsRepository employeeJobsRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     /**
      * Generate or retrieve teacher unique ID
@@ -256,8 +261,85 @@ public class TeacherService {
         map.put("gender_code", teacher.getGender());
         map.put("citizenship_code", teacher.getCitizenship());
         map.put("employee_year", teacher.getEmployeeYear());
-        map.put("jobs", new ArrayList<>()); // Jobs would need separate query
+        map.put("jobs", loadJobsForTeacher(teacher.getId()));
         return map;
+    }
+
+    /**
+     * Load jobs for teacher with classifier names — old-hemis compatible.
+     */
+    private List<Map<String, Object>> loadJobsForTeacher(UUID teacherId) {
+        try {
+            String sql = """
+                SELECT ej._university, u.name as university_name, u.tin as university_tin,
+                       ej._department, d.name_uz as department_name,
+                       ej._employee_form, ef.name as employee_form_name,
+                       ej._employee_position, ep.name as employee_position_name,
+                       ej._employee_rate, er.name as employee_rate_name,
+                       ej._employee_type, et.name as employee_type_name,
+                       ej._employee_status, es.name as employee_status_name,
+                       ej.job_start_date, ej.job_end_date
+                FROM hemishe_e_employee_jobs ej
+                LEFT JOIN hemishe_e_university u ON u.code = ej._university AND u.delete_ts IS NULL
+                LEFT JOIN hemishe_e_university_department d ON d.code = ej._department AND d.delete_ts IS NULL
+                LEFT JOIN hemishe_h_employee_form ef ON ef.code = ej._employee_form AND ef.delete_ts IS NULL
+                LEFT JOIN hemishe_h_employee_position ep ON ep.code = ej._employee_position AND ep.delete_ts IS NULL
+                LEFT JOIN hemishe_h_employee_rate er ON er.code = ej._employee_rate AND er.delete_ts IS NULL
+                LEFT JOIN hemishe_h_employee_type et ON et.code = ej._employee_type AND et.delete_ts IS NULL
+                LEFT JOIN hemishe_h_employee_status es ON es.code = ej._employee_status AND es.delete_ts IS NULL
+                WHERE ej._employee = ? AND ej.delete_ts IS NULL
+                ORDER BY ej.create_ts DESC
+                """;
+
+            List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, teacherId);
+            List<Map<String, Object>> jobs = new ArrayList<>();
+
+            for (Map<String, Object> row : rows) {
+                Map<String, Object> jobMap = new LinkedHashMap<>();
+                jobMap.put("university_code", row.get("_university"));
+                jobMap.put("university_name", row.get("university_name"));
+                jobMap.put("university_tin", row.get("university_tin"));
+                jobMap.put("department_code", row.get("_department"));
+                jobMap.put("department_name", row.get("department_name"));
+
+                // Faculty lookup from department code (old-hemis logic)
+                String depCode = row.get("_department") != null ? row.get("_department").toString() : null;
+                String fCode = null;
+                String fName = null;
+                if (depCode != null) {
+                    try {
+                        List<Map<String, Object>> facRows = jdbcTemplate.queryForList(
+                            "SELECT code, name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
+                            depCode.length() > 4 ? depCode.substring(0, depCode.indexOf("-", 4) > 0 ? depCode.indexOf("-", 4) : depCode.length()) : depCode
+                        );
+                        if (!facRows.isEmpty()) {
+                            fCode = facRows.getFirst().get("code") != null ? facRows.getFirst().get("code").toString() : null;
+                            fName = facRows.getFirst().get("name_uz") != null ? facRows.getFirst().get("name_uz").toString() : null;
+                        }
+                    } catch (Exception ignored) {}
+                }
+                jobMap.put("faculty_code", fCode);
+                jobMap.put("faculty_name", fName);
+
+                jobMap.put("employee_form_code", row.get("_employee_form"));
+                jobMap.put("employee_form_name", row.get("employee_form_name"));
+                jobMap.put("employee_position_code", row.get("_employee_position"));
+                jobMap.put("employee_position_name", row.get("employee_position_name"));
+                jobMap.put("employee_rate_code", row.get("_employee_rate"));
+                jobMap.put("employee_rate_name", row.get("employee_rate_name"));
+                jobMap.put("employee_type_code", row.get("_employee_type"));
+                jobMap.put("employee_type_name", row.get("employee_type_name"));
+                jobMap.put("employee_status_code", row.get("_employee_status"));
+                jobMap.put("employee_status_name", row.get("employee_status_name"));
+                jobMap.put("job_start_date", row.get("job_start_date") != null ? row.get("job_start_date").toString() : null);
+                jobMap.put("job_end_date", row.get("job_end_date") != null ? row.get("job_end_date").toString() : null);
+                jobs.add(jobMap);
+            }
+            return jobs;
+        } catch (Exception e) {
+            log.warn("Failed to load jobs for teacher {}: {}", teacherId, e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     private String safeString(Object obj) {

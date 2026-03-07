@@ -58,26 +58,46 @@ public class TranslationServiceController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * OLD-HEMIS Compatible POST endpoint.
+     *
+     * <p>Accepts CUBA format: {"category": "...", "messages": ["msg1", "msg2"]}</p>
+     * <p>Auto-creates missing translations (old-hemis TranslationServiceBean.get(category, messages))</p>
+     */
     @PostMapping("/translate/get")
     @Operation(
         summary = "Tarjimalarni filtrlab olish",
-        description = "Filter parametrlari bilan tarjimalarni olish"
+        description = "Filter parametrlari bilan tarjimalarni olish. Topilmagan xabarlar avtomatik yaratiladi (old-hemis compatible)"
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli")
     })
+    @SuppressWarnings("unchecked")
     public ResponseEntity<Map<String, Object>> getTranslationsFiltered(
-        @RequestBody(description = "Filter parametrlari")
-        @org.springframework.web.bind.annotation.RequestBody(required = false) TranslationFilterRequest request
+        @org.springframework.web.bind.annotation.RequestBody(required = false) Map<String, Object> requestBody
     ) {
-        log.info("POST /services/translate/get - filter: {}", request);
+        log.info("POST /services/translate/get - request: {}", requestBody);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
 
-        List<Map<String, Object>> translations = translationService.loadTranslations(request);
-        response.put("translations", translations);
+        List<Map<String, Object>> translations;
 
+        // OLD-HEMIS format: {"category": "...", "messages": ["msg1", "msg2"]}
+        if (requestBody != null && requestBody.containsKey("messages")) {
+            String category = requestBody.get("category") != null ? requestBody.get("category").toString() : null;
+            List<String> messages = (List<String>) requestBody.get("messages");
+            translations = translationService.loadTranslationsWithAutoCreate(category, messages);
+        } else {
+            // Fallback: filter by category
+            TranslationFilterRequest filter = new TranslationFilterRequest();
+            if (requestBody != null && requestBody.containsKey("category")) {
+                filter.setCategory(requestBody.get("category").toString());
+            }
+            translations = translationService.loadTranslations(filter);
+        }
+
+        response.put("translations", translations);
         log.info("Filterdan keyin {} ta tarjima topildi", translations.size());
         return ResponseEntity.ok(response);
     }

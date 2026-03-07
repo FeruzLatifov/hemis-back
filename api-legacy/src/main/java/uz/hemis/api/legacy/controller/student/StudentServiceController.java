@@ -924,10 +924,12 @@ public class StudentServiceController {
         // OLD-HEMIS (CUBA): pinfls is a JSON array parameter like ["pinfl1","pinfl2"]
         String trimmed = pinfls.trim();
         if (!trimmed.startsWith("[")) {
+            // OLD-HEMIS compatible: always return 200 with error in body
             Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
             error.put("error", "Invalid parameter value");
             error.put("details", "Invalid parameter value for pinfls");
-            return ResponseEntity.status(400).body(error);
+            return ResponseEntity.ok(error);
         }
         // Parse JSON array
         String[] pinflArray;
@@ -935,10 +937,12 @@ public class StudentServiceController {
             pinflArray = new com.fasterxml.jackson.databind.ObjectMapper()
                     .readValue(trimmed, String[].class);
         } catch (Exception e) {
+            // OLD-HEMIS compatible: always return 200 with error in body
             Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
             error.put("error", "Invalid parameter value");
             error.put("details", "Invalid parameter value for pinfls");
-            return ResponseEntity.status(400).body(error);
+            return ResponseEntity.ok(error);
         }
         Map<String, Object> result = studentService.checkScholarshipNative(tin, pinflArray);
         return ResponseEntity.ok(result);

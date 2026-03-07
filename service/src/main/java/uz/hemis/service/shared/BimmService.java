@@ -118,7 +118,7 @@ public class BimmService extends AbstractGovernmentApiService {
         String token = getTokenOrEmpty();
         String url = apiBaseUrl + "/dtm/certificate-info?pinfl=" + pinfl;
 
-        return stringifyDataField(proxyExternalApiGet(url, token, "BimmService.certificate"));
+        return proxyExternalApiGet(url, token, "BimmService.certificate");
     }
 
     /**
@@ -139,10 +139,10 @@ public class BimmService extends AbstractGovernmentApiService {
         Map<String, String> body = new LinkedHashMap<>();
         body.put("pinfl", pinfl);
 
-        return stringifyDataField(proxyExternalApiPost(
+        return proxyExternalApiPost(
                 apiBaseUrl + "/sac/academic-degree-title/",
                 body, token, "BimmService.academicDegree"
-        ));
+        );
     }
 
     /**
@@ -188,10 +188,10 @@ public class BimmService extends AbstractGovernmentApiService {
         // Old-hemis sends raw JSON string body (not object)
         String body = String.format("{\n    \"message\": \"%s\",\n    \"phone_number\": \"%s\"\n}", message, phone);
 
-        return stringifyDataField(proxyExternalApiPost(
+        return proxyExternalApiPost(
                 apiBaseUrl + "/sms/user-pays",
                 body, token, "BimmService.smsUserPay"
-        ));
+        );
     }
 
     /**
@@ -212,32 +212,10 @@ public class BimmService extends AbstractGovernmentApiService {
         Map<String, String> body = new LinkedHashMap<>();
         body.put("tin", inn);
 
-        return stringifyDataField(proxyExternalApiPost(
+        return proxyExternalApiPost(
                 apiBaseUrl + "/legalentity/legalentity-bankrequisites/",
                 body, token, "BimmService.bankRequisites"
-        ));
+        );
     }
 
-    /**
-     * Convert "data" field from parsed JSON (List/Map) to JSON string.
-     *
-     * <p>Old-hemis uses Gson which re-serializes nested data differently.
-     * When BIMM API returns {"data": [...], "success": true}, old-hemis
-     * serializes the data field as a JSON string. This method replicates that.</p>
-     */
-    @SuppressWarnings("unchecked")
-    private Object stringifyDataField(Object response) {
-        if (response instanceof Map) {
-            Map<String, Object> map = (Map<String, Object>) response;
-            Object data = map.get("data");
-            if (data instanceof List || data instanceof Map) {
-                try {
-                    map.put("data", objectMapper.writeValueAsString(data));
-                } catch (Exception e) {
-                    log.debug("Failed to stringify data field: {}", e.getMessage());
-                }
-            }
-        }
-        return response;
-    }
 }
