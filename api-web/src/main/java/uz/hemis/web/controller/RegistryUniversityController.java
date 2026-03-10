@@ -164,6 +164,21 @@ public class RegistryUniversityController {
             @Parameter(description = "Allow transfer outside flag", example = "true")
             @RequestParam(required = false) String allowTransferOutside,
 
+            @Parameter(description = "OneID login flag", example = "true")
+            @RequestParam(required = false) String oneId,
+
+            @Parameter(description = "Grading system flag", example = "true")
+            @RequestParam(required = false) String gradingSystem,
+
+            @Parameter(description = "Add foreign student flag", example = "true")
+            @RequestParam(required = false) String addForeignStudent,
+
+            @Parameter(description = "Add transfer student flag", example = "true")
+            @RequestParam(required = false) String addTransferStudent,
+
+            @Parameter(description = "Add academic mobile student flag", example = "true")
+            @RequestParam(required = false) String addAcademicMobileStudent,
+
             @Parameter(hidden = true)
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC)
             Pageable pageable
@@ -173,7 +188,8 @@ public class RegistryUniversityController {
 
         Page<UniversityDto> universities = universityRegistryService.searchUniversities(
                 q, searchField, regionId, ownershipId, typeId, activityStatusId, belongsToId, contractCategoryId, versionTypeId,
-                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside, pageable
+                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
+                oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent, pageable
         );
 
         return ResponseEntity.ok(ResponseWrapper.success(universities));
@@ -268,14 +284,30 @@ public class RegistryUniversityController {
             @RequestParam(required = false) String allowGrouping,
 
             @Parameter(description = "Allow transfer outside flag")
-            @RequestParam(required = false) String allowTransferOutside
+            @RequestParam(required = false) String allowTransferOutside,
+
+            @Parameter(description = "OneID login flag")
+            @RequestParam(required = false) String oneId,
+
+            @Parameter(description = "Grading system flag")
+            @RequestParam(required = false) String gradingSystem,
+
+            @Parameter(description = "Add foreign student flag")
+            @RequestParam(required = false) String addForeignStudent,
+
+            @Parameter(description = "Add transfer student flag")
+            @RequestParam(required = false) String addTransferStudent,
+
+            @Parameter(description = "Add academic mobile student flag")
+            @RequestParam(required = false) String addAcademicMobileStudent
     ) {
         log.info("POST /api/v1/web/registry/universities/export - q={}, searchField={}, regionId={}, ownershipId={}, typeId={}",
                  q, searchField, regionId, ownershipId, typeId);
 
         List<UniversityDto> universities = universityRegistryService.exportUniversities(
                 q, searchField, regionId, ownershipId, typeId, activityStatusId, belongsToId, contractCategoryId, versionTypeId,
-                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside
+                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
+                oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent
         );
 
         byte[] csvBytes = generateCsvFile(universities);

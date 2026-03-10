@@ -1703,7 +1703,8 @@ public class StudentService {
             log.warn("Student is already active: {}", activeStudent.get().getCode());
             result.put("success", false);
             result.put("message", "Student is active!");
-            result.put("data", studentLegacyMapper.toLegacyMapForService(activeStudent.get()));
+            result.put("is_active", true);
+            result.put("student", studentLegacyMapper.toLegacyMapForService(activeStudent.get()));
             return result;
         }
 
@@ -1715,7 +1716,7 @@ public class StudentService {
             result.put("success", true);
             result.put("is_new", false);
             result.put("unique_id", student.getCode());
-            result.put("data", studentLegacyMapper.toLegacyMapForService(student));
+            result.put("student", studentLegacyMapper.toLegacyMapForService(student));
             return result;
         }
 
@@ -1744,7 +1745,7 @@ public class StudentService {
             result.put("is_new", true);
             result.put("unique_id", uniqueCode);
             result.put("university", universityCode);
-            result.put("data", studentLegacyMapper.toLegacyMapForService(saved));
+            result.put("student", studentLegacyMapper.toLegacyMapForService(saved));
             return result;
 
         } catch (Exception ex) {

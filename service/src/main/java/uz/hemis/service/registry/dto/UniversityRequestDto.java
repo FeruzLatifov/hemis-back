@@ -49,4 +49,9 @@ public class UniversityRequestDto {
     private Boolean addStudent;
     private Boolean allowGrouping;
     private Boolean allowTransferOutside;
+    private Boolean oneId;
+    private Boolean gradingSystem;
+    private Boolean addForeignStudent;
+    private Boolean addTransferStudent;
+    private Boolean addAcademicMobileStudent;
 }

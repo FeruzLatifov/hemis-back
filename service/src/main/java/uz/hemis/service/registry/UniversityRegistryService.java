@@ -57,7 +57,7 @@ public class UniversityRegistryService {
 
     @Cacheable(
             value = "universitiesSearch",
-            key = "#q + ':' + #searchField + ':' + #regionId + ':' + #ownershipId + ':' + #typeId + ':' + #activityStatusId + ':' + #belongsToId + ':' + #contractCategoryId + ':' + #versionTypeId + ':' + #districtId + ':' + #active + ':' + #gpaEdit + ':' + #accreditationEdit + ':' + #addStudent + ':' + #allowGrouping + ':' + #allowTransferOutside + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
+            key = "#q + ':' + #searchField + ':' + #regionId + ':' + #ownershipId + ':' + #typeId + ':' + #activityStatusId + ':' + #belongsToId + ':' + #contractCategoryId + ':' + #versionTypeId + ':' + #districtId + ':' + #active + ':' + #gpaEdit + ':' + #accreditationEdit + ':' + #addStudent + ':' + #allowGrouping + ':' + #allowTransferOutside + ':' + #oneId + ':' + #gradingSystem + ':' + #addForeignStudent + ':' + #addTransferStudent + ':' + #addAcademicMobileStudent + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
             unless = "#result == null || #pageable.pageNumber > 10"
     )
     public Page<UniversityDto> searchUniversities(
@@ -77,6 +77,11 @@ public class UniversityRegistryService {
             String addStudent,
             String allowGrouping,
             String allowTransferOutside,
+            String oneId,
+            String gradingSystem,
+            String addForeignStudent,
+            String addTransferStudent,
+            String addAcademicMobileStudent,
             Pageable pageable
     ) {
         log.debug("Searching universities: q={}, searchField={}, regionId={}, ownershipId={}, typeId={}",
@@ -84,7 +89,8 @@ public class UniversityRegistryService {
 
         Specification<University> spec = buildFilterSpecification(q, searchField, regionId, ownershipId, typeId,
                 activityStatusId, belongsToId, contractCategoryId, versionTypeId,
-                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside);
+                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
+                oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent);
         Page<University> universities = universityRepository.findAll(spec, pageable);
         return universities.map(universityMapper::toDto);
     }
@@ -151,14 +157,20 @@ public class UniversityRegistryService {
             String accreditationEdit,
             String addStudent,
             String allowGrouping,
-            String allowTransferOutside
+            String allowTransferOutside,
+            String oneId,
+            String gradingSystem,
+            String addForeignStudent,
+            String addTransferStudent,
+            String addAcademicMobileStudent
     ) {
         log.debug("Exporting universities: q={}, searchField={}, regionId={}, ownershipId={}, typeId={}",
                   q, searchField, regionId, ownershipId, typeId);
 
         Specification<University> spec = buildFilterSpecification(q, searchField, regionId, ownershipId, typeId,
                 activityStatusId, belongsToId, contractCategoryId, versionTypeId,
-                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside);
+                districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
+                oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent);
         List<University> universities = universityRepository.findAll(spec);
         return universityMapper.toDtoList(universities);
     }
@@ -265,7 +277,9 @@ public class UniversityRegistryService {
             String q, String searchField, String regionId, String ownershipId, String typeId,
             String activityStatusId, String belongsToId, String contractCategoryId, String versionTypeId,
             String districtId, String active, String gpaEdit, String accreditationEdit,
-            String addStudent, String allowGrouping, String allowTransferOutside
+            String addStudent, String allowGrouping, String allowTransferOutside,
+            String oneId, String gradingSystem, String addForeignStudent,
+            String addTransferStudent, String addAcademicMobileStudent
     ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -378,6 +392,21 @@ public class UniversityRegistryService {
             if (allowTransferOutside != null && !allowTransferOutside.isBlank()) {
                 predicates.add(cb.equal(root.get("allowTransferOutside"), Boolean.valueOf(allowTransferOutside)));
             }
+            if (oneId != null && !oneId.isBlank()) {
+                predicates.add(cb.equal(root.get("oneId"), Boolean.valueOf(oneId)));
+            }
+            if (gradingSystem != null && !gradingSystem.isBlank()) {
+                predicates.add(cb.equal(root.get("gradingSystem"), Boolean.valueOf(gradingSystem)));
+            }
+            if (addForeignStudent != null && !addForeignStudent.isBlank()) {
+                predicates.add(cb.equal(root.get("addForeignStudent"), Boolean.valueOf(addForeignStudent)));
+            }
+            if (addTransferStudent != null && !addTransferStudent.isBlank()) {
+                predicates.add(cb.equal(root.get("addTransferStudent"), Boolean.valueOf(addTransferStudent)));
+            }
+            if (addAcademicMobileStudent != null && !addAcademicMobileStudent.isBlank()) {
+                predicates.add(cb.equal(root.get("addAcademicMobileStudent"), Boolean.valueOf(addAcademicMobileStudent)));
+            }
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -487,5 +516,10 @@ public class UniversityRegistryService {
         entity.setAddStudent(request.getAddStudent());
         entity.setAllowGrouping(request.getAllowGrouping());
         entity.setAllowTransferOutside(request.getAllowTransferOutside());
+        entity.setOneId(request.getOneId());
+        entity.setGradingSystem(request.getGradingSystem());
+        entity.setAddForeignStudent(request.getAddForeignStudent());
+        entity.setAddTransferStudent(request.getAddTransferStudent());
+        entity.setAddAcademicMobileStudent(request.getAddAcademicMobileStudent());
     }
 }

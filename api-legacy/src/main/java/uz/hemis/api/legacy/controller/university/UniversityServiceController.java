@@ -64,7 +64,10 @@ public class UniversityServiceController {
             result.put("addStudent", uni.getAddStudent() != null ? uni.getAddStudent() : true);
             result.put("allowGrouping", uni.getAllowGrouping() != null ? uni.getAllowGrouping() : true);
             result.put("allowTransferOutside", uni.getAllowTransferOutside() != null ? uni.getAllowTransferOutside() : true);
-            result.put("oneId", true);
+            result.put("oneId", uni.getOneId() != null ? uni.getOneId() : true);
+            result.put("gradingSystem", uni.getGradingSystem() != null ? uni.getGradingSystem() : false);
+            result.put("addForeignStudent", uni.getAddForeignStudent() != null ? uni.getAddForeignStudent() : false);
+            result.put("addTransferStudent", uni.getAddTransferStudent() != null ? uni.getAddTransferStudent() : false);
             result.put("addAcademicMobileStudentField", uni.getAddAcademicMobileStudent() != null ? uni.getAddAcademicMobileStudent() : false);
 
             return ResponseEntity.ok(result);
@@ -162,6 +165,30 @@ public class UniversityServiceController {
         item.put("name", u.getName());
         item.put("gpaEdit", u.getGpaEdit() != null ? u.getGpaEdit() : false);
         item.put("addAcademicMobileStudent", u.getAddAcademicMobileStudent() != null ? u.getAddAcademicMobileStudent() : false);
+        item.put("addTransferStudent", u.getAddTransferStudent() != null ? u.getAddTransferStudent() : false);
+        item.put("addForeignStudent", u.getAddForeignStudent() != null ? u.getAddForeignStudent() : false);
+        item.put("gradingSystem", u.getGradingSystem() != null ? u.getGradingSystem() : false);
+
+        if (u.getCadastre() != null) item.put("cadastre", u.getCadastre());
+        if (u.getUniversityUrl() != null) item.put("universityUrl", u.getUniversityUrl());
+        if (u.getUzbmbUrl() != null) item.put("uzbmbUrl", u.getUzbmbUrl());
+        if (u.getMailAddress() != null) item.put("mailAddress", u.getMailAddress());
+        if (u.getBankInfo() != null) item.put("bankInfo", u.getBankInfo());
+        if (u.getAccreditationInfo() != null) item.put("accreditationInfo", u.getAccreditationInfo());
+
+        if (u.getParentUniversity() != null) {
+            // OLD-HEMIS: parentUniversity is a nested university entity with _minimal view
+            Map<String, Object> parent = new LinkedHashMap<>();
+            parent.put("_entityName", UNIVERSITY_ENTITY_NAME);
+            parent.put("id", u.getParentUniversity());
+            parent.put("code", u.getParentUniversity());
+            item.put("parentUniversity", parent);
+        }
+
+        if (u.getTerrain() != null) {
+            item.put("terrain", strip(nestedObjectLoader.loadClassifier(
+                "hemishe_h_terrain", "HTerrain", u.getTerrain())));
+        }
 
         if (u.getUniversityBelongsTo() != null) {
             item.put("belongsTo", strip(nestedObjectLoader.loadClassifier(

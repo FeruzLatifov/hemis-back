@@ -1088,12 +1088,15 @@ public class ClassifierLegacyService {
                 // Nested: universityContractCategory
                 "ucc.code as ucc_code, ucc.name as ucc_name, " +
                 // Nested: versionType
-                "vt.code as vtype_code, vt.name as vtype_name " +
+                "vt.code as vtype_code, vt.name as vtype_name, " +
+                // Nested: ownership
+                "ow.code as ow_code, ow.name as ow_name " +
                 "FROM hemishe_e_university u " +
                 "LEFT JOIN hemishe_h_soato s ON u._soato = s.code " +
                 "LEFT JOIN hemishe_h_university_type ut ON u._university_type = ut.code " +
                 "LEFT JOIN hemishe_h_university_contract_category ucc ON u._university_contract_category = ucc.code " +
                 "LEFT JOIN hemishe_h_hemis_version_type vt ON u._university_version = vt.code " +
+                "LEFT JOIN hemishe_h_ownership ow ON u._ownership = ow.code " +
                 "WHERE u.delete_ts IS NULL " +
                 "ORDER BY u.code";
 
@@ -1194,6 +1197,17 @@ public class ClassifierLegacyService {
                 vType.put("code", row.get("vtype_code"));
                 vType.put("name", row.get("vtype_name"));
                 item.put("versionType", vType);
+            }
+
+            // Nested: ownership (mulkchilik shakli)
+            if (row.get("ow_code") != null) {
+                Map<String, Object> ow = new LinkedHashMap<>();
+                ow.put("_entityName", "hemishe_HOwnership");
+                ow.put("_instanceName", row.get("ow_code") + "-" + row.get("ow_name"));
+                ow.put("id", row.get("ow_code"));
+                ow.put("code", row.get("ow_code"));
+                ow.put("name", row.get("ow_name"));
+                item.put("ownership", ow);
             }
 
             // Remove null values (CUBA style)
