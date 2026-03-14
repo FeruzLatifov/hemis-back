@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.JsonNull;
 import uz.hemis.domain.entity.*;
 import uz.hemis.domain.repository.*;
 
@@ -197,6 +198,10 @@ public class ScienceDoctorateEntityLegacyService {
         map.put("active", entity.getActive());
         putIfNotNull(map, "isChecked", entity.getIsChecked(), returnNulls);
         putIfNotNull(map, "filename", entity.getFilename(), returnNulls);
+        putIfNotNull(map, "uId", entity.getUId(), returnNulls);
+        putIfNotNull(map, "position", entity.getPosition(), returnNulls);
+        putIfNotNull(map, "isCheckedDate", entity.getIsCheckedDate(), returnNulls);
+        putIfNotNull(map, "translations", entity.getTranslations(), returnNulls);
         return map;
     }
 
@@ -403,6 +408,12 @@ public class ScienceDoctorateEntityLegacyService {
         putIfNotNull(map, "homeAddress", entity.getHomeAddress(), returnNulls);
         putIfNotNull(map, "acceptedDate", entity.getAcceptedDate(), returnNulls);
         putIfNotNull(map, "studentIdNumber", entity.getStudentIdNumber(), returnNulls);
+        putIfNotNull(map, "province", entity.getProvince(), returnNulls);
+        putIfNotNull(map, "district", entity.getDistrict(), returnNulls);
+        putIfNotNull(map, "level", entity.getLevel(), returnNulls);
+        putIfNotNull(map, "position", entity.getPosition(), returnNulls);
+        putIfNotNull(map, "uId", entity.getUId(), returnNulls);
+        putIfNotNull(map, "translations", entity.getTranslations(), returnNulls);
         map.put("active", entity.getActive());
         return map;
     }
@@ -735,7 +746,7 @@ public class ScienceDoctorateEntityLegacyService {
         if (value != null) {
             map.put(key, value);
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put(key, null);
+            map.put(key, JsonNull.INSTANCE);
         }
     }
 

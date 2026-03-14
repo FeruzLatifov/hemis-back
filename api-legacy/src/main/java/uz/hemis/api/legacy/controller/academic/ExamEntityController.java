@@ -31,14 +31,14 @@ public class ExamEntityController {
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Exam> entity = academicService.findExamById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EExam with id " + entityId + " not found"));
         return ResponseEntity.ok(academicService.toExamMap(entity.get(), returnNulls));
     }
 
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Exam> existingOpt = academicService.findExamById(entityId);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EExam with id " + entityId + " not found"));
         Exam saved = academicService.saveExam(existingOpt.get());
         return ResponseEntity.ok(academicService.toExamMap(saved, returnNulls));
     }
@@ -46,9 +46,9 @@ public class ExamEntityController {
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<Exam> entity = academicService.findExamById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).build();
         academicService.deleteExam(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -104,7 +104,7 @@ public class ExamEntityController {
             String[] parts = sort.split("-");
             sorting = Sort.by(parts.length > 1 && "desc".equalsIgnoreCase(parts[1]) ? Sort.Direction.DESC : Sort.Direction.ASC, parts[0]);
         }
-        Page<Exam> entityPage = academicService.findAllExam(PageRequest.of(offset / limit, limit, sorting));
+        Page<Exam> entityPage = academicService.findAllExam(PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting));
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> academicService.toExamMap(e, returnNulls)).collect(Collectors.toList()));
     }
 

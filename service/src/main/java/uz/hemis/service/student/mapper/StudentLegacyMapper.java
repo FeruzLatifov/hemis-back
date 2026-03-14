@@ -89,6 +89,16 @@ public class StudentLegacyMapper {
         dto.setStatusOrderNumber(student.getStatusOrderNumber());
         dto.setStatusOrderCategory(student.getStatusOrderCategory());
 
+        // Decree Info Fields
+        dto.setDecreeInfoName(student.getDecreeInfoName());
+        dto.setDecreeInfoNumber(student.getDecreeInfoNumber());
+        dto.setDecreeInfoDate(student.getDecreeInfoDate());
+
+        // Education Start / Graduation Fields
+        dto.setEduStartDate(student.getEduStartDate());
+        dto.setGraduationDate(student.getGraduationDate());
+        dto.setStudyDuration(student.getStudyDuration());
+
         // Points field
         dto.setPoints(student.getPoints());
         dto.setRoommateCount(student.getRoommateCount());
@@ -131,9 +141,13 @@ public class StudentLegacyMapper {
         dto.setTransferCountry(loadSimpleReference("hemishe_h_country", "hemishe_HCountry", student.getTransferCountry()));
         dto.setTransferType(loadSimpleReference("hemishe_h_transfer_type", "hemishe_HTransferType", student.getTransferType()));
         dto.setTransferUniversity(student.getTransferUniversity());
-        dto.setStudentType(loadSimpleReference("hemishe_h_student_type", "hemishe_HStudentType", "11")); // default = "Oddiy"
-        dto.setStatusEducationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getEducationYear()));
+        dto.setStudentType(loadSimpleReference("hemishe_h_student_type", "hemishe_HStudentType", student.getStudentType()));
+        dto.setStatusEducationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getStatusEducationYearCode()));
         dto.setCurrentEducationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getCurrentEducationYearCode()));
+        dto.setAcademicMobileType(loadSimpleReference("hemishe_h_academic_mobile_type", "hemishe_HAcademicMobileType", student.getAcademicMobileType()));
+        dto.setAcademicReason(loadSimpleReference("hemishe_h_academic_reason", "hemishe_HAcademicReason", student.getAcademicReason()));
+        dto.setGraduationYear(loadSimpleReference("hemishe_h_education_year", "hemishe_HEducationYear", student.getGraduationYear()));
+        dto.setSpecialityOrdinatura(loadSimpleSpecialityByUuid(student.getSpecialityOrdinatura(), "hemishe_h_speciality_ordinatura", "hemishe_HSpecialityOrdinatura"));
 
         // Complex nested objects
         dto.setUniversity(loadUniversity(student.getUniversity()));
@@ -146,8 +160,22 @@ public class StudentLegacyMapper {
         dto.setSpecialityMaster(loadSimpleSpecialityByUuid(student.getSpecialityMaster(), "hemishe_h_speciality_master", "hemishe_HSpecialityMaster"));
         dto.setSpecialityDoctoral(loadSimpleSpecialityByUuid(student.getSpecialityDoctoral(), "hemishe_h_speciality_doctoral", "hemishe_HSpecialityDoctoral"));
 
-        // Speciality info from bachelor speciality
-        if (student.getSpecialityBachelor() != null) {
+        // Speciality info: depends on educationType (OLD-HEMIS: EStudent.getSpecialityCode())
+        // 11=Bachelor → specialityBachelor, 12=Master → specialityMaster, 13=Doctoral → specialityDoctoral
+        String eduType = student.getEducationType();
+        if ("12".equals(eduType) && dto.getSpecialityMaster() != null) {
+            StudentLegacyDto.SimpleReferenceDto spec = dto.getSpecialityMaster();
+            dto.setSpecialityName(spec.getName());
+            dto.setSpecialityCode(spec.getCode());
+            dto.setCommonSpecialityName(spec.getName());
+            dto.setCommonSpecialityCode(spec.getCode());
+        } else if ("13".equals(eduType) && dto.getSpecialityDoctoral() != null) {
+            StudentLegacyDto.SimpleReferenceDto spec = dto.getSpecialityDoctoral();
+            dto.setSpecialityName(spec.getName());
+            dto.setSpecialityCode(spec.getCode());
+            dto.setCommonSpecialityName(spec.getName());
+            dto.setCommonSpecialityCode(spec.getCode());
+        } else if (student.getSpecialityBachelor() != null) {
             StudentLegacyDto.SpecialityReferenceDto spec = dto.getSpecialityBachelor();
             if (spec != null) {
                 dto.setSpecialityName(spec.getName());
@@ -346,7 +374,7 @@ public class StudentLegacyMapper {
         }
 
         try {
-            String sql = "SELECT code, name_uz, version FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL";
+            String sql = "SELECT code, name_uz, university_code, version FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             StudentLegacyDto.FacultyReferenceDto faculty = new StudentLegacyDto.FacultyReferenceDto();
@@ -356,6 +384,12 @@ public class StudentLegacyMapper {
             faculty.setNameUz(nameUz);
             faculty.setInstanceName(nameUz != null ? nameUz : code);
             faculty.setVersion(getInteger(row, "version"));
+
+            // OLD-HEMIS compatibility: faculty nested university object
+            String universityCode = (String) row.get("university_code");
+            if (universityCode != null && !universityCode.isBlank()) {
+                faculty.setUniversity(loadUniversity(universityCode));
+            }
 
             return faculty;
         } catch (Exception e) {

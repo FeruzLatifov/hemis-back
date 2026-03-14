@@ -84,6 +84,11 @@ public class MethodicalPublicationTypeEntityController {
             .map(scienceService::toMethodicalPublicationTypeListMap)
             .collect(Collectors.toList());
 
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entities.size()))
+                .body(result);
+        }
         return ResponseEntity.ok(result);
     }
 

@@ -85,7 +85,10 @@ public class ProjectMetaEntityController {
         Optional<ProjectMeta> entity = scienceService.findProjectMetaById(entityId);
         if (entity.isEmpty()) {
             log.warn("GET /entities/hemishe_EProjectMeta/{} - topilmadi", entityId);
-            return ResponseEntity.notFound().build();
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         return ResponseEntity.ok(scienceService.toProjectMetaMap(entity.get(), returnNulls));
@@ -230,9 +233,15 @@ public class ProjectMetaEntityController {
         // Agar limit null bo'lsa, barcha yozuvlarni qaytarish
         if (limit == null) {
             List<ProjectMeta> allEntities = scienceService.findAllProjectMeta();
-            return ResponseEntity.ok(allEntities.stream()
+            List<Map<String, Object>> result = allEntities.stream()
                 .map(e -> scienceService.toProjectMetaMap(e, returnNulls))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+            if (Boolean.TRUE.equals(returnCount)) {
+                return ResponseEntity.ok()
+                    .header("X-Total-Count", String.valueOf(allEntities.size()))
+                    .body(result);
+            }
+            return ResponseEntity.ok(result);
         }
 
         Sort sorting = Sort.unsorted();
@@ -244,13 +253,21 @@ public class ProjectMetaEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
         Page<ProjectMeta> entityPage = scienceService.findAllProjectMeta(pageRequest);
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
+        List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> scienceService.toProjectMetaMap(e, returnNulls))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     // =====================================================

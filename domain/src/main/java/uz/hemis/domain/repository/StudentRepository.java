@@ -308,24 +308,25 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
      * Find active student by PINFL
      * Used for duplicate detection when generating student ID
      *
-     * OLD-HEMIS logic: Student is "active" if NOT expelled/graduated
-     * - studentStatus NOT IN ('16') where '16' = Bitirgan (graduated)
-     * - Also checks that student is not soft-deleted (deleteTs IS NULL implied by JPA)
+     * OLD-HEMIS logic (StudentServiceBean.activeStudent):
+     * Student is "active" if status IN ('10', '11', '13', '15')
      *
-     * Status codes:
+     * Status codes (from hemishe_h_student_status_type):
      *   - '10' = Boshqa (Other) - ACTIVE
-     *   - '11' = O'qimoqda (Active) - ACTIVE
-     *   - '12' = Ta'tilda (On leave) - ACTIVE
-     *   - '13' = Akademik ta'til - ACTIVE
-     *   - '14' = Harbiy xizmat - ACTIVE
-     *   - '15' = Tibbiy ta'til - ACTIVE
-     *   - '16' = Bitirgan (Graduated) - NOT ACTIVE
+     *   - '11' = O'qimoqda (Studying) - ACTIVE
+     *   - '12' = Chetlashgan (Expelled) - NOT ACTIVE (can re-enroll)
+     *   - '13' = Akademik ta'til (Academic leave) - ACTIVE
+     *   - '14' = Bitirgan (Graduated) - NOT ACTIVE
+     *   - '15' = Kursdan qolgan (Failed course) - ACTIVE
+     *   - '16' = Akademik mobil - NOT ACTIVE
+     *   - '17' = Bekor qilingan (Cancelled) - NOT ACTIVE
+     *   - '18' = Qarzdor bitiruvchi (Debtor graduate) - NOT ACTIVE
      *
      * @param pinfl PINFL raqami
      * @return aktiv talabalar ro'yxati (PINFL noyob emas — dublikat bo'lishi mumkin)
      */
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
-           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15') " +
+           "AND s.studentStatus IN ('10', '11', '13', '15') " +
            "ORDER BY s.createTs DESC")
     List<Student> findActiveByPinfl(@Param("pinfl") String pinfl);
 
@@ -342,7 +343,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
      */
     @Query("SELECT s FROM Student s WHERE s.pinfl = :pinfl " +
            "AND s.isDuplicate = :isDuplicate " +
-           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15') " +
+           "AND s.studentStatus IN ('10', '11', '13', '15') " +
            "ORDER BY s.createTs DESC")
     List<Student> findActiveByPinflAndDuplicate(
             @Param("pinfl") String pinfl,
@@ -351,13 +352,14 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
     /**
      * Find active student by serial number (for foreign citizens)
      *
-     * OLD-HEMIS logic: Student is "active" if NOT graduated ('16')
+     * OLD-HEMIS logic (StudentServiceBean.activeStudent):
+     * Student is "active" if status IN ('10', '11', '13', '15')
      *
      * @param serialNumber passport serial number
      * @return aktiv talaba yoki empty
      */
     @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber " +
-           "AND s.studentStatus IN ('10', '11', '12', '13', '14', '15') " +
+           "AND s.studentStatus IN ('10', '11', '13', '15') " +
            "ORDER BY s.createTs DESC")
     List<Student> findActiveBySerialNumber(@Param("serialNumber") String serialNumber);
 
@@ -376,6 +378,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
            "AND s.educationType = :educationType " +
            "AND s.educationYear = :educationYear " +
            "AND s.studentStatus <> '12' " +
+           "AND s.isDuplicate = false " +
            "ORDER BY s.createTs DESC")
     List<Student> findExistingStudent(
             @Param("pinfl") String pinfl,
@@ -396,6 +399,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
            "AND s.educationType = :educationType " +
            "AND s.educationYear = :educationYear " +
            "AND s.studentStatus <> '12' " +
+           "AND s.isDuplicate = false " +
            "ORDER BY s.createTs DESC")
     List<Student> findExistingForeignStudent(
             @Param("serialNumber") String serialNumber,

@@ -958,21 +958,19 @@ public class StudentService {
             }
         }
 
-        try {
-            // Build ARRAY literal for UNNEST
-            StringBuilder arrayLiteral = new StringBuilder();
-            for (int i = 0; i < pinfls.length; i++) {
-                if (i > 0) arrayLiteral.append(",");
-                arrayLiteral.append("'").append(pinfls[i]).append("'");
-            }
+        try (java.sql.Connection conn = jdbcTemplate.getDataSource().getConnection()) {
+            // Build parameterized ARRAY for UNNEST
+            String[] pinflParams = new String[pinfls.length];
+            System.arraycopy(pinfls, 0, pinflParams, 0, pinfls.length);
+            java.sql.Array pinflArray = conn.createArrayOf("text", pinflParams);
 
             String sql = "SELECT t.pinfl, t.fullname FROM (" +
-                    "SELECT r.pinfl, stipend_check('" + tin + "', r.pinfl) as data, " +
+                    "SELECT r.pinfl, stipend_check(?, r.pinfl) as data, " +
                     "get_student_fullname_by_pinfl(r.pinfl) as fullname " +
-                    "FROM (SELECT UNNEST(ARRAY[" + arrayLiteral + "]) as pinfl) r" +
+                    "FROM (SELECT UNNEST(?) as pinfl) r" +
                     ") t WHERE t.\"data\" = false";
 
-            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql);
+            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql, tin, pinflArray);
             result.put("success", true);
             result.put("data", items);
         } catch (Exception e) {
@@ -1390,18 +1388,42 @@ public class StudentService {
         if (data.containsKey("expelReason"))         student.setExpelReason(extractCode(data.get("expelReason")));
         if (data.containsKey("livingStatus"))        student.setLivingStatus(extractCode(data.get("livingStatus")));
         if (data.containsKey("roommateType"))        student.setRoommateType(extractCode(data.get("roommateType")));
-        if (data.containsKey("statusEducationYear")) student.setCurrentEducationYearCode(extractCode(data.get("statusEducationYear")));
+        if (data.containsKey("statusEducationYear")) student.setStatusEducationYearCode(extractCode(data.get("statusEducationYear")));
+        if (data.containsKey("currentEducationYear")) student.setCurrentEducationYearCode(extractCode(data.get("currentEducationYear")));
+        if (data.containsKey("studentType"))         student.setStudentType(extractCode(data.get("studentType")));
+        if (data.containsKey("academicMobileType"))  student.setAcademicMobileType(extractCode(data.get("academicMobileType")));
+        if (data.containsKey("academicReason"))      student.setAcademicReason(extractCode(data.get("academicReason")));
+        if (data.containsKey("terrain"))             student.setTerrain(extractCode(data.get("terrain")));
+        if (data.containsKey("currentTerrain"))      student.setCurrentTerrainCode(extractCode(data.get("currentTerrain")));
+        if (data.containsKey("admissionType"))       student.setAdmissionType(extractCode(data.get("admissionType")));
+        if (data.containsKey("transferCountry"))     student.setTransferCountry(extractCode(data.get("transferCountry")));
+        if (data.containsKey("transferType"))        student.setTransferType(extractCode(data.get("transferType")));
+        if (data.containsKey("povertyLevel"))        student.setPovertyLevel(extractCode(data.get("povertyLevel")));
+        if (data.containsKey("grantType"))           student.setGrantType(extractCode(data.get("grantType")));
+        if (data.containsKey("stipendRate"))         student.setStipendRate(extractCode(data.get("stipendRate")));
+        if (data.containsKey("doctoralStudentType")) student.setDoctoralStudentType(extractCode(data.get("doctoralStudentType")));
+        if (data.containsKey("graduationYear"))      student.setGraduationYear(extractCode(data.get("graduationYear")));
+
+        // Direct string fields (missing from original)
+        if (data.containsKey("decreeInfoName"))      student.setDecreeInfoName(safeString(data.get("decreeInfoName")));
+        if (data.containsKey("decreeInfoNumber"))    student.setDecreeInfoNumber(safeString(data.get("decreeInfoNumber")));
+        if (data.containsKey("transferUniversity"))  student.setTransferUniversity(safeString(data.get("transferUniversity")));
+        if (data.containsKey("studyDuration"))       student.setStudyDuration(safeString(data.get("studyDuration")));
 
         // Nested {id: "UUID"} fields
         if (data.containsKey("specialityBachelor"))   student.setSpecialityBachelor(extractUuid(data.get("specialityBachelor")));
         if (data.containsKey("specialityMaster"))     student.setSpecialityMaster(extractUuid(data.get("specialityMaster")));
-        if (data.containsKey("specialityOrdinatura")) student.setSpecialityDoctoral(extractUuid(data.get("specialityOrdinatura")));
+        if (data.containsKey("specialityOrdinatura")) student.setSpecialityOrdinatura(extractUuid(data.get("specialityOrdinatura")));
+        if (data.containsKey("specialityDoctoral"))   student.setSpecialityDoctoral(extractUuid(data.get("specialityDoctoral")));
 
         // Date fields (format: Y-m-d)
         if (data.containsKey("birthday"))          student.setBirthday(parseDate(data.get("birthday")));
         if (data.containsKey("passportGivenDate")) student.setPassportGivenDate(parseDate(data.get("passportGivenDate")));
         if (data.containsKey("enrollOrderDate"))   student.setEnrollOrderDate(parseDate(data.get("enrollOrderDate")));
         if (data.containsKey("statusOrderDate"))   student.setStatusOrderDate(parseDate(data.get("statusOrderDate")));
+        if (data.containsKey("decreeInfoDate"))    student.setDecreeInfoDate(parseDate(data.get("decreeInfoDate")));
+        if (data.containsKey("eduStartDate"))      student.setEduStartDate(parseDate(data.get("eduStartDate")));
+        if (data.containsKey("graduationDate"))    student.setGraduationDate(parseDate(data.get("graduationDate")));
 
         // Integer fields
         if (data.containsKey("roommateCount")) {
@@ -1507,19 +1529,25 @@ public class StudentService {
             log.info("Found student: {} with status: {}", student.getCode(), statusCode);
 
             // Determine status code based on studentStatus
+            // OLD-HEMIS compatible status mapping (hemishe_h_student_status_type):
+            //   '10' = Boshqa, '11' = O'qimoqda, '13' = Akademik ta'til, '15' = Kursdan qolgan → ACTIVE
+            //   '12' = Chetlashgan → NOT ACTIVE (can re-enroll)
+            //   '14' = Bitirgan → GRADUATED
+            //   '16' = Akademik mobil, '17' = Bekor qilingan, '18' = Qarzdor bitiruvchi → NOT ACTIVE
             String code;
             String message;
 
-            if ("16".equals(statusCode)) {
-                // Graduated
+            if ("14".equals(statusCode)) {
+                // Bitirgan (Graduated)
                 code = "graduated";
                 message = "Student is graduated!";
-            } else if ("12".equals(statusCode)) {
-                // Expelled/removed - can re-enroll
+            } else if ("12".equals(statusCode) || "16".equals(statusCode) ||
+                       "17".equals(statusCode) || "18".equals(statusCode)) {
+                // Chetlashgan / Akademik mobil / Bekor qilingan / Qarzdor bitiruvchi — can re-enroll
                 code = "not_active";
-                message = "Student is expelled. You can create it again!";
+                message = "Student is not active. You can create it again!";
             } else {
-                // Active statuses: 10, 11, 13, 14, 15
+                // Active statuses: 10, 11, 13, 15
                 code = "active";
                 message = "Student is active! You can not create it again!";
             }
@@ -1582,9 +1610,9 @@ public class StudentService {
             java.time.LocalDate first = docOn.withDayOfMonth(1);
             String dt = first.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
-            // Build PINFL and SUM arrays
-            StringBuilder pinflArray = new StringBuilder();
-            StringBuilder sumArray = new StringBuilder();
+            // Build parameterized PINFL and SUM arrays
+            String[] pinflParams = new String[studentsList.size()];
+            java.math.BigDecimal[] sumParams = new java.math.BigDecimal[studentsList.size()];
             for (int i = 0; i < studentsList.size(); i++) {
                 Map<String, Object> s = studentsList.get(i);
                 String pinfl = s.get("pinfl") != null ? s.get("pinfl").toString() : "";
@@ -1595,21 +1623,25 @@ public class StudentService {
                     result.put("data", "Bad request");
                     return result;
                 }
-                if (i > 0) { pinflArray.append(","); sumArray.append(","); }
-                pinflArray.append("'").append(pinfl).append("'");
-                sumArray.append(sum);
+                pinflParams[i] = pinfl;
+                sumParams[i] = new java.math.BigDecimal(sum);
             }
 
-            String sql = "SELECT t.pinfl, t.fullname, t.data as statusId FROM (" +
-                    "SELECT r.pinfl, stipend_check2('" + tin + "', r.pinfl, r.amount, '" + dt + "') as data, " +
-                    "get_student_fullname_by_pinfl(r.pinfl) as fullname FROM (" +
-                    "SELECT UNNEST(ARRAY[" + pinflArray + "]) as pinfl, " +
-                    "UNNEST(ARRAY[" + sumArray + "]) as amount) r) t " +
-                    "WHERE t.\"data\" <> 0";
+            try (java.sql.Connection conn = jdbcTemplate.getDataSource().getConnection()) {
+                java.sql.Array pinflArray = conn.createArrayOf("text", pinflParams);
+                java.sql.Array sumArray = conn.createArrayOf("numeric", sumParams);
 
-            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql);
-            result.put("success", true);
-            result.put("students", items);
+                String sql = "SELECT t.pinfl, t.fullname, t.data as statusId FROM (" +
+                        "SELECT r.pinfl, stipend_check2(?, r.pinfl, r.amount, ?::date) as data, " +
+                        "get_student_fullname_by_pinfl(r.pinfl) as fullname FROM (" +
+                        "SELECT UNNEST(?) as pinfl, " +
+                        "UNNEST(?) as amount) r) t " +
+                        "WHERE t.\"data\" <> 0";
+
+                List<Map<String, Object>> items = jdbcTemplate.queryForList(sql, tin, dt, pinflArray, sumArray);
+                result.put("success", true);
+                result.put("students", items);
+            }
         } catch (Exception e) {
             log.error("Error in checkScholarship2", e);
             result.put("success", false);
@@ -1740,6 +1772,15 @@ public class StudentService {
 
             Student saved = studentRepository.save(newStudent);
             log.info("New student created with code: {}", uniqueCode);
+
+            // OLD-HEMIS: isDuplicate=TRUE larni FALSE ga qaytarish
+            // "2-OTMga ruxsat berilganlarni ruxsatini bekor qilish"
+            if (data.getPinfl() != null && !data.getPinfl().isEmpty()) {
+                int updatedCount = studentRepository.markPreviousMastersAsDuplicates(data.getPinfl());
+                if (updatedCount > 0) {
+                    log.info("Reset {} isDuplicate=TRUE record(s) to FALSE for PINFL: {}", updatedCount, data.getPinfl());
+                }
+            }
 
             result.put("success", true);
             result.put("is_new", true);

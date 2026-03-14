@@ -31,14 +31,14 @@ public class CurriculumEntityController {
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Curriculum> entity = academicService.findCurriculumById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ECurriculum with id " + entityId + " not found"));
         return ResponseEntity.ok(academicService.toCurriculumMap(entity.get(), returnNulls));
     }
 
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Curriculum> existingOpt = academicService.findCurriculumById(entityId);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ECurriculum with id " + entityId + " not found"));
         Curriculum saved = academicService.saveCurriculum(existingOpt.get());
         return ResponseEntity.ok(academicService.toCurriculumMap(saved, returnNulls));
     }
@@ -46,9 +46,9 @@ public class CurriculumEntityController {
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<Curriculum> entity = academicService.findCurriculumById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).build();
         academicService.deleteCurriculum(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -104,7 +104,7 @@ public class CurriculumEntityController {
             String[] parts = sort.split("-");
             sorting = Sort.by(parts.length > 1 && "desc".equalsIgnoreCase(parts[1]) ? Sort.Direction.DESC : Sort.Direction.ASC, parts[0]);
         }
-        Page<Curriculum> entityPage = academicService.findAllCurriculum(PageRequest.of(offset / limit, limit, sorting));
+        Page<Curriculum> entityPage = academicService.findAllCurriculum(PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting));
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> academicService.toCurriculumMap(e, returnNulls)).collect(Collectors.toList()));
     }
 

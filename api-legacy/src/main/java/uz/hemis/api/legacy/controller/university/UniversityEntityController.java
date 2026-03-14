@@ -179,13 +179,17 @@ public class UniversityEntityController {
         }
 
         List<University> entities;
+        long totalElements;
         if (limit == null) {
             entities = universityService.findAllUniversity(sorting);
+            totalElements = entities.size();
         } else {
             int effectiveOffset = offset != null ? offset : 0;
             int page = effectiveOffset / limit;
             PageRequest pageRequest = PageRequest.of(page, limit, sorting);
-            entities = universityService.findAllUniversity(pageRequest).getContent();
+            var entityPage = universityService.findAllUniversity(pageRequest);
+            entities = entityPage.getContent();
+            totalElements = entityPage.getTotalElements();
         }
 
         List<Map<String, Object>> result = entities.stream()
@@ -193,6 +197,12 @@ public class UniversityEntityController {
             .collect(Collectors.toList());
 
         log.info("Jami {} ta OTM topildi", result.size());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(totalElements))
+                .body(result);
+        }
         return ResponseEntity.ok(result);
     }
 
@@ -207,7 +217,7 @@ public class UniversityEntityController {
 
         String code = universityService.extractUniversityCode(body);
         if (code == null || code.isEmpty() || "null".equals(code)) {
-            code = String.valueOf(System.currentTimeMillis() % 100000);
+            code = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 8);
             log.info("POST - code auto-generated: {}", code);
         }
 
@@ -218,9 +228,18 @@ public class UniversityEntityController {
             log.info("POST - mavjud OTM yangilanmoqda: {}", code);
             entity = existingOpt.get();
         } else {
-            log.info("POST - yangi OTM yaratilmoqda: {}", code);
-            entity = new University();
-            entity.setCode(code);
+            // Check for soft-deleted record to restore (OLD-HEMIS compatibility)
+            Optional<University> deletedOpt = universityService.findUniversityByIdIncludingDeleted(code);
+            if (deletedOpt.isPresent()) {
+                log.info("POST - o'chirilgan OTM tiklanmoqda: {}", code);
+                entity = deletedOpt.get();
+                entity.setDeleteTs(null);
+                entity.setDeletedBy(null);
+            } else {
+                log.info("POST - yangi OTM yaratilmoqda: {}", code);
+                entity = new University();
+                entity.setCode(code);
+            }
         }
 
         universityService.updateUniversityFromMap(entity, body);

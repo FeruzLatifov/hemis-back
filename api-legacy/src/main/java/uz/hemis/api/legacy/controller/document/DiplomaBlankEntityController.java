@@ -35,14 +35,14 @@ public class DiplomaBlankEntityController {
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> entity = documentService.findDiplomaBlankById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EDiplomaBlank with id " + entityId + " not found"));
         return ResponseEntity.ok(documentService.toDiplomaBlankMap(entity.get(), returnNulls));
     }
 
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> existingOpt = documentService.findDiplomaBlankById(entityId);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EDiplomaBlank with id " + entityId + " not found"));
         DiplomaBlank entity = existingOpt.get();
         documentService.updateDiplomaBlankFromMap(entity, body);
         DiplomaBlank saved = documentService.saveDiplomaBlank(entity);
@@ -52,9 +52,9 @@ public class DiplomaBlankEntityController {
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<DiplomaBlank> entity = documentService.findDiplomaBlankById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).build();
         documentService.deleteDiplomaBlank(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -116,7 +116,7 @@ public class DiplomaBlankEntityController {
             sorting = Sort.by(parts.length > 1 && "desc".equalsIgnoreCase(parts[1]) ? Sort.Direction.DESC : Sort.Direction.ASC, parts[0]);
         }
 
-        return ResponseEntity.ok(documentService.findAllDiplomaBlank(PageRequest.of(offset / limit, limit, sorting))
+        return ResponseEntity.ok(documentService.findAllDiplomaBlank(PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting))
             .getContent().stream()
             .map(e -> documentService.toDiplomaBlankMap(e, returnNulls))
             .collect(Collectors.toList()));

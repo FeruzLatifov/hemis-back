@@ -50,7 +50,7 @@ public class EducationMaterialsEntityController {
 
         Optional<EducationMaterials> entity = academicService.findEducationMaterialsById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_REducationMaterials with id " + entityId + " not found"));
         }
 
         return ResponseEntity.ok(academicService.toEducationMaterialsMap(entity.get(), returnNulls, view));
@@ -90,7 +90,7 @@ public class EducationMaterialsEntityController {
         }
 
         academicService.deleteEducationMaterials(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -166,13 +166,21 @@ public class EducationMaterialsEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
         Page<EducationMaterials> entityPage = academicService.findAllEducationMaterials(pageRequest);
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
+        List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> academicService.toEducationMaterialsMap(e, returnNulls, view))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping

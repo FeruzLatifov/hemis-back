@@ -407,6 +407,87 @@ public class StudentDto implements Serializable {
     @JsonProperty("transferType")
     private String transferType;
 
+    // Student Type / Education Fields
+    @JsonProperty("studentType")
+    private String studentType;
+
+    @JsonProperty("academicMobileType")
+    private String academicMobileType;
+
+    @JsonProperty("academicReason")
+    private String academicReason;
+
+    @JsonProperty("terrain")
+    private String terrain;
+
+    @JsonProperty("currentTerrain")
+    private String currentTerrain;
+
+    @JsonProperty("graduationYear")
+    private String graduationYear;
+
+    @JsonProperty("statusEducationYear")
+    private String statusEducationYear;
+
+    // Decree Info Fields
+    @JsonProperty("decreeInfoName")
+    private String decreeInfoName;
+
+    @JsonProperty("decreeInfoNumber")
+    private String decreeInfoNumber;
+
+    @JsonProperty("decreeInfoDate")
+    private LocalDate decreeInfoDate;
+
+    // Education Start / Graduation Fields
+    @JsonProperty("eduStartDate")
+    private LocalDate eduStartDate;
+
+    @JsonProperty("graduationDate")
+    private LocalDate graduationDate;
+
+    @JsonProperty("studyDuration")
+    private String studyDuration;
+
+    // Speciality Ordinatura (UUID)
+    @JsonProperty("specialityOrdinatura")
+    private UUID specialityOrdinatura;
+
+    // =====================================================
+    // Classifier Reference Fields (OLD-HEMIS backward compatibility)
+    // These are stored as codes in the database, exposed as strings
+    // =====================================================
+
+    @JsonProperty("_grant_type")
+    private String grantType;
+
+    @JsonProperty("_roommate_type")
+    private String roommateType;
+
+    @JsonProperty("_living_status")
+    private String livingStatus;
+
+    @JsonProperty("_poverty_level")
+    private String povertyLevel;
+
+    @JsonProperty("_expel_reason")
+    private String expelReason;
+
+    @JsonProperty("_doctoral_student_type")
+    private String doctoralStudentType;
+
+    @JsonProperty("_accomodation")
+    private String accomodation;
+
+    @JsonProperty("_stipend_rate")
+    private String stipendRate;
+
+    @JsonProperty("_speciality_bachelor")
+    private UUID specialityBachelor;
+
+    @JsonProperty("_speciality_master")
+    private UUID specialityMaster;
+
     /**
      * Roommate count
      * JSON field: "roommateCount"

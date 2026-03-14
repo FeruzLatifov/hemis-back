@@ -47,7 +47,7 @@ public class SpecialityServiceController {
                 "LEFT JOIN hemishe_e_university u ON s._university = u.code " +
                 "LEFT JOIN hemishe_e_faculty f ON s._faculty = f.code AND f._university = s._university AND f.delete_ts IS NULL " +
                 "LEFT JOIN hemishe_h_education_form ef ON s._education_type = ef.code AND ef.delete_ts IS NULL " +
-                "WHERE s._university = ?";
+                "WHERE s._university = ? AND s.delete_ts IS NULL";
 
         List<Object> params = new ArrayList<>();
         params.add(university);

@@ -64,7 +64,7 @@ public class PublicationMethodicalEntityController {
 
         Optional<PublicationMethodical> entity = scienceService.findPublicationMethodicalById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EPublicationMethodical with id " + entityId + " not found"));
         }
 
         return ResponseEntity.ok(scienceService.toPublicationMethodicalMap(entity.get(), returnNulls));
@@ -175,13 +175,21 @@ public class PublicationMethodicalEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
         Page<PublicationMethodical> entityPage = scienceService.findAllPublicationMethodical(pageRequest);
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
+        List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> scienceService.toPublicationMethodicalMap(e, returnNulls))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping

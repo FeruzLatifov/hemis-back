@@ -32,7 +32,7 @@ public class CourseEntityController {
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
             @RequestParam(required = false) Boolean returnNulls) {
         Optional<Course> entity = academicService.findCourseById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ECourse with id " + entityId + " not found"));
         return ResponseEntity.ok(academicService.toCourseMap(entity.get(), returnNulls));
     }
 
@@ -40,7 +40,7 @@ public class CourseEntityController {
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
             @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Course> existingOpt = academicService.findCourseById(entityId);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ECourse with id " + entityId + " not found"));
         Course saved = academicService.saveCourse(existingOpt.get());
         return ResponseEntity.ok(academicService.toCourseMap(saved, returnNulls));
     }
@@ -48,9 +48,9 @@ public class CourseEntityController {
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<Course> entity = academicService.findCourseById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).build();
         academicService.deleteCourse(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -108,7 +108,7 @@ public class CourseEntityController {
             String[] parts = sort.split("-");
             sorting = Sort.by(parts.length > 1 && "desc".equalsIgnoreCase(parts[1]) ? Sort.Direction.DESC : Sort.Direction.ASC, parts[0]);
         }
-        Page<Course> entityPage = academicService.findAllCourse(PageRequest.of(offset / limit, limit, sorting));
+        Page<Course> entityPage = academicService.findAllCourse(PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting));
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> academicService.toCourseMap(e, returnNulls)).collect(Collectors.toList()));
     }
 

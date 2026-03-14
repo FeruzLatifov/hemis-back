@@ -190,9 +190,16 @@ public class AcademicEducationalWorkEntityController {
         PageRequest pageRequest = PageRequest.of(page, limit, sorting);
         Page<AcademicEducationalWork> entityPage = academicService.findAllAcademicEducationalWork(pageRequest);
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
+        List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> academicService.toAcademicEducationalWorkMap(e, returnNulls))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping

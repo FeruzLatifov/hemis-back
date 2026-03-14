@@ -224,8 +224,9 @@ public class ProjectExecutorEntityController {
                 sorting = Sort.by(direction, field);
             }
 
-            int page = offset / limit;
-            PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+            int safeLimit = Math.max(limit, 1);
+            int page = offset / safeLimit;
+            PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
             Page<ProjectExecutor> entityPage = scienceService.findAllProjectExecutor(pageRequest);
 
             List<Map<String, Object>> result = entityPage.getContent().stream()

@@ -236,7 +236,7 @@ public class GradeEntityController {
             );
         }
 
-        PageRequest pageRequest = PageRequest.of(offset / limit, limit, sorting);
+        PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting);
         Page<AcademicScoreDto> page = academicScoreService.findAll(pageRequest);
 
         List<Map<String, Object>> cubaMaps = adapter.toMapList(

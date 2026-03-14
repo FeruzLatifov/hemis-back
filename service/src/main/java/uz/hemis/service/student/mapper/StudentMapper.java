@@ -86,17 +86,9 @@ public interface StudentMapper {
     @Mapping(target = "version", ignore = true)        // Managed by JPA
     @Mapping(target = "birth_date", ignore = true)     // Not in DTO
     @Mapping(target = "currentEducationYearCode", ignore = true)
-    @Mapping(target = "accomodation", ignore = true)
-    @Mapping(target = "livingStatus", ignore = true)
-    @Mapping(target = "roommateType", ignore = true)
-    @Mapping(target = "stipendRate", ignore = true)
-    @Mapping(target = "expelReason", ignore = true)
-    @Mapping(target = "doctoralStudentType", ignore = true)
-    @Mapping(target = "specialityBachelor", ignore = true)
-    @Mapping(target = "specialityMaster", ignore = true)
-    @Mapping(target = "specialityDoctoral", ignore = true)
-    @Mapping(target = "povertyLevel", ignore = true)
-    @Mapping(target = "grantType", ignore = true)
+    @Mapping(target = "specialityDoctoral", ignore = true)  // UUID - not in DTO
+    @Mapping(source = "currentTerrain", target = "currentTerrainCode")
+    @Mapping(source = "statusEducationYear", target = "statusEducationYearCode")
     Student toEntity(StudentDto dto);
 
     /**
@@ -130,17 +122,9 @@ public interface StudentMapper {
     @Mapping(target = "version", ignore = true)        // Managed by JPA
     @Mapping(target = "birth_date", ignore = true)
     @Mapping(target = "currentEducationYearCode", ignore = true)
-    @Mapping(target = "accomodation", ignore = true)
-    @Mapping(target = "livingStatus", ignore = true)
-    @Mapping(target = "roommateType", ignore = true)
-    @Mapping(target = "stipendRate", ignore = true)
-    @Mapping(target = "expelReason", ignore = true)
-    @Mapping(target = "doctoralStudentType", ignore = true)
-    @Mapping(target = "specialityBachelor", ignore = true)
-    @Mapping(target = "specialityMaster", ignore = true)
     @Mapping(target = "specialityDoctoral", ignore = true)
-    @Mapping(target = "povertyLevel", ignore = true)
-    @Mapping(target = "grantType", ignore = true)
+    @Mapping(source = "currentTerrain", target = "currentTerrainCode")
+    @Mapping(source = "statusEducationYear", target = "statusEducationYearCode")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateEntityFromDto(StudentDto dto, @MappingTarget Student student);
 
@@ -166,17 +150,9 @@ public interface StudentMapper {
     @Mapping(target = "version", ignore = true)
     @Mapping(target = "birth_date", ignore = true)
     @Mapping(target = "currentEducationYearCode", ignore = true)
-    @Mapping(target = "accomodation", ignore = true)
-    @Mapping(target = "livingStatus", ignore = true)
-    @Mapping(target = "roommateType", ignore = true)
-    @Mapping(target = "stipendRate", ignore = true)
-    @Mapping(target = "expelReason", ignore = true)
-    @Mapping(target = "doctoralStudentType", ignore = true)
-    @Mapping(target = "specialityBachelor", ignore = true)
-    @Mapping(target = "specialityMaster", ignore = true)
     @Mapping(target = "specialityDoctoral", ignore = true)
-    @Mapping(target = "povertyLevel", ignore = true)
-    @Mapping(target = "grantType", ignore = true)
+    @Mapping(source = "currentTerrain", target = "currentTerrainCode")
+    @Mapping(source = "statusEducationYear", target = "statusEducationYearCode")
     @BeanMapping(
             nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
             nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS

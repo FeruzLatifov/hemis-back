@@ -87,6 +87,16 @@ public class StudentLegacyDto {
     private String statusOrderNumber;
     private String statusOrderCategory;
 
+    // Decree Info Fields
+    private String decreeInfoName;
+    private String decreeInfoNumber;
+    private LocalDate decreeInfoDate;
+
+    // Education Start / Graduation Fields
+    private LocalDate eduStartDate;
+    private LocalDate graduationDate;
+    private String studyDuration;
+
     // Points field for verification system
     private String points;
 

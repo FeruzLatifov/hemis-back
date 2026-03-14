@@ -31,14 +31,14 @@ public class ScheduleEntityController {
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Schedule> entity = academicService.findScheduleById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ESchedule with id " + entityId + " not found"));
         return ResponseEntity.ok(academicService.toScheduleMap(entity.get(), returnNulls));
     }
 
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Schedule> existingOpt = academicService.findScheduleById(entityId);
-        if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
+        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ESchedule with id " + entityId + " not found"));
         Schedule saved = academicService.saveSchedule(existingOpt.get());
         return ResponseEntity.ok(academicService.toScheduleMap(saved, returnNulls));
     }
@@ -46,9 +46,9 @@ public class ScheduleEntityController {
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<Schedule> entity = academicService.findScheduleById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (entity.isEmpty()) return ResponseEntity.status(404).build();
         academicService.deleteSchedule(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -104,7 +104,7 @@ public class ScheduleEntityController {
             String[] parts = sort.split("-");
             sorting = Sort.by(parts.length > 1 && "desc".equalsIgnoreCase(parts[1]) ? Sort.Direction.DESC : Sort.Direction.ASC, parts[0]);
         }
-        Page<Schedule> entityPage = academicService.findAllSchedule(PageRequest.of(offset / limit, limit, sorting));
+        Page<Schedule> entityPage = academicService.findAllSchedule(PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting));
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> academicService.toScheduleMap(e, returnNulls)).collect(Collectors.toList()));
     }
 

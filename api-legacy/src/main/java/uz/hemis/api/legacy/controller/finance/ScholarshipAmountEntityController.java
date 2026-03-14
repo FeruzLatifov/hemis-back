@@ -131,7 +131,13 @@ public class ScholarshipAmountEntityController {
         int page = offset / Math.max(limit, 1);
         PageRequest pageRequest = PageRequest.of(page, limit, sorting);
         Page<ScholarshipAmount> entityPage = financeService.findAllScholarshipAmount(pageRequest);
-        return ResponseEntity.ok(entityPage.getContent().stream().map(e -> financeService.toScholarshipAmountMap(e, returnNulls)).collect(Collectors.toList()));
+        List<Map<String, Object>> result = entityPage.getContent().stream().map(e -> financeService.toScholarshipAmountMap(e, returnNulls)).collect(Collectors.toList());
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping

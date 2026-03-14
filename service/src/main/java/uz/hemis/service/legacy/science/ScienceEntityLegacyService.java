@@ -290,6 +290,7 @@ public class ScienceEntityLegacyService {
         putIfNotNull(map, "sourceName", entity.getSourceName(), returnNulls);
         putIfNotNull(map, "position", entity.getPosition(), returnNulls);
         putIfNotNull(map, "isCheckedDate", entity.getIsCheckedDate(), returnNulls);
+        putIfNotNull(map, "translations", entity.getTranslations(), returnNulls);
 
         putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
         putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);

@@ -44,7 +44,7 @@ public class FacultyEntityController {
         log.debug("GET faculty by id: {}", entityId);
         Optional<Faculty> entity = universityRefService.findFacultyById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EFaculty with id " + entityId + " not found"));
         }
         return ResponseEntity.ok(universityRefService.toFacultyMap(entity.get(), returnNulls));
     }
@@ -77,7 +77,7 @@ public class FacultyEntityController {
             return ResponseEntity.notFound().build();
         }
         universityRefService.deleteFaculty(entity.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -150,13 +150,21 @@ public class FacultyEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
         Page<Faculty> entityPage = universityRefService.findAllFaculty(pageRequest);
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
+        List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> universityRefService.toFacultyMap(e, returnNulls))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping

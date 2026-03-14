@@ -113,8 +113,15 @@ public class AcademicMethodologicPublicationsEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
         PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit, buildSort(sort));
-        return ResponseEntity.ok(academicService.findAllAcademicMethodologicPublications(pageRequest).getContent().stream()
-            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls)).collect(Collectors.toList()));
+        var entityPage = academicService.findAllAcademicMethodologicPublications(pageRequest);
+        List<Map<String, Object>> result = entityPage.getContent().stream()
+            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls)).collect(Collectors.toList());
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping

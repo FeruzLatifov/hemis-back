@@ -19,6 +19,7 @@ import uz.hemis.api.legacy.adapter.LegacyEntityAdapter;
 import uz.hemis.common.dto.student.StudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.Student;
+import uz.hemis.service.legacy.UserLegacyService;
 import uz.hemis.service.student.StudentService;
 import uz.hemis.service.student.mapper.StudentLegacyMapper;
 
@@ -69,6 +70,7 @@ public class StudentEntityController {
     private final StudentService studentService;
     private final LegacyEntityAdapter adapter;
     private final StudentLegacyMapper studentLegacyMapper;
+    private final UserLegacyService userLegacyService;
 
     private static final String ENTITY_NAME = "hemishe_EStudent";
     private static final String VIEW_LOCAL = "_local";
@@ -145,11 +147,8 @@ public class StudentEntityController {
             // Pass view parameter to filter fields (_local excludes underscore-prefixed fields)
             Map<String, Object> cubaMap = adapter.toMap(dto, ENTITY_NAME, returnNulls, view);
 
-            // OLD-HEMIS compatibility: Remove fields that NEW-hemis has but OLD-hemis doesn't return
-            // Note: transferUniversity IS returned by OLD-HEMIS, so we keep it
-            cubaMap.remove("admissionType");
-            cubaMap.remove("transferCountry");
-            cubaMap.remove("transferType");
+            // OLD-HEMIS compatibility: these fields ARE returned by OLD-HEMIS
+            // admissionType, transferCountry, transferType — all preserved for backward compatibility
 
             // OLD-HEMIS compatibility: add fields that exist in CUBA entity but not in DTO
             if (Boolean.TRUE.equals(returnNulls)) {
@@ -563,9 +562,9 @@ public class StudentEntityController {
         log.debug("DELETE student id: {} (SOFT DELETE via service)", entityId);
 
         try {
-            // Service layer - soft delete (no university check - OLD-HEMIS compatible)
-            // Using null for userUniversityCode to skip authorization check
-            studentService.softDelete(entityId, null);
+            // University isolation: extract user's university from JWT
+            String userUniversityCode = getUniversityCodeFromContext();
+            studentService.softDelete(entityId, userUniversityCode);
 
             // OLD-HEMIS COMPATIBLE: Return 200 OK with empty body
             return ResponseEntity.ok().build();
@@ -631,8 +630,10 @@ public class StudentEntityController {
             }
         }
 
-        // Service layer with pagination
-        PageRequest pageRequest = PageRequest.of(offset / limit, limit, sorting);
+        // Service layer with pagination (guard against limit=0)
+        int safeLimit = (limit != null && limit > 0) ? limit : 20;
+        int safeOffset = (offset != null && offset >= 0) ? offset : 0;
+        PageRequest pageRequest = PageRequest.of(safeOffset / safeLimit, safeLimit, sorting);
         List<Map<String, Object>> cubaMaps;
         long totalElements;
 
@@ -798,6 +799,27 @@ public class StudentEntityController {
             map.putIfAbsent("nameEn", jsonNull);
             map.putIfAbsent("active", map.get("active") != null ? map.get("active") : true);
         }
+    }
+
+    /**
+     * Extract current user's university code from JWT token
+     */
+    private String getUniversityCodeFromContext() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken jwtAuth) {
+            org.springframework.security.oauth2.jwt.Jwt jwt = jwtAuth.getToken();
+            String userId = jwt.getSubject();
+            if (userId != null) {
+                try {
+                    UUID userUuid = UUID.fromString(userId);
+                    return userLegacyService.findUniversityCodeById(userUuid).orElse(null);
+                } catch (IllegalArgumentException e) {
+                    log.error("Invalid UUID in JWT subject: {}", userId);
+                }
+            }
+        }
+        return null;
     }
 
 }

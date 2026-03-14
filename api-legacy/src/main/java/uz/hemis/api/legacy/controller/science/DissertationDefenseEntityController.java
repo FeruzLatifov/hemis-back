@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.adapter.JsonNull;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
 import uz.hemis.service.legacy.science.ScienceDoctorateEntityLegacyService;
@@ -301,8 +302,9 @@ public class DissertationDefenseEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
         Page<DissertationDefense> entityPage = scienceService.findAllDissertationDefense(pageRequest);
 
         List<Map<String, Object>> result = entityPage.getContent().stream()
@@ -431,7 +433,7 @@ public class DissertationDefenseEntityController {
         if (entity.getDefenseDate() != null) {
             map.put("defenseDate", entity.getDefenseDate().format(DATE_FORMAT));
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("defenseDate", null);
+            map.put("defenseDate", JsonNull.INSTANCE);
         }
 
         // doctorateStudent - to'liq nested object (faqat view=eDissertationDefense-view da)
@@ -440,7 +442,7 @@ public class DissertationDefenseEntityController {
             if (entity.getDoctorateStudent() != null) {
                 map.put("doctorateStudent", buildDoctoralStudentMap(entity.getDoctorateStudent()));
             } else if (Boolean.TRUE.equals(returnNulls)) {
-                map.put("doctorateStudent", null);
+                map.put("doctorateStudent", JsonNull.INSTANCE);
             }
         }
 
@@ -448,7 +450,7 @@ public class DissertationDefenseEntityController {
         if (entity.getApprovedDate() != null) {
             map.put("approvedDate", entity.getApprovedDate().format(DATE_FORMAT));
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("approvedDate", null);
+            map.put("approvedDate", JsonNull.INSTANCE);
         }
 
         putIfNotNull(map, "diplomaNumber", entity.getDiplomaNumber(), returnNulls);
@@ -459,7 +461,7 @@ public class DissertationDefenseEntityController {
             if (entity.getSpeciality() != null) {
                 map.put("speciality", getSpecialityDoctoralMap(entity.getSpeciality()));
             } else if (Boolean.TRUE.equals(returnNulls)) {
-                map.put("speciality", null);
+                map.put("speciality", JsonNull.INSTANCE);
             }
         }
 
@@ -473,7 +475,7 @@ public class DissertationDefenseEntityController {
         if (entity.getDiplomaGivenDate() != null) {
             map.put("diplomaGivenDate", entity.getDiplomaGivenDate().format(DATE_FORMAT));
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("diplomaGivenDate", null);
+            map.put("diplomaGivenDate", JsonNull.INSTANCE);
         }
 
         // Optional fields (not in OLD-HEMIS eDissertationDefense-view response)
@@ -631,7 +633,7 @@ public class DissertationDefenseEntityController {
         if (value != null) {
             map.put(key, value);
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put(key, null);
+            map.put(key, JsonNull.INSTANCE);
         }
     }
 

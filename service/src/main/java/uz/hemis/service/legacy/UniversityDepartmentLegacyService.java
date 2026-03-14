@@ -69,6 +69,59 @@ public class UniversityDepartmentLegacyService {
         return departmentRepository.saveAndFlush(entity);
     }
 
+    /**
+     * Create or restore a soft-deleted department — ALL in single transaction.
+     *
+     * <p>CRITICAL: findByCodeIncludingDeleted + save MUST be in the SAME transaction.
+     * Otherwise @SQLRestriction("delete_ts IS NULL") causes merge() to fail
+     * on soft-deleted entities (it can't find the row → INSERT → PK violation).</p>
+     *
+     * @param newEntity entity populated from request body
+     * @param universityCode authenticated user's university code
+     * @param username authenticated user's username
+     * @return saved entity
+     */
+    @Transactional
+    public UniversityDepartment createOrRestore(UniversityDepartment newEntity, String universityCode, String username) {
+        Optional<UniversityDepartment> existingOpt = departmentRepository.findByCodeIncludingDeleted(newEntity.getCode());
+
+        if (existingOpt.isPresent()) {
+            UniversityDepartment existing = existingOpt.get();
+
+            if (universityCode != null && !universityCode.equals(existing.getUniversityCode())) {
+                throw new SecurityException("Department " + newEntity.getCode() + " belongs to university " + existing.getUniversityCode());
+            }
+
+            if (existing.getDeleteTs() != null) {
+                log.info("Entity was soft-deleted, restoring: {}", newEntity.getCode());
+                existing.setDeleteTs(null);
+                existing.setDeletedBy(null);
+            } else {
+                log.info("Entity exists, updating: {}", newEntity.getCode());
+            }
+
+            if (newEntity.getNameUz() != null) existing.setNameUz(newEntity.getNameUz());
+            if (newEntity.getNameRu() != null) existing.setNameRu(newEntity.getNameRu());
+            if (newEntity.getStatus() != null) existing.setStatus(newEntity.getStatus());
+            if (newEntity.getDepartmentType() != null) existing.setDepartmentType(newEntity.getDepartmentType());
+            if (newEntity.getParentCode() != null) existing.setParentCode(newEntity.getParentCode());
+            if (newEntity.getPath() != null) existing.setPath(newEntity.getPath());
+
+            existing.setUpdateTs(LocalDateTime.now());
+            existing.setUpdatedBy(username);
+
+            return departmentRepository.saveAndFlush(existing);
+        } else {
+            newEntity.setUniversityCode(universityCode);
+            newEntity.setCreatedBy(username);
+
+            log.info("Creating new entity: code={}, nameUz={}, universityCode={}, departmentType={}",
+                    newEntity.getCode(), newEntity.getNameUz(), newEntity.getUniversityCode(), newEntity.getDepartmentType());
+
+            return departmentRepository.saveAndFlush(newEntity);
+        }
+    }
+
     @Transactional
     public void softDelete(UniversityDepartment entity, String deletedBy) {
         entity.setDeleteTs(LocalDateTime.now());
@@ -172,8 +225,11 @@ public class UniversityDepartmentLegacyService {
             Object status = map.get("status");
             if (status instanceof Boolean) {
                 entity.setStatus((Boolean) status);
+            } else if (status instanceof Number) {
+                // PHP sends 1/0 as Integer
+                entity.setStatus(((Number) status).intValue() != 0);
             } else if (status instanceof String) {
-                entity.setStatus(Boolean.parseBoolean((String) status));
+                entity.setStatus("true".equalsIgnoreCase((String) status) || "1".equals(status));
             }
         }
 
@@ -295,7 +351,11 @@ public class UniversityDepartmentLegacyService {
         }
 
         if ("university.code".equals(property) || "universityCode".equals(property)) {
-            log.trace("Skipping university.code filter (OLD-HEMIS compatible)");
+            // Apply university.code filter for security isolation
+            String universityCode = value != null ? value.toString() : null;
+            if (universityCode != null && !universityCode.isEmpty()) {
+                return universityCode.equals(entity.getUniversityCode());
+            }
             return true;
         }
 

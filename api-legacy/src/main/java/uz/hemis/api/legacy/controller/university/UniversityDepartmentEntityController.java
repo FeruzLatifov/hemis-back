@@ -493,17 +493,25 @@ public class UniversityDepartmentEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
 
         Boolean returnNullsBool = legacyService.parseBoolean(returnNulls);
         var entityPage = universityCode != null
                 ? legacyService.findByUniversityCode(universityCode, pageRequest)
                 : legacyService.findAll(pageRequest);
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
+        List<Map<String, Object>> result = entityPage.getContent().stream()
                 .map(e -> legacyService.toDepartmentMap(e, returnNullsBool, view))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(legacyService.parseBoolean(returnCount))) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     // ==================== CREATE ====================
@@ -574,51 +582,16 @@ public class UniversityDepartmentEntityController {
                 return ResponseEntity.status(400).body(error);
             }
 
-            Optional<UniversityDepartment> existingOpt = legacyService.findByCodeIncludingDeleted(entity.getCode());
+            // CRITICAL: createOrRestore runs find + save in SINGLE transaction
+            // This prevents @SQLRestriction from breaking merge() on soft-deleted entities
+            UniversityDepartment saved = legacyService.createOrRestore(entity, universityCode, securityHelper.getCurrentUsername());
+            log.info("UniversityDepartment created/restored: {}", saved.getCode());
+            return ResponseEntity.ok(legacyService.minimalDepartmentResponse(saved));
 
-            if (existingOpt.isPresent()) {
-                UniversityDepartment existing = existingOpt.get();
-
-                if (universityCode != null && !universityCode.equals(existing.getUniversityCode())) {
-                    log.warn("Access denied: department {} belongs to university {}, user university: {}",
-                            entity.getCode(), existing.getUniversityCode(), universityCode);
-                    return ResponseEntity.status(404).body(legacyService.cubaNotFoundError(entity.getCode()));
-                }
-
-                if (existing.getDeleteTs() != null) {
-                    log.info("Entity was soft-deleted, restoring: {}", entity.getCode());
-                    existing.setDeleteTs(null);
-                    existing.setDeletedBy(null);
-                } else {
-                    log.info("Entity exists, updating: {}", entity.getCode());
-                }
-
-                if (entity.getNameUz() != null) existing.setNameUz(entity.getNameUz());
-                if (entity.getNameRu() != null) existing.setNameRu(entity.getNameRu());
-                if (entity.getStatus() != null) existing.setStatus(entity.getStatus());
-                if (entity.getDepartmentType() != null) existing.setDepartmentType(entity.getDepartmentType());
-                if (entity.getParentCode() != null) existing.setParentCode(entity.getParentCode());
-                if (entity.getPath() != null) existing.setPath(entity.getPath());
-
-                existing.setUpdateTs(LocalDateTime.now());
-                existing.setUpdatedBy(securityHelper.getCurrentUsername());
-
-                UniversityDepartment saved = legacyService.save(existing);
-                log.info("UniversityDepartment updated via POST: {}", saved.getCode());
-                return ResponseEntity.ok(legacyService.minimalDepartmentResponse(saved));
-
-            } else {
-                entity.setCreatedBy(securityHelper.getCurrentUsername());
-
-                log.info("Creating new entity: code={}, nameUz={}, universityCode={}, departmentType={}",
-                        entity.getCode(), entity.getNameUz(), entity.getUniversityCode(), entity.getDepartmentType());
-
-                UniversityDepartment saved = legacyService.saveAndFlush(entity);
-
-                log.info("UniversityDepartment created: {}", saved.getCode());
-                return ResponseEntity.ok(legacyService.minimalDepartmentResponse(saved));
-            }
-
+        } catch (SecurityException e) {
+            log.warn("Access denied: {}", e.getMessage());
+            return ResponseEntity.status(404).body(legacyService.cubaNotFoundError(
+                    body.containsKey("id") ? String.valueOf(body.get("id")) : "unknown"));
         } catch (Exception e) {
             log.error("Failed to create UniversityDepartment: {}", e.getMessage(), e);
             Map<String, Object> error = new LinkedHashMap<>();

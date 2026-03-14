@@ -80,7 +80,10 @@ public class PublicationPropertyEntityController {
         Optional<PublicationProperty> entity = scienceService.findPublicationPropertyById(entityId);
         if (entity.isEmpty()) {
             log.warn("GET /entities/hemishe_EPublicationProperty/{} - topilmadi", entityId);
-            return ResponseEntity.notFound().build();
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         return ResponseEntity.ok(scienceService.toPublicationPropertyMap(entity.get(), returnNulls));
@@ -237,13 +240,21 @@ public class PublicationPropertyEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
         Page<PublicationProperty> entityPage = scienceService.findAllPublicationProperty(pageRequest);
 
-        return ResponseEntity.ok(entityPage.getContent().stream()
+        List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> scienceService.toPublicationPropertyMap(e, returnNulls))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     // =====================================================

@@ -602,6 +602,60 @@ public class Student extends BaseEntity {
     private String statusOrderCategory;
 
     // =====================================================
+    // Education Start / Graduation Fields
+    // =====================================================
+
+    @Column(name = "edu_start_date")
+    private LocalDate eduStartDate;
+
+    @Column(name = "_graduation_year", length = 32)
+    private String graduationYear;
+
+    @Column(name = "graduation_date")
+    private LocalDate graduationDate;
+
+    @Column(name = "_student_type", length = 32)
+    private String studentType;
+
+    @Column(name = "study_duration", length = 255)
+    private String studyDuration;
+
+    // =====================================================
+    // Decree Info Fields (status change decree)
+    // =====================================================
+
+    @Column(name = "decree_info_name", length = 255)
+    private String decreeInfoName;
+
+    @Column(name = "decree_info_number", length = 255)
+    private String decreeInfoNumber;
+
+    @Column(name = "decree_info_date")
+    private LocalDate decreeInfoDate;
+
+    // =====================================================
+    // Academic Fields
+    // =====================================================
+
+    @Column(name = "_academic_reason", length = 32)
+    private String academicReason;
+
+    @Column(name = "_academic_mobile_type", length = 32)
+    private String academicMobileType;
+
+    @Column(name = "_speciality_ordinatura")
+    private UUID specialityOrdinatura;
+
+    @Column(name = "status_education_year_code", length = 32)
+    private String statusEducationYearCode;
+
+    @Column(name = "_terrain", length = 32)
+    private String terrain;
+
+    @Column(name = "current_terrain_code", length = 32)
+    private String currentTerrainCode;
+
+    // =====================================================
     // Transfer Fields (added in old-hemis update 260202)
     // =====================================================
 

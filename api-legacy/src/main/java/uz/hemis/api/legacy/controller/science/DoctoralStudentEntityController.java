@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.adapter.JsonNull;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.domain.entity.DoctoralStudent;
 import uz.hemis.service.legacy.science.ScienceDoctorateEntityLegacyService;
@@ -294,8 +295,9 @@ public class DoctoralStudentEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
         Page<DoctoralStudent> entityPage = scienceService.findAllDoctoralStudent(pageRequest);
 
         List<Map<String, Object>> result = entityPage.getContent().stream()
@@ -459,7 +461,7 @@ public class DoctoralStudentEntityController {
         if (entity.getBirthDate() != null) {
             map.put("birthDate", entity.getBirthDate().format(DATE_FORMAT));
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("birthDate", null);
+            map.put("birthDate", JsonNull.INSTANCE);
         }
 
         // Academic info
@@ -469,7 +471,7 @@ public class DoctoralStudentEntityController {
         if (entity.getAcceptedDate() != null) {
             map.put("acceptedDate", entity.getAcceptedDate().format(DATE_FORMAT));
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put("acceptedDate", null);
+            map.put("acceptedDate", JsonNull.INSTANCE);
         }
 
         putIfNotNull(map, "studentIdNumber", entity.getStudentIdNumber(), returnNulls);
@@ -507,6 +509,7 @@ public class DoctoralStudentEntityController {
         putIfNotNull(map, "position", entity.getPosition(), returnNulls);
         putIfNotNull(map, "active", entity.getActive(), returnNulls);
         putIfNotNull(map, "uId", entity.getUId(), returnNulls);
+        putIfNotNull(map, "translations", entity.getTranslations(), returnNulls);
 
         // Audit fields
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
@@ -628,7 +631,7 @@ public class DoctoralStudentEntityController {
         if (value != null) {
             map.put(key, value);
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put(key, null);
+            map.put(key, JsonNull.INSTANCE);
         }
     }
 
@@ -638,7 +641,7 @@ public class DoctoralStudentEntityController {
             classifier.put("code", code);
             map.put(key, classifier);
         } else if (Boolean.TRUE.equals(returnNulls)) {
-            map.put(key, null);
+            map.put(key, JsonNull.INSTANCE);
         }
     }
 

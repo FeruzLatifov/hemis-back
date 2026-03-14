@@ -69,7 +69,10 @@ public class TeacherEntityController {
 
         Optional<Teacher> entity = teacherService.findById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("error", "Entity not found");
+            error.put("details", "Entity hemishe_ETeacher with id " + entityId + " not found");
+            return ResponseEntity.status(404).body(error);
         }
 
         Map<String, Object> result = teacherService.toTeacherMap(entity.get(), returnNulls, view);
@@ -227,12 +230,21 @@ public class TeacherEntityController {
             sorting = Sort.by(direction, field);
         }
 
-        int page = offset / limit;
-        PageRequest pageRequest = PageRequest.of(page, limit, sorting);
+        int safeLimit = Math.max(limit, 1);
+        int page = offset / safeLimit;
+        PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
 
-        return ResponseEntity.ok(teacherService.findAll(pageRequest).getContent().stream()
+        var entityPage = teacherService.findAll(pageRequest);
+        List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> teacherService.toTeacherMap(e, returnNulls, view))
-            .collect(Collectors.toList()));
+            .collect(Collectors.toList());
+
+        if (Boolean.TRUE.equals(returnCount)) {
+            return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
+                .body(result);
+        }
+        return ResponseEntity.ok(result);
     }
 
     /**

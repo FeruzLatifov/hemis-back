@@ -39,7 +39,7 @@ public class EmployeeCertificateEntityController {
             @Parameter(description = "Employee certificate ID") @PathVariable UUID id) {
         Optional<EmployeeCertificate> opt = employeeRefService.findEmployeeCertificateById(id);
         if (opt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EEmpoyeeCertificate with id " + id + " not found"));
         }
         return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(opt.get()));
     }
@@ -72,7 +72,7 @@ public class EmployeeCertificateEntityController {
         }
 
         employeeRefService.softDeleteEmployeeCertificate(opt.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping
@@ -81,7 +81,7 @@ public class EmployeeCertificateEntityController {
             @Parameter(description = "Limit") @RequestParam(defaultValue = "50") int limit,
             @Parameter(description = "Offset") @RequestParam(defaultValue = "0") int offset) {
 
-        Pageable pageable = PageRequest.of(offset / limit, limit);
+        Pageable pageable = PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1));
         Page<EmployeeCertificate> page = employeeRefService.findAllEmployeeCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()
@@ -108,7 +108,7 @@ public class EmployeeCertificateEntityController {
             }
         }
 
-        Pageable pageable = PageRequest.of(offset / limit, limit, sorting);
+        Pageable pageable = PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting);
         Page<EmployeeCertificate> page = employeeRefService.findAllEmployeeCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()

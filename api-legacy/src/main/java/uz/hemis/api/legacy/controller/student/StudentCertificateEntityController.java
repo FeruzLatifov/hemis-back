@@ -37,7 +37,7 @@ public class StudentCertificateEntityController {
             @RequestParam(required = false) String view) {
         Optional<StudentCertificate> studentCertificateOpt = studentService.findStudentCertificateById(id);
         if (studentCertificateOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EStudentCertificate with id " + id + " not found"));
         }
         return ResponseEntity.ok(studentService.toStudentCertificateMap(studentCertificateOpt.get(), returnNulls, view));
     }
@@ -70,7 +70,7 @@ public class StudentCertificateEntityController {
         }
 
         studentService.deleteStudentCertificate(studentCertificateOpt.get());
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/search")
@@ -90,7 +90,7 @@ public class StudentCertificateEntityController {
             }
         }
 
-        Pageable pageable = PageRequest.of(offset / limit, limit, sorting);
+        Pageable pageable = PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting);
         Page<StudentCertificate> page = studentService.findAllStudentCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()
@@ -118,7 +118,7 @@ public class StudentCertificateEntityController {
             }
         }
 
-        Pageable pageable = PageRequest.of(offset / limit, limit, sorting);
+        Pageable pageable = PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting);
         Page<StudentCertificate> page = studentService.findAllStudentCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()
@@ -139,7 +139,7 @@ public class StudentCertificateEntityController {
             @Parameter(description = "Offset") @RequestParam(defaultValue = "0") int offset,
             @Parameter(description = "View") @RequestParam(required = false) String view) {
 
-        Pageable pageable = PageRequest.of(offset / limit, limit);
+        Pageable pageable = PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1));
         Page<StudentCertificate> page = studentService.findAllStudentCertificate(pageable);
 
         List<Map<String, Object>> result = page.getContent().stream()

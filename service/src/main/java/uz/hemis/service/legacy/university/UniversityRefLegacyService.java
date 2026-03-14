@@ -365,7 +365,9 @@ public class UniversityRefLegacyService {
 
     @Transactional
     public void deleteFaculty(Faculty entity) {
-        facultyRepository.delete(entity);
+        // OLD-HEMIS: soft delete only (set delete_ts instead of physical delete)
+        entity.setDeleteTs(LocalDateTime.now());
+        facultyRepository.save(entity);
     }
 
     public Map<String, Object> toFacultyMap(Faculty entity, Boolean returnNulls) {
@@ -675,6 +677,14 @@ public class UniversityRefLegacyService {
 
     public Optional<University> findUniversityById(String code) {
         return universityRepository.findById(code);
+    }
+
+    /**
+     * Find university by code including soft-deleted records.
+     * Used to restore soft-deleted universities on POST create.
+     */
+    public Optional<University> findUniversityByIdIncludingDeleted(String code) {
+        return universityRepository.findByIdIncludingDeleted(code);
     }
 
     public List<University> findAllUniversity() {

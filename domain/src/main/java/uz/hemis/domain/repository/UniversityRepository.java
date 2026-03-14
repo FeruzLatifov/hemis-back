@@ -195,4 +195,14 @@ public interface UniversityRepository extends JpaRepository<University, String>,
      */
     @Query("SELECT u FROM University u WHERE u.universityActivityStatus = :activityStatus")
     Page<University> findByActivityStatus(@Param("activityStatus") String activityStatus, Pageable pageable);
+
+    /**
+     * Find university by code including soft-deleted records.
+     * Bypasses @SQLRestriction to find deleted universities for restore.
+     *
+     * @param code university code
+     * @return Optional University (including deleted)
+     */
+    @Query(value = "SELECT * FROM hemishe_e_university WHERE code = :code", nativeQuery = true)
+    Optional<University> findByIdIncludingDeleted(@Param("code") String code);
 }

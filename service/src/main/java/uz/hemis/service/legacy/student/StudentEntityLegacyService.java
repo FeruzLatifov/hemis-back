@@ -325,6 +325,7 @@ public class StudentEntityLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "version", 1, returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "exchangeUniversityName", entity.getExchangeUniversityName(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "specialityName", entity.getSpecialityName(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "specialityCode", entity.getSpecialityCode(), returnNulls);
         return map;
     }
 
