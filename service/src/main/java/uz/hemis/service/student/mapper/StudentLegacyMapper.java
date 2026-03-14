@@ -154,8 +154,8 @@ public class StudentLegacyMapper {
         dto.setFaculty(loadFaculty(student.getFaculty()));
         dto.setSoato(loadSoatoWithParent(student.getSoato()));
         dto.setCurrentSoato(loadSoatoWithParent(student.getCurrentSoato()));
-        dto.setTerrain(loadTerrainBySoato(student.getSoato()));
-        dto.setCurrentTerrain(loadCurrentTerrainBySoato(student.getCurrentSoato()));
+        dto.setTerrain(loadTerrainByCode(student.getTerrain()));
+        dto.setCurrentTerrain(loadCurrentTerrainByCode(student.getCurrentTerrainCode()));
         dto.setSpecialityBachelor(loadSpecialityByUuid(student.getSpecialityBachelor()));
         dto.setSpecialityMaster(loadSimpleSpecialityByUuid(student.getSpecialityMaster(), "hemishe_h_speciality_master", "hemishe_HSpecialityMaster"));
         dto.setSpecialityDoctoral(loadSimpleSpecialityByUuid(student.getSpecialityDoctoral(), "hemishe_h_speciality_doctoral", "hemishe_HSpecialityDoctoral"));
@@ -534,20 +534,27 @@ public class StudentLegacyMapper {
     }
 
     /**
-     * Load terrain by SOATO code (for dto.terrain field)
+     * Load terrain by terrain code (for dto.terrain field)
+     * OLD-HEMIS: EStudent._TERRAIN stores the HTerrain.code (PK), NOT the SOATO code.
      * OLD-HEMIS format: terrain.soato has NO name_ru
+     *
+     * FIX: Previously looked up terrain by SOATO code (student._soato), which was wrong
+     * because multiple terrains can share the same SOATO, causing code mismatch
+     * (e.g., returning "6101" instead of stored "6116").
+     * Now correctly looks up terrain by its own code (student._terrain).
      */
-    private StudentLegacyDto.TerrainReferenceDto loadTerrainBySoato(String soatoCode) {
-        if (soatoCode == null || soatoCode.isBlank()) {
+    private StudentLegacyDto.TerrainReferenceDto loadTerrainByCode(String terrainCode) {
+        if (terrainCode == null || terrainCode.isBlank()) {
             return null;
         }
 
         try {
-            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
-            Map<String, Object> row = jdbcTemplate.queryForMap(sql, soatoCode);
+            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE code = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, terrainCode);
 
             String tCode = (String) row.get("code");
             String tName = (String) row.get("name");
+            String tSoato = (String) row.get("_soato");
             StudentLegacyDto.TerrainReferenceDto terrain = new StudentLegacyDto.TerrainReferenceDto();
             terrain.setId(tCode);
             terrain.setCode(tCode);
@@ -557,30 +564,35 @@ public class StudentLegacyMapper {
             terrain.setVersion(getInteger(row, "version"));
 
             // OLD-HEMIS compatibility: terrain.soato NO name_ru
-            terrain.setSoato(loadSoatoForTerrain(soatoCode));
+            terrain.setSoato(loadSoatoForTerrain(tSoato));
 
             return terrain;
         } catch (Exception e) {
-            log.debug("No terrain found for soato {}: {}", soatoCode, e.getMessage());
+            log.debug("No terrain found for code {}: {}", terrainCode, e.getMessage());
             return null;
         }
     }
 
     /**
-     * Load currentTerrain by SOATO code (for dto.currentTerrain field)
+     * Load currentTerrain by terrain code (for dto.currentTerrain field)
+     * OLD-HEMIS: EStudent.CURRENT_TERRAIN_CODE stores the HTerrain.code (PK), NOT the SOATO code.
      * OLD-HEMIS format: currentTerrain.soato HAS name_ru
+     *
+     * FIX: Previously looked up terrain by SOATO code (student._current_soato), which was wrong.
+     * Now correctly looks up terrain by its own code (student.current_terrain_code).
      */
-    private StudentLegacyDto.TerrainReferenceDto loadCurrentTerrainBySoato(String soatoCode) {
-        if (soatoCode == null || soatoCode.isBlank()) {
+    private StudentLegacyDto.TerrainReferenceDto loadCurrentTerrainByCode(String terrainCode) {
+        if (terrainCode == null || terrainCode.isBlank()) {
             return null;
         }
 
         try {
-            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE _soato = ? AND delete_ts IS NULL LIMIT 1";
-            Map<String, Object> row = jdbcTemplate.queryForMap(sql, soatoCode);
+            String sql = "SELECT code, name, name_ru, _soato, version FROM hemishe_h_terrain WHERE code = ? AND delete_ts IS NULL";
+            Map<String, Object> row = jdbcTemplate.queryForMap(sql, terrainCode);
 
             String tCode = (String) row.get("code");
             String tName = (String) row.get("name");
+            String tSoato = (String) row.get("_soato");
             StudentLegacyDto.TerrainReferenceDto terrain = new StudentLegacyDto.TerrainReferenceDto();
             terrain.setId(tCode);
             terrain.setCode(tCode);
@@ -590,11 +602,11 @@ public class StudentLegacyMapper {
             terrain.setVersion(getInteger(row, "version"));
 
             // OLD-HEMIS compatibility: currentTerrain.soato HAS name_ru
-            terrain.setSoato(loadSoatoForCurrentTerrain(soatoCode));
+            terrain.setSoato(loadSoatoForCurrentTerrain(tSoato));
 
             return terrain;
         } catch (Exception e) {
-            log.debug("No currentTerrain found for soato {}: {}", soatoCode, e.getMessage());
+            log.debug("No currentTerrain found for code {}: {}", terrainCode, e.getMessage());
             return null;
         }
     }

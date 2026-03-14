@@ -528,7 +528,11 @@ public class LegacyEntityAdapter {
         }
 
         if ((targetType == Boolean.class || targetType == boolean.class) && value instanceof String) {
-            return Boolean.parseBoolean((String) value);
+            String str = ((String) value).trim();
+            // OLD-HEMIS compatibility: PHP sends "0"/"1" as well as "true"/"false"
+            if ("1".equals(str)) return true;
+            if ("0".equals(str)) return false;
+            return Boolean.parseBoolean(str);
         }
 
         // Handle any value → String conversion (e.g., Integer from PHP JSON → String field)
