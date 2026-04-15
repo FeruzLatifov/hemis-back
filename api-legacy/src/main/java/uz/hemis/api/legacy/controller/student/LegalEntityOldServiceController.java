@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Legal Entity Old Service Controller - CUBA REST API Compatible
@@ -57,6 +58,7 @@ public class LegalEntityOldServiceController {
      * <p>2. POST {"tin":"X"} to GNK API</p>
      * <p>3. Return {success: true/false, data: response}</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/get")
     @Operation(summary = "Yuridik shaxs ma'lumotlari (GNK)", description = "INN bo'yicha GNK dan yuridik shaxs ma'lumotlarini olish")
     public ResponseEntity<?> get(

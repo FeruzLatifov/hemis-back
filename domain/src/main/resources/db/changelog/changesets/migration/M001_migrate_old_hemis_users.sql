@@ -39,7 +39,6 @@ BEGIN
             time_zone,
             time_zone_auto,
             user_type,
-            entity_code,
             university_id,
             group_id,
             group_names,
@@ -73,7 +72,6 @@ BEGIN
             old.time_zone_auto,
             CASE WHEN old._university IS NOT NULL AND old._university != '' THEN 'UNIVERSITY' ELSE 'SYSTEM' END,
             old._university,
-            old._university,
             old.group_id,
             old.group_names,
             COALESCE(old.active, TRUE),
@@ -100,7 +98,6 @@ BEGIN
             full_name = EXCLUDED.full_name,
             enabled = EXCLUDED.enabled,
             active = EXCLUDED.active,
-            entity_code = EXCLUDED.entity_code,
             university_id = EXCLUDED.university_id,
             user_type = CASE WHEN EXCLUDED.university_id IS NOT NULL AND EXCLUDED.university_id != '' THEN 'UNIVERSITY' ELSE users.user_type END,
             updated_at = CURRENT_TIMESTAMP,
@@ -113,43 +110,50 @@ BEGIN
     END IF;
 END $$;
 
--- Assign default role (VIEWER) to migrated users without roles
+-- =====================================================
+-- ROLE ASSIGNMENT (old-hemis rollariga mos)
+-- =====================================================
+
+-- 1. UNIVERSITY type users → OTM_API role (old-hemis "OTM" roli)
+--    Bu 258 ta otm* userlar — Univer B2B sync uchun CRUD kerak
 INSERT INTO user_roles (user_id, role_id, assigned_by)
 SELECT u.id, r.id, 'migration'
-FROM users u
-CROSS JOIN roles r
-WHERE r.code = 'VIEWER'
-  AND u.created_by = 'migration'
+FROM users u CROSS JOIN roles r
+WHERE u.user_type = 'UNIVERSITY'
+  AND r.code = 'OTM_API'
+  AND NOT EXISTS (
+      SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id
+  )
+ON CONFLICT DO NOTHING;
+
+-- 2. SYSTEM type users → VIEWER role (default for ministry staff)
+INSERT INTO user_roles (user_id, role_id, assigned_by)
+SELECT u.id, r.id, 'migration'
+FROM users u CROSS JOIN roles r
+WHERE u.user_type = 'SYSTEM'
+  AND u.username NOT IN ('admin', 'anonymous')
+  AND r.code = 'VIEWER'
   AND NOT EXISTS (
       SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id
   )
 ON CONFLICT DO NOTHING;
 
--- Assign SUPER_ADMIN role to 'admin' user (system administrator)
+-- 3. admin → SUPER_ADMIN
 INSERT INTO user_roles (user_id, role_id, assigned_by)
 SELECT u.id, r.id, 'migration'
-FROM users u
-CROSS JOIN roles r
+FROM users u CROSS JOIN roles r
 WHERE u.username = 'admin'
   AND r.code = 'SUPER_ADMIN'
   AND NOT EXISTS (
-      SELECT 1 FROM user_roles ur
-      WHERE ur.user_id = u.id AND ur.role_id = r.id
+      SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id
   )
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
--- DATA FIX: Sync entity_code and user_type for migrated users
--- Migrated users have university_id set but entity_code NULL
--- and user_type = 'SYSTEM' even when they belong to a university
+-- DATA FIX: Sync user_type for migrated users
+-- Migrated users have university_id set but user_type = 'SYSTEM'
+-- even when they belong to a university
 -- =====================================================
-UPDATE users
-SET entity_code = university_id,
-    updated_at = CURRENT_TIMESTAMP,
-    updated_by = 'migration-sync'
-WHERE university_id IS NOT NULL
-  AND (entity_code IS NULL OR entity_code = '');
-
 UPDATE users
 SET user_type = 'UNIVERSITY',
     updated_at = CURRENT_TIMESTAMP,
@@ -163,13 +167,10 @@ DECLARE
     total_users INTEGER;
     migrated_users INTEGER;
     with_university INTEGER;
-    synced_entity_code INTEGER;
 BEGIN
     SELECT COUNT(*) INTO total_users FROM users;
     SELECT COUNT(*) INTO migrated_users FROM users WHERE created_by = 'migration';
     SELECT COUNT(*) INTO with_university FROM users WHERE university_id IS NOT NULL;
-    SELECT COUNT(*) INTO synced_entity_code
-    FROM users WHERE entity_code IS NOT NULL AND university_id IS NOT NULL;
-    RAISE NOTICE 'M001 Complete: % total users (% migrated, % with university, % entity_code synced)',
-        total_users, migrated_users, with_university, synced_entity_code;
+    RAISE NOTICE 'M001 Complete: % total users (% migrated, % with university)',
+        total_users, migrated_users, with_university;
 END $$;

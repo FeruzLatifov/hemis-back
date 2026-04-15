@@ -19,6 +19,7 @@ import uz.hemis.service.legacy.science.ScienceEntityLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * PublicationAuthorMeta Entity Controller (CUBA Pattern)
@@ -56,6 +57,7 @@ public class PublicationAuthorMetaEntityController {
     // =====================================================
     // GET - List all with pagination
     // =====================================================
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping
     @Operation(summary = "Barcha nashr mualliflari ro'yxati",
                description = "Paginatsiya bilan barcha nashr mualliflari meta ma'lumotlarini olish")
@@ -97,6 +99,7 @@ public class PublicationAuthorMetaEntityController {
     // =====================================================
     // GET - Get by ID
     // =====================================================
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "ID bo'yicha nashr muallifi olish",
                description = "UUID orqali bitta nashr muallifi meta ma'lumotini olish")
@@ -124,6 +127,7 @@ public class PublicationAuthorMetaEntityController {
     // =====================================================
     // POST - Create new
     // =====================================================
+    @PreAuthorize("hasAuthority('science.edit')")
     @PostMapping
     @Operation(summary = "Yangi nashr muallifi yaratish",
                description = "Yangi nashr muallifi meta ma'lumotini yaratish")
@@ -185,6 +189,7 @@ public class PublicationAuthorMetaEntityController {
     // =====================================================
     // PUT - Update existing
     // =====================================================
+    @PreAuthorize("hasAuthority('science.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Nashr muallifini yangilash",
                description = "Mavjud nashr muallifi meta ma'lumotini yangilash")
@@ -216,6 +221,7 @@ public class PublicationAuthorMetaEntityController {
     // =====================================================
     // DELETE - Soft delete
     // =====================================================
+    @PreAuthorize("hasAuthority('science.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Nashr muallifini o'chirish",
                description = "Nashr muallifi meta ma'lumotini soft delete qilish (delete_ts o'rnatiladi)")

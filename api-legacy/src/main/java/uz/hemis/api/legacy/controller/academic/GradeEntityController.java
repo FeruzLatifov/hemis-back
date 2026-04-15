@@ -24,6 +24,7 @@ import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.service.academic.AcademicScoreService;
 
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Academic Score Entity Controller (CUBA Pattern) - REFACTORED
@@ -60,6 +61,7 @@ public class GradeEntityController {
 
     private static final String ENTITY_NAME = "hemishe_RAcademicScore";
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvini ID bo'yicha olish",
@@ -86,6 +88,7 @@ public class GradeEntityController {
         }
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvini yangilash",
@@ -114,6 +117,7 @@ public class GradeEntityController {
         }
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvini o'chirish",
@@ -137,6 +141,7 @@ public class GradeEntityController {
         }
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvlarini qidirish (GET)",
@@ -161,6 +166,7 @@ public class GradeEntityController {
         return ResponseEntity.ok(cubaMaps);
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvlarini qidirish (POST)",
@@ -207,6 +213,7 @@ public class GradeEntityController {
         return ResponseEntity.ok(cubaMaps);
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     @Operation(
         summary = "Barcha akademik o'zlashtirish yozuvlarini olish",
@@ -248,6 +255,7 @@ public class GradeEntityController {
         return ResponseEntity.ok(cubaMaps);
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     @Operation(
         summary = "Yangi akademik o'zlashtirish yozuvi yaratish",

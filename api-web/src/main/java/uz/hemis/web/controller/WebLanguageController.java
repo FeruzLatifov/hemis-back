@@ -15,8 +15,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.system.LanguageDto;
 import uz.hemis.common.dto.ResponseWrapper;
-import uz.hemis.domain.entity.SystemConfiguration;
-import uz.hemis.domain.repository.SystemConfigurationRepository;
 import uz.hemis.service.shared.LanguageService;
 
 import java.util.HashMap;
@@ -56,7 +54,6 @@ import java.util.stream.Collectors;
 public class WebLanguageController {
 
     private final LanguageService languageService;
-    private final SystemConfigurationRepository configRepository;
 
     /**
      * Get all languages
@@ -221,18 +218,8 @@ public class WebLanguageController {
         log.info("GET /api/v1/web/system/configuration - Fetching system configuration");
 
         List<LanguageDto> languages = languageService.getAllLanguages();
-        List<SystemConfiguration> languageConfigs = configRepository.findAllLanguageConfigurations();
 
-        // Build configuration map
-        Map<String, Boolean> configMap = languageConfigs.stream()
-            .collect(Collectors.toMap(
-                SystemConfiguration::getPath,
-                SystemConfiguration::getBooleanValue
-            ));
-
-        // Build response
         Map<String, Object> response = new HashMap<>();
-
         List<Map<String, Object>> languageList = languages.stream()
             .map(lang -> {
                 Map<String, Object> langMap = new HashMap<>();
@@ -247,10 +234,8 @@ public class WebLanguageController {
             .collect(Collectors.toList());
 
         response.put("languages", languageList);
-
-        // Get default language
-        configRepository.findByPath("system.default_language")
-            .ifPresent(config -> response.put("defaultLanguage", config.getValue()));
+        languageService.getDefaultLanguageCode()
+            .ifPresent(code -> response.put("defaultLanguage", code));
 
         return ResponseEntity.ok(ResponseWrapper.success(response));
     }
@@ -310,11 +295,7 @@ public class WebLanguageController {
         // Update default language
         if (request.containsKey("defaultLanguage")) {
             String defaultLang = (String) request.get("defaultLanguage");
-            configRepository.findByPath("system.default_language").ifPresent(config -> {
-                config.setValue(defaultLang);
-                configRepository.save(config);
-                log.info("Default language set to {}", defaultLang);
-            });
+            languageService.setDefaultLanguageCode(defaultLang);
         }
 
         return ResponseEntity.ok(ResponseWrapper.success("Configuration updated successfully"));

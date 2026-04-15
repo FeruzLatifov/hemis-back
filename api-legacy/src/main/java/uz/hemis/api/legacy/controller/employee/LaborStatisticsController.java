@@ -20,7 +20,7 @@ import java.util.Map;
 public class LaborStatisticsController {
 
     @GetMapping("/employment")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getEmploymentStatistics(
             @RequestParam String university,
             @RequestParam(required = false) String academicYear
@@ -40,7 +40,7 @@ public class LaborStatisticsController {
     }
 
     @GetMapping("/staff")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'HR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'HR')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStaffStatistics(
             @RequestParam String university
     ) {
@@ -58,7 +58,7 @@ public class LaborStatisticsController {
     }
 
     @GetMapping("/workload")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'DEAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getWorkloadStatistics(
             @RequestParam String university,
             @RequestParam(required = false) String academicYear

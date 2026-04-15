@@ -25,3 +25,8 @@ DROP INDEX IF EXISTS idx_smt_message_language;
 
 -- languages.code has UNIQUE constraint -> auto-index exists
 DROP INDEX IF EXISTS idx_languages_code;
+
+-- NOTE: idx_hemishe_e_university_uk_code duplicates PK but CANNOT be dropped
+-- because old-hemis FK constraints reference this UNIQUE index (not the PK index).
+-- 84 tables have FK → hemishe_e_university(code) through this index.
+-- Removing it would CASCADE-drop all those FK constraints.

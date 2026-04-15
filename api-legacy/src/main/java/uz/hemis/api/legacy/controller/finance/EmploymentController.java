@@ -29,6 +29,7 @@ public class EmploymentController {
 
     private final EmploymentService employmentService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<EmploymentDto>>> getAllEmployments(
             @PageableDefault(size = 20, sort = "employmentDate", direction = Sort.Direction.DESC) Pageable pageable
@@ -37,18 +38,21 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(employments)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> getEmploymentById(@PathVariable UUID id) {
         EmploymentDto employment = employmentService.findById(id);
         return ResponseEntity.ok(ResponseWrapper.success(employment));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> getEmploymentByCode(@PathVariable String code) {
         EmploymentDto employment = employmentService.findByCode(code);
         return ResponseEntity.ok(ResponseWrapper.success(employment));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<EmploymentDto>>> getEmploymentsByUniversity(
             @RequestParam("university") String universityCode,
@@ -58,6 +62,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(employments)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<EmploymentDto>>> getEmploymentsByStudent(
             @RequestParam("student") UUID studentId
@@ -66,6 +71,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(employments));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "student")
     public ResponseEntity<ResponseWrapper<List<EmploymentDto>>> getActiveEmploymentsByStudent(
             @RequestParam("student") UUID studentId
@@ -74,6 +80,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(employments));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "university")
     public ResponseEntity<ResponseWrapper<List<EmploymentDto>>> getActiveEmploymentsByUniversity(
             @RequestParam("university") String universityCode
@@ -83,14 +90,14 @@ public class EmploymentController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> createEmployment(@Valid @RequestBody EmploymentDto employmentDto) {
         EmploymentDto created = employmentService.create(employmentDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> updateEmployment(
             @PathVariable UUID id,
             @Valid @RequestBody EmploymentDto employmentDto

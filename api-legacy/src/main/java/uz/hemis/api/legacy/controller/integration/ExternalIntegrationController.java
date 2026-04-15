@@ -11,18 +11,17 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.integration.ExternalIntegrationService;
 
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * External Integration Services
  *
  * <p>Tax, UzASBO integrations</p>
- * <p>Note: DTM Mandat endpoint moved to MandatServiceController</p>
- * <p>Note: OAK endpoint moved to OakServiceController</p>
  *
  * @since 2.0.0
  */
 @RestController
-@RequestMapping({"/app/rest/v2/services", "/services"})
+@RequestMapping("/app/rest/v2/services")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -30,11 +29,9 @@ public class ExternalIntegrationController {
 
     private final ExternalIntegrationService externalIntegrationService;
 
-    // DTM mandat endpoint moved to MandatServiceController to avoid duplicate mapping
-    // OAK endpoint moved to OakServiceController to avoid duplicate mapping
-
     @Tag(name = "60.Soliq")
     @Operation(summary = "Ijara shartnomasi", description = "Soliq ma'lumotlari - ijara shartnomasi. PINFL bo'yicha ijara shartnomalarini olish.")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/tax/rent")
     public ResponseEntity<Map<String, Object>> getTaxRent(
         @Parameter(description = "PINFL (14 xonali)", required = true, example = "51805035330018") @RequestParam String pinfl
@@ -45,6 +42,7 @@ public class ExternalIntegrationController {
 
     @Tag(name = "58.UzASBO")
     @Operation(summary = "UzASBO stipendiya", description = "UzASBO tizimidan stipendiya ma'lumotlarini olish. INN, yil va oy bo'yicha.")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/uzasbo/scholarship")
     public ResponseEntity<Map<String, Object>> getUzasboScholarship(
         @Parameter(description = "INN (tashkilot identifikatori)", required = true, example = "201354108") @RequestParam String inn,

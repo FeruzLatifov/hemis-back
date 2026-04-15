@@ -22,6 +22,7 @@ import uz.hemis.service.legacy.UniversityDepartmentLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * University Department Entity Controller - CUBA REST API Compatible
@@ -93,6 +94,7 @@ public class UniversityDepartmentEntityController {
      * @param view View nomi (masalan: eUniversityDepartment-view)
      * @return Bo'linma ma'lumotlari
      */
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/{entityId}")
     @Operation(
             summary = "Bo'linmani ID bo'yicha olish",
@@ -167,6 +169,7 @@ public class UniversityDepartmentEntityController {
     /**
      * OLD-HEMIS Compatible: Bo'sh entityId bilan PUT so'rov
      */
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PutMapping({"", "/"})
     @Operation(hidden = true)
     public ResponseEntity<Map<String, Object>> updateWithoutId(@RequestBody Map<String, Object> body) {
@@ -185,6 +188,7 @@ public class UniversityDepartmentEntityController {
      * @param returnNulls null qiymatlarni ham qaytarish
      * @return Yangilangan bo'linma
      */
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PutMapping("/{entityId}")
     @Operation(
             summary = "Bo'linmani yangilash",
@@ -236,6 +240,7 @@ public class UniversityDepartmentEntityController {
     /**
      * OLD-HEMIS Compatible: Bo'sh entityId bilan DELETE so'rov
      */
+    @PreAuthorize("hasAuthority('universities.delete')")
     @DeleteMapping({"", "/"})
     @Operation(hidden = true)
     public ResponseEntity<Map<String, Object>> deleteWithoutId() {
@@ -252,6 +257,7 @@ public class UniversityDepartmentEntityController {
      * @param entityId Bo'linma kodi
      * @return O'chirilgan bo'linma
      */
+    @PreAuthorize("hasAuthority('universities.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
             summary = "Bo'linmani o'chirish",
@@ -300,6 +306,7 @@ public class UniversityDepartmentEntityController {
      *
      * <p>Qo'llab-quvvatlanadigan operatorlar: =, <>, >, <, >=, <=, like, startsWith, endsWith, in, isNull, notNull</p>
      */
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/search")
     @Operation(
             summary = "Bo'linmalarni qidirish (GET)",
@@ -366,6 +373,7 @@ public class UniversityDepartmentEntityController {
      * }
      * </pre>
      */
+    @PreAuthorize("hasAuthority('universities.view')")
     @PostMapping("/search")
     @Operation(
             summary = "Bo'linmalarni qidirish (POST)",
@@ -451,6 +459,7 @@ public class UniversityDepartmentEntityController {
     /**
      * Barcha bo'linmalarni olish (pagination bilan)
      */
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping
     @Operation(
             summary = "Barcha bo'linmalarni olish",
@@ -519,6 +528,7 @@ public class UniversityDepartmentEntityController {
     /**
      * Yangi bo'linma yaratish
      */
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PostMapping
     @Operation(
             summary = "Yangi bo'linma yaratish",

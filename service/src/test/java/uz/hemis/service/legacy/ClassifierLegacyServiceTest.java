@@ -1,6 +1,5 @@
 package uz.hemis.service.legacy;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,10 +8,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import uz.hemis.domain.entity.University;
 import uz.hemis.domain.repository.UniversityRepository;
+import uz.hemis.service.legacy.HokimiyatClassifierService;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,8 +30,10 @@ import static org.mockito.Mockito.*;
  *   <li>getAllClassifiersWithItems - success and empty table list</li>
  *   <li>getAllClassifiersInfo - success and empty table list</li>
  *   <li>getSingleClassifier - h_university, dynamic classifier, and not-found</li>
- *   <li>getHokimiyatClassifiers - success and exception handling</li>
  * </ul>
+ *
+ * <p>Hokimiyat/Stipend classifier tests moved to
+ * {@link HokimiyatClassifierServiceTest}.</p>
  *
  * @since 1.5.4
  */
@@ -47,6 +49,9 @@ class ClassifierLegacyServiceTest {
 
     @Mock
     private CubaNestedObjectLoader nestedLoader;
+
+    @Mock
+    private HokimiyatClassifierService hokimiyatClassifierService;
 
     @InjectMocks
     private ClassifierLegacyService classifierLegacyService;
@@ -165,15 +170,12 @@ class ClassifierLegacyServiceTest {
     class GetSingleClassifier {
 
         @Test
-        @DisplayName("h_university - returns university classifier from repository")
-        void universityClassifier_returnsFromRepository() {
-            University uni = new University();
-            uni.setCode("TATU01");
-            uni.setName("Tashkent University");
-            uni.setVersion(3);
-            uni.setActive(true);
+        @DisplayName("h_university - returns university classifier via HokimiyatClassifierService")
+        void universityClassifier_returnsFromHokimiyatService() {
+            Map<String, Object> uniClassifier = new LinkedHashMap<>();
+            uniClassifier.put("h_university", Map.of("title", "Oliy ta'lim muassasalari ro'yxati", "version", 3L, "count", 1L, "items", List.of()));
 
-            when(universityRepository.findAll()).thenReturn(List.of(uni));
+            when(hokimiyatClassifierService.getUniversityClassifierForHokimiyat()).thenReturn(uniClassifier);
 
             Map<String, Object> result = classifierLegacyService.getSingleClassifier("h_university");
 
@@ -185,7 +187,7 @@ class ClassifierLegacyServiceTest {
             Map<String, Object> classifierWrapper = (Map<String, Object>) result.get("classifier");
             assertThat(classifierWrapper).containsKey("h_university");
 
-            verify(universityRepository).findAll();
+            verify(hokimiyatClassifierService).getUniversityClassifierForHokimiyat();
         }
 
         @Test
@@ -200,48 +202,6 @@ class ClassifierLegacyServiceTest {
             Map<String, Object> result = classifierLegacyService.getSingleClassifier("h_nonexistent");
 
             assertThat(result).isNull();
-        }
-    }
-
-    // =====================================================
-    // getHokimiyatClassifiers
-    // =====================================================
-
-    @Nested
-    @DisplayName("getHokimiyatClassifiers")
-    class GetHokimiyatClassifiers {
-
-        @Test
-        @DisplayName("returns success true with classifiers list")
-        void returnsSuccessWithClassifiers() {
-            // All internal calls to getClassifierWithItems will throw exceptions,
-            // which are caught and logged. This tests the exception-handling path.
-            when(jdbcTemplate.queryForObject(
-                    argThat(sql -> sql != null && sql.contains("information_schema.columns")),
-                    eq(Boolean.class), any(), any()))
-                    .thenThrow(new RuntimeException("simulated error"));
-
-            Map<String, Object> result = classifierLegacyService.getHokimiyatClassifiers();
-
-            assertThat(result).isNotNull();
-            assertThat(result.get("success")).isEqualTo(true);
-            assertThat(result).containsKey("classifiers");
-        }
-
-        @Test
-        @DisplayName("handles individual classifier loading failures gracefully")
-        void handlesIndividualFailuresGracefully() {
-            // Simulating that each classifier table lookup fails
-            when(jdbcTemplate.queryForObject(anyString(), eq(Boolean.class), any(Object[].class)))
-                    .thenThrow(new RuntimeException("DB error"));
-
-            Map<String, Object> result = classifierLegacyService.getHokimiyatClassifiers();
-
-            assertThat(result).isNotNull();
-            assertThat(result.get("success")).isEqualTo(true);
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> classifiers = (List<Map<String, Object>>) result.get("classifiers");
-            assertThat(classifiers).isEmpty();
         }
     }
 }

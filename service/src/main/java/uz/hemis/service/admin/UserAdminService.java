@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>SUPER_ADMIN — can manage all users</li>
  *   <li>MINISTRY_ADMIN — can manage all users except SUPER_ADMIN</li>
- *   <li>UNIVERSITY_ADMIN — can only manage users within own university</li>
+ *   <li>OTM_API — can only manage users within own university</li>
  * </ul>
  *
  * @since 2.0.0
@@ -57,21 +57,21 @@ public class UserAdminService {
     /**
      * Get paginated list of users with filters
      *
-     * <p>UNIVERSITY_ADMIN automatically filtered to own university</p>
+     * <p>OTM_API automatically filtered to own university</p>
      */
     @Transactional(readOnly = true)
     public Page<UserAdminResponse> getUsers(String search, String role, String university,
                                             Boolean enabled, Pageable pageable, UUID callerUserId) {
         User caller = findCallerWithPermissions(callerUserId);
 
-        // UNIVERSITY_ADMIN: force filter to own university
+        // OTM_API: force filter to own university
         String effectiveUniversity = university;
-        if (caller.hasRoleByCode("UNIVERSITY_ADMIN") && !caller.isSuperAdmin()
+        if (caller.hasRoleByCode("OTM_API") && !caller.isSuperAdmin()
                 && !caller.hasRoleByCode("MINISTRY_ADMIN")) {
-            if (caller.getEntityCode() == null || caller.getEntityCode().isBlank()) {
+            if (caller.getUniversityCode() == null || caller.getUniversityCode().isBlank()) {
                 throw new AccessDeniedException("University admin has no university assigned");
             }
-            effectiveUniversity = caller.getEntityCode();
+            effectiveUniversity = caller.getUniversityCode();
         }
 
         // Convert null strings to empty strings to avoid Hibernate bytea parameter binding issue
@@ -115,13 +115,13 @@ public class UserAdminService {
             throw new BadRequestException("Username already exists");
         }
 
-        // UNIVERSITY_ADMIN: force entityCode to own university
-        final String entityCode;
-        if (caller.hasRoleByCode("UNIVERSITY_ADMIN") && !caller.isSuperAdmin()
+        // OTM_API: force universityCode to own university
+        final String universityCode;
+        if (caller.hasRoleByCode("OTM_API") && !caller.isSuperAdmin()
                 && !caller.hasRoleByCode("MINISTRY_ADMIN")) {
-            entityCode = caller.getEntityCode();
+            universityCode = caller.getUniversityCode();
         } else {
-            entityCode = request.getEntityCode();
+            universityCode = request.getUniversityCode();
         }
 
         // Validate roles
@@ -139,11 +139,10 @@ public class UserAdminService {
         user.setFailedAttempts(0);
 
         // Set university FK and userType
-        if (entityCode != null && !entityCode.isBlank()) {
-            University university = universityRepository.findById(entityCode)
-                    .orElseThrow(() -> new BadRequestException("University not found: " + entityCode));
-            user.setUniversity(university);
-            user.setEntityCode(entityCode);
+        if (universityCode != null && !universityCode.isBlank()) {
+            University uni = universityRepository.findById(universityCode)
+                    .orElseThrow(() -> new BadRequestException("University not found: " + universityCode));
+            user.setUniversity(uni);
             user.setUserType(UserType.UNIVERSITY);
         } else {
             user.setUserType(UserType.SYSTEM);
@@ -156,8 +155,8 @@ public class UserAdminService {
 
         User saved = userRepository.save(user);
 
-        log.info("User created: username={}, entityCode={}, roles={}, by={}",
-                saved.getUsername(), saved.getEntityCode(),
+        log.info("User created: username={}, universityCode={}, roles={}, by={}",
+                saved.getUsername(), saved.getUniversityCode(),
                 roles.stream().map(Role::getCode).collect(Collectors.joining(",")),
                 callerUserId);
 
@@ -176,9 +175,12 @@ public class UserAdminService {
 
         validateWriteScope(caller, target);
 
-        // Block self role-modification (privilege escalation prevention)
-        if (id.equals(callerUserId) && request.getRoleIds() != null) {
-            throw new BadRequestException("Cannot modify your own roles");
+        // Self role-modification prevention — silently ignore (don't throw)
+        // Frontend always sends roleIds; when editing self, just skip role changes
+        boolean isSelfEdit = id.equals(callerUserId);
+        if (isSelfEdit && request.getRoleIds() != null) {
+            log.info("Self-edit detected for user {}, ignoring roleIds", id);
+            request.setRoleIds(null);
         }
 
         // Update profile fields
@@ -192,22 +194,20 @@ public class UserAdminService {
             target.setPhone(request.getPhone());
         }
 
-        // Update entityCode + university FK (only SUPER_ADMIN and MINISTRY_ADMIN can change)
-        if (request.getEntityCode() != null) {
+        // Update university FK (only SUPER_ADMIN and MINISTRY_ADMIN can change)
+        if (request.getUniversityCode() != null) {
             if (caller.isSuperAdmin() || caller.hasRoleByCode("MINISTRY_ADMIN")) {
-                if (request.getEntityCode().isBlank()) {
-                    target.setEntityCode(null);
+                if (request.getUniversityCode().isBlank()) {
                     target.setUniversity(null);
                     target.setUserType(UserType.SYSTEM);
                 } else {
-                    University uni = universityRepository.findById(request.getEntityCode())
-                            .orElseThrow(() -> new BadRequestException("University not found: " + request.getEntityCode()));
-                    target.setEntityCode(request.getEntityCode());
+                    University uni = universityRepository.findById(request.getUniversityCode())
+                            .orElseThrow(() -> new BadRequestException("University not found: " + request.getUniversityCode()));
                     target.setUniversity(uni);
                     target.setUserType(UserType.UNIVERSITY);
                 }
             }
-            // UNIVERSITY_ADMIN cannot change entityCode — silently ignored
+            // OTM_API cannot change university — silently ignored
         }
 
         // Update roles
@@ -237,7 +237,6 @@ public class UserAdminService {
      * Change user password
      */
     @Transactional
-    @Audited(action = AuditAction.UPDATE, entity = "User", entityClass = User.class, keyArg = "id")
     public void changePassword(UUID id, String newPassword, UUID callerUserId) {
         User caller = findCallerWithPermissions(callerUserId);
         User target = userRepository.findByIdWithRolesAndUniversity(id)
@@ -245,11 +244,15 @@ public class UserAdminService {
 
         validateWriteScope(caller, target);
 
+        String oldHash = target.getPassword() != null ? target.getPassword().substring(0, 20) : "NULL";
         String encodedPassword = passwordEncoder.encode(newPassword);
         target.setPassword(encodedPassword);
-        userRepository.save(target);
+        String newHash = encodedPassword.substring(0, 20);
 
-        log.info("Password changed for user: id={}, username={}, by={}", id, target.getUsername(), callerUserId);
+        userRepository.saveAndFlush(target);
+
+        log.info("PASSWORD CHANGE: id={}, user={}, oldHash={}..., newHash={}..., by={}",
+                id, target.getUsername(), oldHash, newHash, callerUserId);
     }
 
     /**
@@ -343,9 +346,9 @@ public class UserAdminService {
         User caller = findCallerWithPermissions(callerUserId);
         List<Role> roles = roleRepository.findAllActive();
 
-        // UNIVERSITY_ADMIN: filter out SYSTEM roles they can't assign
+        // OTM_API: filter out SYSTEM roles they can't assign
         if (!caller.isSuperAdmin() && !caller.hasRoleByCode("MINISTRY_ADMIN")
-                && caller.hasRoleByCode("UNIVERSITY_ADMIN")) {
+                && caller.hasRoleByCode("OTM_API")) {
             roles = roles.stream()
                     .filter(r -> !r.isSystemRole())
                     .collect(Collectors.toList());
@@ -381,9 +384,9 @@ public class UserAdminService {
         // MINISTRY_ADMIN — can see all users
         if (caller.hasRoleByCode("MINISTRY_ADMIN")) return;
 
-        // UNIVERSITY_ADMIN — only own university
-        if (caller.hasRoleByCode("UNIVERSITY_ADMIN")) {
-            if (!Objects.equals(caller.getEntityCode(), target.getEntityCode())) {
+        // OTM_API — only own university
+        if (caller.hasRoleByCode("OTM_API")) {
+            if (!Objects.equals(caller.getUniversityCode(), target.getUniversityCode())) {
                 throw new AccessDeniedException("Cannot access users from another university");
             }
             return;
@@ -404,9 +407,9 @@ public class UserAdminService {
             return;
         }
 
-        // UNIVERSITY_ADMIN — only own university, no system role users
-        if (caller.hasRoleByCode("UNIVERSITY_ADMIN")) {
-            if (!Objects.equals(caller.getEntityCode(), target.getEntityCode())) {
+        // OTM_API — only own university, no system role users
+        if (caller.hasRoleByCode("OTM_API")) {
+            if (!Objects.equals(caller.getUniversityCode(), target.getUniversityCode())) {
                 throw new AccessDeniedException("Cannot access users from another university");
             }
             if (target.getRoles().stream().anyMatch(Role::isSystemRole)) {
@@ -442,8 +445,8 @@ public class UserAdminService {
                 }
             }
 
-            // UNIVERSITY_ADMIN cannot assign SYSTEM roles
-            if (caller.hasRoleByCode("UNIVERSITY_ADMIN") && !caller.isSuperAdmin()
+            // OTM_API cannot assign SYSTEM roles
+            if (caller.hasRoleByCode("OTM_API") && !caller.isSuperAdmin()
                     && !caller.hasRoleByCode("MINISTRY_ADMIN")) {
                 if (role.isSystemRole()) {
                     throw new AccessDeniedException("Cannot assign system role: " + role.getCode());
@@ -482,7 +485,7 @@ public class UserAdminService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .entityCode(user.getEntityCode())
+                .universityCode(user.getUniversityCode())
                 .universityName(universityName)
                 .userType(user.getUserType() != null ? user.getUserType().name() : null)
                 .enabled(user.getEnabled())

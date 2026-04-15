@@ -17,6 +17,7 @@ import uz.hemis.service.legacy.science.ScienceDoctorateEntityLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Doktorantura Talabasi Turi Controller - CUBA REST API Pattern
@@ -76,6 +77,7 @@ public class DoctoralStudentTypeEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q. Foydalanuvchida bu ma'lumotni o'qish huquqi yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi. Berilgan ID bilan tur mavjud emas.")
     })
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Tur identifikatori (code)", required = true, example = "11")
@@ -119,6 +121,7 @@ public class DoctoralStudentTypeEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
+    @PreAuthorize("hasAuthority('science.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(
             @Parameter(description = "Tur identifikatori (code)", required = true)
@@ -176,6 +179,7 @@ public class DoctoralStudentTypeEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
+    @PreAuthorize("hasAuthority('science.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(
             @Parameter(description = "Tur identifikatori (code)", required = true)
@@ -216,6 +220,7 @@ public class DoctoralStudentTypeEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @Parameter(description = "Filter sharti (JSON)", required = true)
@@ -259,6 +264,7 @@ public class DoctoralStudentTypeEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("hasAuthority('science.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filterBody,
@@ -312,6 +318,7 @@ public class DoctoralStudentTypeEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> listAll(
             @Parameter(description = "Jami sonni 'X-Total-Count' headerda qaytarish")
@@ -371,6 +378,7 @@ public class DoctoralStudentTypeEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("hasAuthority('science.edit')")
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
 

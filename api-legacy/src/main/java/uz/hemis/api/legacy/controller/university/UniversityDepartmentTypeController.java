@@ -17,6 +17,7 @@ import uz.hemis.service.legacy.ClassifierLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * OTM Bo'linma Turlari Controller - CUBA REST API Pattern
@@ -76,6 +77,7 @@ public class UniversityDepartmentTypeController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q. Foydalanuvchida bu ma'lumotni o'qish huquqi yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi. Berilgan ID bilan bo'linma turi mavjud emas.")
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Bo'linma turi identifikatori (code)", required = true, example = "11")
@@ -120,6 +122,7 @@ public class UniversityDepartmentTypeController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(
             @Parameter(description = "Bo'linma turi identifikatori (code)", required = true)
@@ -179,6 +182,7 @@ public class UniversityDepartmentTypeController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(
             @Parameter(description = "Bo'linma turi identifikatori (code)", required = true)
@@ -222,6 +226,7 @@ public class UniversityDepartmentTypeController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @Parameter(description = "Filter sharti (JSON)", required = true)
@@ -265,6 +270,7 @@ public class UniversityDepartmentTypeController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filterBody,
@@ -320,6 +326,7 @@ public class UniversityDepartmentTypeController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> listAll(
             @Parameter(description = "Jami sonni 'X-Total-Count' headerda qaytarish")
@@ -380,6 +387,7 @@ public class UniversityDepartmentTypeController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
 

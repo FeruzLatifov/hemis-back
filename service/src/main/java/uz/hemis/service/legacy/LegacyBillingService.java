@@ -1,7 +1,10 @@
 package uz.hemis.service.legacy;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -19,8 +22,11 @@ import java.util.UUID;
  * {@code data} payload or an explanatory message.</p>
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class LegacyBillingService {
+
+    private final JdbcTemplate jdbcTemplate;
 
     public Map<String, Object> processScholarship(String tin, List<String> pinfls) {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -66,6 +72,34 @@ public class LegacyBillingService {
 
         log.info("Legacy billing invoice request accepted params={}", params);
         return response;
+    }
+
+    /**
+     * Lookup student fullname by PINFL from hemishe_e_student.
+     * OLD-HEMIS format: "FAMILIYA ISM OTASI" (uppercase).
+     *
+     * @param pinfl student PINFL
+     * @return uppercase fullname or empty string if not found
+     */
+    @Transactional(readOnly = true)
+    public String lookupStudentFullname(String pinfl) {
+        if (pinfl == null || pinfl.isBlank()) return "";
+        try {
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT first_name, lastname, fathername FROM hemishe_e_student WHERE pinfl = ? AND delete_ts IS NULL LIMIT 1",
+                    pinfl);
+            StringBuilder sb = new StringBuilder();
+            String lastname = row.get("lastname") != null ? row.get("lastname").toString() : "";
+            String firstName = row.get("first_name") != null ? row.get("first_name").toString() : "";
+            String fathername = row.get("fathername") != null ? row.get("fathername").toString() : "";
+            if (!lastname.isEmpty()) sb.append(lastname);
+            if (!firstName.isEmpty()) { if (!sb.isEmpty()) sb.append(" "); sb.append(firstName); }
+            if (!fathername.isEmpty()) { if (!sb.isEmpty()) sb.append(" "); sb.append(fathername); }
+            return sb.toString().toUpperCase();
+        } catch (Exception e) {
+            log.debug("Student not found for PINFL: {}", pinfl);
+            return "";
+        }
     }
 }
 

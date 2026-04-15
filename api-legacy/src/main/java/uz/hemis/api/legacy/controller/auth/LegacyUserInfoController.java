@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.dto.LegacyUserInfoResponse;
 import uz.hemis.domain.entity.User;
 import uz.hemis.service.legacy.UserLegacyService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Legacy User Controller - OLD-HEMIS Compatibility
@@ -108,6 +109,7 @@ public class LegacyUserInfoController {
      * 1. /app/rest/v2/userInfo (primary - old-hemis URL)
      * 2. /app/rest/user/info (alternative)
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping({"/v2/userInfo", "/user/info"})
     public ResponseEntity<LegacyUserInfoResponse.UserData> getUserInfo(Authentication authentication) {
         log.info("GET /app/rest/user/info - principal: {}", authentication.getName());

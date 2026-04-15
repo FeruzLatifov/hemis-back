@@ -102,7 +102,7 @@ public class LegacyUserLoadingAdapter implements LegacyUserLoadingPort {
         if (user.isSystemAdmin()) {
             authorities.add("ROLE_ADMIN");
         } else if (user.getUniversityCode() != null) {
-            authorities.add("ROLE_UNIVERSITY_ADMIN");
+            authorities.add("ROLE_OTM_API");
         }
 
         // Fallback if no roles assigned
@@ -122,7 +122,7 @@ public class LegacyUserLoadingAdapter implements LegacyUserLoadingPort {
         if (lowerGroupName.contains("admin")) {
             return "ROLE_ADMIN";
         } else if (lowerGroupName.contains("university")) {
-            return "ROLE_UNIVERSITY_ADMIN";
+            return "ROLE_OTM_API";
         } else {
             return "ROLE_USER";
         }

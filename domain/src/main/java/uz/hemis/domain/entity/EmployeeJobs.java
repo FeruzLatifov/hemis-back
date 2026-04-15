@@ -1,62 +1,139 @@
 package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 
+import java.io.Serializable;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * EmployeeJobs — one person can hold many positions at many universities.
+ *
+ * <p>Direct successor of {@code hemishe_e_employee_jobs} (old CUBA table).</p>
+ *
+ * <p>World equivalents:
+ * <ul>
+ *   <li>PeopleSoft: {@code JOB} / {@code PS_JOB}</li>
+ *   <li>Oracle HCM: {@code PER_ALL_ASSIGNMENTS_F}</li>
+ *   <li>Banner: {@code NBRJOBS}</li>
+ * </ul></p>
+ *
+ * @since 1.0.0
+ */
+@Entity
+@Table(name = "employee_jobs")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
-@Entity
-@Table(name = "hemishe_e_employee_jobs")
-@SQLRestriction("delete_ts IS NULL")
-public class EmployeeJobs extends BaseEntity {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class EmployeeJobs implements Serializable {
 
-    @Column(name = "_employee")
-    private UUID employee;
+    @Id
+    @Column(name = "id", nullable = false)
+    private UUID id;
 
-    @Column(name = "_university")
-    private String university;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id", nullable = false)
+    private Employee employee;
 
-    @Column(name = "_department")
-    private String department;
+    @Column(name = "employee_id_number", length = 50)
+    private String employeeIdNumber;
 
-    @Column(name = "_employee_type")
+    @Column(name = "university_code", nullable = false)
+    private String universityCode;
+
+    @Column(name = "department_code")
+    private String departmentCode;
+
+    @Column(name = "position_code", length = 10)
+    private String positionCode;
+
+    @Column(name = "employee_type", length = 10)
     private String employeeType;
 
-    @Column(name = "_employee_position")
-    private String employeePosition;
+    @Column(name = "employment_form", length = 10)
+    private String employmentForm;
 
-    @Column(name = "_employee_rate")
-    private String employeeRate;
+    @Column(name = "employment_staff", length = 10)
+    private String employmentStaff;
 
-    @Column(name = "_employee_form")
-    private String employeeForm;
-
-    @Column(name = "_employee_status")
+    @Column(name = "employee_status", length = 10)
     private String employeeStatus;
 
-    @Column(name = "job_start_date")
-    private LocalDate jobStartDate;
+    @Column(name = "employee_rate", length = 10)
+    private String employeeRate;
 
-    @Column(name = "job_end_date")
-    private LocalDate jobEndDate;
+    @Column(name = "is_current", nullable = false)
+    private Boolean isCurrent = true;
 
-    @Column(name = "tag")
-    private String tag;
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    @Column(name = "contract_number", length = 100)
+    private String contractNumber;
 
     @Column(name = "contract_date")
     private LocalDate contractDate;
 
-    @Column(name = "contract_number")
-    private String contractNumber;
+    @Column(name = "decree_number", length = 100)
+    private String decreeNumber;
 
     @Column(name = "decree_date")
     private LocalDate decreeDate;
 
-    @Column(name = "decree_number")
-    private String decreeNumber;
+    @Column(name = "source", length = 50)
+    private String source;
+
+    @Column(name = "source_uid")
+    private String sourceUid;
+
+    @Column(name = "hemis_uid")
+    private String hemisUid;
+
+    @Column(name = "hash", length = 64)
+    private String hash;
+
+    @Column(name = "sort_order")
+    private Integer sortOrder;
+
+    @Version
+    @Column(name = "version")
+    private Integer version;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "created_by", length = 50)
+    private String createdBy;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "updated_by", length = 50)
+    private String updatedBy;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by", length = 50)
+    private String deletedBy;
+
+    @PrePersist
+    protected void onCreate() {
+        if (id == null) id = UUID.randomUUID();
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

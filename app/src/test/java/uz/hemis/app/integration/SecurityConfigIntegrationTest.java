@@ -111,8 +111,8 @@ class SecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(roles = "UNIVERSITY_ADMIN")
-    @DisplayName("POST /students should be accessible for UNIVERSITY_ADMIN role")
+    @WithMockUser(roles = "OTM_API")
+    @DisplayName("POST /students should be accessible for OTM_API role")
     void postStudent_WithUniversityAdminRole_ShouldBeAccessible() throws Exception {
         mockMvc.perform(post("/app/rest/v2/students")
                         .contentType("application/json")
@@ -155,8 +155,8 @@ class SecurityConfigTest {
     }
 
     @Test
-    @WithMockUser(roles = "UNIVERSITY_ADMIN")
-    @DisplayName("PATCH /students/{id} should be accessible for UNIVERSITY_ADMIN role")
+    @WithMockUser(roles = "OTM_API")
+    @DisplayName("PATCH /students/{id} should be accessible for OTM_API role")
     void patchStudent_WithUniversityAdminRole_ShouldBeAccessible() throws Exception {
         mockMvc.perform(patch("/app/rest/v2/students/{id}", "12345678-1234-1234-1234-123456789012")
                         .contentType("application/json")

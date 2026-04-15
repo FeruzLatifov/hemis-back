@@ -29,6 +29,7 @@ public class CourseController {
 
     private final CourseService courseService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getAllCourses(
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
@@ -37,18 +38,21 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<CourseDto>> getCourseById(@PathVariable UUID id) {
         CourseDto course = courseService.findById(id);
         return ResponseEntity.ok(ResponseWrapper.success(course));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<CourseDto>> getCourseByCode(@PathVariable String code) {
         CourseDto course = courseService.findByCode(code);
         return ResponseEntity.ok(ResponseWrapper.success(course));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getCoursesByUniversity(
             @RequestParam("university") String universityCode,
@@ -58,6 +62,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "universityAll")
     public ResponseEntity<ResponseWrapper<List<CourseDto>>> getAllCoursesByUniversity(
             @RequestParam("universityAll") String universityCode
@@ -66,6 +71,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(courses));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "subject")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getCoursesBySubject(
             @RequestParam("subject") UUID subjectId,
@@ -75,6 +81,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "search")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> searchCoursesByName(
             @RequestParam("search") String name,
@@ -84,6 +91,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "active")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getActiveCourses(
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
@@ -92,6 +100,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "semester")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getCoursesBySemester(
             @RequestParam("semester") Integer semester,
@@ -102,14 +111,14 @@ public class CourseController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<CourseDto>> createCourse(@Valid @RequestBody CourseDto courseDto) {
         CourseDto created = courseService.create(courseDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<CourseDto>> updateCourse(
             @PathVariable UUID id,
             @Valid @RequestBody CourseDto courseDto

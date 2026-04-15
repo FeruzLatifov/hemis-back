@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.shared.BimmService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Legal Entity Service Controller - OLD-HEMIS Compatible
@@ -35,6 +36,7 @@ public class LegalEntityServiceController {
      * <p>Old-hemis: LegalEntityServiceBean.bankRequisites(String inn)</p>
      * <p>Tashqi API: https://api-mspd.edu.uz/legalentity/legalentity-bankrequisites/</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/bankRequisites")
     @Operation(
             summary = "Bank rekvizitlarini olish",

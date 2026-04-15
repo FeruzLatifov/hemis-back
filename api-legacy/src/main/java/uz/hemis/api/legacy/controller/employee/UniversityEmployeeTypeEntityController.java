@@ -20,6 +20,7 @@ import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * University Employee Type Entity Controller (CUBA Pattern)
@@ -51,6 +52,7 @@ public class UniversityEmployeeTypeEntityController {
     private final LegacySecurityHelper securityHelper;
     private static final String ENTITY_NAME = "hemishe_HUniversityEmployeeType";
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta xodim turini olish",
@@ -89,6 +91,7 @@ public class UniversityEmployeeTypeEntityController {
         return ResponseEntity.ok(employeeRefService.toUniversityEmployeeTypeMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Xodim turini yangilash",
@@ -155,6 +158,7 @@ public class UniversityEmployeeTypeEntityController {
         return ResponseEntity.ok(employeeRefService.toUniversityEmployeeTypeMinimalMap(saved));
     }
 
+    @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Xodim turini o'chirish",
@@ -197,6 +201,7 @@ public class UniversityEmployeeTypeEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PostMapping
     @Operation(
         summary = "Yangi xodim turini yaratish",
@@ -276,6 +281,7 @@ public class UniversityEmployeeTypeEntityController {
         return ResponseEntity.ok(employeeRefService.toUniversityEmployeeTypeMinimalMap(saved));
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     @Operation(
         summary = "Barcha xodim turlari",
@@ -329,6 +335,7 @@ public class UniversityEmployeeTypeEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Xodim turlarini qidirish (GET)",
@@ -377,6 +384,7 @@ public class UniversityEmployeeTypeEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Xodim turlarini qidirish (POST)",

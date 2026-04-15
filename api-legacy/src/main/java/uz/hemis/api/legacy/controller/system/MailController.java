@@ -22,7 +22,7 @@ import java.util.Map;
 public class MailController {
 
     @PostMapping("/send")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> sendEmail(
             @Valid @RequestBody Map<String, String> request
     ) {
@@ -42,6 +42,7 @@ public class MailController {
         return ResponseEntity.ok(ResponseWrapper.success(response));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/status/{messageId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getEmailStatus(
             @PathVariable String messageId
@@ -57,7 +58,7 @@ public class MailController {
     }
 
     @GetMapping("/templates")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getEmailTemplates() {
         Map<String, String> templates = new HashMap<>();
         templates.put("welcome", "Xush kelibsiz email shabloni");

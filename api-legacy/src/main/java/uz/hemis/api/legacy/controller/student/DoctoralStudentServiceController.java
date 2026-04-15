@@ -16,6 +16,7 @@ import uz.hemis.service.legacy.ReferenceDataLegacyService;
 import uz.hemis.service.student.DoctoralStudentService;
 
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Doctoral Student Service Controller - OLD-HEMIS Compatible
@@ -45,6 +46,7 @@ public class DoctoralStudentServiceController {
      *
      * <p>Old-hemis: DoctoralStudentServiceBean.id()</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/id")
     @Operation(
             summary = "Doktorant ID olish",

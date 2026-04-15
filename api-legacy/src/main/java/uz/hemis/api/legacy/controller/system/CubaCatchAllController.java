@@ -3,6 +3,7 @@ package uz.hemis.api.legacy.controller.system;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -35,6 +36,7 @@ public class CubaCatchAllController {
      * bu catch-all dan ustun turadi.
      */
     @RequestMapping("/app/rest/v2/services/{service}/{method}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> serviceMethodNotFound(
             @PathVariable String service,
             @PathVariable String method,
@@ -54,6 +56,7 @@ public class CubaCatchAllController {
      * Pattern: /app/rest/v2/services/{service}/{method}/{extra}
      */
     @RequestMapping("/app/rest/v2/services/{service}/{method}/{extra}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> serviceMethodNotFoundWithExtra(
             @PathVariable String service,
             @PathVariable String method,
@@ -74,6 +77,7 @@ public class CubaCatchAllController {
      * Pattern: /app/rest/v2/entities/{entity}
      */
     @RequestMapping("/app/rest/v2/entities/{entity}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> entityNotFound(
             @PathVariable String entity,
             HttpServletRequest request) {
@@ -91,6 +95,7 @@ public class CubaCatchAllController {
      * Pattern: /app/rest/v2/entities/{entity}/{entityId}
      */
     @RequestMapping("/app/rest/v2/entities/{entity}/{entityId}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> entityWithIdNotFound(
             @PathVariable String entity,
             @PathVariable String entityId,

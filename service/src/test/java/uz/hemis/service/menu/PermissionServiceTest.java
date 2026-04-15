@@ -91,7 +91,7 @@ class PermissionServiceTest {
         // Build roles
         adminRole = Role.builder()
                 .id(UUID.randomUUID())
-                .code("UNIVERSITY_ADMIN")
+                .code("OTM_API")
                 .name("University Administrator")
                 .active(true)
                 .permissions(new HashSet<>(Set.of(studentsView, studentsCreate, reportsView, reportsExport)))

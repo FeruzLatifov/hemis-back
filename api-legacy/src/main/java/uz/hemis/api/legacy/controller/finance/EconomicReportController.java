@@ -20,7 +20,7 @@ import java.util.Map;
 public class EconomicReportController {
 
     @GetMapping("/financial")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getFinancialReport(
             @RequestParam String university,
             @RequestParam(required = false) Integer year

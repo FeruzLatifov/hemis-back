@@ -43,11 +43,11 @@ public class EmployeeJobsLegacyService {
     }
 
     public List<EmployeeJobs> findByUniversity(String universityCode) {
-        return employeeJobsRepository.findByUniversity(universityCode);
+        return employeeJobsRepository.findByUniversityCode(universityCode);
     }
 
     public List<EmployeeJobs> findByEmployeeCode(String employeeCode) {
-        return employeeJobsRepository.findByEmployeeCode(employeeCode);
+        return employeeJobsRepository.findByEmployeeIdNumber(employeeCode);
     }
 
     public List<EmployeeJobs> findByEmployeeId(UUID employeeId) {
@@ -55,7 +55,7 @@ public class EmployeeJobsLegacyService {
     }
 
     public Page<EmployeeJobs> findAllByUniversity(String universityCode, PageRequest pageRequest) {
-        return employeeJobsRepository.findAllByUniversity(universityCode, pageRequest);
+        return employeeJobsRepository.findByUniversityCode(universityCode, pageRequest);
     }
 
     @Transactional

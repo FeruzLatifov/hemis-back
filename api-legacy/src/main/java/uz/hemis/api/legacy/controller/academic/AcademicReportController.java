@@ -21,7 +21,7 @@ import java.util.UUID;
 public class AcademicReportController {
 
     @GetMapping("/students")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'DEAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentReport(
             @RequestParam(required = false) String university,
             @RequestParam(required = false) UUID faculty,
@@ -43,7 +43,7 @@ public class AcademicReportController {
     }
 
     @GetMapping("/grades")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'DEAN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN', 'TEACHER')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getGradeReport(
             @RequestParam(required = false) String university,
             @RequestParam(required = false) UUID specialty,
@@ -64,7 +64,7 @@ public class AcademicReportController {
     }
 
     @GetMapping("/attendance")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'DEAN', 'TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN', 'TEACHER')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAttendanceReport(
             @RequestParam(required = false) String university,
             @RequestParam(required = false) UUID group,
@@ -87,7 +87,7 @@ public class AcademicReportController {
     }
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getSummaryReport(
             @RequestParam String university,
             @RequestParam(required = false) String academicYear

@@ -24,6 +24,7 @@ import uz.hemis.api.legacy.util.CubaFilterHelper;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Ilmiy ishlanmalar Entity Controller (CUBA Pattern)
@@ -59,6 +60,7 @@ public class PublicationPropertyEntityController {
     // GET /{entityId} - Bitta ilmiy ishlanmani olish
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy ishlanmani olish",
@@ -93,6 +95,7 @@ public class PublicationPropertyEntityController {
     // PUT /{entityId} - Ilmiy ishlanmani yangilash
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy ishlanmani yangilash",
@@ -127,6 +130,7 @@ public class PublicationPropertyEntityController {
     // DELETE /{entityId} - Ilmiy ishlanmani o'chirish
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy ishlanmani o'chirish",
@@ -154,6 +158,7 @@ public class PublicationPropertyEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/search")
     @Operation(summary = "Ilmiy ishlanmalar qidirish (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -180,6 +185,7 @@ public class PublicationPropertyEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @PostMapping("/search")
     @Operation(summary = "Ilmiy ishlanmalar qidirish (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -210,6 +216,7 @@ public class PublicationPropertyEntityController {
     // GET - Barcha ilmiy ishlanmalar (paginated)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping({"", "/"})
     @Operation(summary = "Barcha ilmiy ishlanmalar ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -261,6 +268,7 @@ public class PublicationPropertyEntityController {
     // POST - Yangi ilmiy ishlanma yaratish
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PostMapping
     @Operation(
         summary = "Ilmiy ishlanma yaratish",

@@ -15,6 +15,7 @@ import uz.hemis.service.legacy.document.DocumentLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Diploma Blank Entity Controller (CUBA Pattern)
@@ -32,6 +33,7 @@ public class DiplomaBlankEntityController {
     private final DocumentLegacyService documentService;
     private final CubaFilterHelper filterHelper;
 
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> entity = documentService.findDiplomaBlankById(entityId);
@@ -39,6 +41,7 @@ public class DiplomaBlankEntityController {
         return ResponseEntity.ok(documentService.toDiplomaBlankMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.diplomas.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> existingOpt = documentService.findDiplomaBlankById(entityId);
@@ -49,6 +52,7 @@ public class DiplomaBlankEntityController {
         return ResponseEntity.ok(documentService.toDiplomaBlankMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.diplomas.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<DiplomaBlank> entity = documentService.findDiplomaBlankById(entityId);
@@ -57,6 +61,7 @@ public class DiplomaBlankEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -78,6 +83,7 @@ public class DiplomaBlankEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -103,6 +109,7 @@ public class DiplomaBlankEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @RequestParam(defaultValue = "0") Integer offset,
@@ -122,6 +129,7 @@ public class DiplomaBlankEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.diplomas.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         DiplomaBlank entity = new DiplomaBlank();

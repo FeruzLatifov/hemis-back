@@ -19,7 +19,7 @@ public class RoleSummary {
     @Schema(description = "Role ID")
     private UUID id;
 
-    @Schema(description = "Role code", example = "UNIVERSITY_ADMIN")
+    @Schema(description = "Role code", example = "OTM_API")
     private String code;
 
     @Schema(description = "Role name", example = "University Administrator")

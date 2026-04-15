@@ -18,6 +18,7 @@ import uz.hemis.api.legacy.util.CubaFilterHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * PublicationMethodical Entity Controller (CUBA Pattern)
@@ -52,6 +53,7 @@ public class PublicationMethodicalEntityController {
     private final ScienceEntityLegacyService scienceService;
     private final CubaFilterHelper filterHelper;
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get PublicationMethodical by ID", description = "Returns a single PublicationMethodical by UUID")
     public ResponseEntity<Map<String, Object>> getById(
@@ -70,6 +72,7 @@ public class PublicationMethodicalEntityController {
         return ResponseEntity.ok(scienceService.toPublicationMethodicalMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update PublicationMethodical", description = "Updates an existing PublicationMethodical")
     public ResponseEntity<Map<String, Object>> update(
@@ -91,6 +94,7 @@ public class PublicationMethodicalEntityController {
         return ResponseEntity.ok(scienceService.toPublicationMethodicalMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('science.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete PublicationMethodical", description = "Soft deletes an PublicationMethodical")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -105,6 +109,7 @@ public class PublicationMethodicalEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/search")
     @Operation(summary = "Search PublicationMethodical (GET)", description = "Search using URL parameters")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -127,6 +132,7 @@ public class PublicationMethodicalEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('science.view')")
     @PostMapping("/search")
     @Operation(summary = "Search PublicationMethodical (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -153,6 +159,7 @@ public class PublicationMethodicalEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping
     @Operation(summary = "Get all PublicationMethodical", description = "Returns paginated list")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -192,6 +199,7 @@ public class PublicationMethodicalEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PostMapping
     @Operation(summary = "Create PublicationMethodical", description = "Creates a new PublicationMethodical")
     public ResponseEntity<Map<String, Object>> create(

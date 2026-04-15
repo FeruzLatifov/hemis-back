@@ -16,12 +16,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
+import uz.hemis.domain.entity.Employee;
 import uz.hemis.domain.entity.EmployeeJobs;
 import uz.hemis.service.legacy.EmployeeJobsLegacyService;
 
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * EmployeeJobs Entity Controller (CUBA Pattern)
@@ -48,7 +50,7 @@ import java.util.stream.Collectors;
  */
 @Tag(name = "06.Xodim lavozimlari")
 @RestController
-@RequestMapping({"/app/rest/v2/entities/hemishe_EEmployeeJobs", "/app/rest/v2/entities/hemishe_EEmployeeJob"})
+@RequestMapping("/app/rest/v2/entities/hemishe_EEmployeeJobs")
 @RequiredArgsConstructor
 @Slf4j
 @SecurityRequirement(name = "bearerAuth")
@@ -59,6 +61,7 @@ public class EmployeeJobsEntityController {
 
     private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Xodim ish joyini olish",
@@ -108,6 +111,7 @@ public class EmployeeJobsEntityController {
     /**
      * OLD-HEMIS Compatible: Bo'sh entityId bilan PUT so'rov
      */
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PutMapping({"", "/"})
     @Operation(hidden = true)
     public ResponseEntity<Map<String, Object>> updateWithoutId(@RequestBody Map<String, Object> body) {
@@ -118,6 +122,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.status(500).body(errorResponse);
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PutMapping("/{entityId}")
     @Operation(
             summary = "Xodim lavozimini yangilash",
@@ -178,6 +183,7 @@ public class EmployeeJobsEntityController {
     /**
      * OLD-HEMIS Compatible: Bo'sh entityId bilan DELETE so'rov
      */
+    @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping({"", "/"})
     @Operation(hidden = true)
     public ResponseEntity<Map<String, Object>> deleteWithoutId() {
@@ -188,6 +194,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.status(500).body(errorResponse);
     }
 
+    @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
             summary = "Xodim lavozimini o'chirish",
@@ -223,6 +230,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Lavozimlarni qidirish (GET)",
@@ -247,6 +255,7 @@ public class EmployeeJobsEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Xodim kodi orqali ish joylarini olish",
@@ -321,6 +330,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.ok(List.of());
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     @Operation(
         summary = "Barcha xodim ish joylari",
@@ -373,6 +383,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PostMapping
     @Operation(
         summary = "Xodim ish joyini yaratish",
@@ -398,19 +409,19 @@ public class EmployeeJobsEntityController {
         EmployeeJobs entity = new EmployeeJobs();
         updateFromMap(entity, body);
 
-        if (entity.getUniversity() == null || entity.getUniversity().isEmpty()) {
+        if (entity.getUniversityCode() == null || entity.getUniversityCode().isEmpty()) {
             String universityCode = securityHelper.getUniversityCodeFromContext();
-            entity.setUniversity(universityCode);
+            entity.setUniversityCode(universityCode);
             log.debug("Auto-set university to: {}", universityCode);
         }
 
         try {
             EmployeeJobs saved = employeeJobsService.saveAndFlush(entity);
-            log.info("EmployeeJob created successfully: id={}, university={}", saved.getId(), saved.getUniversity());
+            log.info("EmployeeJob created successfully: id={}, university={}", saved.getId(), saved.getUniversityCode());
 
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("_entityName", ENTITY_NAME);
-            response.put("_instanceName", employeeJobsService.getEmployeeFullName(saved.getEmployee()));
+            response.put("_instanceName", employeeJobsService.getEmployeeFullName(saved.getEmployee() != null ? saved.getEmployee().getId() : null));
             response.put("id", saved.getId().toString());
             return ResponseEntity.ok(response);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
@@ -429,12 +440,14 @@ public class EmployeeJobsEntityController {
 
     private Map<String, Object> toMap(EmployeeJobs entity, Boolean returnNulls, String view) {
         return employeeJobsService.toMap(
-                entity.getId(), entity.getEmployee(), entity.getUniversity(), entity.getDepartment(),
-                entity.getEmployeeType(), entity.getEmployeePosition(), entity.getEmployeeRate(),
-                entity.getEmployeeForm(), entity.getEmployeeStatus(),
-                entity.getVersion(), entity.getTag(),
+                entity.getId(),
+                entity.getEmployee() != null ? entity.getEmployee().getId() : null,
+                entity.getUniversityCode(), entity.getDepartmentCode(),
+                entity.getEmployeeType(), entity.getPositionCode(), entity.getEmployeeRate(),
+                entity.getEmploymentForm(), entity.getEmployeeStatus(),
+                entity.getVersion(), null,
                 entity.getContractDate(), entity.getContractNumber(),
-                entity.getJobStartDate(), entity.getJobEndDate(),
+                entity.getStartDate(), entity.getEndDate(),
                 entity.getDecreeDate(), entity.getDecreeNumber(),
                 returnNulls, view);
     }
@@ -541,15 +554,19 @@ public class EmployeeJobsEntityController {
     private void updateFromMap(EmployeeJobs entity, Map<String, Object> map) {
         if (map.containsKey("employee")) {
             UUID value = parseUuid(map.get("employee"));
-            if (value != null) entity.setEmployee(value);
+            if (value != null) {
+                Employee emp = new Employee();
+                emp.setId(value);
+                entity.setEmployee(emp);
+            }
         }
         if (map.containsKey("university")) {
             String value = parseCode(map.get("university"));
-            if (value != null) entity.setUniversity(value);
+            if (value != null) entity.setUniversityCode(value);
         }
         if (map.containsKey("department")) {
             String value = parseCode(map.get("department"));
-            if (value != null) entity.setDepartment(value);
+            if (value != null) entity.setDepartmentCode(value);
         }
         if (map.containsKey("employeeType")) {
             String value = parseCode(map.get("employeeType"));
@@ -557,11 +574,11 @@ public class EmployeeJobsEntityController {
         }
         if (map.containsKey("employeePosition")) {
             String value = parseCode(map.get("employeePosition"));
-            if (value != null) entity.setEmployeePosition(value);
+            if (value != null) entity.setPositionCode(value);
         }
         if (map.containsKey("teacherPositionType")) {
             String value = parseCode(map.get("teacherPositionType"));
-            if (value != null) entity.setEmployeePosition(value);
+            if (value != null) entity.setPositionCode(value);
         }
         if (map.containsKey("employeeRate")) {
             String value = parseCode(map.get("employeeRate"));
@@ -569,11 +586,11 @@ public class EmployeeJobsEntityController {
         }
         if (map.containsKey("employeeForm")) {
             String value = parseCode(map.get("employeeForm"));
-            if (value != null) entity.setEmployeeForm(value);
+            if (value != null) entity.setEmploymentForm(value);
         }
         if (map.containsKey("employmentForm")) {
             String value = parseCode(map.get("employmentForm"));
-            if (value != null) entity.setEmployeeForm(value);
+            if (value != null) entity.setEmploymentForm(value);
         }
         if (map.containsKey("employeeStatus")) {
             String value = parseCode(map.get("employeeStatus"));
@@ -581,19 +598,18 @@ public class EmployeeJobsEntityController {
         }
         if (map.containsKey("staffPosition") && !map.containsKey("employeePosition") && !map.containsKey("teacherPositionType")) {
             String value = parseCode(map.get("staffPosition"));
-            if (value != null) entity.setEmployeePosition(value);
+            if (value != null) entity.setPositionCode(value);
         }
         if (map.containsKey("employmentStaff") && !map.containsKey("employeeStatus")) {
             String value = parseCode(map.get("employmentStaff"));
             if (value != null) entity.setEmployeeStatus(value);
         }
-        if (map.containsKey("jobStartDate")) entity.setJobStartDate(parseLocalDate(map.get("jobStartDate")));
-        if (map.containsKey("jobEndDate")) entity.setJobEndDate(parseLocalDate(map.get("jobEndDate")));
+        if (map.containsKey("jobStartDate")) entity.setStartDate(parseLocalDate(map.get("jobStartDate")));
+        if (map.containsKey("jobEndDate")) entity.setEndDate(parseLocalDate(map.get("jobEndDate")));
         if (map.containsKey("contractDate")) entity.setContractDate(parseLocalDate(map.get("contractDate")));
         if (map.containsKey("decreeDate")) entity.setDecreeDate(parseLocalDate(map.get("decreeDate")));
         if (map.containsKey("contractNumber")) entity.setContractNumber(parseString(map.get("contractNumber")));
         if (map.containsKey("decreeNumber")) entity.setDecreeNumber(parseString(map.get("decreeNumber")));
-        if (map.containsKey("tag")) entity.setTag(parseString(map.get("tag")));
     }
 
     @SuppressWarnings("unchecked")

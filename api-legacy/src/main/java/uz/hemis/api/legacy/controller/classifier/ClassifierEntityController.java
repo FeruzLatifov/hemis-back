@@ -12,6 +12,7 @@ import uz.hemis.service.legacy.ClassifierLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Classifier Entity Controllers (CUBA Pattern)
@@ -41,6 +42,7 @@ public class ClassifierEntityController {
 
         private final ClassifierLegacyService classifierService;
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping
         @Operation(summary = "Ta'lim turlari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -55,6 +57,7 @@ public class ClassifierEntityController {
             return ResponseEntity.ok(result);
         }
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping("/{code}")
         @Operation(summary = "Ta'lim turi bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
@@ -78,6 +81,7 @@ public class ClassifierEntityController {
 
         private final ClassifierLegacyService classifierService;
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping
         @Operation(summary = "Ta'lim shakllari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -92,6 +96,7 @@ public class ClassifierEntityController {
             return ResponseEntity.ok(result);
         }
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping("/{code}")
         @Operation(summary = "Ta'lim shakli bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
@@ -115,6 +120,7 @@ public class ClassifierEntityController {
 
         private final ClassifierLegacyService classifierService;
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping
         @Operation(summary = "Kurslar ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -129,6 +135,7 @@ public class ClassifierEntityController {
             return ResponseEntity.ok(result);
         }
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping("/{code}")
         @Operation(summary = "Kurs bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
@@ -152,6 +159,7 @@ public class ClassifierEntityController {
 
         private final ClassifierLegacyService classifierService;
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping
         @Operation(summary = "O'quv yillari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -166,6 +174,7 @@ public class ClassifierEntityController {
             return ResponseEntity.ok(result);
         }
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping("/{code}")
         @Operation(summary = "O'quv yili bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
@@ -189,6 +198,7 @@ public class ClassifierEntityController {
 
         private final ClassifierLegacyService classifierService;
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping
         @Operation(summary = "O'tkazish turlari ro'yxati (old-hemis da yo'q)")
         public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -203,6 +213,7 @@ public class ClassifierEntityController {
             return ResponseEntity.ok(result);
         }
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping("/{code}")
         @Operation(summary = "O'tkazish turi bo'yicha olish (old-hemis da yo'q)")
         public ResponseEntity<Map<String, Object>> getByCode(
@@ -226,6 +237,7 @@ public class ClassifierEntityController {
 
         private final ClassifierLegacyService classifierService;
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping
         @Operation(summary = "Qabul turlari ro'yxati")
         public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -240,6 +252,7 @@ public class ClassifierEntityController {
             return ResponseEntity.ok(result);
         }
 
+        @PreAuthorize("isAuthenticated()")
         @GetMapping("/{code}")
         @Operation(summary = "Qabul turi bo'yicha olish")
         public ResponseEntity<Map<String, Object>> getByCode(

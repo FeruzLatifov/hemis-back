@@ -42,7 +42,7 @@ import java.util.UUID;
  *   <li>All endpoints require authentication (JWT Bearer token)</li>
  *   <li>GET endpoints require {@code users.view} or {@code users.manage} permission</li>
  *   <li>CUD endpoints require {@code users.manage} permission</li>
- *   <li>Scope validation at service layer (SUPER_ADMIN > MINISTRY_ADMIN > UNIVERSITY_ADMIN)</li>
+ *   <li>Scope validation at service layer (SUPER_ADMIN > MINISTRY_ADMIN > OTM_API)</li>
  * </ul>
  *
  * @since 2.0.0
@@ -73,7 +73,7 @@ public class UserAdminController {
     public ResponseEntity<ResponseWrapper<Page<UserAdminResponse>>> getUsers(
             @Parameter(description = "Search by username or full name")
             @RequestParam(required = false) String search,
-            @Parameter(description = "Filter by role code", example = "UNIVERSITY_ADMIN")
+            @Parameter(description = "Filter by role code", example = "OTM_API")
             @RequestParam(required = false) String role,
             @Parameter(description = "Filter by university entity code", example = "TATU")
             @RequestParam(required = false) String university,
@@ -282,7 +282,7 @@ public class UserAdminController {
     // =====================================================
 
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "username", "fullName", "email", "entityCode", "enabled", "createdAt", "updatedAt");
+            "username", "fullName", "email", "university.code", "enabled", "createdAt", "updatedAt");
 
     private Pageable buildPageable(int page, int size, String sort) {
         int safePage = Math.max(page, 0);

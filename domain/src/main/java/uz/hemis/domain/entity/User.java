@@ -19,7 +19,7 @@ import java.util.Set;
  *   <li>Table: hemishe_user (NEW table for OAuth2)</li>
  *   <li>Purpose: Store university user credentials for API access</li>
  *   <li>Password: BCrypt hashed (never plain text)</li>
- *   <li>Roles: Comma-separated (ROLE_ADMIN, ROLE_UNIVERSITY_ADMIN, ROLE_USER)</li>
+ *   <li>Roles: Comma-separated (ROLE_ADMIN, ROLE_OTM_API, ROLE_USER)</li>
  * </ul>
  *
  * <p><strong>OLD-HEMIS Compatibility:</strong></p>
@@ -124,23 +124,6 @@ public class User extends ModernBaseEntity {
     // =====================================================
 
     /**
-     * Entity code (university/organization/ministry code, nullable for system admins)
-     * Column: entity_code VARCHAR(255)
-     *
-     * <p>Maps to UniversityUser.university in OLD-HEMIS</p>
-     * <p>NULL for system administrators</p>
-     * <p>Required for non-SYSTEM user types</p>
-     *
-     * <p><strong>Example:</strong></p>
-     * <ul>
-     *   <li>admin user: entityCode = NULL (system-wide access)</li>
-     *   <li>tatu_admin: entityCode = "TATU" (only TATU data)</li>
-     * </ul>
-     */
-    @Column(name = "entity_code", length = 255)
-    private String entityCode;
-
-    /**
      * User type (SYSTEM, UNIVERSITY, MINISTRY, ORGANIZATION)
      * Column: user_type VARCHAR(50) NOT NULL DEFAULT 'SYSTEM'
      * CHECK constraint in DB: user_type IN ('SYSTEM', 'UNIVERSITY', 'MINISTRY', 'ORGANIZATION')
@@ -234,6 +217,22 @@ public class User extends ModernBaseEntity {
     @JoinColumn(name = "university_id", referencedColumnName = "code")
     private University university;
 
+    /**
+     * Person link — shaxs bo'lgan user uchun employee jadvaliga bog'lanish.
+     * NULL for B2B/service/system accounts.
+     * Pattern: Banner GOBTPAC → SPRIDEN
+     */
+    @Column(name = "employee_id")
+    private java.util.UUID employeeId;
+
+    /**
+     * Get university code (from university relation)
+     * Replaces old entityCode field
+     */
+    public String getUniversityCode() {
+        return university != null ? university.getCode() : null;
+    }
+
     // =====================================================
     // Account Lockout (Security)
     // =====================================================
@@ -310,10 +309,10 @@ public class User extends ModernBaseEntity {
     /**
      * Check if user is university admin
      *
-     * @return true if has ROLE_UNIVERSITY_ADMIN
+     * @return true if has ROLE_OTM_API
      */
     public boolean isUniversityAdmin() {
-        return hasRole("ROLE_UNIVERSITY_ADMIN");
+        return hasRole("ROLE_OTM_API");
     }
 
     // =====================================================

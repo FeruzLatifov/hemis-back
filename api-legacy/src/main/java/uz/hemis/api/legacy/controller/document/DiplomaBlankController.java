@@ -70,6 +70,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getAllDiplomaBlanks(
             @PageableDefault(size = 20, sort = "series,number", direction = Sort.Direction.ASC)
@@ -92,6 +93,7 @@ public class DiplomaBlankController {
      * @param id diploma blank ID (UUID)
      * @return diploma blank details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> getDiplomaBlankById(@PathVariable UUID id) {
         log.debug("GET /app/rest/v2/diploma-blanks/{}", id);
@@ -109,6 +111,7 @@ public class DiplomaBlankController {
      * @param blankCode blank code (e.g., "AB 1234567")
      * @return diploma blank details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{blankCode}")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> getDiplomaBlankByCode(@PathVariable String blankCode) {
         log.debug("GET /app/rest/v2/diploma-blanks/code/{}", blankCode);
@@ -127,6 +130,7 @@ public class DiplomaBlankController {
      * @param number number (e.g., "1234567")
      * @return diploma blank details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/series/{series}/number/{number}")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> getDiplomaBlankBySeriesAndNumber(
             @PathVariable String series,
@@ -148,6 +152,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks for the university
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getDiplomaBlanksByUniversity(
             @RequestParam("university") String universityCode,
@@ -172,6 +177,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "status"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getDiplomaBlanksByUniversityAndStatus(
             @RequestParam("university") String universityCode,
@@ -197,6 +203,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "year"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getDiplomaBlanksByUniversityAndYear(
             @RequestParam("university") String universityCode,
@@ -223,6 +230,7 @@ public class DiplomaBlankController {
      * @param blankType blank type (BACHELOR, MASTER, DOCTORATE, etc.)
      * @return list of available diploma blanks
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/available", params = {"university", "type"})
     public ResponseEntity<ResponseWrapper<List<DiplomaBlankDto>>> getAvailableDiplomaBlanks(
             @RequestParam("university") String universityCode,
@@ -243,6 +251,7 @@ public class DiplomaBlankController {
      * @param series series (e.g., "AB")
      * @return list of diploma blanks (ordered by number)
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/series/{series}")
     public ResponseEntity<ResponseWrapper<List<DiplomaBlankDto>>> getDiplomaBlanksBySeries(
             @PathVariable String series
@@ -312,14 +321,14 @@ public class DiplomaBlankController {
      * <p><strong>Legacy URL:</strong> PUT /app/rest/diplom-blank/setStatus (preserved for compatibility)</p>
      * <p><strong>New URL:</strong> PUT /app/rest/v2/diploma-blanks/{id}/status</p>
      *
-     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_UNIVERSITY_ADMIN</p>
+     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_OTM_API</p>
      *
      * @param id diploma blank ID (UUID)
      * @param status new status (AVAILABLE, ASSIGNED, ISSUED, DAMAGED, LOST, ANNULLED)
      * @return updated diploma blank
      */
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> updateDiplomaBlankStatus(
             @PathVariable UUID id,
             @RequestParam("status") String status

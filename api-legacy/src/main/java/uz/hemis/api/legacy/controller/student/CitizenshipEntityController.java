@@ -18,6 +18,7 @@ import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Citizenship Entity Controller (CUBA Pattern)
@@ -50,6 +51,7 @@ public class CitizenshipEntityController {
     // GET BY ID
     // =====================================================
 
+    @PreAuthorize("hasAuthority('classifiers.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta fuqarolik holatini olish",
@@ -92,6 +94,7 @@ public class CitizenshipEntityController {
     // PUT - UPDATE ENTITY
     // =====================================================
 
+    @PreAuthorize("hasAuthority('classifiers.edit')")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Fuqarolik holatini yangilash",
@@ -136,6 +139,7 @@ public class CitizenshipEntityController {
     // DELETE - SOFT DELETE ENTITY
     // =====================================================
 
+    @PreAuthorize("hasAuthority('classifiers.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Fuqarolik holatini o'chirish",
@@ -169,6 +173,7 @@ public class CitizenshipEntityController {
     // POST - CREATE NEW ENTITY
     // =====================================================
 
+    @PreAuthorize("hasAuthority('classifiers.edit')")
     @PostMapping
     @Operation(
         summary = "Yangi fuqarolik holatini yaratish",
@@ -245,6 +250,7 @@ public class CitizenshipEntityController {
     // GET ALL - LIST ALL ENTITIES
     // =====================================================
 
+    @PreAuthorize("hasAuthority('classifiers.view')")
     @GetMapping
     @Operation(
         summary = "Barcha fuqarolik holatlari",
@@ -281,6 +287,7 @@ public class CitizenshipEntityController {
     // GET SEARCH
     // =====================================================
 
+    @PreAuthorize("hasAuthority('classifiers.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Fuqarolik holatlarini qidirish (GET)",
@@ -324,6 +331,7 @@ public class CitizenshipEntityController {
     // POST SEARCH
     // =====================================================
 
+    @PreAuthorize("hasAuthority('classifiers.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Fuqarolik holatlarini qidirish (POST)",

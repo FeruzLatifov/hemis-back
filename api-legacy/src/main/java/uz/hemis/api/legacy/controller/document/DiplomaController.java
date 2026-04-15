@@ -70,6 +70,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getAllDiplomas(
             @PageableDefault(size = 20, sort = "issueDate", direction = Sort.Direction.DESC)
@@ -91,6 +92,7 @@ public class DiplomaController {
      * @param id diploma ID (UUID)
      * @return diploma details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> getDiplomaById(@PathVariable UUID id) {
         log.debug("GET /app/rest/v2/diplomas/{}", id);
@@ -109,6 +111,7 @@ public class DiplomaController {
      * @param diplomaNumber diploma registration number
      * @return diploma details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/number/{diplomaNumber}")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> getDiplomaByNumber(@PathVariable String diplomaNumber) {
         log.debug("GET /app/rest/v2/diplomas/number/{}", diplomaNumber);
@@ -129,6 +132,7 @@ public class DiplomaController {
      * @param diplomaHash SHA-256 hash of diploma data
      * @return diploma details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/hash/{diplomaHash}")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> getDiplomaByHash(@PathVariable String diplomaHash) {
         log.debug("GET /app/rest/v2/diplomas/hash/{}", diplomaHash);
@@ -147,6 +151,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas for the university
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getDiplomasByUniversity(
             @RequestParam("university") String universityCode,
@@ -169,6 +174,7 @@ public class DiplomaController {
      * @param studentId student UUID
      * @return list of diplomas for the student
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<DiplomaDto>>> getDiplomasByStudent(
             @RequestParam("student") UUID studentId
@@ -190,6 +196,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "status"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getDiplomasByUniversityAndStatus(
             @RequestParam("university") String universityCode,
@@ -215,6 +222,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "year"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getDiplomasByUniversityAndYear(
             @RequestParam("university") String universityCode,
@@ -239,13 +247,13 @@ public class DiplomaController {
      *
      * <p><strong>Legacy URL:</strong> POST /app/rest/v2/diplomas</p>
      *
-     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_UNIVERSITY_ADMIN</p>
+     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_OTM_API</p>
      *
      * @param diplomaDto diploma data
      * @return created diploma (HTTP 201 CREATED)
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> createDiploma(
             @Valid @RequestBody DiplomaDto diplomaDto
     ) {
@@ -263,14 +271,14 @@ public class DiplomaController {
      *
      * <p><strong>Legacy URL:</strong> PUT /app/rest/v2/diplomas/{id}</p>
      *
-     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_UNIVERSITY_ADMIN</p>
+     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_OTM_API</p>
      *
      * @param id diploma ID (UUID)
      * @param diplomaDto diploma data
      * @return updated diploma
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> updateDiploma(
             @PathVariable UUID id,
             @Valid @RequestBody DiplomaDto diplomaDto

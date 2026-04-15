@@ -68,6 +68,7 @@ public class DepartmentController {
      * @param pageable pagination parameters
      * @return paginated list of departments
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentDto>>> getAllDepartments(
             @PageableDefault(size = 20, sort = "departmentName", direction = Sort.Direction.ASC)
@@ -89,6 +90,7 @@ public class DepartmentController {
      * @param id department ID (UUID)
      * @return department details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> getDepartmentById(@PathVariable UUID id) {
         log.debug("GET /app/rest/v2/departments/{}", id);
@@ -106,6 +108,7 @@ public class DepartmentController {
      * @param code department code
      * @return department details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> getDepartmentByCode(@PathVariable String code) {
         log.debug("GET /app/rest/v2/departments/code/{}", code);
@@ -124,6 +127,7 @@ public class DepartmentController {
      * @param pageable pagination parameters
      * @return paginated list of departments for the university
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentDto>>> getDepartmentsByUniversity(
             @RequestParam("university") String universityCode,
@@ -146,6 +150,7 @@ public class DepartmentController {
      * @param universityCode university code
      * @return list of active departments
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "university")
     public ResponseEntity<ResponseWrapper<List<DepartmentDto>>> getActiveDepartmentsByUniversity(
             @RequestParam("university") String universityCode
@@ -166,6 +171,7 @@ public class DepartmentController {
      * @param pageable pagination parameters
      * @return paginated list of departments for the faculty
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "faculty")
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentDto>>> getDepartmentsByFaculty(
             @RequestParam("faculty") UUID facultyId,
@@ -188,6 +194,7 @@ public class DepartmentController {
      * @param facultyId faculty UUID
      * @return list of active departments
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "faculty")
     public ResponseEntity<ResponseWrapper<List<DepartmentDto>>> getActiveDepartmentsByFaculty(
             @RequestParam("faculty") UUID facultyId
@@ -207,6 +214,7 @@ public class DepartmentController {
      * @param headId teacher UUID
      * @return department details
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/head/{headId}")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> getDepartmentByHead(@PathVariable UUID headId) {
         log.debug("GET /app/rest/v2/departments/head/{}", headId);
@@ -225,13 +233,13 @@ public class DepartmentController {
      *
      * <p><strong>Legacy URL:</strong> POST /app/rest/v2/departments</p>
      *
-     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_UNIVERSITY_ADMIN</p>
+     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_OTM_API</p>
      *
      * @param departmentDto department data
      * @return created department (HTTP 201 CREATED)
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> createDepartment(
             @Valid @RequestBody DepartmentDto departmentDto
     ) {
@@ -249,14 +257,14 @@ public class DepartmentController {
      *
      * <p><strong>Legacy URL:</strong> PUT /app/rest/v2/departments/{id}</p>
      *
-     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_UNIVERSITY_ADMIN</p>
+     * <p><strong>Security:</strong> Requires ROLE_ADMIN or ROLE_OTM_API</p>
      *
      * @param id department ID (UUID)
      * @param departmentDto department data
      * @return updated department
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> updateDepartment(
             @PathVariable UUID id,
             @Valid @RequestBody DepartmentDto departmentDto

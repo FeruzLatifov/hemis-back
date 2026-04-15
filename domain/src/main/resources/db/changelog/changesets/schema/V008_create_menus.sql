@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS menus (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_by VARCHAR(255),
     deleted_at TIMESTAMP,                        -- Soft delete timestamp
+    deleted_by VARCHAR(255),                     -- Who soft-deleted
+    version INTEGER DEFAULT 1,                  -- Optimistic locking (JPA @Version)
 
     -- Constraints
     CONSTRAINT fk_menus_parent FOREIGN KEY (parent_id) REFERENCES menus(id) ON DELETE CASCADE,
@@ -110,6 +112,8 @@ COMMENT ON COLUMN menus.order_number IS 'Display order within same parent (lower
 COMMENT ON COLUMN menus.menu_type IS 'Menu type: main (regular) or system (shown below separator)';
 COMMENT ON COLUMN menus.is_active IS 'Menu item active status (false = hidden from users)';
 COMMENT ON COLUMN menus.deleted_at IS 'Soft delete timestamp (null = not deleted)';
+COMMENT ON COLUMN menus.deleted_by IS 'Who performed the soft delete';
+COMMENT ON COLUMN menus.version IS 'Optimistic locking version (JPA @Version)';
 
 -- =====================================================
 -- AUDIT TRIGGER FOR updated_at
@@ -1348,3 +1352,20 @@ BEGIN
 
     RAISE NOTICE '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━';
 END $$;
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- USER FAVORITES (sevimli menular)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CREATE TABLE IF NOT EXISTS user_favorites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    menu_code VARCHAR(100) NOT NULL,
+    order_number INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_user_favorites_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_user_favorites_menu FOREIGN KEY (menu_code) REFERENCES menus(code) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT uq_user_favorites UNIQUE (user_id, menu_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_favorites_user ON user_favorites(user_id);

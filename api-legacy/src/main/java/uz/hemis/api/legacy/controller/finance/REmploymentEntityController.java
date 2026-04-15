@@ -21,6 +21,7 @@ import uz.hemis.service.legacy.finance.FinanceEntityLegacyService;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Bandlik Statistikasi Entity Controller
@@ -60,6 +61,7 @@ public class REmploymentEntityController {
     // =============================
     // GET by ID
     // =============================
+    @PreAuthorize("hasAuthority('reports.view')")
     @GetMapping("/{entityId}")
     @Operation(
             summary = "Bandlik yozuvini ID bo'yicha olish",
@@ -92,6 +94,7 @@ public class REmploymentEntityController {
     // =============================
     // UPDATE (PUT)
     // =============================
+    @PreAuthorize("hasAuthority('reports.edit')")
     @PutMapping("/{entityId}")
     @Operation(
             summary = "Bandlik yozuvini yangilash",
@@ -130,6 +133,7 @@ public class REmploymentEntityController {
     // =============================
     // DELETE (hard delete - jadvalda soft delete yo'q)
     // =============================
+    @PreAuthorize("hasAuthority('reports.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
             summary = "Bandlik yozuvini o'chirish",
@@ -164,6 +168,7 @@ public class REmploymentEntityController {
     // =============================
     // SEARCH (GET)
     // =============================
+    @PreAuthorize("hasAuthority('reports.view')")
     @GetMapping("/search")
     @Operation(
             summary = "Bandlik yozuvlarini qidirish (GET)",
@@ -203,6 +208,7 @@ public class REmploymentEntityController {
     // =============================
     // SEARCH (POST)
     // =============================
+    @PreAuthorize("hasAuthority('reports.view')")
     @PostMapping("/search")
     @Operation(
             summary = "Bandlik yozuvlarini qidirish (POST)",
@@ -274,6 +280,7 @@ public class REmploymentEntityController {
     // =============================
     // LIST ALL (GET)
     // =============================
+    @PreAuthorize("hasAuthority('reports.view')")
     @GetMapping
     @Operation(
             summary = "Barcha bandlik yozuvlarini olish",
@@ -315,6 +322,7 @@ public class REmploymentEntityController {
     // =============================
     // CREATE (POST) - OLD-HEMIS massiv formatini qo'llab-quvvatlaydi
     // =============================
+    @PreAuthorize("hasAuthority('reports.edit')")
     @PostMapping
     @Operation(
             summary = "Yangi bandlik yozuvi yaratish",

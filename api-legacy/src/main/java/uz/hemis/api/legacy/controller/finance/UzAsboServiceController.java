@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * UzASBO Service Controller
@@ -84,6 +85,7 @@ public class UzAsboServiceController {
      * @param request Scholarship check request with TIN, document date, and list of students
      * @return Scholarship eligibility status for each student
      */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/student/checkScholarship2")
     @Operation(
             summary = "Stipendiya tekshirish (UzASBO)",
@@ -244,6 +246,7 @@ public class UzAsboServiceController {
      *
      * @return Test response with type and message
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/test/typetest")
     @Operation(
             summary = "Test endpoint (UzASBO)",

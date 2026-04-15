@@ -108,11 +108,14 @@ public class AuditAspect {
                 entity = entityManager.find(entityClass, entityId);
             }
             if (entity != null) {
-                entityManager.detach(entity);
+                // CRITICAL: DO NOT detach! The same entity may be the "target" in the
+                // calling service method. Detaching it would make save() fail silently
+                // (merge creates a new managed instance but doesn't copy pending changes).
+                // Instead, just convert to Map immediately — this captures the current state.
                 return toMap(objectMapper.convertValue(entity, Map.class));
             }
         } catch (Exception e) {
-            log.warn("Failed to load old value for audit: {}", e.getMessage());
+            log.debug("Failed to load old value for audit (lazy collection expected): {}", e.getMessage());
         }
         return null;
     }

@@ -143,7 +143,7 @@ class JwtGrantedAuthoritiesConverterTest {
     @DisplayName("Should extract Keycloak resource/client roles")
     void extractKeycloakResourceRoles() {
         // Given
-        Map<String, Object> hemisApiAccess = Map.of("roles", List.of("ADMIN", "UNIVERSITY_ADMIN"));
+        Map<String, Object> hemisApiAccess = Map.of("roles", List.of("ADMIN", "OTM_API"));
         Map<String, Object> resourceAccess = Map.of("hemis-api", hemisApiAccess);
         Jwt jwt = createJwt(Map.of("resource_access", resourceAccess));
 
@@ -153,7 +153,7 @@ class JwtGrantedAuthoritiesConverterTest {
         // Then
         assertThat(authorities).hasSize(2);
         assertThat(authorities).extracting("authority")
-                .containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_UNIVERSITY_ADMIN");
+                .containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_OTM_API");
     }
 
     @Test
@@ -186,7 +186,7 @@ class JwtGrantedAuthoritiesConverterTest {
     void extractRolesFromMultipleClaims() {
         // Given
         Map<String, Object> realmAccess = Map.of("roles", List.of("ADMIN"));
-        Map<String, Object> hemisApiAccess = Map.of("roles", List.of("UNIVERSITY_ADMIN"));
+        Map<String, Object> hemisApiAccess = Map.of("roles", List.of("OTM_API"));
         Map<String, Object> resourceAccess = Map.of("hemis-api", hemisApiAccess);
 
         Jwt jwt = createJwt(Map.of(
@@ -206,7 +206,7 @@ class JwtGrantedAuthoritiesConverterTest {
                         "ROLE_USER",
                         "ROLE_TEACHER",
                         "ROLE_ADMIN",
-                        "ROLE_UNIVERSITY_ADMIN"
+                        "ROLE_OTM_API"
                 );
     }
 
@@ -306,7 +306,7 @@ class JwtGrantedAuthoritiesConverterTest {
         Jwt jwt = createJwt(Map.of(
                 "roles", List.of(
                         "ADMIN",
-                        "UNIVERSITY_ADMIN",
+                        "OTM_API",
                         "USER",
                         "TEACHER",
                         "STUDENT"
@@ -321,7 +321,7 @@ class JwtGrantedAuthoritiesConverterTest {
         assertThat(authorities).extracting("authority")
                 .containsExactlyInAnyOrder(
                         "ROLE_ADMIN",
-                        "ROLE_UNIVERSITY_ADMIN",
+                        "ROLE_OTM_API",
                         "ROLE_USER",
                         "ROLE_TEACHER",
                         "ROLE_STUDENT"

@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Transcript Service Controller - OLD-HEMIS Compatible
@@ -114,6 +115,7 @@ public class TranscriptServiceController {
                     )
             )
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/get")
     public ResponseEntity<Map<String, Object>> get(
             @Parameter(

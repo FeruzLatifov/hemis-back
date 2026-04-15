@@ -12,6 +12,7 @@ import uz.hemis.domain.entity.User;
 import uz.hemis.service.legacy.UserLegacyService;
 
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "01.Token, Foydalanuvchilar")
 @RestController
@@ -27,6 +28,7 @@ public class UserController {
             description = "Authenticated user'ning ma'lumotlarini olish",
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/me")
     public ResponseEntity<Map<String, Object>> getCurrentUser(Authentication authentication) {
         log.info("GET /app/rest/v2/user/me - username: {}", authentication.getName());
@@ -42,6 +44,7 @@ public class UserController {
             description = "Token'ning amal qilish muddatini tekshirish",
             security = @SecurityRequirement(name = "bearerAuth")
     )
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/validate")
     public ResponseEntity<Map<String, Object>> validateToken(Authentication authentication) {
         log.info("GET /app/rest/v2/user/validate - username: {}", authentication.getName());

@@ -16,6 +16,7 @@ import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * AdministrativeStudent3 Entity Controller (CUBA Pattern)
@@ -31,6 +32,7 @@ public class AdministrativeStudent3EntityController {
 
     private final StudentEntityLegacyService studentService;
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get AdministrativeStudent3 by ID")
     public ResponseEntity<Map<String, Object>> getById(
@@ -49,6 +51,7 @@ public class AdministrativeStudent3EntityController {
         return ResponseEntity.ok(studentService.toAdministrativeStudent3Map(entity.get(), returnNulls, view));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update AdministrativeStudent3")
     public ResponseEntity<Map<String, Object>> update(
@@ -70,6 +73,7 @@ public class AdministrativeStudent3EntityController {
         return ResponseEntity.ok(studentService.toAdministrativeStudent3Map(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete AdministrativeStudent3")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {
@@ -87,6 +91,7 @@ public class AdministrativeStudent3EntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     @Operation(summary = "Search AdministrativeStudent3 (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -117,6 +122,7 @@ public class AdministrativeStudent3EntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     @Operation(summary = "Search AdministrativeStudent3 (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -152,6 +158,7 @@ public class AdministrativeStudent3EntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     @Operation(summary = "Get all AdministrativeStudent3")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -191,6 +198,7 @@ public class AdministrativeStudent3EntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     @Operation(summary = "Create AdministrativeStudent3")
     public ResponseEntity<Map<String, Object>> create(

@@ -49,6 +49,8 @@ CREATE INDEX IF NOT EXISTS idx_student_dup_analysis
 
 -- ── Materialized view ────────────────────────────────────────────
 
+DROP MATERIALIZED VIEW IF EXISTS mv_student_duplicates;
+
 CREATE MATERIALIZED VIEW mv_student_duplicates AS
 SELECT
     pinfl,

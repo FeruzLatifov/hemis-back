@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Dissertation Defense Entity Controller (CUBA Pattern)
@@ -68,6 +69,7 @@ public class DissertationDefenseEntityController {
     // GET /{entityId} - Bitta dissertasiya himoyasini olish
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta dissertasiya himoyasini olish",
@@ -114,6 +116,7 @@ public class DissertationDefenseEntityController {
     // PUT /{entityId} - Dissertasiya himoyasini yangilash
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Dissertasiya himoyasini yangilash",
@@ -164,6 +167,7 @@ public class DissertationDefenseEntityController {
     // DELETE /{entityId} - Dissertasiya himoyasini o'chirish (soft delete)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Dissertasiya himoyasini o'chirish",
@@ -200,6 +204,7 @@ public class DissertationDefenseEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Dissertasiya himoyalarini qidirish (GET)",
@@ -229,6 +234,7 @@ public class DissertationDefenseEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Dissertasiya himoyalarini qidirish (POST)",
@@ -262,6 +268,7 @@ public class DissertationDefenseEntityController {
     // GET - Barcha dissertasiya himoyalari ro'yxati (paginated)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping({"", "/"})
     @Operation(
         summary = "Barcha dissertasiya himoyalari ro'yxati",
@@ -324,6 +331,7 @@ public class DissertationDefenseEntityController {
     // POST - Yangi dissertasiya himoyasi yaratish
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PostMapping
     @Operation(
         summary = "Dissertasiya himoyasi yaratish",

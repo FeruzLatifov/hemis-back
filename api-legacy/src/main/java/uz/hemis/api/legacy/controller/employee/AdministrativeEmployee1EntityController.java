@@ -14,6 +14,7 @@ import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Administrative Employee1 Entity Controller (CUBA Pattern)
@@ -34,6 +35,7 @@ public class AdministrativeEmployee1EntityController {
 
     private static final String ENTITY_NAME = "hemishe_RIAdministrativeEmployee1";
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         log.info("POST create hemishe_RIAdministrativeEmployee1: {}", body);
@@ -43,6 +45,7 @@ public class AdministrativeEmployee1EntityController {
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee1Map(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         log.debug("GET hemishe_RIAdministrativeEmployee1 by id: {}", entityId);
@@ -53,6 +56,7 @@ public class AdministrativeEmployee1EntityController {
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee1Map(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         log.info("PUT hemishe_RIAdministrativeEmployee1 id: {}", entityId);
@@ -66,6 +70,7 @@ public class AdministrativeEmployee1EntityController {
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee1Map(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         log.info("DELETE hemishe_RIAdministrativeEmployee1 id: {}", entityId);
@@ -77,6 +82,7 @@ public class AdministrativeEmployee1EntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @RequestParam(defaultValue = "0") Integer offset, @RequestParam(defaultValue = "50") Integer limit,
@@ -90,6 +96,7 @@ public class AdministrativeEmployee1EntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter, @RequestParam(defaultValue = "0") Integer offset,
@@ -98,6 +105,7 @@ public class AdministrativeEmployee1EntityController {
         return search(filter, offset, limit, returnNulls);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,

@@ -34,6 +34,8 @@ BEGIN
 -- Helper function: insert message + 4 translations in one call
 -- Args: category, english_key, uzbek_latin, uzbek_cyrillic, russian
 -- The english_key is used as both message_key and en-US translation
+-- Defined here (first consumer) and NOT dropped — reused by S009 and any future
+-- translation seeds that reference it. CREATE OR REPLACE keeps it idempotent.
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 CREATE OR REPLACE FUNCTION _seed_msg(
@@ -940,10 +942,8 @@ PERFORM _seed_msg('action', 'Enable',   'Yoqish',           'Ёқиш',         
 PERFORM _seed_msg('action', 'Unlock',   'Qulfni ochish',    'Қулфни очиш',     'Разблокировать');
 PERFORM _seed_msg('status', 'Locked',   'Qulflangan',       'Қулфланган',       'Заблокирован');
 
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
--- CLEANUP: Drop helper function
--- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DROP FUNCTION IF EXISTS _seed_msg(TEXT, TEXT, TEXT, TEXT, TEXT);
+-- Helper function _seed_msg remains available for subsequent translation seeds (S009, ...).
+-- Intentionally NOT dropped — CREATE OR REPLACE keeps it idempotent on re-runs.
 
 END $$;
 

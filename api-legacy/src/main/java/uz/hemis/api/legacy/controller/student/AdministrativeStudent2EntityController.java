@@ -17,6 +17,7 @@ import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * AdministrativeStudent2 Entity Controller (CUBA Pattern)
@@ -33,6 +34,7 @@ public class AdministrativeStudent2EntityController {
     private final StudentEntityLegacyService studentService;
     private static final String ENTITY_NAME = "hemishe_RIAdministrativeStudent2";
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "Yozuvni ID bo'yicha olish")
     public ResponseEntity<?> getById(
@@ -52,6 +54,7 @@ public class AdministrativeStudent2EntityController {
         return ResponseEntity.ok(studentService.toAdministrativeStudent2Map(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Yozuvni yangilash")
     public ResponseEntity<?> update(
@@ -77,6 +80,7 @@ public class AdministrativeStudent2EntityController {
         return ResponseEntity.ok(studentService.toAdministrativeStudent2Map(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Yozuvni o'chirish")
     public ResponseEntity<?> delete(@PathVariable("entityId") UUID entityId) {
@@ -95,6 +99,7 @@ public class AdministrativeStudent2EntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     @Operation(summary = "Yozuvlarni qidirish (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -117,6 +122,7 @@ public class AdministrativeStudent2EntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     @Operation(summary = "Yozuvlarni qidirish (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -159,6 +165,7 @@ public class AdministrativeStudent2EntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     @Operation(summary = "Barcha yozuvlarni olish")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -196,6 +203,7 @@ public class AdministrativeStudent2EntityController {
         return ResponseEntity.ok().headers(headers).body(result);
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     @Operation(summary = "Yangi yozuv yaratish")
     @SuppressWarnings("unchecked")

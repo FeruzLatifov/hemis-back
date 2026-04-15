@@ -8,6 +8,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import uz.hemis.service.legacy.ClassifierLegacyService;
+import uz.hemis.service.legacy.HokimiyatClassifierService;
+import uz.hemis.service.legacy.StipendClassifierService;
 
 import java.util.*;
 
@@ -20,6 +22,12 @@ class ClassifierServicesControllerTest {
 
     @Mock
     private ClassifierLegacyService classifierService;
+
+    @Mock
+    private HokimiyatClassifierService hokimiyatClassifierService;
+
+    @Mock
+    private StipendClassifierService stipendClassifierService;
 
     @InjectMocks
     private ClassifierServicesController controller;
@@ -96,12 +104,12 @@ class ClassifierServicesControllerTest {
         expected.put("success", true);
         expected.put("classifiers", List.of());
 
-        when(classifierService.getHokimiyatClassifiers()).thenReturn(expected);
+        when(hokimiyatClassifierService.getHokimiyatClassifiers()).thenReturn(expected);
 
         ResponseEntity<Map<String, Object>> response = controller.hokimiyat();
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
         assertThat(response.getBody()).containsEntry("success", true);
-        verify(classifierService).getHokimiyatClassifiers();
+        verify(hokimiyatClassifierService).getHokimiyatClassifiers();
     }
 }

@@ -21,7 +21,7 @@ import java.util.UUID;
 public class TranscriptController {
 
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'DEAN', 'STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN', 'STUDENT')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentTranscript(
             @PathVariable UUID studentId,
             @RequestParam(required = false) String academicYear
@@ -39,7 +39,7 @@ public class TranscriptController {
     }
 
     @GetMapping("/generate/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'DEAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> generateTranscript(
             @PathVariable UUID studentId,
             @RequestParam(required = false, defaultValue = "pdf") String format
@@ -56,6 +56,7 @@ public class TranscriptController {
         return ResponseEntity.ok(ResponseWrapper.success(result));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify/{transcriptId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyTranscript(
             @PathVariable String transcriptId

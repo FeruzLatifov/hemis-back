@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.Faculty;
@@ -52,6 +53,7 @@ public class UniversityRefLegacyService {
     private final GroupRepository groupRepository;
     private final SpecialtyRepository specialtyRepository;
     private final UniversityRepository universityRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     // Entity names
     private static final String ICT_EQUIPMENT_ENTITY_NAME = "hemishe_RIctEquipment";
@@ -828,5 +830,66 @@ public class UniversityRefLegacyService {
             }
         }
         return null;
+    }
+
+    // ==================== Speciality Service Query ====================
+
+    /**
+     * Get specialities by university code - raw SQL for CUBA REST API compatibility.
+     *
+     * <p>Extracted from SpecialityServiceController to follow Clean Architecture.</p>
+     * <p>Uses raw SQL with JOINs to match OLD-HEMIS response format exactly.</p>
+     *
+     * @param university university code
+     * @param type       optional education type filter
+     * @return response map with success, count, and data list
+     */
+    public Map<String, Object> getSpecialitiesByUniversity(String university, String type) {
+        String sql = "SELECT s.id, s.speciality_code, s.speciality_name, " +
+                "s._university, u.name AS university_name, " +
+                "s._faculty, f.name AS faculty_name, " +
+                "s._education_type, ef.name AS education_form_name " +
+                "FROM hemishe_e_university_speciality s " +
+                "LEFT JOIN hemishe_e_university u ON s._university = u.code " +
+                "LEFT JOIN hemishe_e_faculty f ON s._faculty = f.code AND f._university = s._university AND f.delete_ts IS NULL " +
+                "LEFT JOIN hemishe_h_education_form ef ON s._education_type = ef.code AND ef.delete_ts IS NULL " +
+                "WHERE s._university = ?";
+
+        List<Object> params = new ArrayList<>();
+        params.add(university);
+
+        if (type != null && !type.isEmpty()) {
+            sql += " AND s._education_type = ?";
+            params.add(type);
+        }
+
+        sql += " ORDER BY s.speciality_name";
+
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql, params.toArray());
+
+        List<Map<String, Object>> data = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", row.get("id") != null ? row.get("id").toString() : null);
+            map.put("specialityCode", row.get("speciality_code"));
+            map.put("specialityName", row.get("speciality_name"));
+            map.put("universityCode", row.get("_university"));
+            map.put("universityName", row.get("university_name"));
+            map.put("facultyCode", row.get("_faculty"));
+            map.put("facultyName", row.get("faculty_name"));
+            map.put("educationFormCode", row.get("_education_type"));
+            map.put("educationFormName", row.get("education_form_name"));
+            data.add(map);
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("count", data.size());
+        if (type != null && !type.isEmpty()) {
+            response.put("type", type);
+        }
+        response.put("data", data);
+
+        return response;
     }
 }

@@ -16,7 +16,7 @@ import java.util.UUID;
  *
  * <p><strong>Purpose:</strong></p>
  * <ul>
- *   <li>Define roles for users (e.g., MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER)</li>
+ *   <li>Define roles for users (e.g., MINISTRY_ADMIN, OTM_API, VIEWER)</li>
  *   <li>Clean, modern permission system for hemis-back</li>
  *   <li>Independent from CUBA Platform's sec_role</li>
  * </ul>
@@ -27,7 +27,7 @@ import java.util.UUID;
  * <ul>
  *   <li>SUPER_ADMIN - Full system access (Ministry level)</li>
  *   <li>MINISTRY_ADMIN - Ministry-level administrator</li>
- *   <li>UNIVERSITY_ADMIN - University-level administrator</li>
+ *   <li>OTM_API - University-level administrator</li>
  *   <li>VIEWER - Read-only access</li>
  *   <li>REPORT_VIEWER - Can view and generate reports</li>
  * </ul>
@@ -61,7 +61,7 @@ public class Role {
 
     /**
      * Role code (machine-readable)
-     * <p>Examples: MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER</p>
+     * <p>Examples: MINISTRY_ADMIN, OTM_API, VIEWER</p>
      */
     @Column(name = "code", nullable = false, unique = true, length = 100)
     private String code;

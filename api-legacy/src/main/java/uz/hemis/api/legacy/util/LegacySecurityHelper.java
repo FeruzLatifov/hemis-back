@@ -45,14 +45,14 @@ public class LegacySecurityHelper {
             return null;
         }
 
-        // 1. From user table entity_code
+        // 1. From user's university relation
         try {
             Optional<User> userOpt = userRepository.findByUsername(username);
             if (userOpt.isPresent()) {
-                String entityCode = userOpt.get().getEntityCode();
-                if (entityCode != null && !entityCode.isEmpty()) {
-                    log.debug("University code from user.entity_code: {}", entityCode);
-                    return entityCode;
+                String universityCode = userOpt.get().getUniversityCode();
+                if (universityCode != null && !universityCode.isEmpty()) {
+                    log.debug("University code from user.university: {}", universityCode);
+                    return universityCode;
                 }
             }
         } catch (Exception e) {

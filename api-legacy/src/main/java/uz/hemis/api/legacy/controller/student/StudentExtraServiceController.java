@@ -17,6 +17,7 @@ import uz.hemis.service.finance.ContractStatisticsService;
 import uz.hemis.service.student.StudentService;
 
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Student Extra Service Controller
@@ -40,6 +41,7 @@ public class StudentExtraServiceController {
     private final StudentService studentService;
     private final ContractStatisticsService contractStatisticsService;
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/checkScholarship2")
     @Operation(
             summary = "Scholarship check",
@@ -51,6 +53,7 @@ public class StudentExtraServiceController {
         return ResponseEntity.ok(studentService.checkScholarship(request));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/contractStatistics")
     @Operation(
             summary = "Shartnoma statistikasini yuborish",

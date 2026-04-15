@@ -30,7 +30,7 @@ import java.util.*;
  * <ul>
  *   <li>Mode 1 - ROLE_BASED (recommended): Dynamic discovery from database</li>
  *   <li>Mode 2 - STATIC: Hardcoded usernames (fallback/override)</li>
- *   <li>Critical Roles: SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN (synchronous)</li>
+ *   <li>Critical Roles: SUPER_ADMIN, MINISTRY_ADMIN, OTM_API (synchronous)</li>
  *   <li>Other Roles: VIEWER, REPORT_VIEWER (lazy loading or async warmup)</li>
  * </ul>
  *
@@ -44,7 +44,7 @@ import java.util.*;
  *       critical-roles:   # Sync warmup for VIP users
  *         - SUPER_ADMIN
  *         - MINISTRY_ADMIN
- *         - UNIVERSITY_ADMIN
+ *         - OTM_API
  *       max-users-per-role: 1  # Sample size
  *       sample-usernames: []    # Fallback for static mode
  * </pre>
@@ -281,7 +281,7 @@ public class MenuCacheWarmup {
  *       critical-roles:
  *         - SUPER_ADMIN
  *         - MINISTRY_ADMIN
- *         - UNIVERSITY_ADMIN
+ *         - OTM_API
  *       max-users-per-role: 1
  *       sample-usernames: []  # Fallback
  * </pre>
@@ -304,12 +304,12 @@ class MenuCacheWarmupProperties {
 
     /**
      * Critical roles for synchronous warmup
-     * Default: SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN
+     * Default: SUPER_ADMIN, MINISTRY_ADMIN, OTM_API
      */
     private List<String> criticalRoles = new ArrayList<>(Arrays.asList(
         "SUPER_ADMIN",
         "MINISTRY_ADMIN",
-        "UNIVERSITY_ADMIN"
+        "OTM_API"
     ));
 
     /**

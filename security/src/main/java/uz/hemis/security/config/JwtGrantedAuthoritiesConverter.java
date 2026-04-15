@@ -313,7 +313,7 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
     // =====================================================
     // Common roles in HEMIS:
     // - ROLE_ADMIN          - System administrators
-    // - ROLE_UNIVERSITY_ADMIN - University administrators
+    // - ROLE_OTM_API - University administrators
     // - ROLE_USER           - Regular users
     // - ROLE_TEACHER        - Teachers/staff
     // - ROLE_STUDENT        - Students (read-only access)

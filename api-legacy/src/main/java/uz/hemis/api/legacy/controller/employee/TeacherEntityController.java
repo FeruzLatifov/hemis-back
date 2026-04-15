@@ -19,6 +19,7 @@ import uz.hemis.service.legacy.TeacherLegacyService;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Teacher Entity Controller (CUBA Pattern)
@@ -54,6 +55,7 @@ public class TeacherEntityController {
     private final CubaFilterHelper filterHelper;
     private final LegacySecurityHelper securityHelper;
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta o'qituvchi ma'lumotlarini olish",
@@ -85,6 +87,7 @@ public class TeacherEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "O'qituvchi ma'lumotlarini o'zgartirish",
@@ -116,6 +119,7 @@ public class TeacherEntityController {
         return ResponseEntity.ok(teacherService.minimalTeacherResponse(saved));
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     @Operation(summary = "O'qituvchilarni qidirish (GET)", description = "URL parametrlari orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -150,6 +154,7 @@ public class TeacherEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @PostMapping("/search")
     @Operation(summary = "O'qituvchilarni qidirish (POST)", description = "JSON filter orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -185,6 +190,7 @@ public class TeacherEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "O'qituvchini o'chirish (soft delete)",
@@ -208,6 +214,7 @@ public class TeacherEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     @Operation(summary = "Barcha o'qituvchilar ro'yxati", description = "Sahifalangan ro'yxat qaytaradi")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -273,6 +280,7 @@ public class TeacherEntityController {
      * @param view View nomi (_local, _minimal, default)
      * @return Yaratilgan o'qituvchi ma'lumotlari
      */
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PostMapping
     @Operation(
             summary = "Yangi o'qituvchi yaratish",

@@ -375,6 +375,13 @@ ON CONFLICT (code) DO UPDATE SET
     name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
+-- Roles management (moved from S008)
+INSERT INTO permissions (resource, action, code, name, description, category, created_by)
+VALUES ('roles', 'manage', 'roles.manage', 'Manage roles', 'Create, edit, and delete roles', 'ADMIN', 'system')
+ON CONFLICT (code) DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
 -- =====================================================
 -- Verification
 -- =====================================================

@@ -13,6 +13,7 @@ import uz.hemis.common.dto.student.GraduateListRequest;
 import uz.hemis.service.integration.EmploymentIntegrationService;
 
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Employment Service Controller
@@ -32,6 +33,7 @@ public class EmploymentServiceController {
     private final EmploymentIntegrationService employmentIntegrationService;
 
     @Operation(summary = "Bitiruvchilar ro'yxatini yuborish", description = "Bandlik statistikasi uchun bitiruvchilar ro'yxatini yuborish")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/graduateList")
     public ResponseEntity<Map<String, Object>> submitGraduateList(
         @RequestBody(description = "Bitiruvchilar ro'yxati", required = true)
@@ -43,6 +45,7 @@ public class EmploymentServiceController {
     }
 
     @Operation(summary = "Mehnat daftarchasi ma'lumotlari", description = "PINFL orqali mehnat daftarchasi ma'lumotlarini olish")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/workbook")
     public ResponseEntity<Map<String, Object>> getWorkbook(
         @Parameter(description = "PINFL", required = true, example = "31503776560016") @RequestParam String pinfl

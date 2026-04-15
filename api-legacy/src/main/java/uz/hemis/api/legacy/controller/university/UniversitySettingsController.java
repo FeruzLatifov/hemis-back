@@ -19,7 +19,7 @@ import java.util.Map;
 public class UniversitySettingsController {
 
     @GetMapping("/{universityCode}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getSettings(@PathVariable String universityCode) {
         Map<String, Object> settings = new HashMap<>();
         settings.put("universityCode", universityCode);
@@ -30,7 +30,7 @@ public class UniversitySettingsController {
     }
 
     @PutMapping("/{universityCode}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> updateSettings(
             @PathVariable String universityCode,
             @RequestBody Map<String, Object> settings

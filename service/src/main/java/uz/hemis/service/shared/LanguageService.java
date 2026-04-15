@@ -6,11 +6,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.system.LanguageDto;
 import uz.hemis.domain.entity.Language;
+import uz.hemis.domain.entity.SystemConfiguration;
 import uz.hemis.domain.repository.LanguageRepository;
+import uz.hemis.domain.repository.SystemConfigurationRepository;
 import uz.hemis.service.shared.mapper.LanguageMapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Language Service - System language management
@@ -25,8 +29,11 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class LanguageService {
 
+    private static final String DEFAULT_LANGUAGE_KEY = "system.default_language";
+
     private final LanguageRepository languageRepository;
     private final LanguageMapper languageMapper;
+    private final SystemConfigurationRepository systemConfigurationRepository;
 
     /**
      * Get all languages ordered by position
@@ -80,8 +87,39 @@ public class LanguageService {
         
         language.setIsActive(enabled);
         languageRepository.save(language);
-        
+
         log.info("Language {} set to {}", code, enabled);
         return true;
+    }
+
+    /**
+     * Get all language-related system configurations as a map of path → boolean value.
+     */
+    public Map<String, Boolean> getLanguageConfigurationsMap() {
+        return systemConfigurationRepository.findAllLanguageConfigurations().stream()
+                .collect(Collectors.toMap(
+                        SystemConfiguration::getPath,
+                        SystemConfiguration::getBooleanValue
+                ));
+    }
+
+    /**
+     * Get the currently configured default language code, or empty if unset.
+     */
+    public Optional<String> getDefaultLanguageCode() {
+        return systemConfigurationRepository.findByPath(DEFAULT_LANGUAGE_KEY)
+                .map(SystemConfiguration::getValue);
+    }
+
+    /**
+     * Update the default language code in system_configuration. No-op if the row does not exist.
+     */
+    @Transactional
+    public void setDefaultLanguageCode(String languageCode) {
+        systemConfigurationRepository.findByPath(DEFAULT_LANGUAGE_KEY).ifPresent(config -> {
+            config.setValue(languageCode);
+            systemConfigurationRepository.save(config);
+            log.info("Default language set to {}", languageCode);
+        });
     }
 }

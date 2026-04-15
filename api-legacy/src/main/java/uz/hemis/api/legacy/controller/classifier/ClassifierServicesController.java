@@ -13,8 +13,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.legacy.ClassifierLegacyService;
+import uz.hemis.service.legacy.HokimiyatClassifierService;
+import uz.hemis.service.legacy.StipendClassifierService;
 
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Classifier Services Controller - CUBA Service Pattern
@@ -26,7 +29,8 @@ import java.util.*;
  *   <li>200+ universities depend on these endpoints</li>
  * </ul>
  *
- * <p>Business logic delegated to {@link ClassifierLegacyService}</p>
+ * <p>Business logic delegated to {@link ClassifierLegacyService},
+ * {@link HokimiyatClassifierService}, and {@link StipendClassifierService}</p>
  *
  * @since 1.0.0
  */
@@ -39,12 +43,15 @@ import java.util.*;
 public class ClassifierServicesController {
 
     private final ClassifierLegacyService classifierService;
+    private final HokimiyatClassifierService hokimiyatClassifierService;
+    private final StipendClassifierService stipendClassifierService;
 
     /**
      * Barcha klassifikatorlar (items bilan)
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/allItems</p>
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/allItems")
     @Operation(
         summary = "Barcha klassifikatorlar (items bilan)",
@@ -65,6 +72,7 @@ public class ClassifierServicesController {
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/info</p>
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/info")
     @Operation(
         summary = "Barcha klassifikatorlar ro'yxati",
@@ -85,6 +93,7 @@ public class ClassifierServicesController {
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/single?classifier=h_university</p>
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/single")
     @Operation(
         summary = "Bitta klassifikatorni olish",
@@ -119,11 +128,12 @@ public class ClassifierServicesController {
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/hokimiyat</p>
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/hokimiyat")
     @Operation(summary = "Hokimiyat klassifikatorlari", description = "Old-hemis formatida 20 ta hokimiyat klassifikatorini qaytaradi")
     public ResponseEntity<Map<String, Object>> hokimiyat() {
         log.info("GET /services/classifiers/hokimiyat");
-        return ResponseEntity.ok(classifierService.getHokimiyatClassifiers());
+        return ResponseEntity.ok(hokimiyatClassifierService.getHokimiyatClassifiers());
     }
 
     /**
@@ -131,11 +141,12 @@ public class ClassifierServicesController {
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/hokimiyatInfo</p>
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/hokimiyatInfo")
     @Operation(summary = "Hokimiyat klassifikatorlari (info)", description = "20 ta hokimiyat klassifikatorini faqat metadata (title, version, count) bilan qaytaradi")
     public ResponseEntity<Map<String, Object>> hokimiyatInfo() {
         log.info("GET /services/classifiers/hokimiyatInfo");
-        return ResponseEntity.ok(classifierService.getHokimiyatClassifiersInfo());
+        return ResponseEntity.ok(hokimiyatClassifierService.getHokimiyatClassifiersInfo());
     }
 
     /**
@@ -143,11 +154,12 @@ public class ClassifierServicesController {
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/stipend</p>
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/stipend")
     @Operation(summary = "Stipendiya klassifikatorlari", description = "13 ta stipendiya klassifikatorini items bilan qaytaradi")
     public ResponseEntity<Map<String, Object>> stipend() {
         log.info("GET /services/classifiers/stipend");
-        return ResponseEntity.ok(classifierService.getStipendClassifiers());
+        return ResponseEntity.ok(stipendClassifierService.getStipendClassifiers());
     }
 
     /**
@@ -155,10 +167,11 @@ public class ClassifierServicesController {
      *
      * <p><strong>Legacy Endpoint:</strong> GET /app/rest/v2/services/classifiers/stipendInfo</p>
      */
+    @PreAuthorize("permitAll()")
     @GetMapping("/stipendInfo")
     @Operation(summary = "Stipendiya klassifikatorlari (info)", description = "13 ta stipendiya klassifikatorini faqat metadata (title, version, count) bilan qaytaradi")
     public ResponseEntity<Map<String, Object>> stipendInfo() {
         log.info("GET /services/classifiers/stipendInfo");
-        return ResponseEntity.ok(classifierService.getStipendClassifiersInfo());
+        return ResponseEntity.ok(stipendClassifierService.getStipendClassifiersInfo());
     }
 }

@@ -17,6 +17,7 @@ import uz.hemis.common.dto.system.TranslationFilterRequest;
 import uz.hemis.service.legacy.TranslationLegacyService;
 
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Translation/Transcript Service Controller
@@ -35,6 +36,7 @@ public class TranslationServiceController {
 
     private final TranslationLegacyService translationService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/translate/get")
     @Operation(
         summary = "Barcha tarjimalar",
@@ -64,6 +66,7 @@ public class TranslationServiceController {
      * <p>Accepts CUBA format: {"category": "...", "messages": ["msg1", "msg2"]}</p>
      * <p>Auto-creates missing translations (old-hemis TranslationServiceBean.get(category, messages))</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/translate/get")
     @Operation(
         summary = "Tarjimalarni filtrlab olish",

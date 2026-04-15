@@ -310,4 +310,39 @@ public class UniversityDto implements Serializable {
      */
     @JsonProperty("add_academic_mobile_student")
     private Boolean addAcademicMobileStudent;
+
+    // =====================================================
+    // Resolved display names (NOT persisted, populated via ClassifierLookupService)
+    // Populated by service layer for read responses; ignored on writes.
+    // =====================================================
+
+    @JsonProperty("_ownership_name")
+    private String ownershipName;
+
+    @JsonProperty("_university_type_name")
+    private String universityTypeName;
+
+    @JsonProperty("_university_activity_status_name")
+    private String universityActivityStatusName;
+
+    @JsonProperty("_university_belongs_to_name")
+    private String universityBelongsToName;
+
+    @JsonProperty("_university_contract_category_name")
+    private String universityContractCategoryName;
+
+    @JsonProperty("_university_version_name")
+    private String universityVersionName;
+
+    /** Region name resolved from `_soato` (4-digit SOATO). */
+    @JsonProperty("_soato_name")
+    private String soatoName;
+
+    /** District name resolved from `_soato_region` (7-digit SOATO). */
+    @JsonProperty("_soato_region_name")
+    private String soatoRegionName;
+
+    /** Neighborhood/mahalla name resolved from `_terrain`. */
+    @JsonProperty("_terrain_name")
+    private String terrainName;
 }

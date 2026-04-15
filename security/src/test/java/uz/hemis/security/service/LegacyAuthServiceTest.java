@@ -618,7 +618,7 @@ class LegacyAuthServiceTest {
                     new SimpleGrantedAuthority("ROLE_ADMIN"),
                     new SimpleGrantedAuthority("ROLE_USER"),
                     new SimpleGrantedAuthority("ROLE_TEACHER"),
-                    new SimpleGrantedAuthority("ROLE_UNIVERSITY_ADMIN"),
+                    new SimpleGrantedAuthority("ROLE_OTM_API"),
                     new SimpleGrantedAuthority("student:read"),
                     new SimpleGrantedAuthority("student:create"),
                     new SimpleGrantedAuthority("employee:read")

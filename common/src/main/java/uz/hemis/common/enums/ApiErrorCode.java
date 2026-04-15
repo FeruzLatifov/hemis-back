@@ -179,8 +179,8 @@ public enum ApiErrorCode {
      */
     ADMIN_ROLE_REQUIRED(
             "ADMIN_ROLE_REQUIRED",
-            "This operation requires ADMIN or UNIVERSITY_ADMIN role",
-            "Bu amal uchun ADMIN yoki UNIVERSITY_ADMIN roli kerak",
+            "This operation requires ADMIN or OTM_API role",
+            "Bu amal uchun ADMIN yoki OTM_API roli kerak",
             403
     ),
 

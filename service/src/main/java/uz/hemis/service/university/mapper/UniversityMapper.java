@@ -50,6 +50,16 @@ public interface UniversityMapper extends UniversityDtoConverter {
      * @return DTO
      */
     @Mapping(target = "versionType", ignore = true)  // Not in entity
+    // Resolved display names — populated by ClassifierLookupService in service layer.
+    @Mapping(target = "ownershipName", ignore = true)
+    @Mapping(target = "universityTypeName", ignore = true)
+    @Mapping(target = "universityActivityStatusName", ignore = true)
+    @Mapping(target = "universityBelongsToName", ignore = true)
+    @Mapping(target = "universityContractCategoryName", ignore = true)
+    @Mapping(target = "universityVersionName", ignore = true)
+    @Mapping(target = "soatoName", ignore = true)
+    @Mapping(target = "soatoRegionName", ignore = true)
+    @Mapping(target = "terrainName", ignore = true)
     UniversityDto toDto(University university);
 
     /**

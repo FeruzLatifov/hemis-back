@@ -21,7 +21,7 @@ import java.util.UUID;
 public class StudentCertificateController {
 
     @PostMapping("/generate/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN', 'DEAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> generateCertificate(
             @PathVariable UUID studentId,
             @RequestParam String certificateType
@@ -37,6 +37,7 @@ public class StudentCertificateController {
         return ResponseEntity.ok(ResponseWrapper.success(certificate));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify/{certificateId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyCertificate(@PathVariable String certificateId) {
         Map<String, Object> verification = new HashMap<>();

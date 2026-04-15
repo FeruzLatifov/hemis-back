@@ -24,6 +24,7 @@ import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * University Entity Controller (CUBA Pattern)
@@ -43,6 +44,7 @@ public class UniversityEntityController {
 
     private static final String ENTITY_NAME = "hemishe_EUniversity";
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "OTM olish (ID bo'yicha)")
     public ResponseEntity<Map<String, Object>> getById(
@@ -71,6 +73,7 @@ public class UniversityEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "OTM yangilash")
     public ResponseEntity<Map<String, Object>> update(
@@ -94,6 +97,7 @@ public class UniversityEntityController {
         return ResponseEntity.ok(universityService.toUniversityMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('universities.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "OTM o'chirish")
     public ResponseEntity<?> delete(@PathVariable String entityId) {
@@ -110,6 +114,7 @@ public class UniversityEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/search")
     @Operation(summary = "OTM qidirish (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -131,6 +136,7 @@ public class UniversityEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @PostMapping("/search")
     @Operation(summary = "OTM qidirish (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -156,6 +162,7 @@ public class UniversityEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping
     @Operation(summary = "OTM ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -206,6 +213,7 @@ public class UniversityEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PostMapping
     @Operation(summary = "OTM yaratish yoki yangilash")
     public ResponseEntity<Map<String, Object>> create(

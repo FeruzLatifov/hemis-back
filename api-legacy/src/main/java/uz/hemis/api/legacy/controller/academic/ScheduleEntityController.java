@@ -16,6 +16,7 @@ import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "12.Dars jadvali", description = "Dars jadvali entity API")
 @RestController
@@ -28,6 +29,7 @@ public class ScheduleEntityController {
     private final AcademicEntityLegacyService academicService;
     private final CubaFilterHelper filterHelper;
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Schedule> entity = academicService.findScheduleById(entityId);
@@ -35,6 +37,7 @@ public class ScheduleEntityController {
         return ResponseEntity.ok(academicService.toScheduleMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Schedule> existingOpt = academicService.findScheduleById(entityId);
@@ -43,6 +46,7 @@ public class ScheduleEntityController {
         return ResponseEntity.ok(academicService.toScheduleMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<Schedule> entity = academicService.findScheduleById(entityId);
@@ -51,6 +55,7 @@ public class ScheduleEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -72,6 +77,7 @@ public class ScheduleEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -97,6 +103,7 @@ public class ScheduleEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(@RequestParam(defaultValue = "0") Integer offset, @RequestParam(defaultValue = "50") Integer limit, @RequestParam(required = false) String sort, @RequestParam(required = false) Boolean returnNulls) {
         Sort sorting = Sort.unsorted();
@@ -108,6 +115,7 @@ public class ScheduleEntityController {
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> academicService.toScheduleMap(e, returnNulls)).collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Schedule entity = new Schedule();

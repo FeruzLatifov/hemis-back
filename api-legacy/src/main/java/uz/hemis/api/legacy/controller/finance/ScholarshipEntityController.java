@@ -16,6 +16,7 @@ import uz.hemis.service.legacy.finance.FinanceEntityLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Scholarship Entity Controller (CUBA Pattern)
@@ -33,6 +34,7 @@ public class ScholarshipEntityController {
     private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_EStudentScholarshipFull";
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
@@ -44,6 +46,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.ok(financeService.toScholarshipMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
             @RequestBody Map<String, Object> body,
@@ -57,6 +60,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.ok(financeService.toScholarshipMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         log.debug("DELETE scholarship id: {}", entityId);
@@ -66,6 +70,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -87,6 +92,7 @@ public class ScholarshipEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -112,6 +118,7 @@ public class ScholarshipEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @RequestParam(required = false) Boolean returnCount,
@@ -140,6 +147,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {

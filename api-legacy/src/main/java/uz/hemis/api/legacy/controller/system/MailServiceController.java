@@ -19,6 +19,7 @@ import uz.hemis.service.shared.BimmService;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Mail Service Controller - OLD-HEMIS Compatible
@@ -106,6 +107,7 @@ public class MailServiceController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
+    @PreAuthorize("isAuthenticated()")
     @PostMapping({"/app/rest/v2/services/mail/send", "/services/mail/send"})
     public ResponseEntity<Map<String, Object>> sendMail(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -204,6 +206,7 @@ public class MailServiceController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
+    @PreAuthorize("isAuthenticated()")
     @PostMapping({"/app/rest/v2/services/send/verifyCode", "/services/send/verifyCode"})
     public ResponseEntity<Map<String, Object>> sendVerifyCode(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(

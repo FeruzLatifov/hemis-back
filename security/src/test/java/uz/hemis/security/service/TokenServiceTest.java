@@ -76,7 +76,7 @@ class TokenServiceTest {
                 .authorities(List.of(
                         new SimpleGrantedAuthority("ROLE_ADMIN"),
                         new SimpleGrantedAuthority("ROLE_USER"),
-                        new SimpleGrantedAuthority("ROLE_UNIVERSITY_ADMIN")
+                        new SimpleGrantedAuthority("ROLE_OTM_API")
                 ))
                 .build();
     }
@@ -124,7 +124,7 @@ class TokenServiceTest {
         assertThat(roles).isNotNull();
         assertThat(roles).contains("ROLE_ADMIN");
         assertThat(roles).contains("ROLE_USER");
-        assertThat(roles).contains("ROLE_UNIVERSITY_ADMIN");
+        assertThat(roles).contains("ROLE_OTM_API");
     }
 
     @Test
@@ -281,7 +281,7 @@ class TokenServiceTest {
         String roles = newAccessJwt.getClaimAsString("roles");
         assertThat(roles).contains("ROLE_ADMIN");
         assertThat(roles).contains("ROLE_USER");
-        assertThat(roles).contains("ROLE_UNIVERSITY_ADMIN");
+        assertThat(roles).contains("ROLE_OTM_API");
     }
 
     @Test

@@ -29,6 +29,7 @@ public class ContractController {
 
     private final ContractService contractService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<ContractDto>>> getAllContracts(
             @PageableDefault(size = 20, sort = "contractDate", direction = Sort.Direction.DESC) Pageable pageable
@@ -37,18 +38,21 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(contracts)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<ContractDto>> getContractById(@PathVariable UUID id) {
         ContractDto contract = contractService.findById(id);
         return ResponseEntity.ok(ResponseWrapper.success(contract));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/number/{number}")
     public ResponseEntity<ResponseWrapper<ContractDto>> getContractByNumber(@PathVariable String number) {
         ContractDto contract = contractService.findByContractNumber(number);
         return ResponseEntity.ok(ResponseWrapper.success(contract));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<ContractDto>>> getContractsByUniversity(
             @RequestParam("university") String universityCode,
@@ -58,6 +62,7 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(contracts)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<ContractDto>>> getContractsByStudent(
             @RequestParam("student") UUID studentId
@@ -67,14 +72,14 @@ public class ContractController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ContractDto>> createContract(@Valid @RequestBody ContractDto contractDto) {
         ContractDto created = contractService.create(contractDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ContractDto>> updateContract(
             @PathVariable UUID id,
             @Valid @RequestBody ContractDto contractDto

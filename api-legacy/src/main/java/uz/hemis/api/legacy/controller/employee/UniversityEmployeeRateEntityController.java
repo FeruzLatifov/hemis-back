@@ -18,6 +18,7 @@ import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * University Employee Rate Entity Controller (CUBA Pattern)
@@ -57,6 +58,7 @@ public class UniversityEmployeeRateEntityController {
 
     private final EmployeeRefLegacyService employeeRefService;
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta stavkani olish",
@@ -93,6 +95,7 @@ public class UniversityEmployeeRateEntityController {
         return ResponseEntity.ok(employeeRefService.toUniversityEmployeeRateMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     @Operation(
         summary = "Barcha xodim mehnat stavkalari",
@@ -147,6 +150,7 @@ public class UniversityEmployeeRateEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Stavkalarni qidirish (GET)",
@@ -172,6 +176,7 @@ public class UniversityEmployeeRateEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Stavkalarni qidirish (POST)",

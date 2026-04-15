@@ -20,7 +20,7 @@ import java.util.UUID;
 public class QrDiplomaController {
 
     @PostMapping("/generate/{diplomaId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> generateQrCode(@PathVariable UUID diplomaId) {
         log.info("Generating QR code for diploma: {}", diplomaId);
 
@@ -32,6 +32,7 @@ public class QrDiplomaController {
         return ResponseEntity.ok(ResponseWrapper.success(result));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyQrCode(@RequestParam String qrCode) {
         Map<String, Object> verification = new HashMap<>();

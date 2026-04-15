@@ -38,13 +38,12 @@ public class UserCreateRequest {
     private String email;
 
     @Size(max = 50, message = "Phone must be at most 50 characters")
-    @Pattern(regexp = "^\\+998[0-9]{9}$", message = "Phone number must be in format +998XXXXXXXXX")
     @Schema(description = "Phone number", example = "+998901234567", nullable = true)
     private String phone;
 
-    @Size(max = 255, message = "Entity code must be at most 255 characters")
-    @Schema(description = "University entity code (null for system admins)", example = "TATU", nullable = true)
-    private String entityCode;
+    @Size(max = 255, message = "University code must be at most 255 characters")
+    @Schema(description = "University code (null for system admins)", example = "TATU", nullable = true)
+    private String universityCode;
 
     @NotEmpty(message = "At least one role is required")
     @Schema(description = "Role IDs to assign")

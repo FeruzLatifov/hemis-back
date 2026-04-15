@@ -20,6 +20,7 @@ import uz.hemis.service.legacy.DiplomaLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Student Diploma Entity Controller
@@ -51,6 +52,7 @@ public class StudentDiplomaEntityController {
     // =============================================
     // 1. GET ALL - Barcha diplomlar
     // =============================================
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping
     @Operation(summary = "Barcha diplomlarni olish", description = "Diplomlar ro'yxatini pagination bilan qaytaradi. CUBA filter qo'llab-quvvatlanadi.")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -109,6 +111,7 @@ public class StudentDiplomaEntityController {
     // =============================================
     // 2. GET BY ID - Bitta diploma
     // =============================================
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "Bitta diplomni olish", description = "UUID bo'yicha diplomni qaytaradi")
     public ResponseEntity<Map<String, Object>> getById(
@@ -129,6 +132,7 @@ public class StudentDiplomaEntityController {
     // =============================================
     // 3. PUT - Yangilash
     // =============================================
+    @PreAuthorize("hasAuthority('students.diplomas.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Diplomni yangilash", description = "Mavjud diplomni yangilaydi")
     public ResponseEntity<Map<String, Object>> update(
@@ -155,6 +159,7 @@ public class StudentDiplomaEntityController {
     // =============================================
     // 4. POST - Yaratish
     // =============================================
+    @PreAuthorize("hasAuthority('students.diplomas.edit')")
     @PostMapping
     @Operation(summary = "Yangi diploma yaratish", description = "Yangi diploma yaratadi")
     public ResponseEntity<?> create(
@@ -183,6 +188,7 @@ public class StudentDiplomaEntityController {
     // =============================================
     // 5. DELETE - O'chirish (soft delete)
     // =============================================
+    @PreAuthorize("hasAuthority('students.diplomas.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Diplomni o'chirish", description = "Diplomni soft delete qiladi")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -203,6 +209,7 @@ public class StudentDiplomaEntityController {
     // 6. GET /search - Qidirish (URL params)
     // Old Hemis bilan bir xil: CUBA JSON filter qabul qiladi
     // =============================================
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping("/search")
     @Operation(summary = "Diplomlarni qidirish (GET)", description = "CUBA filter formatida diplomlarni qidiradi")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -268,6 +275,7 @@ public class StudentDiplomaEntityController {
     // =============================================
     // 7. POST /search - Qidirish (JSON filter)
     // =============================================
+    @PreAuthorize("hasAuthority('students.diplomas.view')")
     @PostMapping("/search")
     @Operation(summary = "Diplomlarni qidirish (POST)", description = "CUBA filter formatida diplomlarni qidiradi")
     public ResponseEntity<List<Map<String, Object>>> searchPost(

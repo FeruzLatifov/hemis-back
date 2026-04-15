@@ -5,9 +5,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.service.legacy.TestLegacyService;
 
 import java.util.*;
 
@@ -26,7 +26,7 @@ import java.util.*;
 @Slf4j
 public class TestServiceController {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final TestLegacyService testLegacyService;
 
     /**
      * Health check (anonymous - no auth required)
@@ -51,27 +51,13 @@ public class TestServiceController {
      * <p>JPQL: select e from hemishe_EStudent e where e.updateTs >= :yesterday and e.updateTs < :today</p>
      */
     @GetMapping("/students")
+    @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Kechagi yangilangan talabalar", description = "Kecha yangilangan talabalar ro'yxati")
     public ResponseEntity<?> students() {
         log.info("[CUBA Service] test/students");
 
         try {
-            String sql = """
-                SELECT id, code, pinfl, serial_number, firstname, lastname, fathername,
-                       "_university" as university, "_student_status" as student_status,
-                       create_ts, update_ts
-                FROM hemishe_e_student
-                WHERE delete_ts IS NULL
-                  AND update_ts >= CURRENT_DATE - 1
-                  AND update_ts < CURRENT_DATE
-                ORDER BY update_ts DESC
-                """;
-
-            List<Map<String, Object>> items = jdbcTemplate.queryForList(sql);
-
-            if (items.isEmpty()) {
-                return ResponseEntity.ok(null);
-            }
+            List<Map<String, Object>> items = testLegacyService.getStudentsUpdatedYesterday();
             return ResponseEntity.ok(items);
         } catch (Exception e) {
             log.error("Error fetching yesterday's students", e);

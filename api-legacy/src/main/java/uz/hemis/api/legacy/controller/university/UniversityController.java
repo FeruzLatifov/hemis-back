@@ -79,6 +79,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllUniversities() {
         log.info("GET /app/rest/v2/universities - barcha universitetlar (old-hemis format)");
@@ -101,6 +102,7 @@ public class UniversityController {
      * @param code university code (PK - VARCHAR)
      * @return ResponseWrapper with UniversityDto
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{code}")
     public ResponseEntity<ResponseWrapper<UniversityDto>> getUniversityByCode(@PathVariable String code) {
         log.info("GET /app/rest/v2/universities/{}", code);
@@ -117,6 +119,7 @@ public class UniversityController {
      * @param tin Tax Identification Number
      * @return ResponseWrapper with UniversityDto
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/tin/{tin}")
     public ResponseEntity<ResponseWrapper<UniversityDto>> getUniversityByTin(@PathVariable String tin) {
         log.info("GET /app/rest/v2/universities/tin/{}", tin);
@@ -134,6 +137,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> searchUniversities(
             @RequestParam String name,
@@ -155,6 +159,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/active")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getActiveUniversities(
             @PageableDefault(size = 20, sort = "name") Pageable pageable
@@ -176,6 +181,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/type/{typeCode}")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversitiesByType(
             @PathVariable String typeCode,
@@ -198,6 +204,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/ownership/{ownershipCode}")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversitiesByOwnership(
             @PathVariable String ownershipCode,
@@ -220,6 +227,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/region/{soatoRegion}")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversitiesByRegion(
             @PathVariable String soatoRegion,
@@ -241,6 +249,7 @@ public class UniversityController {
      * @param parentCode parent university code
      * @return ResponseWrapper with List<UniversityDto>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/parent/{parentCode}/children")
     public ResponseEntity<ResponseWrapper<List<UniversityDto>>> getChildUniversities(@PathVariable String parentCode) {
         log.info("GET /app/rest/v2/universities/parent/{}/children", parentCode);
@@ -256,6 +265,7 @@ public class UniversityController {
      *
      * @return ResponseWrapper with count
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/count/active")
     public ResponseEntity<ResponseWrapper<Long>> countActiveUniversities() {
         log.info("GET /app/rest/v2/universities/count/active");
@@ -265,7 +275,7 @@ public class UniversityController {
     }
 
     // =====================================================
-    // Write Operations (ADMIN/UNIVERSITY_ADMIN only)
+    // Write Operations (ADMIN/OTM_API only)
     // =====================================================
 
     /**

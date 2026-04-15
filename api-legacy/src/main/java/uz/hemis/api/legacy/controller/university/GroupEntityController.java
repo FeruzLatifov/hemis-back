@@ -12,6 +12,7 @@ import uz.hemis.domain.entity.Group;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Group Entity Controller (CUBA Pattern)
@@ -29,6 +30,7 @@ public class GroupEntityController {
 
     private final UniversityRefLegacyService universityRefService;
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get group by ID")
     public ResponseEntity<Map<String, Object>> getById(
@@ -42,6 +44,7 @@ public class GroupEntityController {
         return ResponseEntity.ok(universityRefService.toGroupMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update group")
     public ResponseEntity<Map<String, Object>> update(
@@ -61,6 +64,7 @@ public class GroupEntityController {
         return ResponseEntity.ok(universityRefService.toGroupMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('universities.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete group")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -72,6 +76,7 @@ public class GroupEntityController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping
     @Operation(summary = "Get all groups")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -93,6 +98,7 @@ public class GroupEntityController {
     /**
      * Create group(s) - OLD-HEMIS sends an ARRAY
      */
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PostMapping
     @Operation(summary = "Create group(s)")
     public ResponseEntity<?> create(

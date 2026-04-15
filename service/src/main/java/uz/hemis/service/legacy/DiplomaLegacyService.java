@@ -702,4 +702,82 @@ public class DiplomaLegacyService {
     private String str(Object obj) {
         return obj != null ? String.valueOf(obj) : null;
     }
+
+    // ==================== Legacy Diploma Info Query ====================
+
+    /**
+     * Get diploma info by student PINFL - raw SQL for CUBA REST API compatibility.
+     *
+     * <p>Extracted from DiplomaServiceController to follow Clean Architecture.</p>
+     * <p>Joins hemishe_e_student_diploma with hemishe_e_student to return diploma + student info.</p>
+     *
+     * @param pinfl student PINFL number
+     * @return response map with success, status, count, data in OLD-HEMIS format
+     */
+    public Map<String, Object> getDiplomaInfoByPinfl(String pinfl) {
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(
+                "SELECT d.id, d.diploma_number, d.register_number, d.register_date, " +
+                "d._speciality, d.speciality_name, d._university, d.active, d._diplom_category, " +
+                "d._education_type, d._education_year, d.total_credit, d.total_acload, d.avg_grade, " +
+                "s.firstname, s.lastname, s.fathername, s.pinfl " +
+                "FROM hemishe_e_student_diploma d " +
+                "JOIN hemishe_e_student s ON s.id = d._student " +
+                "WHERE s.pinfl = ? AND d.delete_ts IS NULL AND s.delete_ts IS NULL " +
+                "ORDER BY d.create_ts DESC",
+                pinfl
+        );
+
+        if (rows.isEmpty()) {
+            // OLD-HEMIS format: wraps error inside data array
+            Map<String, Object> innerError = new LinkedHashMap<>();
+            innerError.put("success", false);
+            innerError.put("error", pinfl + " JSHSHIRga ega talaba uchun diplom topilmadi");
+            innerError.put("data", List.of());
+            innerError.put("code", 404);
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("success", true);
+            response.put("status", 200);
+            response.put("count", 1);
+            response.put("data", List.of(innerError));
+            return response;
+        }
+
+        List<Map<String, Object>> diplomas = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("_entityName", ENTITY_NAME);
+            map.put("id", row.get("id"));
+            map.put("diplomaNumber", row.get("diploma_number"));
+            map.put("registerNumber", row.get("register_number"));
+            map.put("registerDate", row.get("register_date"));
+            map.put("speciality", row.get("_speciality"));
+            map.put("specialityName", row.get("speciality_name"));
+            map.put("university", row.get("_university"));
+            map.put("active", row.get("active"));
+            map.put("diplomCategory", row.get("_diplom_category"));
+            map.put("educationType", row.get("_education_type"));
+            map.put("educationYear", row.get("_education_year"));
+            map.put("totalCredit", row.get("total_credit"));
+            map.put("totalAcload", row.get("total_acload"));
+            map.put("avgGrade", row.get("avg_grade"));
+
+            Map<String, Object> student = new LinkedHashMap<>();
+            student.put("firstname", row.get("firstname"));
+            student.put("lastname", row.get("lastname"));
+            student.put("fathername", row.get("fathername"));
+            student.put("pinfl", row.get("pinfl"));
+            map.put("student", student);
+
+            diplomas.add(map);
+        }
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("success", true);
+        response.put("status", 200);
+        response.put("count", diplomas.size());
+        response.put("data", diplomas);
+
+        return response;
+    }
 }

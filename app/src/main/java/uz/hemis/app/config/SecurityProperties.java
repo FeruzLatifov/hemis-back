@@ -124,9 +124,9 @@ public class SecurityProperties {
     public static class RateLimit {
         /**
          * Enable rate limiting
-         * Default: true
+         * Default: false (old-hemis da rate limit yo'q edi)
          */
-        private boolean enabled = true;
+        private boolean enabled = false;
 
         /**
          * Requests per minute per university

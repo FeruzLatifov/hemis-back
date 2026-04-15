@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import uz.hemis.domain.entity.University;
 import uz.hemis.domain.entity.User;
 import uz.hemis.domain.repository.UserRepository;
 
@@ -106,8 +107,8 @@ class LegacySecurityHelperTest {
     }
 
     @Test
-    @DisplayName("getUniversityCodeFromContext: user has entityCode -> returns entityCode from DB")
-    void getUniversityCodeFromContext_userHasEntityCode_returnsEntityCode() {
+    @DisplayName("getUniversityCodeFromContext: user has university -> returns university code from DB")
+    void getUniversityCodeFromContext_userHasUniversity_returnsUniversityCode() {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .claim("username", "otm401")
@@ -116,8 +117,10 @@ class LegacySecurityHelperTest {
         JwtAuthenticationToken jwtAuth = new JwtAuthenticationToken(jwt);
         SecurityContextHolder.getContext().setAuthentication(jwtAuth);
 
+        University university = new University();
+        university.setCode("TATU_CODE");
         User user = new User();
-        user.setEntityCode("TATU_CODE");
+        user.setUniversity(university);
         when(userRepository.findByUsername("otm401")).thenReturn(Optional.of(user));
 
         String result = legacySecurityHelper.getUniversityCodeFromContext();
@@ -127,8 +130,8 @@ class LegacySecurityHelperTest {
     }
 
     @Test
-    @DisplayName("getUniversityCodeFromContext: user has no entityCode -> extracts from username 'otm401' -> '401'")
-    void getUniversityCodeFromContext_noEntityCode_extractsFromUsername() {
+    @DisplayName("getUniversityCodeFromContext: user has no university -> extracts from username 'otm401' -> '401'")
+    void getUniversityCodeFromContext_noUniversity_extractsFromUsername() {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .claim("username", "otm401")
@@ -138,7 +141,7 @@ class LegacySecurityHelperTest {
         SecurityContextHolder.getContext().setAuthentication(jwtAuth);
 
         User user = new User();
-        user.setEntityCode(null);
+        // No university set — getUniversityCode() returns null
         when(userRepository.findByUsername("otm401")).thenReturn(Optional.of(user));
 
         String result = legacySecurityHelper.getUniversityCodeFromContext();

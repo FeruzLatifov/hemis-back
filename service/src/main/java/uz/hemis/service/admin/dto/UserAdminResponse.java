@@ -34,8 +34,8 @@ public class UserAdminResponse {
     @Schema(description = "Phone", example = "+998901234567")
     private String phone;
 
-    @Schema(description = "University entity code", example = "TATU")
-    private String entityCode;
+    @Schema(description = "University code", example = "TATU")
+    private String universityCode;
 
     @Schema(description = "University name", example = "Toshkent axborot texnologiyalari universiteti")
     private String universityName;

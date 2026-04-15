@@ -69,7 +69,7 @@ public class UserLegacyService {
         response.put("roles", user.getRoles() != null && !user.getRoles().isEmpty()
                 ? user.getRoles().stream().map(Role::getCode).toArray(String[]::new)
                 : new String[0]);
-        response.put("university", user.getEntityCode());
+        response.put("university", user.getUniversityCode());
         response.put("enabled", user.getEnabled());
         response.put("accountNonLocked", user.getAccountNonLocked());
         return response;

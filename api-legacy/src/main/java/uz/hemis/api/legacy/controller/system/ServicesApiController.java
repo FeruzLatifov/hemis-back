@@ -9,6 +9,7 @@ import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "70.Qo'shimcha xizmatlar", description = "Xizmatlar API")
 @RestController
@@ -17,6 +18,7 @@ import java.util.Map;
 @Slf4j
 public class ServicesApiController {
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/available")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAvailableServices() {
         Map<String, Object> services = new HashMap<>();
@@ -26,6 +28,7 @@ public class ServicesApiController {
         return ResponseEntity.ok(ResponseWrapper.success(services));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/info/{serviceCode}")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getServiceInfo(@PathVariable String serviceCode) {
         Map<String, String> info = new HashMap<>();

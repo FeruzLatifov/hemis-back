@@ -15,6 +15,7 @@ import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * OTM Service Controller - University Information Services
@@ -55,6 +56,7 @@ public class OtmServiceController {
         description = "Talaba ID raqami (string format) orqali to'liq akademik ma'lumotlarini olish. " +
                       "OLD-HEMIS format: studentId=999221100044"
     )
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/studentInfoById")
     public ResponseEntity<Map<String, Object>> getStudentInfoById(
         @Parameter(description = "Talaba ID (string format)", required = true, example = "999221100044")
@@ -80,6 +82,7 @@ public class OtmServiceController {
         summary = "Talaba ma'lumotlarini PINFL bo'yicha olish",
         description = "Talaba PINFL raqami orqali akademik ma'lumotlarini olish"
     )
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/studentInfoByPinfl")
     public ResponseEntity<Map<String, Object>> getStudentInfoByPinfl(
         @Parameter(description = "PINFL", required = true, example = "31503776560016")
@@ -109,6 +112,7 @@ public class OtmServiceController {
         description = "Universitet kodi va tutor PINFL raqami bo'yicha talabalar ro'yxatini olish. " +
                       "OLD-HEMIS format: university=999&tutorPinfl=31503776560016"
     )
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/studentListByTutor")
     public ResponseEntity<Map<String, Object>> getStudentListByTutor(
         @Parameter(description = "Universitet kodi", required = true, example = "999")

@@ -15,6 +15,7 @@ import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Akademik Davomat Hisobotlari Controller - CUBA REST API Pattern
@@ -34,6 +35,7 @@ public class RAcademicAttendanceEntityController {
 
     private static final String ENTITY_NAME = "hemishe_RAcademicAttendance";
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(@PathVariable String entityId, @RequestParam(required = false) Boolean returnNulls) {
         log.info("GET hemishe_RAcademicAttendance: {}", entityId);
@@ -49,6 +51,7 @@ public class RAcademicAttendanceEntityController {
         }
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(@PathVariable String entityId, @RequestBody Map<String, Object> entityData) {
         log.info("UPDATE hemishe_RAcademicAttendance: {}", entityId);
@@ -68,6 +71,7 @@ public class RAcademicAttendanceEntityController {
         }
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(@PathVariable String entityId) {
         log.info("DELETE hemishe_RAcademicAttendance: {}", entityId);
@@ -84,6 +88,7 @@ public class RAcademicAttendanceEntityController {
         }
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam String filter, @RequestParam(required = false) Boolean returnCount,
@@ -93,6 +98,7 @@ public class RAcademicAttendanceEntityController {
         return search(filter, offset, limit, returnCount, returnNulls);
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filterBody,
@@ -109,6 +115,7 @@ public class RAcademicAttendanceEntityController {
         return search(filterStr, bodyOffset, bodyLimit, returnCount, returnNulls);
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping({"", "/"})
     public ResponseEntity<List<Map<String, Object>>> listAll(
             @RequestParam(required = false) Boolean returnCount, @RequestParam(required = false) Integer offset,
@@ -124,6 +131,7 @@ public class RAcademicAttendanceEntityController {
         return ResponseEntity.ok().headers(headers).body(result);
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping({"", "/"})
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
         log.info("CREATE hemishe_RAcademicAttendance: {}", entityData);

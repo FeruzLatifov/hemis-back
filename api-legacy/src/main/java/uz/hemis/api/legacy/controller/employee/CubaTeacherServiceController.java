@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * CUBA Teacher Service Controller - OLD-HEMIS Compatible
@@ -102,6 +103,7 @@ public class CubaTeacherServiceController {
      * @param requestBody Request body with "data" wrapper
      * @return O'qituvchi ma'lumotlari va is_new flag
      */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/id")
     @Operation(
             summary = "O'qituvchi ID sini olish",
@@ -261,6 +263,7 @@ public class CubaTeacherServiceController {
      * @param requestBody Request body with "job" wrapper
      * @return Success status and message
      */
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/addJob")
     @Tag(name = "06.Xodim lavozimlari", description = "Xodim lavozimlari bilan ishlash")
     @Operation(
@@ -364,6 +367,7 @@ public class CubaTeacherServiceController {
      *
      * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/teacher/get?pinfl={pinfl}}</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/get")
     @Operation(
             summary = "O'qituvchi olish (PINFL)",
@@ -394,6 +398,7 @@ public class CubaTeacherServiceController {
      *
      * <p><strong>URL:</strong> {@code GET /app/rest/v2/services/teacher/getById?id={id}}</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getById")
     @Operation(
             summary = "O'qituvchi olish (code)",

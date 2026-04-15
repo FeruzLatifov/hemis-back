@@ -18,6 +18,7 @@ import uz.hemis.api.legacy.util.CubaFilterHelper;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Specialty Entity Controller (CUBA Pattern)
@@ -36,6 +37,7 @@ public class SpecialtyEntityController {
     private final UniversityRefLegacyService universityRefService;
     private final CubaFilterHelper filterHelper;
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get specialty by ID", description = "Returns a single specialty by UUID")
     public ResponseEntity<Map<String, Object>> getById(
@@ -52,6 +54,7 @@ public class SpecialtyEntityController {
         return ResponseEntity.ok(universityRefService.toSpecialtyMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update specialty", description = "Updates an existing specialty")
     public ResponseEntity<Map<String, Object>> update(
@@ -71,6 +74,7 @@ public class SpecialtyEntityController {
         return ResponseEntity.ok(universityRefService.toSpecialtyMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('universities.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete specialty", description = "Soft deletes a specialty")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -83,6 +87,7 @@ public class SpecialtyEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/search")
     @Operation(summary = "Search specialties (GET)", description = "Search using URL parameters")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -105,6 +110,7 @@ public class SpecialtyEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @PostMapping("/search")
     @Operation(summary = "Search specialties (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -131,6 +137,7 @@ public class SpecialtyEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping
     @Operation(summary = "Get all specialties", description = "Returns paginated list")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -175,6 +182,7 @@ public class SpecialtyEntityController {
      *
      * OLD-HEMIS: Bitta object qabul qiladi
      */
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PostMapping
     @Operation(summary = "Create specialty", description = "Creates a new specialty (OLD-HEMIS format)")
     public ResponseEntity<?> create(

@@ -12,6 +12,7 @@ import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Faculty Service Controller - CUBA REST API Compatible
@@ -29,6 +30,7 @@ public class FacultyServiceController {
 
     private static final String ENTITY_NAME = "hemishe_EUniversityDepartment";
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/get")
     @Operation(summary = "OTM fakultetlarini olish")
     public ResponseEntity<Map<String, Object>> get(
@@ -53,6 +55,7 @@ public class FacultyServiceController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/list")
     @Operation(summary = "Get faculties by university")
     public ResponseEntity<Map<String, Object>> list(
@@ -61,6 +64,7 @@ public class FacultyServiceController {
         return get(universityCode);
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/count")
     @Operation(summary = "Count faculties")
     public ResponseEntity<Map<String, Object>> count(

@@ -28,6 +28,7 @@ public class GroupController {
 
     private final GroupService groupService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<GroupDto>>> getAllGroups(
             @PageableDefault(size = 20, sort = "groupName", direction = Sort.Direction.ASC) Pageable pageable
@@ -36,6 +37,7 @@ public class GroupController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(groups)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<GroupDto>> getGroupById(@PathVariable UUID id) {
         GroupDto group = groupService.findById(id);
@@ -43,14 +45,14 @@ public class GroupController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<GroupDto>> createGroup(@Valid @RequestBody GroupDto groupDto) {
         GroupDto created = groupService.create(groupDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<GroupDto>> updateGroup(
             @PathVariable UUID id,
             @Valid @RequestBody GroupDto groupDto

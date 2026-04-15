@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Personal Data Service Controller - CUBA REST API Compatible
@@ -37,6 +38,7 @@ public class PersonalDataServiceController {
      * <p>OLD-HEMIS: PersonalDataServiceBean.getData(pinfl, serial)</p>
      * <p>Calls: GET https://talaba.edu.uz/api/my_edu_uz/student_mvd_hemis.php?TOKEN=12345&amp;pinfl=X&amp;p_seriya=Y</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getData")
     @Operation(summary = "MVD shaxsiy ma'lumotlari", description = "PINFL va passport seriya bo'yicha MVD dan shaxsiy ma'lumotlarni olish")
     public Map<String, Object> getData(

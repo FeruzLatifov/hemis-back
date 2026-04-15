@@ -61,7 +61,7 @@ public enum RoleCode {
      * <p>Type: UNIVERSITY</p>
      * <p>Scope: Single university</p>
      */
-    UNIVERSITY_ADMIN("UNIVERSITY_ADMIN", "University Administrator", RoleType.UNIVERSITY),
+    OTM_API("OTM_API", "University Administrator", RoleType.UNIVERSITY),
 
     // =====================================================
     // Custom Roles (CUSTOM)
@@ -80,7 +80,7 @@ public enum RoleCode {
 
     /**
      * Role code (machine-readable identifier)
-     * <p>Example: "SUPER_ADMIN", "UNIVERSITY_ADMIN"</p>
+     * <p>Example: "SUPER_ADMIN", "OTM_API"</p>
      */
     private final String code;
 

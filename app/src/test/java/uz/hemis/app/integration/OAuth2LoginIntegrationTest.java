@@ -93,7 +93,7 @@ class OAuth2LoginIntegrationTest {
         Permission teacherViewPerm = createPermissionIfNotExists("teachers.view");
 
         // Create test role
-        Role testRole = createRoleIfNotExists("UNIVERSITY_ADMIN", Set.of(
+        Role testRole = createRoleIfNotExists("OTM_API", Set.of(
                 studentViewPerm,
                 studentCreatePerm,
                 teacherViewPerm

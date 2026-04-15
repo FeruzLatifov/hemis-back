@@ -16,6 +16,7 @@ import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * AcademicEducationalWork Entity Controller (CUBA Pattern)
@@ -37,6 +38,7 @@ public class AcademicEducationalWorkEntityController {
     private final AcademicEntityLegacyService academicService;
     private static final String ENTITY_NAME = "hemishe_RIAcademicEducationalWork";
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get AcademicEducationalWork by ID", description = "Returns a single AcademicEducationalWork by UUID")
     public ResponseEntity<?> getById(
@@ -58,6 +60,7 @@ public class AcademicEducationalWorkEntityController {
         return ResponseEntity.ok(academicService.toAcademicEducationalWorkMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update AcademicEducationalWork", description = "Updates an existing AcademicEducationalWork")
     public ResponseEntity<?> update(
@@ -82,6 +85,7 @@ public class AcademicEducationalWorkEntityController {
         return ResponseEntity.ok(academicService.toAcademicEducationalWorkMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete AcademicEducationalWork", description = "Soft deletes an AcademicEducationalWork")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {
@@ -99,6 +103,7 @@ public class AcademicEducationalWorkEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     @Operation(summary = "Search AcademicEducationalWork (GET)", description = "Search using URL parameters")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -129,6 +134,7 @@ public class AcademicEducationalWorkEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     @Operation(summary = "Search AcademicEducationalWork (POST)", description = "Search using JSON filter")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -164,6 +170,7 @@ public class AcademicEducationalWorkEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     @Operation(summary = "Get all AcademicEducationalWork", description = "Returns paginated list")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -202,6 +209,7 @@ public class AcademicEducationalWorkEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     @Operation(summary = "Create AcademicEducationalWork", description = "Creates a new AcademicEducationalWork")
     public ResponseEntity<Map<String, Object>> create(

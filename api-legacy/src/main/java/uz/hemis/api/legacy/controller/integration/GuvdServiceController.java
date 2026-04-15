@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.hemis.service.legacy.GuvdLegacyService;
 
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * GUVD Service Controller - OLD-HEMIS compatible
@@ -39,6 +40,7 @@ public class GuvdServiceController {
      *
      * <p>h_soato (faqat '1726%' prefix), h_gender, h_university_form, h_ownership, h_university</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/classifiers")
     @Operation(summary = "GUVD klassifikatorlari", description = "5 ta GUVD klassifikatorini qaytaradi (old-hemis format)")
     public ResponseEntity<Map<String, Object>> classifiers() {
@@ -51,6 +53,7 @@ public class GuvdServiceController {
      *
      * <p>Old-hemis format: { success: true, count: N, data: [{code, name, tin}, ...] }</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/objects")
     @Operation(summary = "Barcha universitetlar (GUVD)", description = "Barcha universitetlarni code, name, tin bilan qaytaradi (old-hemis format)")
     public ResponseEntity<Map<String, Object>> objects() {

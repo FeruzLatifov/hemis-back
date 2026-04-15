@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Send Service Controller - CUBA REST API Compatible
@@ -46,6 +47,7 @@ public class SendServiceController {
      * <p>Subject: "HEMIS tizimi parolini tiklash"</p>
      * <p>Always returns {"result": "OK"} (old-hemis compatible)</p>
      */
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/sendEmailNative")
     @Operation(summary = "Parol tiklash emaili yuborish", description = "Foydalanuvchiga parol tiklash uchun tasdiqlash kodi yuboradi")
     public ResponseEntity<?> sendEmailNative(

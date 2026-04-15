@@ -16,6 +16,7 @@ import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Tag(name = "11.Fanlar", description = "Fanlar entity API")
 @RestController
@@ -28,6 +29,7 @@ public class CourseEntityController {
     private final AcademicEntityLegacyService academicService;
     private final CubaFilterHelper filterHelper;
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
             @RequestParam(required = false) Boolean returnNulls) {
@@ -36,6 +38,7 @@ public class CourseEntityController {
         return ResponseEntity.ok(academicService.toCourseMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
             @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
@@ -45,6 +48,7 @@ public class CourseEntityController {
         return ResponseEntity.ok(academicService.toCourseMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<Course> entity = academicService.findCourseById(entityId);
@@ -53,6 +57,7 @@ public class CourseEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -74,6 +79,7 @@ public class CourseEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -99,6 +105,7 @@ public class CourseEntityController {
             .collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(@RequestParam(defaultValue = "0") Integer offset,
             @RequestParam(defaultValue = "50") Integer limit, @RequestParam(required = false) String sort,
@@ -112,6 +119,7 @@ public class CourseEntityController {
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> academicService.toCourseMap(e, returnNulls)).collect(Collectors.toList()));
     }
 
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {

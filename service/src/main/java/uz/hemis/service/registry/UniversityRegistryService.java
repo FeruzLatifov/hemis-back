@@ -50,6 +50,22 @@ public class UniversityRegistryService {
     private final UniversityRepository universityRepository;
     private final UniversityDtoConverter universityMapper;
     private final EntityManager entityManager;
+    private final ClassifierLookupService classifiers;
+
+    /** Populate human-readable `*Name` fields from cached classifier maps (in-memory, O(1)). */
+    private UniversityDto enrich(UniversityDto dto) {
+        if (dto == null) return null;
+        dto.setOwnershipName(classifiers.resolveOwnership(dto.getOwnership()));
+        dto.setUniversityTypeName(classifiers.resolveType(dto.getUniversityType()));
+        dto.setUniversityActivityStatusName(classifiers.resolveActivityStatus(dto.getUniversityActivityStatus()));
+        dto.setUniversityBelongsToName(classifiers.resolveBelongsTo(dto.getUniversityBelongsTo()));
+        dto.setUniversityContractCategoryName(classifiers.resolveContractCategory(dto.getUniversityContractCategory()));
+        dto.setUniversityVersionName(classifiers.resolveVersionType(dto.getUniversityVersion()));
+        dto.setSoatoName(classifiers.resolveSoato(dto.getSoato()));
+        dto.setSoatoRegionName(classifiers.resolveSoato(dto.getSoatoRegion()));
+        dto.setTerrainName(classifiers.resolveSoato(dto.getTerrain()));
+        return dto;
+    }
 
     // =====================================================
     // READ Operations (REPLICA Database)
@@ -92,7 +108,7 @@ public class UniversityRegistryService {
                 districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
                 oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent);
         Page<University> universities = universityRepository.findAll(spec, pageable);
-        return universities.map(universityMapper::toDto);
+        return universities.map(u -> enrich(universityMapper.toDto(u)));
     }
 
     @Cacheable(value = "universitiesSearch", key = "'detail:' + #id", unless = "#result == null")
@@ -100,6 +116,7 @@ public class UniversityRegistryService {
         log.debug("Getting university by id: {}", id);
         return universityRepository.findById(id)
                 .map(universityMapper::toDto)
+                .map(this::enrich)
                 .orElse(null);
     }
 
@@ -141,6 +158,21 @@ public class UniversityRegistryService {
                 .build();
     }
 
+    @SuppressWarnings("unchecked")
+    @Transactional(readOnly = true)
+    public List<DictionaryItem> getTerrainsBySoato(String soato) {
+        Query query = entityManager.createNativeQuery(
+                "SELECT code, name FROM hemishe_h_terrain WHERE _soato = :soato AND delete_ts IS NULL AND active = true ORDER BY name");
+        query.setParameter("soato", soato);
+        List<Object[]> results = query.getResultList();
+        return results.stream()
+                .map(row -> DictionaryItem.builder()
+                        .code((String) row[0])
+                        .name((String) row[1])
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public List<UniversityDto> exportUniversities(
             String q,
             String searchField,
@@ -172,7 +204,7 @@ public class UniversityRegistryService {
                 districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
                 oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent);
         List<University> universities = universityRepository.findAll(spec);
-        return universityMapper.toDtoList(universities);
+        return universityMapper.toDtoList(universities).stream().map(this::enrich).toList();
     }
 
     /**
@@ -449,13 +481,14 @@ public class UniversityRegistryService {
     }
 
     /**
-     * Load district items from hemishe_h_soato (7-digit SOATO codes — tuman/shahar)
+     * Load district items from hemishe_h_soato (7-digit SOATO codes — tuman/shahar).
+     * Includes inactive entries so historical universities still resolve to a name on display.
      */
     @SuppressWarnings("unchecked")
     private List<DictionaryItem> loadDistrictItems() {
         Query query = entityManager.createNativeQuery(
                 "SELECT code, name_uz FROM hemishe_h_soato " +
-                "WHERE delete_ts IS NULL AND active = true AND LENGTH(code) = 7 " +
+                "WHERE delete_ts IS NULL AND LENGTH(code) = 7 " +
                 "ORDER BY name_uz");
 
         List<Object[]> results = query.getResultList();
@@ -488,38 +521,43 @@ public class UniversityRegistryService {
      * Map request DTO to entity
      */
     private void mapRequestToEntity(UniversityRequestDto request, University entity) {
+        // Required fields — always set
         entity.setCode(request.getCode());
-        entity.setTin(request.getTin());
         entity.setName(request.getName());
-        entity.setOwnership(request.getOwnership());
-        entity.setSoato(request.getSoato());
-        entity.setSoatoRegion(request.getSoatoRegion());
-        entity.setUniversityType(request.getUniversityType());
-        entity.setUniversityVersion(request.getUniversityVersion());
-        entity.setUniversityActivityStatus(request.getActivityStatus());
-        entity.setUniversityBelongsTo(request.getBelongsTo());
-        entity.setUniversityContractCategory(request.getContractCategory());
-        entity.setParentUniversity(request.getParentUniversity());
-        entity.setTerrain(request.getTerrain());
-        entity.setAddress(request.getAddress());
-        entity.setCadastre(request.getCadastre());
-        entity.setUniversityUrl(request.getUniversityUrl());
-        entity.setStudentUrl(request.getStudentUrl());
-        entity.setTeacherUrl(request.getTeacherUrl());
-        entity.setUzbmbUrl(request.getUzbmbUrl());
-        entity.setMailAddress(request.getMailAddress());
-        entity.setAccreditationInfo(request.getAccreditationInfo());
-        entity.setBankInfo(request.getBankInfo());
-        entity.setActive(request.getActive());
-        entity.setGpaEdit(request.getGpaEdit());
-        entity.setAccreditationEdit(request.getAccreditationEdit());
-        entity.setAddStudent(request.getAddStudent());
-        entity.setAllowGrouping(request.getAllowGrouping());
-        entity.setAllowTransferOutside(request.getAllowTransferOutside());
-        entity.setOneId(request.getOneId());
-        entity.setGradingSystem(request.getGradingSystem());
-        entity.setAddForeignStudent(request.getAddForeignStudent());
-        entity.setAddTransferStudent(request.getAddTransferStudent());
-        entity.setAddAcademicMobileStudent(request.getAddAcademicMobileStudent());
+
+        // Optional fields — only update if provided (null = don't change)
+        if (request.getTin() != null) entity.setTin(request.getTin());
+        if (request.getOwnership() != null) entity.setOwnership(request.getOwnership());
+        if (request.getSoato() != null) entity.setSoato(request.getSoato());
+        if (request.getSoatoRegion() != null) entity.setSoatoRegion(request.getSoatoRegion());
+        if (request.getUniversityType() != null) entity.setUniversityType(request.getUniversityType());
+        if (request.getUniversityVersion() != null) entity.setUniversityVersion(request.getUniversityVersion());
+        if (request.getActivityStatus() != null) entity.setUniversityActivityStatus(request.getActivityStatus());
+        if (request.getBelongsTo() != null) entity.setUniversityBelongsTo(request.getBelongsTo());
+        if (request.getContractCategory() != null) entity.setUniversityContractCategory(request.getContractCategory());
+        if (request.getParentUniversity() != null) entity.setParentUniversity(request.getParentUniversity());
+        if (request.getTerrain() != null) entity.setTerrain(request.getTerrain());
+        if (request.getAddress() != null) entity.setAddress(request.getAddress());
+        if (request.getCadastre() != null) entity.setCadastre(request.getCadastre());
+        if (request.getUniversityUrl() != null) entity.setUniversityUrl(request.getUniversityUrl());
+        if (request.getStudentUrl() != null) entity.setStudentUrl(request.getStudentUrl());
+        if (request.getTeacherUrl() != null) entity.setTeacherUrl(request.getTeacherUrl());
+        if (request.getUzbmbUrl() != null) entity.setUzbmbUrl(request.getUzbmbUrl());
+        if (request.getMailAddress() != null) entity.setMailAddress(request.getMailAddress());
+        if (request.getAccreditationInfo() != null) entity.setAccreditationInfo(request.getAccreditationInfo());
+        if (request.getBankInfo() != null) entity.setBankInfo(request.getBankInfo());
+
+        // Boolean fields — always have defaults
+        if (request.getActive() != null) entity.setActive(request.getActive());
+        if (request.getGpaEdit() != null) entity.setGpaEdit(request.getGpaEdit());
+        if (request.getAccreditationEdit() != null) entity.setAccreditationEdit(request.getAccreditationEdit());
+        if (request.getAddStudent() != null) entity.setAddStudent(request.getAddStudent());
+        if (request.getAllowGrouping() != null) entity.setAllowGrouping(request.getAllowGrouping());
+        if (request.getAllowTransferOutside() != null) entity.setAllowTransferOutside(request.getAllowTransferOutside());
+        if (request.getOneId() != null) entity.setOneId(request.getOneId());
+        if (request.getGradingSystem() != null) entity.setGradingSystem(request.getGradingSystem());
+        if (request.getAddForeignStudent() != null) entity.setAddForeignStudent(request.getAddForeignStudent());
+        if (request.getAddTransferStudent() != null) entity.setAddTransferStudent(request.getAddTransferStudent());
+        if (request.getAddAcademicMobileStudent() != null) entity.setAddAcademicMobileStudent(request.getAddAcademicMobileStudent());
     }
 }

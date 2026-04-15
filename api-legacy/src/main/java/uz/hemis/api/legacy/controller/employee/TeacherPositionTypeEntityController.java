@@ -18,6 +18,7 @@ import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Teacher Position Type Entity Controller (CUBA Pattern)
@@ -54,6 +55,7 @@ public class TeacherPositionTypeEntityController {
 
     private final EmployeeRefLegacyService employeeRefService;
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta lavozimni olish",
@@ -90,6 +92,7 @@ public class TeacherPositionTypeEntityController {
         return ResponseEntity.ok(employeeRefService.toTeacherPositionTypeMap(entity.get(), returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     @Operation(
         summary = "Barcha xodim lavozimlari",
@@ -144,6 +147,7 @@ public class TeacherPositionTypeEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Lavozimlarni qidirish (GET)",
@@ -169,6 +173,7 @@ public class TeacherPositionTypeEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Lavozimlarni qidirish (POST)",

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.service.base.CubaResponseHelper;
+import uz.hemis.domain.entity.Employee;
 import uz.hemis.domain.entity.EmployeeJobs;
 import uz.hemis.domain.entity.Teacher;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
@@ -184,19 +185,20 @@ public class TeacherCubaService {
             return error;
         }
 
-        // Create EmployeeJobs entity
+        // Create EmployeeJobs entity — field names match EmployeeJobs.java (V009 schema)
         EmployeeJobs entity = new EmployeeJobs();
-        entity.setEmployee(employeeId);
-        entity.setUniversity(extractCode(job.get("university")));
-        entity.setDepartment(extractCode(job.get("department")));
+        Employee employee = new Employee();
+        employee.setId(employeeId);
+        entity.setEmployee(employee);
+        entity.setUniversityCode(extractCode(job.get("university")));
+        entity.setDepartmentCode(extractCode(job.get("department")));
         entity.setEmployeeType(extractCode(job.get("employeeType")));
-        entity.setEmployeePosition(extractCode(job.get("employeePosition")));
+        entity.setPositionCode(extractCode(job.get("employeePosition")));
         entity.setEmployeeRate(extractCode(job.get("employeeRate")));
-        entity.setEmployeeForm(extractCode(job.get("employeeForm")));
+        entity.setEmploymentForm(extractCode(job.get("employeeForm")));
         entity.setEmployeeStatus(extractCode(job.get("employeeStatus")));
-        entity.setTag(job.get("tag") != null ? job.get("tag").toString() : null);
-        entity.setJobStartDate(parseDate(job.get("jobStartDate")));
-        entity.setJobEndDate(parseDate(job.get("jobEndDate")));
+        entity.setStartDate(parseDate(job.get("jobStartDate")));
+        entity.setEndDate(parseDate(job.get("jobEndDate")));
         entity.setContractDate(parseDate(job.get("contractDate")));
         entity.setContractNumber(job.get("contractNumber") != null ? job.get("contractNumber").toString() : null);
         entity.setDecreeDate(parseDate(job.get("decreeDate")));

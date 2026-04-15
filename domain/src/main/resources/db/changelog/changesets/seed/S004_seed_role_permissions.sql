@@ -3,181 +3,154 @@
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2025-01-15
--- Purpose: Assign permissions to the 5 system roles.
---          All role-permission assignments consolidated here.
--- Strategy: IDEMPOTENT (ON CONFLICT DO NOTHING for junction table)
--- Merged from: S004 (base) + S003b STEP 9 + S009 + S016 role assignments
--- =====================================================
--- Roles: SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER, REPORT_VIEWER
+-- Updated: 2026-03-21 — OTM_API role with full CRUD (old-hemis OTM equivalent)
+-- Purpose: Assign permissions to 7 system roles
+-- Strategy: IDEMPOTENT (ON CONFLICT DO NOTHING)
+--
+-- Old-hemis permission mapping:
+--   OTM: 919 perms (SCREEN + ENTITY CRUD + SERVICE) → OTM_API: full CRUD
+--   Ministry: 420 perms (SCREEN + ENTITY read) → MINISTRY_ADMIN: core + admin
+--   Inspeksiya: 166 perms (SCREEN + read) → INSPECTOR: view only
+--   ReportAdmin: 963 perms → REPORT_VIEWER: reports + rating
 -- =====================================================
 
 -- =====================================================
 -- SUPER_ADMIN: ALL permissions (full access)
 -- =====================================================
--- Simple CROSS JOIN — SUPER_ADMIN gets every permission in the system.
--- This covers all 84 permissions (30 base + 54 feature).
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
+FROM roles r CROSS JOIN permissions p
 WHERE r.code = 'SUPER_ADMIN'
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
--- MINISTRY_ADMIN: Core business + admin user management
+-- OTM_API: Full CRUD — old-hemis "OTM" role equivalent
+-- This is what Univer uses for B2B sync (258 universities)
+-- Old-hemis OTM had: entity CRUD + REST API enabled + all screens
 -- =====================================================
--- From S004: All CORE category permissions (S002 base CORE)
+-- Give ALL permissions (same as old-hemis OTM which had 919 perms)
+-- OTM user needs: create/read/update/delete students, teachers, departments, etc.
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'MINISTRY_ADMIN'
-  AND p.category = 'CORE'
-ON CONFLICT DO NOTHING;
-
--- From S016: users.manage + users.view for user administration
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'MINISTRY_ADMIN'
-  AND p.code IN ('users.manage', 'users.view')
-ON CONFLICT DO NOTHING;
-
--- Menu structure + audit logs access
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'MINISTRY_ADMIN'
-  AND p.code IN ('system.menu.view', 'audit.view')
-ON CONFLICT DO NOTHING;
-
--- =====================================================
--- UNIVERSITY_ADMIN: Scoped core permissions + user management
--- =====================================================
--- From S004: CORE permissions for dashboard, students, teachers, reports
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'UNIVERSITY_ADMIN'
-  AND p.category = 'CORE'
-  AND p.resource IN ('dashboard', 'students', 'teachers', 'reports')
-ON CONFLICT DO NOTHING;
-
--- From S016: users.view + users.manage for university-scoped user admin
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'UNIVERSITY_ADMIN'
-  AND p.code IN ('users.view', 'users.manage')
-ON CONFLICT DO NOTHING;
-
--- Menu structure access (navigation)
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'UNIVERSITY_ADMIN'
-  AND p.code = 'system.menu.view'
-ON CONFLICT DO NOTHING;
-
--- =====================================================
--- VIEWER: View-only permissions across most modules
--- =====================================================
--- From S004: Base safe view permissions + menu structure
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'VIEWER'
-  AND p.code IN (
-    'dashboard.view', 'students.view', 'teachers.view',
-    'universities.view', 'reports.view', 'system.menu.view'
+FROM roles r CROSS JOIN permissions p
+WHERE r.code = 'OTM_API'
+  AND (
+    -- Students: full CRUD (old-hemis: hemishe_EStudent:create/read/update/delete = 1)
+    p.code LIKE 'students.%'
+    -- Teachers: full CRUD
+    OR p.code LIKE 'teachers.%'
+    -- Institutions: full access
+    OR p.code LIKE 'institutions.%'
+    -- Universities: view (OTM sees own university)
+    OR p.code LIKE 'universities.%'
+    -- Science: full access
+    OR p.code LIKE 'science.%'
+    -- Reports: view + create + export
+    OR p.code LIKE 'reports.%'
+    -- Rating: view
+    OR p.code LIKE 'rating.%'
+    -- Classifiers: view + edit
+    OR p.code LIKE 'classifiers.%'
+    -- Dashboard
+    OR p.code = 'dashboard.view'
+    -- Menu navigation
+    OR p.code = 'system.menu.view'
   )
 ON CONFLICT DO NOTHING;
 
--- From S003b: Specific menu permissions for OTM_ADMIN/VIEWER
--- Students (7), Teachers (4), Science (6), select Reports (3)
+-- =====================================================
+-- MINISTRY_ADMIN: Core business + admin (old-hemis: Ministry)
+-- =====================================================
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'VIEWER'
-  AND p.code IN (
-    -- Students (7)
-    'students.view', 'students.list.view', 'students.directions.view', 'students.groups.view',
-    'students.diplomas.view', 'students.scholarships.view', 'students.certificates.view',
-    -- Teachers (4)
-    'teachers.view', 'teachers.list.view', 'teachers.positions.view', 'teachers.qualifications.view',
-    -- Science (6)
-    'science.view', 'science.researchers.view', 'science.projects.view',
-    'science.publications.view', 'science.methodical.view', 'science.intellectual.view',
-    -- Select Reports
-    'reports.students.view', 'reports.teachers.view', 'reports.academic.view'
+FROM roles r CROSS JOIN permissions p
+WHERE r.code = 'MINISTRY_ADMIN'
+  AND (
+    p.category = 'CORE'
+    OR p.code IN (
+      'users.manage', 'users.view', 'users.create', 'users.edit', 'users.delete',
+      'roles.manage', 'roles.view', 'roles.create', 'roles.edit', 'roles.delete',
+      'permissions.manage', 'permissions.view',
+      'system.menu.view', 'system.menus.manage',
+      'system.translation.view', 'system.translation.manage',
+      'system.users.view', 'system.view',
+      'audit.view', 'settings.view', 'settings.edit'
+    )
   )
 ON CONFLICT DO NOTHING;
 
--- From S003b: All *.view permissions for institutions, students, teachers, science, reports, rating
+-- Ministry also gets all view permissions
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
+FROM roles r CROSS JOIN permissions p
+WHERE r.code = 'MINISTRY_ADMIN' AND p.action = 'view'
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- INSPECTOR: View-only across all modules (old-hemis: Inspeksiya)
+-- =====================================================
+INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+SELECT r.id, p.id, 'system'
+FROM roles r CROSS JOIN permissions p
+WHERE r.code = 'INSPECTOR'
+  AND p.action = 'view'
+ON CONFLICT DO NOTHING;
+
+-- Inspector also gets dashboard and menu
+INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+SELECT r.id, p.id, 'system'
+FROM roles r CROSS JOIN permissions p
+WHERE r.code = 'INSPECTOR'
+  AND p.code IN ('dashboard.view', 'system.menu.view')
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- VIEWER: Minimal view (old-hemis: Ministry_lite, vazirlikrole)
+-- =====================================================
+INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+SELECT r.id, p.id, 'system'
+FROM roles r CROSS JOIN permissions p
 WHERE r.code = 'VIEWER'
   AND p.action = 'view'
   AND (
-    p.code LIKE 'institutions.%'
-    OR p.code LIKE 'students.%'
+    p.code LIKE 'students.%'
     OR p.code LIKE 'teachers.%'
+    OR p.code LIKE 'institutions.%'
     OR p.code LIKE 'science.%'
     OR p.code LIKE 'reports.%'
     OR p.code LIKE 'rating.%'
+    OR p.code = 'dashboard.view'
+    OR p.code = 'system.menu.view'
   )
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
--- REPORT_VIEWER: Reports, rating, and institutions
+-- REPORT_VIEWER: Reports + rating + institutions (old-hemis: ReportAdmin)
 -- =====================================================
--- From S004: All reports resource permissions + menu structure
 INSERT INTO role_permissions (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'REPORT_VIEWER'
-  AND (p.resource = 'reports' OR p.code = 'system.menu.view')
-ON CONFLICT DO NOTHING;
-
--- From S003b: Explicit institutions, reports sub-menus, rating
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
-WHERE r.code = 'REPORT_VIEWER'
-  AND p.code IN (
-    -- Institutions (5)
-    'institutions.view', 'institutions.universities.view', 'institutions.faculties.view',
-    'institutions.departments.view', 'institutions.attached-specialities.view',
-    -- Reports (7)
-    'reports.view', 'reports.students.view', 'reports.teachers.view', 'reports.institutions.view',
-    'reports.academic.view', 'reports.research.view', 'reports.economic.view',
-    -- Rating (5)
-    'rating.view', 'rating.administrative.view', 'rating.academic.view',
-    'rating.scientific.view', 'rating.gpa.view'
-  )
-ON CONFLICT DO NOTHING;
-
--- From S003b: Pattern-based catch-all for reports.*, rating.*, institutions.*
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
-SELECT r.id, p.id, 'system'
-FROM roles r
-CROSS JOIN permissions p
+FROM roles r CROSS JOIN permissions p
 WHERE r.code = 'REPORT_VIEWER'
   AND (
     p.code LIKE 'reports.%'
     OR p.code LIKE 'rating.%'
     OR p.code LIKE 'institutions.%'
+    OR p.code = 'dashboard.view'
+    OR p.code = 'system.menu.view'
+  )
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
+-- EXTERNAL_API: Minimal B2B access (old-hemis: Student API, Xodim API, Hokimiyat)
+-- =====================================================
+INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+SELECT r.id, p.id, 'system'
+FROM roles r CROSS JOIN permissions p
+WHERE r.code = 'EXTERNAL_API'
+  AND p.code IN (
+    'students.view', 'students.list.view',
+    'teachers.view', 'teachers.list.view',
+    'universities.view'
   )
 ON CONFLICT DO NOTHING;
 
@@ -186,26 +159,16 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 DO $$
 DECLARE
-    total_mappings INTEGER;
-    sa_count INTEGER;
-    ma_count INTEGER;
-    ua_count INTEGER;
-    vw_count INTEGER;
-    rv_count INTEGER;
+    sa INTEGER; otm INTEGER; ma INTEGER; insp INTEGER; vw INTEGER; rv INTEGER; ext INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO total_mappings FROM role_permissions WHERE assigned_by = 'system';
+    SELECT COUNT(*) INTO sa FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'SUPER_ADMIN';
+    SELECT COUNT(*) INTO otm FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'OTM_API';
+    SELECT COUNT(*) INTO ma FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'MINISTRY_ADMIN';
+    SELECT COUNT(*) INTO insp FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'INSPECTOR';
+    SELECT COUNT(*) INTO vw FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'VIEWER';
+    SELECT COUNT(*) INTO rv FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'REPORT_VIEWER';
+    SELECT COUNT(*) INTO ext FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'EXTERNAL_API';
 
-    SELECT COUNT(*) INTO sa_count FROM role_permissions rp
-        JOIN roles r ON rp.role_id = r.id WHERE r.code = 'SUPER_ADMIN' AND rp.assigned_by = 'system';
-    SELECT COUNT(*) INTO ma_count FROM role_permissions rp
-        JOIN roles r ON rp.role_id = r.id WHERE r.code = 'MINISTRY_ADMIN' AND rp.assigned_by = 'system';
-    SELECT COUNT(*) INTO ua_count FROM role_permissions rp
-        JOIN roles r ON rp.role_id = r.id WHERE r.code = 'UNIVERSITY_ADMIN' AND rp.assigned_by = 'system';
-    SELECT COUNT(*) INTO vw_count FROM role_permissions rp
-        JOIN roles r ON rp.role_id = r.id WHERE r.code = 'VIEWER' AND rp.assigned_by = 'system';
-    SELECT COUNT(*) INTO rv_count FROM role_permissions rp
-        JOIN roles r ON rp.role_id = r.id WHERE r.code = 'REPORT_VIEWER' AND rp.assigned_by = 'system';
-
-    RAISE NOTICE 'S004: % total role-permission mappings (SUPER_ADMIN=%, MINISTRY_ADMIN=%, UNIVERSITY_ADMIN=%, VIEWER=%, REPORT_VIEWER=%)',
-        total_mappings, sa_count, ma_count, ua_count, vw_count, rv_count;
+    RAISE NOTICE 'S004: Role permissions — SUPER_ADMIN=%, OTM_API=%, MINISTRY_ADMIN=%, INSPECTOR=%, VIEWER=%, REPORT_VIEWER=%, EXTERNAL_API=%',
+        sa, otm, ma, insp, vw, rv, ext;
 END $$;

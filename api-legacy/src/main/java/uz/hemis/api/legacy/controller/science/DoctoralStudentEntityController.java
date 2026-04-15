@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Doctoral Student Entity Controller (CUBA Pattern)
@@ -61,6 +62,7 @@ public class DoctoralStudentEntityController {
     // GET /{entityId} - Bitta doktorant ma'lumotlarini olish
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta doktorant ma'lumotlarini olish",
@@ -107,6 +109,7 @@ public class DoctoralStudentEntityController {
     // PUT /{entityId} - Doktorant ma'lumotlarini yangilash
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Doktorant ma'lumotlarini yangilash",
@@ -157,6 +160,7 @@ public class DoctoralStudentEntityController {
     // DELETE /{entityId} - Doktorantni o'chirish (soft delete)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Doktorantni o'chirish",
@@ -193,6 +197,7 @@ public class DoctoralStudentEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping("/search")
     @Operation(
         summary = "Doktorantlarni qidirish (GET)",
@@ -222,6 +227,7 @@ public class DoctoralStudentEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @PostMapping("/search")
     @Operation(
         summary = "Doktorantlarni qidirish (POST)",
@@ -255,6 +261,7 @@ public class DoctoralStudentEntityController {
     // GET - Barcha doktorantlar ro'yxati (paginated)
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.view')")
     @GetMapping({"", "/"})
     @Operation(
         summary = "Barcha doktorantlar ro'yxati",
@@ -317,6 +324,7 @@ public class DoctoralStudentEntityController {
     // POST - Yangi doktorant yaratish
     // =====================================================
 
+    @PreAuthorize("hasAuthority('science.edit')")
     @PostMapping
     @Operation(
         summary = "Doktorant talaba yaratish",

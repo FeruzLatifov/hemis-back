@@ -17,6 +17,7 @@ import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Employee Certificate Entity Controller for OLD-HEMIS compatibility.
@@ -33,6 +34,7 @@ public class EmployeeCertificateEntityController {
 
     private final EmployeeRefLegacyService employeeRefService;
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini ID bo'yicha olish")
     public ResponseEntity<Map<String, Object>> getEmployeeCertificate(
@@ -44,6 +46,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(opt.get()));
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PutMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini yangilash")
     public ResponseEntity<Map<String, Object>> updateEmployeeCertificate(
@@ -62,6 +65,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(cert));
     }
 
+    @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini o'chirish")
     public ResponseEntity<Void> deleteEmployeeCertificate(
@@ -75,6 +79,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     @Operation(summary = "Xodim sertifikatlari ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAllEmployeeCertificates(
@@ -91,6 +96,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     @Operation(summary = "Xodim sertifikatlarini qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchEmployeeCertificates(
@@ -118,6 +124,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('teachers.edit')")
     @PostMapping
     @Operation(summary = "Xodim sertifikatini yaratish/upsert")
     public ResponseEntity<Map<String, Object>> createEmployeeCertificate(

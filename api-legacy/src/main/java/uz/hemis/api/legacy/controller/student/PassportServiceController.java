@@ -196,6 +196,7 @@ public class PassportServiceController {
                     )
             )
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDataBySN")
     public ResponseEntity<Object> getDataBySN(
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")
@@ -368,6 +369,7 @@ public class PassportServiceController {
                     )
             )
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDataBySNBirthdate")
     public ResponseEntity<Object> getDataBySNBirthdate(
             @Parameter(description = "Passport seria va raqam (masalan: AA6970877)", required = true, example = "AA1234567")
@@ -745,6 +747,7 @@ public class PassportServiceController {
                     )
             )
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDataByPinflBirthdate")
     public ResponseEntity<Object> getDataByPinflBirthdate(
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "31507976020031")
@@ -863,6 +866,7 @@ public class PassportServiceController {
                     )
             )
     })
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getAddress")
     public ResponseEntity<Object> getAddressPublic(
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")

@@ -341,6 +341,17 @@ public class RegistryUniversityController {
         return ResponseEntity.ok(ResponseWrapper.success(dictionaries));
     }
 
+    @GetMapping("/terrains")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get terrains by SOATO", description = "Returns neighborhoods filtered by district SOATO code")
+    public ResponseEntity<ResponseWrapper<List<uz.hemis.service.registry.dto.UniversityDictionariesDto.DictionaryItem>>> getTerrains(
+            @RequestParam String soato
+    ) {
+        log.info("GET /api/v1/web/registry/universities/terrains?soato={}", soato);
+        List<uz.hemis.service.registry.dto.UniversityDictionariesDto.DictionaryItem> terrains = universityRegistryService.getTerrainsBySoato(soato);
+        return ResponseEntity.ok(ResponseWrapper.success(terrains));
+    }
+
     // =====================================================
     // CRUD Operations (CREATE, UPDATE, DELETE)
     // =====================================================

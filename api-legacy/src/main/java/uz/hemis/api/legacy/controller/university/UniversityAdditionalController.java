@@ -19,7 +19,7 @@ import java.util.Map;
 public class UniversityAdditionalController {
 
     @GetMapping("/{universityCode}/infrastructure")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getInfrastructure(@PathVariable String universityCode) {
         Map<String, Object> infrastructure = new HashMap<>();
         infrastructure.put("universityCode", universityCode);
@@ -29,6 +29,7 @@ public class UniversityAdditionalController {
         return ResponseEntity.ok(ResponseWrapper.success(infrastructure));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{universityCode}/achievements")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAchievements(@PathVariable String universityCode) {
         Map<String, Object> achievements = new HashMap<>();

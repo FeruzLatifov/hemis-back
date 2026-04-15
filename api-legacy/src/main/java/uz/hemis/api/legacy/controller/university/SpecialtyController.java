@@ -29,6 +29,7 @@ public class SpecialtyController {
 
     private final SpecialtyService specialtyService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getAllSpecialties(
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
@@ -37,18 +38,21 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> getSpecialtyById(@PathVariable UUID id) {
         SpecialtyDto specialty = specialtyService.findById(id);
         return ResponseEntity.ok(ResponseWrapper.success(specialty));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> getSpecialtyByCode(@PathVariable String code) {
         SpecialtyDto specialty = specialtyService.findByCode(code);
         return ResponseEntity.ok(ResponseWrapper.success(specialty));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getSpecialtiesByUniversity(
             @RequestParam("university") String universityCode,
@@ -58,6 +62,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "faculty")
     public ResponseEntity<ResponseWrapper<List<SpecialtyDto>>> getSpecialtiesByFaculty(
             @RequestParam("faculty") String facultyCode
@@ -66,6 +71,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(specialties));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "search")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> searchSpecialtiesByName(
             @RequestParam("search") String name,
@@ -75,6 +81,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "active")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getActiveSpecialties(
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
@@ -83,6 +90,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "educationType")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getSpecialtiesByEducationType(
             @RequestParam("educationType") String educationTypeCode,
@@ -93,14 +101,14 @@ public class SpecialtyController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> createSpecialty(@Valid @RequestBody SpecialtyDto specialtyDto) {
         SpecialtyDto created = specialtyService.create(specialtyDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> updateSpecialty(
             @PathVariable UUID id,
             @Valid @RequestBody SpecialtyDto specialtyDto

@@ -63,9 +63,9 @@ public class WebUserProfileService {
                         .build())
                 .permissions(permissions)
                 .roles(roles)
-                .university(user.getEntityCode() != null
+                .university(user.getUniversityCode() != null
                         ? UserInfoResponse.UniversityBasicInfo.builder()
-                                .code(user.getEntityCode())
+                                .code(user.getUniversityCode())
                                 .build()
                         : null)
                 .build();

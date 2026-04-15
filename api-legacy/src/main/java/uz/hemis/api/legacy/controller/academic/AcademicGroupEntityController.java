@@ -19,6 +19,7 @@ import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * Akademik Guruhlar Controller - CUBA REST API Pattern
@@ -59,6 +60,7 @@ public class AcademicGroupEntityController {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Entity ID (UUID)", required = true)
@@ -99,6 +101,7 @@ public class AcademicGroupEntityController {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
+    @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(
             @PathVariable String entityId,
@@ -143,6 +146,7 @@ public class AcademicGroupEntityController {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
+    @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(@PathVariable String entityId) {
 
@@ -177,6 +181,7 @@ public class AcademicGroupEntityController {
         summary = "Akademik guruhlarni qidirish (GET)",
         description = "Filter shartlari bo'yicha qidiradi."
     )
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam String filter,
@@ -197,6 +202,7 @@ public class AcademicGroupEntityController {
         summary = "Akademik guruhlarni qidirish (POST)",
         description = "Filter shartlari bo'yicha qidiradi."
     )
+    @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filterBody,
@@ -227,6 +233,7 @@ public class AcademicGroupEntityController {
         summary = "Barcha akademik guruhlar yozuvlarini olish",
         description = "Sahifalangan ro'yxat."
     )
+    @PreAuthorize("hasAuthority('students.view')")
     @GetMapping({"", "/"})
     public ResponseEntity<List<Map<String, Object>>> listAll(
             @RequestParam(required = false) Boolean returnCount,
@@ -266,6 +273,7 @@ public class AcademicGroupEntityController {
         summary = "Yangi akademik guruh yozuvi yaratish",
         description = "Yangi yozuv yaratadi."
     )
+    @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping({"", "/"})
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
 

@@ -15,6 +15,7 @@ import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import java.net.URI;
 import java.util.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * UniversityAttachedSpeciality Entity Controller (CUBA Pattern)
@@ -34,6 +35,7 @@ public class UniversityAttachedSpecialityEntityController {
 
     private static final String ENTITY_NAME = "hemishe_EUniversityAttachedSpeciality";
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping
     @Operation(summary = "OTM biriktirilgan mutaxassisliklar ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -51,6 +53,7 @@ public class UniversityAttachedSpecialityEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasAuthority('universities.view')")
     @GetMapping("/{entityId}")
     @Operation(summary = "ID bo'yicha olish")
     public ResponseEntity<Map<String, Object>> getById(
@@ -67,6 +70,7 @@ public class UniversityAttachedSpecialityEntityController {
                 });
     }
 
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PostMapping
     @Operation(summary = "Yangi yozuv yaratish")
     public ResponseEntity<Map<String, Object>> create(
@@ -87,6 +91,7 @@ public class UniversityAttachedSpecialityEntityController {
         return ResponseEntity.created(location).body(universityRefService.toUniversityAttachedSpecialityMinimalMap(saved));
     }
 
+    @PreAuthorize("hasAuthority('universities.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Yangilash")
     public ResponseEntity<Map<String, Object>> update(
@@ -108,6 +113,7 @@ public class UniversityAttachedSpecialityEntityController {
         return ResponseEntity.ok(universityRefService.toUniversityAttachedSpecialityMap(saved, returnNulls));
     }
 
+    @PreAuthorize("hasAuthority('universities.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "O'chirish (taqiqlangan)")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {

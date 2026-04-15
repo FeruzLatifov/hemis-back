@@ -1,7 +1,7 @@
 -- =====================================================
 -- Rollback S001: REMOVE SEEDED ROLES
 -- =====================================================
--- Deletes ONLY the 5 roles created by S001 (by code).
+-- Deletes ONLY the 7 roles created by S001 (by code).
 -- =====================================================
 
 DO $$
@@ -14,9 +14,9 @@ BEGIN
 
     IF roles_exists THEN
         DELETE FROM roles WHERE code IN (
-            'SUPER_ADMIN', 'MINISTRY_ADMIN', 'UNIVERSITY_ADMIN', 'VIEWER', 'REPORT_VIEWER'
+            'SUPER_ADMIN', 'OTM_API', 'MINISTRY_ADMIN', 'INSPECTOR', 'VIEWER', 'REPORT_VIEWER', 'EXTERNAL_API'
         );
-        RAISE NOTICE 'S001 Rollback: Deleted 5 seeded roles';
+        RAISE NOTICE 'S001 Rollback: Deleted 7 seeded roles';
     ELSE
         RAISE NOTICE 'S001 Rollback: roles table does not exist, skipping';
     END IF;

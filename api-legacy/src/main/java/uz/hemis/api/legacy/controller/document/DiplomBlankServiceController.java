@@ -20,7 +20,7 @@ import java.util.*;
  * @since 2.0.0
  */
 @RestController
-@RequestMapping({"/app/rest/v2/services/diplom-blank", "/services/diplom-blank"})
+@RequestMapping("/app/rest/v2/services/diplom-blank")
 @Tag(name = "Diplom-Blank Service API", description = "CUBA compatible diploma blank service endpoints")
 @RequiredArgsConstructor
 @Slf4j

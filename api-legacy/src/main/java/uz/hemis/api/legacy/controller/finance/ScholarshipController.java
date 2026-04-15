@@ -31,6 +31,7 @@ public class ScholarshipController {
 
     private final ScholarshipService scholarshipService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<ScholarshipDto>>> getAllScholarships(
             @PageableDefault(size = 20, sort = "startDate", direction = Sort.Direction.DESC) Pageable pageable
@@ -39,12 +40,14 @@ public class ScholarshipController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(scholarships)));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> getScholarshipById(@PathVariable UUID id) {
         ScholarshipDto scholarship = scholarshipService.findById(id);
         return ResponseEntity.ok(ResponseWrapper.success(scholarship));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<ScholarshipDto>>> getScholarshipsByStudent(
             @RequestParam("student") UUID studentId
@@ -54,7 +57,7 @@ public class ScholarshipController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> createScholarship(
             @Valid @RequestBody ScholarshipDto scholarshipDto
     ) {
@@ -63,7 +66,7 @@ public class ScholarshipController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> updateScholarship(
             @PathVariable UUID id,
             @Valid @RequestBody ScholarshipDto scholarshipDto

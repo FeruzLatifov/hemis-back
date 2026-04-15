@@ -38,7 +38,7 @@ public enum RoleType {
      *   <li>Scoped to a single university</li>
      *   <li>Managed by university administrators</li>
      *   <li>Can be customized per institution</li>
-     *   <li>Examples: UNIVERSITY_ADMIN, UNIVERSITY_VIEWER</li>
+     *   <li>Examples: OTM_API, UNIVERSITY_VIEWER</li>
      * </ul>
      */
     UNIVERSITY("University", "University-scoped roles"),

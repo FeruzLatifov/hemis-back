@@ -150,32 +150,32 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     // =====================================================
 
     /**
-     * Find user by username and entity code
+     * Find user by username and university code
      *
      * <p>Used when checking entity-specific user access</p>
      *
      * @param username login username
-     * @param entityCode entity code (university/organization)
+     * @param universityCode university code
      * @return user if found
      */
-    @Query("SELECT u FROM User u WHERE u.username = :username AND u.entityCode = :entityCode")
+    @Query("SELECT u FROM User u WHERE u.username = :username AND u.university.code = :universityCode")
     Optional<User> findByUsernameAndUniversity(
             @Param("username") String username,
-            @Param("entityCode") String entityCode
+            @Param("universityCode") String universityCode
     );
 
     /**
-     * Check if user exists at specific entity
+     * Check if user exists at specific university
      *
      * @param username login username
-     * @param entityCode entity code (university/organization)
-     * @return true if user exists at this entity
+     * @param universityCode university code
+     * @return true if user exists at this university
      */
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END " +
-           "FROM User u WHERE u.username = :username AND u.entityCode = :entityCode")
+           "FROM User u WHERE u.username = :username AND u.university.code = :universityCode")
     boolean existsByUsernameAndUniversity(
             @Param("username") String username,
-            @Param("entityCode") String entityCode
+            @Param("universityCode") String universityCode
     );
 
     // =====================================================
@@ -201,13 +201,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     long countActiveUsers();
 
     /**
-     * Count users by entity code
+     * Count users by university code
      *
-     * @param entityCode entity code (university/organization)
+     * @param universityCode university code
      * @return count of users
      */
-    @Query("SELECT COUNT(u) FROM User u WHERE u.entityCode = :entityCode")
-    long countByUniversity(@Param("entityCode") String entityCode);
+    @Query("SELECT COUNT(u) FROM User u WHERE u.university.code = :universityCode")
+    long countByUniversity(@Param("universityCode") String universityCode);
 
     /**
      * Get university code by user ID
@@ -247,7 +247,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
            "WHERE (:search = '' OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "       OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
            "AND (:role = '' OR u IN (SELECT u2 FROM User u2 JOIN u2.roleSet r2 WHERE r2.code = :role)) " +
-           "AND (:university = '' OR u.entityCode = :university) " +
+           "AND (:university = '' OR u.university.code = :university) " +
            "AND (:enabled IS NULL OR u.enabled = :enabled)")
     Page<User> findAllFiltered(@Param("search") String search,
                                @Param("role") String role,
@@ -280,7 +280,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * <p>Used by MenuCacheWarmup to get sample users per role for pre-caching menus</p>
      * <p>Returns only active users (not deleted, enabled)</p>
      *
-     * @param roleCode Role code (e.g., SUPER_ADMIN, UNIVERSITY_ADMIN)
+     * @param roleCode Role code (e.g., SUPER_ADMIN, OTM_API)
      * @param limit Maximum number of usernames to return (typically 1-2 per role)
      * @return List of usernames with this role
      */

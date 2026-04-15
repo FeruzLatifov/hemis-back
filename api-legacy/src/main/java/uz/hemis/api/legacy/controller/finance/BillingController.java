@@ -20,7 +20,7 @@ import java.util.UUID;
 public class BillingController {
 
     @GetMapping("/invoices")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'UNIVERSITY_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getInvoices(
             @RequestParam(required = false) String university
     ) {
@@ -44,6 +44,7 @@ public class BillingController {
         return ResponseEntity.ok(ResponseWrapper.success(result));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/balance/{studentId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentBalance(@PathVariable UUID studentId) {
         Map<String, Object> balance = new HashMap<>();

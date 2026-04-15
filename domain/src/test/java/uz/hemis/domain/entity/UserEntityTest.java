@@ -4,7 +4,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,7 +42,9 @@ class UserEntityTest {
         user.setUsername("tatu_admin");
         user.setPassword("$2a$10$hashedPasswordHere");
         user.setEnabled(true);
-        user.setEntityCode("TATU");
+        University university = new University();
+        university.setCode("TATU");
+        user.setUniversity(university);
         user.setFullName("Karimov Abdulla Rashidovich");
         user.setEmail("admin@tatu.uz");
         user.setPhone("+998901234567");
@@ -51,7 +52,7 @@ class UserEntityTest {
         assertThat(user.getUsername()).isEqualTo("tatu_admin");
         assertThat(user.getPassword()).isEqualTo("$2a$10$hashedPasswordHere");
         assertThat(user.getEnabled()).isTrue();
-        assertThat(user.getEntityCode()).isEqualTo("TATU");
+        assertThat(user.getUniversityCode()).isEqualTo("TATU");
         assertThat(user.getFullName()).isEqualTo("Karimov Abdulla Rashidovich");
         assertThat(user.getEmail()).isEqualTo("admin@tatu.uz");
         assertThat(user.getPhone()).isEqualTo("+998901234567");
@@ -116,7 +117,7 @@ class UserEntityTest {
         assertThat(user.isSystemAdmin()).isTrue();
         assertThat(user.isUniversityAdmin()).isFalse();
 
-        user.setRoles("ROLE_UNIVERSITY_ADMIN");
+        user.setRoles("ROLE_OTM_API");
         assertThat(user.isUniversityAdmin()).isTrue();
         assertThat(user.isSystemAdmin()).isFalse();
     }

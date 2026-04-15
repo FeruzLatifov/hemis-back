@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
@@ -19,6 +20,7 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getHealth() {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "UP");
@@ -30,6 +32,7 @@ public class HealthController {
     }
 
     @GetMapping("/ping")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> ping() {
         Map<String, Object> response = new HashMap<>();
         response.put("status", "UP");
@@ -40,6 +43,7 @@ public class HealthController {
     }
 
     @GetMapping("/version")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getVersion() {
         Map<String, String> version = new HashMap<>();
         version.put("application", "HEMIS");
