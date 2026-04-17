@@ -196,7 +196,8 @@ public class TeacherCubaService {
         entity.setPositionCode(extractCode(job.get("employeePosition")));
         entity.setEmployeeRate(extractCode(job.get("employeeRate")));
         entity.setEmploymentForm(extractCode(job.get("employeeForm")));
-        entity.setEmployeeStatus(extractCode(job.get("employeeStatus")));
+        // employee_status is derived from is_current + end_date — not a separate column anymore.
+        entity.setIsCurrent(job.get("jobEndDate") == null);
         entity.setStartDate(parseDate(job.get("jobStartDate")));
         entity.setEndDate(parseDate(job.get("jobEndDate")));
         entity.setContractDate(parseDate(job.get("contractDate")));

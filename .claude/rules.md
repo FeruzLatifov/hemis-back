@@ -23,9 +23,28 @@
 ### `domain` — Entities, repositories, migrations
 **Entities:**
 - Map exactly to legacy tables: `@Table(name="...")`, `@Column(name="...")`
-- Extend `BaseEntity` for audit fields. Define indexes with `@Index`
-- Never rename/drop existing columns — add new columns instead
+- **Eski CUBA jadvallar** → extend `BaseEntity` (audit: `create_ts/update_ts/delete_ts`)
+- **Yangi jadvallar** → extend `AuditableEntity` / `ReferenceEntity` / `ImmutableEntity` (audit: `created_at/updated_at/deleted_at`)
+- Never rename/drop existing CUBA columns — add new columns instead
 - Do NOT use `@Data` on entities (lazy loading / equality issues)
+
+**Audit ustunlari standarti (yangi jadvallar):**
+
+| Jadval turi | Ustunlar |
+|---|---|
+| **Entity** (employee, users, university_*) | `version`, `created_at/by`, `updated_at/by`, `deleted_at/by` (7) |
+| **Classifier** (genders, soato, positions) | `version`, `created_at/by`, `updated_at/by` (5) + `is_active` |
+| **Immutable** (lifecycle, password_history) | `created_at`, `created_by` (2) |
+| **Junction** (user_roles, role_permissions) | `created_at` (1) |
+
+**Jadval/ustun nomlash (yangi jadvallar):**
+- Java entity: **camelCase** (`academicDegree`, `createdAt`) — Spring Boot avtomatik `academic_degree`, `created_at` ga moslab oladi
+- Yangi entity'larda `@Column(name="...")` **yozilmaydi** — Spring Boot `CamelCaseToUnderscoresNamingStrategy` ishlaydi
+- Eski CUBA entity'larda `@Column(name="...")` **qoladi** (eski ustun nomlari pattern'ga mos kelmaydi)
+- Jadval nomi: ingliz tili, **singular** (`employee`, `gender`, `academic_degree`), prefix YO'Q
+- PK: `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+- Mavjud plural jadvallar (`users`, `roles`, `positions`) RENAME qilinmaydi — exception
+- Eski CUBA jadvallar (`hemishe_*`) TEGILMAYDI
 
 **Repositories:**
 - Extend `JpaRepository<Entity, ID>`. Use method naming conventions (`findByEmail`, `existsById`)

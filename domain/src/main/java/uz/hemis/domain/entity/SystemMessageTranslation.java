@@ -53,7 +53,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-    name = "system_message_translations",
+    name = "system_message_translation",
     indexes = {
         @Index(name = "idx_system_message_translations_language", columnList = "language"),
         @Index(name = "idx_system_message_translations_message", columnList = "message_id")
@@ -87,7 +87,7 @@ public class SystemMessageTranslation implements Serializable {
      * <p>Must match field name in SystemMessageTranslationId</p>
      */
     @Id
-    @Column(name = "language", nullable = false, length = 16)
+    @Column(name = "language", nullable = false, length = 10)
     private String language;
 
     // =====================================================
@@ -138,9 +138,9 @@ public class SystemMessageTranslation implements Serializable {
     private SystemMessage systemMessage;
 
     // =====================================================
-    // Audit Fields (Not from ModernBaseEntity)
+    // Audit Fields (standalone — not from AuditableEntity)
     // =====================================================
-    // Note: Translations don't extend ModernBaseEntity because:
+    // Note: Translations don't extend AuditableEntity because:
     // 1. They use composite PK (not single UUID)
     // 2. They don't need soft delete
     // 3. They don't need separate ID field
@@ -215,7 +215,7 @@ public class SystemMessageTranslation implements Serializable {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return java.util.Objects.hash(messageId, language);
     }
 
     @Override

@@ -11,12 +11,12 @@ DECLARE
     role_perms_exists BOOLEAN;
 BEGIN
     SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'role_permissions'
+        SELECT 1 FROM information_schema.tables WHERE table_name = 'role_permission'
     ) INTO role_perms_exists;
 
     IF role_perms_exists THEN
-        DELETE FROM role_permissions WHERE role_id IN (
-            SELECT id FROM roles WHERE code IN (
+        DELETE FROM role_permission WHERE role_id IN (
+            SELECT id FROM role WHERE code IN (
                 'SUPER_ADMIN', 'OTM_API', 'MINISTRY_ADMIN', 'INSPECTOR', 'VIEWER', 'REPORT_VIEWER', 'EXTERNAL_API'
             )
         ) AND assigned_by = 'system';

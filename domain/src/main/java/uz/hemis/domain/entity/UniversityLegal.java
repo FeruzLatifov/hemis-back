@@ -3,12 +3,12 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * University Legal Entity — legal/tax registration data from API
@@ -16,29 +16,21 @@ import java.util.UUID;
  * <p><strong>Source:</strong> 172.18.9.171/legalentity/</p>
  * <p><strong>Table:</strong> university_legal (1:1 with university)</p>
  *
- * <p>Does NOT extend ModernBaseEntity — no soft delete.
- * Legal entity data persists permanently.</p>
+ * <p>Extends AuditableEntity — soft delete via deleted_at/deleted_by.</p>
  *
  * @since 2.0.0
  */
 @Entity
 @Table(name = "university_legal")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UniversityLegal implements Serializable {
+public class UniversityLegal extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
-
-    // =====================================================
-    // Primary Key
-    // =====================================================
-
-    @Id
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
 
     // =====================================================
     // University Reference
@@ -50,6 +42,14 @@ public class UniversityLegal implements Serializable {
      */
     @Column(name = "university_code", nullable = false, unique = true)
     private String universityCode;
+
+    /**
+     * FK to organization registry (TIN UNIQUE).
+     * tin column kept as API snapshot even when organization row is missing.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id")
+    private Organization organization;
 
     // =====================================================
     // Company Info
@@ -175,49 +175,6 @@ public class UniversityLegal implements Serializable {
     private LocalDateTime syncedAt;
 
     // =====================================================
-    // Audit Fields
-    // =====================================================
-
-    @Version
-    @Column(name = "version")
-    @Builder.Default
-    private Integer version = 1;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    // =====================================================
-    // JPA Lifecycle Hooks
-    // =====================================================
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (version == null) {
-            version = 1;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    // =====================================================
     // Equals & HashCode (based on ID)
     // =====================================================
 
@@ -226,18 +183,18 @@ public class UniversityLegal implements Serializable {
         if (this == o) return true;
         if (!(o instanceof UniversityLegal)) return false;
         UniversityLegal that = (UniversityLegal) o;
-        return id != null && id.equals(that.id);
+        return getId() != null && getId().equals(that.getId());
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return java.util.Objects.hashCode(getId());
     }
 
     @Override
     public String toString() {
         return "UniversityLegal{" +
-                "id=" + id +
+                "id=" + getId() +
                 ", universityCode='" + universityCode + '\'' +
                 ", tin='" + tin + '\'' +
                 ", shortName='" + shortName + '\'' +

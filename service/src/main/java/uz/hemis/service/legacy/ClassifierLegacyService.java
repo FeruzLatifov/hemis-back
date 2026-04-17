@@ -156,8 +156,8 @@ public class ClassifierLegacyService {
 
     public Map<String, Object> toEducationTypeMap(EducationType e, Boolean returnNulls) {
         return classifierToMap("hemishe_HEducationType", e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
-                e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
-                e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+                e.getVersion(), e.isActive(), e.getCreatedAt(), e.getCreatedBy(),
+                e.getUpdatedAt(), e.getUpdatedBy(), null, null, returnNulls);
     }
 
     // ==================== EducationForm ====================
@@ -172,8 +172,8 @@ public class ClassifierLegacyService {
 
     public Map<String, Object> toEducationFormMap(EducationForm e, Boolean returnNulls) {
         return classifierToMap("hemishe_HEducationForm", e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
-                e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
-                e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+                e.getVersion(), e.isActive(), e.getCreatedAt(), e.getCreatedBy(),
+                e.getUpdatedAt(), e.getUpdatedBy(), null, null, returnNulls);
     }
 
     // ==================== HCourse ====================
@@ -188,8 +188,8 @@ public class ClassifierLegacyService {
 
     public Map<String, Object> toCourseMap(HCourse e, Boolean returnNulls) {
         return classifierToMap("hemishe_HCourse", e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
-                e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
-                e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+                e.getVersion(), e.isActive(), e.getCreatedAt(), e.getCreatedBy(),
+                e.getUpdatedAt(), e.getUpdatedBy(), null, null, returnNulls);
     }
 
     // ==================== EducationYear ====================
@@ -204,8 +204,8 @@ public class ClassifierLegacyService {
 
     public Map<String, Object> toEducationYearMap(EducationYear e, Boolean returnNulls) {
         return classifierToMap("hemishe_HEducationYear", e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
-                e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
-                e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+                e.getVersion(), e.isActive(), e.getCreatedAt(), e.getCreatedBy(),
+                e.getUpdatedAt(), e.getUpdatedBy(), null, null, returnNulls);
     }
 
     // ==================== TransferType ====================
@@ -220,8 +220,8 @@ public class ClassifierLegacyService {
 
     public Map<String, Object> toTransferTypeMap(TransferType e, Boolean returnNulls) {
         return classifierToMap("hemishe_HTransferType", e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
-                e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
-                e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+                e.getVersion(), e.isActive(), e.getCreatedAt(), e.getCreatedBy(),
+                e.getUpdatedAt(), e.getUpdatedBy(), null, null, returnNulls);
     }
 
     // ==================== AdmissionType ====================
@@ -236,8 +236,8 @@ public class ClassifierLegacyService {
 
     public Map<String, Object> toAdmissionTypeMap(AdmissionType e, Boolean returnNulls) {
         return classifierToMap("hemishe_HAdmissionType", e.getCode(), e.getName(), e.getNameRu(), e.getNameEn(),
-                e.getVersion(), e.getActive(), e.getCreateTs(), e.getCreatedBy(),
-                e.getUpdateTs(), e.getUpdatedBy(), e.getDeleteTs(), e.getDeletedBy(), returnNulls);
+                e.getVersion(), e.isActive(), e.getCreatedAt(), e.getCreatedBy(),
+                e.getUpdatedAt(), e.getUpdatedBy(), null, null, returnNulls);
     }
 
     // ==================== Shared CUBA Map Builder ====================
@@ -886,7 +886,7 @@ public class ClassifierLegacyService {
 
     @Transactional
     public void softDeleteDepartmentType(HUniversityDepartmentType entity) {
-        entity.setDeleteTs(LocalDateTime.now());
+        entity.setActive(false);
         hUniversityDepartmentTypeRepository.save(entity);
     }
 
@@ -955,12 +955,12 @@ public class ClassifierLegacyService {
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
 
         // returnNulls=true bo'lganda deleteTs
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        putIfNotNull(map, "deleteTs", null, returnNulls);
 
         // Asosiy maydonlar (har doim, null bo'lmasa)
         putIfNotNull(map, "code", entity.getCode(), returnNulls);
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
 
         // returnNulls=true bo'lganda nameEn
         putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
@@ -969,7 +969,7 @@ public class ClassifierLegacyService {
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
 
         // returnNulls=true bo'lganda deletedBy
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
 
         return map;
     }
@@ -987,7 +987,7 @@ public class ClassifierLegacyService {
                 entity.setActive(Boolean.parseBoolean(val.toString()));
             }
         }
-        entity.setUpdateTs(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
     }
 
     private void putIfNotNull(Map<String, Object> map, String key, Object value, Boolean returnNulls) {

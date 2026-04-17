@@ -285,8 +285,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return List of usernames with this role
      */
     @Query(value = "SELECT u.username FROM users u " +
-                   "JOIN user_roles ur ON u.id = ur.user_id " +
-                   "JOIN roles r ON ur.role_id = r.id " +
+                   "JOIN user_role ur ON u.id = ur.user_id " +
+                   "JOIN role r ON ur.role_id = r.id " +
                    "WHERE r.code = :roleCode " +
                    "AND u.deleted_at IS NULL " +
                    "AND u.enabled = true " +

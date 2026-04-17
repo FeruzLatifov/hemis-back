@@ -1,12 +1,10 @@
 package uz.hemis.domain.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLRestriction;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
+import uz.hemis.domain.entity.base.ReferenceEntity;
 
 /**
  * University Employee Status Type Entity - Xodim holatlari klassifikatori
@@ -25,60 +23,8 @@ import java.time.LocalDateTime;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "hemishe_h_university_employee_status_type")
-@SQLRestriction("delete_ts IS NULL")
+@Table(name = "university_employee_status_type")
 @Getter
 @Setter
-public class UniversityEmployeeStatusType implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * Primary key - code (not UUID)
-     * Values: 11, 12, 13, 14
-     */
-    @Id
-    @Column(name = "code", nullable = false, length = 32)
-    private String code;
-
-    @Column(name = "name", nullable = false, length = 255)
-    private String name;
-
-    @Column(name = "name_en", length = 255)
-    private String nameEn;
-
-    @Column(name = "name_ru", length = 255)
-    private String nameRu;
-
-    @Column(name = "active")
-    private Boolean active;
-
-    @Version
-    @Column(name = "version", nullable = false)
-    private Integer version;
-
-    @Column(name = "create_ts")
-    private LocalDateTime createTs;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "update_ts")
-    private LocalDateTime updateTs;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    @Column(name = "delete_ts")
-    private LocalDateTime deleteTs;
-
-    @Column(name = "deleted_by", length = 50)
-    private String deletedBy;
-
-    /**
-     * Check if entity is deleted (soft delete)
-     */
-    public boolean isDeleted() {
-        return deleteTs != null;
-    }
+public class UniversityEmployeeStatusType extends ReferenceEntity {
 }

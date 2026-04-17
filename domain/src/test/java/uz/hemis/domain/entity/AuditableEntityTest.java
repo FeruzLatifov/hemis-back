@@ -1,10 +1,9 @@
 package uz.hemis.domain.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -12,10 +11,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * ModernBaseEntity Unit Tests
+ * AuditableEntity Unit Tests
  *
- * <p>ModernBaseEntity is abstract (used by User and newer entities),
- * so we use a minimal concrete subclass ({@link TestModernEntity}) for testing.</p>
+ * <p>AuditableEntity is abstract (used by User, Menu, and other business entities),
+ * so we use a minimal concrete subclass ({@link TestAuditableEntity}) for testing.</p>
  *
  * <p>Covers:</p>
  * <ul>
@@ -27,15 +26,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Modern column naming convention (created_at, updated_at, deleted_at)</li>
  * </ul>
  */
-@DisplayName("ModernBaseEntity Tests")
-class ModernBaseEntityTest {
+@DisplayName("AuditableEntity Tests")
+class AuditableEntityTest {
 
     // ------------------------------------------------------------------
     // Minimal concrete subclass used only in this test
     // ------------------------------------------------------------------
-    @Entity
-    @Table(name = "test_modern_entity")
-    static class TestModernEntity extends ModernBaseEntity {
+    static class TestAuditableEntity extends AuditableEntity {
+        @Override
+        public void onCreate() {
+            super.onCreate();
+        }
+
+        @Override
+        public void onUpdate() {
+            super.onUpdate();
+        }
     }
 
     // ==================================================================
@@ -49,7 +55,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("New instance should have all fields null")
         void newInstanceShouldHaveAllFieldsNull() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
 
             assertThat(entity.getId()).isNull();
             assertThat(entity.getCreatedAt()).isNull();
@@ -60,7 +66,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("New instance should not be deleted")
         void newInstanceShouldNotBeDeleted() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
 
             assertThat(entity.isDeleted()).isFalse();
         }
@@ -77,7 +83,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should generate UUID id when id is null")
         void shouldGenerateUuidWhenIdIsNull() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             assertThat(entity.getId()).isNull();
 
             entity.onCreate();
@@ -89,7 +95,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should NOT overwrite existing id")
         void shouldNotOverwriteExistingId() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             UUID predefined = UUID.fromString("22222222-2222-2222-2222-222222222222");
             entity.setId(predefined);
 
@@ -101,7 +107,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should set createdAt to approximately now when null")
         void shouldSetCreatedAtWhenNull() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             LocalDateTime before = LocalDateTime.now().minusSeconds(1);
 
             entity.onCreate();
@@ -115,7 +121,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should NOT overwrite existing createdAt")
         void shouldNotOverwriteExistingCreatedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             LocalDateTime predefined = LocalDateTime.of(2023, 1, 1, 0, 0);
             entity.setCreatedAt(predefined);
 
@@ -127,8 +133,8 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Each new entity should get a unique UUID")
         void eachNewEntityShouldGetUniqueUuid() {
-            TestModernEntity entity1 = new TestModernEntity();
-            TestModernEntity entity2 = new TestModernEntity();
+            TestAuditableEntity entity1 = new TestAuditableEntity();
+            TestAuditableEntity entity2 = new TestAuditableEntity();
 
             entity1.onCreate();
             entity2.onCreate();
@@ -148,7 +154,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should set updatedAt to approximately now")
         void shouldSetUpdatedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             assertThat(entity.getUpdatedAt()).isNull();
 
             LocalDateTime before = LocalDateTime.now().minusSeconds(1);
@@ -163,7 +169,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should overwrite previous updatedAt on subsequent calls")
         void shouldOverwritePreviousUpdatedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             entity.setUpdatedAt(LocalDateTime.of(2020, 1, 1, 0, 0));
 
             entity.onUpdate();
@@ -174,7 +180,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("onUpdate should not affect createdAt")
         void onUpdateShouldNotAffectCreatedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             LocalDateTime createdTs = LocalDateTime.of(2024, 6, 1, 10, 0);
             entity.setCreatedAt(createdTs);
 
@@ -195,7 +201,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("softDelete should set deletedAt to approximately now")
         void softDeleteShouldSetDeletedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             LocalDateTime before = LocalDateTime.now().minusSeconds(1);
 
             entity.softDelete();
@@ -209,7 +215,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("softDelete should cause isDeleted to return true")
         void softDeleteShouldCauseIsDeletedTrue() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             assertThat(entity.isDeleted()).isFalse();
 
             entity.softDelete();
@@ -220,7 +226,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Calling softDelete twice should update deletedAt timestamp")
         void callingSoftDeleteTwiceShouldUpdateTimestamp() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             entity.setDeletedAt(LocalDateTime.of(2020, 1, 1, 0, 0));
 
             entity.softDelete();
@@ -240,7 +246,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("restore should clear deletedAt")
         void restoreShouldClearDeletedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             entity.softDelete();
             assertThat(entity.getDeletedAt()).isNotNull();
 
@@ -252,7 +258,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("restore should cause isDeleted to return false")
         void restoreShouldCauseIsDeletedFalse() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             entity.softDelete();
             assertThat(entity.isDeleted()).isTrue();
 
@@ -264,7 +270,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Calling restore on non-deleted entity should be safe (no-op)")
         void callingRestoreOnNonDeletedEntityShouldBeNoOp() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             assertThat(entity.getDeletedAt()).isNull();
 
             entity.restore();
@@ -285,7 +291,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should return false when deletedAt is null")
         void shouldReturnFalseWhenDeletedAtIsNull() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
 
             assertThat(entity.isDeleted()).isFalse();
         }
@@ -293,7 +299,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should return true when deletedAt is set to any timestamp")
         void shouldReturnTrueWhenDeletedAtIsSet() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             entity.setDeletedAt(LocalDateTime.of(2000, 1, 1, 0, 0));
 
             assertThat(entity.isDeleted()).isTrue();
@@ -302,7 +308,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Full lifecycle: create -> delete -> restore -> delete")
         void fullLifecycle() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             entity.onCreate();
 
             assertThat(entity.isDeleted()).isFalse();
@@ -329,7 +335,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should set and get id manually")
         void shouldSetAndGetId() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             UUID id = UUID.randomUUID();
             entity.setId(id);
 
@@ -339,7 +345,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should set and get createdAt manually")
         void shouldSetAndGetCreatedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             LocalDateTime ts = LocalDateTime.of(2024, 5, 10, 8, 30);
             entity.setCreatedAt(ts);
 
@@ -349,7 +355,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should set and get updatedAt manually")
         void shouldSetAndGetUpdatedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             LocalDateTime ts = LocalDateTime.of(2024, 9, 1, 16, 45);
             entity.setUpdatedAt(ts);
 
@@ -359,7 +365,7 @@ class ModernBaseEntityTest {
         @Test
         @DisplayName("Should set and get deletedAt manually")
         void shouldSetAndGetDeletedAt() {
-            TestModernEntity entity = new TestModernEntity();
+            TestAuditableEntity entity = new TestAuditableEntity();
             LocalDateTime ts = LocalDateTime.of(2025, 2, 14, 23, 59);
             entity.setDeletedAt(ts);
 

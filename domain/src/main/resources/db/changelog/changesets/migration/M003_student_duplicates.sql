@@ -15,11 +15,11 @@
 
 -- ── Menu ─────────────────────────────────────────────────────────
 
-UPDATE menus
+UPDATE menu
 SET url = '/students', updated_at = CURRENT_TIMESTAMP
 WHERE code = 'students' AND (url IS NULL OR url = '');
 
-INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
+INSERT INTO menu (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
 VALUES (
     '20000003-0000-0000-0000-000000000007',
     'student-duplicates',

@@ -3,12 +3,11 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * University public profile — contacts, social media, documents.
@@ -18,20 +17,19 @@ import java.util.UUID;
  * <p>Managed by admin panel or synced from univer (230 universities).
  * Files stored in MinIO (S3-compatible), database stores metadata only.</p>
  *
+ * <p>Extends AuditableEntity — soft delete via deleted_at/deleted_by.</p>
+ *
  * @since 2.0.0
  */
 @Entity
 @Table(name = "university_profile")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UniversityProfile implements Serializable {
-
-    @Id
-    @Column(name = "id", nullable = false)
-    private UUID id;
+public class UniversityProfile extends AuditableEntity {
 
     @Column(name = "university_code", nullable = false, unique = true)
     private String universityCode;
@@ -79,31 +77,4 @@ public class UniversityProfile implements Serializable {
 
     @Column(name = "hash", length = 64)
     private String hash;
-
-    @Version
-    @Column(name = "version")
-    private Integer version;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) id = UUID.randomUUID();
-        if (createdAt == null) createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

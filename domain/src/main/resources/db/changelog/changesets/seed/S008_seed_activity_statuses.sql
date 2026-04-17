@@ -7,7 +7,7 @@
 -- Old hemishe_h_university_activity_status table is managed by old-hemis only.
 
 -- 1. Position types (14 ta)
-INSERT INTO position_types (code, name, name_ru, name_en) VALUES
+INSERT INTO position_type (code, name, name_ru, name_en) VALUES
   ('10', 'Boshqa', '', ''),
   ('11', 'Administrativ-boshqaruv xodim', '', ''),
   ('12', 'Professor-o''qituvchi xodimlar', '', ''),
@@ -25,7 +25,7 @@ INSERT INTO position_types (code, name, name_ru, name_en) VALUES
 ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name;
 
 -- 3. Positions (227 ta — to'g'ridan-to'g'ri Excel dan)
-INSERT INTO positions (code, name, name_ru, name_en, type_code) VALUES
+INSERT INTO position (code, name, name_ru, name_en, type_code) VALUES
   ('47', 'Boshqarma boshlig''i', '', '', '11'),
   ('48', 'Boshqarma boshlig''i muovini', '', '', '11'),
   ('19', 'Markaz boshlig‘i', '', '', '11'),

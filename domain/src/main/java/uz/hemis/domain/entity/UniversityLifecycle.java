@@ -2,18 +2,16 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import uz.hemis.domain.entity.base.ImmutableEntity;
 
-import java.io.Serializable;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * University Lifecycle Event — immutable event log
  *
  * <p><strong>Table:</strong> university_lifecycle (1:N with university)</p>
  *
- * <p>Does NOT extend ModernBaseEntity — no version, no soft delete.
+ * <p>Extends ImmutableEntity — no version, no update, no soft delete.
  * Lifecycle events are immutable audit records that never change.</p>
  *
  * <p><strong>Event types:</strong></p>
@@ -37,17 +35,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UniversityLifecycle implements Serializable {
+public class UniversityLifecycle extends ImmutableEntity {
 
     private static final long serialVersionUID = 1L;
-
-    // =====================================================
-    // Primary Key
-    // =====================================================
-
-    @Id
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
 
     // =====================================================
     // University Reference
@@ -133,30 +123,6 @@ public class UniversityLifecycle implements Serializable {
     private String note;
 
     // =====================================================
-    // Audit (who recorded this event)
-    // =====================================================
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    // =====================================================
-    // JPA Lifecycle Hooks
-    // =====================================================
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-    }
-
-    // =====================================================
     // Equals & HashCode (based on ID)
     // =====================================================
 
@@ -165,18 +131,18 @@ public class UniversityLifecycle implements Serializable {
         if (this == o) return true;
         if (!(o instanceof UniversityLifecycle)) return false;
         UniversityLifecycle that = (UniversityLifecycle) o;
-        return id != null && id.equals(that.id);
+        return getId() != null && getId().equals(that.getId());
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return java.util.Objects.hashCode(getId());
     }
 
     @Override
     public String toString() {
         return "UniversityLifecycle{" +
-                "id=" + id +
+                "id=" + getId() +
                 ", universityCode='" + universityCode + '\'' +
                 ", eventType='" + eventType + '\'' +
                 ", eventDate=" + eventDate +

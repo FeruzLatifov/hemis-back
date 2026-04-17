@@ -2,20 +2,19 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * University Founder — shareholders (individuals and legal entities)
  *
  * <p><strong>Table:</strong> university_founder (1:N with university)</p>
  *
- * <p>Does NOT extend ModernBaseEntity — no soft delete.
- * Founder records are tracked historically via is_current + effective_from/to.</p>
+ * <p>Extends AuditableEntity — soft delete via deleted_at/deleted_by.
+ * Founder records are also tracked historically via is_current + effective_from/to.</p>
  *
  * <p><strong>Founder types:</strong></p>
  * <ul>
@@ -27,22 +26,15 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "university_founder")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UniversityFounder implements Serializable {
+public class UniversityFounder extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
-
-    // =====================================================
-    // Primary Key
-    // =====================================================
-
-    @Id
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
 
     // =====================================================
     // University Reference
@@ -108,52 +100,6 @@ public class UniversityFounder implements Serializable {
     private LocalDate effectiveTo;
 
     // =====================================================
-    // Audit Fields
-    // =====================================================
-
-    @Version
-    @Column(name = "version")
-    @Builder.Default
-    private Integer version = 1;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    // =====================================================
-    // JPA Lifecycle Hooks
-    // =====================================================
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (version == null) {
-            version = 1;
-        }
-        if (isCurrent == null) {
-            isCurrent = true;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    // =====================================================
     // Equals & HashCode (based on ID)
     // =====================================================
 
@@ -162,21 +108,20 @@ public class UniversityFounder implements Serializable {
         if (this == o) return true;
         if (!(o instanceof UniversityFounder)) return false;
         UniversityFounder that = (UniversityFounder) o;
-        return id != null && id.equals(that.id);
+        return getId() != null && getId().equals(that.getId());
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return java.util.Objects.hashCode(getId());
     }
 
     @Override
     public String toString() {
         return "UniversityFounder{" +
-                "id=" + id +
+                "id=" + getId() +
                 ", universityCode='" + universityCode + '\'' +
                 ", founderType='" + founderType + '\'' +
-                ", employee=" + (employee != null ? employee.getPinfl() : "null") +
                 ", employee=" + (employee != null ? employee.getPinfl() : "null") +
                 ", isCurrent=" + isCurrent +
                 '}';

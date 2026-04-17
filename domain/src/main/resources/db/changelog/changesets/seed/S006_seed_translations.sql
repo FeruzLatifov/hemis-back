@@ -44,7 +44,7 @@ CREATE OR REPLACE FUNCTION _seed_msg(
 DECLARE _id UUID;
 BEGIN
     -- Insert or update the base message (default = Uzbek Latin)
-    INSERT INTO system_messages (id, category, message_key, message, is_active, created_at, updated_at, created_by, updated_by)
+    INSERT INTO system_message (id, category, message_key, message, is_active, created_at, updated_at, created_by, updated_by)
     VALUES (gen_random_uuid(), _cat, _key, _uz, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system')
     ON CONFLICT (message_key) DO UPDATE SET
         message = EXCLUDED.message,
@@ -54,22 +54,22 @@ BEGIN
     RETURNING id INTO _id;
 
     -- en-US (key = English text itself)
-    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
     VALUES (gen_random_uuid(), _id, 'en-US', _key, CURRENT_TIMESTAMP)
     ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
 
     -- uz-UZ
-    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
     VALUES (gen_random_uuid(), _id, 'uz-UZ', _uz, CURRENT_TIMESTAMP)
     ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
 
     -- oz-UZ
-    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
     VALUES (gen_random_uuid(), _id, 'oz-UZ', _oz, CURRENT_TIMESTAMP)
     ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
 
     -- ru-RU
-    INSERT INTO system_message_translations (id, message_id, language, translation, created_at)
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
     VALUES (gen_random_uuid(), _id, 'ru-RU', _ru, CURRENT_TIMESTAMP)
     ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
 END;
@@ -953,7 +953,7 @@ END $$;
 DO $$
 DECLARE _count INT;
 BEGIN
-    SELECT COUNT(*) INTO _count FROM system_messages
+    SELECT COUNT(*) INTO _count FROM system_message
     WHERE category IN (
         'action', 'status', 'label', 'message', 'validation',
         'table', 'pagination', 'confirm', 'auth', 'menu', 'error'

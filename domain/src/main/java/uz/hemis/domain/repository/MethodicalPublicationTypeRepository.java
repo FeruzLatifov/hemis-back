@@ -15,15 +15,14 @@ import java.util.Optional;
 @Repository
 public interface MethodicalPublicationTypeRepository extends JpaRepository<MethodicalPublicationType, String> {
 
-    List<MethodicalPublicationType> findAllByDeleteTsIsNull();
+    List<MethodicalPublicationType> findAllByIsActiveTrue();
 
-    Optional<MethodicalPublicationType> findByCodeAndDeleteTsIsNull(String code);
+    Optional<MethodicalPublicationType> findByCodeAndIsActiveTrue(String code);
 
-    boolean existsByCodeAndDeleteTsIsNull(String code);
+    boolean existsByCodeAndIsActiveTrue(String code);
 
     /**
-     * Find by code ignoring @SQLRestriction (includes soft-deleted records)
-     * Used for upsert logic to restore soft-deleted entities
+     * Find by code including inactive records (for upsert/restore logic)
      */
     @Query(value = "SELECT * FROM hemishe_h_methodical_publication_type WHERE code = :code", nativeQuery = true)
     Optional<MethodicalPublicationType> findByCodeIncludingDeleted(@Param("code") String code);

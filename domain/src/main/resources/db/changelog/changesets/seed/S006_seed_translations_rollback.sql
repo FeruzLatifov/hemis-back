@@ -15,17 +15,17 @@ DECLARE
     _deleted_messages BIGINT := 0;
 BEGIN
     SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'system_message_translations'
+        SELECT 1 FROM information_schema.tables WHERE table_name = 'system_message_translation'
     ) INTO translations_exists;
 
     SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'system_messages'
+        SELECT 1 FROM information_schema.tables WHERE table_name = 'system_message'
     ) INTO messages_exists;
 
     IF translations_exists AND messages_exists THEN
         -- Delete all translations for seeded messages (all categories from S006)
-        DELETE FROM system_message_translations WHERE message_id IN (
-            SELECT id FROM system_messages
+        DELETE FROM system_message_translation WHERE message_id IN (
+            SELECT id FROM system_message
             WHERE category IN (
                 'action', 'status', 'label', 'message', 'validation',
                 'table', 'pagination', 'confirm', 'auth', 'menu', 'error'
@@ -39,7 +39,7 @@ BEGIN
 
     IF messages_exists THEN
         -- Delete all seeded messages
-        DELETE FROM system_messages
+        DELETE FROM system_message
         WHERE category IN (
             'action', 'status', 'label', 'message', 'validation',
             'table', 'pagination', 'confirm', 'auth', 'menu', 'error'

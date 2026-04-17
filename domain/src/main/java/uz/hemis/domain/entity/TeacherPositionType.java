@@ -1,12 +1,10 @@
 package uz.hemis.domain.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.SQLRestriction;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
+import uz.hemis.domain.entity.base.ReferenceEntity;
 
 /**
  * Teacher Position Type Entity - Xodim lavozimlari klassifikatori
@@ -27,53 +25,8 @@ import java.time.LocalDateTime;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "hemishe_h_teacher_position_type")
-@SQLRestriction("delete_ts IS NULL")
+@Table(name = "teacher_position_type")
 @Getter
 @Setter
-public class TeacherPositionType implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    @Id
-    @Column(name = "code", nullable = false, length = 32)
-    private String code;
-
-    @Column(name = "name", nullable = false, length = 255)
-    private String name;
-
-    @Column(name = "name_en", length = 255)
-    private String nameEn;
-
-    @Column(name = "name_ru", length = 255)
-    private String nameRu;
-
-    @Column(name = "active")
-    private Boolean active;
-
-    @Version
-    @Column(name = "version", nullable = false)
-    private Integer version;
-
-    @Column(name = "create_ts")
-    private LocalDateTime createTs;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "update_ts")
-    private LocalDateTime updateTs;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    @Column(name = "delete_ts")
-    private LocalDateTime deleteTs;
-
-    @Column(name = "deleted_by", length = 50)
-    private String deletedBy;
-
-    public boolean isDeleted() {
-        return deleteTs != null;
-    }
+public class TeacherPositionType extends ReferenceEntity {
 }

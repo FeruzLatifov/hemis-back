@@ -47,7 +47,25 @@ CREATE TABLE university_lifecycle (
 
     -- Audit (immutable — only created_at/by, no update/delete)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50)
+    created_by VARCHAR(50),
+
+    -- Data integrity: successor_code required for MERGED/SPLIT/REORGANIZED
+    CONSTRAINT chk_lifecycle_successor CHECK (
+        event_type NOT IN ('MERGED', 'SPLIT', 'REORGANIZED')
+        OR successor_code IS NOT NULL
+    ),
+    -- RENAMED requires old_name and new_name
+    CONSTRAINT chk_lifecycle_rename CHECK (
+        event_type != 'RENAMED'
+        OR (old_name IS NOT NULL AND new_name IS NOT NULL)
+    ),
+    -- Event date cannot be in future
+    CONSTRAINT chk_lifecycle_event_date CHECK (event_date <= CURRENT_DATE),
+    -- Decree date must precede or equal event date
+    CONSTRAINT chk_lifecycle_decree_date CHECK (decree_date IS NULL OR decree_date <= event_date),
+    -- Counts non-negative
+    CONSTRAINT chk_lifecycle_students_count CHECK (students_count IS NULL OR students_count >= 0),
+    CONSTRAINT chk_lifecycle_employees_count CHECK (employees_count IS NULL OR employees_count >= 0)
 );
 
 COMMENT ON TABLE university_lifecycle IS 'University lifecycle events — full chronological history';

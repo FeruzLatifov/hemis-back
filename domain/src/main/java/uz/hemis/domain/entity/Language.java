@@ -2,7 +2,9 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
+
+import java.util.Objects;
 
 /**
  * Language Entity - UNIVER Pattern Implementation
@@ -24,58 +26,42 @@ import org.hibernate.annotations.SQLRestriction;
  *
  * <p><strong>Currently Active Languages (4):</strong></p>
  * <ul>
- *   <li>✅ uz-UZ - O'zbekcha (Lotin) - Primary language</li>
- *   <li>✅ oz-UZ - Ўзбекча (Kirill)</li>
- *   <li>✅ ru-RU - Русский</li>
- *   <li>✅ en-US - English</li>
+ *   <li>uz-UZ - O'zbekcha (Lotin) - Primary language</li>
+ *   <li>oz-UZ - O'zbekcha (Kirill)</li>
+ *   <li>ru-RU - Russkij</li>
+ *   <li>en-US - English</li>
  * </ul>
  *
  * <p><strong>Planned Languages (5 - Future Support):</strong></p>
  * <ul>
- *   <li>⏳ kk-UZ - Қарақалпақша (Karakalpak)</li>
- *   <li>⏳ tg-TG - Тоҷикӣ (Tajik)</li>
- *   <li>⏳ kz-KZ - Қазақша (Kazakh)</li>
- *   <li>⏳ tm-TM - Türkmençe (Turkmen)</li>
- *   <li>⏳ kg-KG - Кыргызча (Kyrgyz)</li>
+ *   <li>kk-UZ - Karakalpak</li>
+ *   <li>tg-TG - Tajik</li>
+ *   <li>kz-KZ - Kazakh</li>
+ *   <li>tm-TM - Turkmen</li>
+ *   <li>kg-KG - Kyrgyz</li>
  * </ul>
  *
- * <p><strong>Adding New Languages:</strong></p>
- * <ol>
- *   <li>Insert language record in languages table</li>
- *   <li>Add translations to i18n_messages table</li>
- *   <li>Update app.languages.supported in application.yml</li>
- *   <li>Restart application</li>
- * </ol>
+ * <p><strong>Note:</strong> No @SQLRestriction — classifier uses isActive flag instead of soft delete.
+ * The language table has no deleted_at column.</p>
  *
- * <p><strong>Usage:</strong></p>
- * <pre>
- * Language language = new Language();
- * language.setCode("uz-UZ");
- * language.setName("O'zbekcha");
- * language.setNativeName("O'zbek tili");
- * language.setActive(true);
- * language.setPosition(1);
- * </pre>
- *
- * @see ModernBaseEntity
+ * @see AuditableEntity
  * @since 2.0.0
  */
 @Entity
 @Table(
-    name = "languages",
+    name = "language",
     indexes = {
         @Index(name = "idx_languages_code", columnList = "code", unique = true),
         @Index(name = "idx_languages_active", columnList = "is_active"),
         @Index(name = "idx_languages_position", columnList = "position")
     }
 )
-@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Language extends ModernBaseEntity {
+public class Language extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -133,8 +119,8 @@ public class Language extends ModernBaseEntity {
      * <p><strong>Examples:</strong></p>
      * <ul>
      *   <li>O'zbekcha (for uz-UZ)</li>
-     *   <li>Ўзбекча (for oz-UZ)</li>
-     *   <li>Русский (for ru-RU)</li>
+     *   <li>Uzbekcha (for oz-UZ)</li>
+     *   <li>Russkij (for ru-RU)</li>
      *   <li>English (for en-US)</li>
      * </ul>
      */
@@ -199,7 +185,7 @@ public class Language extends ModernBaseEntity {
      * System default flag
      * <p>Cannot be disabled through UI</p>
      */
-    @Column(name = "is_default")
+    @Column(name = "is_default", nullable = false)
     @Builder.Default
     private Boolean isDefault = false;
 
@@ -259,7 +245,7 @@ public class Language extends ModernBaseEntity {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(getId());
     }
 
     @Override

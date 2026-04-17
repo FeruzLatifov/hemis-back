@@ -3,11 +3,9 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.io.Serializable;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * EmployeeJobs — one person can hold many positions at many universities.
@@ -24,25 +22,18 @@ import java.util.UUID;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "employee_jobs")
+@Table(name = "employee_job")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EmployeeJobs implements Serializable {
-
-    @Id
-    @Column(name = "id", nullable = false)
-    private UUID id;
+public class EmployeeJobs extends AuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
-
-    @Column(name = "employee_id_number", length = 50)
-    private String employeeIdNumber;
 
     @Column(name = "university_code", nullable = false)
     private String universityCode;
@@ -59,15 +50,14 @@ public class EmployeeJobs implements Serializable {
     @Column(name = "employment_form", length = 10)
     private String employmentForm;
 
-    @Column(name = "employment_staff", length = 10)
-    private String employmentStaff;
-
-    @Column(name = "employee_status", length = 10)
-    private String employeeStatus;
-
     @Column(name = "employee_rate", length = 10)
     private String employeeRate;
 
+    /** Specialty for this job (assignment-scoped, not person-scoped). */
+    @Column(name = "specialty", length = 500)
+    private String specialty;
+
+    @Builder.Default
     @Column(name = "is_current", nullable = false)
     private Boolean isCurrent = true;
 
@@ -88,52 +78,4 @@ public class EmployeeJobs implements Serializable {
 
     @Column(name = "decree_date")
     private LocalDate decreeDate;
-
-    @Column(name = "source", length = 50)
-    private String source;
-
-    @Column(name = "source_uid")
-    private String sourceUid;
-
-    @Column(name = "hemis_uid")
-    private String hemisUid;
-
-    @Column(name = "hash", length = 64)
-    private String hash;
-
-    @Column(name = "sort_order")
-    private Integer sortOrder;
-
-    @Version
-    @Column(name = "version")
-    private Integer version;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by", length = 50)
-    private String deletedBy;
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) id = UUID.randomUUID();
-        if (createdAt == null) createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

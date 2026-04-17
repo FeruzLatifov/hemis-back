@@ -46,8 +46,8 @@ public class EmployeeJobsLegacyService {
         return employeeJobsRepository.findByUniversityCode(universityCode);
     }
 
-    public List<EmployeeJobs> findByEmployeeCode(String employeeCode) {
-        return employeeJobsRepository.findByEmployeeIdNumber(employeeCode);
+    public List<EmployeeJobs> findByEmployeePinfl(String pinfl) {
+        return employeeJobsRepository.findByEmployeePinfl(pinfl);
     }
 
     public List<EmployeeJobs> findByEmployeeId(UUID employeeId) {
@@ -70,7 +70,9 @@ public class EmployeeJobsLegacyService {
 
     @Transactional
     public void delete(EmployeeJobs entity) {
-        employeeJobsRepository.delete(entity);
+        // Soft delete — AuditableEntity pattern (deleted_at, @SQLRestriction)
+        entity.softDelete();
+        employeeJobsRepository.save(entity);
     }
 
     /**

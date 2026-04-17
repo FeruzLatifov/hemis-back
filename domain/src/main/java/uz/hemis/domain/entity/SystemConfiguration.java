@@ -3,6 +3,9 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
+
+import java.util.Objects;
 
 /**
  * System Configuration Entity - UNIVER Pattern
@@ -39,7 +42,7 @@ import org.hibernate.annotations.SQLRestriction;
  * config.setDescription("Enable Uzbek (Latin) language");
  * </pre>
  *
- * @see ModernBaseEntity
+ * @see AuditableEntity
  * @since 2.0.0
  */
 @Entity
@@ -56,7 +59,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SystemConfiguration extends ModernBaseEntity {
+public class SystemConfiguration extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -227,7 +230,7 @@ public class SystemConfiguration extends ModernBaseEntity {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(getId());
     }
 
     @Override

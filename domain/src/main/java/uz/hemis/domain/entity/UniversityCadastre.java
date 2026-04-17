@@ -4,20 +4,19 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import uz.hemis.domain.entity.base.AuditableEntityNoSoftDelete;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
- * University Cadastre — real estate objects from cadastre API
+ * University Cadastre — real estate objects from cadastre API.
  *
  * <p><strong>Source:</strong> 172.18.9.171/kadastr/by-inn + /kadastr/by-cadnum</p>
  * <p><strong>Table:</strong> university_cadastre (1:N with university)</p>
  *
- * <p>Does NOT extend ModernBaseEntity — no soft delete.
- * Cadastre records persist permanently.</p>
+ * <p>Extends {@link AuditableEntityNoSoftDelete} — no soft delete by design.
+ * Records are API snapshots updated in-place via upsert on cad_number.</p>
  *
  * @since 2.0.0
  */
@@ -28,35 +27,14 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UniversityCadastre implements Serializable {
+public class UniversityCadastre extends AuditableEntityNoSoftDelete {
 
     private static final long serialVersionUID = 1L;
 
-    // =====================================================
-    // Primary Key
-    // =====================================================
-
-    @Id
-    @Column(name = "id", nullable = false, updatable = false)
-    private UUID id;
-
-    // =====================================================
-    // University Reference
-    // =====================================================
-
-    /**
-     * University code — plain column, NOT a JPA relationship.
-     */
     @Column(name = "university_code", nullable = false)
     private String universityCode;
 
-    // =====================================================
-    // Cadastre Identity
-    // =====================================================
-
-    /**
-     * Unique cadastre number, e.g. "10:10:02:03:03:5010"
-     */
+    /** Unique cadastre number, e.g. "10:10:02:03:03:5010" */
     @Column(name = "cad_number", nullable = false, unique = true, length = 50)
     private String cadNumber;
 
@@ -64,7 +42,7 @@ public class UniversityCadastre implements Serializable {
     private String cadNumberOld;
 
     // =====================================================
-    // Location
+    // Location (kadastr API numbering — not SOATO)
     // =====================================================
 
     @Column(name = "region_id")
@@ -104,20 +82,20 @@ public class UniversityCadastre implements Serializable {
     // Object Classification
     // =====================================================
 
-    @Column(name = "tip", length = 10)
-    private String tip;
+    @Column(name = "type_code", length = 10)
+    private String typeCode;
 
-    @Column(name = "tip_text")
-    private String tipText;
+    @Column(name = "type_name")
+    private String typeName;
 
-    @Column(name = "vid", length = 10)
-    private String vid;
+    @Column(name = "kind_code", length = 10)
+    private String kindCode;
 
-    @Column(name = "vid_text")
-    private String vidText;
+    @Column(name = "kind_name")
+    private String kindName;
 
     // =====================================================
-    // Land Area (sq meters)
+    // Land Area (sq meters) — see table COMMENTS for meaning of _i/_b/_f/_z/_d/_u
     // =====================================================
 
     @Column(name = "land_area", precision = 12, scale = 2)
@@ -149,7 +127,7 @@ public class UniversityCadastre implements Serializable {
     private BigDecimal landAreaU = BigDecimal.ZERO;
 
     // =====================================================
-    // Object Area (sq meters)
+    // Object Area (sq meters) — see table COMMENTS for _l/_u
     // =====================================================
 
     @Column(name = "object_area", precision = 12, scale = 2)
@@ -165,15 +143,12 @@ public class UniversityCadastre implements Serializable {
     private BigDecimal objectAreaU = BigDecimal.ZERO;
 
     // =====================================================
-    // Value
+    // Value / Status
     // =====================================================
 
+    /** Cadastre value in UZS */
     @Column(name = "cost")
     private Long cost;
-
-    // =====================================================
-    // Legal Status
-    // =====================================================
 
     @Column(name = "eco_zone", length = 10)
     private String ecoZone;
@@ -230,49 +205,6 @@ public class UniversityCadastre implements Serializable {
     private LocalDateTime syncedAt;
 
     // =====================================================
-    // Audit Fields
-    // =====================================================
-
-    @Version
-    @Column(name = "version")
-    @Builder.Default
-    private Integer version = 1;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    // =====================================================
-    // JPA Lifecycle Hooks
-    // =====================================================
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (version == null) {
-            version = 1;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    // =====================================================
     // Equals & HashCode (based on ID)
     // =====================================================
 
@@ -281,18 +213,18 @@ public class UniversityCadastre implements Serializable {
         if (this == o) return true;
         if (!(o instanceof UniversityCadastre)) return false;
         UniversityCadastre that = (UniversityCadastre) o;
-        return id != null && id.equals(that.id);
+        return getId() != null && getId().equals(that.getId());
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return java.util.Objects.hashCode(getId());
     }
 
     @Override
     public String toString() {
         return "UniversityCadastre{" +
-                "id=" + id +
+                "id=" + getId() +
                 ", universityCode='" + universityCode + '\'' +
                 ", cadNumber='" + cadNumber + '\'' +
                 ", region='" + region + '\'' +

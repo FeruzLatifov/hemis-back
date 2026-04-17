@@ -321,11 +321,11 @@ public class UniversityExternalDataService {
         c.setNeighborhood(textOrNull(resp, "neighborhood"));
         c.setNeighborhoodId(textOrNull(resp, "neighborhood_id"));
 
-        // Classification
-        c.setTip(textOrNull(resp, "tip"));
-        c.setTipText(textOrNull(resp, "tipText"));
-        c.setVid(textOrNull(resp, "vid"));
-        c.setVidText(textOrNull(resp, "vidText"));
+        // Classification — kadastr API raw field names (tip/vid) mapped to type/kind
+        c.setTypeCode(textOrNull(resp, "tip"));
+        c.setTypeName(textOrNull(resp, "tipText"));
+        c.setKindCode(textOrNull(resp, "vid"));
+        c.setKindName(textOrNull(resp, "vidText"));
 
         // Land area
         c.setLandArea(decimalOrNull(resp, "land_area"));
@@ -551,8 +551,7 @@ public class UniversityExternalDataService {
         Employee emp = existing != null ? existing : new Employee();
         if (existing == null) {
             emp.setPinfl(pinfl);
-            emp.setSource("api_legal");
-            emp.setSourceUniversity(universityCode);
+            // source tracking removed — audit via created_by
         }
 
         if (personNode != null && !personNode.isMissingNode()) {

@@ -116,36 +116,36 @@ END $$;
 
 -- 1. UNIVERSITY type users → OTM_API role (old-hemis "OTM" roli)
 --    Bu 258 ta otm* userlar — Univer B2B sync uchun CRUD kerak
-INSERT INTO user_roles (user_id, role_id, assigned_by)
+INSERT INTO user_role (user_id, role_id, assigned_by)
 SELECT u.id, r.id, 'migration'
-FROM users u CROSS JOIN roles r
+FROM users u CROSS JOIN role r
 WHERE u.user_type = 'UNIVERSITY'
   AND r.code = 'OTM_API'
   AND NOT EXISTS (
-      SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id
+      SELECT 1 FROM user_role ur WHERE ur.user_id = u.id AND ur.role_id = r.id
   )
 ON CONFLICT DO NOTHING;
 
 -- 2. SYSTEM type users → VIEWER role (default for ministry staff)
-INSERT INTO user_roles (user_id, role_id, assigned_by)
+INSERT INTO user_role (user_id, role_id, assigned_by)
 SELECT u.id, r.id, 'migration'
-FROM users u CROSS JOIN roles r
+FROM users u CROSS JOIN role r
 WHERE u.user_type = 'SYSTEM'
   AND u.username NOT IN ('admin', 'anonymous')
   AND r.code = 'VIEWER'
   AND NOT EXISTS (
-      SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id
+      SELECT 1 FROM user_role ur WHERE ur.user_id = u.id
   )
 ON CONFLICT DO NOTHING;
 
 -- 3. admin → SUPER_ADMIN
-INSERT INTO user_roles (user_id, role_id, assigned_by)
+INSERT INTO user_role (user_id, role_id, assigned_by)
 SELECT u.id, r.id, 'migration'
-FROM users u CROSS JOIN roles r
+FROM users u CROSS JOIN role r
 WHERE u.username = 'admin'
   AND r.code = 'SUPER_ADMIN'
   AND NOT EXISTS (
-      SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_id = r.id
+      SELECT 1 FROM user_role ur WHERE ur.user_id = u.id AND ur.role_id = r.id
   )
 ON CONFLICT DO NOTHING;
 

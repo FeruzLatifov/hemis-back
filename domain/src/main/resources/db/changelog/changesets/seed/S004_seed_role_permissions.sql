@@ -17,9 +17,9 @@
 -- =====================================================
 -- SUPER_ADMIN: ALL permissions (full access)
 -- =====================================================
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'SUPER_ADMIN'
 ON CONFLICT DO NOTHING;
 
@@ -30,9 +30,9 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- Give ALL permissions (same as old-hemis OTM which had 919 perms)
 -- OTM user needs: create/read/update/delete students, teachers, departments, etc.
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'OTM_API'
   AND (
     -- Students: full CRUD (old-hemis: hemishe_EStudent:create/read/update/delete = 1)
@@ -61,9 +61,9 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- MINISTRY_ADMIN: Core business + admin (old-hemis: Ministry)
 -- =====================================================
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'MINISTRY_ADMIN'
   AND (
     p.category = 'CORE'
@@ -80,26 +80,26 @@ WHERE r.code = 'MINISTRY_ADMIN'
 ON CONFLICT DO NOTHING;
 
 -- Ministry also gets all view permissions
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'MINISTRY_ADMIN' AND p.action = 'view'
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
 -- INSPECTOR: View-only across all modules (old-hemis: Inspeksiya)
 -- =====================================================
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'INSPECTOR'
   AND p.action = 'view'
 ON CONFLICT DO NOTHING;
 
 -- Inspector also gets dashboard and menu
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'INSPECTOR'
   AND p.code IN ('dashboard.view', 'system.menu.view')
 ON CONFLICT DO NOTHING;
@@ -107,9 +107,9 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- VIEWER: Minimal view (old-hemis: Ministry_lite, vazirlikrole)
 -- =====================================================
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'VIEWER'
   AND p.action = 'view'
   AND (
@@ -127,9 +127,9 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- REPORT_VIEWER: Reports + rating + institutions (old-hemis: ReportAdmin)
 -- =====================================================
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'REPORT_VIEWER'
   AND (
     p.code LIKE 'reports.%'
@@ -143,9 +143,9 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- EXTERNAL_API: Minimal B2B access (old-hemis: Student API, Xodim API, Hokimiyat)
 -- =====================================================
-INSERT INTO role_permissions (role_id, permission_id, assigned_by)
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
 SELECT r.id, p.id, 'system'
-FROM roles r CROSS JOIN permissions p
+FROM role r CROSS JOIN permission p
 WHERE r.code = 'EXTERNAL_API'
   AND p.code IN (
     'students.view', 'students.list.view',
@@ -161,13 +161,13 @@ DO $$
 DECLARE
     sa INTEGER; otm INTEGER; ma INTEGER; insp INTEGER; vw INTEGER; rv INTEGER; ext INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO sa FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'SUPER_ADMIN';
-    SELECT COUNT(*) INTO otm FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'OTM_API';
-    SELECT COUNT(*) INTO ma FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'MINISTRY_ADMIN';
-    SELECT COUNT(*) INTO insp FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'INSPECTOR';
-    SELECT COUNT(*) INTO vw FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'VIEWER';
-    SELECT COUNT(*) INTO rv FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'REPORT_VIEWER';
-    SELECT COUNT(*) INTO ext FROM role_permissions rp JOIN roles r ON rp.role_id = r.id WHERE r.code = 'EXTERNAL_API';
+    SELECT COUNT(*) INTO sa FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'SUPER_ADMIN';
+    SELECT COUNT(*) INTO otm FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'OTM_API';
+    SELECT COUNT(*) INTO ma FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'MINISTRY_ADMIN';
+    SELECT COUNT(*) INTO insp FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'INSPECTOR';
+    SELECT COUNT(*) INTO vw FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'VIEWER';
+    SELECT COUNT(*) INTO rv FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'REPORT_VIEWER';
+    SELECT COUNT(*) INTO ext FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'EXTERNAL_API';
 
     RAISE NOTICE 'S004: Role permissions — SUPER_ADMIN=%, OTM_API=%, MINISTRY_ADMIN=%, INSPECTOR=%, VIEWER=%, REPORT_VIEWER=%, EXTERNAL_API=%',
         sa, otm, ma, insp, vw, rv, ext;

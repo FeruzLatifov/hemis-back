@@ -310,8 +310,8 @@ public class EmployeeJobsEntityController {
 
         String employeeCode = extractEmployeeCodeFromFilter(body);
         if (employeeCode != null) {
-            log.debug("Searching by employee.code: {}", employeeCode);
-            List<EmployeeJobs> entities = employeeJobsService.findByEmployeeCode(employeeCode);
+            log.debug("Searching by employee.pinfl: {}", employeeCode);
+            List<EmployeeJobs> entities = employeeJobsService.findByEmployeePinfl(employeeCode);
             return ResponseEntity.ok(entities.stream()
                 .map(e -> toMap(e, returnNulls, view))
                 .collect(Collectors.toList()));
@@ -444,7 +444,7 @@ public class EmployeeJobsEntityController {
                 entity.getEmployee() != null ? entity.getEmployee().getId() : null,
                 entity.getUniversityCode(), entity.getDepartmentCode(),
                 entity.getEmployeeType(), entity.getPositionCode(), entity.getEmployeeRate(),
-                entity.getEmploymentForm(), entity.getEmployeeStatus(),
+                entity.getEmploymentForm(), null, // employee_status removed — derived from is_current+end_date
                 entity.getVersion(), null,
                 entity.getContractDate(), entity.getContractNumber(),
                 entity.getStartDate(), entity.getEndDate(),
@@ -592,17 +592,12 @@ public class EmployeeJobsEntityController {
             String value = parseCode(map.get("employmentForm"));
             if (value != null) entity.setEmploymentForm(value);
         }
-        if (map.containsKey("employeeStatus")) {
-            String value = parseCode(map.get("employeeStatus"));
-            if (value != null) entity.setEmployeeStatus(value);
-        }
+        // employee_status / employmentStaff columns were removed from the schema —
+        // legacy API still accepts these fields but they're ignored (active flag is
+        // derived from is_current + end_date).
         if (map.containsKey("staffPosition") && !map.containsKey("employeePosition") && !map.containsKey("teacherPositionType")) {
             String value = parseCode(map.get("staffPosition"));
             if (value != null) entity.setPositionCode(value);
-        }
-        if (map.containsKey("employmentStaff") && !map.containsKey("employeeStatus")) {
-            String value = parseCode(map.get("employmentStaff"));
-            if (value != null) entity.setEmployeeStatus(value);
         }
         if (map.containsKey("jobStartDate")) entity.setStartDate(parseLocalDate(map.get("jobStartDate")));
         if (map.containsKey("jobEndDate")) entity.setEndDate(parseLocalDate(map.get("jobEndDate")));

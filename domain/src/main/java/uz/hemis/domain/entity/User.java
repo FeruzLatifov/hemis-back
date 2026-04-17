@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.SQLRestriction;
 import uz.hemis.common.enums.UserType;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -31,12 +32,12 @@ import java.util.Set;
  *
  * <p><strong>Soft Delete Pattern:</strong></p>
  * <ul>
- *   <li>@SQLRestriction("delete_ts IS NULL")</li>
+ *   <li>@SQLRestriction("deleted_at IS NULL")</li>
  *   <li>Disabled users: enabled = false (NOT deleted)</li>
- *   <li>Deleted users: delete_ts != null</li>
+ *   <li>Deleted users: deleted_at != null</li>
  * </ul>
  *
- * @see BaseEntity
+ * @see AuditableEntity
  * @since 1.0.0
  */
 @Entity
@@ -44,13 +45,9 @@ import java.util.Set;
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
-public class User extends ModernBaseEntity {
+public class User extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
-
-    @jakarta.persistence.Version
-    @Column(name = "version")
-    private Long version;
 
     // =====================================================
     // Authentication Fields
@@ -101,7 +98,7 @@ public class User extends ModernBaseEntity {
      */
     @ManyToMany
     @JoinTable(
-        name = "user_roles",
+        name = "user_role",
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
@@ -194,18 +191,18 @@ public class User extends ModernBaseEntity {
 
     /**
      * Language (legacy old-hemis compatibility)
-     * Column: language VARCHAR(10)
+     * Column: language VARCHAR(20)
      * Example: "ru", "uz", "en"
      */
-    @Column(name = "language", length = 10)
+    @Column(name = "language", length = 20)
     private String language;
 
     /**
      * Locale (legacy old-hemis compatibility)
-     * Column: locale VARCHAR(10)
+     * Column: locale VARCHAR(20)
      * Example: "uz", "ru", "en"
      */
-    @Column(name = "locale", length = 10)
+    @Column(name = "locale", length = 20)
     private String locale;
 
     /**

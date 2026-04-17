@@ -13,7 +13,7 @@
 -- =====================================================
 
 -- cls-financial (order 9)
-INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
+INSERT INTO menu (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
 VALUES (
     '20000008-0000-0000-0000-000000000009',
     'cls-financial',
@@ -36,7 +36,7 @@ VALUES (
     updated_at = CURRENT_TIMESTAMP;
 
 -- cls-diploma (order 10)
-INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
+INSERT INTO menu (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
 VALUES (
     '20000008-0000-0000-0000-000000000010',
     'cls-diploma',
@@ -59,7 +59,7 @@ VALUES (
     updated_at = CURRENT_TIMESTAMP;
 
 -- cls-speciality (order 11)
-INSERT INTO menus (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
+INSERT INTO menu (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at)
 VALUES (
     '20000008-0000-0000-0000-000000000011',
     'cls-speciality',
@@ -89,7 +89,7 @@ DECLARE
     cls_menu_count INTEGER;
 BEGIN
     SELECT COUNT(*) INTO cls_menu_count
-    FROM menus
+    FROM menu
     WHERE parent_id = '10000000-0000-0000-0000-000000000008'
       AND deleted_at IS NULL;
     RAISE NOTICE 'S007: Total classifier sub-menus: %', cls_menu_count;

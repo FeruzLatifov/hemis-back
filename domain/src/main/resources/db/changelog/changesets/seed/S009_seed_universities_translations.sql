@@ -106,6 +106,14 @@ PERFORM _seed_msg('label',  'Closed',                              'Yopilgan',  
 PERFORM _seed_msg('label',  'Restricted',                          'Cheklangan',                  'Чекланган',                   'Ограничено');
 PERFORM _seed_msg('label',  'selected',                            'tanlandi',                    'танланди',                    'выбрано');
 
+-- University activity statuses (hardcoded enum on the frontend; no classifier table).
+-- Kept in-app rather than in hemishe_h_university_activity_status so we can drop that
+-- old-hemis table once the integration is decommissioned.
+PERFORM _seed_msg('label',  'Merged',                              'Birlashtirilgan',             'Бирлаштирилган',              'Объединён');
+PERFORM _seed_msg('label',  'License revoked',                     'Litsenziya bekor qilingan',   'Лицензия бекор қилинган',     'Лицензия отозвана');
+PERFORM _seed_msg('label',  'Suspended',                           'To''xtatilgan',               'Тўхтатилган',                 'Приостановлен');
+PERFORM _seed_msg('label',  'Reorganized',                         'Qayta tashkil etilgan',       'Қайта ташкил этилган',        'Реорганизован');
+
 -- ──────────────────────────────────────────────────────
 -- ACTIONS (buttons)
 -- ──────────────────────────────────────────────────────

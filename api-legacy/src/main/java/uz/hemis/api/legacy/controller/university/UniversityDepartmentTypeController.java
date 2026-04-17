@@ -154,10 +154,15 @@ public class UniversityDepartmentTypeController {
             entity.setNameEn((String) entityData.get("nameEn"));
         }
         if (entityData.containsKey("active")) {
-            entity.setActive((Boolean) entityData.get("active"));
+            Object v = entityData.get("active");
+            if (v instanceof Boolean b) {
+                entity.setActive(b);
+            } else if (v != null) {
+                entity.setActive(Boolean.parseBoolean(v.toString()));
+            }
         }
 
-        entity.setUpdateTs(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
 
         HUniversityDepartmentType saved = classifierService.saveDepartmentType(entity);
 
@@ -550,7 +555,7 @@ public class UniversityDepartmentTypeController {
             case "name": return entity.getName();
             case "nameRu": return entity.getNameRu();
             case "nameEn": return entity.getNameEn();
-            case "active": return entity.getActive();
+            case "active": return entity.isActive();
             case "version": return entity.getVersion();
             default: return null;
         }

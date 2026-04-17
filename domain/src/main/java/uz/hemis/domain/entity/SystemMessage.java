@@ -3,8 +3,10 @@ package uz.hemis.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -35,12 +37,12 @@ import java.util.Set;
  * </pre>
  *
  * @see SystemMessageTranslation
- * @see ModernBaseEntity
+ * @see AuditableEntity
  * @since 2.0.0
  */
 @Entity
 @Table(
-    name = "system_messages",
+    name = "system_message",
     indexes = {
         @Index(name = "idx_system_messages_category", columnList = "category"),
         @Index(name = "idx_system_messages_key", columnList = "message_key", unique = true),
@@ -53,7 +55,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SystemMessage extends ModernBaseEntity {
+public class SystemMessage extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -76,7 +78,7 @@ public class SystemMessage extends ModernBaseEntity {
      *   <li>validation - Form validation messages</li>
      * </ul>
      */
-    @Column(name = "category", nullable = false, length = 64)
+    @Column(name = "category", nullable = false, length = 100)
     private String category;
 
     /**
@@ -132,7 +134,7 @@ public class SystemMessage extends ModernBaseEntity {
      *
      * <p><strong>Relationship:</strong></p>
      * <ul>
-     *   <li>One SystemMessage → Many SystemMessageTranslation</li>
+     *   <li>One SystemMessage -> Many SystemMessageTranslation</li>
      *   <li>Cascade: ALL (when message deleted, translations deleted too)</li>
      *   <li>Orphan removal: true (when translation removed from set, it's deleted from DB)</li>
      *   <li>Fetch: LAZY (translations loaded only when accessed)</li>
@@ -201,7 +203,7 @@ public class SystemMessage extends ModernBaseEntity {
 
     /**
      * Get translation with fallback logic
-     * <p>UNIVER pattern: language-region → language → default</p>
+     * <p>UNIVER pattern: language-region -> language -> default</p>
      *
      * <p><strong>Fallback sequence:</strong></p>
      * <ol>
@@ -260,7 +262,7 @@ public class SystemMessage extends ModernBaseEntity {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(getId());
     }
 
     @Override

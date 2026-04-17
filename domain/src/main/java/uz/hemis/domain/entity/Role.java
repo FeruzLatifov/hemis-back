@@ -5,11 +5,11 @@ import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 import uz.hemis.common.enums.RoleCode;
 import uz.hemis.common.enums.RoleType;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Role Entity - User Role Management
@@ -35,25 +35,14 @@ import java.util.UUID;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "roles")
+@Table(name = "role")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Role {
-
-    // =====================================================
-    // Primary Key
-    // =====================================================
-
-    /**
-     * Primary Key (UUID)
-     */
-    @Id
-    @Column(name = "id", nullable = false)
-    private UUID id;
+public class Role extends AuditableEntity {
 
     // =====================================================
     // Role Identification
@@ -84,8 +73,9 @@ public class Role {
      * <p>Values: SYSTEM, UNIVERSITY, CUSTOM</p>
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "role_type", length = 50)
-    private RoleType roleType;
+    @Column(name = "role_type", nullable = false, length = 50)
+    @Builder.Default
+    private RoleType roleType = RoleType.CUSTOM;
 
     /**
      * Active flag
@@ -93,36 +83,6 @@ public class Role {
     @Column(name = "active", nullable = false)
     @Builder.Default
     private Boolean active = true;
-
-    // =====================================================
-    // Audit Fields (CUBA Standard Pattern)
-    // =====================================================
-
-    /**
-     * Creation timestamp
-     */
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    /**
-     * Update timestamp
-     */
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    /**
-     * Soft delete timestamp
-     */
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    /**
-     * Version (optimistic locking)
-     */
-    @Version
-    @Column(name = "version")
-    @Builder.Default
-    private Integer version = 1;
 
     // =====================================================
     // Relationships
@@ -133,7 +93,7 @@ public class Role {
      */
     @ManyToMany
     @JoinTable(
-        name = "role_permissions",
+        name = "role_permission",
         joinColumns = @JoinColumn(name = "role_id"),
         inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
@@ -157,16 +117,7 @@ public class Role {
      * @return true if role is active
      */
     public boolean isActive() {
-        return Boolean.TRUE.equals(active) && deletedAt == null;
-    }
-
-    /**
-     * Check if role is deleted (soft delete)
-     *
-     * @return true if deleted_at is not null
-     */
-    public boolean isDeleted() {
-        return deletedAt != null;
+        return Boolean.TRUE.equals(active) && getDeletedAt() == null;
     }
 
     /**
@@ -177,7 +128,7 @@ public class Role {
     public boolean isSystemRole() {
         return RoleType.SYSTEM.equals(roleType);
     }
-    
+
     /**
      * Get RoleCode enum from code string
      *
@@ -186,7 +137,7 @@ public class Role {
     public RoleCode getRoleCode() {
         return RoleCode.fromCode(this.code);
     }
-    
+
     /**
      * Check if this role matches a standard RoleCode
      *
@@ -238,31 +189,6 @@ public class Role {
     }
 
     // =====================================================
-    // PrePersist Hook
-    // =====================================================
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (version == null) {
-            version = 1;
-        }
-        if (active == null) {
-            active = true;
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    // =====================================================
     // Equals & HashCode (based on ID)
     // =====================================================
 
@@ -271,18 +197,18 @@ public class Role {
         if (this == o) return true;
         if (!(o instanceof Role)) return false;
         Role role = (Role) o;
-        return id != null && id.equals(role.id);
+        return getId() != null && getId().equals(role.getId());
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(getId());
     }
 
     @Override
     public String toString() {
         return "Role{" +
-                "id=" + id +
+                "id=" + getId() +
                 ", code='" + code + '\'' +
                 ", name='" + name + '\'' +
                 ", active=" + active +

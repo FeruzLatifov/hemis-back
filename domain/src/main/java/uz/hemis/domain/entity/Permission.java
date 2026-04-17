@@ -2,11 +2,12 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Permission Entity - Granular Permission Management
@@ -46,24 +47,14 @@ import java.util.UUID;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "permissions")
+@Table(name = "permission")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Permission {
-
-    // =====================================================
-    // Primary Key
-    // =====================================================
-
-    /**
-     * Primary Key (UUID)
-     */
-    @Id
-    @Column(name = "id", nullable = false)
-    private UUID id;
+public class Permission extends AuditableEntity {
 
     // =====================================================
     // Permission Identification
@@ -88,7 +79,7 @@ public class Permission {
      * <p>Auto-generated from resource + action</p>
      * <p>Examples: students.view, reports.create, users.manage</p>
      */
-    @Column(name = "code", nullable = false, unique = true, length = 200)
+    @Column(name = "code", nullable = false, unique = true, length = 255)
     private String code;
 
     /**
@@ -106,40 +97,11 @@ public class Permission {
 
     /**
      * Category (for organization)
-     * <p>Values: CORE, REPORTS, ADMIN, INTEGRATION</p>
+     * <p>DB CHECK allows: CORE, ADMIN, MENU, CUSTOM, REPORTS</p>
      */
-    @Column(name = "category", length = 50)
-    private String category;
-
-    // =====================================================
-    // Audit Fields (CUBA Standard Pattern)
-    // =====================================================
-
-    /**
-     * Creation timestamp
-     */
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    /**
-     * Update timestamp
-     */
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    /**
-     * Soft delete timestamp
-     */
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    /**
-     * Version (optimistic locking)
-     */
-    @Version
-    @Column(name = "version")
+    @Column(name = "category", nullable = false, length = 50)
     @Builder.Default
-    private Integer version = 1;
+    private String category = "CUSTOM";
 
     // =====================================================
     // Relationships
@@ -162,16 +124,7 @@ public class Permission {
      * @return true if permission is not soft-deleted
      */
     public boolean isActive() {
-        return deletedAt == null;
-    }
-
-    /**
-     * Check if permission is deleted (soft delete)
-     *
-     * @return true if deleted_at is not null
-     */
-    public boolean isDeleted() {
-        return deletedAt != null;
+        return getDeletedAt() == null;
     }
 
     /**
@@ -218,29 +171,23 @@ public class Permission {
     }
 
     // =====================================================
-    // PrePersist Hook
+    // PrePersist / PreUpdate Hooks
     // =====================================================
 
+    @Override
     @PrePersist
     protected void onCreate() {
-        if (id == null) {
-            id = UUID.randomUUID();
-        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
-        if (version == null) {
-            version = 1;
-        }
+        super.onCreate();
         // Auto-generate code if not set
         if (code == null) {
             code = generateCode();
         }
     }
 
+    @Override
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        super.onUpdate();
         // Update code if resource or action changed
         if (code == null || !code.equals(generateCode())) {
             code = generateCode();
@@ -256,18 +203,18 @@ public class Permission {
         if (this == o) return true;
         if (!(o instanceof Permission)) return false;
         Permission that = (Permission) o;
-        return id != null && id.equals(that.id);
+        return getId() != null && getId().equals(that.getId());
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return Objects.hashCode(getId());
     }
 
     @Override
     public String toString() {
         return "Permission{" +
-                "id=" + id +
+                "id=" + getId() +
                 ", code='" + code + '\'' +
                 ", name='" + name + '\'' +
                 ", category='" + category + '\'' +

@@ -153,9 +153,9 @@ public class UniversityInfoService {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList("""
                 SELECT e.first_name, e.last_name, e.middle_name, e.pinfl, e.phone,
                        m.position_code, p.name as position_name
-                FROM employee_jobs m
+                FROM employee_job m
                 JOIN employee e ON e.id = m.employee_id
-                LEFT JOIN positions p ON p.code = m.position_code
+                LEFT JOIN position p ON p.code = m.position_code
                 WHERE m.university_code = ? AND m.is_current = true
                   AND m.position_code = '20' AND m.deleted_at IS NULL
                 LIMIT 1

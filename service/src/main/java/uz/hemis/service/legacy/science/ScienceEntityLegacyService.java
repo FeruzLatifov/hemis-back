@@ -369,7 +369,7 @@ public class ScienceEntityLegacyService {
     private static final String MPT_ENTITY = "hemishe_HMethodicalPublicationType";
 
     public Optional<MethodicalPublicationType> findMethodicalPublicationTypeByCode(String code) {
-        return methodicalPublicationTypeRepository.findByCodeAndDeleteTsIsNull(code);
+        return methodicalPublicationTypeRepository.findByCodeAndIsActiveTrue(code);
     }
 
     public Optional<MethodicalPublicationType> findMethodicalPublicationTypeByCodeIncludingDeleted(String code) {
@@ -377,7 +377,7 @@ public class ScienceEntityLegacyService {
     }
 
     public List<MethodicalPublicationType> findAllMethodicalPublicationTypes() {
-        return methodicalPublicationTypeRepository.findAllByDeleteTsIsNull();
+        return methodicalPublicationTypeRepository.findAllByIsActiveTrue();
     }
 
     @Transactional
@@ -387,7 +387,7 @@ public class ScienceEntityLegacyService {
 
     @Transactional
     public void softDeleteMethodicalPublicationType(MethodicalPublicationType entity) {
-        entity.setDeleteTs(LocalDateTime.now());
+        entity.setActive(false);
         methodicalPublicationTypeRepository.save(entity);
     }
 
@@ -401,14 +401,11 @@ public class ScienceEntityLegacyService {
         }
         map.put("code", entity.getCode());
         map.put("name", entity.getName());
-        map.put("active", entity.getActive() != null ? entity.getActive() : true);
+        map.put("active", entity.isActive());
         if (entity.getNameEn() != null) {
             map.put("nameEn", entity.getNameEn());
         }
         map.put("version", entity.getVersion() != null ? entity.getVersion() : 1);
-        if (entity.getDeletedBy() != null) {
-            map.put("deletedBy", entity.getDeletedBy());
-        }
         return map;
     }
 

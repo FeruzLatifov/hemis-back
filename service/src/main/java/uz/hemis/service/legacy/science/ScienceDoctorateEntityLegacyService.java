@@ -531,7 +531,6 @@ public class ScienceDoctorateEntityLegacyService {
 
     @Transactional
     public void deleteDoctoralStudentStatus(DoctoralStudentStatus entity) {
-        entity.setDeleteTs(LocalDateTime.now());
         entity.setActive(false);
         doctoralStudentStatusRepository.save(entity);
     }
@@ -568,13 +567,13 @@ public class ScienceDoctorateEntityLegacyService {
         map.put("_instanceName", entity.getCode() + " " + entity.getName());
         map.put("id", entity.getCode());
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        putIfNotNull(map, "deleteTs", null, returnNulls);
         putIfNotNull(map, "code", entity.getCode(), returnNulls);
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 
@@ -607,7 +606,6 @@ public class ScienceDoctorateEntityLegacyService {
 
     @Transactional
     public void deleteDoctoralStudentType(DoctoralStudentType entity) {
-        entity.setDeleteTs(LocalDateTime.now());
         entity.setActive(false);
         doctoralStudentTypeRepository.save(entity);
     }
@@ -644,13 +642,13 @@ public class ScienceDoctorateEntityLegacyService {
         map.put("_instanceName", entity.getCode() + " " + entity.getName());
         map.put("id", entity.getCode());
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        putIfNotNull(map, "deleteTs", null, returnNulls);
         putIfNotNull(map, "code", entity.getCode(), returnNulls);
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 
@@ -683,7 +681,6 @@ public class ScienceDoctorateEntityLegacyService {
 
     @Transactional
     public void deletePublicationLocality(PublicationLocality entity) {
-        entity.setDeleteTs(LocalDateTime.now());
         entity.setActive(false);
         publicationLocalityRepository.save(entity);
     }
@@ -720,13 +717,13 @@ public class ScienceDoctorateEntityLegacyService {
         map.put("_instanceName", entity.getCode() + " " + entity.getName());
         map.put("id", entity.getCode());
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        putIfNotNull(map, "deleteTs", null, returnNulls);
         putIfNotNull(map, "code", entity.getCode(), returnNulls);
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 

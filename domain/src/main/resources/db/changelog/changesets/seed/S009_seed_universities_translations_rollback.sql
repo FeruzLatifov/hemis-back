@@ -1,7 +1,7 @@
 -- Rollback for S009_seed_universities_translations.sql
 -- Delete message keys added in S009 (ON DELETE CASCADE removes translations)
 
-DELETE FROM system_messages WHERE message_key IN (
+DELETE FROM system_message WHERE message_key IN (
     -- Labels
     'General', 'Legal', 'Officials', 'Property', 'History',
     'Location', 'Contacts', 'Documents', 'Document', 'Document title',
@@ -53,5 +53,7 @@ DELETE FROM system_messages WHERE message_key IN (
     -- Feature flags
     'OneID login', 'Add foreign student', 'Add transfer student', 'Add academic mobile student',
     -- Document types
-    'LICENSE', 'ACCREDITATION', 'CHARTER', 'OTHER'
+    'LICENSE', 'ACCREDITATION', 'CHARTER', 'OTHER',
+    -- Activity statuses (hardcoded enum)
+    'Merged', 'License revoked', 'Suspended', 'Reorganized'
 );

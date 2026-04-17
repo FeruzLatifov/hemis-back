@@ -8,10 +8,10 @@
 -- =====================================================
 
 -- First, ensure no duplicate defaults by resetting
-UPDATE languages SET is_default = FALSE WHERE is_default = TRUE;
+UPDATE language SET is_default = FALSE WHERE is_default = TRUE;
 
 -- Uzbek (Latin) - DEFAULT
-INSERT INTO languages (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
+INSERT INTO language (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
 VALUES (
     gen_random_uuid(),
     'uz-UZ',
@@ -36,7 +36,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Uzbek (Cyrillic)
-INSERT INTO languages (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
+INSERT INTO language (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
 VALUES (
     gen_random_uuid(),
     'oz-UZ',
@@ -61,7 +61,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Russian
-INSERT INTO languages (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
+INSERT INTO language (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
 VALUES (
     gen_random_uuid(),
     'ru-RU',
@@ -86,7 +86,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- English
-INSERT INTO languages (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
+INSERT INTO language (id, code, name, native_name, iso_code, position, is_active, is_rtl, is_default, created_by)
 VALUES (
     gen_random_uuid(),
     'en-US',
@@ -116,8 +116,8 @@ DECLARE
     lang_count INTEGER;
     default_count INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO lang_count FROM languages WHERE is_active = TRUE;
-    SELECT COUNT(*) INTO default_count FROM languages WHERE is_default = TRUE AND deleted_at IS NULL;
+    SELECT COUNT(*) INTO lang_count FROM language WHERE is_active = TRUE AND deleted_at IS NULL;
+    SELECT COUNT(*) INTO default_count FROM language WHERE is_default = TRUE AND deleted_at IS NULL;
 
     IF default_count != 1 THEN
         RAISE EXCEPTION 'S005 Failed: Expected exactly 1 default language, found %', default_count;

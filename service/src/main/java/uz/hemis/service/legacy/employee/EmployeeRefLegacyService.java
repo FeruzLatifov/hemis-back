@@ -77,10 +77,10 @@ public class EmployeeRefLegacyService {
         map.put("id", entity.getCode());
         map.put("code", entity.getCode());
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deleteTs", null, returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 
@@ -109,10 +109,11 @@ public class EmployeeRefLegacyService {
         map.put("id", entity.getCode());
         map.put("code", entity.getCode());
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        // Classifier uses isActive instead of soft-delete — deleteTs/deletedBy always null
+        putIfNotNull(map, "deleteTs", null, returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 
@@ -245,13 +246,14 @@ public class EmployeeRefLegacyService {
         map.put("id", entity.getCode());
         // OLD-HEMIS specific field order
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        // Classifier uses isActive instead of soft-delete — deleteTs/deletedBy always null
+        putIfNotNull(map, "deleteTs", null, returnNulls);
         map.put("code", entity.getCode());
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 
@@ -280,13 +282,13 @@ public class EmployeeRefLegacyService {
         map.put("id", entity.getCode());
         // OLD-HEMIS specific field order
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
+        putIfNotNull(map, "deleteTs", null, returnNulls);
         map.put("code", entity.getCode());
         putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 
@@ -333,15 +335,15 @@ public class EmployeeRefLegacyService {
                 entity.setActive(Boolean.parseBoolean((String) activeValue));
             }
         }
-        entity.setUpdateTs(LocalDateTime.now());
+        entity.setUpdatedAt(LocalDateTime.now());
         entity.setUpdatedBy(currentUsername);
         return universityEmployeeTypeRepository.save(entity);
     }
 
     @Transactional
     public void softDeleteUniversityEmployeeType(UniversityEmployeeType entity, String currentUsername) {
-        entity.setDeleteTs(LocalDateTime.now());
-        entity.setDeletedBy(currentUsername);
+        entity.setActive(false);
+        entity.setUpdatedBy(currentUsername);
         universityEmployeeTypeRepository.save(entity);
     }
 
@@ -354,7 +356,7 @@ public class EmployeeRefLegacyService {
 
         if (existingOpt.isPresent()) {
             entity = existingOpt.get();
-            entity.setUpdateTs(LocalDateTime.now());
+            entity.setUpdatedAt(LocalDateTime.now());
             log.debug("Found existing entity with code: {}", code);
         } else {
             if (softDeleteRestoreService.hasSoftDeletedRecord(EMPLOYEE_TYPE_TABLE, code)) {
@@ -365,7 +367,7 @@ public class EmployeeRefLegacyService {
             } else {
                 entity = new UniversityEmployeeType();
                 entity.setCode(code);
-                entity.setCreateTs(LocalDateTime.now());
+                entity.setCreatedAt(LocalDateTime.now());
                 entity.setCreatedBy(currentUsername);
                 isNew = true;
                 log.debug("Creating new entity with code: {}", code);
@@ -404,10 +406,10 @@ public class EmployeeRefLegacyService {
         putIfNotNull(map, "name", entity.getName(), returnNulls);
         putIfNotNull(map, "nameEn", entity.getNameEn(), returnNulls);
         putIfNotNull(map, "nameRu", entity.getNameRu(), returnNulls);
-        putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        putIfNotNull(map, "active", entity.isActive(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deleteTs", entity.getDeleteTs(), returnNulls);
-        putIfNotNull(map, "deletedBy", entity.getDeletedBy(), returnNulls);
+        putIfNotNull(map, "deleteTs", null, returnNulls);
+        putIfNotNull(map, "deletedBy", null, returnNulls);
         return map;
     }
 
@@ -488,7 +490,7 @@ public class EmployeeRefLegacyService {
             case "name" -> entity.getName();
             case "nameen", "name_en" -> entity.getNameEn();
             case "nameru", "name_ru" -> entity.getNameRu();
-            case "active" -> entity.getActive();
+            case "active" -> entity.isActive();
             case "version" -> entity.getVersion();
             default -> null;
         };

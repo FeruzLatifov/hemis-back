@@ -39,7 +39,7 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-    name = "user_favorites",
+    name = "user_favorite",
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uq_user_favorites_user_menu",
@@ -153,7 +153,7 @@ public class UserFavorite implements Serializable {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode();
+        return java.util.Objects.hashCode(id);
     }
 
     @Override

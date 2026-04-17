@@ -16,9 +16,6 @@ import java.util.UUID;
 public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID> {
 
     @EntityGraph(attributePaths = {"employee"})
-    List<EmployeeJobs> findByUniversityCodeAndIsCurrentAndSource(String universityCode, boolean isCurrent, String source);
-
-    @EntityGraph(attributePaths = {"employee"})
     List<EmployeeJobs> findByUniversityCodeAndIsCurrentAndEmployeeType(String universityCode, boolean isCurrent, String employeeType);
 
     @EntityGraph(attributePaths = {"employee"})
@@ -26,15 +23,12 @@ public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID
 
     List<EmployeeJobs> findByUniversityCodeAndPositionCodeAndIsCurrent(String universityCode, String positionCode, boolean isCurrent);
 
-    @EntityGraph(attributePaths = {"employee"})
-    List<EmployeeJobs> findByUniversityCodeAndSource(String universityCode, String source);
-
     List<EmployeeJobs> findByEmployeeId(UUID employeeId);
 
     // Legacy compatibility methods — used by EmployeeJobsLegacyService (CUBA API)
     List<EmployeeJobs> findByUniversityCode(String universityCode);
 
-    List<EmployeeJobs> findByEmployeeIdNumber(String employeeIdNumber);
+    List<EmployeeJobs> findByEmployeePinfl(String pinfl);
 
     Page<EmployeeJobs> findByUniversityCode(String universityCode, Pageable pageable);
 }

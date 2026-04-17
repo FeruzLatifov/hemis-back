@@ -11,9 +11,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * User Entity Unit Tests
  *
  * <p>Tests Lombok-generated getters/setters, business methods,
- * and inherited soft delete logic from ModernBaseEntity.</p>
+ * and inherited soft delete logic from AuditableEntity.</p>
  *
- * <p>User extends ModernBaseEntity (UUID primary key, modern column names:
+ * <p>User extends AuditableEntity (UUID primary key, modern column names:
  * created_at, updated_at, deleted_at).</p>
  */
 @DisplayName("User Entity Tests")
@@ -85,8 +85,8 @@ class UserEntityTest {
     }
 
     @Test
-    @DisplayName("isDeleted should use deletedAt from ModernBaseEntity")
-    void isDeletedShouldUseModernBaseEntity() {
+    @DisplayName("isDeleted should use deletedAt from AuditableEntity")
+    void isDeletedShouldUseAuditableEntity() {
         User user = new User();
 
         assertThat(user.isDeleted()).isFalse();
@@ -94,7 +94,7 @@ class UserEntityTest {
         user.setDeletedAt(LocalDateTime.now());
         assertThat(user.isDeleted()).isTrue();
 
-        // softDelete and restore from ModernBaseEntity
+        // softDelete and restore from AuditableEntity
         user.restore();
         assertThat(user.isDeleted()).isFalse();
 

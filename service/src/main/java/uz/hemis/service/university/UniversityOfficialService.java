@@ -115,8 +115,6 @@ public class UniversityOfficialService {
                     emp.setLastName(request.getLastName());
                     emp.setMiddleName(request.getMiddleName());
                     emp.setPhone(request.getPhone());
-                    emp.setSource("ministry");
-                    emp.setSourceUniversity(universityCode);
                     return employeeRepository.save(emp);
                 });
 
@@ -141,7 +139,7 @@ public class UniversityOfficialService {
         meta.setEmployeeType("15"); // Rahbariyat — leadership type
         meta.setIsCurrent(true);
         meta.setStartDate(LocalDate.now());
-        meta.setSource("ministry");
+        // source tracking removed — audit via created_by
         if (request.getDecreeNumber() != null) meta.setDecreeNumber(request.getDecreeNumber());
         if (request.getDecreeDate() != null) {
             try { meta.setDecreeDate(LocalDate.parse(request.getDecreeDate())); } catch (Exception ignored) {}
@@ -228,7 +226,7 @@ public class UniversityOfficialService {
                 if (bd instanceof java.sql.Date) emp.setBirthDate(((java.sql.Date) bd).toLocalDate());
                 emp.setAcademicDegree(str(row, "_academic_degree"));
                 emp.setAcademicRank(str(row, "_academic_rank"));
-                emp.setSource("hemishe_e_teacher");
+                // source removed — audit via created_by
                 emp = employeeRepository.save(emp);
                 log.info("Employee created from hemishe_e_teacher: pinfl={}", pinfl);
                 return buildResult("hemishe_e_teacher", emp);
@@ -324,7 +322,7 @@ public class UniversityOfficialService {
                     if (bd != null) {
                         try { emp.setBirthDate(java.time.LocalDate.parse(bd)); } catch (Exception ignored) {}
                     }
-                    emp.setSource("external_api");
+                    // source removed — audit via created_by
 
                     // Fetch address from /person/person-address/
                     String address = fetchPersonAddress(pinfl, token);
@@ -396,14 +394,14 @@ public class UniversityOfficialService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getLeadershipPositions() {
         return jdbcTemplate.queryForList(
-                "SELECT code, name FROM positions WHERE type_code = '15' AND is_active = true ORDER BY name");
+                "SELECT code, name FROM position WHERE type_code = '15' AND is_active = true ORDER BY name");
     }
 
     private String resolvePositionName(String positionCode) {
         if (positionCode == null) return null;
         try {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                    "SELECT name FROM positions WHERE code = ?", positionCode);
+                    "SELECT name FROM position WHERE code = ?", positionCode);
             return rows.isEmpty() ? positionCode : rows.get(0).get("name").toString();
         } catch (Exception e) {
             return positionCode;

@@ -164,7 +164,7 @@ public class StudentStatusTypeEntityController {
         studentService.updateStudentStatusTypeFromMap(entity, entityData);
 
         // Update timestamp va user
-        entity.setUpdateTs(java.time.LocalDateTime.now());
+        entity.setUpdatedAt(java.time.LocalDateTime.now());
         entity.setUpdatedBy(securityHelper.getCurrentUsername());
 
         StudentStatusType saved = studentService.saveStudentStatusType(entity);
@@ -217,7 +217,7 @@ public class StudentStatusTypeEntityController {
         }
 
         StudentStatusType entity = existingOpt.get();
-        entity.setDeletedBy(securityHelper.getCurrentUsername());
+        entity.setUpdatedBy(securityHelper.getCurrentUsername());
 
         studentService.deleteStudentStatusType(entity);
         log.info("StudentStatusType soft deleted successfully: {}", entityId);
@@ -310,7 +310,7 @@ public class StudentStatusTypeEntityController {
         if (existingOpt.isPresent()) {
             // Entity exists and is not soft-deleted - just update
             entity = existingOpt.get();
-            entity.setUpdateTs(java.time.LocalDateTime.now());
+            entity.setUpdatedAt(java.time.LocalDateTime.now());
             entity.setUpdatedBy(securityHelper.getCurrentUsername());
             log.debug("Found existing entity with code: {}", code);
         } else {
@@ -329,7 +329,7 @@ public class StudentStatusTypeEntityController {
                 // Step 4: Truly new entity
                 entity = new StudentStatusType();
                 entity.setCode(code);
-                entity.setCreateTs(java.time.LocalDateTime.now());
+                entity.setCreatedAt(java.time.LocalDateTime.now());
                 entity.setCreatedBy(securityHelper.getCurrentUsername());
                 isNew = true;
                 log.debug("Creating new entity with code: {}", code);
@@ -340,7 +340,7 @@ public class StudentStatusTypeEntityController {
         entity.setName(name);
         studentService.updateStudentStatusTypeFromMap(entity, entityData);
 
-        if (isNew && entity.getActive() == null) {
+        if (isNew) {
             entity.setActive(true); // Default for new entities only
         }
 
@@ -624,7 +624,7 @@ public class StudentStatusTypeEntityController {
             case "name" -> entity.getName();
             case "nameen", "name_en" -> entity.getNameEn();
             case "nameru", "name_ru" -> entity.getNameRu();
-            case "active" -> entity.getActive();
+            case "active" -> entity.isActive();
             case "version" -> entity.getVersion();
             default -> null;
         };

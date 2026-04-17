@@ -25,24 +25,24 @@ DECLARE
     ];
 BEGIN
     SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'role_permissions'
+        SELECT 1 FROM information_schema.tables WHERE table_name = 'role_permission'
     ) INTO role_perms_exists;
 
     SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'permissions'
+        SELECT 1 FROM information_schema.tables WHERE table_name = 'permission'
     ) INTO perms_exists;
 
     -- Remove FK references first
     IF role_perms_exists AND perms_exists THEN
-        DELETE FROM role_permissions WHERE permission_id IN (
-            SELECT id FROM permissions WHERE code = ANY(_codes)
+        DELETE FROM role_permission WHERE permission_id IN (
+            SELECT id FROM permission WHERE code = ANY(_codes)
         );
         RAISE NOTICE 'S002 Rollback: Deleted role_permissions for 30 base permissions';
     END IF;
 
     -- Remove the permissions
     IF perms_exists THEN
-        DELETE FROM permissions WHERE code = ANY(_codes);
+        DELETE FROM permission WHERE code = ANY(_codes);
         RAISE NOTICE 'S002 Rollback: Deleted 30 base permissions';
     ELSE
         RAISE NOTICE 'S002 Rollback: permissions table does not exist, skipping';

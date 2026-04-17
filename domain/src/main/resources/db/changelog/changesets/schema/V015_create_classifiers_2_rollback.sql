@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS verification_type CASCADE;
+DROP TABLE IF EXISTS university_employee_type CASCADE;
+DROP TABLE IF EXISTS university_employee_status_type CASCADE;
+DROP TABLE IF EXISTS transfer_type CASCADE;
+DROP TABLE IF EXISTS teacher_position_type CASCADE;
+DROP TABLE IF EXISTS student_status_type CASCADE;
+DROP TABLE IF EXISTS publication_locality CASCADE;
+DROP TABLE IF EXISTS methodical_publication_type CASCADE;
+DROP TABLE IF EXISTS university_department_type CASCADE;
+DROP TABLE IF EXISTS course CASCADE;
+DROP TABLE IF EXISTS education_year CASCADE;
+DROP TABLE IF EXISTS education_type CASCADE;
+DROP TABLE IF EXISTS education_form CASCADE;
+DROP TABLE IF EXISTS doctoral_student_type CASCADE;
+DROP TABLE IF EXISTS doctoral_student_status CASCADE;
+DROP TABLE IF EXISTS admission_type CASCADE;

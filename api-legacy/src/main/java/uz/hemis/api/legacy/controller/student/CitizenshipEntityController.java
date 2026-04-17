@@ -127,7 +127,7 @@ public class CitizenshipEntityController {
 
         Citizenship entity = existingOpt.get();
         studentService.updateCitizenshipFromMap(entity, entityData);
-        entity.setUpdateTs(java.time.LocalDateTime.now());
+        entity.setUpdatedAt(java.time.LocalDateTime.now());
 
         Citizenship saved = studentService.saveCitizenship(entity);
         log.info("Citizenship updated successfully: {}", entityId);
@@ -217,7 +217,7 @@ public class CitizenshipEntityController {
 
         if (existingOpt.isPresent()) {
             entity = existingOpt.get();
-            entity.setUpdateTs(java.time.LocalDateTime.now());
+            entity.setUpdatedAt(java.time.LocalDateTime.now());
         } else {
             if (studentService.hasSoftDeletedCitizenship(code)) {
                 studentService.restoreSoftDeletedCitizenship(code);
@@ -228,7 +228,7 @@ public class CitizenshipEntityController {
             } else {
                 entity = new Citizenship();
                 entity.setCode(code);
-                entity.setCreateTs(java.time.LocalDateTime.now());
+                entity.setCreatedAt(java.time.LocalDateTime.now());
                 isNew = true;
             }
         }
@@ -236,7 +236,7 @@ public class CitizenshipEntityController {
         entity.setName(name);
         studentService.updateCitizenshipFromMap(entity, entityData);
 
-        if (isNew && entity.getActive() == null) {
+        if (isNew) {
             entity.setActive(true);
         }
 
@@ -467,7 +467,7 @@ public class CitizenshipEntityController {
             case "name" -> entity.getName();
             case "nameen", "name_en" -> entity.getNameEn();
             case "nameru", "name_ru" -> entity.getNameRu();
-            case "active" -> entity.getActive();
+            case "active" -> entity.isActive();
             case "version" -> entity.getVersion();
             default -> null;
         };

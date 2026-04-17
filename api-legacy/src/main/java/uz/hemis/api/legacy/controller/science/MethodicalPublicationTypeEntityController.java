@@ -175,8 +175,7 @@ public class MethodicalPublicationTypeEntityController {
         if (existingOpt.isPresent()) {
             entity = existingOpt.get();
             // Restore if soft-deleted
-            entity.setDeleteTs(null);
-            entity.setDeletedBy(null);
+            entity.setActive(true);
             scienceService.updateMethodicalPublicationTypeFromMap(entity, body);
         } else {
             entity = new MethodicalPublicationType();

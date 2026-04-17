@@ -33,12 +33,28 @@ CREATE TABLE university_founder (
     effective_from DATE,
     effective_to DATE,
 
-    -- Audit
+    -- Audit (AuditableEntity: 7)
     version INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(50),
+
+    -- Data integrity: founder_type determines which FK is required
+    CONSTRAINT chk_ufounder_xor CHECK (
+        (founder_type = 'individual' AND employee_id IS NOT NULL AND organization_id IS NULL)
+        OR
+        (founder_type = 'legal'      AND organization_id IS NOT NULL AND employee_id IS NULL)
+    ),
+    CONSTRAINT chk_ufounder_share_percent CHECK (
+        share_percent IS NULL OR (share_percent >= 0 AND share_percent <= 100)
+    ),
+    CONSTRAINT chk_ufounder_effective_range CHECK (
+        effective_to IS NULL OR effective_from IS NULL OR effective_to >= effective_from
+    ),
+    CONSTRAINT chk_ufounder_share_sum CHECK (share_sum IS NULL OR share_sum >= 0)
 );
 
 COMMENT ON TABLE university_founder IS 'University founders — individual (→ employee) or legal (→ organization)';
@@ -50,3 +66,13 @@ CREATE INDEX idx_ufounder_university ON university_founder(university_code);
 CREATE INDEX idx_ufounder_employee ON university_founder(employee_id) WHERE employee_id IS NOT NULL;
 CREATE INDEX idx_ufounder_org ON university_founder(organization_id) WHERE organization_id IS NOT NULL;
 CREATE INDEX idx_ufounder_current ON university_founder(university_code, is_current) WHERE is_current = true;
+CREATE INDEX idx_ufounder_deleted_at ON university_founder(deleted_at) WHERE deleted_at IS NULL;
+
+-- Bitta ta'sischi bitta universitet uchun bir vaqtda faqat bitta is_current=true yozuv bo'lishi kerak
+CREATE UNIQUE INDEX idx_ufounder_unique_current_individual
+    ON university_founder(university_code, employee_id)
+    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'individual';
+
+CREATE UNIQUE INDEX idx_ufounder_unique_current_legal
+    ON university_founder(university_code, organization_id)
+    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'legal';

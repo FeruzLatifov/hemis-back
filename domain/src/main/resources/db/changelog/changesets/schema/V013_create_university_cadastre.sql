@@ -28,11 +28,11 @@ CREATE TABLE university_cadastre (
     neighborhood VARCHAR(255),
     neighborhood_id VARCHAR(50),
 
-    -- Object classification
-    tip VARCHAR(10),
-    tip_text VARCHAR(255),
-    vid VARCHAR(10),
-    vid_text VARCHAR(255),
+    -- Object classification (kadastr API fields: tip/vid → type/kind)
+    type_code VARCHAR(10),
+    type_name VARCHAR(255),
+    kind_code VARCHAR(10),
+    kind_name VARCHAR(255),
 
     -- Land area (sq meters)
     land_area NUMERIC(12,2) DEFAULT 0,
@@ -83,6 +83,40 @@ COMMENT ON TABLE university_cadastre IS 'University real estate objects from cad
 COMMENT ON COLUMN university_cadastre.cad_number IS 'Unique cadastre number, e.g. 10:10:02:03:03:5010';
 COMMENT ON COLUMN university_cadastre.cost IS 'Cadastre value in UZS';
 COMMENT ON COLUMN university_cadastre.version IS 'Optimistic locking version (JPA @Version)';
+
+-- Kadastr API field naming (raw passthrough — ustun nomi API javobiga mos):
+COMMENT ON COLUMN university_cadastre.type_code IS 'Object type code from kadastr API (was: tip)';
+COMMENT ON COLUMN university_cadastre.type_name IS 'Object type label (was: tip_text)';
+COMMENT ON COLUMN university_cadastre.kind_code IS 'Object kind/sub-type code from kadastr API (was: vid)';
+COMMENT ON COLUMN university_cadastre.kind_name IS 'Object kind label (was: vid_text)';
+
+-- Land area breakdown (kadastr API raw fields — sq meters):
+COMMENT ON COLUMN university_cadastre.land_area IS 'Total land area (m²)';
+COMMENT ON COLUMN university_cadastre.land_area_i IS 'Irrigation/irrigated land area (m²) — API field _i';
+COMMENT ON COLUMN university_cadastre.land_area_b IS 'Building footprint area (m²) — API field _b';
+COMMENT ON COLUMN university_cadastre.land_area_f IS 'Free/open area (m²) — API field _f';
+COMMENT ON COLUMN university_cadastre.land_area_z IS 'Reserve (zahira) area (m²) — API field _z';
+COMMENT ON COLUMN university_cadastre.land_area_d IS 'Roads/driveways area (m²) — API field _d';
+COMMENT ON COLUMN university_cadastre.land_area_u IS 'Usable area (m²) — API field _u';
+
+-- Object area breakdown (buildings on the land):
+COMMENT ON COLUMN university_cadastre.object_area IS 'Total object/building area (m²)';
+COMMENT ON COLUMN university_cadastre.object_area_l IS 'Living area (yashash) (m²) — API field _l';
+COMMENT ON COLUMN university_cadastre.object_area_u IS 'Non-living usable area (m²) — API field _u';
+
+-- JSONB nested data
+COMMENT ON COLUMN university_cadastre.subjects IS 'Ownership subjects — JSONB array from kadastr API';
+COMMENT ON COLUMN university_cadastre.documents IS 'Object documents — JSONB from API';
+COMMENT ON COLUMN university_cadastre.documents_l IS 'Land-related (_l) documents — JSONB from API';
+COMMENT ON COLUMN university_cadastre.bans IS 'Legal bans/encumbrances — JSONB from API';
+
+-- Location IDs: kadastr API uses its own numbering (not SOATO). FK deferred until mapping clarified.
+COMMENT ON COLUMN university_cadastre.region_id IS 'Kadastr API region ID (not SOATO) — numeric reference';
+COMMENT ON COLUMN university_cadastre.district_id IS 'Kadastr API district ID (not SOATO) — numeric reference';
+COMMENT ON COLUMN university_cadastre.neighborhood_id IS 'Kadastr API neighborhood ID';
+
+-- Data source + CHECK
+COMMENT ON COLUMN university_cadastre.data_source IS 'Sync source: api_kadastr | manual';
 -- NOTE: No soft delete (deleted_at) by design.
 -- Cadastre data is a synchronized snapshot from the external government API.
 -- Records are updated in-place on each sync (upsert pattern via cad_number UNIQUE).
@@ -93,3 +127,4 @@ CREATE INDEX idx_ucadastre_university ON university_cadastre(university_code);
 CREATE INDEX idx_ucadastre_region ON university_cadastre(region_id) WHERE region_id IS NOT NULL;
 CREATE INDEX idx_ucadastre_district ON university_cadastre(district_id) WHERE district_id IS NOT NULL;
 CREATE INDEX idx_ucadastre_ban ON university_cadastre(ban_is) WHERE ban_is = true;
+CREATE INDEX idx_ucadastre_synced_at ON university_cadastre(synced_at);

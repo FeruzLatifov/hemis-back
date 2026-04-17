@@ -18,7 +18,7 @@ import uz.hemis.domain.repository.PasswordResetTokenRepository;
 import uz.hemis.domain.repository.UserRepository;
 
 import java.security.SecureRandom;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Properties;
 
@@ -69,7 +69,7 @@ public class PasswordResetService {
         // Rate limit: max 3 requests per hour per user
         // Silent return (no exception) to prevent user enumeration
         long recentRequests = tokenRepository.countByUserAndCreatedAtAfter(
-                user, Instant.now().minus(1, ChronoUnit.HOURS));
+                user, LocalDateTime.now().minus(1, ChronoUnit.HOURS));
         if (recentRequests >= MAX_REQUESTS_PER_HOUR) {
             log.warn("Rate limit exceeded for password reset: user={}", user.getUsername());
             return; // Silent return — same as non-existent email
@@ -82,7 +82,7 @@ public class PasswordResetService {
         PasswordResetToken resetToken = new PasswordResetToken();
         resetToken.setUser(user);
         resetToken.setToken(token);
-        resetToken.setExpiresAt(Instant.now().plus(TOKEN_EXPIRY_MINUTES, ChronoUnit.MINUTES));
+        resetToken.setExpiresAt(LocalDateTime.now().plus(TOKEN_EXPIRY_MINUTES, ChronoUnit.MINUTES));
         resetToken.setUsed(false);
         tokenRepository.save(resetToken);
 

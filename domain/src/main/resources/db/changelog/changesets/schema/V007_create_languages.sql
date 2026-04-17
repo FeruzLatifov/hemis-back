@@ -1,12 +1,14 @@
 -- =====================================================
--- V007: CREATE LANGUAGES TABLE
+-- V007: language + configuration — system-wide settings
 -- =====================================================
 -- Author: hemis-team
--- Date: 2025-01-23
--- Purpose: Supported languages configuration
+-- Purpose:
+--   language — supported UI languages (uz-UZ, ru-RU, en-US, ...)
+--   configuration — key/value store for system settings incl. language toggles
+-- Both follow AuditableEntity pattern (7 audit columns, soft delete).
 -- =====================================================
 
-CREATE TABLE languages (
+CREATE TABLE language (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(10) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
@@ -17,32 +19,51 @@ CREATE TABLE languages (
     is_rtl BOOLEAN DEFAULT FALSE,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
 
-    -- Timestamps
+    version INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP,
     updated_by VARCHAR(50),
     deleted_at TIMESTAMP,
-    deleted_by VARCHAR(50),
-
-    -- Versioning
-    version INTEGER DEFAULT 1
+    deleted_by VARCHAR(50)
 );
 
--- Comments
-COMMENT ON TABLE languages IS 'Supported system languages';
-COMMENT ON COLUMN languages.code IS 'ISO language code (e.g., uz-UZ, ru-RU)';
-COMMENT ON COLUMN languages.iso_code IS 'ISO 639-1 code (2 letters)';
-COMMENT ON COLUMN languages.position IS 'Display order (lower = first)';
-COMMENT ON COLUMN languages.is_rtl IS 'Right-to-left flag (Arabic, Hebrew, etc.)';
-COMMENT ON COLUMN languages.is_default IS 'Only ONE language can be default';
+-- Only ONE language can be default
+CREATE UNIQUE INDEX idx_language_single_default
+ON language(is_default)
+WHERE is_default = TRUE;
 
--- CRITICAL: Business constraint - only ONE default language
-CREATE UNIQUE INDEX idx_languages_single_default
-ON languages(is_default)
-WHERE is_default = TRUE AND deleted_at IS NULL;
+CREATE INDEX idx_language_active ON language(is_active) WHERE is_active = TRUE;
+CREATE INDEX idx_language_position ON language(position);
+CREATE INDEX idx_language_deleted_at ON language(deleted_at) WHERE deleted_at IS NULL;
 
--- Other indexes (languages.code UNIQUE already creates B-tree index)
-CREATE INDEX idx_languages_active ON languages(is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_languages_position ON languages(position);
-CREATE INDEX idx_languages_deleted_at ON languages(deleted_at) WHERE deleted_at IS NULL;
+-- =====================================================
+-- configuration — system-wide key/value store
+-- =====================================================
+CREATE TABLE configuration (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    path VARCHAR(255) NOT NULL UNIQUE,
+    value TEXT,
+    category VARCHAR(64),
+    description TEXT,
+
+    value_type VARCHAR(32) DEFAULT 'string',
+    is_editable BOOLEAN NOT NULL DEFAULT TRUE,
+    is_sensitive BOOLEAN NOT NULL DEFAULT FALSE,
+
+    version INTEGER DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(50)
+);
+
+COMMENT ON TABLE configuration IS 'System-wide key/value configuration (path = unique key, value = text payload)';
+COMMENT ON COLUMN configuration.path IS 'Dotted key, e.g. system.language.uz-UZ';
+COMMENT ON COLUMN configuration.value_type IS 'Hint for UI rendering: boolean | number | string | password | json';
+
+CREATE INDEX idx_configuration_category ON configuration(category) WHERE category IS NOT NULL;
+CREATE INDEX idx_configuration_deleted_at ON configuration(deleted_at) WHERE deleted_at IS NULL;

@@ -38,10 +38,10 @@ public class UniversityCadastreDto {
     private String domNum;
     private String neighborhood;
     private String neighborhoodId;
-    private String tip;
-    private String tipText;
-    private String vid;
-    private String vidText;
+    private String typeCode;
+    private String typeName;
+    private String kindCode;
+    private String kindName;
     private BigDecimal landArea;
     private BigDecimal landAreaI;
     private BigDecimal landAreaB;
@@ -83,10 +83,10 @@ public class UniversityCadastreDto {
                 .domNum(e.getDomNum())
                 .neighborhood(e.getNeighborhood())
                 .neighborhoodId(e.getNeighborhoodId())
-                .tip(e.getTip())
-                .tipText(e.getTipText())
-                .vid(e.getVid())
-                .vidText(e.getVidText())
+                .typeCode(e.getTypeCode())
+                .typeName(e.getTypeName())
+                .kindCode(e.getKindCode())
+                .kindName(e.getKindName())
                 .landArea(e.getLandArea())
                 .landAreaI(e.getLandAreaI())
                 .landAreaB(e.getLandAreaB())

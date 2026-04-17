@@ -16,7 +16,7 @@
 -- =====================================================
 
 -- Role 1: SUPER_ADMIN — Full system access (old-hemis: Administrators)
-INSERT INTO roles (id, code, name, description, role_type, active, created_by)
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
 VALUES (
     gen_random_uuid(),
     'SUPER_ADMIN',
@@ -36,7 +36,7 @@ ON CONFLICT (code) DO UPDATE SET
 
 -- Role 2: OTM_API — B2B sync for universities (old-hemis: OTM)
 -- Univer loyihasi shu rol orqali REST API ga kiradi
-INSERT INTO roles (id, code, name, description, role_type, active, created_by)
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
 VALUES (
     gen_random_uuid(),
     'OTM_API',
@@ -55,7 +55,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Role 3: MINISTRY_ADMIN — Ministry staff (old-hemis: Ministry + Kadr Vazirlik)
-INSERT INTO roles (id, code, name, description, role_type, active, created_by)
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
 VALUES (
     gen_random_uuid(),
     'MINISTRY_ADMIN',
@@ -74,7 +74,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Role 4: INSPECTOR — Inspection/audit (old-hemis: Inspeksiya)
-INSERT INTO roles (id, code, name, description, role_type, active, created_by)
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
 VALUES (
     gen_random_uuid(),
     'INSPECTOR',
@@ -93,7 +93,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Role 5: VIEWER — Read-only (old-hemis: Ministry_lite + vazirlikrole)
-INSERT INTO roles (id, code, name, description, role_type, active, created_by)
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
 VALUES (
     gen_random_uuid(),
     'VIEWER',
@@ -112,7 +112,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Role 6: REPORT_VIEWER — Reports only (old-hemis: ReportAdmin)
-INSERT INTO roles (id, code, name, description, role_type, active, created_by)
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
 VALUES (
     gen_random_uuid(),
     'REPORT_VIEWER',
@@ -131,7 +131,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Role 7: EXTERNAL_API — External system integration (old-hemis: Student API, Xodim API, Hokimiyat)
-INSERT INTO roles (id, code, name, description, role_type, active, created_by)
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
 VALUES (
     gen_random_uuid(),
     'EXTERNAL_API',
@@ -150,7 +150,7 @@ ON CONFLICT (code) DO UPDATE SET
     updated_by = 'system';
 
 -- Remove old UNIVERSITY_ADMIN if exists (renamed to OTM_API)
-UPDATE roles SET
+UPDATE role SET
     code = 'OTM_API',
     name = 'OTM API',
     description = 'B2B sync for universities — Full CRUD. Old-hemis OTM role equivalent.',
@@ -164,7 +164,7 @@ DO $$
 DECLARE
     role_count INTEGER;
 BEGIN
-    SELECT COUNT(*) INTO role_count FROM roles WHERE active = TRUE AND deleted_at IS NULL;
+    SELECT COUNT(*) INTO role_count FROM role WHERE active = TRUE AND deleted_at IS NULL;
     IF role_count < 7 THEN
         RAISE WARNING 'S001: Expected 7 roles, found %', role_count;
     END IF;

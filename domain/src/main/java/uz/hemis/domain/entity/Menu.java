@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.UUID;
  *
  * <p><strong>Hierarchical Structure:</strong></p>
  * <ul>
- *   <li>Self-referencing: parent_id → menus.id</li>
+ *   <li>Self-referencing: parent_id -> menus.id</li>
  *   <li>Unlimited nesting levels supported</li>
  *   <li>Order within same parent: order_number</li>
  *   <li>Root menus: parent_id IS NULL</li>
@@ -50,15 +51,15 @@ import java.util.UUID;
  *   <li>TTL: 1 hour (configurable)</li>
  * </ul>
  *
- * @see ModernBaseEntity
+ * @see AuditableEntity
  * @since 2.0.0
  */
 @Entity
-@Table(name = "menus")
+@Table(name = "menu")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
-public class Menu extends ModernBaseEntity {
+public class Menu extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -140,7 +141,7 @@ public class Menu extends ModernBaseEntity {
      * <p>Supports unlimited nesting levels</p>
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_menus_parent"))
+    @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_menu_parent"))
     private Menu parent;
 
     /**
@@ -199,30 +200,6 @@ public class Menu extends ModernBaseEntity {
      */
     @Column(name = "is_active", nullable = false)
     private Boolean active = true;
-
-    // =====================================================
-    // Audit Fields (Additional)
-    // =====================================================
-
-    /**
-     * Created by username
-     * Column: created_by VARCHAR(255)
-     *
-     * <p>Username who created this menu item</p>
-     * <p>Set automatically by JPA @PrePersist hook</p>
-     */
-    @Column(name = "created_by", length = 255)
-    private String createdBy;
-
-    /**
-     * Updated by username
-     * Column: updated_by VARCHAR(255)
-     *
-     * <p>Username who last updated this menu item</p>
-     * <p>Set automatically by JPA @PreUpdate hook</p>
-     */
-    @Column(name = "updated_by", length = 255)
-    private String updatedBy;
 
     // =====================================================
     // Helper Methods

@@ -15,11 +15,11 @@ BEGIN
     ) INTO users_exists;
 
     SELECT EXISTS (
-        SELECT 1 FROM information_schema.tables WHERE table_name = 'user_roles'
+        SELECT 1 FROM information_schema.tables WHERE table_name = 'user_role'
     ) INTO user_roles_exists;
 
     IF user_roles_exists THEN
-        DELETE FROM user_roles WHERE assigned_by = 'migration';
+        DELETE FROM user_role WHERE assigned_by = 'migration';
         RAISE NOTICE 'M001 Rollback: Deleted migrated user_roles';
     ELSE
         RAISE NOTICE 'M001 Rollback: user_roles table does not exist, skipping';

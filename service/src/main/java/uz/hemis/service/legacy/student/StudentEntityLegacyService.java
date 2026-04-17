@@ -702,17 +702,22 @@ public class StudentEntityLegacyService {
 
     @Transactional
     public void deleteCitizenship(Citizenship entity) {
-        entity.setDeleteTs(LocalDateTime.now());
+        // Classifier: deactivation (isActive=false) instead of soft-delete
+        entity.setActive(false);
         citizenshipRepository.save(entity);
     }
 
     public boolean hasSoftDeletedCitizenship(String code) {
-        return softDeleteRestoreService.hasSoftDeletedRecord("hemishe_h_citizenship", code);
+        // Classifier: deactivated == "soft-deleted"
+        return citizenshipRepository.findById(code).map(c -> !c.isActive()).orElse(false);
     }
 
     @Transactional
     public void restoreSoftDeletedCitizenship(String code) {
-        softDeleteRestoreService.restoreSoftDeletedRecord("hemishe_h_citizenship", code);
+        citizenshipRepository.findById(code).ifPresent(c -> {
+            c.setActive(true);
+            citizenshipRepository.save(c);
+        });
     }
 
     public Map<String, Object> toCitizenshipMap(Citizenship entity, Boolean returnNulls) {
@@ -723,7 +728,7 @@ public class StudentEntityLegacyService {
         map.put("id", entity.getCode());
         map.put("code", entity.getCode());
         CubaEntityMapHelper.putIfNotNull(map, "name", entity.getName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "active", entity.isActive(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         return map;
     }
@@ -748,7 +753,12 @@ public class StudentEntityLegacyService {
             entity.setNameRu(CubaEntityMapHelper.getStringValue(data.get("nameRu")));
         }
         if (data.containsKey("active")) {
-            entity.setActive(CubaEntityMapHelper.getBooleanValue(data.get("active")));
+            Object v = data.get("active");
+            if (v instanceof Boolean b) {
+                entity.setActive(b);
+            } else if (v != null) {
+                entity.setActive(Boolean.parseBoolean(v.toString()));
+            }
         }
     }
 
@@ -880,7 +890,7 @@ public class StudentEntityLegacyService {
 
     @Transactional
     public void deleteStudentStatusType(StudentStatusType entity) {
-        entity.setDeleteTs(LocalDateTime.now());
+        entity.setActive(false);
         studentStatusTypeRepository.save(entity);
     }
 
@@ -901,7 +911,7 @@ public class StudentEntityLegacyService {
         map.put("id", entity.getCode());
         map.put("code", entity.getCode());
         CubaEntityMapHelper.putIfNotNull(map, "name", entity.getName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "active", entity.isActive(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         return map;
     }

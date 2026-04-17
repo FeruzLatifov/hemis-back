@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.PasswordResetToken;
 import uz.hemis.domain.entity.User;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,7 +18,7 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
 
     Optional<PasswordResetToken> findByTokenAndUsedFalse(String token);
 
-    long countByUserAndCreatedAtAfter(User user, Instant after);
+    long countByUserAndCreatedAtAfter(User user, LocalDateTime after);
 
     /**
      * Invalidate all unused tokens for a user (after successful password reset).

@@ -2,10 +2,12 @@ package uz.hemis.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * Organization — legal entity registry (TIN UNIQUE).
@@ -23,16 +25,13 @@ import java.util.UUID;
  */
 @Entity
 @Table(name = "organization")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Organization implements Serializable {
-
-    @Id
-    @Column(name = "id", nullable = false)
-    private UUID id;
+public class Organization extends AuditableEntity {
 
     @Column(name = "tin", nullable = false, unique = true, length = 20)
     private String tin;
@@ -59,35 +58,9 @@ public class Organization implements Serializable {
     private String source;
 
     @Column(name = "api_raw_response", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
     private String apiRawResponse;
 
     @Column(name = "synced_at")
     private LocalDateTime syncedAt;
-
-    @Version
-    @Column(name = "version")
-    private Integer version;
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", length = 50)
-    private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by", length = 50)
-    private String updatedBy;
-
-    @PrePersist
-    protected void onCreate() {
-        if (id == null) id = UUID.randomUUID();
-        if (createdAt == null) createdAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }
