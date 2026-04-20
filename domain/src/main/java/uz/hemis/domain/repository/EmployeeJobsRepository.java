@@ -16,10 +16,10 @@ import java.util.UUID;
 public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID> {
 
     @EntityGraph(attributePaths = {"employee"})
-    List<EmployeeJobs> findByUniversityCodeAndIsCurrentAndEmployeeType(String universityCode, boolean isCurrent, String employeeType);
+    List<EmployeeJobs> findByUniversityCodeAndIsCurrentAndEmployeeTypeCode(String universityCode, boolean isCurrent, String employeeTypeCode);
 
     @EntityGraph(attributePaths = {"employee"})
-    List<EmployeeJobs> findByUniversityCodeAndEmployeeType(String universityCode, String employeeType);
+    List<EmployeeJobs> findByUniversityCodeAndEmployeeTypeCode(String universityCode, String employeeTypeCode);
 
     List<EmployeeJobs> findByUniversityCodeAndPositionCodeAndIsCurrent(String universityCode, String positionCode, boolean isCurrent);
 

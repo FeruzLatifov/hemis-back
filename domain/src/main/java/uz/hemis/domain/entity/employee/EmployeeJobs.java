@@ -1,7 +1,5 @@
 package uz.hemis.domain.entity.employee;
 
-import uz.hemis.domain.entity.academic.Specialty;
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -46,14 +44,14 @@ public class EmployeeJobs extends AuditableEntity {
     @Column(name = "position_code", length = 10)
     private String positionCode;
 
-    @Column(name = "employee_type", length = 10)
-    private String employeeType;
+    @Column(name = "employee_type_code", length = 10)
+    private String employeeTypeCode;
 
-    @Column(name = "employment_form", length = 10)
-    private String employmentForm;
+    @Column(name = "employment_form_code", length = 10)
+    private String employmentFormCode;
 
-    @Column(name = "employee_rate", length = 10)
-    private String employeeRate;
+    @Column(name = "employee_rate_code", length = 10)
+    private String employeeRateCode;
 
     /** Specialty for this job (assignment-scoped, not person-scoped). */
     @Column(name = "specialty", length = 500)

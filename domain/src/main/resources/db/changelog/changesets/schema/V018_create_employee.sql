@@ -58,9 +58,9 @@ CREATE TABLE employee (
     last_name VARCHAR(255) NOT NULL,
     middle_name VARCHAR(255),
     birth_date DATE,
-    gender VARCHAR(2),
-    citizenship VARCHAR(10),
-    nationality VARCHAR(10),
+    gender_code VARCHAR(2) REFERENCES gender(code),
+    citizenship_code VARCHAR(10) REFERENCES citizenship(code),
+    nationality_code VARCHAR(10) REFERENCES nationality(code),
     passport_series VARCHAR(10),
     passport_number VARCHAR(20),
     passport_date DATE,
@@ -69,9 +69,9 @@ CREATE TABLE employee (
     address TEXT,
     -- Single hierarchical SOATO code: first 4 digits = region, 7 = district, 11 = neighborhood.
     -- Replaces legacy `province` + `district` pair — prefix derivation on the UI side.
-    soato_code VARCHAR(20) REFERENCES hemishe_h_soato(code),
-    academic_degree VARCHAR(10),
-    academic_rank VARCHAR(10),
+    soato_code VARCHAR(20) REFERENCES soato(code),
+    academic_degree_code VARCHAR(10) REFERENCES academic_degree(code),
+    academic_rank_code VARCHAR(10) REFERENCES academic_rank(code),
     tin VARCHAR(20),
 
     -- Audit
@@ -110,9 +110,9 @@ CREATE TABLE employee_job (
     university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code),
     department_code VARCHAR(255),
     position_code VARCHAR(10) REFERENCES position(code) ON DELETE RESTRICT,
-    employee_type VARCHAR(10) REFERENCES position_type(code) ON DELETE RESTRICT,
-    employment_form VARCHAR(10),
-    employee_rate VARCHAR(10),
+    employee_type_code VARCHAR(10) REFERENCES position_type(code) ON DELETE RESTRICT,
+    employment_form_code VARCHAR(10),
+    employee_rate_code VARCHAR(10),
     specialty VARCHAR(500),              -- job-level specialty (moved from `employee`)
 
     is_current BOOLEAN NOT NULL DEFAULT true,
@@ -150,10 +150,24 @@ CREATE INDEX idx_ejob_position ON employee_job(position_code) WHERE deleted_at I
 CREATE INDEX idx_ejob_deleted ON employee_job(deleted_at) WHERE deleted_at IS NULL;
 
 -- =====================================================
--- DEFERRED FK: users.employee_id → employee(id)
+-- DEFERRED FKs: columns declared in earlier migrations,
+--               constraints added here (employee created now)
 -- =====================================================
--- V001 da employee_id ustuni yaratilgan, lekin employee jadvali hali yo'q edi.
--- Endi employee jadvali yaratildi — FK constraintni qo'shamiz.
+
+-- users.employee_id (V001)
 ALTER TABLE users ADD CONSTRAINT fk_users_employee
+    FOREIGN KEY (employee_id) REFERENCES employee(id)
+    ON DELETE SET NULL;
+
+-- university_legal.{director,accountant}_employee_id (V014)
+ALTER TABLE university_legal ADD CONSTRAINT fk_ul_director
+    FOREIGN KEY (director_employee_id) REFERENCES employee(id)
+    ON DELETE SET NULL;
+ALTER TABLE university_legal ADD CONSTRAINT fk_ul_accountant
+    FOREIGN KEY (accountant_employee_id) REFERENCES employee(id)
+    ON DELETE SET NULL;
+
+-- university_founder.employee_id (V015)
+ALTER TABLE university_founder ADD CONSTRAINT fk_uf_employee
     FOREIGN KEY (employee_id) REFERENCES employee(id)
     ON DELETE SET NULL;

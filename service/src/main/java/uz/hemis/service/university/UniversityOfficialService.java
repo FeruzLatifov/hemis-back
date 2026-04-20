@@ -72,8 +72,8 @@ public class UniversityOfficialService {
      */
     public List<OfficialDto> getOfficials(String universityCode, boolean currentOnly) {
         List<EmployeeJobs> jobs = currentOnly
-                ? employeeJobsRepository.findByUniversityCodeAndIsCurrentAndEmployeeType(universityCode, true, "15")
-                : employeeJobsRepository.findByUniversityCodeAndEmployeeType(universityCode, "15");
+                ? employeeJobsRepository.findByUniversityCodeAndIsCurrentAndEmployeeTypeCode(universityCode, true, "15")
+                : employeeJobsRepository.findByUniversityCodeAndEmployeeTypeCode(universityCode, "15");
 
         return jobs.stream().map(meta -> {
             Employee emp = meta.getEmployee();
@@ -141,7 +141,7 @@ public class UniversityOfficialService {
         meta.setEmployee(employee);
         meta.setUniversityCode(universityCode);
         meta.setPositionCode(request.getPositionCode());
-        meta.setEmployeeType("15"); // Rahbariyat — leadership type
+        meta.setEmployeeTypeCode("15"); // Rahbariyat — leadership type
         meta.setIsCurrent(true);
         meta.setStartDate(LocalDate.now());
         // source tracking removed — audit via created_by
@@ -222,9 +222,9 @@ public class UniversityOfficialService {
                     catch (IllegalArgumentException ignored) { /* legacy free-form skip */ }
                 }
                 emp.setAddress(str(row, "address"));
-                emp.setGender(str(row, "_gender"));
-                emp.setCitizenship(str(row, "_citizenship"));
-                emp.setNationality(str(row, "_nationality"));
+                emp.setGenderCode(str(row, "_gender"));
+                emp.setCitizenshipCode(str(row, "_citizenship"));
+                emp.setNationalityCode(str(row, "_nationality"));
                 // serial_number = "AD1234567" → series="AD", number="1234567"
                 String serial = str(row, "serial_number");
                 if (serial != null && serial.length() > 2) {
@@ -233,8 +233,8 @@ public class UniversityOfficialService {
                 }
                 Object bd = row.get("birthday");
                 if (bd instanceof java.sql.Date) emp.setBirthDate(((java.sql.Date) bd).toLocalDate());
-                emp.setAcademicDegree(str(row, "_academic_degree"));
-                emp.setAcademicRank(str(row, "_academic_rank"));
+                emp.setAcademicDegreeCode(str(row, "_academic_degree"));
+                emp.setAcademicRankCode(str(row, "_academic_rank"));
                 // source removed — audit via created_by
                 emp = employeeRepository.save(emp);
                 log.info("Employee created from hemishe_e_teacher: pinfl={}", pinfl);
@@ -322,9 +322,9 @@ public class UniversityOfficialService {
                     emp.setFirstName(firstName);
                     emp.setLastName(lastName);
                     emp.setMiddleName(middleName);
-                    emp.setGender(textOrNull(json, "sex"));
-                    emp.setCitizenship(textOrNull(json, "citizenship"));
-                    emp.setNationality(textOrNull(json, "nationality"));
+                    emp.setGenderCode(textOrNull(json, "sex"));
+                    emp.setCitizenshipCode(textOrNull(json, "citizenship"));
+                    emp.setNationalityCode(textOrNull(json, "nationality"));
                     emp.setPassportSeries(textOrNull(json, "doc_serial"));
                     emp.setPassportNumber(textOrNull(json, "doc_number"));
                     String bd = textOrNull(json, "birth_date");

@@ -3,7 +3,7 @@
 -- Source: /docs/lavozim_klassifikatorlar_2026.xlsx
 -- =====================================================
 -- Note: University activity statuses are NOT inserted here.
--- V012 university_lifecycle uses CHECK constraint for event types.
+-- V016 university_lifecycle uses CHECK constraint for event types.
 -- Old hemishe_h_university_activity_status table is managed by old-hemis only.
 
 -- 1. Position types (14 ta)

@@ -20,12 +20,12 @@ databaseChangeLog:
   # V006: system_message + system_message_translation (2)
   # V007: language (1)
   # V008: menu + user_favorite (2)
-  # V009: position_type + position + employee + employee_job (4)
-  # V010: organization + university_legal + university_profile (3)
-  # V011: university_founder (1)
-  # V012: university_lifecycle (1)
-  # V013: university_cadastre (1)
-  # V014-V018: ~99 classifier tables (gender, soato, course, country, ...)
+  # V009-V013: ~99 classifier tables (gender, soato, course, country, ...)
+  # V014: organization + university_legal + university_profile (3)
+  # V015: university_founder (1)
+  # V016: university_lifecycle (1)
+  # V017: university_cadastre (1)
+  # V018: position_type + position + employee + employee_job (4) — depends on classifiers + university
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
@@ -128,72 +128,7 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V008_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V009_create_employee
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "HR: position_type + position + employee + employee_job"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: employee } }
-      changes:
-        - sqlFile: { path: changesets/schema/V009_create_employee.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V009_create_employee_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V010_create_university_legal
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Legal entity info from API (1:1)"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: university_legal } }
-      changes:
-        - sqlFile: { path: changesets/schema/V010_create_university_legal.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V010_create_university_legal_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V011_create_university_founder
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Founders/shareholders (1:N)"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: university_founder } }
-      changes:
-        - sqlFile: { path: changesets/schema/V011_create_university_founder.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V011_create_university_founder_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V012_create_university_lifecycle
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Lifecycle events — immutable log"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: university_lifecycle } }
-      changes:
-        - sqlFile: { path: changesets/schema/V012_create_university_lifecycle.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V012_create_university_lifecycle_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V013_create_university_cadastre
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Real estate objects from cadastre API"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: university_cadastre } }
-      changes:
-        - sqlFile: { path: changesets/schema/V013_create_university_cadastre.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V013_create_university_cadastre_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V014_create_classifiers
+      id: V009_create_classifiers
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "14 clean classifier tables (gender, soato, ownership, ...) with data from hemishe_h_*"
@@ -201,12 +136,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: gender } }
       changes:
-        - sqlFile: { path: changesets/schema/V014_create_classifiers.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V009_create_classifiers.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V014_create_classifiers_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V009_create_classifiers_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V015_create_classifiers_2
+      id: V010_create_classifiers_2
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "16 classifier tables with Entity+Repository (admission_type, course, education_*, student_status_type, ...)"
@@ -214,12 +149,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: admission_type } }
       changes:
-        - sqlFile: { path: changesets/schema/V015_create_classifiers_2.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V010_create_classifiers_2.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V015_create_classifiers_2_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V010_create_classifiers_2_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V016_create_classifiers_3
+      id: V011_create_classifiers_3
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "29 classifier tables — Student & Academic (certificate_language, score_type, student_achievement_type, absence_reason)"
@@ -227,12 +162,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: academic_mobile_type } }
       changes:
-        - sqlFile: { path: changesets/schema/V016_create_classifiers_3.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V011_create_classifiers_3.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V016_create_classifiers_3_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V011_create_classifiers_3_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V017_create_classifiers_4
+      id: V012_create_classifiers_4
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "20 classifier tables — Finance & Admin (grant_type, stipend_rate have extra cols)"
@@ -240,12 +175,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: contract_class } }
       changes:
-        - sqlFile: { path: changesets/schema/V017_create_classifiers_4.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V012_create_classifiers_4.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V017_create_classifiers_4_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V012_create_classifiers_4_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V018_create_classifiers_5
+      id: V013_create_classifiers_5
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "21 classifier tables — Infrastructure & Research (language_certificate has extra col)"
@@ -253,9 +188,74 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: attandance_setting } }
       changes:
-        - sqlFile: { path: changesets/schema/V018_create_classifiers_5.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V013_create_classifiers_5.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V018_create_classifiers_5_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V013_create_classifiers_5_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V014_create_university_legal
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Legal entity info from API (1:1)"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: university_legal } }
+      changes:
+        - sqlFile: { path: changesets/schema/V014_create_university_legal.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V014_create_university_legal_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V015_create_university_founder
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Founders/shareholders (1:N)"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: university_founder } }
+      changes:
+        - sqlFile: { path: changesets/schema/V015_create_university_founder.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V015_create_university_founder_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V016_create_university_lifecycle
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Lifecycle events — immutable log"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: university_lifecycle } }
+      changes:
+        - sqlFile: { path: changesets/schema/V016_create_university_lifecycle.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V016_create_university_lifecycle_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V017_create_university_cadastre
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Real estate objects from cadastre API"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: university_cadastre } }
+      changes:
+        - sqlFile: { path: changesets/schema/V017_create_university_cadastre.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V017_create_university_cadastre_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V018_create_employee
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "HR: position_type + position + employee + employee_job (FKs to clean classifiers + deferred FKs to users/university)"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: employee } }
+      changes:
+        - sqlFile: { path: changesets/schema/V018_create_employee.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V018_create_employee_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: tag-schema-complete

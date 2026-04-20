@@ -330,15 +330,3 @@ SELECT code, name, name_ru, name_en, _soato, COALESCE(active, true), COALESCE(ve
 FROM hemishe_h_terrain WHERE delete_ts IS NULL;
 
 CREATE INDEX idx_terrain_soato ON terrain(soato_code) WHERE soato_code IS NOT NULL;
-
--- =====================================================
--- Update FKs pointing at legacy hemishe_h_soato → new soato
--- (deferred to V014 because soato is created here)
--- =====================================================
-ALTER TABLE employee DROP CONSTRAINT IF EXISTS employee_soato_code_fkey;
-ALTER TABLE employee ADD CONSTRAINT employee_soato_code_fkey
-    FOREIGN KEY (soato_code) REFERENCES soato(code);
-
-ALTER TABLE university_legal DROP CONSTRAINT IF EXISTS fk_ulegal_billing_soato;
-ALTER TABLE university_legal ADD CONSTRAINT fk_ulegal_billing_soato
-    FOREIGN KEY (billing_soato) REFERENCES soato(code);

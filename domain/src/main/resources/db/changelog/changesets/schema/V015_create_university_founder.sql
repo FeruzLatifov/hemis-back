@@ -19,7 +19,8 @@ CREATE TABLE university_founder (
     -- employee_id = asosiy bog'lanish (sync da PINFL bo'yicha topiladi yoki yaratiladi)
     -- pinfl = fallback (employee da topilmasa, API snapshot sifatida)
     -- name/tin alohida SAQLANMAYDI — employee jadvalidan JOIN orqali olinadi
-    employee_id UUID REFERENCES employee(id),
+    -- FK added as deferred constraint in V018 (employee created later)
+    employee_id UUID,
 
     -- Legal founder (yuridik shaxs → organization FK)
     organization_id UUID REFERENCES organization(id),

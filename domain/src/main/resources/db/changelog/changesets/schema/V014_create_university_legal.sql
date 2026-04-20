@@ -93,7 +93,7 @@ CREATE TABLE university_legal (
 
     -- Billing address (flat columns for efficient queries)
     billing_country_code INTEGER,
-    billing_soato VARCHAR(20),
+    billing_soato VARCHAR(20) REFERENCES soato(code),
     billing_street TEXT,
     billing_postcode VARCHAR(20),
     billing_cadastre VARCHAR(50),
@@ -105,8 +105,9 @@ CREATE TABLE university_legal (
     -- employee_id = asosiy bog'lanish (PINFL orqali sync da topiladi)
     -- pinfl = fallback (employee da topilmasa, API snapshot sifatida)
     -- name/phone/email alohida SAQLANMAYDI — employee jadvalidan JOIN orqali olinadi
-    director_employee_id UUID REFERENCES employee(id),
-    accountant_employee_id UUID REFERENCES employee(id),
+    -- FKs added as deferred constraints in V018 (employee created later)
+    director_employee_id UUID,
+    accountant_employee_id UUID,
 
     -- Bank accounts
     bank_accounts JSONB,

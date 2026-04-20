@@ -443,8 +443,8 @@ public class EmployeeJobsEntityController {
                 entity.getId(),
                 entity.getEmployee() != null ? entity.getEmployee().getId() : null,
                 entity.getUniversityCode(), entity.getDepartmentCode(),
-                entity.getEmployeeType(), entity.getPositionCode(), entity.getEmployeeRate(),
-                entity.getEmploymentForm(), null, // employee_status removed — derived from is_current+end_date
+                entity.getEmployeeTypeCode(), entity.getPositionCode(), entity.getEmployeeRateCode(),
+                entity.getEmploymentFormCode(), null, // employee_status removed — derived from is_current+end_date
                 entity.getVersion(), null,
                 entity.getContractDate(), entity.getContractNumber(),
                 entity.getStartDate(), entity.getEndDate(),
@@ -570,7 +570,7 @@ public class EmployeeJobsEntityController {
         }
         if (map.containsKey("employeeType")) {
             String value = parseCode(map.get("employeeType"));
-            if (value != null) entity.setEmployeeType(value);
+            if (value != null) entity.setEmployeeTypeCode(value);
         }
         if (map.containsKey("employeePosition")) {
             String value = parseCode(map.get("employeePosition"));
@@ -582,15 +582,15 @@ public class EmployeeJobsEntityController {
         }
         if (map.containsKey("employeeRate")) {
             String value = parseCode(map.get("employeeRate"));
-            if (value != null) entity.setEmployeeRate(value);
+            if (value != null) entity.setEmployeeRateCode(value);
         }
         if (map.containsKey("employeeForm")) {
             String value = parseCode(map.get("employeeForm"));
-            if (value != null) entity.setEmploymentForm(value);
+            if (value != null) entity.setEmploymentFormCode(value);
         }
         if (map.containsKey("employmentForm")) {
             String value = parseCode(map.get("employmentForm"));
-            if (value != null) entity.setEmploymentForm(value);
+            if (value != null) entity.setEmploymentFormCode(value);
         }
         // employee_status / employmentStaff columns were removed from the schema —
         // legacy API still accepts these fields but they're ignored (active flag is

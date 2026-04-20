@@ -3,13 +3,12 @@ package uz.hemis.service.teacher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.service.base.CubaResponseHelper;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
 import uz.hemis.domain.entity.employee.Teacher;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
+import uz.hemis.service.base.CubaResponseHelper;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -199,10 +198,10 @@ public class TeacherCubaService {
         entity.setEmployee(employee);
         entity.setUniversityCode(extractCode(job.get("university")));
         entity.setDepartmentCode(extractCode(job.get("department")));
-        entity.setEmployeeType(extractCode(job.get("employeeType")));
+        entity.setEmployeeTypeCode(extractCode(job.get("employeeType")));
         entity.setPositionCode(extractCode(job.get("employeePosition")));
-        entity.setEmployeeRate(extractCode(job.get("employeeRate")));
-        entity.setEmploymentForm(extractCode(job.get("employeeForm")));
+        entity.setEmployeeRateCode(extractCode(job.get("employeeRate")));
+        entity.setEmploymentFormCode(extractCode(job.get("employeeForm")));
         // employee_status is derived from is_current + end_date — not a separate column anymore.
         entity.setIsCurrent(job.get("jobEndDate") == null);
         entity.setStartDate(parseDate(job.get("jobStartDate")));

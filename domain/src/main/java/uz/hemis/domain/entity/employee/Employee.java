@@ -39,14 +39,14 @@ public class Employee extends AuditableEntity {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    @Column(name = "gender", length = 2)
-    private String gender;
+    @Column(name = "gender_code", length = 2)
+    private String genderCode;
 
-    @Column(name = "citizenship", length = 10)
-    private String citizenship;
+    @Column(name = "citizenship_code", length = 10)
+    private String citizenshipCode;
 
-    @Column(name = "nationality", length = 10)
-    private String nationality;
+    @Column(name = "nationality_code", length = 10)
+    private String nationalityCode;
 
     @Column(name = "passport_series", length = 10)
     private String passportSeries;
@@ -71,11 +71,11 @@ public class Employee extends AuditableEntity {
     @Column(name = "soato_code", length = 20)
     private String soatoCode;
 
-    @Column(name = "academic_degree", length = 10)
-    private String academicDegree;
+    @Column(name = "academic_degree_code", length = 10)
+    private String academicDegreeCode;
 
-    @Column(name = "academic_rank", length = 10)
-    private String academicRank;
+    @Column(name = "academic_rank_code", length = 10)
+    private String academicRankCode;
 
     @Column(name = "tin", length = 20)
     @Convert(converter = TinConverter.class)

@@ -1,7 +1,5 @@
 package uz.hemis.domain.entity.university;
 
-import uz.hemis.domain.entity.academic.Department;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,6 +11,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.domain.Persistable;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -37,6 +36,7 @@ import java.util.Objects;
 @Setter
 public class UniversityDepartment implements Serializable, Persistable<String> {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Transient

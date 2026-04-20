@@ -1,11 +1,5 @@
 package uz.hemis.domain.entity.university;
 
-import uz.hemis.domain.entity.base.BaseEntity;
-import uz.hemis.domain.entity.employee.Teacher;
-import uz.hemis.domain.entity.reference.Ownership;
-import uz.hemis.domain.entity.reference.Terrain;
-import uz.hemis.domain.entity.student.Student;
-
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +10,7 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -48,6 +43,7 @@ import java.time.LocalDateTime;
 @Setter
 public class University implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     // =====================================================
@@ -62,7 +58,7 @@ public class University implements Serializable {
      * <p>All references to university use this code.</p>
      */
     @Id
-    @Column(name = "code", nullable = false, length = 255)
+    @Column(name = "code", nullable = false)
     private String code;
 
     // =====================================================
@@ -131,7 +127,7 @@ public class University implements Serializable {
      * TIN - Tax Identification Number
      * Column: tin VARCHAR(255)
      */
-    @Column(name = "tin", length = 255)
+    @Column(name = "tin")
     private String tin;
 
     /**
