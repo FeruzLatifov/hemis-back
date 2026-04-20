@@ -2,7 +2,7 @@ package uz.hemis.service.university.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import uz.hemis.domain.entity.Employee;
+import uz.hemis.domain.entity.employee.Employee;
 
 @Data
 @Builder
@@ -21,13 +21,13 @@ public class PersonRefDto {
     public static PersonRefDto from(Employee emp) {
         if (emp == null) return null;
         return PersonRefDto.builder()
-                .pinfl(emp.getPinfl())
+                .pinfl(emp.getPinfl() != null ? emp.getPinfl().value() : null)
                 .firstName(emp.getFirstName())
                 .lastName(emp.getLastName())
                 .middleName(emp.getMiddleName())
-                .phone(emp.getPhone())
+                .phone(emp.getPhone() != null ? emp.getPhone().value() : null)
                 .email(emp.getEmail())
-                .tin(emp.getTin())
+                .tin(emp.getTin() != null ? emp.getTin().value() : null)
                 .passportSeries(emp.getPassportSeries())
                 .passportNumber(emp.getPassportNumber())
                 .address(emp.getAddress())

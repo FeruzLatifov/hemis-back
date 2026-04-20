@@ -38,16 +38,18 @@ public class LegalEntityOldServiceController {
     @Value("${hemis.integration.gnk.oauth2.url:https://iskm.egov.uz:9444/oauth2/token}")
     private String gnkTokenUrl;
 
-    @Value("${hemis.integration.gnk.oauth2.client-id:5kl5wLLzyoS4pDT7EeibMLcZojga}")
+    // ⚠️ SECURITY: Defaultlar olib tashlandi — .env dan ${GNK_OAUTH_*} o'qish majburiy.
+    // Default bo'lsa kredensiallar kodda leak qilinadi (git history'da qoladi).
+    @Value("${hemis.integration.gnk.oauth2.client-id:${GNK_OAUTH_CLIENT_ID:}}")
     private String gnkClientId;
 
-    @Value("${hemis.integration.gnk.oauth2.client-secret:PUNfVZ4mrTFKtkZTdRxxNuHAHMEa}")
+    @Value("${hemis.integration.gnk.oauth2.client-secret:${GNK_OAUTH_CLIENT_SECRET:}}")
     private String gnkClientSecret;
 
-    @Value("${hemis.integration.gnk.oauth2.username:minvuz_user1}")
+    @Value("${hemis.integration.gnk.oauth2.username:${GNK_OAUTH_USERNAME:}}")
     private String gnkUsername;
 
-    @Value("${hemis.integration.gnk.oauth2.password:m1nvuz!@#}")
+    @Value("${hemis.integration.gnk.oauth2.password:${GNK_OAUTH_PASSWORD:}}")
     private String gnkPassword;
 
     /**
@@ -136,8 +138,12 @@ public class LegalEntityOldServiceController {
             }
             connection.connect();
 
-            String jsonText = new String(connection.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            connection.disconnect();
+            String jsonText;
+            try (java.io.InputStream is = connection.getInputStream()) {
+                jsonText = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            } finally {
+                connection.disconnect();
+            }
 
             if (jsonText.isEmpty()) return null;
 

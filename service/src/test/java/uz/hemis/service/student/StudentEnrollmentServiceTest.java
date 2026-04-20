@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import uz.hemis.common.dto.student.StudentIdRequest;
-import uz.hemis.domain.entity.Student;
+import uz.hemis.domain.entity.student.Student;
 import uz.hemis.domain.repository.StudentRepository;
 import uz.hemis.service.student.mapper.StudentLegacyMapper;
 

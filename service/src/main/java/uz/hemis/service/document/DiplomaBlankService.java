@@ -16,7 +16,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.document.DiplomaBlankDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.DiplomaBlank;
+import uz.hemis.domain.entity.finance.DiplomaBlank;
 import uz.hemis.service.document.mapper.DiplomaBlankMapper;
 import uz.hemis.domain.repository.DiplomaBlankRepository;
 

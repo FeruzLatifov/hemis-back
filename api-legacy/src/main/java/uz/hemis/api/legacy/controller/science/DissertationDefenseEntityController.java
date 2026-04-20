@@ -19,8 +19,8 @@ import uz.hemis.api.legacy.adapter.JsonNull;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
 import uz.hemis.service.legacy.science.ScienceDoctorateEntityLegacyService;
-import uz.hemis.domain.entity.DissertationDefense;
-import uz.hemis.domain.entity.DoctoralStudent;
+import uz.hemis.domain.entity.research.DissertationDefense;
+import uz.hemis.domain.entity.student.DoctoralStudent;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

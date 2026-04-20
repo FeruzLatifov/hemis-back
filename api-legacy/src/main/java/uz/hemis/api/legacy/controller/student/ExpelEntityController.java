@@ -12,7 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaSearchBodyParser;
-import uz.hemis.domain.entity.Expel;
+import uz.hemis.domain.entity.student.Expel;
 import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.time.LocalDateTime;

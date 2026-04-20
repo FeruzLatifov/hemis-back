@@ -2,7 +2,7 @@ package uz.hemis.service.teacher.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.teacher.TeacherDto;
-import uz.hemis.domain.entity.Teacher;
+import uz.hemis.domain.entity.employee.Teacher;
 
 import java.util.List;
 

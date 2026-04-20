@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.AcademicScore;
+import uz.hemis.domain.entity.academic.AcademicScore;
 
 import java.time.LocalDateTime;
 import java.util.List;

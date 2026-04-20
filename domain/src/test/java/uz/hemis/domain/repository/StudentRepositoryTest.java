@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
-import uz.hemis.domain.entity.Student;
+import uz.hemis.domain.entity.student.Student;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

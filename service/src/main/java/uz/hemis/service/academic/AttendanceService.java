@@ -10,7 +10,7 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.AttendanceDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Attendance;
+import uz.hemis.domain.entity.student.Attendance;
 import uz.hemis.service.academic.mapper.AttendanceMapper;
 import uz.hemis.domain.repository.AttendanceRepository;
 

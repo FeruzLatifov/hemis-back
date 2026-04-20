@@ -7,7 +7,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 
 import java.time.LocalDate;
@@ -215,7 +226,7 @@ class ScienceEntityLegacyServiceTest {
         @Test
         @DisplayName("findMethodicalPublicationTypeByCode delegates to repository")
         void findByCode_delegatesToRepository() {
-            when(methodicalPublicationTypeRepository.findByCodeAndDeleteTsIsNull("11"))
+            when(methodicalPublicationTypeRepository.findByCodeAndIsActiveTrue("11"))
                 .thenReturn(Optional.of(new MethodicalPublicationType()));
 
             Optional<MethodicalPublicationType> result = service.findMethodicalPublicationTypeByCode("11");

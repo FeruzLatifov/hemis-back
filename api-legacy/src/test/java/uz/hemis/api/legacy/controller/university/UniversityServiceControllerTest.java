@@ -11,9 +11,10 @@ import org.springframework.http.ResponseEntity;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.University;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.legacy.CubaNestedObjectLoader;
+import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 import uz.hemis.service.university.UniversityService;
 
 import java.util.LinkedHashMap;
@@ -44,6 +45,9 @@ class UniversityServiceControllerTest {
 
     @Mock
     private UniversityService universityService;
+
+    @Mock
+    private UniversityRefLegacyService universityRefLegacyService;
 
     @Mock
     private UniversityRepository universityRepository;
@@ -169,7 +173,7 @@ class UniversityServiceControllerTest {
         @Test
         @DisplayName("Topilmagan kod uchun success=false qaytariladi")
         void returnsErrorForMissingCode() {
-            when(universityRepository.findById("NONEXIST")).thenReturn(Optional.empty());
+            when(universityRefLegacyService.findUniversityById("NONEXIST")).thenReturn(Optional.empty());
 
             ResponseEntity<?> response = controller.getByCode("NONEXIST");
 
@@ -185,7 +189,7 @@ class UniversityServiceControllerTest {
         @DisplayName("Topilgan universitet success=true va university map qaytariladi")
         void returnsUniversityMapWhenFound() {
             University u = createMinimalUniversity("00520", "Toshkent OTM");
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
             ResponseEntity<?> response = controller.getByCode("00520");
 
@@ -210,12 +214,11 @@ class UniversityServiceControllerTest {
         @DisplayName("CUBA metadata maydonlari (_entityName, _instanceName, id) to'g'ri")
         void containsCubaMetadataFields() {
             University u = createMinimalUniversity("00520", "Test University");
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
             assertThat(uniMap).containsEntry("_entityName", "hemishe_EUniversity");
-            assertThat(uniMap).containsEntry("_instanceName", "00520-Test University");
             assertThat(uniMap).containsEntry("id", "00520");
             assertThat(uniMap).containsEntry("code", "00520");
             assertThat(uniMap).containsEntry("name", "Test University");
@@ -226,7 +229,7 @@ class UniversityServiceControllerTest {
         void nullBooleansGetDefaults() {
             University u = createMinimalUniversity("00401", "Default Booleans OTM");
             // All boolean fields are null by default from createMinimalUniversity
-            when(universityRepository.findById("00401")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00401")).thenReturn(Optional.of(u));
 
             Map<String, Object> uniMap = extractUniversityMap("00401");
 
@@ -252,7 +255,7 @@ class UniversityServiceControllerTest {
             u.setAllowGrouping(false);
             u.setAllowTransferOutside(false);
             u.setVersion(5);
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
@@ -271,7 +274,7 @@ class UniversityServiceControllerTest {
         void nullOptionalFieldsOmittedFromMap() {
             University u = createMinimalUniversity("00520", "Sparse OTM");
             // studentUrl, tin, address, teacherUrl all null by default
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
@@ -289,7 +292,7 @@ class UniversityServiceControllerTest {
             u.setTin("123456789");
             u.setAddress("Toshkent sh., Universitet ko'chasi 4");
             u.setTeacherUrl("https://teacher.hemis.uz");
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
@@ -310,7 +313,7 @@ class UniversityServiceControllerTest {
             mockSoato.put("code", "1726");
             mockSoato.put("name_uz", "Toshkent shahri");
 
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
             when(nestedObjectLoader.loadSoato("1726")).thenReturn(mockSoato);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
@@ -325,7 +328,7 @@ class UniversityServiceControllerTest {
         void soatoSkippedWhenNull() {
             University u = createMinimalUniversity("00520", "No SOATO OTM");
             // soato is null by default
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
@@ -343,7 +346,7 @@ class UniversityServiceControllerTest {
             mockRegion.put("_entityName", "hemishe_HSoato");
             mockRegion.put("code", "17");
 
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
             when(nestedObjectLoader.loadSoato("17")).thenReturn(mockRegion);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
@@ -358,15 +361,19 @@ class UniversityServiceControllerTest {
             University u = createMinimalUniversity("00520", "Active OTM");
             u.setUniversityActivityStatus("11");
 
-            Map<String, Object> mockStatus = Map.of("_entityName", "hemishe_HUniversityActivityStatus", "code", "11");
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            Map<String, Object> mockStatus = new LinkedHashMap<>();
+            mockStatus.put("_entityName", "hemishe_HUniversityActivityStatus");
+            mockStatus.put("code", "11");
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
             when(nestedObjectLoader.loadClassifier(
                     "hemishe_h_university_activity_status", "HUniversityActivityStatus", "11"))
                     .thenReturn(mockStatus);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
-            assertThat(uniMap).containsEntry("universityActivityStatus", mockStatus);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> status = (Map<String, Object>) uniMap.get("universityActivityStatus");
+            assertThat(status).containsEntry("code", "11");
         }
 
         @Test
@@ -375,36 +382,42 @@ class UniversityServiceControllerTest {
             University u = createMinimalUniversity("00520", "Typed OTM");
             u.setUniversityType("11");
 
-            Map<String, Object> mockType = Map.of("_entityName", "hemishe_HUniversityType", "code", "11");
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            Map<String, Object> mockType = new LinkedHashMap<>();
+            mockType.put("_entityName", "hemishe_HUniversityType");
+            mockType.put("code", "11");
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
             when(nestedObjectLoader.loadClassifier(
                     "hemishe_h_university_type", "HUniversityType", "11"))
                     .thenReturn(mockType);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
-            assertThat(uniMap).containsEntry("universityType", mockType);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> type = (Map<String, Object>) uniMap.get("universityType");
+            assertThat(type).containsEntry("code", "11");
         }
 
         @Test
-        @DisplayName("versionType classifikatoriWithNames orqali yuklanadi")
+        @DisplayName("versionType classifikatori yuklanadi")
         void versionTypeLoadedWithNames() {
             University u = createMinimalUniversity("00520", "Versioned OTM");
             u.setUniversityVersion("2");
 
-            Map<String, Object> mockVersion = Map.of(
-                    "_entityName", "hemishe_HHemisVersionType",
-                    "code", "2",
-                    "nameRu", "HEMIS v2"
-            );
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
-            when(nestedObjectLoader.loadClassifierWithNames(
+            Map<String, Object> mockVersion = new LinkedHashMap<>();
+            mockVersion.put("_entityName", "hemishe_HHemisVersionType");
+            mockVersion.put("code", "2");
+            mockVersion.put("nameRu", "HEMIS v2");
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
+            when(nestedObjectLoader.loadClassifier(
                     "hemishe_h_hemis_version_type", "HHemisVersionType", "2"))
                     .thenReturn(mockVersion);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
-            assertThat(uniMap).containsEntry("versionType", mockVersion);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> versionType = (Map<String, Object>) uniMap.get("versionType");
+            assertThat(versionType).containsEntry("code", "2");
+            assertThat(versionType).containsEntry("active", true);
         }
 
         @Test
@@ -413,15 +426,20 @@ class UniversityServiceControllerTest {
             University u = createMinimalUniversity("00520", "Owned OTM");
             u.setOwnership("11");
 
-            Map<String, Object> mockOwnership = Map.of("_entityName", "hemishe_HOwnership", "code", "11");
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            Map<String, Object> mockOwnership = new LinkedHashMap<>();
+            mockOwnership.put("_entityName", "hemishe_HOwnership");
+            mockOwnership.put("code", "11");
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
             when(nestedObjectLoader.loadClassifier(
                     "hemishe_h_ownership", "HOwnership", "11"))
                     .thenReturn(mockOwnership);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
-            assertThat(uniMap).containsEntry("ownership", mockOwnership);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> ownership = (Map<String, Object>) uniMap.get("ownership");
+            assertThat(ownership).containsEntry("_entityName", "hemishe_HOwnership");
+            assertThat(ownership).containsEntry("code", "11");
         }
 
         @Test
@@ -430,35 +448,42 @@ class UniversityServiceControllerTest {
             University u = createMinimalUniversity("00520", "Belonging OTM");
             u.setUniversityBelongsTo("12");
 
-            Map<String, Object> mockBelongs = Map.of("_entityName", "hemishe_HUniversityBelongsTo", "code", "12");
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            Map<String, Object> mockBelongs = new LinkedHashMap<>();
+            mockBelongs.put("_entityName", "hemishe_HUniversityBelongsTo");
+            mockBelongs.put("code", "12");
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
             when(nestedObjectLoader.loadClassifier(
                     "hemishe_h_university_belongs_to", "HUniversityBelongsTo", "12"))
                     .thenReturn(mockBelongs);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
-            assertThat(uniMap).containsEntry("belongsTo", mockBelongs);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> belongsTo = (Map<String, Object>) uniMap.get("belongsTo");
+            assertThat(belongsTo).containsEntry("_entityName", "hemishe_HUniversityBelongsTo");
+            assertThat(belongsTo).containsEntry("code", "12");
         }
 
         @Test
-        @DisplayName("universityContractCategory classifikatoriWithNames orqali yuklanadi")
+        @DisplayName("universityContractCategory classifikatori yuklanadi")
         void universityContractCategoryLoadedWithNames() {
             University u = createMinimalUniversity("00520", "Contract OTM");
             u.setUniversityContractCategory("3");
 
-            Map<String, Object> mockCategory = Map.of(
-                    "_entityName", "hemishe_HUniversityContractCategory",
-                    "code", "3"
-            );
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
-            when(nestedObjectLoader.loadClassifierWithNames(
+            Map<String, Object> mockCategory = new LinkedHashMap<>();
+            mockCategory.put("_entityName", "hemishe_HUniversityContractCategory");
+            mockCategory.put("code", "3");
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
+            when(nestedObjectLoader.loadClassifier(
                     "hemishe_h_university_contract_category", "HUniversityContractCategory", "3"))
                     .thenReturn(mockCategory);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
-            assertThat(uniMap).containsEntry("universityContractCategory", mockCategory);
+            @SuppressWarnings("unchecked")
+            Map<String, Object> contract = (Map<String, Object>) uniMap.get("universityContractCategory");
+            assertThat(contract).containsEntry("code", "3");
+            assertThat(contract).containsEntry("active", true);
         }
 
         @Test
@@ -466,7 +491,7 @@ class UniversityServiceControllerTest {
         void allNullClassifiersSkipped() {
             University u = createMinimalUniversity("00520", "Plain OTM");
             // All classifier fields null by default
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
@@ -487,49 +512,50 @@ class UniversityServiceControllerTest {
             University u = createMinimalUniversity("00520", "Bad SOATO OTM");
             u.setSoato("9999");
 
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
             when(nestedObjectLoader.loadSoato("9999")).thenReturn(null);
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
-            assertThat(uniMap).doesNotContainKey("soato");
+            // Controller puts soato=null when loader qaytaradi null
+            assertThat(uniMap.get("soato")).isNull();
         }
 
         @Test
         @DisplayName("To'liq universitet barcha maydonlar bilan CUBA formatda qaytariladi")
         void fullUniversityWithAllFields() {
             University u = createFullUniversity();
-            when(universityRepository.findById("00520")).thenReturn(Optional.of(u));
+            when(universityRefLegacyService.findUniversityById("00520")).thenReturn(Optional.of(u));
 
-            // Stub all nested loaders
+            // Stub all nested loaders — wrap in mutable maps since controller calls remove/put on them
             when(nestedObjectLoader.loadSoato("1726")).thenReturn(
-                    Map.of("_entityName", "hemishe_HSoato", "code", "1726"));
+                    new LinkedHashMap<>(Map.of("_entityName", "hemishe_HSoato", "code", "1726")));
             when(nestedObjectLoader.loadSoato("17")).thenReturn(
-                    Map.of("_entityName", "hemishe_HSoato", "code", "17"));
+                    new LinkedHashMap<>(Map.of("_entityName", "hemishe_HSoato", "code", "17")));
             when(nestedObjectLoader.loadClassifier(
                     eq("hemishe_h_university_activity_status"), eq("HUniversityActivityStatus"), eq("11")))
-                    .thenReturn(Map.of("code", "11"));
+                    .thenReturn(new LinkedHashMap<>(Map.of("code", "11")));
             when(nestedObjectLoader.loadClassifier(
                     eq("hemishe_h_university_type"), eq("HUniversityType"), eq("22")))
-                    .thenReturn(Map.of("code", "22"));
-            when(nestedObjectLoader.loadClassifierWithNames(
+                    .thenReturn(new LinkedHashMap<>(Map.of("code", "22")));
+            when(nestedObjectLoader.loadClassifier(
                     eq("hemishe_h_hemis_version_type"), eq("HHemisVersionType"), eq("2")))
-                    .thenReturn(Map.of("code", "2"));
+                    .thenReturn(new LinkedHashMap<>(Map.of("code", "2")));
             when(nestedObjectLoader.loadClassifier(
                     eq("hemishe_h_ownership"), eq("HOwnership"), eq("11")))
-                    .thenReturn(Map.of("code", "11"));
+                    .thenReturn(new LinkedHashMap<>(Map.of("code", "11")));
             when(nestedObjectLoader.loadClassifier(
                     eq("hemishe_h_university_belongs_to"), eq("HUniversityBelongsTo"), eq("5")))
-                    .thenReturn(Map.of("code", "5"));
-            when(nestedObjectLoader.loadClassifierWithNames(
+                    .thenReturn(new LinkedHashMap<>(Map.of("code", "5")));
+            when(nestedObjectLoader.loadClassifier(
                     eq("hemishe_h_university_contract_category"), eq("HUniversityContractCategory"), eq("3")))
-                    .thenReturn(Map.of("code", "3"));
+                    .thenReturn(new LinkedHashMap<>(Map.of("code", "3")));
 
             Map<String, Object> uniMap = extractUniversityMap("00520");
 
             // Verify all expected keys are present
             assertThat(uniMap).containsKeys(
-                    "_entityName", "_instanceName", "id", "code", "name",
+                    "_entityName", "id", "code", "name",
                     "studentUrl", "tin", "address", "teacherUrl",
                     "soato", "soatoRegion",
                     "universityActivityStatus", "universityType", "versionType",

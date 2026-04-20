@@ -7,7 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.StudentGpa;
+import uz.hemis.domain.entity.student.StudentGpa;
 import uz.hemis.domain.repository.StudentGpaRepository;
 
 import java.util.*;

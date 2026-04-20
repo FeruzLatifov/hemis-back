@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 import uz.hemis.common.dto.system.LanguageDto;
-import uz.hemis.domain.entity.Language;
+import uz.hemis.domain.entity.reference.Language;
 
 import java.util.List;
 

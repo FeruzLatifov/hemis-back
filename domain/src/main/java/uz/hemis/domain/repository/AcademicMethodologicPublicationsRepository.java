@@ -2,7 +2,8 @@ package uz.hemis.domain.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.AcademicMethodologicPublications;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.academic.AcademicMethodologicPublications;
 
 import java.util.UUID;
 
@@ -12,5 +13,6 @@ import java.util.UUID;
  * Uslubiy nashrlar
  */
 @Repository
+@Transactional(readOnly = true)
 public interface AcademicMethodologicPublicationsRepository extends JpaRepository<AcademicMethodologicPublications, UUID> {
 }

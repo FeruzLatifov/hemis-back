@@ -6,9 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.DiplomaBlank;
+import uz.hemis.domain.entity.finance.DiplomaBlank;
 import uz.hemis.domain.repository.DiplomaBlankRepository;
 import uz.hemis.service.legacy.CubaEntityMapHelper;
+import uz.hemis.service.legacy.CubaNestedObjectLoader;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -18,7 +19,7 @@ import java.util.*;
  *
  * <p>CUBA Platform REST API compatible service for document entities:</p>
  * <ul>
- *   <li>DiplomaBlank (hemishe_EDiplomaBlank)</li>
+ *   <li>DiplomaBlank (hemishe_EDiplomBlank)</li>
  * </ul>
  *
  * @since 1.0.0
@@ -30,8 +31,9 @@ import java.util.*;
 public class DocumentLegacyService {
 
     private final DiplomaBlankRepository diplomaBlankRepository;
+    private final CubaNestedObjectLoader nestedObjectLoader;
 
-    private static final String DIPLOMA_BLANK_ENTITY_NAME = "hemishe_EDiplomaBlank";
+    private static final String DIPLOMA_BLANK_ENTITY_NAME = "hemishe_EDiplomBlank";
 
     // ==================== DiplomaBlank ====================
 
@@ -64,6 +66,17 @@ public class DocumentLegacyService {
     }
 
     public Map<String, Object> toDiplomaBlankMap(DiplomaBlank entity, Boolean returnNulls) {
+        return toDiplomaBlankMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code eDiplomBlank-view} (views.xml:531-543):
+     * 7 refs {@code _minimal} — university, universityOld, educationType (+nameEn),
+     * blankCategory, blankStatus, blankYear, blankGenerateStatus (+name).
+     * NOTE: yangi entityda faqat university + blankType (mapped to educationType) +
+     * status (mapped to blankStatus) fieldlari bor.
+     */
+    public Map<String, Object> toDiplomaBlankMap(DiplomaBlank entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", DIPLOMA_BLANK_ENTITY_NAME);
         map.put("_instanceName", entity.getBlankCode() != null ? entity.getBlankCode() : "DiplomaBlank-" + entity.getId());
@@ -72,9 +85,23 @@ public class DocumentLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "blankCode", entity.getBlankCode(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "series", entity.getSeries(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "number", entity.getNumber(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_blankType", entity.getBlankType(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_status", entity.getStatus(), returnNulls);
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationType", entity.getBlankType(),
+                    "hemishe_h_education_type", "HEducationType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "blankStatus", entity.getStatus(),
+                    "hemishe_h_diplom_blank_status", "HDiplomBlankStatus", returnNulls);
+        } else {
+            CubaEntityMapHelper.putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "_blankType", entity.getBlankType(), returnNulls);
+            CubaEntityMapHelper.putIfNotNull(map, "_status", entity.getStatus(), returnNulls);
+        }
         CubaEntityMapHelper.putIfNotNull(map, "receivedDate", entity.getReceivedDate(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "issuedDate", entity.getIssuedDate(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "academicYear", entity.getAcademicYear(), returnNulls);

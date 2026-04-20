@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.PasswordResetToken;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.PasswordResetToken;
+import uz.hemis.domain.entity.security.User;
 
 import java.time.LocalDateTime;
 import java.util.Optional;

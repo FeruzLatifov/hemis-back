@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.academic.ExamDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Exam;
+import uz.hemis.domain.entity.student.Exam;
 import uz.hemis.service.academic.mapper.ExamMapper;
 import uz.hemis.domain.repository.ExamRepository;
 

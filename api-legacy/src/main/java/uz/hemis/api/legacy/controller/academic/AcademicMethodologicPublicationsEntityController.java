@@ -9,7 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.AcademicMethodologicPublications;
+import uz.hemis.domain.entity.academic.AcademicMethodologicPublications;
 import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
 import java.util.*;
@@ -44,14 +44,15 @@ public class AcademicMethodologicPublicationsEntityController {
             return ResponseEntity.status(404).body(Map.of("error", "Entity not found",
                 "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
         }
-        return ResponseEntity.ok(academicService.toAcademicMethodologicPublicationsMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(academicService.toAcademicMethodologicPublicationsMap(entity.get(), returnNulls, view));
     }
 
     @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update")
     public ResponseEntity<?> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
         Optional<AcademicMethodologicPublications> existingOpt = academicService.findAcademicMethodologicPublicationsById(entityId);
         if (existingOpt.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("error", "Entity not found",
@@ -60,7 +61,7 @@ public class AcademicMethodologicPublicationsEntityController {
         AcademicMethodologicPublications entity = existingOpt.get();
         academicService.updateAcademicMethodologicPublicationsFromMap(entity, body);
         return ResponseEntity.ok(academicService.toAcademicMethodologicPublicationsMap(
-            academicService.saveAcademicMethodologicPublications(entity), returnNulls));
+            academicService.saveAcademicMethodologicPublications(entity), returnNulls, view));
     }
 
     @PreAuthorize("hasAuthority('students.delete')")
@@ -88,7 +89,7 @@ public class AcademicMethodologicPublicationsEntityController {
             @RequestParam(required = false) String sort) {
         PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit, buildSort(sort));
         return ResponseEntity.ok(academicService.findAllAcademicMethodologicPublications(pageRequest).getContent().stream()
-            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls)).collect(Collectors.toList()));
+            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls, view)).collect(Collectors.toList()));
     }
 
     @PreAuthorize("hasAuthority('students.view')")
@@ -105,7 +106,7 @@ public class AcademicMethodologicPublicationsEntityController {
         int effectiveOffset = offset != null ? offset : (body != null && body.get("offset") != null ? ((Number) body.get("offset")).intValue() : 0);
         PageRequest pageRequest = PageRequest.of(effectiveOffset / Math.max(effectiveLimit, 1), effectiveLimit, buildSort(sort));
         return ResponseEntity.ok(academicService.findAllAcademicMethodologicPublications(pageRequest).getContent().stream()
-            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls)).collect(Collectors.toList()));
+            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls, view)).collect(Collectors.toList()));
     }
 
     @PreAuthorize("hasAuthority('students.view')")
@@ -122,7 +123,7 @@ public class AcademicMethodologicPublicationsEntityController {
         PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit, buildSort(sort));
         var entityPage = academicService.findAllAcademicMethodologicPublications(pageRequest);
         List<Map<String, Object>> result = entityPage.getContent().stream()
-            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls)).collect(Collectors.toList());
+            .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls, view)).collect(Collectors.toList());
         if (Boolean.TRUE.equals(returnCount)) {
             return ResponseEntity.ok()
                 .header("X-Total-Count", String.valueOf(entityPage.getTotalElements()))
@@ -135,11 +136,12 @@ public class AcademicMethodologicPublicationsEntityController {
     @PostMapping
     @Operation(summary = "Create")
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @RequestParam(required = false) Boolean returnNulls,
+            @RequestParam(required = false) String view) {
         AcademicMethodologicPublications entity = new AcademicMethodologicPublications();
         academicService.updateAcademicMethodologicPublicationsFromMap(entity, body);
         return ResponseEntity.ok(academicService.toAcademicMethodologicPublicationsMap(
-            academicService.saveAcademicMethodologicPublications(entity), returnNulls));
+            academicService.saveAcademicMethodologicPublications(entity), returnNulls, view));
     }
 
     private Sort buildSort(String sort) {

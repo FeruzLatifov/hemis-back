@@ -5,7 +5,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.SystemMessage;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.system.SystemMessage;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import java.util.UUID;
  * @since 2.0.0
  */
 @Repository
+@Transactional(readOnly = true)
 public interface SystemMessageRepository extends JpaRepository<SystemMessage, UUID>, JpaSpecificationExecutor<SystemMessage> {
 
     /**

@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.PublicationAuthorMeta;
+import uz.hemis.domain.entity.research.PublicationAuthorMeta;
 import uz.hemis.service.legacy.science.ScienceEntityLegacyService;
 
 import java.time.LocalDateTime;

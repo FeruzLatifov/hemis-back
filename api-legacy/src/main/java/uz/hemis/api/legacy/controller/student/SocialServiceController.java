@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.log.LogSafe;
 import uz.hemis.service.integration.ApiMspdTokenService;
 import uz.hemis.service.student.SocialService;
 
@@ -39,7 +40,7 @@ public class SocialServiceController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> singleRegister(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
-        log.info("[CUBA Service] social/singleRegister: pinfl={}", pinfl);
+        log.info("[CUBA Service] social/singleRegister: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(socialService.singleRegister(pinfl));
     }
 
@@ -51,7 +52,7 @@ public class SocialServiceController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> daftarFull(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
-        log.info("[CUBA Service] social/daftarFull: pinfl={}", pinfl);
+        log.info("[CUBA Service] social/daftarFull: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(socialService.daftarFull(pinfl));
     }
 
@@ -63,7 +64,7 @@ public class SocialServiceController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> daftarShort(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
-        log.info("[CUBA Service] social/daftarShort: pinfl={}", pinfl);
+        log.info("[CUBA Service] social/daftarShort: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(socialService.daftarShort(pinfl));
     }
 
@@ -76,7 +77,7 @@ public class SocialServiceController {
     public ResponseEntity<?> women(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl,
             @Parameter(description = "Hujjat seriya va raqami", required = false) @RequestParam(required = false) String sn) {
-        log.info("[CUBA Service] social/women: pinfl={}, sn={}", pinfl, sn);
+        log.info("[CUBA Service] social/women: pinfl={}, sn={}", LogSafe.pinfl(pinfl), LogSafe.passport(sn));
         return ResponseEntity.ok(socialService.women(pinfl, sn));
     }
 
@@ -90,7 +91,8 @@ public class SocialServiceController {
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl,
             @Parameter(description = "Seriya", required = false) @RequestParam(required = false) String seria,
             @Parameter(description = "Raqam", required = false) @RequestParam(required = false) String number) {
-        log.info("[CUBA Service] social/young: pinfl={}, seria={}, number={}", pinfl, seria, number);
+        log.info("[CUBA Service] social/young: pinfl={}, seria=**, number=**",
+                LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(socialService.young(pinfl, seria, number));
     }
 
@@ -109,7 +111,8 @@ public class SocialServiceController {
             @Parameter(description = "Tug'ilgan sana (yyyy-MM-dd)") @RequestParam(required = false) String birthDate,
             @Parameter(description = "Tug'ilganlik guvohnomasi raqami") @RequestParam(required = false) String birthDocument) {
 
-        log.info("[CUBA Service] social/vtek: pinfl={}, birthDate={}, birthDocument={}", pinfl, birthDate, birthDocument);
+        log.info("[CUBA Service] social/vtek: pinfl={}, birthDate=***, birthDocument=***",
+                LogSafe.pinfl(pinfl));
 
         LinkedHashMap<String, Object> result = new LinkedHashMap<>();
 

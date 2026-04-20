@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.StudentGpa;
+import uz.hemis.domain.entity.student.StudentGpa;
 import uz.hemis.service.student.StudentGpaService;
 
 import java.util.List;

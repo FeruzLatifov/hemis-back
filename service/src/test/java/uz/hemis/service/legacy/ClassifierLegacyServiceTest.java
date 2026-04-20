@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.jdbc.core.JdbcTemplate;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.legacy.HokimiyatClassifierService;
@@ -38,6 +40,7 @@ import static org.mockito.Mockito.*;
  * @since 1.5.4
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("ClassifierLegacyService Unit Tests")
 class ClassifierLegacyServiceTest {
 

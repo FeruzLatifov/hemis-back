@@ -8,7 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.StudentDiploma;
+import uz.hemis.domain.entity.student.StudentDiploma;
 import uz.hemis.domain.repository.StudentDiplomaRepository;
 
 import java.time.LocalDate;

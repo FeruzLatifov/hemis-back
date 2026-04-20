@@ -2,6 +2,9 @@ package uz.hemis.domain.entity;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import uz.hemis.domain.entity.security.Role;
+import uz.hemis.domain.entity.security.User;
+import uz.hemis.domain.entity.university.University;
 
 import java.time.LocalDateTime;
 
@@ -103,21 +106,24 @@ class UserEntityTest {
     }
 
     @Test
-    @DisplayName("hasRole should check transient roles string field")
-    void hasRoleShouldCheckRolesString() {
+    @DisplayName("hasRole should check roleSet (many-to-many)")
+    void hasRoleShouldCheckRoleSet() {
         User user = new User();
 
-        // null roles -> false
-        assertThat(user.hasRole("ROLE_ADMIN")).isFalse();
+        // empty roleSet -> false
+        assertThat(user.hasRole("ADMIN")).isFalse();
+        assertThat(user.isSystemAdmin()).isFalse();
 
-        user.setRoles("ROLE_ADMIN,ROLE_USER");
+        Role superAdmin = Role.builder().code("SUPER_ADMIN").name("Super Admin").build();
+        user.getRoleSet().add(superAdmin);
 
-        assertThat(user.hasRole("ROLE_ADMIN")).isTrue();
-        assertThat(user.hasRole("ADMIN")).isTrue(); // auto-prepends ROLE_
+        assertThat(user.hasRole("SUPER_ADMIN")).isTrue();
+        assertThat(user.hasRole("ROLE_SUPER_ADMIN")).isTrue(); // ROLE_ prefix is stripped
         assertThat(user.isSystemAdmin()).isTrue();
         assertThat(user.isUniversityAdmin()).isFalse();
 
-        user.setRoles("ROLE_OTM_API");
+        user.getRoleSet().clear();
+        user.getRoleSet().add(Role.builder().code("UNIVERSITY_ADMIN").name("University Admin").build());
         assertThat(user.isUniversityAdmin()).isTrue();
         assertThat(user.isSystemAdmin()).isFalse();
     }

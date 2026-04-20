@@ -6,7 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.Diploma;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.finance.Diploma;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.UUID;
  * Legacy API: /app/rest/diploma/info, /app/rest/diploma/byhash
  */
 @Repository
+@Transactional(readOnly = true)
 public interface DiplomaRepository extends JpaRepository<Diploma, UUID> {
 
     // =====================================================

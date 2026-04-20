@@ -12,7 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.AdministrativeStudent2;
+import uz.hemis.domain.entity.student.AdministrativeStudent2;
 import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.time.LocalDateTime;

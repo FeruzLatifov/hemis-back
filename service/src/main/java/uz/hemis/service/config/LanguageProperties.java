@@ -4,7 +4,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import uz.hemis.domain.entity.Language;
+import uz.hemis.domain.entity.reference.Language;
 import uz.hemis.domain.repository.LanguageRepository;
 
 import jakarta.annotation.PostConstruct;

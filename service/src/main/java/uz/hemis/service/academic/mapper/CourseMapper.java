@@ -2,7 +2,7 @@ package uz.hemis.service.academic.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.academic.CourseDto;
-import uz.hemis.domain.entity.Course;
+import uz.hemis.domain.entity.academic.Course;
 
 /**
  * MapStruct mapper for Course entity ↔ CourseDto conversion

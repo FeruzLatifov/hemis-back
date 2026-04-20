@@ -5,7 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uz.hemis.domain.entity.UniversityLifecycle;
+import uz.hemis.domain.entity.university.UniversityLifecycle;
+import uz.hemis.domain.entity.enums.LifecycleEventType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,7 +25,7 @@ import java.util.UUID;
 public class UniversityLifecycleDto {
     private UUID id;
     private String universityCode;
-    private String eventType;
+    private LifecycleEventType eventType;
     private LocalDate eventDate;
     private String successorCode;
     private String decreeNumber;

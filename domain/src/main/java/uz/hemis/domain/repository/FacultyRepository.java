@@ -7,13 +7,15 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.Faculty;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.academic.Faculty;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 @Repository
+@Transactional(readOnly = true)
 public interface FacultyRepository extends JpaRepository<Faculty, UUID>, JpaSpecificationExecutor<Faculty> {
 
     /**

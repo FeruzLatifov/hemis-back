@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.student.EnrollmentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Enrollment;
+import uz.hemis.domain.entity.student.Enrollment;
 import uz.hemis.service.student.mapper.EnrollmentMapper;
 import uz.hemis.domain.repository.*;
 

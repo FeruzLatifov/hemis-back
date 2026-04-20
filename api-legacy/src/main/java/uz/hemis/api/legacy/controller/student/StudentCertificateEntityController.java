@@ -12,7 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.StudentCertificate;
+import uz.hemis.domain.entity.student.StudentCertificate;
 import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.time.LocalDateTime;

@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.Permission;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.Permission;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.UserRepository;
 
 import java.util.*;
@@ -63,10 +63,11 @@ public class PermissionService {
         // ✅ OPTIMIZED: Permissions already loaded via join fetch (no lazy loading!)
         Set<Permission> allPermissions = user.getAllPermissions();
 
+        // Immutable wrap: cached qiymat — hech qaysi caller uni modify qilib cache ni buzmasligi kerak
         List<String> permissionCodes = allPermissions.stream()
             .map(Permission::getCode)
             .sorted()
-            .collect(Collectors.toList());
+            .toList();
 
         log.debug("✅ Loaded {} permissions for user {} (eager fetch, 1 query)",
             permissionCodes.size(), userId);

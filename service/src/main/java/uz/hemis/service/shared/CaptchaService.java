@@ -272,11 +272,12 @@ public class CaptchaService {
         g2d.dispose();
 
         // Convert to base64 PNG
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
-        byte[] imageBytes = baos.toByteArray();
-        String base64 = Base64.getEncoder().encodeToString(imageBytes);
-
-        return "data:image/png;base64," + base64;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            ImageIO.write(image, "png", baos);
+            byte[] imageBytes = baos.toByteArray();
+            return "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+        } catch (java.io.IOException e) {
+            throw new java.io.UncheckedIOException("Failed to encode CAPTCHA image", e);
+        }
     }
 }

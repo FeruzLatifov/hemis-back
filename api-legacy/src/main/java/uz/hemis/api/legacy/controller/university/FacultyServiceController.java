@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.Faculty;
+import uz.hemis.domain.entity.academic.Faculty;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import java.util.*;

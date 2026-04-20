@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.student.StudentMetaDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.StudentMeta;
+import uz.hemis.domain.entity.student.StudentMeta;
 import uz.hemis.domain.repository.StudentMetaRepository;
 import uz.hemis.service.student.mapper.StudentMetaMapper;
 

@@ -360,11 +360,11 @@ class CubaEntityMapHelperTest {
         }
 
         @Test
-        @DisplayName("puts null value when returnNulls is true")
-        void putsNull_whenReturnNullsTrue() {
+        @DisplayName("puts JsonNull sentinel when returnNulls is true (serializes as JSON null)")
+        void putsJsonNull_whenReturnNullsTrue() {
             Map<String, Object> map = new LinkedHashMap<>();
             CubaEntityMapHelper.putIfNotNull(map, "key", null, true);
-            assertThat(map).containsEntry("key", null);
+            assertThat(map).containsEntry("key", uz.hemis.common.JsonNull.INSTANCE);
         }
 
         @Test

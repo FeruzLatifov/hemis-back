@@ -16,7 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.ProjectExecutor;
+import uz.hemis.domain.entity.research.ProjectExecutor;
 import uz.hemis.service.legacy.science.ScienceEntityLegacyService;
 
 import java.time.LocalDateTime;

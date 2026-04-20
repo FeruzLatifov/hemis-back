@@ -138,6 +138,18 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // University dictionaries (static): 6 hours
         redisCacheConfigurations.put("universityDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
 
+        // University domain caches — 230 OTM, rarely change (24 hour TTL)
+        // Hot: findByCode (PK lookup), findAllList (230 row list), findActive (dashboard)
+        redisCacheConfigurations.put("university", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("universityList", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("universityActive", defaultConfig.entryTtl(Duration.ofHours(6)));
+        redisCacheConfigurations.put("universityChildren", defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // University detail caches — 1 hour (legal data syncs daily, profile manual)
+        redisCacheConfigurations.put("universityDashboard", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("universityLegal", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("universityProfile", defaultConfig.entryTtl(Duration.ofHours(1)));
+
         // Student list search cache (lightweight DTO, paged + filters): 30 minutes
         redisCacheConfigurations.put("studentsListSearch", defaultConfig.entryTtl(DASHBOARD_TTL));
 

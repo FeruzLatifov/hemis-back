@@ -6,7 +6,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 import uz.hemis.service.legacy.CubaEntityMapHelper;
 import uz.hemis.service.legacy.CubaNestedObjectLoader;
@@ -315,10 +326,34 @@ public class StudentEntityLegacyService {
     }
 
     public Map<String, Object> toAdministrativeStudent2Map(AdministrativeStudent2 entity, Boolean returnNulls) {
+        return toAdministrativeStudent2Map(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAdministrativeStudent2-view} (views.xml:701-706):
+     * 4 refs (university, educationYear, country, educationType) {@code _minimal}.
+     */
+    public Map<String, Object> toAdministrativeStudent2Map(AdministrativeStudent2 entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", "hemishe_RIAdministrativeStudent2");
         map.put("_instanceName", buildAdministrativeStudent2InstanceName(entity));
         map.put("id", entity.getId());
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "country", entity.getCountry(),
+                    "hemishe_h_country", "HCountry", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "educationType", entity.getEducationType(),
+                    "hemishe_h_education_type", "HEducationType", returnNulls);
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "exchangeDocument", entity.getExchangeDocument(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "exchangeType", entity.getExchangeType(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "studentFullname", entity.getStudentFullname(), returnNulls);
@@ -477,10 +512,28 @@ public class StudentEntityLegacyService {
     }
 
     public Map<String, Object> toAdministrativeStudent4Map(AdministrativeStudent4 entity, Boolean returnNulls) {
+        return toAdministrativeStudent4Map(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAdministrativeStudent4-view} (views.xml:716-723):
+     * 4 refs (university, educationYear, country, student/_minimal with fullname).
+     * AS4 da FK lar UUID, string code emas — minimal reference {@code {_entityName, id}}.
+     */
+    public Map<String, Object> toAdministrativeStudent4Map(AdministrativeStudent4 entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", "hemishe_RIAdministrativeStudent4");
         map.put("_instanceName", buildAdministrativeStudent4InstanceName(entity));
         map.put("id", entity.getId());
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            putUuidRef(map, "university", entity.getUniversity(), "hemishe_EUniversity", returnNulls);
+            putUuidRef(map, "educationYear", entity.getEducationYear(), "hemishe_HEducationYear", returnNulls);
+            putUuidRef(map, "country", entity.getCountry(), "hemishe_HCountry", returnNulls);
+            putUuidRef(map, "student", entity.getStudent(), "hemishe_EStudent", returnNulls);
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "olimpiadaType", entity.getOlimpiadaType(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "olimpiadaPlace", entity.getOlimpiadaPlace(), returnNulls);
@@ -492,6 +545,24 @@ public class StudentEntityLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "diplomaSerial", entity.getDiplomaSerial(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "diplomaNumber", entity.getDiplomaNumber(), returnNulls);
         return map;
+    }
+
+    /**
+     * CUBA {@code _minimal} view pattern for UUID-based FK — {@code {_entityName, id, _instanceName}}.
+     *
+     * <p>{@code _instanceName} CUBA detached marker formatida qaytariladi (real entity ni load
+     * qilmasdan) — clientlar ID orqali to'liq obyektni alohida so'rovi bilan olishlari mumkin.</p>
+     */
+    private void putUuidRef(Map<String, Object> map, String key, UUID id, String entityName, Boolean returnNulls) {
+        if (id != null) {
+            Map<String, Object> ref = new LinkedHashMap<>();
+            ref.put("_entityName", entityName);
+            ref.put("id", id.toString());
+            ref.put("_instanceName", "com.company.hemishe.entity." + entityName.replace("hemishe_", "") + "-" + id + " [detached]");
+            map.put(key, ref);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            map.put(key, uz.hemis.common.JsonNull.INSTANCE);
+        }
     }
 
     private String buildAdministrativeStudent4InstanceName(AdministrativeStudent4 entity) {
@@ -563,10 +634,27 @@ public class StudentEntityLegacyService {
     }
 
     public Map<String, Object> toAdministrativeStudentSportMap(AdministrativeStudentSport entity, Boolean returnNulls) {
+        return toAdministrativeStudentSportMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAdministrativeStudentSport-view} (views.xml:724-729):
+     * 4 refs (university, educationYear, student, sportType) {@code _minimal}.
+     */
+    public Map<String, Object> toAdministrativeStudentSportMap(AdministrativeStudentSport entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", "hemishe_RIAdministrativeStudentSport");
         map.put("_instanceName", buildAdministrativeStudentSportInstanceName(entity));
         map.put("id", entity.getId());
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            putUuidRef(map, "university", entity.getUniversity(), "hemishe_EUniversity", returnNulls);
+            putUuidRef(map, "educationYear", entity.getEducationYear(), "hemishe_HEducationYear", returnNulls);
+            putUuidRef(map, "student", entity.getStudent(), "hemishe_EStudent", returnNulls);
+            putUuidRef(map, "sportType", entity.getSportType(), "hemishe_HSportType", returnNulls);
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "sportDate", entity.getSportDate(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "sportTypeRank", entity.getSportTypeRank(), returnNulls);
@@ -625,13 +713,30 @@ public class StudentEntityLegacyService {
     }
 
     public Map<String, Object> toAdministrativeSportFacilitiesMap(AdministrativeSportFacilities entity, Boolean returnNulls) {
+        return toAdministrativeSportFacilitiesMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAdministrativeSportFacilities-view} (views.xml:730-733):
+     * 2 refs (university, educationYear) {@code _minimal}.
+     */
+    public Map<String, Object> toAdministrativeSportFacilitiesMap(AdministrativeSportFacilities entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", "hemishe_RIAdministrativeSportFacilities");
         map.put("_instanceName", buildAdministrativeSportFacilitiesInstanceName(entity));
         map.put("id", entity.getId());
         CubaEntityMapHelper.putIfNotNull(map, "square", entity.getSquare(), returnNulls);
 
-        // OLD-HEMIS: university va educationYear reference fieldlar default view da qaytarilmaydi
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+        }
 
         CubaEntityMapHelper.putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         return map;

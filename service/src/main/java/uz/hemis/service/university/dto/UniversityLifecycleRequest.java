@@ -1,12 +1,12 @@
 package uz.hemis.service.university.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uz.hemis.domain.entity.UniversityLifecycle;
+import uz.hemis.domain.entity.university.UniversityLifecycle;
+import uz.hemis.domain.entity.enums.LifecycleEventType;
 
 import java.time.LocalDate;
 
@@ -20,9 +20,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class UniversityLifecycleRequest {
 
-    @NotBlank(message = "Event type is required")
-    @Size(max = 30)
-    private String eventType;
+    @NotNull(message = "Event type is required")
+    private LifecycleEventType eventType;
 
     @NotNull(message = "Event date is required")
     private LocalDate eventDate;

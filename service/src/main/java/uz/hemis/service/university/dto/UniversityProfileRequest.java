@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.hemis.common.validation.ValidPhoneNumber;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.List;
 @AllArgsConstructor
 public class UniversityProfileRequest {
 
+    @ValidPhoneNumber
     @Size(max = 50)
     private String phone;
 

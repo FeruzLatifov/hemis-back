@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import uz.hemis.domain.entity.UniversityAttachedSpeciality;
+import uz.hemis.domain.entity.university.UniversityAttachedSpeciality;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import java.net.URI;
@@ -41,14 +41,16 @@ public class UniversityAttachedSpecialityEntityController {
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "Limit") @RequestParam(defaultValue = "50") Integer limit,
             @Parameter(description = "Offset") @RequestParam(defaultValue = "0") Integer offset,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "CUBA view (e.g. eUniversityAttachedSpeciality-view)")
+            @RequestParam(required = false) String view) {
 
         List<UniversityAttachedSpeciality> all = universityRefService.findAllUniversityAttachedSpeciality();
         int from = Math.min(offset, all.size());
         int to = Math.min(from + limit, all.size());
         List<Map<String, Object>> result = new ArrayList<>();
         for (UniversityAttachedSpeciality e : all.subList(from, to)) {
-            result.add(universityRefService.toUniversityAttachedSpecialityMap(e, returnNulls));
+            result.add(universityRefService.toUniversityAttachedSpecialityMap(e, returnNulls, view));
         }
         return ResponseEntity.ok(result);
     }
@@ -58,10 +60,12 @@ public class UniversityAttachedSpecialityEntityController {
     @Operation(summary = "ID bo'yicha olish")
     public ResponseEntity<Map<String, Object>> getById(
             @PathVariable UUID entityId,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "CUBA view")
+            @RequestParam(required = false) String view) {
 
         return universityRefService.findUniversityAttachedSpecialityById(entityId)
-                .map(e -> ResponseEntity.ok(universityRefService.toUniversityAttachedSpecialityMap(e, returnNulls)))
+                .map(e -> ResponseEntity.ok(universityRefService.toUniversityAttachedSpecialityMap(e, returnNulls, view)))
                 .orElseGet(() -> {
                     Map<String, Object> error = new LinkedHashMap<>();
                     error.put("error", "Entity not found");
@@ -97,7 +101,9 @@ public class UniversityAttachedSpecialityEntityController {
     public ResponseEntity<Map<String, Object>> update(
             @PathVariable UUID entityId,
             @RequestBody Map<String, Object> body,
-            @RequestParam(required = false) Boolean returnNulls) {
+            @RequestParam(required = false) Boolean returnNulls,
+            @Parameter(description = "CUBA view")
+            @RequestParam(required = false) String view) {
 
         Optional<UniversityAttachedSpeciality> existingOpt = universityRefService.findUniversityAttachedSpecialityById(entityId);
         if (existingOpt.isEmpty()) {
@@ -110,7 +116,7 @@ public class UniversityAttachedSpecialityEntityController {
         UniversityAttachedSpeciality entity = existingOpt.get();
         universityRefService.updateUniversityAttachedSpecialityFromMap(entity, body);
         UniversityAttachedSpeciality saved = universityRefService.saveUniversityAttachedSpeciality(entity);
-        return ResponseEntity.ok(universityRefService.toUniversityAttachedSpecialityMap(saved, returnNulls));
+        return ResponseEntity.ok(universityRefService.toUniversityAttachedSpecialityMap(saved, returnNulls, view));
     }
 
     @PreAuthorize("hasAuthority('universities.delete')")

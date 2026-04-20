@@ -14,6 +14,14 @@ spring:
     # include: redis  # Disabled - using JWT (stateless), not Redis sessions
 
   # =====================================================
+  # Graceful Shutdown Phase Timeout
+  # =====================================================
+  # Spring SmartLifecycle phase'ida har bir bean uchun shutdown timeout.
+  # Tugallanmagan request'lar tugashiga yetarli vaqt beradi.
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+  # =====================================================
   # Lazy Initialization (fixes Sentry BeanPostProcessor warnings)
   # =====================================================
   main:
@@ -196,6 +204,14 @@ springdoc:
 server:
   port: ${SERVER_PORT:8081}
 
+  # =====================================================
+  # Graceful Shutdown (K8s rolling update, zero-downtime)
+  # =====================================================
+  # SIGTERM qabul qilingach Tomcat yangi request'larni reject qiladi,
+  # tugallanmagan request'larga timeout beradi. K8s terminationGracePeriodSeconds
+  # qiymati timeout'dan kattaroq bo'lishi kerak (default 30s).
+  shutdown: graceful
+
   servlet:
     context-path: /
 
@@ -263,8 +279,9 @@ logging:
     org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    # MDC traceId/spanId — distributed tracing uchun (Micrometer Observation auto-fills)
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{traceId:-},%X{spanId:-}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n"
 
 # =====================================================
 # Application-Specific Configuration
@@ -441,11 +458,23 @@ sentry:
   enabled: ${SENTRY_ENABLED:false}
   dsn: ${SENTRY_DSN:}
   environment: ${SENTRY_ENVIRONMENT:${spring.profiles.active}}
+  release: ${SENTRY_RELEASE:hemis-back@1.0.0}
   traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.0}
-  
-  # In-app packages (for stack traces)
+
+  # PII xavfsizligi (Rule #7): shaxsiy ma'lumotlar Sentry'ga yuborilmasligi.
+  # Stack trace'dagi username/email avtomatik redact qilinadi.
+  send-default-pii: ${SENTRY_SEND_DEFAULT_PII:false}
+
+  # Stack trace'da qaysi paket "in-app" deb belgilanadi (Sentry UI da rangli)
   in-app-includes:
     - uz.hemis
+
+  # Ignore noisy exceptions (expected runtime errors)
+  ignored-exceptions-for-type:
+    - uz.hemis.common.exception.ResourceNotFoundException
+    - uz.hemis.common.exception.BadRequestException
+    - org.springframework.security.access.AccessDeniedException
+    - org.springframework.security.authentication.BadCredentialsException
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

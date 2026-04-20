@@ -2,7 +2,7 @@ package uz.hemis.service.registry.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.university.FacultyDto;
-import uz.hemis.domain.entity.Faculty;
+import uz.hemis.domain.entity.academic.Faculty;
 
 /**
  * MapStruct mapper for Faculty entity ↔ FacultyDto conversion
@@ -42,10 +42,10 @@ public interface FacultyMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(target = "code", source = "code")
     @Mapping(target = "name", source = "name")
-    @Mapping(target = "shortName", source = "shortName")
     @Mapping(target = "university", source = "university")
-    @Mapping(target = "facultyType", source = "facultyType")
-    @Mapping(target = "active", source = "active")
+    @Mapping(target = "shortName", ignore = true)
+    @Mapping(target = "facultyType", ignore = true)
+    @Mapping(target = "active", expression = "java(entity != null && entity.isActive())")
     FacultyDto toDto(Faculty entity);
 
     /**
@@ -59,10 +59,7 @@ public interface FacultyMapper {
     @Mapping(target = "id", ignore = true)  // Auto-generated
     @Mapping(target = "code", source = "code")
     @Mapping(target = "name", source = "name")
-    @Mapping(target = "shortName", source = "shortName")
     @Mapping(target = "university", source = "university")
-    @Mapping(target = "facultyType", source = "facultyType")
-    @Mapping(target = "active", source = "active")
     // Audit fields ignored (managed by BaseEntity @PrePersist/@PreUpdate)
     @Mapping(target = "createTs", ignore = true)
     @Mapping(target = "createdBy", ignore = true)
@@ -85,10 +82,7 @@ public interface FacultyMapper {
     @Mapping(target = "id", ignore = true)  // Never update PK
     @Mapping(target = "code", source = "code")
     @Mapping(target = "name", source = "name")
-    @Mapping(target = "shortName", source = "shortName")
     @Mapping(target = "university", source = "university")
-    @Mapping(target = "facultyType", source = "facultyType")
-    @Mapping(target = "active", source = "active")
     // Audit fields ignored (managed by BaseEntity @PreUpdate)
     @Mapping(target = "createTs", ignore = true)
     @Mapping(target = "createdBy", ignore = true)

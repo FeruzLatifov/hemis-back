@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.service.registry.UniversityRegistryService;
@@ -115,7 +116,7 @@ public class RegistryUniversityController {
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "403", description = "Forbidden - User lacks 'institutions.universities.view' permission")
     })
-    public ResponseEntity<ResponseWrapper<Page<UniversityDto>>> getUniversities(
+    public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversities(
             @Parameter(description = "Search query (code, name, or TIN)", example = "tatu")
             @RequestParam(required = false) String q,
 
@@ -192,7 +193,7 @@ public class RegistryUniversityController {
                 oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent, pageable
         );
 
-        return ResponseEntity.ok(ResponseWrapper.success(universities));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(universities)));
     }
 
     @GetMapping("/{id}")

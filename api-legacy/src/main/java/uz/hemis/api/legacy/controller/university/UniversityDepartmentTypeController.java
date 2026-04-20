@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.HUniversityDepartmentType;
+import uz.hemis.domain.entity.university.UniversityDepartmentType;
 import uz.hemis.service.legacy.ClassifierLegacyService;
 
 import java.time.LocalDateTime;
@@ -91,7 +91,7 @@ public class UniversityDepartmentTypeController {
 
         log.info("=== GET bo'linma turi === entityId={}, returnNulls={}", entityId, returnNulls);
 
-        Optional<HUniversityDepartmentType> entity = classifierService.findDepartmentTypeById(entityId);
+        Optional<UniversityDepartmentType> entity = classifierService.findDepartmentTypeById(entityId);
 
         if (entity.isEmpty()) {
             // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
@@ -131,7 +131,7 @@ public class UniversityDepartmentTypeController {
 
         log.info("UPDATE bo'linma turi: {}", entityId);
 
-        Optional<HUniversityDepartmentType> existingOpt = classifierService.findDepartmentTypeById(entityId);
+        Optional<UniversityDepartmentType> existingOpt = classifierService.findDepartmentTypeById(entityId);
 
         if (existingOpt.isEmpty()) {
             // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
@@ -141,7 +141,7 @@ public class UniversityDepartmentTypeController {
             return ResponseEntity.status(404).body(errorResponse);
         }
 
-        HUniversityDepartmentType entity = existingOpt.get();
+        UniversityDepartmentType entity = existingOpt.get();
 
         // Maydonlarni yangilash
         if (entityData.containsKey("name")) {
@@ -164,7 +164,7 @@ public class UniversityDepartmentTypeController {
 
         entity.setUpdatedAt(LocalDateTime.now());
 
-        HUniversityDepartmentType saved = classifierService.saveDepartmentType(entity);
+        UniversityDepartmentType saved = classifierService.saveDepartmentType(entity);
 
         return ResponseEntity.ok(classifierService.toDepartmentTypeMap(saved, false));
     }
@@ -195,7 +195,7 @@ public class UniversityDepartmentTypeController {
 
         log.info("DELETE bo'linma turi: {}", entityId);
 
-        Optional<HUniversityDepartmentType> entity = classifierService.findDepartmentTypeById(entityId);
+        Optional<UniversityDepartmentType> entity = classifierService.findDepartmentTypeById(entityId);
 
         if (entity.isEmpty()) {
             // OLD-HEMIS format: {"error": "Entity not found", "details": "..."}
@@ -351,13 +351,13 @@ public class UniversityDepartmentTypeController {
 
         log.info("LIST ALL bo'linma turlari");
 
-        List<HUniversityDepartmentType> allEntities = classifierService.findAllDepartmentTypes();
+        List<UniversityDepartmentType> allEntities = classifierService.findAllDepartmentTypes();
 
         // Sahifalash
         int start = offset != null ? offset : 0;
         int end = limit != null ? Math.min(start + limit, allEntities.size()) : allEntities.size();
 
-        List<HUniversityDepartmentType> paged = allEntities.subList(
+        List<UniversityDepartmentType> paged = allEntities.subList(
             Math.min(start, allEntities.size()),
             Math.min(end, allEntities.size())
         );
@@ -405,7 +405,7 @@ public class UniversityDepartmentTypeController {
 
         try {
             // Service handles soft-deleted entity restoration via native query
-            HUniversityDepartmentType saved = classifierService.createOrRestoreDepartmentType(code, name, nameRu, nameEn);
+            UniversityDepartmentType saved = classifierService.createOrRestoreDepartmentType(code, name, nameRu, nameEn);
 
             // OLD-HEMIS: POST returns minimal response (no code/name/active)
             Map<String, Object> result = classifierService.toDepartmentTypeMap(saved, false);
@@ -440,7 +440,7 @@ public class UniversityDepartmentTypeController {
     private ResponseEntity<List<Map<String, Object>>> search(
             String filter, Integer offset, Integer limit, String sort, Boolean returnCount, Boolean returnNulls) {
 
-        List<HUniversityDepartmentType> allEntities = classifierService.findAllDepartmentTypes();
+        List<UniversityDepartmentType> allEntities = classifierService.findAllDepartmentTypes();
 
         // CUBA JSON filter yoki oddiy string filter
         if (filter != null && !filter.isEmpty()) {
@@ -451,7 +451,7 @@ public class UniversityDepartmentTypeController {
         int start = offset != null ? offset : 0;
         int end = limit != null ? Math.min(start + limit, allEntities.size()) : allEntities.size();
 
-        List<HUniversityDepartmentType> paged = allEntities.subList(
+        List<UniversityDepartmentType> paged = allEntities.subList(
             Math.min(start, allEntities.size()),
             Math.min(end, allEntities.size())
         );
@@ -472,7 +472,7 @@ public class UniversityDepartmentTypeController {
      * CUBA JSON filter yoki oddiy string filter qo'llash
      */
     @SuppressWarnings("unchecked")
-    private List<HUniversityDepartmentType> applyFilter(List<HUniversityDepartmentType> entities, String filter) {
+    private List<UniversityDepartmentType> applyFilter(List<UniversityDepartmentType> entities, String filter) {
         // CUBA JSON format ekanligini tekshirish
         if (filter.trim().startsWith("{")) {
             try {
@@ -507,8 +507,8 @@ public class UniversityDepartmentTypeController {
     /**
      * CUBA condition bo'yicha filtrlash
      */
-    private List<HUniversityDepartmentType> filterByCondition(
-            List<HUniversityDepartmentType> entities, String property, String operator, Object value) {
+    private List<UniversityDepartmentType> filterByCondition(
+            List<UniversityDepartmentType> entities, String property, String operator, Object value) {
 
         return entities.stream()
             .filter(e -> matchesCondition(e, property, operator, value))
@@ -518,7 +518,7 @@ public class UniversityDepartmentTypeController {
     /**
      * Entity CUBA conditionga mos kelishini tekshirish
      */
-    private boolean matchesCondition(HUniversityDepartmentType entity, String property, String operator, Object value) {
+    private boolean matchesCondition(UniversityDepartmentType entity, String property, String operator, Object value) {
         Object fieldValue = getFieldValue(entity, property);
 
         if (operator == null) operator = "=";
@@ -547,7 +547,7 @@ public class UniversityDepartmentTypeController {
     /**
      * Entity dan field qiymatini olish
      */
-    private Object getFieldValue(HUniversityDepartmentType entity, String property) {
+    private Object getFieldValue(UniversityDepartmentType entity, String property) {
         if (property == null) return null;
 
         switch (property) {

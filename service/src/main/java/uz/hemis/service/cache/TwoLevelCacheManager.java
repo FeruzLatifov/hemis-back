@@ -70,6 +70,14 @@ public class TwoLevelCacheManager implements CacheManager {
         Map.entry("stats", 100L),              // Dashboard statistics
         Map.entry("universitiesSearch", 500L), // University search results
         Map.entry("universityDictionaries", 200L), // Static reference data
+        // University domain caches (230 OTM, rarely change)
+        Map.entry("university", 300L),         // Single University by code — hot path
+        Map.entry("universityList", 10L),      // findAll list (one entry "all")
+        Map.entry("universityActive", 10L),    // Active universities page
+        Map.entry("universityChildren", 100L), // Filial children by parent code
+        Map.entry("universityDashboard", 300L),// Dashboard: legal+founders+lifecycle+cadastre+rector
+        Map.entry("universityLegal", 300L),    // Single legal by university_code
+        Map.entry("universityProfile", 300L),  // Single profile by university_code
         Map.entry("studentsListSearch", 500L), // Student list search results (lightweight DTO, paged)
         Map.entry("studentsListCount", 50L),   // Student list COUNT cache (shared across pages)
         Map.entry("studentStats", 100L),       // Student statistics

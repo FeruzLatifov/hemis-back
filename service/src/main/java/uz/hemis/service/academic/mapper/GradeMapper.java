@@ -2,7 +2,7 @@ package uz.hemis.service.academic.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.academic.GradeDto;
-import uz.hemis.domain.entity.Grade;
+import uz.hemis.domain.entity.student.Grade;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface GradeMapper {

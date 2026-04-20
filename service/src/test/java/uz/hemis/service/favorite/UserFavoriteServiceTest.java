@@ -1,5 +1,7 @@
 package uz.hemis.service.favorite;
 
+import uz.hemis.common.exception.BadRequestException;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -10,7 +12,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uz.hemis.domain.entity.UserFavorite;
+import uz.hemis.domain.entity.security.UserFavorite;
 import uz.hemis.domain.repository.UserFavoriteRepository;
 import uz.hemis.service.favorite.UserFavoriteService.FavoriteOrderItem;
 
@@ -222,7 +224,7 @@ class UserFavoriteServiceTest {
 
             // When / Then
             assertThatThrownBy(() -> userFavoriteService.addFavorite(userId, menuCode))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(BadRequestException.class)
                     .hasMessageContaining("already in favorites");
 
             verify(userFavoriteRepository).existsByUserIdAndMenuCode(userId, menuCode);
@@ -240,7 +242,7 @@ class UserFavoriteServiceTest {
 
             // When / Then
             assertThatThrownBy(() -> userFavoriteService.addFavorite(userId, menuCode))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(BadRequestException.class)
                     .hasMessageContaining("Maximum favorites limit reached")
                     .hasMessageContaining("10");
 
@@ -285,7 +287,7 @@ class UserFavoriteServiceTest {
 
             // When / Then
             assertThatThrownBy(() -> userFavoriteService.addFavorite(userId, menuCode))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(BadRequestException.class)
                     .hasMessageContaining("Maximum favorites limit reached");
 
             verify(userFavoriteRepository, never()).save(any());

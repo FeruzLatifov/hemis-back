@@ -8,7 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uz.hemis.domain.entity.Menu;
+import uz.hemis.domain.entity.system.Menu;
 import uz.hemis.domain.repository.MenuRepository;
 import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.service.cache.CacheVersionService;

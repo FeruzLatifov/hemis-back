@@ -4,8 +4,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.SystemMessageTranslation;
-import uz.hemis.domain.entity.SystemMessageTranslationId;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.system.SystemMessageTranslation;
+import uz.hemis.domain.entity.system.SystemMessageTranslationId;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +47,7 @@ import java.util.UUID;
  * @since 2.0.0
  */
 @Repository
+@Transactional(readOnly = true)
 public interface SystemMessageTranslationRepository extends
         JpaRepository<SystemMessageTranslation, SystemMessageTranslationId> {
 

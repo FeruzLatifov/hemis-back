@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import uz.hemis.common.dto.document.DiplomaBlankDto;
-import uz.hemis.domain.entity.DiplomaBlank;
+import uz.hemis.domain.entity.finance.DiplomaBlank;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

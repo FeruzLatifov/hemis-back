@@ -8,7 +8,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 import uz.hemis.service.legacy.CubaNestedObjectLoader;
 import uz.hemis.service.legacy.SoftDeleteRestoreLegacyService;
@@ -26,9 +37,9 @@ import static uz.hemis.service.legacy.CubaEntityMapHelper.*;
  *
  * Entities handled:
  * - TeacherPositionType (read-only classifier, String PK)
- * - UniversityEmployeeRate (read-only classifier, String PK)
+ * - EmployeeRate (read-only classifier, String PK)
  * - EmployeeCertificate (full CRUD + UPSERT, UUID PK)
- * - UniversityEmployeeForm (read-only classifier, String PK)
+ * - EmploymentForm (read-only classifier, String PK)
  * - UniversityEmployeeStatusType (read-only classifier, String PK)
  * - UniversityEmployeeType (full CRUD + UPSERT + soft-delete restore, String PK)
  *
@@ -41,9 +52,9 @@ import static uz.hemis.service.legacy.CubaEntityMapHelper.*;
 public class EmployeeRefLegacyService {
 
     private final TeacherPositionTypeRepository teacherPositionTypeRepository;
-    private final UniversityEmployeeRateRepository universityEmployeeRateRepository;
+    private final EmployeeRateRepository employeeRateRepository;
     private final EmployeeCertificateRepository employeeCertificateRepository;
-    private final UniversityEmployeeFormRepository universityEmployeeFormRepository;
+    private final EmploymentFormRepository employmentFormRepository;
     private final UniversityEmployeeStatusTypeRepository universityEmployeeStatusTypeRepository;
     private final UniversityEmployeeTypeRepository universityEmployeeTypeRepository;
     private final SoftDeleteRestoreLegacyService softDeleteRestoreService;
@@ -85,24 +96,24 @@ public class EmployeeRefLegacyService {
     }
 
     // ====================================================================
-    //  UniversityEmployeeRate (read-only classifier)
+    //  EmployeeRate (read-only classifier)
     // ====================================================================
 
     private static final String EMPLOYEE_RATE_ENTITY = "hemishe_HUniversityEmployeeRate";
 
-    public Optional<UniversityEmployeeRate> findUniversityEmployeeRateById(String code) {
-        return universityEmployeeRateRepository.findById(code);
+    public Optional<EmployeeRate> findEmployeeRateById(String code) {
+        return employeeRateRepository.findById(code);
     }
 
-    public Page<UniversityEmployeeRate> findAllUniversityEmployeeRate(PageRequest pageRequest) {
-        return universityEmployeeRateRepository.findAll(pageRequest);
+    public Page<EmployeeRate> findAllEmployeeRate(PageRequest pageRequest) {
+        return employeeRateRepository.findAll(pageRequest);
     }
 
-    public List<UniversityEmployeeRate> findAllUniversityEmployeeRate(Sort sort) {
-        return universityEmployeeRateRepository.findAll(sort);
+    public List<EmployeeRate> findAllEmployeeRate(Sort sort) {
+        return employeeRateRepository.findAll(sort);
     }
 
-    public Map<String, Object> toUniversityEmployeeRateMap(UniversityEmployeeRate entity, Boolean returnNulls) {
+    public Map<String, Object> toEmployeeRateMap(EmployeeRate entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", EMPLOYEE_RATE_ENTITY);
         map.put("_instanceName", entity.getName() != null ? entity.getName() : entity.getCode());
@@ -169,19 +180,63 @@ public class EmployeeRefLegacyService {
     }
 
     public Map<String, Object> toEmployeeCertificateMap(EmployeeCertificate cert) {
+        return toEmployeeCertificateMap(cert, false, null);
+    }
+
+    public Map<String, Object> toEmployeeCertificateMap(EmployeeCertificate cert, Boolean returnNulls) {
+        return toEmployeeCertificateMap(cert, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS CUBA view support.
+     *
+     * <p>Default view ({@code view=null} yoki {@code "_local"}): faqat scalar fieldlar +
+     * audit timestamp'lar — OLD-HEMIS {@code _local} bilan mos.</p>
+     *
+     * <p>{@code eEmpoyeeCertificate-view}: old-hemis {@code views.xml} ga muvofiq
+     * 6 ta reference field nested obyekt sifatida qo'shiladi — university, employee,
+     * certificateType, certificateName, certificateGrade, certificateSubject.</p>
+     */
+    public Map<String, Object> toEmployeeCertificateMap(EmployeeCertificate cert, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", cert.getId());
         map.put("_entityName", EMPLOYEE_CERTIFICATE_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.EEmpoyeeCertificate-" + cert.getId() + " [detached]");
-        // OLD-HEMIS: default view da reference fieldlar qaytarilmaydi
-        // university, employee, certificateType, certificateName, certificateGrade, certificateSubject
-        map.put("issueDate", cert.getIssueDate());
-        map.put("validDate", cert.getValidDate());
-        map.put("serialNumber", cert.getSerialNumber());
-        map.put("active", cert.getActive());
-        map.put("createTs", cert.getCreateTs());
-        map.put("updateTs", cert.getUpdateTs());
-        map.put("deleteTs", cert.getDeleteTs());
+
+        // Named view (e.g. "eEmpoyeeCertificate-view") — reference fieldlar nested object sifatida qaytariladi
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (cert.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversityFull(cert.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            if (cert.getEmployee() != null) {
+                Map<String, Object> emp = new LinkedHashMap<>();
+                emp.put("_entityName", "hemishe_ETeacher");
+                emp.put("id", cert.getEmployee().toString());
+                emp.put("_instanceName", "com.company.hemishe.entity.ETeacher-" + cert.getEmployee() + " [detached]");
+                map.put("employee", emp);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employee", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "certificateType", cert.getCertificateType(),
+                    "hemishe_h_certificate_type", "HCertificateType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "certificateName", cert.getCertificateName(),
+                    "hemishe_h_certificate_names", "HCertificateNames", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "certificateGrade", cert.getCertificateGrade(),
+                    "hemishe_h_certificate_grades", "HCertificateGrades", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "certificateSubject", cert.getCertificateSubject(),
+                    "hemishe_h_certificate_subjects", "HCertificateSubjects", returnNulls);
+        }
+
+        uz.hemis.service.legacy.CubaEntityMapHelper.putIfNotNull(map, "issueDate", cert.getIssueDate(), returnNulls);
+        uz.hemis.service.legacy.CubaEntityMapHelper.putIfNotNull(map, "validDate", cert.getValidDate(), returnNulls);
+        uz.hemis.service.legacy.CubaEntityMapHelper.putIfNotNull(map, "serialNumber", cert.getSerialNumber(), returnNulls);
+        uz.hemis.service.legacy.CubaEntityMapHelper.putIfNotNull(map, "active", cert.getActive(), returnNulls);
+        uz.hemis.service.legacy.CubaEntityMapHelper.putIfNotNull(map, "createTs", cert.getCreateTs(), returnNulls);
+        uz.hemis.service.legacy.CubaEntityMapHelper.putIfNotNull(map, "updateTs", cert.getUpdateTs(), returnNulls);
+        uz.hemis.service.legacy.CubaEntityMapHelper.putIfNotNull(map, "deleteTs", cert.getDeleteTs(), returnNulls);
         return map;
     }
 
@@ -222,24 +277,24 @@ public class EmployeeRefLegacyService {
     }
 
     // ====================================================================
-    //  UniversityEmployeeForm (read-only classifier)
+    //  EmploymentForm (read-only classifier)
     // ====================================================================
 
     private static final String EMPLOYEE_FORM_ENTITY = "hemishe_HUniversityEmployeeForm";
 
-    public Optional<UniversityEmployeeForm> findUniversityEmployeeFormById(String code) {
-        return universityEmployeeFormRepository.findById(code);
+    public Optional<EmploymentForm> findEmploymentFormById(String code) {
+        return employmentFormRepository.findById(code);
     }
 
-    public Page<UniversityEmployeeForm> findAllUniversityEmployeeForm(PageRequest pageRequest) {
-        return universityEmployeeFormRepository.findAll(pageRequest);
+    public Page<EmploymentForm> findAllEmploymentForm(PageRequest pageRequest) {
+        return employmentFormRepository.findAll(pageRequest);
     }
 
-    public List<UniversityEmployeeForm> findAllUniversityEmployeeForm(Sort sort) {
-        return universityEmployeeFormRepository.findAll(sort);
+    public List<EmploymentForm> findAllEmploymentForm(Sort sort) {
+        return employmentFormRepository.findAll(sort);
     }
 
-    public Map<String, Object> toUniversityEmployeeFormMap(UniversityEmployeeForm entity, Boolean returnNulls) {
+    public Map<String, Object> toEmploymentFormMap(EmploymentForm entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", EMPLOYEE_FORM_ENTITY);
         map.put("_instanceName", entity.getName() != null ? entity.getName() : entity.getCode());
@@ -522,10 +577,43 @@ public class EmployeeRefLegacyService {
     }
 
     public Map<String, Object> toAdministrativeEmployee1Map(AdministrativeEmployee1 entity, Boolean returnNulls) {
+        return toAdministrativeEmployee1Map(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAdministrativeEmployee1-view} (views.xml:567-573):
+     * 5 refs (university, educationYear, employee, country, degree) {@code _minimal}.
+     */
+    public Map<String, Object> toAdministrativeEmployee1Map(AdministrativeEmployee1 entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ADMIN_EMP1_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.RIAdministrativeEmployee1-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+            if (entity.getEmployee() != null) {
+                Map<String, Object> emp = new LinkedHashMap<>();
+                emp.put("_entityName", "hemishe_ETeacher");
+                emp.put("id", entity.getEmployee().toString());
+                emp.put("_instanceName", "com.company.hemishe.entity.ETeacher-" + entity.getEmployee() + " [detached]");
+                map.put("employee", emp);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employee", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "country", entity.getCountry(),
+                    "hemishe_h_country", "HCountry", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "degree", entity.getDegree(),
+                    "hemishe_h_scientific_degree", "HScientificDegree", returnNulls);
+        }
+
         putIfNotNull(map, "diplomaSerialNumber", entity.getDiplomaSerialNumber(), returnNulls);
         putIfNotNull(map, "diplomaType", entity.getDiplomaType(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
@@ -581,10 +669,46 @@ public class EmployeeRefLegacyService {
     }
 
     public Map<String, Object> toAdministrativeEmployee2Map(AdministrativeEmployee2 entity, Boolean returnNulls) {
+        return toAdministrativeEmployee2Map(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAdministrativeEmployee2-view} (views.xml:574-581):
+     * 6 refs (university, educationYear, employee, country, internshipForm, internshipType) {@code _minimal}.
+     */
+    public Map<String, Object> toAdministrativeEmployee2Map(AdministrativeEmployee2 entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ADMIN_EMP2_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.RIAdministrativeEmployee2-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+            if (entity.getEmployee() != null) {
+                // AdministrativeEmployee2.employee — String (tasdiqlangan entity field)
+                Map<String, Object> emp = new LinkedHashMap<>();
+                emp.put("_entityName", "hemishe_ETeacher");
+                emp.put("id", entity.getEmployee());
+                emp.put("_instanceName", "com.company.hemishe.entity.ETeacher-" + entity.getEmployee() + " [detached]");
+                map.put("employee", emp);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("employee", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "country", entity.getCountry(),
+                    "hemishe_h_country", "HCountry", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "internshipForm", entity.getInternshipForm(),
+                    "hemishe_h_internship_form", "HInternshipForm", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "internshipType", entity.getInternshipType(),
+                    "hemishe_h_internship_type", "HInternshipType", returnNulls);
+        }
+
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         putIfNotNull(map, "foreignUniversity", entity.getForeignUniversity(), returnNulls);
         putIfNotNull(map, "specialityCode", entity.getSpecialityCode(), returnNulls);
@@ -642,10 +766,32 @@ public class EmployeeRefLegacyService {
     }
 
     public Map<String, Object> toAdministrativeEmployee3Map(AdministrativeEmployee3 entity, Boolean returnNulls) {
+        return toAdministrativeEmployee3Map(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAdministrativeEmployee3-view} (views.xml:582-586):
+     * 3 refs (university, educationYear, country) {@code _minimal}.
+     */
+    public Map<String, Object> toAdministrativeEmployee3Map(AdministrativeEmployee3 entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ADMIN_EMP3_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.RIAdministrativeEmployee3-" + entity.getId() + " [detached]");
         map.put("id", entity.getId().toString());
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "country", entity.getCountry(),
+                    "hemishe_h_country", "HCountry", returnNulls);
+        }
+
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         putIfNotNull(map, "fullname", entity.getFullname(), returnNulls);
         putIfNotNull(map, "workPlace", entity.getWorkPlace(), returnNulls);

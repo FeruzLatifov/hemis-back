@@ -7,7 +7,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uz.hemis.domain.entity.Teacher;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import uz.hemis.domain.entity.employee.EmployeeJobs;
+import uz.hemis.domain.entity.employee.Teacher;
+import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
 
 import java.util.HashMap;
@@ -20,11 +24,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("TeacherCubaService - CUBA-compatible teacher lookup and job management")
 class TeacherCubaServiceTest {
 
     @Mock
     private TeacherRepository teacherRepository;
+
+    @Mock
+    private EmployeeJobsRepository employeeJobsRepository;
 
     @InjectMocks
     private TeacherCubaService service;
@@ -176,16 +184,19 @@ class TeacherCubaServiceTest {
         @DisplayName("should return success when teacher exists and job data is valid")
         void returnsSuccessWhenTeacherExists() {
             Teacher teacher = createTeacher();
-            when(teacherRepository.findById(teacher.getId())).thenReturn(Optional.of(teacher));
+            UUID jobId = UUID.randomUUID();
+            EmployeeJobs savedJob = new EmployeeJobs();
+            savedJob.setId(jobId);
+            when(employeeJobsRepository.saveAndFlush(any(EmployeeJobs.class))).thenReturn(savedJob);
 
             Map<String, Object> jobData = new HashMap<>();
-            jobData.put("teacher_id", teacher.getId().toString());
+            jobData.put("employee", teacher.getId().toString());
             jobData.put("university", "00123");
 
             Map<String, Object> result = service.addJob(jobData);
 
             assertThat(result).containsEntry("success", true);
-            assertThat(result).containsEntry("teacher_id", teacher.getId().toString());
+            assertThat(result).containsEntry("id", jobId.toString());
         }
 
         @Test

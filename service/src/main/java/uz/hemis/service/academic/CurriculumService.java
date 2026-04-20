@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.academic.CurriculumDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Curriculum;
+import uz.hemis.domain.entity.academic.Curriculum;
 import uz.hemis.service.academic.mapper.CurriculumMapper;
 import uz.hemis.domain.repository.CurriculumRepository;
 import uz.hemis.domain.repository.SpecialtyRepository;

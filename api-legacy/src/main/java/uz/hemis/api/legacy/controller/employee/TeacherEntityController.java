@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.JsonNull;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
-import uz.hemis.domain.entity.Teacher;
+import uz.hemis.domain.entity.employee.Teacher;
 import uz.hemis.service.legacy.TeacherLegacyService;
 
 import java.time.LocalDate;

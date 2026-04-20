@@ -3,7 +3,7 @@ package uz.hemis.domain.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.UniversityCadastre;
+import uz.hemis.domain.entity.university.UniversityCadastre;
 
 import java.util.List;
 import java.util.Optional;

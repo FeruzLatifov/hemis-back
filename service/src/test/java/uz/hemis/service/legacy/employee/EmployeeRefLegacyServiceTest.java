@@ -11,7 +11,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 import uz.hemis.service.legacy.SoftDeleteRestoreLegacyService;
 
@@ -27,9 +38,9 @@ import static org.mockito.Mockito.*;
 class EmployeeRefLegacyServiceTest {
 
     @Mock private TeacherPositionTypeRepository teacherPositionTypeRepository;
-    @Mock private UniversityEmployeeRateRepository universityEmployeeRateRepository;
+    @Mock private EmployeeRateRepository employeeRateRepository;
     @Mock private EmployeeCertificateRepository employeeCertificateRepository;
-    @Mock private UniversityEmployeeFormRepository universityEmployeeFormRepository;
+    @Mock private EmploymentFormRepository employmentFormRepository;
     @Mock private UniversityEmployeeStatusTypeRepository universityEmployeeStatusTypeRepository;
     @Mock private UniversityEmployeeTypeRepository universityEmployeeTypeRepository;
     @Mock private SoftDeleteRestoreLegacyService softDeleteRestoreService;
@@ -74,26 +85,27 @@ class EmployeeRefLegacyServiceTest {
 
             assertThat(map).containsKey("deleteTs");
             assertThat(map).containsKey("deletedBy");
-            assertThat(map.get("deleteTs")).isNull();
+            // returnNulls=true da JsonNull.INSTANCE ishlatiladi (JSON null sifatida serialize qilinadi)
+            assertThat(map.get("deleteTs")).isEqualTo(uz.hemis.common.JsonNull.INSTANCE);
         }
     }
 
     // ====================================================================
-    //  UniversityEmployeeRate
+    //  EmployeeRate
     // ====================================================================
 
     @Nested
-    @DisplayName("UniversityEmployeeRate")
-    class UniversityEmployeeRateTests {
+    @DisplayName("EmployeeRate")
+    class EmployeeRateTests {
 
         @Test
-        void toUniversityEmployeeRateMap_shouldBuildCorrectMap() {
-            UniversityEmployeeRate entity = new UniversityEmployeeRate();
+        void toEmployeeRateMap_shouldBuildCorrectMap() {
+            EmployeeRate entity = new EmployeeRate();
             entity.setCode("11");
             entity.setName("1,00 stavka");
             entity.setActive(true);
 
-            Map<String, Object> map = service.toUniversityEmployeeRateMap(entity, false);
+            Map<String, Object> map = service.toEmployeeRateMap(entity, false);
 
             assertThat(map).containsEntry("_entityName", "hemishe_HUniversityEmployeeRate");
             assertThat(map).containsEntry("id", "11");
@@ -127,12 +139,13 @@ class EmployeeRefLegacyServiceTest {
             Map<String, Object> map = service.toEmployeeCertificateMap(cert);
 
             assertThat(map).containsEntry("_entityName", "hemishe_EEmpoyeeCertificate");
-            assertThat(map).containsEntry("_instanceName", "SN-001");
+            assertThat((String) map.get("_instanceName"))
+                    .contains("com.company.hemishe.entity.EEmpoyeeCertificate-" + id);
             assertThat(map).containsEntry("id", id);
-            assertThat(map).containsEntry("university", "401");
-            assertThat(map).containsEntry("employee", empId);
-            assertThat(map).containsEntry("certificateType", "IELTS");
+            // OLD-HEMIS: default view da reference fieldlar qaytarilmaydi
+            assertThat(map).containsEntry("serialNumber", "SN-001");
             assertThat(map).containsEntry("issueDate", LocalDate.of(2024, 1, 15));
+            assertThat(map).containsEntry("active", true);
         }
 
         @Test
@@ -190,16 +203,16 @@ class EmployeeRefLegacyServiceTest {
     }
 
     // ====================================================================
-    //  UniversityEmployeeForm
+    //  EmploymentForm
     // ====================================================================
 
     @Nested
-    @DisplayName("UniversityEmployeeForm")
-    class UniversityEmployeeFormTests {
+    @DisplayName("EmploymentForm")
+    class EmploymentFormTests {
 
         @Test
-        void toUniversityEmployeeFormMap_preservesOldHemisFieldOrder() {
-            UniversityEmployeeForm entity = new UniversityEmployeeForm();
+        void toEmploymentFormMap_preservesOldHemisFieldOrder() {
+            EmploymentForm entity = new EmploymentForm();
             entity.setCode("11");
             entity.setName("Asosiy shtat");
             entity.setNameRu(null);
@@ -207,7 +220,7 @@ class EmployeeRefLegacyServiceTest {
             entity.setActive(true);
             entity.setVersion(1);
 
-            Map<String, Object> map = service.toUniversityEmployeeFormMap(entity, true);
+            Map<String, Object> map = service.toEmploymentFormMap(entity, true);
 
             assertThat(map).containsEntry("_entityName", "hemishe_HUniversityEmployeeForm");
             assertThat(map).containsEntry("id", "11");
@@ -297,9 +310,9 @@ class EmployeeRefLegacyServiceTest {
 
             assertThat(result.getName()).isEqualTo("New Name");
             assertThat(result.getNameEn()).isEqualTo("New Name En");
-            assertThat(result.getActive()).isFalse();
+            assertThat(result.isActive()).isFalse();
             assertThat(result.getUpdatedBy()).isEqualTo("admin");
-            assertThat(result.getUpdateTs()).isNotNull();
+            assertThat(result.getUpdatedAt()).isNotNull();
         }
 
         @Test
@@ -348,7 +361,7 @@ class EmployeeRefLegacyServiceTest {
 
             assertThat(result.getCode()).isEqualTo("99");
             assertThat(result.getName()).isEqualTo("Brand New");
-            assertThat(result.getActive()).isTrue();
+            assertThat(result.isActive()).isTrue();
             assertThat(result.getCreatedBy()).isEqualTo("admin");
         }
 

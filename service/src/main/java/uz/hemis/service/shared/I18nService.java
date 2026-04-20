@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.SystemMessage;
-import uz.hemis.domain.entity.SystemMessageTranslation;
+import uz.hemis.domain.entity.system.SystemMessage;
+import uz.hemis.domain.entity.system.SystemMessageTranslation;
 import uz.hemis.domain.repository.SystemMessageRepository;
 import uz.hemis.domain.repository.SystemMessageTranslationRepository;
 

@@ -13,7 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import uz.hemis.common.dto.document.DiplomaBlankDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.DiplomaBlank;
+import uz.hemis.domain.entity.finance.DiplomaBlank;
 import uz.hemis.domain.repository.DiplomaBlankRepository;
 import uz.hemis.service.document.mapper.DiplomaBlankMapper;
 

@@ -10,8 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.enums.RoleType;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Permission;
-import uz.hemis.domain.entity.Role;
+import uz.hemis.domain.entity.security.Permission;
+import uz.hemis.domain.entity.security.Role;
 import uz.hemis.domain.repository.PermissionRepository;
 import uz.hemis.domain.repository.RoleRepository;
 import uz.hemis.common.port.cache.CacheEvictionPort;
@@ -237,9 +237,9 @@ public class RoleAdminService {
                 .id(permission.getId())
                 .code(permission.getCode())
                 .name(permission.getName())
-                .category(permission.getCategory())
+                .category(permission.getCategory() != null ? permission.getCategory().name() : null)
                 .resource(permission.getResource())
-                .action(permission.getAction())
+                .action(permission.getAction() != null ? permission.getAction().name().toLowerCase() : null)
                 .build();
     }
 }

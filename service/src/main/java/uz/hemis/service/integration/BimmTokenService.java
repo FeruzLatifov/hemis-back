@@ -107,46 +107,51 @@ public class BimmTokenService {
 
             URL urlObj = URI.create(oauth2Url).toURL();
             HttpURLConnection conn = (HttpURLConnection) urlObj.openConnection();
-            // Per-connection SSL bypass for government APIs with self-signed certs
-            if (conn instanceof HttpsURLConnection httpsConn) {
-                SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
-                httpsConn.setSSLSocketFactory(sc.getSocketFactory());
-                httpsConn.setHostnameVerifier((hostname, session) -> true);
-            }
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setConnectTimeout(30000);
-            conn.setReadTimeout(30000);
+            try {
+                // Per-connection SSL bypass for government APIs with self-signed certs
+                if (conn instanceof HttpsURLConnection httpsConn) {
+                    SSLContext sc = uz.hemis.service.base.AbstractGovernmentApiService.getGovSslContextStatic();
+                    httpsConn.setSSLSocketFactory(sc.getSocketFactory());
+                    httpsConn.setHostnameVerifier((hostname, session) -> true);
+                }
+                conn.setRequestMethod("POST");
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setConnectTimeout(30000);
+                conn.setReadTimeout(30000);
 
-            try (OutputStream os = conn.getOutputStream()) {
-                os.write(body.getBytes(StandardCharsets.UTF_8));
-            }
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(body.getBytes(StandardCharsets.UTF_8));
+                }
 
-            int statusCode = conn.getResponseCode();
-            if (statusCode == 200) {
-                String responseStr = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-                conn.disconnect();
+                int statusCode = conn.getResponseCode();
+                if (statusCode == 200) {
+                    String responseStr;
+                    try (java.io.InputStream is = conn.getInputStream()) {
+                        responseStr = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    }
 
-                // Parse response — old-hemis uses Gson getBodyAsMap(), we use Jackson
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                Map<String, Object> responseBody = mapper.readValue(responseStr, Map.class);
+                    // Parse response — old-hemis uses Gson getBodyAsMap(), we use Jackson
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    Map<String, Object> responseBody = mapper.readValue(responseStr, Map.class);
 
-                if (responseBody != null && responseBody.containsKey("access_token")) {
-                    String accessToken = responseBody.get("access_token").toString();
-                    // Cache token
-                    cachePort.store(CACHE_KEY, accessToken, TOKEN_TTL);
-                    log.info("BIMM OAuth2 token fetched and cached (TTL: {} seconds)", TOKEN_TTL.getSeconds());
-                    return accessToken;
+                    if (responseBody != null && responseBody.containsKey("access_token")) {
+                        String accessToken = responseBody.get("access_token").toString();
+                        // Cache token
+                        cachePort.store(CACHE_KEY, accessToken, TOKEN_TTL);
+                        log.info("BIMM OAuth2 token fetched and cached (TTL: {} seconds)", TOKEN_TTL.getSeconds());
+                        return accessToken;
+                    } else {
+                        log.error("BIMM OAuth2 response missing access_token");
+                        return null;
+                    }
                 } else {
-                    log.error("BIMM OAuth2 response missing access_token");
+                    log.error("BIMM OAuth2 request failed with status: {}", statusCode);
                     return null;
                 }
-            } else {
-                conn.disconnect();
-                log.error("BIMM OAuth2 request failed with status: {}", statusCode);
-                return null;
+            } finally {
+                conn.disconnect();  // ✅ disconnect har qanday holatda (exception, success, non-200)
             }
 
         } catch (Exception e) {

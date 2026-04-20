@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.Schedule;
+import uz.hemis.domain.entity.student.Schedule;
 
 import java.time.LocalDate;
 import java.util.List;

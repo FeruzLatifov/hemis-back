@@ -1,11 +1,13 @@
 package uz.hemis.common.dto;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,138 +17,123 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("PageResponse")
 class PageResponseTest {
 
-    // =====================================================
-    // of(Page) Factory Method
-    // =====================================================
-
     @Nested
-    @DisplayName("of(Page) factory method")
+    @DisplayName("of(Page) factory")
     class OfPageFactory {
 
         @Test
-        @DisplayName("of(page) sets all pagination fields correctly")
-        void of_page_setsAllPaginationFields() {
+        @DisplayName("all pagination fields populated — PageImpl bilan mos")
+        void setsAllFields() {
             List<String> content = List.of("alpha", "beta", "gamma");
-            // page 0, size 3, total 10 elements => 4 total pages
             Page<String> springPage = new PageImpl<>(content, PageRequest.of(0, 3), 10);
 
-            PageResponse<String> result = PageResponse.of(springPage);
+            PageResponse<String> r = PageResponse.of(springPage);
 
-            assertThat(result.getContent()).containsExactly("alpha", "beta", "gamma");
-            assertThat(result.getPage()).isEqualTo(0);
-            assertThat(result.getSize()).isEqualTo(3);
-            assertThat(result.getTotalElements()).isEqualTo(10L);
-            assertThat(result.getTotalPages()).isEqualTo(4);
-            assertThat(result.getFirst()).isTrue();
-            assertThat(result.getLast()).isFalse();
-            assertThat(result.getHasNext()).isTrue();
-            assertThat(result.getHasPrevious()).isFalse();
-            assertThat(result.getNumberOfElements()).isEqualTo(3);
-            assertThat(result.getEmpty()).isFalse();
+            assertThat(r.getContent()).containsExactly("alpha", "beta", "gamma");
+            assertThat(r.getNumber()).isEqualTo(0);
+            assertThat(r.getSize()).isEqualTo(3);
+            assertThat(r.getTotalElements()).isEqualTo(10L);
+            assertThat(r.getTotalPages()).isEqualTo(4);
+            assertThat(r.getNumberOfElements()).isEqualTo(3);
+            assertThat(r.getFirst()).isTrue();
+            assertThat(r.getLast()).isFalse();
+            assertThat(r.getEmpty()).isFalse();
+            // Legacy aliaslar (eski PageResponse format)
+            assertThat(r.getPage()).isEqualTo(0);
+            assertThat(r.getHasNext()).isTrue();
+            assertThat(r.getHasPrevious()).isFalse();
+            // Nested pageable/sort PageImpl JSON shape bilan mos
+            assertThat(r.getPageable()).isNotNull();
+            assertThat(r.getPageable().getPageNumber()).isEqualTo(0);
+            assertThat(r.getPageable().getPageSize()).isEqualTo(3);
+            assertThat(r.getPageable().getPaged()).isTrue();
+            assertThat(r.getSort()).isNotNull();
+            assertThat(r.getSort().getEmpty()).isTrue();
         }
 
         @Test
-        @DisplayName("of(page) with empty page sets zero values")
-        void of_emptyPage_setsZeroValues() {
+        @DisplayName("empty page — barcha zero/bo'sh qiymatlar")
+        void emptyPage() {
             Page<String> emptyPage = new PageImpl<>(
-                    Collections.emptyList(), PageRequest.of(0, 10), 0
-            );
+                    Collections.emptyList(), PageRequest.of(0, 10), 0);
 
-            PageResponse<String> result = PageResponse.of(emptyPage);
+            PageResponse<String> r = PageResponse.of(emptyPage);
 
-            assertThat(result.getContent()).isEmpty();
-            assertThat(result.getPage()).isEqualTo(0);
-            assertThat(result.getSize()).isEqualTo(10);
-            assertThat(result.getTotalElements()).isEqualTo(0L);
-            assertThat(result.getTotalPages()).isEqualTo(0);
-            assertThat(result.getFirst()).isTrue();
-            assertThat(result.getLast()).isTrue();
-            assertThat(result.getHasNext()).isFalse();
-            assertThat(result.getHasPrevious()).isFalse();
-            assertThat(result.getNumberOfElements()).isEqualTo(0);
-            assertThat(result.getEmpty()).isTrue();
+            assertThat(r.getContent()).isEmpty();
+            assertThat(r.getNumber()).isEqualTo(0);
+            assertThat(r.getTotalElements()).isEqualTo(0L);
+            assertThat(r.getTotalPages()).isEqualTo(0);
+            assertThat(r.getFirst()).isTrue();
+            assertThat(r.getLast()).isTrue();
+            assertThat(r.getEmpty()).isTrue();
+        }
+
+        @Test
+        @DisplayName("sorted page — sort fieldlar to'g'ri")
+        void sortedPage() {
+            Page<String> page = new PageImpl<>(
+                    List.of("a"), PageRequest.of(0, 10, Sort.by("name")), 1);
+
+            PageResponse<String> r = PageResponse.of(page);
+
+            assertThat(r.getSort().getSorted()).isTrue();
+            assertThat(r.getSort().getUnsorted()).isFalse();
+            assertThat(r.getPageable().getSort().getSorted()).isTrue();
         }
     }
 
-    // =====================================================
-    // of(Page, List) Factory Method with Transformed Content
-    // =====================================================
-
     @Nested
-    @DisplayName("of(Page, List) factory method with transformed content")
-    class OfPageWithTransformedContent {
+    @DisplayName("of(Page, transformedContent) — mapper uchun")
+    class OfPageWithTransformed {
 
         @Test
-        @DisplayName("of(page, transformedContent) uses the new content list")
-        void of_pageWithTransformedContent_usesNewContent() {
-            // Original page holds Integer entities
-            List<Integer> entities = List.of(1, 2, 3);
-            Page<Integer> springPage = new PageImpl<>(entities, PageRequest.of(1, 3), 9);
-
-            // Transform to String DTOs
+        void usesTransformedContent() {
+            Page<Integer> springPage = new PageImpl<>(
+                    List.of(1, 2, 3), PageRequest.of(1, 3), 9);
             List<String> dtos = List.of("one", "two", "three");
 
-            PageResponse<String> result = PageResponse.of(springPage, dtos);
+            PageResponse<String> r = PageResponse.of(springPage, dtos);
 
-            // Content should be the transformed list, not the original
-            assertThat(result.getContent()).containsExactly("one", "two", "three");
-            // Pagination metadata comes from the original page
-            assertThat(result.getPage()).isEqualTo(1);
-            assertThat(result.getSize()).isEqualTo(3);
-            assertThat(result.getTotalElements()).isEqualTo(9L);
-            assertThat(result.getTotalPages()).isEqualTo(3);
-            // numberOfElements and empty come from the transformed content list
-            assertThat(result.getNumberOfElements()).isEqualTo(3);
-            assertThat(result.getEmpty()).isFalse();
+            assertThat(r.getContent()).containsExactly("one", "two", "three");
+            assertThat(r.getNumber()).isEqualTo(1);
+            assertThat(r.getTotalElements()).isEqualTo(9L);
         }
     }
 
-    // =====================================================
-    // Helper Methods
-    // =====================================================
-
     @Nested
-    @DisplayName("helper methods")
-    class HelperMethods {
+    @DisplayName("JSON shape — PageImpl drop-in compatibility")
+    class JsonShape {
 
         @Test
-        @DisplayName("isSinglePage returns true when page is both first and last")
-        void isSinglePage_onePage_returnsTrue() {
-            // Single page: 2 items, size 10, total 2 => 1 page
-            Page<String> singlePage = new PageImpl<>(
-                    List.of("a", "b"), PageRequest.of(0, 10), 2
-            );
+        @DisplayName("JSON da barcha PageImpl fieldlari mavjud (backward compat)")
+        void jsonShapeMatchesPageImpl() throws Exception {
+            Page<String> springPage = new PageImpl<>(
+                    List.of("x"), PageRequest.of(0, 5, Sort.by("id")), 1);
+            PageResponse<String> r = PageResponse.of(springPage);
 
-            PageResponse<String> result = PageResponse.of(singlePage);
+            String json = new ObjectMapper().writeValueAsString(r);
 
-            assertThat(result.isSinglePage()).isTrue();
-        }
-
-        @Test
-        @DisplayName("isSinglePage returns false when there are multiple pages")
-        void isSinglePage_multiplePages_returnsFalse() {
-            // Multiple pages: 3 items on page 0, size 3, total 7 => 3 pages
-            Page<String> multiPage = new PageImpl<>(
-                    List.of("a", "b", "c"), PageRequest.of(0, 3), 7
-            );
-
-            PageResponse<String> result = PageResponse.of(multiPage);
-
-            assertThat(result.isSinglePage()).isFalse();
-        }
-
-        @Test
-        @DisplayName("getPageNumber returns 1-indexed page number")
-        void getPageNumber_returnsOneIndexed() {
-            // Page index 0 in Spring Data should become page number 1
-            Page<String> page = new PageImpl<>(
-                    List.of("x"), PageRequest.of(0, 5), 1
-            );
-
-            PageResponse<String> result = PageResponse.of(page);
-
-            assertThat(result.getPage()).isEqualTo(0);
-            assertThat(result.getPageNumber()).isEqualTo(1);
+            // Spring PageImpl default JSON fieldlari
+            assertThat(json).contains("\"content\"");
+            assertThat(json).contains("\"number\":0");          // ← CRITICAL: `page` emas, `number`
+            assertThat(json).contains("\"size\":5");
+            assertThat(json).contains("\"totalElements\":1");
+            assertThat(json).contains("\"totalPages\":1");
+            assertThat(json).contains("\"numberOfElements\":1");
+            assertThat(json).contains("\"first\":true");
+            assertThat(json).contains("\"last\":true");
+            assertThat(json).contains("\"empty\":false");
+            assertThat(json).contains("\"pageable\"");
+            assertThat(json).contains("\"pageNumber\":0");
+            assertThat(json).contains("\"pageSize\":5");
+            assertThat(json).contains("\"paged\":true");
+            assertThat(json).contains("\"unpaged\":false");
+            assertThat(json).contains("\"sort\"");
+            assertThat(json).contains("\"sorted\":true");
+            // Legacy aliaslar — eski PageResponse format consumer'lari uchun
+            assertThat(json).contains("\"page\":0");
+            assertThat(json).contains("\"hasNext\":false");
+            assertThat(json).contains("\"hasPrevious\":false");
         }
     }
 }

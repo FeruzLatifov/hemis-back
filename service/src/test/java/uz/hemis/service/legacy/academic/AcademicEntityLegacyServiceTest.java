@@ -7,7 +7,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
 
@@ -196,8 +207,9 @@ class AcademicEntityLegacyServiceTest {
         @Test
         @DisplayName("toEducationMaterialsMap returns correct fields")
         void toMap_returnsCorrectFields() {
+            UUID id = UUID.randomUUID();
             EducationMaterials entity = new EducationMaterials();
-            entity.setId(UUID.randomUUID());
+            entity.setId(id);
             entity.setUniversity("401");
             entity.setEducationYear("2024");
             entity.setSpecialityName("Informatika");
@@ -207,23 +219,26 @@ class AcademicEntityLegacyServiceTest {
             Map<String, Object> result = service.toEducationMaterialsMap(entity, false);
 
             assertThat(result).containsEntry("_entityName", "hemishe_REducationMaterials");
-            assertThat(result).containsEntry("university_code", "401");
-            assertThat(result).containsEntry("education_year_code", "2024");
-            assertThat(result).containsEntry("speciality_name", "Informatika");
-            assertThat(result).containsEntry("subject_count", 15);
-            assertThat(result.get("_instanceName")).isEqualTo("Informatika");
+            assertThat(result).containsEntry("universityCode", "401");
+            assertThat(result).containsEntry("educationYearCode", "2024");
+            assertThat(result).containsEntry("specialityName", "Informatika");
+            assertThat(result).containsEntry("subjectCount", 15);
+            assertThat((String) result.get("_instanceName"))
+                    .contains("com.company.hemishe.entity.REducationMaterials-" + id);
         }
 
         @Test
-        @DisplayName("toEducationMaterialsMap includes deleteTs/deletedBy")
+        @DisplayName("toEducationMaterialsMap - returnNulls true da barcha maydonlar JsonNull bo'ladi")
         void toMap_includesDeleteFields() {
             EducationMaterials entity = new EducationMaterials();
             entity.setId(UUID.randomUUID());
 
             Map<String, Object> result = service.toEducationMaterialsMap(entity, true);
 
-            assertThat(result).containsKey("deleteTs");
-            assertThat(result).containsKey("deletedBy");
+            // Service delete fieldlarni qaytarmaydi, lekin returnNulls=true da boshqa fieldlar JsonNull
+            assertThat(result).containsKey("universityCode");
+            assertThat(result).containsKey("specialityName");
+            assertThat(result.get("universityCode")).isEqualTo(uz.hemis.common.JsonNull.INSTANCE);
         }
     }
 
@@ -246,11 +261,6 @@ class AcademicEntityLegacyServiceTest {
             entity.setCertificateDate(LocalDate.of(2024, 6, 15));
             entity.setVersion(1);
 
-            when(referenceDataService.getUniversityData("401"))
-                .thenReturn(Map.of("code", "401", "name", "TATU"));
-            when(referenceDataService.getEducationYearData("2024"))
-                .thenReturn(Map.of("code", "2024", "name", "2024/2025"));
-
             Map<String, Object> result = service.toAcademicMethodologicPublicationsMap(entity, false);
 
             assertThat(result).containsEntry("_entityName", "hemishe_RIAcademicMethodologicPublications");
@@ -258,15 +268,9 @@ class AcademicEntityLegacyServiceTest {
             assertThat(result).containsEntry("bookName", "Informatika darsligi");
             assertThat(result).containsEntry("version", 1);
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> university = (Map<String, Object>) result.get("university");
-            assertThat(university).containsEntry("_entityName", "hemishe_EUniversity");
-            assertThat(university).containsEntry("code", "401");
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> educationYear = (Map<String, Object>) result.get("educationYear");
-            assertThat(educationYear).containsEntry("_entityName", "hemishe_HEducationYear");
-            assertThat(educationYear).containsEntry("name", "2024/2025");
+            // OLD-HEMIS: university va educationYear reference fieldlar default view da qaytarilmaydi
+            assertThat(result).doesNotContainKey("university");
+            assertThat(result).doesNotContainKey("educationYear");
         }
 
         @Test

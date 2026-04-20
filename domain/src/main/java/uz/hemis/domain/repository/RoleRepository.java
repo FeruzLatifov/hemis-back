@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.enums.RoleType;
-import uz.hemis.domain.entity.Role;
+import uz.hemis.domain.entity.security.Role;
 
 import java.util.List;
 import java.util.Optional;

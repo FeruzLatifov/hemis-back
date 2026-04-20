@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.dto.LegacyUserInfoResponse;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.service.legacy.UserLegacyService;
 import org.springframework.security.access.prepost.PreAuthorize;
 

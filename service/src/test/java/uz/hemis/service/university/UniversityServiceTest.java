@@ -15,7 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.University;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.university.mapper.UniversityMapper;
 

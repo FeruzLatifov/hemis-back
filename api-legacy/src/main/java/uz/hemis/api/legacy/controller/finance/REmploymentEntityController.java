@@ -16,7 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.REmployment;
+import uz.hemis.domain.entity.employee.REmployment;
 import uz.hemis.service.legacy.finance.FinanceEntityLegacyService;
 
 import java.time.LocalDateTime;

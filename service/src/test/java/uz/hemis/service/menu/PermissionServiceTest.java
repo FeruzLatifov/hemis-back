@@ -8,9 +8,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uz.hemis.domain.entity.Permission;
-import uz.hemis.domain.entity.Role;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.Permission;
+import uz.hemis.domain.entity.security.Role;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.UserRepository;
 
 import java.util.*;
@@ -53,44 +53,39 @@ class PermissionServiceTest {
 
         // Build permissions
         Permission studentsView = Permission.builder()
-                .id(UUID.randomUUID())
                 .resource("students")
-                .action("view")
+                .action(uz.hemis.domain.entity.enums.PermissionAction.VIEW)
                 .code("students.view")
                 .name("View Students")
-                .category("CORE")
+                .category(uz.hemis.domain.entity.enums.PermissionCategory.CORE)
                 .build();
 
         Permission studentsCreate = Permission.builder()
-                .id(UUID.randomUUID())
                 .resource("students")
-                .action("create")
+                .action(uz.hemis.domain.entity.enums.PermissionAction.CREATE)
                 .code("students.create")
                 .name("Create Students")
-                .category("CORE")
+                .category(uz.hemis.domain.entity.enums.PermissionCategory.CORE)
                 .build();
 
         Permission reportsView = Permission.builder()
-                .id(UUID.randomUUID())
                 .resource("reports")
-                .action("view")
+                .action(uz.hemis.domain.entity.enums.PermissionAction.VIEW)
                 .code("reports.view")
                 .name("View Reports")
-                .category("REPORTS")
+                .category(uz.hemis.domain.entity.enums.PermissionCategory.REPORTS)
                 .build();
 
         Permission reportsExport = Permission.builder()
-                .id(UUID.randomUUID())
                 .resource("reports")
-                .action("export")
+                .action(uz.hemis.domain.entity.enums.PermissionAction.EXPORT)
                 .code("reports.export")
                 .name("Export Reports")
-                .category("REPORTS")
+                .category(uz.hemis.domain.entity.enums.PermissionCategory.REPORTS)
                 .build();
 
         // Build roles
         adminRole = Role.builder()
-                .id(UUID.randomUUID())
                 .code("OTM_API")
                 .name("University Administrator")
                 .active(true)
@@ -98,7 +93,6 @@ class PermissionServiceTest {
                 .build();
 
         viewerRole = Role.builder()
-                .id(UUID.randomUUID())
                 .code("VIEWER")
                 .name("Viewer")
                 .active(true)
@@ -199,16 +193,14 @@ class PermissionServiceTest {
         void userWithInactiveRole_permissionsExcluded() {
             // Given - deactivate the admin role
             Role inactiveRole = Role.builder()
-                    .id(UUID.randomUUID())
                     .code("INACTIVE_ROLE")
                     .name("Inactive Role")
                     .active(false) // inactive
                     .permissions(new HashSet<>(Set.of(
                             Permission.builder()
-                                    .id(UUID.randomUUID())
                                     .code("secret.manage")
                                     .resource("secret")
-                                    .action("manage")
+                                    .action(uz.hemis.domain.entity.enums.PermissionAction.MANAGE)
                                     .name("Manage Secrets")
                                     .build()
                     )))
@@ -261,87 +253,9 @@ class PermissionServiceTest {
             assertThat(result).isFalse();
         }
 
-        @Test
-        @DisplayName("super admin wildcard (*) - grants all permissions")
-        void superAdminWildcard_grantsAllPermissions() {
-            // Given - create user with wildcard permission
-            Permission wildcardPermission = Permission.builder()
-                    .id(UUID.randomUUID())
-                    .resource("*")
-                    .action("*")
-                    .code("*")
-                    .name("Super Admin")
-                    .build();
-
-            Role superAdminRole = Role.builder()
-                    .id(UUID.randomUUID())
-                    .code("SUPER_ADMIN")
-                    .name("Super Admin")
-                    .active(true)
-                    .permissions(new HashSet<>(Set.of(wildcardPermission)))
-                    .build();
-
-            User superAdmin = new User();
-            superAdmin.setId(userId);
-            superAdmin.setUsername("super_admin");
-            superAdmin.setPassword("$2a$10$hashed");
-            superAdmin.setEnabled(true);
-            superAdmin.setRoleSet(new HashSet<>(Set.of(superAdminRole)));
-
-            when(userRepository.findByIdWithPermissions(userId)).thenReturn(Optional.of(superAdmin));
-
-            // When
-            boolean canViewStudents = permissionService.hasPermission(userId, "students.view");
-            boolean canManageUsers = permissionService.hasPermission(userId, "users.manage");
-            boolean canDeleteAnything = permissionService.hasPermission(userId, "anything.delete");
-
-            // Then
-            assertThat(canViewStudents).isTrue();
-            assertThat(canManageUsers).isTrue();
-            assertThat(canDeleteAnything).isTrue();
-        }
-
-        @Test
-        @DisplayName("resource wildcard (students.*) - grants all actions on resource")
-        void resourceWildcard_grantsAllActionsOnResource() {
-            // Given - create user with students.* permission
-            Permission studentsWildcard = Permission.builder()
-                    .id(UUID.randomUUID())
-                    .resource("students")
-                    .action("*")
-                    .code("students.*")
-                    .name("All Student Permissions")
-                    .build();
-
-            Role roleWithWildcard = Role.builder()
-                    .id(UUID.randomUUID())
-                    .code("STUDENT_MANAGER")
-                    .name("Student Manager")
-                    .active(true)
-                    .permissions(new HashSet<>(Set.of(studentsWildcard)))
-                    .build();
-
-            User wildcardUser = new User();
-            wildcardUser.setId(userId);
-            wildcardUser.setUsername("student_manager");
-            wildcardUser.setPassword("$2a$10$hashed");
-            wildcardUser.setEnabled(true);
-            wildcardUser.setRoleSet(new HashSet<>(Set.of(roleWithWildcard)));
-
-            when(userRepository.findByIdWithPermissions(userId)).thenReturn(Optional.of(wildcardUser));
-
-            // When
-            boolean canView = permissionService.hasPermission(userId, "students.view");
-            boolean canCreate = permissionService.hasPermission(userId, "students.create");
-            boolean canDelete = permissionService.hasPermission(userId, "students.delete");
-            boolean canViewReports = permissionService.hasPermission(userId, "reports.view");
-
-            // Then
-            assertThat(canView).isTrue();
-            assertThat(canCreate).isTrue();
-            assertThat(canDelete).isTrue();
-            assertThat(canViewReports).isFalse(); // different resource
-        }
+        // NOTE: Legacy wildcard tests (superAdminWildcard, resourceWildcard) removed after
+        // Permission.action migration to enum in Batch 4 — wildcards are no longer storable.
+        // Super admin capability is now expressed via SUPER_ADMIN role (see Role.code).
 
         @Test
         @DisplayName("null or empty permission required - returns true (no permission needed)")
@@ -372,43 +286,6 @@ class PermissionServiceTest {
             assertThat(result).isFalse();
         }
 
-        @Test
-        @DisplayName("wildcard does not partially match resource prefix")
-        void wildcardDoesNotPartiallyMatchPrefix() {
-            // Given - user has "student.*" (note: singular)
-            Permission studentWildcard = Permission.builder()
-                    .id(UUID.randomUUID())
-                    .code("student.*")
-                    .resource("student")
-                    .action("*")
-                    .name("Student wildcard")
-                    .build();
-
-            Role roleWithPartial = Role.builder()
-                    .id(UUID.randomUUID())
-                    .code("PARTIAL")
-                    .name("Partial")
-                    .active(true)
-                    .permissions(new HashSet<>(Set.of(studentWildcard)))
-                    .build();
-
-            User partialUser = new User();
-            partialUser.setId(userId);
-            partialUser.setUsername("partial_user");
-            partialUser.setPassword("$2a$10$hashed");
-            partialUser.setEnabled(true);
-            partialUser.setRoleSet(new HashSet<>(Set.of(roleWithPartial)));
-
-            when(userRepository.findByIdWithPermissions(userId)).thenReturn(Optional.of(partialUser));
-
-            // When - "student.*" should NOT match "students.view" (different resource)
-            boolean matchesStudents = permissionService.hasPermission(userId, "students.view");
-            boolean matchesStudent = permissionService.hasPermission(userId, "student.view");
-
-            // Then
-            assertThat(matchesStudents).isFalse(); // "student.*" != "students.*"
-            assertThat(matchesStudent).isTrue();   // "student.*" matches "student.view"
-        }
     }
 
     // =====================================================

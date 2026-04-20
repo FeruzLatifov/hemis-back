@@ -12,8 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.exception.BadRequestException;
-import uz.hemis.domain.entity.PasswordResetToken;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.PasswordResetToken;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.PasswordResetTokenRepository;
 import uz.hemis.domain.repository.UserRepository;
 
@@ -47,7 +47,7 @@ public class PasswordResetService {
     private String frontendUrl;
 
     private static final int TOKEN_EXPIRY_MINUTES = 15;
-    private static final int MAX_REQUESTS_PER_HOUR = 3;
+    private static final int MAX_REQUESTS_PER_HOUR = 2;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /**

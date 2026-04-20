@@ -106,7 +106,8 @@ CREATE TABLE password_history (
     id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     password_hash VARCHAR(255) NOT NULL,
-    created_at    TIMESTAMP NOT NULL DEFAULT now()
+    created_at    TIMESTAMP NOT NULL DEFAULT now(),
+    created_by    VARCHAR(50)
 );
 
 CREATE INDEX idx_password_history_user_id ON password_history(user_id);
@@ -120,7 +121,8 @@ CREATE TABLE password_reset_token (
     token      VARCHAR(64) NOT NULL UNIQUE,
     expires_at TIMESTAMP NOT NULL,
     used       BOOLEAN NOT NULL DEFAULT false,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    created_by VARCHAR(50)
 );
 
 CREATE INDEX idx_prt_token ON password_reset_token(token);

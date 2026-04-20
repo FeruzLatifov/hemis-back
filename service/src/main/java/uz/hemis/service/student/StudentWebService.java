@@ -27,7 +27,7 @@ import uz.hemis.common.dto.student.SpecialityStatsDto;
 import uz.hemis.common.dto.student.SpecialitySummaryDto;
 import uz.hemis.common.dto.student.StudentStatsDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Student;
+import uz.hemis.domain.entity.student.Student;
 import uz.hemis.domain.repository.StudentRepository;
 import uz.hemis.service.classifier.ClassifierWebService;
 import uz.hemis.service.student.mapper.StudentMapper;

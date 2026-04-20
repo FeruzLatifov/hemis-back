@@ -10,9 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.system.TranslationDto;
-import uz.hemis.domain.entity.SystemMessage;
-import uz.hemis.domain.entity.SystemMessageTranslation;
-import uz.hemis.domain.entity.SystemMessageTranslationId;
+import uz.hemis.domain.entity.system.SystemMessage;
+import uz.hemis.domain.entity.system.SystemMessageTranslation;
+import uz.hemis.domain.entity.system.SystemMessageTranslationId;
 import uz.hemis.domain.repository.SystemMessageRepository;
 import uz.hemis.domain.repository.SystemMessageTranslationRepository;
 import uz.hemis.service.shared.I18nService;
@@ -451,7 +451,7 @@ public class TranslationAdminService {
                             try {
                                 writer.write(prop.getKey() + "=" + escapePropertyValue(prop.getValue()) + "\n");
                             } catch (IOException e) {
-                                log.error("Failed to write property: " + prop.getKey(), e);
+                                log.error("Failed to write property: {}", prop.getKey(), e);
                             }
                         });
                 }

@@ -409,12 +409,19 @@ public class LegacyOAuthTokenController {
      */
     private String getClientIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            // Edge case: "," yoki bo'sh segment — split empty array qaytaradi
+            String[] parts = xForwardedFor.split(",");
+            for (String p : parts) {
+                String trimmed = p.trim();
+                if (!trimmed.isEmpty()) {
+                    return trimmed;
+                }
+            }
         }
         String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
+        if (xRealIp != null && !xRealIp.isBlank()) {
+            return xRealIp.trim();
         }
         return request.getRemoteAddr();
     }

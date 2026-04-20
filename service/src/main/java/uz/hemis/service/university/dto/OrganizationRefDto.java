@@ -2,7 +2,7 @@ package uz.hemis.service.university.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import uz.hemis.domain.entity.Organization;
+import uz.hemis.domain.entity.university.Organization;
 
 @Data
 @Builder

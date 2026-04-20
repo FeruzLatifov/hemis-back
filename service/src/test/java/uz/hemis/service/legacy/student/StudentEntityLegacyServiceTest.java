@@ -8,7 +8,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
 import uz.hemis.service.legacy.SoftDeleteRestoreLegacyService;
@@ -94,10 +105,10 @@ class StudentEntityLegacyServiceTest {
             Map<String, Object> map = service.toStudentCertificateMap(entity, false);
 
             assertThat(map.get("_entityName")).isEqualTo("hemishe_EStudentCertificate");
-            assertThat(map.get("_instanceName")).isEqualTo("SN-12345");
+            assertThat((String) map.get("_instanceName"))
+                    .contains("com.company.hemishe.entity.EStudentCertificate-" + testId);
             assertThat(map.get("id")).isEqualTo(testId);
-            assertThat(map.get("university")).isEqualTo("301");
-            assertThat(map.get("certificateType")).isEqualTo("IELTS");
+            // Reference fields (university, certificateType) faqat view mode da qaytariladi
             assertThat(map.get("active")).isEqualTo(true);
         }
 
@@ -178,7 +189,8 @@ class StudentEntityLegacyServiceTest {
 
             service.updateAdministrativeStudent3FromMap(entity, data);
 
-            assertThat(entity.getUniversity()).isEqualTo(universityId);
+            // university is String (code-based), student is UUID
+            assertThat(entity.getUniversity()).isEqualTo(universityId.toString());
             assertThat(entity.getStudent()).isEqualTo(studentId);
             assertThat(entity.getCompany()).isEqualTo("New Company");
         }
@@ -341,7 +353,8 @@ class StudentEntityLegacyServiceTest {
             Map<String, Object> map = service.toExpelMap(entity, false);
 
             assertThat(map.get("_entityName")).isEqualTo("hemishe_RExpel");
-            assertThat(map.get("_instanceName")).isEqualTo("TDTU");
+            assertThat((String) map.get("_instanceName"))
+                    .contains("com.company.hemishe.entity.RExpel-" + testId);
             assertThat(map.get("universityCode")).isEqualTo("301");
             assertThat(map.get("facultyName")).isEqualTo("IT fakulteti");
             assertThat(map.get("expelCount")).isEqualTo(5);
@@ -426,23 +439,15 @@ class StudentEntityLegacyServiceTest {
         }
 
         @Test
-        @DisplayName("toMap - nested university object qaytaradi")
+        @DisplayName("toMap - default view da reference fieldlar yo'q")
         void toMap_returnsNestedUniversityObject() {
-            when(referenceDataService.getUniversityData("301"))
-                .thenReturn(Map.of("name", "TDTU"));
-            when(referenceDataService.getEducationYearData("2024"))
-                .thenReturn(Map.of("name", "2024-2025"));
-
             Map<String, Object> map = service.toAdministrativeSportFacilitiesMap(entity, false);
 
             assertThat(map.get("_entityName")).isEqualTo("hemishe_RIAdministrativeSportFacilities");
             assertThat(map.get("square")).isEqualTo(1500.5);
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> universityMap = (Map<String, Object>) map.get("university");
-            assertThat(universityMap.get("_entityName")).isEqualTo("hemishe_EUniversity");
-            assertThat(universityMap.get("code")).isEqualTo("301");
-            assertThat(universityMap.get("name")).isEqualTo("TDTU");
+            // OLD-HEMIS: university/educationYear reference fieldlar default view da qaytarilmaydi
+            assertThat(map).doesNotContainKey("university");
+            assertThat(map).doesNotContainKey("educationYear");
         }
 
         @Test

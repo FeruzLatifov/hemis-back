@@ -35,6 +35,22 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
 
+    // Structured JSON logging (prod) — CloudWatch/ELK/Datadog ingestion
+    implementation("net.logstash.logback:logstash-logback-encoder:8.0")
+
+    // DEFERRED: Prometheus + OTel tracing — Spring Boot 4.0.2 da dep version conflicts.
+    // Observability stack Spring Boot BOM stabillashgach qayta qo'shiladi.
+    // Log pattern [%X{traceId:-}] tayyor — bridge qo'shilsa avtomatik ishlaydi.
+
+    // Spring Modulith — explicit modul boundary deklaratsiyasi va verification
+    implementation(platform("org.springframework.modulith:spring-modulith-bom:1.4.0"))
+    implementation("org.springframework.modulith:spring-modulith-starter-core")
+    testImplementation("org.springframework.modulith:spring-modulith-starter-test")
+
+    // DEFERRED: Togglz (feature flags) — 4.5.0 Spring Boot 3.x uchun.
+    // Spring Boot 4.0 da EndpointExposure.CLOUD_FOUNDRY enum olib tashlangan,
+    // Togglz auto-configuration crash qiladi. Spring Boot 4 uchun 5.x chiqqach qo'shiladi.
+
     // Apache HttpClient5 (for RestTemplate with custom SSL/connection pooling)
     implementation("org.apache.httpcomponents.client5:httpclient5")
 
@@ -65,7 +81,16 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     testImplementation("org.springframework.security:spring-security-test")
-    testImplementation("com.h2database:h2")  // For integration tests
+    testImplementation("com.h2database:h2")  // For light-weight unit integration tests
+
+    // TestContainers — real Postgres/Redis in tests (Batch 26)
+    testImplementation(platform("org.testcontainers:testcontainers-bom:1.20.4"))
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.testcontainers:postgresql")
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+
+    // ArchUnit — compile-time arxitektura qoidalari (modul boundary, paket naming)
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
 }
 
 // =====================================================

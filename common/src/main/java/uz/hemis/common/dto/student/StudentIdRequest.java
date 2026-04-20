@@ -2,6 +2,7 @@ package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import uz.hemis.common.validation.ValidPinfl;
 
 /**
  * Student ID Request DTO - OLD-HEMIS Compatible
@@ -37,9 +38,11 @@ public class StudentIdRequest {
     private String citizenship;
 
     /**
-     * PINFL - Jismoniy shaxsning shaxsiy identifikatsiya raqami
-     * O'zbekiston fuqarolari uchun majburiy (citizenship = 11)
+     * PINFL - Jismoniy shaxsning shaxsiy identifikatsiya raqami.
+     * O'zbekiston fuqarolari uchun majburiy (citizenship = 11) — 14 xonali raqam.
      */
+    // ValidPinfl null-safe — citizenship=11 bo'lsa mavjudlik validate() ichida tekshiriladi
+    @ValidPinfl
     private String pinfl;
 
     /**

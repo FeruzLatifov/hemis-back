@@ -84,10 +84,9 @@ public class TokenService {
      * @return TokenResponse containing JWT access token and refresh token
      */
     public TokenResponse generateToken(UserDetails userDetails) {
-        log.info("Generating JWT token for user: {}", userDetails.getUsername());
-
         // ✅ HYBRID: Try users table first, fallback to sec_user
         String userId = getUserId(userDetails.getUsername());
+        log.info("Generating JWT token for userId: {}", userId);
 
         // Current time
         Instant now = Instant.now();
@@ -121,8 +120,8 @@ public class TokenService {
         // ✅ Generate refresh token (old-hemis compatibility)
         String refreshToken = generateRefreshToken(userDetails);
 
-        log.info("JWT token generated for user: {} (expires in {} seconds)",
-                userDetails.getUsername(), accessTokenValiditySeconds);
+        log.info("JWT token generated for userId: {} (expires in {} seconds)",
+                userId, accessTokenValiditySeconds);
 
         // Build OAuth2 token response (OLD-HEMIS format WITH refresh_token)
         return TokenResponse.builder()
@@ -141,10 +140,9 @@ public class TokenService {
      * @return refresh token JWT
      */
     public String generateRefreshToken(UserDetails userDetails) {
-        log.info("Generating refresh token for user: {}", userDetails.getUsername());
-
         // ✅ HYBRID: Try users table first, fallback to sec_user
         String userId = getUserId(userDetails.getUsername());
+        log.info("Generating refresh token for userId: {}", userId);
 
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(refreshTokenValiditySeconds);

@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.PublicationCriteria;
+import uz.hemis.domain.entity.research.PublicationCriteria;
 
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.service.legacy.science.ScienceEntityLegacyService;

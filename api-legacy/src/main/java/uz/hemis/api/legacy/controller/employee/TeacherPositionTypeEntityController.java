@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.TeacherPositionType;
+import uz.hemis.domain.entity.employee.TeacherPositionType;
 import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
 import java.util.*;

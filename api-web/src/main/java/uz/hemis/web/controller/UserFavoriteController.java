@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,11 +18,11 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
-import uz.hemis.domain.entity.UserFavorite;
 import uz.hemis.service.favorite.UserFavoriteService;
+import uz.hemis.service.favorite.dto.UserFavoriteCreateRequest;
+import uz.hemis.service.favorite.dto.UserFavoriteDto;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -109,7 +110,7 @@ public class UserFavoriteController {
             description = "Favoritlar muvaffaqiyatli qaytarildi",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = UserFavorite[].class)
+                schema = @Schema(implementation = UserFavoriteDto[].class)
             )
         ),
         @ApiResponse(
@@ -117,11 +118,13 @@ public class UserFavoriteController {
             description = "Unauthorized - Token topilmadi yoki yaroqsiz"
         )
     })
-    public ResponseEntity<ResponseWrapper<List<UserFavorite>>> getFavorites(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<ResponseWrapper<List<UserFavoriteDto>>> getFavorites(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = UUID.fromString(jwt.getSubject());
         log.debug("GET /api/v1/web/favorites - userId: {}", userId);
 
-        List<UserFavorite> favorites = favoriteService.getUserFavorites(userId);
+        List<UserFavoriteDto> favorites = favoriteService.getUserFavorites(userId).stream()
+                .map(UserFavoriteDto::from)
+                .toList();
         return ResponseEntity.ok(ResponseWrapper.success(favorites));
     }
 
@@ -164,7 +167,7 @@ public class UserFavoriteController {
             description = "Favorite muvaffaqiyatli qo'shildi",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = UserFavorite.class)
+                schema = @Schema(implementation = UserFavoriteDto.class)
             )
         ),
         @ApiResponse(
@@ -182,28 +185,17 @@ public class UserFavoriteController {
             description = "Unauthorized - Token topilmadi yoki yaroqsiz"
         )
     })
-    public ResponseEntity<ResponseWrapper<UserFavorite>> addFavorite(
+    public ResponseEntity<ResponseWrapper<UserFavoriteDto>> addFavorite(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestBody Map<String, String> body
+            @Valid @RequestBody UserFavoriteCreateRequest request
     ) {
         UUID userId = UUID.fromString(jwt.getSubject());
-        String menuCode = body.get("menuCode");
-        log.debug("POST /api/v1/web/favorites - userId: {}, menuCode: {}", userId, menuCode);
+        log.debug("POST /api/v1/web/favorites - userId: {}, menuCode: {}", userId, request.menuCode());
 
-        if (menuCode == null || menuCode.isBlank()) {
-            return ResponseEntity.badRequest().body(ResponseWrapper.error("menuCode is required"));
-        }
-
-        try {
-            UserFavorite favorite = favoriteService.addFavorite(userId, menuCode);
-            return ResponseEntity.ok(ResponseWrapper.success(favorite));
-        } catch (IllegalArgumentException e) {
-            log.warn("Add favorite failed - duplicate: userId: {}, menuCode: {}", userId, menuCode);
-            return ResponseEntity.badRequest().body(ResponseWrapper.error(e.getMessage()));
-        } catch (IllegalStateException e) {
-            log.warn("Add favorite failed - limit reached: userId: {}", userId);
-            return ResponseEntity.badRequest().body(ResponseWrapper.error(e.getMessage()));
-        }
+        // Service throws BadRequestException on duplicate/limit — handled by GlobalExceptionHandler
+        UserFavoriteDto favorite = UserFavoriteDto.from(
+                favoriteService.addFavorite(userId, request.menuCode()));
+        return ResponseEntity.ok(ResponseWrapper.success(favorite));
     }
 
     // =====================================================

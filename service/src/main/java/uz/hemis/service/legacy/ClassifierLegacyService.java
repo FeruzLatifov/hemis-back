@@ -4,7 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 
 import java.time.LocalDateTime;
@@ -36,7 +47,7 @@ public class ClassifierLegacyService {
     private final EducationYearRepository educationYearRepository;
     private final TransferTypeRepository transferTypeRepository;
     private final AdmissionTypeRepository admissionTypeRepository;
-    private final HUniversityDepartmentTypeRepository hUniversityDepartmentTypeRepository;
+    private final UniversityDepartmentTypeRepository universityDepartmentTypeRepository;
     private final uz.hemis.domain.repository.UniversityRepository universityRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
     private final HokimiyatClassifierService hokimiyatClassifierService;
@@ -869,29 +880,29 @@ public class ClassifierLegacyService {
         };
     }
 
-    // ==================== HUniversityDepartmentType ====================
+    // ==================== UniversityDepartmentType ====================
 
-    public Optional<HUniversityDepartmentType> findDepartmentTypeById(String code) {
-        return hUniversityDepartmentTypeRepository.findById(code);
+    public Optional<UniversityDepartmentType> findDepartmentTypeById(String code) {
+        return universityDepartmentTypeRepository.findById(code);
     }
 
-    public List<HUniversityDepartmentType> findAllDepartmentTypes() {
-        return hUniversityDepartmentTypeRepository.findAll();
-    }
-
-    @Transactional
-    public HUniversityDepartmentType saveDepartmentType(HUniversityDepartmentType entity) {
-        return hUniversityDepartmentTypeRepository.save(entity);
+    public List<UniversityDepartmentType> findAllDepartmentTypes() {
+        return universityDepartmentTypeRepository.findAll();
     }
 
     @Transactional
-    public void softDeleteDepartmentType(HUniversityDepartmentType entity) {
+    public UniversityDepartmentType saveDepartmentType(UniversityDepartmentType entity) {
+        return universityDepartmentTypeRepository.save(entity);
+    }
+
+    @Transactional
+    public void softDeleteDepartmentType(UniversityDepartmentType entity) {
         entity.setActive(false);
-        hUniversityDepartmentTypeRepository.save(entity);
+        universityDepartmentTypeRepository.save(entity);
     }
 
     /**
-     * Create or restore (if soft-deleted) a HUniversityDepartmentType.
+     * Create or restore (if soft-deleted) a UniversityDepartmentType.
      * Uses native query to bypass @Where(deleteTs IS NULL) filter.
      *
      * @param code     the code (primary key)
@@ -901,7 +912,7 @@ public class ClassifierLegacyService {
      * @return the created or restored entity
      */
     @Transactional
-    public HUniversityDepartmentType createOrRestoreDepartmentType(String code, String name, String nameRu, String nameEn) {
+    public UniversityDepartmentType createOrRestoreDepartmentType(String code, String name, String nameRu, String nameEn) {
         // Check if entity exists (including soft-deleted) using native query
         String checkSql = "SELECT COUNT(*) FROM hemishe_h_university_department_type WHERE code = ?";
         Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, code);
@@ -926,12 +937,12 @@ public class ClassifierLegacyService {
         }
 
         // Return the entity (now visible since deleteTs is NULL)
-        return hUniversityDepartmentTypeRepository.findById(code)
+        return universityDepartmentTypeRepository.findById(code)
                 .orElseThrow(() -> new IllegalStateException("Failed to create/restore department type: " + code));
     }
 
     /**
-     * Convert HUniversityDepartmentType to CUBA-compatible map.
+     * Convert UniversityDepartmentType to CUBA-compatible map.
      *
      * <p><strong>OLD-HEMIS FIELD ORDER (100% compatible):</strong></p>
      * <ul>
@@ -943,7 +954,7 @@ public class ClassifierLegacyService {
      *   <li>deletedBy - returnNulls=true bo'lganda</li>
      * </ul>
      */
-    public Map<String, Object> toDepartmentTypeMap(HUniversityDepartmentType entity, Boolean returnNulls) {
+    public Map<String, Object> toDepartmentTypeMap(UniversityDepartmentType entity, Boolean returnNulls) {
         Map<String, Object> map = new LinkedHashMap<>();
 
         // OLD-HEMIS exact field order
@@ -974,7 +985,7 @@ public class ClassifierLegacyService {
         return map;
     }
 
-    public void updateDepartmentTypeFromMap(HUniversityDepartmentType entity, Map<String, Object> body) {
+    public void updateDepartmentTypeFromMap(UniversityDepartmentType entity, Map<String, Object> body) {
         if (body.containsKey("name")) {
             Object val = body.get("name");
             entity.setName(val != null ? val.toString() : null);

@@ -6,7 +6,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
 import java.time.LocalDate;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
@@ -323,8 +334,41 @@ public class AcademicEntityLegacyService {
         return map;
     }
 
+    /**
+     * EducationMaterials maydonlarini CUBA formatdan entity'ga o'tkazish.
+     *
+     * <p>Nested CUBA format ({@code {"university": {"id": "401"}}}) va camelCase/underscore
+     * key variantlari qo'llab-quvvatlanadi.</p>
+     */
     public void updateEducationMaterialsFromMap(EducationMaterials entity, Map<String, Object> map) {
-        // DEFERRED: Requires EducationMaterials field mapping specification
+        if (map.containsKey("university") || map.containsKey("universityCode") || map.containsKey("university_code")) {
+            Object v = map.containsKey("university") ? map.get("university")
+                    : map.containsKey("universityCode") ? map.get("universityCode") : map.get("university_code");
+            entity.setUniversity(extractString(v));
+        }
+        if (map.containsKey("educationYear") || map.containsKey("educationYearCode") || map.containsKey("education_year_code")) {
+            Object v = map.containsKey("educationYear") ? map.get("educationYear")
+                    : map.containsKey("educationYearCode") ? map.get("educationYearCode") : map.get("education_year_code");
+            entity.setEducationYear(extractString(v));
+        }
+        if (map.containsKey("specialityId")) entity.setSpecialityId(getStringValue(map.get("specialityId")));
+        if (map.containsKey("specialityCode")) entity.setSpecialityCode(getStringValue(map.get("specialityCode")));
+        if (map.containsKey("specialityName")) entity.setSpecialityName(getStringValue(map.get("specialityName")));
+        if (map.containsKey("subjectCount")) {
+            Object v = map.get("subjectCount");
+            if (v instanceof Number) entity.setSubjectCount(((Number) v).intValue());
+            else if (v instanceof String) entity.setSubjectCount(Integer.parseInt((String) v));
+        }
+        if (map.containsKey("textbooksCount")) {
+            Object v = map.get("textbooksCount");
+            if (v instanceof Number) entity.setTextbooksCount(((Number) v).intValue());
+            else if (v instanceof String) entity.setTextbooksCount(Integer.parseInt((String) v));
+        }
+        if (map.containsKey("createdMaterialsGrade")) {
+            Object v = map.get("createdMaterialsGrade");
+            if (v instanceof Number) entity.setCreatedMaterialsGrade(((Number) v).intValue());
+            else if (v instanceof String) entity.setCreatedMaterialsGrade(Integer.parseInt((String) v));
+        }
     }
 
     // ====================================================================
@@ -356,17 +400,41 @@ public class AcademicEntityLegacyService {
     }
 
     public Map<String, Object> toAcademicMethodologicPublicationsMap(AcademicMethodologicPublications entity, Boolean returnNulls) {
+        return toAcademicMethodologicPublicationsMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS CUBA view support.
+     *
+     * <p>Default view ({@code view=null} yoki {@code "_local"}): scalarlar (extends {@code _local}
+     * CUBA behaviour).</p>
+     *
+     * <p>{@code rIAcademicMethodologicPublications-view}: old-hemis {@code views.xml:734-738} ga
+     * muvofiq {@code university} va {@code educationYear} reference fieldlari {@code _minimal}
+     * nested obyekt sifatida qaytariladi.</p>
+     */
+    public Map<String, Object> toAcademicMethodologicPublicationsMap(AcademicMethodologicPublications entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", AMP_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.RIAcademicMethodologicPublications-" + entity.getId() + " [detached]");
         map.put("id", entity.getId());
 
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", buildUniversityObject(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            if (entity.getEducationYear() != null) {
+                map.put("educationYear", buildEducationYearObject(entity.getEducationYear()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("educationYear", uz.hemis.common.JsonNull.INSTANCE);
+            }
+        }
+
         putIfNotNull(map, "certificateDate", entity.getCertificateDate(), returnNulls);
         putIfNotNull(map, "authorFullname", entity.getAuthorFullname(), returnNulls);
-
-        // OLD-HEMIS: university va educationYear reference fieldlar default view da qaytarilmaydi
-        // Ular faqat underscore-prefixed (_university, _educationYear) sifatida saqlanadi
-
         putIfNotNull(map, "bookName", entity.getBookName(), returnNulls);
         putIfNotNull(map, "specialityCode", entity.getSpecialityCode(), returnNulls);
         putIfNotNull(map, "certificateNumber", entity.getCertificateNumber(), returnNulls);
@@ -637,6 +705,14 @@ public class AcademicEntityLegacyService {
     }
 
     public Map<String, Object> toAcademicEducationalWorkMap(AcademicEducationalWork entity, Boolean returnNulls) {
+        return toAcademicEducationalWorkMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rIAcademicEducationalWork-view} (views.xml:739-743):
+     * 3 refs (university, educationYear, course) {@code _minimal}.
+     */
+    public Map<String, Object> toAcademicEducationalWorkMap(AcademicEducationalWork entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", EDUCATIONAL_WORK_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.RIAcademicEducationalWork-" + entity.getId() + " [detached]");
@@ -644,7 +720,24 @@ public class AcademicEntityLegacyService {
 
         putIfNotNull(map, "studentCount", entity.getStudentCount(), returnNulls);
 
-        // OLD-HEMIS: university, educationYear, course reference fieldlar default view da qaytarilmaydi
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", buildUniversityObject(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            if (entity.getEducationYear() != null) {
+                map.put("educationYear", buildEducationYearObject(entity.getEducationYear()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("educationYear", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            if (entity.getCourse() != null) {
+                map.put("course", buildCourseObject(entity.getCourse()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("course", uz.hemis.common.JsonNull.INSTANCE);
+            }
+        }
 
         putIfNotNull(map, "document", entity.getDocument(), returnNulls);
         putIfNotNull(map, "subjects", entity.getSubjects(), returnNulls);

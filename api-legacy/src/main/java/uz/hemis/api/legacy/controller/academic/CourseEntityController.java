@@ -11,7 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
-import uz.hemis.domain.entity.Course;
+import uz.hemis.domain.entity.academic.Course;
 import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
 import java.util.*;

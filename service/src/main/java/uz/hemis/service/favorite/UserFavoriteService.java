@@ -4,7 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.UserFavorite;
+import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.domain.entity.security.UserFavorite;
 import uz.hemis.domain.repository.UserFavoriteRepository;
 
 import java.util.List;
@@ -95,14 +96,14 @@ public class UserFavoriteService {
         // Check for duplicate
         if (userFavoriteRepository.existsByUserIdAndMenuCode(userId, menuCode)) {
             log.warn("Duplicate favorite attempt - userId: {}, menuCode: {}", userId, menuCode);
-            throw new IllegalArgumentException("Menu item already in favorites");
+            throw new BadRequestException("Menu item already in favorites");
         }
 
         // Check maximum limit
         long currentCount = userFavoriteRepository.countByUserId(userId);
         if (currentCount >= MAX_FAVORITES) {
             log.warn("Maximum favorites limit reached - userId: {}, count: {}", userId, currentCount);
-            throw new IllegalStateException("Maximum favorites limit reached (" + MAX_FAVORITES + ")");
+            throw new BadRequestException("Maximum favorites limit reached (" + MAX_FAVORITES + ")");
         }
 
         // Create and save new favorite

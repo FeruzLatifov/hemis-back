@@ -6,10 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.ContractStatistics;
-import uz.hemis.domain.entity.REmployment;
-import uz.hemis.domain.entity.Scholarship;
-import uz.hemis.domain.entity.ScholarshipAmount;
+import uz.hemis.domain.entity.finance.ContractStatistics;
+import uz.hemis.domain.entity.employee.REmployment;
+import uz.hemis.domain.entity.finance.Scholarship;
+import uz.hemis.domain.entity.finance.ScholarshipAmount;
 import uz.hemis.domain.repository.ContractStatisticsRepository;
 import uz.hemis.domain.repository.REmploymentRepository;
 import uz.hemis.domain.repository.ScholarshipAmountRepository;
@@ -139,19 +139,62 @@ public class FinanceEntityLegacyService {
     }
 
     public Map<String, Object> toScholarshipMap(Scholarship entity, Boolean returnNulls) {
+        return toScholarshipMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code eStudentScholarshipFull-view} (views.xml:961-972):
+     * 9 refs nested — student, university, educationType, educationForm, paymentForm,
+     * semester, educationYear, stipendCategory, stipendType.
+     */
+    public Map<String, Object> toScholarshipMap(Scholarship entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", SCHOLARSHIP_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.EStudentScholarshipFull-" + entity.getId() + " [detached]");
         map.put("id", entity.getId());
-        putIfNotNull(map, "_student", entity.getStudent(), returnNulls);
-        putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        putIfNotNull(map, "_educationType", entity.getEducationType(), returnNulls);
-        putIfNotNull(map, "_educationForm", entity.getEducationForm(), returnNulls);
-        putIfNotNull(map, "_paymentForm", entity.getPaymentForm(), returnNulls);
-        putIfNotNull(map, "_semester", entity.getSemester(), returnNulls);
-        putIfNotNull(map, "_educationYear", entity.getEducationYear(), returnNulls);
-        putIfNotNull(map, "_stipendCategory", entity.getStipendCategory(), returnNulls);
-        putIfNotNull(map, "_stipendType", entity.getStipendType(), returnNulls);
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getStudent() != null) {
+                Map<String, Object> st = new LinkedHashMap<>();
+                st.put("_entityName", "hemishe_EStudent");
+                st.put("id", entity.getStudent().toString());
+                st.put("_instanceName", "com.company.hemishe.entity.EStudent-" + entity.getStudent() + " [detached]");
+                map.put("student", st);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("student", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationType", entity.getEducationType(),
+                    "hemishe_h_education_type", "HEducationType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "educationForm", entity.getEducationForm(),
+                    "hemishe_h_education_form", "HEducationForm", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "paymentForm", entity.getPaymentForm(),
+                    "hemishe_h_payment_form", "HPaymentForm", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "semester", entity.getSemester(),
+                    "hemishe_h_semester", "HSemester", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "stipendCategory", entity.getStipendCategory(),
+                    "hemishe_h_stipend_rate_category", "HStipendRateCategory", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "stipendType", entity.getStipendType(),
+                    "hemishe_h_stipend_rate", "HStipendRate", returnNulls);
+        } else {
+            putIfNotNull(map, "_student", entity.getStudent(), returnNulls);
+            putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
+            putIfNotNull(map, "_educationType", entity.getEducationType(), returnNulls);
+            putIfNotNull(map, "_educationForm", entity.getEducationForm(), returnNulls);
+            putIfNotNull(map, "_paymentForm", entity.getPaymentForm(), returnNulls);
+            putIfNotNull(map, "_semester", entity.getSemester(), returnNulls);
+            putIfNotNull(map, "_educationYear", entity.getEducationYear(), returnNulls);
+            putIfNotNull(map, "_stipendCategory", entity.getStipendCategory(), returnNulls);
+            putIfNotNull(map, "_stipendType", entity.getStipendType(), returnNulls);
+        }
+
         putIfNotNull(map, "decree", entity.getDecree(), returnNulls);
         putIfNotNull(map, "group", entity.getGroup(), returnNulls);
         putIfNotNull(map, "curriculum", entity.getCurriculum(), returnNulls);
@@ -373,10 +416,52 @@ public class FinanceEntityLegacyService {
     }
 
     public Map<String, Object> toREmploymentMap(REmployment entity, Boolean returnNulls) {
+        return toREmploymentMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code rEmployment-view} (views.xml:688-700):
+     * 10 refs nested {@code _minimal} — department, educationYear, educationType,
+     * educationForm, paymentForm, gender, workplaceCompatibility, graduateFieldsType,
+     * graduateInactiveType, university.
+     */
+    public Map<String, Object> toREmploymentMap(REmployment entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", R_EMPLOYMENT_ENTITY);
         map.put("_instanceName", "com.company.hemishe.entity.REmployment-" + entity.getId() + " [detached]");
         map.put("id", entity.getId());
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversityCode() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversityCode()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            // department — entity table (classifier emas), dedicated loader ishlatiladi
+            if (entity.getDepartmentCode() != null) {
+                map.put("department", nestedObjectLoader.loadDepartment(entity.getDepartmentCode()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("department", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYearCode(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "educationType", entity.getEducationTypeCode(),
+                    "hemishe_h_education_type", "HEducationType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "educationForm", entity.getEducationFormCode(),
+                    "hemishe_h_education_form", "HEducationForm", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "paymentForm", entity.getPaymentFormCode(),
+                    "hemishe_h_payment_form", "HPaymentForm", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "gender", entity.getGenderCode(),
+                    "hemishe_h_gender", "HGender", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "workplaceCompatibility", entity.getWorkplaceCompatibilityCode(),
+                    "hemishe_h_workplace_compatibility", "HWorkplaceCompatibility", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "graduateFieldsType", entity.getGraduateFieldsTypeCode(),
+                    "hemishe_h_graduate_fields_type", "HGraduateFieldsType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "graduateInactiveType", entity.getGraduateInactiveTypeCode(),
+                    "hemishe_h_graduate_inactive_type", "HGraduateInactiveType", returnNulls);
+        }
+
         putIfNotNull(map, "uId", entity.getUId(), returnNulls);
         putIfNotNull(map, "qty", entity.getQty(), returnNulls);
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);

@@ -13,7 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.UniversityEmployeeRate;
+import uz.hemis.domain.entity.employee.EmployeeRate;
 import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
 import java.util.*;
@@ -85,14 +85,14 @@ public class UniversityEmployeeRateEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET UniversityEmployeeRate by code: {}", entityId);
+        log.debug("GET EmployeeRate by code: {}", entityId);
 
-        Optional<UniversityEmployeeRate> entity = employeeRefService.findUniversityEmployeeRateById(entityId);
+        Optional<EmployeeRate> entity = employeeRefService.findEmployeeRateById(entityId);
         if (entity.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
-        return ResponseEntity.ok(employeeRefService.toUniversityEmployeeRateMap(entity.get(), returnNulls));
+        return ResponseEntity.ok(employeeRefService.toEmployeeRateMap(entity.get(), returnNulls));
     }
 
     @PreAuthorize("hasAuthority('teachers.view')")
@@ -121,7 +121,7 @@ public class UniversityEmployeeRateEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET all UniversityEmployeeRate - offset: {}, limit: {}", offset, limit);
+        log.debug("GET all EmployeeRate - offset: {}, limit: {}", offset, limit);
 
         Sort sorting = Sort.by(Sort.Direction.ASC, "code");
         if (sort != null && !sort.isEmpty()) {
@@ -135,10 +135,10 @@ public class UniversityEmployeeRateEntityController {
         }
 
         PageRequest pageRequest = PageRequest.of(offset / Math.max(limit, 1), limit, sorting);
-        Page<UniversityEmployeeRate> page = employeeRefService.findAllUniversityEmployeeRate(pageRequest);
+        Page<EmployeeRate> page = employeeRefService.findAllEmployeeRate(pageRequest);
 
         List<Map<String, Object>> result = page.getContent().stream()
-            .map(e -> employeeRefService.toUniversityEmployeeRateMap(e, returnNulls))
+            .map(e -> employeeRefService.toEmployeeRateMap(e, returnNulls))
             .collect(Collectors.toList());
 
         if (Boolean.TRUE.equals(returnCount)) {
@@ -166,11 +166,11 @@ public class UniversityEmployeeRateEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("GET search UniversityEmployeeRate with filter: {}", filter);
+        log.debug("GET search EmployeeRate with filter: {}", filter);
 
-        List<UniversityEmployeeRate> entities = employeeRefService.findAllUniversityEmployeeRate(Sort.by(Sort.Direction.ASC, "code"));
+        List<EmployeeRate> entities = employeeRefService.findAllEmployeeRate(Sort.by(Sort.Direction.ASC, "code"));
         List<Map<String, Object>> result = entities.stream()
-            .map(e -> employeeRefService.toUniversityEmployeeRateMap(e, returnNulls))
+            .map(e -> employeeRefService.toEmployeeRateMap(e, returnNulls))
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
@@ -192,11 +192,11 @@ public class UniversityEmployeeRateEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search UniversityEmployeeRate with filter: {}", filter);
+        log.debug("POST search EmployeeRate with filter: {}", filter);
 
-        List<UniversityEmployeeRate> entities = employeeRefService.findAllUniversityEmployeeRate(Sort.by(Sort.Direction.ASC, "code"));
+        List<EmployeeRate> entities = employeeRefService.findAllEmployeeRate(Sort.by(Sort.Direction.ASC, "code"));
         List<Map<String, Object>> result = entities.stream()
-            .map(e -> employeeRefService.toUniversityEmployeeRateMap(e, returnNulls))
+            .map(e -> employeeRefService.toEmployeeRateMap(e, returnNulls))
             .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);

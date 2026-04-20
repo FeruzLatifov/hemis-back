@@ -2,7 +2,7 @@ package uz.hemis.service.finance.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.finance.ScholarshipDto;
-import uz.hemis.domain.entity.Scholarship;
+import uz.hemis.domain.entity.finance.Scholarship;
 
 import java.util.List;
 

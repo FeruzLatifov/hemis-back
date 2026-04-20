@@ -8,7 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.JsonNull;
-import uz.hemis.domain.entity.UniversityDepartment;
+import uz.hemis.domain.entity.university.UniversityDepartment;
 import uz.hemis.domain.repository.UniversityDepartmentRepository;
 
 import java.time.LocalDateTime;

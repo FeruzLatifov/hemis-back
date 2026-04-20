@@ -19,6 +19,7 @@ import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.registry.FacultyRegistryService;
 import uz.hemis.service.registry.dto.*;
@@ -162,7 +163,7 @@ public class FacultyRegistryController {
             description = "Internal Server Error"
         )
     })
-    public ResponseEntity<ResponseWrapper<Page<FacultyGroupRowDto>>> getGroups(
+    public ResponseEntity<ResponseWrapper<PageResponse<FacultyGroupRowDto>>> getGroups(
             @Parameter(
                 description = "Search query (university name or code)",
                 example = "tatu",
@@ -185,11 +186,11 @@ public class FacultyRegistryController {
                  q, status, pageable.getPageNumber());
 
         Page<FacultyGroupRowDto> groups = facultyRegistryService.getFacultyGroups(q, status, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(groups));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(groups)));
     }
-    
+
     @Schema(name = "FacultyGroupResponse")
-    static class FacultyGroupResponseWrapper extends ResponseWrapper<Page<FacultyGroupRowDto>> {}
+    static class FacultyGroupResponseWrapper extends ResponseWrapper<PageResponse<FacultyGroupRowDto>> {}
 
     // =====================================================
     // Children API (Faculties by university)
@@ -277,7 +278,7 @@ public class FacultyRegistryController {
             description = "University not found"
         )
     })
-    public ResponseEntity<ResponseWrapper<Page<FacultyRowDto>>> getFacultiesByUniversity(
+    public ResponseEntity<ResponseWrapper<PageResponse<FacultyRowDto>>> getFacultiesByUniversity(
             @Parameter(
                 description = "University code (Primary key)",
                 example = "00001",
@@ -309,11 +310,11 @@ public class FacultyRegistryController {
         Page<FacultyRowDto> faculties = facultyRegistryService.getFacultiesByUniversity(
             universityCode, q, status, pageable
         );
-        return ResponseEntity.ok(ResponseWrapper.success(faculties));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(faculties)));
     }
-    
+
     @Schema(name = "FacultyRowResponse")
-    static class FacultyRowResponseWrapper extends ResponseWrapper<Page<FacultyRowDto>> {}
+    static class FacultyRowResponseWrapper extends ResponseWrapper<PageResponse<FacultyRowDto>> {}
 
     // =====================================================
     // Detail API (Single faculty)

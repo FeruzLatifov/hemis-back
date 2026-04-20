@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.Permission;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.Permission;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.common.port.security.PermissionLoadingPort;
 

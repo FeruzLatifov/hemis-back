@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.hemis.common.validation.ValidPhoneNumber;
 
 import java.util.Set;
 import java.util.UUID;
@@ -28,8 +29,9 @@ public class UserUpdateRequest {
     @Schema(description = "Email address", example = "john@example.com", nullable = true)
     private String email;
 
+    @ValidPhoneNumber
     @Size(max = 50, message = "Phone must be at most 50 characters")
-    @Schema(description = "Phone number", example = "+998901234567", nullable = true)
+    @Schema(description = "Phone number (UZ format +998XXXXXXXXX)", example = "+998901234567", nullable = true)
     private String phone;
 
     @Size(max = 255, message = "University code must be at most 255 characters")

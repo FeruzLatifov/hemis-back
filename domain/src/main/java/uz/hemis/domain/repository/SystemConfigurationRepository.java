@@ -3,7 +3,8 @@ package uz.hemis.domain.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.SystemConfiguration;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.system.SystemConfiguration;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,7 @@ import java.util.UUID;
  * @since 2.0.0
  */
 @Repository
+@Transactional(readOnly = true)
 public interface SystemConfigurationRepository extends JpaRepository<SystemConfiguration, UUID> {
 
     /**

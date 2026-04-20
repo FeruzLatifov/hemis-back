@@ -6,13 +6,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.University;
-import uz.hemis.domain.entity.UniversityCadastre;
-import uz.hemis.domain.entity.UniversityFounder;
-import uz.hemis.domain.entity.UniversityLegal;
+import uz.hemis.domain.entity.university.University;
+import uz.hemis.domain.entity.university.UniversityCadastre;
+import uz.hemis.domain.entity.university.UniversityFounder;
+import uz.hemis.domain.entity.university.UniversityLegal;
 import uz.hemis.domain.repository.UniversityCadastreRepository;
-import uz.hemis.domain.entity.Employee;
-import uz.hemis.domain.entity.Organization;
+import uz.hemis.domain.entity.employee.Employee;
+import uz.hemis.domain.entity.university.Organization;
 import uz.hemis.domain.repository.UniversityFounderRepository;
 import uz.hemis.domain.repository.UniversityLegalRepository;
 import uz.hemis.domain.repository.UniversityRepository;
@@ -226,7 +226,7 @@ public class UniversityExternalDataService {
             JsonNode legal = founderNode.path("founderLegal");
 
             if (!individual.isMissingNode() && !individual.isNull()) {
-                founder.setFounderType("individual");
+                founder.setFounderType(uz.hemis.domain.entity.enums.FounderType.INDIVIDUAL);
                 String founderPinfl = textOrNull(individual, "pinfl");
                 if (founderPinfl != null && !founderPinfl.isBlank()) {
                     Employee emp = findOrCreateEmployee(founderPinfl, individual, null, universityCode);
@@ -236,7 +236,7 @@ public class UniversityExternalDataService {
                 founder.setSharePercent(percent);
                 founder.setShareSum(longOrNull(individual, "founderShareSum"));
             } else if (!legal.isMissingNode() && !legal.isNull()) {
-                founder.setFounderType("legal");
+                founder.setFounderType(uz.hemis.domain.entity.enums.FounderType.LEGAL);
                 String legalTin = textOrNull(legal, "tin");
                 if (legalTin != null && !legalTin.isBlank()) {
                     Organization org = findOrCreateOrganization(legalTin, legal);
@@ -550,7 +550,7 @@ public class UniversityExternalDataService {
 
         Employee emp = existing != null ? existing : new Employee();
         if (existing == null) {
-            emp.setPinfl(pinfl);
+            emp.setPinfl(uz.hemis.common.vo.Pinfl.of(pinfl));
             // source tracking removed — audit via created_by
         }
 
@@ -558,7 +558,9 @@ public class UniversityExternalDataService {
             emp.setLastName(newLastName);
             emp.setFirstName(newFirstName);
             emp.setMiddleName(textOrNull(personNode, "middleName"));
-            emp.setTin(newTin);
+            if (newTin != null && !newTin.isBlank()) {
+                emp.setTin(uz.hemis.common.vo.Tin.of(newTin));
+            }
             String series = textOrNull(personNode, "passportSeries");
             String number = textOrNull(personNode, "passportNumber");
             if (series != null) emp.setPassportSeries(series);
@@ -570,7 +572,11 @@ public class UniversityExternalDataService {
         if (contactNode != null && !contactNode.isMissingNode()) {
             String phone = textOrNull(contactNode, "phone");
             String email = textOrNull(contactNode, "email");
-            if (phone != null) emp.setPhone(phone);
+            if (phone != null && !phone.isBlank()) {
+                try {
+                    emp.setPhone(uz.hemis.common.vo.PhoneNumber.parse(phone));
+                } catch (IllegalArgumentException ignored) { /* external data — normalize bo'lmasa, skip */ }
+            }
             if (email != null) emp.setEmail(email);
         }
 

@@ -12,8 +12,8 @@ CREATE TABLE university_founder (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code),
 
-    -- Founder type
-    founder_type VARCHAR(20) NOT NULL CHECK (founder_type IN ('individual', 'legal')),
+    -- Founder type (stored uppercase to match Java enum STRING serialization)
+    founder_type VARCHAR(20) NOT NULL CHECK (founder_type IN ('INDIVIDUAL', 'LEGAL')),
 
     -- Individual founder (jismoniy shaxs)
     -- employee_id = asosiy bog'lanish (sync da PINFL bo'yicha topiladi yoki yaratiladi)
@@ -44,9 +44,9 @@ CREATE TABLE university_founder (
 
     -- Data integrity: founder_type determines which FK is required
     CONSTRAINT chk_ufounder_xor CHECK (
-        (founder_type = 'individual' AND employee_id IS NOT NULL AND organization_id IS NULL)
+        (founder_type = 'INDIVIDUAL' AND employee_id IS NOT NULL AND organization_id IS NULL)
         OR
-        (founder_type = 'legal'      AND organization_id IS NOT NULL AND employee_id IS NULL)
+        (founder_type = 'LEGAL'      AND organization_id IS NOT NULL AND employee_id IS NULL)
     ),
     CONSTRAINT chk_ufounder_share_percent CHECK (
         share_percent IS NULL OR (share_percent >= 0 AND share_percent <= 100)
@@ -71,8 +71,8 @@ CREATE INDEX idx_ufounder_deleted_at ON university_founder(deleted_at) WHERE del
 -- Bitta ta'sischi bitta universitet uchun bir vaqtda faqat bitta is_current=true yozuv bo'lishi kerak
 CREATE UNIQUE INDEX idx_ufounder_unique_current_individual
     ON university_founder(university_code, employee_id)
-    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'individual';
+    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'INDIVIDUAL';
 
 CREATE UNIQUE INDEX idx_ufounder_unique_current_legal
     ON university_founder(university_code, organization_id)
-    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'legal';
+    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'LEGAL';

@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.classifier.*;
+import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.service.classifier.ClassifierMetadataRegistry.Category;
 import uz.hemis.service.classifier.ClassifierMetadataRegistry.ClassifierMeta;
 
@@ -231,12 +233,12 @@ public class ClassifierWebService {
     public ClassifierItemDto createClassifierItem(String apiKey, ClassifierItemCreateDto dto) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
         if (!meta.isEditable()) {
-            throw new IllegalStateException("Classifier '" + apiKey + "' faqat o'qish uchun (read-only)");
+            throw new BadRequestException("Classifier '" + apiKey + "' faqat o'qish uchun (read-only)");
         }
 
         String tableName = meta.getTableName();
         if (!tableExists(tableName)) {
-            throw new IllegalStateException("Classifier jadvali topilmadi: " + tableName);
+            throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
 
         // Check for existing code (including soft-deleted)
@@ -314,12 +316,12 @@ public class ClassifierWebService {
     public ClassifierItemDto updateClassifierItem(String apiKey, String code, ClassifierItemUpdateDto dto) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
         if (!meta.isEditable()) {
-            throw new IllegalStateException("Classifier '" + apiKey + "' faqat o'qish uchun (read-only)");
+            throw new BadRequestException("Classifier '" + apiKey + "' faqat o'qish uchun (read-only)");
         }
 
         String tableName = meta.getTableName();
         if (!tableExists(tableName)) {
-            throw new IllegalStateException("Classifier jadvali topilmadi: " + tableName);
+            throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
 
         // Check item exists
@@ -386,12 +388,12 @@ public class ClassifierWebService {
     public void deleteClassifierItem(String apiKey, String code) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
         if (!meta.isEditable()) {
-            throw new IllegalStateException("Classifier '" + apiKey + "' faqat o'qish uchun (read-only)");
+            throw new BadRequestException("Classifier '" + apiKey + "' faqat o'qish uchun (read-only)");
         }
 
         String tableName = meta.getTableName();
         if (!tableExists(tableName)) {
-            throw new IllegalStateException("Classifier jadvali topilmadi: " + tableName);
+            throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
 
         boolean hasDeleteTs = columnExists(tableName, "delete_ts");

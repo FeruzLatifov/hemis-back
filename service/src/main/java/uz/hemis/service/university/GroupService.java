@@ -10,7 +10,7 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.university.GroupDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Group;
+import uz.hemis.domain.entity.student.Group;
 import uz.hemis.service.university.mapper.GroupMapper;
 import uz.hemis.domain.repository.GroupRepository;
 

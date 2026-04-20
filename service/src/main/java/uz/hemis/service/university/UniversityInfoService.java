@@ -2,12 +2,15 @@ package uz.hemis.service.university;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.UniversityCadastre;
-import uz.hemis.domain.entity.UniversityFounder;
-import uz.hemis.domain.entity.UniversityLegal;
-import uz.hemis.domain.entity.UniversityLifecycle;
+import uz.hemis.domain.entity.university.UniversityCadastre;
+import uz.hemis.domain.entity.university.UniversityFounder;
+import uz.hemis.domain.entity.university.UniversityLegal;
+import uz.hemis.domain.entity.university.UniversityLifecycle;
 import uz.hemis.service.university.dto.UniversityCadastreDto;
 import uz.hemis.service.university.dto.UniversityFounderDto;
 import uz.hemis.service.university.dto.UniversityLegalDto;
@@ -75,6 +78,10 @@ public class UniversityInfoService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "universityDashboard", key = "#legal.universityCode"),
+        @CacheEvict(value = "universityLegal", key = "#legal.universityCode")
+    })
     public UniversityLegal saveLegal(UniversityLegal legal) {
         return legalRepository.save(legal);
     }
@@ -103,6 +110,7 @@ public class UniversityInfoService {
     }
 
     @Transactional
+    @CacheEvict(value = "universityDashboard", key = "#event.universityCode")
     public UniversityLifecycle addLifecycleEvent(UniversityLifecycle event) {
         return lifecycleRepository.save(event);
     }
@@ -117,6 +125,7 @@ public class UniversityInfoService {
     }
 
     @Transactional
+    @CacheEvict(value = "universityDashboard", key = "#cadastre.universityCode")
     public UniversityCadastre saveCadastre(UniversityCadastre cadastre) {
         return cadastreRepository.save(cadastre);
     }
@@ -125,8 +134,19 @@ public class UniversityInfoService {
     // Dashboard — all info for one university
     // =====================================================
 
+    /**
+     * Full university dashboard — legal + founders + lifecycle + cadastre + rector.
+     *
+     * <p><strong>Cache:</strong> {@code universityDashboard} — key = universityCode. TTL 1h.</p>
+     *
+     * <p>5-6 separate queries aggregated. Caching saves significant DB load for admin panel.</p>
+     *
+     * <p>Invalidated when legal/founder/lifecycle/cadastre changes (see respective save methods).</p>
+     */
+    @Cacheable(value = "universityDashboard", key = "#universityCode", unless = "#result == null")
     @Transactional(readOnly = true)
     public UniversityDashboardDto getUniversityDashboard(String universityCode) {
+        log.debug("Loading university dashboard (cache MISS) for code: {}", universityCode);
         UniversityLegal legalEntity = getLegal(universityCode);
         List<UniversityFounder> founderEntities = getFounders(universityCode);
 

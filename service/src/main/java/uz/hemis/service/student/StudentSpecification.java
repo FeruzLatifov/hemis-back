@@ -4,7 +4,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
-import uz.hemis.domain.entity.Student;
+import uz.hemis.domain.entity.student.Student;
 
 import java.util.ArrayList;
 import java.util.Arrays;

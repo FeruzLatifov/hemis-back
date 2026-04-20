@@ -3,7 +3,8 @@ package uz.hemis.service.university.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
-import uz.hemis.domain.entity.UniversityFounder;
+import uz.hemis.domain.entity.university.UniversityFounder;
+import uz.hemis.domain.entity.enums.FounderType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,7 +12,7 @@ import java.time.LocalDate;
 @Data
 @Builder
 public class UniversityFounderDto {
-    private String founderType;     // "individual" or "legal"
+    private FounderType founderType;
     private String name;            // employee FIO or organization name
     private String tin;             // employee TIN or organization TIN
     private String pinfl;           // employee PINFL (null for legal)
@@ -36,7 +37,7 @@ public class UniversityFounderDto {
         String tin;
         String pinfl;
 
-        if ("individual".equals(entity.getFounderType())) {
+        if (FounderType.INDIVIDUAL == entity.getFounderType()) {
             name = person != null ? person.getFullName() : null;
             tin = person != null ? person.getTin() : null;
             pinfl = person != null ? person.getPinfl() : null;

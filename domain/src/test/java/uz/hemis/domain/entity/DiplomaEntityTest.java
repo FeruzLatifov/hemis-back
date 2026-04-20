@@ -2,6 +2,7 @@ package uz.hemis.domain.entity;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import uz.hemis.domain.entity.finance.Diploma;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -14,7 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaSearchBodyParser;
-import uz.hemis.domain.entity.StudentDiploma;
+import uz.hemis.domain.entity.student.StudentDiploma;
 import uz.hemis.service.legacy.DiplomaLegacyService;
 
 import java.time.LocalDateTime;

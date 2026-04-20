@@ -14,7 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import uz.hemis.common.dto.university.GroupDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Group;
+import uz.hemis.domain.entity.student.Group;
 import uz.hemis.domain.repository.GroupRepository;
 import uz.hemis.service.university.mapper.GroupMapper;
 

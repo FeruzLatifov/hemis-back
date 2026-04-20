@@ -13,9 +13,9 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.enums.UserType;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Role;
-import uz.hemis.domain.entity.University;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.Role;
+import uz.hemis.domain.entity.university.University;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.RoleRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.domain.repository.UserRepository;
@@ -364,13 +364,14 @@ public class UserAdminService {
      */
     @Transactional(readOnly = true)
     public List<String> getRolePermissions(UUID roleId) {
-        Role role = roleRepository.findById(roleId)
+        // Eager fetch — LAZY collection N+1 query xavfini bartaraf etadi
+        Role role = roleRepository.findByIdWithPermissions(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", roleId));
 
         return role.getPermissions().stream()
                 .map(p -> p.getCode())
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // =====================================================

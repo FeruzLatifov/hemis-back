@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HEMIS Backend Logback konfiguratsiyasi
+
+  - dev/test profile: Spring Boot default pattern (human-readable)
+  - prod profile: JSON stdout + JSON file (ELK/CloudWatch/Datadog scraping)
+
+  JSON format markerlari: @timestamp, level, logger, thread, message, mdc
+  (traceId, spanId, userId) — qidirish va filtering uchun.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- ================================================ -->
+    <!-- Default profile (dev/test): plain text, kodab o'qish oson -->
+    <!-- ================================================ -->
+    <springProfile name="default,dev,test,migrate">
+        <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- ================================================ -->
+    <!-- Production: JSON stdout + rotating JSON file -->
+    <!-- ================================================ -->
+    <springProfile name="prod">
+        <!-- Stdout JSON (container logs, Docker/K8s) -->
+        <appender name="JSON_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
+                <customFields>{"app":"hemis-backend","env":"prod"}</customFields>
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <version>[ignore]</version>
+                </fieldNames>
+            </encoder>
+        </appender>
+
+        <!-- File JSON (rotating, 100MB × 7 kun) -->
+        <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>${LOG_PATH:-./logs}/hemis-backend.json</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+                <fileNamePattern>${LOG_PATH:-./logs}/hemis-backend-%d{yyyy-MM-dd}.%i.json.gz</fileNamePattern>
+                <maxFileSize>100MB</maxFileSize>
+                <maxHistory>7</maxHistory>
+                <totalSizeCap>10GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeMdcKeyName>traceId</includeMdcKeyName>
+                <includeMdcKeyName>spanId</includeMdcKeyName>
+                <includeMdcKeyName>userId</includeMdcKeyName>
+                <customFields>{"app":"hemis-backend","env":"prod"}</customFields>
+            </encoder>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="JSON_STDOUT"/>
+            <appender-ref ref="JSON_FILE"/>
+        </root>
+
+        <!-- Noisy loggers -->
+        <logger name="org.hibernate.orm.deprecation" level="ERROR"/>
+        <logger name="org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer" level="ERROR"/>
+    </springProfile>
+</configuration>

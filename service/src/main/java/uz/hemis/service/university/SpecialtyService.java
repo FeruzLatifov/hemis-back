@@ -11,7 +11,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.university.SpecialtyDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Specialty;
+import uz.hemis.domain.entity.academic.Specialty;
 import uz.hemis.service.university.mapper.SpecialtyMapper;
 import uz.hemis.domain.repository.SpecialtyRepository;
 import uz.hemis.domain.repository.UniversityRepository;

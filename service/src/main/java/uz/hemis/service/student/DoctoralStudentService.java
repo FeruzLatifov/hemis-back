@@ -12,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.student.DoctoralStudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.DoctoralStudent;
+import uz.hemis.domain.entity.student.DoctoralStudent;
 import uz.hemis.service.student.mapper.DoctoralStudentMapper;
 import uz.hemis.domain.repository.DoctoralStudentRepository;
 

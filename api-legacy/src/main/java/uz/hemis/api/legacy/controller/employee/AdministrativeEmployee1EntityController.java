@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.api.legacy.util.CubaSearchBodyParser;
-import uz.hemis.domain.entity.AdministrativeEmployee1;
+import uz.hemis.domain.entity.employee.AdministrativeEmployee1;
 import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
 import java.time.LocalDateTime;

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.SecUser;
+import uz.hemis.domain.entity.security.SecUser;
 import uz.hemis.domain.repository.SecUserRepository;
 import uz.hemis.common.dto.security.LegacyLoadedUser;
 import uz.hemis.common.port.security.LegacyUserLoadingPort;

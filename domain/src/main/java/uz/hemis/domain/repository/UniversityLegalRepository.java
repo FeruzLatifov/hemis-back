@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.UniversityLegal;
+import uz.hemis.domain.entity.university.UniversityLegal;
 
 import java.util.List;
 import java.util.Optional;

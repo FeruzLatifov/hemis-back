@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.Verification;
-import uz.hemis.domain.entity.VerificationType;
+import uz.hemis.domain.entity.student.Verification;
+import uz.hemis.domain.entity.student.VerificationType;
 import uz.hemis.domain.repository.VerificationRepository;
 import uz.hemis.domain.repository.VerificationTypeRepository;
 
@@ -207,6 +207,9 @@ public class VerificationService {
                     ref.put("_entityName", "hemishe_HVerificationType");
                     ref.put("id", vt.getCode());
                     ref.put("code", vt.getCode());
+                    ref.put("name", vt.getName());
+                    ref.put("nameRu", vt.getNameRu());
+                    ref.put("nameEn", vt.getNameEn());
                     ref.put("version", vt.getVersion());
                     return ref;
                 })

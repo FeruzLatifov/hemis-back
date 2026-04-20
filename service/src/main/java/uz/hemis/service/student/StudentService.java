@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uz.hemis.common.dto.student.StudentDto;
 import uz.hemis.common.dto.student.StudentIdRequest;
-import uz.hemis.domain.entity.Student;
+import uz.hemis.domain.entity.student.Student;
 
 import java.util.List;
 import java.util.Map;

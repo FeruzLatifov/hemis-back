@@ -11,7 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.AdministrativeStudent4;
+import uz.hemis.domain.entity.student.AdministrativeStudent4;
 import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.util.*;

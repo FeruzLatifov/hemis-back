@@ -60,11 +60,12 @@ class TeacherLegacyServiceTest {
         @Test
         @DisplayName("returns jobs list when teacher has jobs")
         void returnsJobsList_whenTeacherHasJobs() {
+            UUID jobId = UUID.randomUUID();
             Map<String, Object> jobRow = new LinkedHashMap<>();
-            jobRow.put("id", UUID.randomUUID());
-            jobRow.put("version", 1);
-            jobRow.put("code", TEACHER_CODE);
-            jobRow.put("active", true);
+            jobRow.put("id", jobId);
+            jobRow.put("firstname", "Ali");
+            jobRow.put("lastname", "Valiyev");
+            jobRow.put("fathername", "Karimovich");
 
             when(jdbcTemplate.queryForList(anyString(), eq(TEACHER_CODE)))
                     .thenReturn(List.of(jobRow));
@@ -74,8 +75,8 @@ class TeacherLegacyServiceTest {
             assertThat(result).isNotNull();
             assertThat(result).hasSize(1);
             assertThat(result.get(0).get("_entityName")).isEqualTo("hemishe_EEmployeeJobs");
-            assertThat(result.get(0).get("code")).isEqualTo(TEACHER_CODE);
-            assertThat(result.get(0).get("active")).isEqualTo(true);
+            assertThat(result.get(0).get("id")).isEqualTo(jobId.toString());
+            assertThat(result.get(0).get("_instanceName")).isEqualTo("Valiyev Ali Karimovich");
         }
 
         @Test
@@ -197,7 +198,7 @@ class TeacherLegacyServiceTest {
                     "code", UNIVERSITY_CODE,
                     "name", "Test University"
             );
-            when(nestedLoader.loadUniversity(UNIVERSITY_CODE)).thenReturn(uniObj);
+            when(nestedLoader.loadUniversityForTeacher(UNIVERSITY_CODE)).thenReturn(uniObj);
 
             teacherLegacyService.putUniversity(map, UNIVERSITY_CODE, false);
 
@@ -205,7 +206,7 @@ class TeacherLegacyServiceTest {
             @SuppressWarnings("unchecked")
             Map<String, Object> result = (Map<String, Object>) map.get("university");
             assertThat(result.get("code")).isEqualTo(UNIVERSITY_CODE);
-            verify(nestedLoader).loadUniversity(UNIVERSITY_CODE);
+            verify(nestedLoader).loadUniversityForTeacher(UNIVERSITY_CODE);
         }
 
         @Test
@@ -223,7 +224,7 @@ class TeacherLegacyServiceTest {
         @DisplayName("puts null when nestedLoader returns null and returnNulls is true")
         void putsNull_whenNotFoundAndReturnNullsTrue() {
             Map<String, Object> map = new LinkedHashMap<>();
-            when(nestedLoader.loadUniversity("NONEXISTENT")).thenReturn(null);
+            when(nestedLoader.loadUniversityForTeacher("NONEXISTENT")).thenReturn(null);
 
             teacherLegacyService.putUniversity(map, "NONEXISTENT", true);
 
@@ -288,12 +289,12 @@ class TeacherLegacyServiceTest {
                     "_entityName", "hemishe_HSoato",
                     "code", soatoCode
             );
-            when(nestedLoader.loadSoato(soatoCode)).thenReturn(soatoObj);
+            when(nestedLoader.loadSoatoForTeacher(soatoCode)).thenReturn(soatoObj);
 
             teacherLegacyService.putSoato(map, "soato", soatoCode, false);
 
             assertThat(map).containsKey("soato");
-            verify(nestedLoader).loadSoato(soatoCode);
+            verify(nestedLoader).loadSoatoForTeacher(soatoCode);
         }
 
         @Test

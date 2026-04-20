@@ -2,6 +2,9 @@ package uz.hemis.service.university;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -13,7 +16,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.University;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.service.university.mapper.UniversityMapper;
 import uz.hemis.domain.repository.UniversityRepository;
 
@@ -62,14 +65,19 @@ public class UniversityService {
     // =====================================================
 
     /**
-     * Find university by code (PK)
+     * Find university by code (PK) — cached (24h TTL).
+     *
+     * <p><strong>Cache:</strong> {@code university} — single OTM by code. 230 entries max.</p>
+     *
+     * <p>Invalidated on: update, partialUpdate, softDelete, restore.</p>
      *
      * @param code university code
      * @return university DTO
      * @throws ResourceNotFoundException if not found
      */
+    @Cacheable(value = "university", key = "#code", unless = "#result == null")
     public UniversityDto findByCode(String code) {
-        log.debug("Finding university by code: {}", code);
+        log.debug("Finding university by code: {} (cache MISS)", code);
 
         University university = universityRepository.findById(code)
                 .orElseThrow(() -> new ResourceNotFoundException("University", "code", code));
@@ -94,15 +102,21 @@ public class UniversityService {
     }
 
     /**
-     * Find all universities (no pagination — old-hemis compatible)
+     * Find all universities (no pagination — old-hemis compatible) — cached (24h TTL).
+     *
+     * <p><strong>Cache:</strong> {@code universityList} — key {@code 'all'}. Single entry of 230 OTM.</p>
+     *
+     * <p>This is the HOTTEST read — dropdown'lar va CUBA {@code /universities} endpoint ishlatadi.</p>
      *
      * @return list of all university DTOs
      */
+    @Cacheable(value = "universityList", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<UniversityDto> findAllList() {
-        log.debug("Finding all universities (no pagination)");
+        log.debug("Finding all universities (cache MISS — loading from DB)");
 
         List<University> universities = universityRepository.findAll();
-        return universityMapper.toDtoList(universities);
+        // Immutable wrap: cached value bo'ladi — clientlar modify qilib cache ni buzmasligi uchun
+        return List.copyOf(universityMapper.toDtoList(universities));
     }
 
     /**
@@ -133,13 +147,18 @@ public class UniversityService {
     }
 
     /**
-     * Find active universities
+     * Find active universities — cached (6h TTL).
+     *
+     * <p><strong>Cache:</strong> {@code universityActive} — key by pageable (page+size+sort).</p>
      *
      * @param pageable pagination
      * @return page of active university DTOs
      */
+    @Cacheable(value = "universityActive",
+               key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()",
+               unless = "#result == null || #result.isEmpty()")
     public Page<UniversityDto> findActiveUniversities(Pageable pageable) {
-        log.debug("Finding active universities");
+        log.debug("Finding active universities (cache MISS), page: {}", pageable);
 
         Page<University> universities = universityRepository.findByActiveTrue(pageable);
         return universities.map(universityMapper::toDto);
@@ -188,16 +207,19 @@ public class UniversityService {
     }
 
     /**
-     * Find child universities by parent code
+     * Find child universities by parent code — cached (24h TTL).
+     *
+     * <p><strong>Cache:</strong> {@code universityChildren} — key by parent code.</p>
      *
      * @param parentCode parent university code
      * @return list of child university DTOs
      */
+    @Cacheable(value = "universityChildren", key = "#parentCode", unless = "#result == null || #result.isEmpty()")
     public List<UniversityDto> findByParent(String parentCode) {
-        log.debug("Finding universities by parent: {}", parentCode);
+        log.debug("Finding universities by parent: {} (cache MISS)", parentCode);
 
         List<University> universities = universityRepository.findByParentUniversity(parentCode);
-        return universityMapper.toDtoList(universities);
+        return List.copyOf(universityMapper.toDtoList(universities));
     }
 
     /**
@@ -222,6 +244,12 @@ public class UniversityService {
      */
     @Audited(action = AuditAction.CREATE, entity = "University", entityClass = University.class)
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        @CacheEvict(value = "universitiesSearch", allEntries = true)
+    })
     public UniversityDto create(UniversityDto dto) {
         log.info("Creating new university with code: {}", dto.getCode());
 
@@ -272,6 +300,14 @@ public class UniversityService {
      */
     @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        @CacheEvict(value = "universityDashboard", key = "#code"),
+        @CacheEvict(value = "universitiesSearch", allEntries = true)
+    })
     public UniversityDto update(String code, UniversityDto dto) {
         log.info("Updating university with code: {}", code);
 
@@ -331,6 +367,14 @@ public class UniversityService {
      */
     @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        @CacheEvict(value = "universityDashboard", key = "#code"),
+        @CacheEvict(value = "universitiesSearch", allEntries = true)
+    })
     public UniversityDto partialUpdate(String code, UniversityDto dto) {
         log.info("Partially updating university with code: {}", code);
 
@@ -372,6 +416,14 @@ public class UniversityService {
      */
     @Audited(action = AuditAction.DELETE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        @CacheEvict(value = "universityDashboard", key = "#code"),
+        @CacheEvict(value = "universitiesSearch", allEntries = true)
+    })
     public void softDelete(String code) {
         log.info("Soft deleting university with code: {}", code);
 
@@ -395,6 +447,12 @@ public class UniversityService {
      */
     @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true)
+    })
     public void restore(String code) {
         log.info("Restoring university with code: {}", code);
 

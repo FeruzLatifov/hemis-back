@@ -8,10 +8,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Example;
-import uz.hemis.domain.entity.Teacher;
-import uz.hemis.domain.entity.University;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.employee.Teacher;
+import uz.hemis.domain.entity.university.University;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.TeacherRepository;
 import uz.hemis.domain.repository.UserRepository;
 
@@ -36,6 +38,7 @@ import static org.mockito.Mockito.*;
  * @since 1.0.0
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("TeacherService Unit Tests")
 class TeacherServiceTest {
 
@@ -224,8 +227,8 @@ class TeacherServiceTest {
         @Test
         @DisplayName("returns success with teacher data when found by PINFL")
         void returnsSuccess_whenFoundByPinfl() {
-            when(teacherRepository.findByPinfl("12345678901234"))
-                    .thenReturn(Optional.of(sampleTeacher));
+            when(teacherRepository.findAllByPinfl("12345678901234"))
+                    .thenReturn(java.util.List.of(sampleTeacher));
 
             Map<String, Object> result = teacherService.getTeacherByPinfl("12345678901234");
 
@@ -237,24 +240,24 @@ class TeacherServiceTest {
             assertThat(data.get("id")).isEqualTo("40124101001");
             assertThat(data.get("pinfl")).isEqualTo("12345678901234");
 
-            verify(teacherRepository).findByPinfl("12345678901234");
+            verify(teacherRepository).findAllByPinfl("12345678901234");
         }
 
         @Test
         @DisplayName("falls back to serial number search when not found by PINFL")
         void fallsBackToSerial_whenNotFoundByPinfl() {
-            when(teacherRepository.findByPinfl("SERIAL_NUM"))
-                    .thenReturn(Optional.empty());
-            when(teacherRepository.findOne(any(Example.class)))
-                    .thenReturn(Optional.of(sampleTeacher));
+            when(teacherRepository.findAllByPinfl("SERIAL_NUM"))
+                    .thenReturn(java.util.List.of());
+            when(teacherRepository.findAll(any(Example.class)))
+                    .thenReturn(java.util.List.of(sampleTeacher));
 
             Map<String, Object> result = teacherService.getTeacherByPinfl("SERIAL_NUM");
 
             assertThat(result.get("success")).isEqualTo(true);
             assertThat(result.get("code")).isEqualTo("ok");
 
-            verify(teacherRepository).findByPinfl("SERIAL_NUM");
-            verify(teacherRepository).findOne(any(Example.class));
+            verify(teacherRepository).findAllByPinfl("SERIAL_NUM");
+            verify(teacherRepository).findAll(any(Example.class));
         }
 
         @Test

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.academic.AcademicScoreDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.AcademicScore;
+import uz.hemis.domain.entity.academic.AcademicScore;
 import uz.hemis.domain.repository.AcademicScoreRepository;
 
 import java.time.LocalDateTime;

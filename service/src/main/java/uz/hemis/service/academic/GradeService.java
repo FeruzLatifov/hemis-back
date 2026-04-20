@@ -11,7 +11,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.GradeDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Grade;
+import uz.hemis.domain.entity.student.Grade;
 import uz.hemis.service.academic.mapper.GradeMapper;
 import uz.hemis.domain.repository.*;
 

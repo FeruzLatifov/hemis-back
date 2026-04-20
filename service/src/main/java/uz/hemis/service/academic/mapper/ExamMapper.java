@@ -2,7 +2,7 @@ package uz.hemis.service.academic.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.academic.ExamDto;
-import uz.hemis.domain.entity.Exam;
+import uz.hemis.domain.entity.student.Exam;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ExamMapper {

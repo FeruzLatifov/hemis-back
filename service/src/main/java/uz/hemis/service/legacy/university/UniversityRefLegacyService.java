@@ -8,13 +8,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.Faculty;
-import uz.hemis.domain.entity.Group;
-import uz.hemis.domain.entity.IctEquipment;
-import uz.hemis.domain.entity.Laboratories;
-import uz.hemis.domain.entity.Specialty;
-import uz.hemis.domain.entity.UniversityAttachedSpeciality;
-import uz.hemis.domain.entity.University;
+import uz.hemis.domain.entity.academic.Faculty;
+import uz.hemis.domain.entity.student.Group;
+import uz.hemis.domain.entity.infrastructure.IctEquipment;
+import uz.hemis.domain.entity.infrastructure.Laboratories;
+import uz.hemis.domain.entity.academic.Specialty;
+import uz.hemis.domain.entity.university.UniversityAttachedSpeciality;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.repository.FacultyRepository;
 import uz.hemis.domain.repository.GroupRepository;
 import uz.hemis.domain.repository.IctEquipmentRepository;
@@ -23,6 +23,7 @@ import uz.hemis.domain.repository.SpecialtyRepository;
 import uz.hemis.domain.repository.UniversityAttachedSpecialityRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.legacy.CubaEntityMapHelper;
+import uz.hemis.service.legacy.CubaNestedObjectLoader;
 
 import java.time.LocalDateTime;
 
@@ -54,6 +55,7 @@ public class UniversityRefLegacyService {
     private final SpecialtyRepository specialtyRepository;
     private final UniversityRepository universityRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final CubaNestedObjectLoader nestedObjectLoader;
 
     // Entity names
     private static final String ICT_EQUIPMENT_ENTITY_NAME = "hemishe_RIctEquipment";
@@ -93,6 +95,10 @@ public class UniversityRefLegacyService {
         return toIctEquipmentMap(entity, returnNulls, null);
     }
 
+    /**
+     * OLD-HEMIS CUBA view support — {@code rIctEquipment-view} (views.xml:999-1002):
+     * 2 refs (university, educationYear) {@code _minimal} nested obyekt sifatida.
+     */
     public Map<String, Object> toIctEquipmentMap(IctEquipment entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", ICT_EQUIPMENT_ENTITY_NAME);
@@ -101,8 +107,18 @@ public class UniversityRefLegacyService {
 
         // OLD-HEMIS _local: faqat data fieldlar (camelCase), ref va audit yo'q
         boolean isLocal = "_local".equals(view);
+        boolean useNested = view != null && !view.isEmpty() && !isLocal;
 
-        if (!isLocal) {
+        if (useNested) {
+            // Named view: university/educationYear nested _minimal obyekt
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+        } else if (!isLocal) {
             CubaEntityMapHelper.putIfNotNull(map, "universityCode", entity.getUniversity(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "educationYearCode", entity.getEducationYear(), returnNulls);
         }
@@ -116,13 +132,16 @@ public class UniversityRefLegacyService {
     }
 
     public void updateIctEquipmentFromMap(IctEquipment entity, Map<String, Object> map) {
-        if (map.containsKey("universityCode") || map.containsKey("university_code")) {
-            entity.setUniversity(CubaEntityMapHelper.getStringValue(
-                map.containsKey("universityCode") ? map.get("universityCode") : map.get("university_code")));
+        // Nested CUBA format ({"university": {"id": "401"}}) va camelCase/snake_case string formatini qo'llab-quvvatlash
+        if (map.containsKey("university") || map.containsKey("universityCode") || map.containsKey("university_code")) {
+            Object v = map.containsKey("university") ? map.get("university")
+                    : map.containsKey("universityCode") ? map.get("universityCode") : map.get("university_code");
+            entity.setUniversity(CubaEntityMapHelper.extractCodeOrId(v));
         }
-        if (map.containsKey("educationYearCode") || map.containsKey("education_year_code")) {
-            entity.setEducationYear(CubaEntityMapHelper.getStringValue(
-                map.containsKey("educationYearCode") ? map.get("educationYearCode") : map.get("education_year_code")));
+        if (map.containsKey("educationYear") || map.containsKey("educationYearCode") || map.containsKey("education_year_code")) {
+            Object v = map.containsKey("educationYear") ? map.get("educationYear")
+                    : map.containsKey("educationYearCode") ? map.get("educationYearCode") : map.get("education_year_code");
+            entity.setEducationYear(CubaEntityMapHelper.extractCodeOrId(v));
         }
         if (map.containsKey("roomCount") || map.containsKey("room_count")) {
             entity.setRoomCount(CubaEntityMapHelper.getIntegerValue(
@@ -174,6 +193,10 @@ public class UniversityRefLegacyService {
         return toLaboratoriesMap(entity, returnNulls, null);
     }
 
+    /**
+     * OLD-HEMIS CUBA view support — {@code rLaboratories-view} (views.xml:995-998):
+     * 2 refs (university, educationYear) {@code _minimal} nested obyekt sifatida.
+     */
     public Map<String, Object> toLaboratoriesMap(Laboratories entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", LABORATORIES_ENTITY_NAME);
@@ -181,8 +204,17 @@ public class UniversityRefLegacyService {
         map.put("id", entity.getId());
 
         boolean isLocal = "_local".equals(view);
+        boolean useNested = view != null && !view.isEmpty() && !isLocal;
 
-        if (!isLocal) {
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+        } else if (!isLocal) {
             CubaEntityMapHelper.putIfNotNull(map, "universityCode", entity.getUniversity(), returnNulls);
             CubaEntityMapHelper.putIfNotNull(map, "educationYearCode", entity.getEducationYear(), returnNulls);
         }
@@ -202,13 +234,16 @@ public class UniversityRefLegacyService {
     }
 
     public void updateLaboratoriesFromMap(Laboratories entity, Map<String, Object> map) {
-        if (map.containsKey("universityCode") || map.containsKey("university_code")) {
-            entity.setUniversity(CubaEntityMapHelper.getStringValue(
-                map.containsKey("universityCode") ? map.get("universityCode") : map.get("university_code")));
+        // Nested CUBA format ({"university": {"id": "401"}}) va string formatini qo'llab-quvvatlash
+        if (map.containsKey("university") || map.containsKey("universityCode") || map.containsKey("university_code")) {
+            Object v = map.containsKey("university") ? map.get("university")
+                    : map.containsKey("universityCode") ? map.get("universityCode") : map.get("university_code");
+            entity.setUniversity(CubaEntityMapHelper.extractCodeOrId(v));
         }
-        if (map.containsKey("educationYearCode") || map.containsKey("education_year_code")) {
-            entity.setEducationYear(CubaEntityMapHelper.getStringValue(
-                map.containsKey("educationYearCode") ? map.get("educationYearCode") : map.get("education_year_code")));
+        if (map.containsKey("educationYear") || map.containsKey("educationYearCode") || map.containsKey("education_year_code")) {
+            Object v = map.containsKey("educationYear") ? map.get("educationYear")
+                    : map.containsKey("educationYearCode") ? map.get("educationYearCode") : map.get("education_year_code");
+            entity.setEducationYear(CubaEntityMapHelper.extractCodeOrId(v));
         }
         if (map.containsKey("specialityId") || map.containsKey("speciality_id")) {
             entity.setSpecialityId(CubaEntityMapHelper.getStringValue(
@@ -280,18 +315,65 @@ public class UniversityRefLegacyService {
     }
 
     public Map<String, Object> toUniversityAttachedSpecialityMap(UniversityAttachedSpeciality e, Boolean returnNulls) {
+        return toUniversityAttachedSpecialityMap(e, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS CUBA view support.
+     *
+     * <p>Default view ({@code view=null}, {@code "_local"}): scalar fieldlar — old-hemis
+     * {@code _local} bilan mos (reference yo'q).</p>
+     *
+     * <p>{@code eUniversityAttachedSpeciality-view}: old-hemis {@code views.xml:1072-1080} ga
+     * muvofiq 7 ta reference field {@code _local} nested obyekt sifatida qaytariladi —
+     * university, educationForm, educationType, specialityBachelor, specialityMaster,
+     * specialityOrdinatura, specialityDoctoral.</p>
+     */
+    public Map<String, Object> toUniversityAttachedSpecialityMap(UniversityAttachedSpeciality e, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", UNIVERSITY_ATTACHED_SPECIALITY_ENTITY_NAME);
         map.put("_instanceName", universityAttachedSpecialityInstanceName(e));
         map.put("id", e.getId() != null ? e.getId().toString() : null);
 
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            // university — hemishe_e_university (code-based, string)
+            if (e.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(e.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            // educationForm / educationType — classifier (code-based)
+            nestedObjectLoader.putNestedWithNames(map, "educationForm", e.getEducationForm(),
+                    "hemishe_h_education_form", "HEducationForm", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "educationType", e.getEducationType(),
+                    "hemishe_h_education_type", "HEducationType", returnNulls);
+            // specialityBachelor/Master/Ordinatura/Doctoral — UUID FK, minimal reference
+            putSpecialityRef(map, "specialityBachelor", e.getSpecialityBachelor(), returnNulls);
+            putSpecialityRef(map, "specialityMaster", e.getSpecialityMaster(), returnNulls);
+            putSpecialityRef(map, "specialityOrdinatura", e.getSpecialityOrdinatura(), returnNulls);
+            putSpecialityRef(map, "specialityDoctoral", e.getSpecialityDoctoral(), returnNulls);
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "active", e.getActive(), returnNulls);
-        // OLD-HEMIS: educationType reference field default view da qaytarilmaydi
         CubaEntityMapHelper.putIfNotNull(map, "version", e.getVersion(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "deletedBy", e.getDeletedBy(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "deleteTs", e.getDeleteTs() != null ? e.getDeleteTs().toString() : null, returnNulls);
 
         return map;
+    }
+
+    private void putSpecialityRef(Map<String, Object> map, String key, java.util.UUID id, Boolean returnNulls) {
+        if (id != null) {
+            Map<String, Object> ref = new LinkedHashMap<>();
+            ref.put("_entityName", "hemishe_HSpeciality");
+            ref.put("id", id.toString());
+            // CUBA _minimal view: _instanceName (detached marker)
+            ref.put("_instanceName", "com.company.hemishe.entity.HSpeciality-" + id + " [detached]");
+            map.put(key, ref);
+        } else if (Boolean.TRUE.equals(returnNulls)) {
+            map.put(key, uz.hemis.common.JsonNull.INSTANCE);
+        }
     }
 
     public Map<String, Object> toUniversityAttachedSpecialityMinimalMap(UniversityAttachedSpeciality saved) {
@@ -373,6 +455,13 @@ public class UniversityRefLegacyService {
     }
 
     public Map<String, Object> toFacultyMap(Faculty entity, Boolean returnNulls) {
+        return toFacultyMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS CUBA view support — {@code eFaculty-view} (views.xml:69-71): 1 ref (university/_minimal).
+     */
+    public Map<String, Object> toFacultyMap(Faculty entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", FACULTY_ENTITY_NAME);
 
@@ -383,10 +472,19 @@ public class UniversityRefLegacyService {
         map.put("id", entity.getId());
         CubaEntityMapHelper.putIfNotNull(map, "code", entity.getCode(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "name", entity.getName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "shortName", entity.getShortName(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "_facultyType", entity.getFacultyType(), returnNulls);
-        CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+        } else {
+            CubaEntityMapHelper.putIfNotNull(map, "_university", entity.getUniversity(), returnNulls);
+        }
+
+        CubaEntityMapHelper.putIfNotNull(map, "active", !entity.isDeleted(), returnNulls);
 
         CubaEntityMapHelper.putIfNotNull(map, "createTs", entity.getCreateTs(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "createdBy", entity.getCreatedBy(), returnNulls);
@@ -398,8 +496,19 @@ public class UniversityRefLegacyService {
         return map;
     }
 
+    /**
+     * Faculty maydonlarini CUBA formatdan entity'ga o'tkazish.
+     *
+     * <p>Nested (CUBA: {@code {"university": {"id": "401"}}}) va flat (camelCase/snake_case
+     * {@code {"_university": "401"}}) formatlarni qo'llab-quvvatlaydi.</p>
+     */
     public void updateFacultyFromMap(Faculty entity, Map<String, Object> map) {
-        // DEFERRED: Requires Faculty field mapping specification
+        if (map.containsKey("code")) entity.setCode(CubaEntityMapHelper.getStringValue(map.get("code")));
+        if (map.containsKey("name")) entity.setName(CubaEntityMapHelper.getStringValue(map.get("name")));
+        if (map.containsKey("university") || map.containsKey("_university")) {
+            Object v = map.containsKey("university") ? map.get("university") : map.get("_university");
+            entity.setUniversity(CubaEntityMapHelper.extractCodeOrId(v));
+        }
     }
 
     // ==================== Group ====================
@@ -432,6 +541,14 @@ public class UniversityRefLegacyService {
     }
 
     public Map<String, Object> toGroupMap(Group entity, Boolean returnNulls) {
+        return toGroupMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS CUBA view support — {@code eUniversityGroup-view} (views.xml:888-892):
+     * 3 refs: university, educationType, educationYear ({@code _minimal}).
+     */
+    public Map<String, Object> toGroupMap(Group entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", GROUP_ENTITY_NAME);
         map.put("_instanceName", entity.getGroupName() != null ? entity.getGroupName() : "Group-" + entity.getId());
@@ -439,7 +556,20 @@ public class UniversityRefLegacyService {
 
         CubaEntityMapHelper.putIfNotNull(map, "groupId", entity.getGroupId(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "groupName", entity.getGroupName(), returnNulls);
-        // OLD-HEMIS: _university, _educationType, _educationYear reference fieldlar default view da qaytarilmaydi
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationType", entity.getEducationType(),
+                    "hemishe_h_education_type", "HEducationType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
 
         return map;
@@ -554,6 +684,15 @@ public class UniversityRefLegacyService {
     }
 
     public Map<String, Object> toSpecialtyMap(Specialty entity, Boolean returnNulls) {
+        return toSpecialtyMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS CUBA view support — {@code eSpeciality-view} (views.xml:52-55):
+     * 2 refs: educationType, parent ({@code _minimal}). Yangi entity'da {@code parent}
+     * fieldi yo'q, faqat {@code educationType} nested qaytariladi.
+     */
+    public Map<String, Object> toSpecialtyMap(Specialty entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", SPECIALTY_ENTITY_NAME);
 
@@ -565,7 +704,13 @@ public class UniversityRefLegacyService {
         map.put("id", entity.getId());
         CubaEntityMapHelper.putIfNotNull(map, "specialityCode", entity.getCode(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "specialityName", entity.getName(), returnNulls);
-        // OLD-HEMIS: _university, _faculty, _educationType, _educationYear reference fieldlar default view da qaytarilmaydi
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            nestedObjectLoader.putNestedWithNames(map, "educationType", entity.getEducationType(),
+                    "hemishe_h_education_type", "HEducationType", returnNulls);
+        }
+
         CubaEntityMapHelper.putIfNotNull(map, "active", entity.getActive(), returnNulls);
 
         return map;

@@ -20,8 +20,8 @@ spring:
       password: ${DB_MASTER_PASSWORD}
       driver-class-name: org.postgresql.Driver
       hikari:
-        maximum-pool-size: 10
-        minimum-idle: 5
+        maximum-pool-size: 30
+        minimum-idle: 8
         connection-timeout: 30000
         idle-timeout: 300000
         max-lifetime: 1200000
@@ -31,6 +31,8 @@ spring:
           ApplicationName: HEMIS-Master-Prod
           tcpKeepAlive: true
           socketTimeout: 30
+          # Hung query protection (Postgres statement_timeout = 60 sec)
+          options: "-c statement_timeout=60000"
 
     # Replica Database (Read Operations)
     replica:
@@ -224,7 +226,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics
 
   endpoint:
     health:
@@ -253,7 +255,8 @@ logging:
     max-history: 30
 
   pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    # MDC traceId/spanId — distributed tracing uchun (Micrometer Observation)
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [%X{traceId:-},%X{spanId:-}] %-5level %logger{36} - %msg%n"
 
 # =====================================================
 # Required Environment Variables

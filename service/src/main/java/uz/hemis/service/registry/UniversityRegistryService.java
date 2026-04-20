@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.university.UniversityDto;
-import uz.hemis.domain.entity.University;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.registry.dto.UniversityDictionariesDto;
 import uz.hemis.service.registry.dto.UniversityDictionariesDto.DictionaryItem;

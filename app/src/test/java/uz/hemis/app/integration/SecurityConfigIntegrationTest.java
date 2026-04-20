@@ -2,6 +2,7 @@ package uz.hemis.app.integration;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +39,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.security.oauth2.resourceserver.jwt.issuer-uri="
 })
 @DisplayName("SecurityConfig Tests")
-class SecurityConfigTest {
+@EnabledIf("uz.hemis.app.integration.AbstractIntegrationTest#isDockerAvailable")
+class SecurityConfigTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

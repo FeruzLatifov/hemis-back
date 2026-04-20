@@ -13,7 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
-import uz.hemis.domain.entity.EducationMaterials;
+import uz.hemis.domain.entity.infrastructure.EducationMaterials;
 import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
 import java.util.*;

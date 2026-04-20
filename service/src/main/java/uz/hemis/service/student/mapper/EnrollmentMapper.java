@@ -2,7 +2,7 @@ package uz.hemis.service.student.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.student.EnrollmentDto;
-import uz.hemis.domain.entity.Enrollment;
+import uz.hemis.domain.entity.student.Enrollment;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface EnrollmentMapper {

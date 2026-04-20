@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.Group;
+import uz.hemis.domain.entity.student.Group;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import java.util.*;

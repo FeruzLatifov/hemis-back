@@ -6,7 +6,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.student.StudentIdRequest;
-import uz.hemis.domain.entity.Student;
+import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.domain.entity.student.Student;
 import uz.hemis.service.student.mapper.StudentLegacyMapper;
 import uz.hemis.domain.repository.StudentRepository;
 
@@ -358,7 +359,7 @@ public class StudentEnrollmentService {
             iterations++;
 
             if (iterations > MAX_ITERATIONS) {
-                throw new RuntimeException("Unable to generate unique student code after " + MAX_ITERATIONS + " attempts");
+                throw new BadRequestException("Unable to generate unique student code after " + MAX_ITERATIONS + " attempts (sequence exhausted)");
             }
         } while (studentRepository.existsByCode(uniqueCode));
 

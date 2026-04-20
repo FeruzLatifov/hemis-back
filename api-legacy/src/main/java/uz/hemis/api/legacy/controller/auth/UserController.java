@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.service.legacy.UserLegacyService;
 
 import java.util.Map;

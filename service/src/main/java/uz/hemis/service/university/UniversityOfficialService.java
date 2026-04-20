@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import uz.hemis.domain.entity.Employee;
-import uz.hemis.domain.entity.EmployeeJobs;
+import uz.hemis.domain.entity.employee.Employee;
+import uz.hemis.domain.entity.employee.EmployeeJobs;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.EmployeeRepository;
 import uz.hemis.service.integration.ApiMspdTokenService;
@@ -81,11 +81,11 @@ public class UniversityOfficialService {
             return OfficialDto.builder()
                     .employeeId(emp.getId())
                     .metaId(meta.getId())
-                    .pinfl(emp.getPinfl())
+                    .pinfl(emp.getPinfl() != null ? emp.getPinfl().value() : null)
                     .firstName(emp.getFirstName())
                     .lastName(emp.getLastName())
                     .middleName(emp.getMiddleName())
-                    .phone(emp.getPhone())
+                    .phone(emp.getPhone() != null ? emp.getPhone().value() : null)
                     .positionCode(meta.getPositionCode())
                     .positionName(positionName)
                     .decreeNumber(meta.getDecreeNumber())
@@ -106,20 +106,25 @@ public class UniversityOfficialService {
         log.info("Appointing official: university={}, pinfl={}, position={}",
                 universityCode, request.getPinfl(), request.getPositionCode());
 
-        // Find or create employee
+        // Find or create employee — request.pinfl/phone DTO darajasida String,
+        // entity darajasida VO. VO constructor format'ni validate qiladi.
         Employee employee = employeeRepository.findByPinfl(request.getPinfl())
                 .orElseGet(() -> {
                     Employee emp = new Employee();
-                    emp.setPinfl(request.getPinfl());
+                    emp.setPinfl(uz.hemis.common.vo.Pinfl.of(request.getPinfl()));
                     emp.setFirstName(request.getFirstName());
                     emp.setLastName(request.getLastName());
                     emp.setMiddleName(request.getMiddleName());
-                    emp.setPhone(request.getPhone());
+                    if (request.getPhone() != null && !request.getPhone().isBlank()) {
+                        emp.setPhone(uz.hemis.common.vo.PhoneNumber.parse(request.getPhone()));
+                    }
                     return employeeRepository.save(emp);
                 });
 
         // Update employee info if needed
-        if (request.getPhone() != null) employee.setPhone(request.getPhone());
+        if (request.getPhone() != null && !request.getPhone().isBlank()) {
+            employee.setPhone(uz.hemis.common.vo.PhoneNumber.parse(request.getPhone()));
+        }
         employeeRepository.save(employee);
 
         // Deactivate previous holder of this position at this university
@@ -153,11 +158,11 @@ public class UniversityOfficialService {
         return OfficialDto.builder()
                 .employeeId(employee.getId())
                 .metaId(meta.getId())
-                .pinfl(employee.getPinfl())
+                .pinfl(employee.getPinfl() != null ? employee.getPinfl().value() : null)
                 .firstName(employee.getFirstName())
                 .lastName(employee.getLastName())
                 .middleName(employee.getMiddleName())
-                .phone(employee.getPhone())
+                .phone(employee.getPhone() != null ? employee.getPhone().value() : null)
                 .positionCode(meta.getPositionCode())
                 .positionName(positionName)
                 .decreeNumber(meta.getDecreeNumber())
@@ -207,11 +212,15 @@ public class UniversityOfficialService {
             if (!rows.isEmpty()) {
                 Map<String, Object> row = rows.get(0);
                 Employee emp = new Employee();
-                emp.setPinfl(pinfl);
+                emp.setPinfl(uz.hemis.common.vo.Pinfl.of(pinfl));
                 emp.setFirstName(str(row, "firstname"));
                 emp.setLastName(str(row, "lastname"));
                 emp.setMiddleName(str(row, "fathername"));
-                emp.setPhone(str(row, "phone"));
+                String phoneRaw = str(row, "phone");
+                if (phoneRaw != null && !phoneRaw.isBlank()) {
+                    try { emp.setPhone(uz.hemis.common.vo.PhoneNumber.parse(phoneRaw)); }
+                    catch (IllegalArgumentException ignored) { /* legacy free-form skip */ }
+                }
                 emp.setAddress(str(row, "address"));
                 emp.setGender(str(row, "_gender"));
                 emp.setCitizenship(str(row, "_citizenship"));
@@ -309,7 +318,7 @@ public class UniversityOfficialService {
                 if (lastName != null || firstName != null) {
                     // Save to employee table
                     Employee emp = new Employee();
-                    emp.setPinfl(pinfl);
+                    emp.setPinfl(uz.hemis.common.vo.Pinfl.of(pinfl));
                     emp.setFirstName(firstName);
                     emp.setLastName(lastName);
                     emp.setMiddleName(middleName);

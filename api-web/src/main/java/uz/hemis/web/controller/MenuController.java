@@ -209,10 +209,15 @@ public class MenuController {
         return ResponseEntity.ok(ResponseWrapper.success(Map.of("accessible", accessible)));
     }
 
-    /**
-     * POST /api/v1/web/menu/clear-cache
-     * Clear menu cache
-     */
+    @Operation(
+        summary = "Clear menu cache",
+        description = "Evicts menu + permission caches across Redis and JVM. Requires {@code system.view}."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Cache cleared"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
     @PostMapping("/clear-cache")
     @PreAuthorize("hasAuthority('system.view')")
     public ResponseEntity<ResponseWrapper<String>> clearCache(@AuthenticationPrincipal Jwt jwt) {
@@ -225,16 +230,15 @@ public class MenuController {
         return ResponseEntity.ok(ResponseWrapper.success("Menu cache cleared across Redis + JVM"));
     }
 
-    /**
-     * GET /api/v1/web/menu/structure
-     * Get full menu structure (admin only)
-     *
-     * <p><strong>Security:</strong></p>
-     * <ul>
-     *   <li>Requires: system.menu.view permission</li>
-     *   <li>Use Case: Admin panel, menu configuration UI</li>
-     * </ul>
-     */
+    @Operation(
+        summary = "Get full menu structure (admin)",
+        description = "Returns the entire menu tree for admin/configuration UI. Requires {@code system.menu.view}."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Menu structure returned"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Forbidden")
+    })
     @GetMapping("/structure")
     @PreAuthorize("hasAuthority('system.menu.view')")  // ✅ FIX: Admin-only authorization
     public ResponseEntity<ResponseWrapper<MenuResponse>> getStructure(

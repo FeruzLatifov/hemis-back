@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.DoctoralStudent;
+import uz.hemis.domain.entity.student.DoctoralStudent;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
 import uz.hemis.service.student.DoctoralStudentService;

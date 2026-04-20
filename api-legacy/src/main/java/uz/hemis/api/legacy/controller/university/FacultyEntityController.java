@@ -12,7 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
-import uz.hemis.domain.entity.Faculty;
+import uz.hemis.domain.entity.academic.Faculty;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import java.util.*;

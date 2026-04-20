@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.api.legacy.util.CubaSearchBodyParser;
-import uz.hemis.domain.entity.RAcademicAttendance;
+import uz.hemis.domain.entity.research.RAcademicAttendance;
 import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
 import java.time.LocalDateTime;

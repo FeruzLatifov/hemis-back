@@ -61,7 +61,8 @@ public class TranslationService {
     @Cacheable(value = "translations", key = "#locale")
     public Map<String, String> getAllTranslations(String locale) {
         log.debug("Loading all translations for locale: {}", locale);
-        return translationRepository.getTranslationsMap(locale);
+        Map<String, String> data = translationRepository.getTranslationsMap(locale);
+        return data != null ? Map.copyOf(data) : Map.of();
     }
 
     /**
@@ -71,7 +72,8 @@ public class TranslationService {
     @Cacheable(value = "translations-category", key = "#locale + '-' + #category")
     public Map<String, String> getTranslationsByCategory(String locale, String category) {
         log.debug("Loading translations for locale: {}, category: {}", locale, category);
-        return translationRepository.getTranslationsMapByCategory(locale, category);
+        Map<String, String> data = translationRepository.getTranslationsMapByCategory(locale, category);
+        return data != null ? Map.copyOf(data) : Map.of();
     }
 
     /**

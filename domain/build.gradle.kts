@@ -176,6 +176,12 @@ tasks.register<JavaExec>("liquibaseHistory") {
     configureLiquibase("history", listOf("--format=TEXT"))
 }
 
+tasks.register<JavaExec>("liquibaseClearChecksums") {
+    description = "Clear all stored checksums; they'll be recalculated on next update. " +
+        "Use after modifying an already-applied changeset (test/dev only)."
+    configureLiquibase("clearChecksums")
+}
+
 // Backward compatibility aliases
 tasks.register<JavaExec>("status") {
     description = "Alias for liquibaseStatus"

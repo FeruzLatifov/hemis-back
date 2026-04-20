@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.service.base.CubaResponseHelper;
-import uz.hemis.domain.entity.Employee;
-import uz.hemis.domain.entity.EmployeeJobs;
-import uz.hemis.domain.entity.Teacher;
+import uz.hemis.domain.entity.employee.Employee;
+import uz.hemis.domain.entity.employee.EmployeeJobs;
+import uz.hemis.domain.entity.employee.Teacher;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
 
@@ -169,6 +169,13 @@ public class TeacherCubaService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> addJob(Map<String, Object> requestBody) {
         log.info("Adding job to teacher - request: {}", requestBody);
+
+        if (requestBody == null || requestBody.isEmpty()) {
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("success", false);
+            error.put("message", "Request body is empty");
+            return error;
+        }
 
         // Extract job data from wrapper
         Map<String, Object> job = (Map<String, Object>) requestBody.get("job");

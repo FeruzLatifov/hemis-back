@@ -60,10 +60,12 @@ public class PersonalDataServiceController {
             connection.setReadTimeout(30000);
             connection.connect();
 
-            InputStream is = connection.getInputStream();
-            String jsonText = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            is.close();
-            connection.disconnect();
+            String jsonText;
+            try (InputStream is = connection.getInputStream()) {
+                jsonText = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+            } finally {
+                connection.disconnect();
+            }
 
             // Old-hemis: if response is "no" -> return null -> incorrect_data
             if (jsonText.replaceAll("[^a-zA-Z0-9]", "").equals("no") || jsonText.isBlank()) {

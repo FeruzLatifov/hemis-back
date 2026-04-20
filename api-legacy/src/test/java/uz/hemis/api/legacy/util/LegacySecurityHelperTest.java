@@ -11,8 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import uz.hemis.domain.entity.University;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.university.University;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.UserRepository;
 
 import java.util.Optional;

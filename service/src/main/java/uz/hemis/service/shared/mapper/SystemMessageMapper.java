@@ -2,7 +2,7 @@ package uz.hemis.service.shared.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.system.TranslationDto;
-import uz.hemis.domain.entity.SystemMessage;
+import uz.hemis.domain.entity.system.SystemMessage;
 
 import java.util.HashMap;
 import java.util.Map;

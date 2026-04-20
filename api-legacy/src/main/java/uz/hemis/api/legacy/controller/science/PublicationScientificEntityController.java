@@ -15,7 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.PublicationScientific;
+import uz.hemis.domain.entity.research.PublicationScientific;
 import uz.hemis.service.legacy.science.ScienceDoctorateEntityLegacyService;
 
 import uz.hemis.api.legacy.util.CubaFilterHelper;

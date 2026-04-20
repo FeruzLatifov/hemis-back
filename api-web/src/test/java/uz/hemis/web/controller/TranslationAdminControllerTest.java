@@ -12,7 +12,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.app.HemisApplication;
-import uz.hemis.domain.entity.SystemMessage;
+import uz.hemis.domain.entity.system.SystemMessage;
 import uz.hemis.domain.repository.SystemMessageRepository;
 
 import java.util.HashMap;

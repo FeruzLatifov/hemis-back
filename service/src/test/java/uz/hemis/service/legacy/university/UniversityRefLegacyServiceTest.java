@@ -12,9 +12,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import uz.hemis.domain.entity.IctEquipment;
-import uz.hemis.domain.entity.Laboratories;
-import uz.hemis.domain.entity.UniversityAttachedSpeciality;
+import uz.hemis.domain.entity.infrastructure.IctEquipment;
+import uz.hemis.domain.entity.infrastructure.Laboratories;
+import uz.hemis.domain.entity.university.UniversityAttachedSpeciality;
 import uz.hemis.domain.repository.IctEquipmentRepository;
 import uz.hemis.domain.repository.LaboratoriesRepository;
 import uz.hemis.domain.repository.UniversityAttachedSpecialityRepository;
@@ -93,15 +93,15 @@ class UniversityRefLegacyServiceTest {
             Map<String, Object> map = service.toIctEquipmentMap(ictEquipment, false);
 
             assertThat(map.get("_entityName")).isEqualTo("hemishe_RIctEquipment");
-            assertThat(map.get("_instanceName")).isEqualTo("ICT-TATU-2023");
+            assertThat((String) map.get("_instanceName")).contains("com.company.hemishe.entity.RIctEquipment-" + testId);
             assertThat(map.get("id")).isEqualTo(testId);
-            assertThat(map.get("university_code")).isEqualTo("TATU");
-            assertThat(map.get("education_year_code")).isEqualTo("2023");
-            assertThat(map.get("room_count")).isEqualTo(50);
-            assertThat(map.get("valid_projector_count")).isEqualTo(45);
-            assertThat(map.get("invalid_projector_count")).isEqualTo(5);
-            assertThat(map.get("total_count")).isEqualTo(100);
-            assertThat(map.get("total_grade")).isEqualTo(90);
+            assertThat(map.get("universityCode")).isEqualTo("TATU");
+            assertThat(map.get("educationYearCode")).isEqualTo("2023");
+            assertThat(map.get("roomCount")).isEqualTo(50);
+            assertThat(map.get("validProjectorCount")).isEqualTo(45);
+            assertThat(map.get("invalidProjectorCount")).isEqualTo(5);
+            assertThat(map.get("totalCount")).isEqualTo(100);
+            assertThat(map.get("totalGrade")).isEqualTo(90);
         }
 
         @Test
@@ -178,19 +178,19 @@ class UniversityRefLegacyServiceTest {
             Map<String, Object> map = service.toLaboratoriesMap(laboratories, false);
 
             assertThat(map.get("_entityName")).isEqualTo("hemishe_RLaboratories");
-            assertThat(map.get("_instanceName")).isEqualTo("Kompyuter injiniringi");
+            assertThat((String) map.get("_instanceName")).contains("com.company.hemishe.entity.RLaboratories-" + testId);
             assertThat(map.get("id")).isEqualTo(testId);
-            assertThat(map.get("university_code")).isEqualTo("TATU");
-            assertThat(map.get("education_year_code")).isEqualTo("2023");
-            assertThat(map.get("speciality_id")).isEqualTo("SPEC001");
-            assertThat(map.get("speciality_code")).isEqualTo("5330100");
-            assertThat(map.get("speciality_name")).isEqualTo("Kompyuter injiniringi");
-            assertThat(map.get("student_count")).isEqualTo(200);
-            assertThat(map.get("valid_laboratories_count")).isEqualTo(10);
-            assertThat(map.get("valid_workshops_count")).isEqualTo(5);
-            assertThat(map.get("total_laboratories")).isEqualTo(12);
-            assertThat(map.get("total_workshops")).isEqualTo(6);
-            assertThat(map.get("total_grade")).isEqualTo(85);
+            assertThat(map.get("universityCode")).isEqualTo("TATU");
+            assertThat(map.get("educationYearCode")).isEqualTo("2023");
+            assertThat(map.get("specialityId")).isEqualTo("SPEC001");
+            assertThat(map.get("specialityCode")).isEqualTo("5330100");
+            assertThat(map.get("specialityName")).isEqualTo("Kompyuter injiniringi");
+            assertThat(map.get("studentCount")).isEqualTo(200);
+            assertThat(map.get("validLaboratoriesCount")).isEqualTo(10);
+            assertThat(map.get("validWorkshopsCount")).isEqualTo(5);
+            assertThat(map.get("totalLaboratories")).isEqualTo(12);
+            assertThat(map.get("totalWorkshops")).isEqualTo(6);
+            assertThat(map.get("totalGrade")).isEqualTo(85);
         }
 
         @Test
@@ -199,7 +199,7 @@ class UniversityRefLegacyServiceTest {
             laboratories.setSpecialityName(null);
             Map<String, Object> map = service.toLaboratoriesMap(laboratories, false);
 
-            assertThat(map.get("_instanceName")).isEqualTo("Laboratories-" + testId);
+            assertThat((String) map.get("_instanceName")).contains("[detached]");
         }
 
         @Test
@@ -260,7 +260,8 @@ class UniversityRefLegacyServiceTest {
             assertThat((String) map.get("_instanceName")).contains("com.company.hemishe.entity.EUniversityAttachedSpeciality");
             assertThat(map.get("id")).isEqualTo(testId.toString());
             assertThat(map.get("active")).isEqualTo(true);
-            assertThat(map.get("educationType")).isEqualTo("11");
+            // OLD-HEMIS: educationType default view da qaytarilmaydi
+            assertThat(map).doesNotContainKey("educationType");
         }
 
         @Test

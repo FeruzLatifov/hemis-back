@@ -7,7 +7,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.UserRepository;
 
 import java.util.Optional;

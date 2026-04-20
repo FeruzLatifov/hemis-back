@@ -10,7 +10,7 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.finance.ScholarshipDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Scholarship;
+import uz.hemis.domain.entity.finance.Scholarship;
 import uz.hemis.service.finance.mapper.ScholarshipMapper;
 import uz.hemis.domain.repository.ScholarshipRepository;
 

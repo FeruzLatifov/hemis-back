@@ -14,7 +14,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.finance.EmploymentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Employment;
+import uz.hemis.domain.entity.employee.Employment;
 import uz.hemis.service.finance.mapper.EmploymentMapper;
 import uz.hemis.domain.repository.EmploymentRepository;
 

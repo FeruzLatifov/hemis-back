@@ -9,7 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uz.hemis.common.dto.system.LanguageDto;
-import uz.hemis.domain.entity.Language;
+import uz.hemis.domain.entity.reference.Language;
 import uz.hemis.domain.repository.LanguageRepository;
 import uz.hemis.service.shared.mapper.LanguageMapper;
 

@@ -471,7 +471,10 @@ public class WebAuthController {
                         new com.fasterxml.jackson.databind.ObjectMapper().readTree(payload);
                 return json.has(claim) ? json.get(claim).asText() : null;
             }
-        } catch (Exception ignored) { }
+        } catch (Exception e) {
+            // JWT parse xatosi — debug log'ga yoziladi, client null oladi
+            log.debug("Failed to parse JWT claim: {}", e.getMessage());
+        }
         return null;
     }
 

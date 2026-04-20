@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.hemis.common.validation.ValidPhoneNumber;
+import uz.hemis.common.validation.ValidPinfl;
 
 /**
  * Request to appoint a university official (rector, prorektor, etc.)
@@ -15,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class OfficialRequest {
 
     @NotBlank(message = "PINFL is required")
-    @Size(min = 14, max = 14, message = "PINFL must be 14 digits")
+    @ValidPinfl
     private String pinfl;
 
     @NotBlank(message = "First name is required")
@@ -25,6 +27,8 @@ public class OfficialRequest {
     private String lastName;
 
     private String middleName;
+
+    @ValidPhoneNumber
     private String phone;
 
     @NotBlank(message = "Position code is required")

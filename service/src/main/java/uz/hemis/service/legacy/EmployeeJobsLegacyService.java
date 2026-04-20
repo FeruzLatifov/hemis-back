@@ -8,7 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.EmployeeJobs;
+import uz.hemis.domain.entity.employee.EmployeeJobs;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
 
 import uz.hemis.common.JsonNull;

@@ -32,6 +32,7 @@ import java.util.Map;
  * <p><strong>Best Practice:</strong> HTTP tests are simpler and test the real system</p>
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled("Requires running backend at http://localhost:8081 — enable for live smoke testing")
 class TranslationAdminControllerHttpTest {
 
     private static final String BASE_URL = "http://localhost:8081";

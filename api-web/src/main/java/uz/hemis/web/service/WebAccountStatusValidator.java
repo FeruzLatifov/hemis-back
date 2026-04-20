@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
-import uz.hemis.domain.entity.SecUser;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.SecUser;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.SecUserRepository;
 import uz.hemis.domain.repository.UserRepository;
 

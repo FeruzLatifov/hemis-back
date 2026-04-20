@@ -17,6 +17,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.student.StudentIdRequest;
+import uz.hemis.common.log.LogSafe;
 import uz.hemis.service.legacy.UserLegacyService;
 import uz.hemis.service.student.StudentGpaService;
 import uz.hemis.service.student.StudentService;
@@ -123,7 +124,7 @@ public class StudentServiceController {
     public ResponseEntity<?> verify(
             @Parameter(description = "Talaba PINFL raqami", example = "52503015440023")
             @RequestParam String pinfl) {
-        log.info("[CUBA Service] student/verify: pinfl={}", pinfl);
+        log.info("[CUBA Service] student/verify: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(verificationService.verifyByPinfl(pinfl));
     }
 
@@ -264,7 +265,7 @@ public class StudentServiceController {
     public ResponseEntity<?> contractInfo(
             @Parameter(description = "Talaba PINFL raqami", example = "61111065190052")
             @RequestParam String pinfl) {
-        log.info("[CUBA Service] student/contractInfo: pinfl={}", pinfl);
+        log.info("[CUBA Service] student/contractInfo: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(hemisApiService.getContractInfo(pinfl));
     }
 
@@ -716,7 +717,7 @@ public class StudentServiceController {
     @Operation(summary = "Talaba ma'lumotlari (PINFL)", description = "PINFL bo'yicha talaba ma'lumotlarini olish (status: 11, 16)")
     public ResponseEntity<?> get(
             @Parameter(description = "PINFL") @RequestParam String pinfl) {
-        log.info("[CUBA Service] student/get: pinfl={}", pinfl);
+        log.info("[CUBA Service] student/get: pinfl={}", LogSafe.pinfl(pinfl));
         Map<String, Object> data = studentService.getByPinflFlat(pinfl);
         Map<String, Object> response = new java.util.LinkedHashMap<>();
         if (data == null) {
@@ -741,7 +742,7 @@ public class StudentServiceController {
     @Operation(summary = "Aktiv talaba (PINFL)", description = "PINFL bo'yicha aktiv talaba ma'lumotlarini olish")
     public ResponseEntity<?> getActive(
             @Parameter(description = "PINFL") @RequestParam String pinfl) {
-        log.info("[CUBA Service] student/getActive: pinfl={}", pinfl);
+        log.info("[CUBA Service] student/getActive: pinfl={}", LogSafe.pinfl(pinfl));
         Map<String, Object> data = studentService.getActiveFlat(pinfl);
         Map<String, Object> response = new java.util.LinkedHashMap<>();
         if (data == null) {
@@ -789,7 +790,7 @@ public class StudentServiceController {
     @Operation(summary = "Doktorant talaba (PINFL)", description = "PINFL bo'yicha doktorant talaba ma'lumotlarini olish")
     public ResponseEntity<?> getDoctoral(
             @Parameter(description = "PINFL") @RequestParam String pinfl) {
-        log.info("[CUBA Service] student/getDoctoral: pinfl={}", pinfl);
+        log.info("[CUBA Service] student/getDoctoral: pinfl={}", LogSafe.pinfl(pinfl));
         Map<String, Object> data = studentService.getDoctoralFlat(pinfl);
         Map<String, Object> response = new java.util.LinkedHashMap<>();
         if (data == null) {
@@ -813,7 +814,7 @@ public class StudentServiceController {
     @Operation(summary = "Talaba (status bilan)", description = "PINFL bo'yicha talaba - status '11' → oxirgi yozuv → seriya raqam")
     public ResponseEntity<?> getWithStatus(
             @Parameter(description = "PINFL") @RequestParam String pinfl) {
-        log.info("[CUBA Service] student/getWithStatus: pinfl={}", pinfl);
+        log.info("[CUBA Service] student/getWithStatus: pinfl={}", LogSafe.pinfl(pinfl));
         Map<String, Object> data = studentService.getWithStatusFlat(pinfl);
         Map<String, Object> response = new java.util.LinkedHashMap<>();
         if (data == null) {
@@ -837,7 +838,7 @@ public class StudentServiceController {
     @Operation(summary = "Test talaba (billing format)", description = "Billing API formati uchun talaba ma'lumotlari")
     public ResponseEntity<?> testGet(
             @Parameter(description = "PINFL") @RequestParam String pinfl) {
-        log.info("[CUBA Service] student/testGet: pinfl={}", pinfl);
+        log.info("[CUBA Service] student/testGet: pinfl={}", LogSafe.pinfl(pinfl));
         Map<String, Object> result = studentService.testGetFlat(pinfl);
         return ResponseEntity.ok(result);
     }
@@ -909,8 +910,19 @@ public class StudentServiceController {
     @Operation(summary = "Chetlatilgan talabalar tekshirish", description = "PINFL lar bo'yicha chetlatilgan talabalarni tekshirish")
     public ResponseEntity<?> isExpel(
             @Parameter(description = "PINFL lar (vergul bilan ajratilgan)") @RequestParam String pinfls) {
-        log.info("[CUBA Service] student/isExpel: pinfls={}", pinfls);
-        String[] pinflArray = pinfls.split(",");
+        if (pinfls == null || pinfls.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, "message", "pinfls required"));
+        }
+        String[] pinflArray = java.util.Arrays.stream(pinfls.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toArray(String[]::new);
+        log.info("[CUBA Service] student/isExpel: {} PINFL qabul qilindi", pinflArray.length);
+        if (pinflArray.length == 0) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false, "message", "No valid PINFLs provided"));
+        }
         Map<String, Object> result = studentService.isExpel(pinflArray);
         return ResponseEntity.ok(result);
     }

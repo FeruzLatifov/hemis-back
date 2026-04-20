@@ -3,7 +3,8 @@ package uz.hemis.domain.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.UniversityLifecycle;
+import uz.hemis.domain.entity.university.UniversityLifecycle;
+import uz.hemis.domain.entity.enums.LifecycleEventType;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public interface UniversityLifecycleRepository extends JpaRepository<UniversityL
 
     List<UniversityLifecycle> findBySuccessorCodeOrderByEventDateDesc(String successorCode);
 
-    List<UniversityLifecycle> findByEventType(String eventType);
+    List<UniversityLifecycle> findByEventType(LifecycleEventType eventType);
 
     Optional<UniversityLifecycle> findFirstByUniversityCodeOrderByEventDateDesc(String universityCode);
 }

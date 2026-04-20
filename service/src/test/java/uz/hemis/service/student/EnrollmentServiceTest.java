@@ -15,7 +15,7 @@ import org.springframework.data.domain.Pageable;
 import uz.hemis.common.dto.student.EnrollmentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Enrollment;
+import uz.hemis.domain.entity.student.Enrollment;
 import uz.hemis.domain.repository.EnrollmentRepository;
 import uz.hemis.domain.repository.FacultyRepository;
 import uz.hemis.domain.repository.SpecialtyRepository;

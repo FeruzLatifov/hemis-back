@@ -4,7 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import uz.hemis.domain.entity.MethodicalPublicationType;
+import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.domain.entity.research.MethodicalPublicationType;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import java.util.Optional;
  * Uslubiy nashr turlari repository
  */
 @Repository
+@Transactional(readOnly = true)
 public interface MethodicalPublicationTypeRepository extends JpaRepository<MethodicalPublicationType, String> {
 
     List<MethodicalPublicationType> findAllByIsActiveTrue();

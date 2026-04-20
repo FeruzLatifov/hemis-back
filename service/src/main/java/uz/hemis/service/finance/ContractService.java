@@ -14,7 +14,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.finance.ContractDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Contract;
+import uz.hemis.domain.entity.finance.Contract;
 import uz.hemis.service.finance.mapper.ContractMapper;
 import uz.hemis.domain.repository.ContractRepository;
 

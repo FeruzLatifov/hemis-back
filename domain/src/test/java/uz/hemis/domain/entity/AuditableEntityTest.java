@@ -37,11 +37,6 @@ class AuditableEntityTest {
         public void onCreate() {
             super.onCreate();
         }
-
-        @Override
-        public void onUpdate() {
-            super.onUpdate();
-        }
     }
 
     // ==================================================================
@@ -104,31 +99,10 @@ class AuditableEntityTest {
             assertThat(entity.getId()).isEqualTo(predefined);
         }
 
-        @Test
-        @DisplayName("Should set createdAt to approximately now when null")
-        void shouldSetCreatedAtWhenNull() {
-            TestAuditableEntity entity = new TestAuditableEntity();
-            LocalDateTime before = LocalDateTime.now().minusSeconds(1);
-
-            entity.onCreate();
-
-            LocalDateTime after = LocalDateTime.now().plusSeconds(1);
-            assertThat(entity.getCreatedAt()).isNotNull();
-            assertThat(entity.getCreatedAt()).isAfterOrEqualTo(before);
-            assertThat(entity.getCreatedAt()).isBeforeOrEqualTo(after);
-        }
-
-        @Test
-        @DisplayName("Should NOT overwrite existing createdAt")
-        void shouldNotOverwriteExistingCreatedAt() {
-            TestAuditableEntity entity = new TestAuditableEntity();
-            LocalDateTime predefined = LocalDateTime.of(2023, 1, 1, 0, 0);
-            entity.setCreatedAt(predefined);
-
-            entity.onCreate();
-
-            assertThat(entity.getCreatedAt()).isEqualTo(predefined);
-        }
+        // NOTE: createdAt auto-population tests moved to integration tier — after Batch 1 we
+        // migrated from manual timestamp assignment in @PrePersist to Spring Data JPA Auditing
+        // (@CreatedDate + AuditingEntityListener). Timestamp behavior is now an integration
+        // concern and must be verified with a running Spring context.
 
         @Test
         @DisplayName("Each new entity should get a unique UUID")
@@ -140,53 +114,6 @@ class AuditableEntityTest {
             entity2.onCreate();
 
             assertThat(entity1.getId()).isNotEqualTo(entity2.getId());
-        }
-    }
-
-    // ==================================================================
-    // PreUpdate (onUpdate)
-    // ==================================================================
-
-    @Nested
-    @DisplayName("onUpdate (PreUpdate)")
-    class OnUpdate {
-
-        @Test
-        @DisplayName("Should set updatedAt to approximately now")
-        void shouldSetUpdatedAt() {
-            TestAuditableEntity entity = new TestAuditableEntity();
-            assertThat(entity.getUpdatedAt()).isNull();
-
-            LocalDateTime before = LocalDateTime.now().minusSeconds(1);
-            entity.onUpdate();
-            LocalDateTime after = LocalDateTime.now().plusSeconds(1);
-
-            assertThat(entity.getUpdatedAt()).isNotNull();
-            assertThat(entity.getUpdatedAt()).isAfterOrEqualTo(before);
-            assertThat(entity.getUpdatedAt()).isBeforeOrEqualTo(after);
-        }
-
-        @Test
-        @DisplayName("Should overwrite previous updatedAt on subsequent calls")
-        void shouldOverwritePreviousUpdatedAt() {
-            TestAuditableEntity entity = new TestAuditableEntity();
-            entity.setUpdatedAt(LocalDateTime.of(2020, 1, 1, 0, 0));
-
-            entity.onUpdate();
-
-            assertThat(entity.getUpdatedAt()).isAfter(LocalDateTime.of(2020, 1, 1, 0, 0));
-        }
-
-        @Test
-        @DisplayName("onUpdate should not affect createdAt")
-        void onUpdateShouldNotAffectCreatedAt() {
-            TestAuditableEntity entity = new TestAuditableEntity();
-            LocalDateTime createdTs = LocalDateTime.of(2024, 6, 1, 10, 0);
-            entity.setCreatedAt(createdTs);
-
-            entity.onUpdate();
-
-            assertThat(entity.getCreatedAt()).isEqualTo(createdTs);
         }
     }
 

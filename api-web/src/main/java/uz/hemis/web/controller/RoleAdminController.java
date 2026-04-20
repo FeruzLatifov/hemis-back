@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.admin.RoleAdminService;
 import uz.hemis.service.admin.dto.*;
@@ -45,7 +46,7 @@ public class RoleAdminController {
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden")
     })
-    public ResponseEntity<ResponseWrapper<Page<RoleResponse>>> getRoles(
+    public ResponseEntity<ResponseWrapper<PageResponse<RoleResponse>>> getRoles(
             @Parameter(description = "Search by code or name")
             @RequestParam(required = false) String search,
             @Parameter(description = "Page number (0-based)")
@@ -57,7 +58,7 @@ public class RoleAdminController {
     ) {
         Pageable pageable = buildPageable(page, size, sort);
         Page<RoleResponse> roles = roleAdminService.getAll(search, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(roles));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(roles)));
     }
 
     @GetMapping("/{id}")

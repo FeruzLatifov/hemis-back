@@ -9,8 +9,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.JsonNull;
-import uz.hemis.domain.entity.*;
+import uz.hemis.domain.entity.academic.*;
+import uz.hemis.domain.entity.student.*;
+import uz.hemis.domain.entity.employee.*;
+import uz.hemis.domain.entity.university.*;
+import uz.hemis.domain.entity.research.*;
+import uz.hemis.domain.entity.finance.*;
+import uz.hemis.domain.entity.security.*;
+import uz.hemis.domain.entity.reference.*;
+import uz.hemis.domain.entity.system.*;
+import uz.hemis.domain.entity.infrastructure.*;
+import uz.hemis.domain.entity.base.*;
+import uz.hemis.domain.entity.enums.*;
 import uz.hemis.domain.repository.*;
+import uz.hemis.service.legacy.CubaNestedObjectLoader;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,6 +57,7 @@ public class ScienceDoctorateEntityLegacyService {
     private final DoctoralStudentStatusRepository doctoralStudentStatusRepository;
     private final DoctoralStudentTypeRepository doctoralStudentTypeRepository;
     private final PublicationLocalityRepository publicationLocalityRepository;
+    private final CubaNestedObjectLoader nestedObjectLoader;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -295,10 +308,55 @@ public class ScienceDoctorateEntityLegacyService {
     }
 
     public Map<String, Object> toDissertationDefenseMap(DissertationDefense entity, Boolean returnNulls) {
+        return toDissertationDefenseMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code eDissertationDefense-view} (views.xml:447-453):
+     * 2 refs {@code _minimal} — doctorateStudent (with secondName, thirdName), speciality.
+     */
+    public Map<String, Object> toDissertationDefenseMap(DissertationDefense entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", DISSERTATION_DEFENSE_ENTITY);
         map.put("_instanceName", entity.getDefensePlace() != null ? entity.getDefensePlace() : "");
         map.put("id", entity.getId() != null ? entity.getId().toString() : null);
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            // doctorateStudent — CUBA view'da _minimal + secondName, thirdName inner property
+            if (entity.getDoctorateStudent() != null) {
+                Map<String, Object> ds = doctoralStudentRepository.findById(entity.getDoctorateStudent())
+                        .map(student -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("_entityName", DOCTORAL_STUDENT_ENTITY);
+                            m.put("id", student.getId().toString());
+                            m.put("_instanceName", (student.getSecondName() != null ? student.getSecondName() : "")
+                                    + " " + (student.getFirstName() != null ? student.getFirstName() : ""));
+                            m.put("secondName", student.getSecondName());
+                            m.put("thirdName", student.getThirdName());
+                            return m;
+                        })
+                        .orElseGet(() -> {
+                            Map<String, Object> m = new LinkedHashMap<>();
+                            m.put("_entityName", DOCTORAL_STUDENT_ENTITY);
+                            m.put("id", entity.getDoctorateStudent().toString());
+                            return m;
+                        });
+                map.put("doctorateStudent", ds);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("doctorateStudent", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            if (entity.getSpeciality() != null) {
+                Map<String, Object> sp = new LinkedHashMap<>();
+                sp.put("_entityName", "hemishe_HSpeciality");
+                sp.put("id", entity.getSpeciality().toString());
+                sp.put("_instanceName", "com.company.hemishe.entity.HSpeciality-" + entity.getSpeciality() + " [detached]");
+                map.put("speciality", sp);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("speciality", uz.hemis.common.JsonNull.INSTANCE);
+            }
+        }
+
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         putIfNotNull(map, "defenseDate", entity.getDefenseDate(), returnNulls);
         putIfNotNull(map, "defensePlace", entity.getDefensePlace(), returnNulls);
@@ -383,6 +441,16 @@ public class ScienceDoctorateEntityLegacyService {
     }
 
     public Map<String, Object> toDoctoralStudentMap(DoctoralStudent entity, Boolean returnNulls) {
+        return toDoctoralStudentMap(entity, returnNulls, null);
+    }
+
+    /**
+     * OLD-HEMIS view — {@code eDoctorateStudent-view} (views.xml:425-445):
+     * 13 refs nested {@code _minimal}: scienceBranch, speciality, paymentForm, citizenship,
+     * nationality, gender, country, soato, doctoralStudentType, doctorateStudentStatus,
+     * university (+ownership, universityType), department, educationYear.
+     */
+    public Map<String, Object> toDoctoralStudentMap(DoctoralStudent entity, Boolean returnNulls, String view) {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("_entityName", DOCTORAL_STUDENT_ENTITY);
         // OLD-HEMIS @NamePattern("%s %s|secondName,firstName") — faqat familiya + ism, patronymic yo'q
@@ -397,6 +465,54 @@ public class ScienceDoctorateEntityLegacyService {
         }
         map.put("_instanceName", instanceName);
         map.put("id", entity.getId() != null ? entity.getId().toString() : null);
+
+        boolean useNested = view != null && !view.isEmpty() && !"_local".equals(view);
+        if (useNested) {
+            nestedObjectLoader.putNestedWithNames(map, "scienceBranch", entity.getScienceBranch(),
+                    "hemishe_h_science_branch", "HScienceBranch", returnNulls);
+            if (entity.getSpeciality() != null) {
+                Map<String, Object> sp = new LinkedHashMap<>();
+                sp.put("_entityName", "hemishe_HSpeciality");
+                sp.put("id", entity.getSpeciality().toString());
+                sp.put("_instanceName", "com.company.hemishe.entity.HSpeciality-" + entity.getSpeciality() + " [detached]");
+                map.put("speciality", sp);
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("speciality", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "paymentForm", entity.getPaymentForm(),
+                    "hemishe_h_payment_form", "HPaymentForm", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "citizenship", entity.getCitizenship(),
+                    "hemishe_h_citizenship", "HCitizenship", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "nationality", entity.getNationality(),
+                    "hemishe_h_nationality", "HNationality", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "gender", entity.getGender(),
+                    "hemishe_h_gender", "HGender", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "country", entity.getCountry(),
+                    "hemishe_h_country", "HCountry", returnNulls);
+            if (entity.getSoato() != null) {
+                map.put("soato", nestedObjectLoader.loadSoato(entity.getSoato()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("soato", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "doctoralStudentType", entity.getDoctoralStudentType(),
+                    "hemishe_h_doctoral_student_type", "HDoctoralStudentType", returnNulls);
+            nestedObjectLoader.putNestedWithNames(map, "doctorateStudentStatus", entity.getDoctorateStudentStatus(),
+                    "hemishe_h_doctoral_student_status", "HDoctoralStudentStatus", returnNulls);
+            if (entity.getUniversity() != null) {
+                map.put("university", nestedObjectLoader.loadUniversity(entity.getUniversity()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("university", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            // department — entity table (code-based), dedicated loader ishlatiladi
+            if (entity.getDepartment() != null) {
+                map.put("department", nestedObjectLoader.loadDepartment(entity.getDepartment()));
+            } else if (Boolean.TRUE.equals(returnNulls)) {
+                map.put("department", uz.hemis.common.JsonNull.INSTANCE);
+            }
+            nestedObjectLoader.putNestedWithNames(map, "educationYear", entity.getEducationYear(),
+                    "hemishe_h_education_year", "HEducationYear", returnNulls);
+        }
+
         putIfNotNull(map, "version", entity.getVersion(), returnNulls);
         putIfNotNull(map, "firstName", entity.getFirstName(), returnNulls);
         putIfNotNull(map, "secondName", entity.getSecondName(), returnNulls);

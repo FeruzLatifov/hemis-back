@@ -167,20 +167,13 @@ public class AuditService {
         // Camel case conversion
         content = content.stream().map(this::toCamelCaseKeys).toList();
 
-        int totalPages = (int) Math.ceil((double) (total != null ? total : 0) / size);
-        return PageResponse.<Map<String, Object>>builder()
-                .content(content)
-                .page(page)
-                .size(size)
-                .totalElements(total != null ? total : 0)
-                .totalPages(totalPages)
-                .first(page == 0)
-                .last(page >= totalPages - 1)
-                .hasNext(page < totalPages - 1)
-                .hasPrevious(page > 0)
-                .numberOfElements(content.size())
-                .empty(content.isEmpty())
-                .build();
+        long totalElements = total != null ? total : 0L;
+        org.springframework.data.domain.Page<Map<String, Object>> springPage =
+                new org.springframework.data.domain.PageImpl<>(
+                        content,
+                        org.springframework.data.domain.PageRequest.of(page, size),
+                        totalElements);
+        return PageResponse.of(springPage);
     }
 
     private Map<String, Object> queryById(String table, String id, String columns) {

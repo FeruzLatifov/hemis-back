@@ -2,7 +2,7 @@ package uz.hemis.service.academic.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.academic.ScheduleDto;
-import uz.hemis.domain.entity.Schedule;
+import uz.hemis.domain.entity.student.Schedule;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ScheduleMapper {

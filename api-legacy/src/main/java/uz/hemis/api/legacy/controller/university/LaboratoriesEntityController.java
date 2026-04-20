@@ -12,7 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.Laboratories;
+import uz.hemis.domain.entity.infrastructure.Laboratories;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
 import uz.hemis.api.legacy.util.CubaFilterHelper;

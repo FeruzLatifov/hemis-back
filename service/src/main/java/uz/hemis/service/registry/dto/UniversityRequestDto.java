@@ -3,6 +3,7 @@ package uz.hemis.service.registry.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import uz.hemis.common.validation.ValidTin;
 
 /**
  * University Create/Update Request DTO
@@ -14,6 +15,7 @@ public class UniversityRequestDto {
     @Size(max = 255)
     private String code;
     
+    @ValidTin
     @Size(max = 255)
     private String tin;
     

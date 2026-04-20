@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.University;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.service.legacy.CubaNestedObjectLoader;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 import uz.hemis.service.university.UniversityService;

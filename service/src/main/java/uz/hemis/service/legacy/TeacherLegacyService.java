@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.JsonNull;
-import uz.hemis.domain.entity.Teacher;
+import uz.hemis.domain.entity.employee.Teacher;
 import uz.hemis.domain.repository.TeacherRepository;
 
 import java.time.LocalDate;

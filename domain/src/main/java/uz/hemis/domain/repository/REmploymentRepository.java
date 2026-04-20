@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.REmployment;
+import uz.hemis.domain.entity.employee.REmployment;
 
 import java.util.List;
 import java.util.UUID;

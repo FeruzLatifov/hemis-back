@@ -2,6 +2,7 @@ package uz.hemis.app.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -11,9 +12,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.TokenResponse;
-import uz.hemis.domain.entity.Permission;
-import uz.hemis.domain.entity.Role;
-import uz.hemis.domain.entity.User;
+import uz.hemis.domain.entity.security.Permission;
+import uz.hemis.domain.entity.security.Role;
+import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.PermissionRepository;
 import uz.hemis.domain.repository.RoleRepository;
 import uz.hemis.domain.repository.UserRepository;
@@ -59,7 +60,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("OAuth2 Login Flow End-to-End Integration Tests")
-class OAuth2LoginIntegrationTest {
+@EnabledIf("uz.hemis.app.integration.AbstractIntegrationTest#isDockerAvailable")
+class OAuth2LoginIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

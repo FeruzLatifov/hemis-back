@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.AdministrativeEmployee1;
+import uz.hemis.domain.entity.employee.AdministrativeEmployee1;
 
 import java.util.List;
 import java.util.UUID;

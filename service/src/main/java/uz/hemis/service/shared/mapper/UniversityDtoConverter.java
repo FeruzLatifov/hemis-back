@@ -1,7 +1,7 @@
 package uz.hemis.service.shared.mapper;
 
 import uz.hemis.common.dto.university.UniversityDto;
-import uz.hemis.domain.entity.University;
+import uz.hemis.domain.entity.university.University;
 
 import java.util.List;
 

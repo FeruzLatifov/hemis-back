@@ -16,8 +16,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
-import uz.hemis.domain.entity.Employee;
-import uz.hemis.domain.entity.EmployeeJobs;
+import uz.hemis.domain.entity.employee.Employee;
+import uz.hemis.domain.entity.employee.EmployeeJobs;
 import uz.hemis.service.legacy.EmployeeJobsLegacyService;
 
 import java.time.LocalDate;

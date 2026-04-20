@@ -11,7 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.domain.entity.EmployeeCertificate;
+import uz.hemis.domain.entity.employee.EmployeeCertificate;
 import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
 import java.time.LocalDateTime;
@@ -38,12 +38,17 @@ public class EmployeeCertificateEntityController {
     @GetMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini ID bo'yicha olish")
     public ResponseEntity<Map<String, Object>> getEmployeeCertificate(
-            @Parameter(description = "Employee certificate ID") @PathVariable UUID id) {
+            @Parameter(description = "Employee certificate ID") @PathVariable UUID id,
+            @Parameter(description = "CUBA view (e.g. eEmpoyeeCertificate-view)")
+            @RequestParam(required = false) String view,
+            @Parameter(description = "null qiymatlarni ham qaytarish")
+            @RequestParam(required = false) Boolean returnNulls) {
         Optional<EmployeeCertificate> opt = employeeRefService.findEmployeeCertificateById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EEmpoyeeCertificate with id " + id + " not found"));
         }
-        return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(opt.get()));
+        return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(opt.get(),
+                returnNulls != null ? returnNulls : false, view));
     }
 
     @PreAuthorize("hasAuthority('teachers.edit')")
@@ -117,8 +122,9 @@ public class EmployeeCertificateEntityController {
         Pageable pageable = PageRequest.of(offset / Math.max(limit, 1), Math.max(limit, 1), sorting);
         Page<EmployeeCertificate> page = employeeRefService.findAllEmployeeCertificate(pageable);
 
+        final String effectiveView = view;
         List<Map<String, Object>> result = page.getContent().stream()
-                .map(employeeRefService::toEmployeeCertificateMap)
+                .map(e -> employeeRefService.toEmployeeCertificateMap(e, false, effectiveView))
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(result);
@@ -128,9 +134,11 @@ public class EmployeeCertificateEntityController {
     @PostMapping
     @Operation(summary = "Xodim sertifikatini yaratish/upsert")
     public ResponseEntity<Map<String, Object>> createEmployeeCertificate(
-            @RequestBody Map<String, Object> data) {
+            @RequestBody Map<String, Object> data,
+            @Parameter(description = "CUBA view")
+            @RequestParam(required = false) String view) {
 
         EmployeeCertificate cert = employeeRefService.createOrUpsertEmployeeCertificate(data);
-        return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(cert));
+        return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(cert, false, view));
     }
 }

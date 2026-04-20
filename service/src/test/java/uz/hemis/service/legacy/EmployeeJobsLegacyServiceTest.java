@@ -24,11 +24,14 @@ class EmployeeJobsLegacyServiceTest {
     @Mock
     private CubaNestedObjectLoader nestedObjectLoader;
 
+    @Mock
+    private uz.hemis.domain.repository.EmployeeJobsRepository employeeJobsRepository;
+
     private EmployeeJobsLegacyService service;
 
     @BeforeEach
     void setUp() {
-        service = new EmployeeJobsLegacyService(jdbcTemplate, nestedObjectLoader);
+        service = new EmployeeJobsLegacyService(jdbcTemplate, nestedObjectLoader, employeeJobsRepository);
     }
 
     // =====================================================
@@ -42,9 +45,9 @@ class EmployeeJobsLegacyServiceTest {
                 contains("hemishe_e_teacher"),
                 eq(empId)
         )).thenReturn(Map.of(
-                "first_name", "Ali",
-                "second_name", "Valiyev",
-                "third_name", "Karimovich"
+                "firstname", "Ali",
+                "lastname", "Valiyev",
+                "fathername", "Karimovich"
         ));
 
         String result = service.getEmployeeFullName(empId);
@@ -79,13 +82,13 @@ class EmployeeJobsLegacyServiceTest {
     void putNestedEmployee_found_addsToMap() {
         UUID empId = UUID.randomUUID();
         when(jdbcTemplate.queryForMap(
-                contains("SELECT id, first_name"),
+                contains("FROM hemishe_e_teacher"),
                 eq(empId)
         )).thenReturn(Map.of(
                 "id", empId,
-                "first_name", "Ali",
-                "second_name", "Valiyev",
-                "third_name", "Karimovich",
+                "firstname", "Ali",
+                "lastname", "Valiyev",
+                "fathername", "Karimovich",
                 "version", 1
         ));
 
@@ -105,7 +108,8 @@ class EmployeeJobsLegacyServiceTest {
         service.putNestedEmployee(map, null, true);
 
         assertThat(map).containsKey("employee");
-        assertThat(map.get("employee")).isNull();
+        // Service uses JsonNull sentinel (serializes as JSON null but bypasses NON_NULL filter).
+        assertThat(map.get("employee")).isEqualTo(uz.hemis.common.JsonNull.INSTANCE);
     }
 
     @Test

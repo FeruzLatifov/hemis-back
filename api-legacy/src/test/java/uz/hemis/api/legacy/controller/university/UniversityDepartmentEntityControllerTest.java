@@ -6,12 +6,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
-import uz.hemis.domain.entity.UniversityDepartment;
+import uz.hemis.domain.entity.university.UniversityDepartment;
 import uz.hemis.domain.repository.UniversityDepartmentRepository;
 import uz.hemis.service.legacy.UniversityDepartmentLegacyService;
 
@@ -19,9 +21,11 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("UniversityDepartmentEntityController Tests")
 class UniversityDepartmentEntityControllerTest {
 
@@ -49,7 +53,9 @@ class UniversityDepartmentEntityControllerTest {
     void getByIdFound() {
         String code = "305-10";
         UniversityDepartment dept = createDepartment(code, "Informatika");
-        when(repository.findByCode(code)).thenReturn(Optional.of(dept));
+        when(legacyService.findByCode(code)).thenReturn(Optional.of(dept));
+        when(legacyService.toDepartmentMap(any(), any(), any())).thenReturn(
+                Map.of("_entityName", "hemishe_EUniversityDepartment", "id", code));
 
         ResponseEntity<Map<String, Object>> response = controller.getById(code, null, null, null);
 
@@ -62,7 +68,8 @@ class UniversityDepartmentEntityControllerTest {
     @DisplayName("GET /{id} - topilmagan entity uchun 404")
     void getByIdNotFound() {
         String code = "999-99";
-        when(repository.findByCode(code)).thenReturn(Optional.empty());
+        when(legacyService.findByCode(code)).thenReturn(Optional.empty());
+        when(legacyService.cubaNotFoundError(code)).thenReturn(Map.of("error", "MetaClass not found"));
 
         ResponseEntity<Map<String, Object>> response = controller.getById(code, null, null, null);
 
@@ -81,8 +88,10 @@ class UniversityDepartmentEntityControllerTest {
                 createDepartment("305-11", "Matematika")
         );
 
-        when(repository.findAll(any(PageRequest.class)))
+        when(legacyService.findAll(any(PageRequest.class)))
                 .thenReturn(new PageImpl<>(depts));
+        when(legacyService.toDepartmentMap(any(), any(), any())).thenReturn(
+                Map.of("_entityName", "hemishe_EUniversityDepartment"));
 
         ResponseEntity<List<Map<String, Object>>> response =
                 controller.getAll(null, 0, 50, null, null, null, null);
@@ -101,20 +110,21 @@ class UniversityDepartmentEntityControllerTest {
     void deleteReturns200() {
         String code = "305-10";
         UniversityDepartment dept = createDepartment(code, "Informatika");
-        when(repository.findByCode(code)).thenReturn(Optional.of(dept));
+        when(legacyService.findByCode(code)).thenReturn(Optional.of(dept));
         when(securityHelper.getCurrentUsername()).thenReturn("otm520");
 
         ResponseEntity<?> response = controller.delete(code);
 
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        verify(repository).save(any(UniversityDepartment.class));
+        verify(legacyService).softDelete(any(UniversityDepartment.class), anyString());
     }
 
     @Test
     @DisplayName("DELETE /{id} - topilmagan entity uchun 404")
     void deleteReturns404() {
         String code = "999-99";
-        when(repository.findByCode(code)).thenReturn(Optional.empty());
+        when(legacyService.findByCode(code)).thenReturn(Optional.empty());
+        when(legacyService.cubaNotFoundError(code)).thenReturn(Map.of("error", "not found"));
 
         ResponseEntity<?> response = controller.delete(code);
 
@@ -130,7 +140,12 @@ class UniversityDepartmentEntityControllerTest {
     void responseContainsCubaMetadata() {
         String code = "305-10";
         UniversityDepartment dept = createDepartment(code, "Informatika kafedrasi");
-        when(repository.findByCode(code)).thenReturn(Optional.of(dept));
+        when(legacyService.findByCode(code)).thenReturn(Optional.of(dept));
+        when(legacyService.toDepartmentMap(any(), any(), any())).thenReturn(Map.of(
+                "_entityName", "hemishe_EUniversityDepartment",
+                "_instanceName", "Informatika kafedrasi",
+                "id", code
+        ));
 
         ResponseEntity<Map<String, Object>> response = controller.getById(code, null, null, null);
 

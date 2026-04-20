@@ -69,11 +69,11 @@ class LegacyExceptionHandlerTest {
         DataIntegrityViolationException ex =
                 new DataIntegrityViolationException("msg", new RuntimeException("duplicate key violation"));
 
-        ResponseEntity<List<Map<String, String>>> response = handler.handleDataIntegrity(ex, request);
+        ResponseEntity<List<Map<String, Object>>> response = handler.handleDataIntegrity(ex, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull().hasSize(1);
-        Map<String, String> error = response.getBody().get(0);
+        Map<String, Object> error = response.getBody().get(0);
         assertThat(error).containsEntry("id", "database");
         assertThat(error).containsEntry("message", "Duplicate entry: record already exists");
     }
@@ -83,13 +83,15 @@ class LegacyExceptionHandlerTest {
         DataIntegrityViolationException ex =
                 new DataIntegrityViolationException("msg", new RuntimeException("not-null constraint violated"));
 
-        ResponseEntity<List<Map<String, String>>> response = handler.handleDataIntegrity(ex, request);
+        ResponseEntity<List<Map<String, Object>>> response = handler.handleDataIntegrity(ex, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull().hasSize(1);
-        Map<String, String> error = response.getBody().get(0);
-        assertThat(error).containsEntry("id", "database");
-        assertThat(error).containsEntry("message", "Required field is missing");
+        Map<String, Object> error = response.getBody().get(0);
+        // OLD-HEMIS: NotNull → CUBA bean validation format (message, messageTemplate, path, invalidValue)
+        assertThat(error).containsEntry("messageTemplate", "{javax.validation.constraints.NotNull.message}");
+        assertThat(error).containsKey("path");
+        assertThat(error).containsKey("invalidValue");
     }
 
     @Test
@@ -97,11 +99,11 @@ class LegacyExceptionHandlerTest {
         DataIntegrityViolationException ex =
                 new DataIntegrityViolationException("msg", new RuntimeException("foreign key constraint violation"));
 
-        ResponseEntity<List<Map<String, String>>> response = handler.handleDataIntegrity(ex, request);
+        ResponseEntity<List<Map<String, Object>>> response = handler.handleDataIntegrity(ex, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull().hasSize(1);
-        Map<String, String> error = response.getBody().get(0);
+        Map<String, Object> error = response.getBody().get(0);
         assertThat(error).containsEntry("id", "database");
         assertThat(error).containsEntry("message", "Referenced record not found");
     }
@@ -111,11 +113,11 @@ class LegacyExceptionHandlerTest {
         DataIntegrityViolationException ex =
                 new DataIntegrityViolationException("msg", new RuntimeException("some other db error"));
 
-        ResponseEntity<List<Map<String, String>>> response = handler.handleDataIntegrity(ex, request);
+        ResponseEntity<List<Map<String, Object>>> response = handler.handleDataIntegrity(ex, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull().hasSize(1);
-        Map<String, String> error = response.getBody().get(0);
+        Map<String, Object> error = response.getBody().get(0);
         assertThat(error).containsEntry("id", "database");
         assertThat(error).containsEntry("message", "Data integrity violation");
     }
@@ -125,6 +127,7 @@ class LegacyExceptionHandlerTest {
     @Test
     void handleNoResourceFound_servicesPath_returnsServiceFormat() throws NoResourceFoundException {
         when(request.getRequestURI()).thenReturn("/app/rest/v2/services/MyService/myMethod");
+        when(request.getParameterNames()).thenReturn(java.util.Collections.emptyEnumeration());
         NoResourceFoundException ex = new NoResourceFoundException(HttpMethod.GET, "resource", null);
 
         ResponseEntity<Map<String, Object>> response = handler.handleNoResourceFound(ex, request);

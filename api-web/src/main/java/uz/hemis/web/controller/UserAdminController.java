@@ -22,6 +22,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.admin.UserAdminService;
 import uz.hemis.service.admin.dto.*;
@@ -70,7 +71,7 @@ public class UserAdminController {
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
-    public ResponseEntity<ResponseWrapper<Page<UserAdminResponse>>> getUsers(
+    public ResponseEntity<ResponseWrapper<PageResponse<UserAdminResponse>>> getUsers(
             @Parameter(description = "Search by username or full name")
             @RequestParam(required = false) String search,
             @Parameter(description = "Filter by role code", example = "OTM_API")
@@ -93,7 +94,7 @@ public class UserAdminController {
         Page<UserAdminResponse> users = userAdminService.getUsers(
                 search, role, university, enabled, pageable, callerId);
 
-        return ResponseEntity.ok(ResponseWrapper.success(users));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(users)));
     }
 
     @GetMapping("/{id}")

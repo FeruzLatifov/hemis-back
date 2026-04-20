@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.Group;
+import uz.hemis.domain.entity.student.Group;
 
 import java.util.Optional;
 import java.util.UUID;

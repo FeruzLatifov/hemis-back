@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.PublicationScientific;
+import uz.hemis.domain.entity.research.PublicationScientific;
 
 import java.util.List;
 import java.util.UUID;

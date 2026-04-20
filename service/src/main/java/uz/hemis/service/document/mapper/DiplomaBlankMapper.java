@@ -2,7 +2,7 @@ package uz.hemis.service.document.mapper;
 
 import org.mapstruct.*;
 import uz.hemis.common.dto.document.DiplomaBlankDto;
-import uz.hemis.domain.entity.DiplomaBlank;
+import uz.hemis.domain.entity.finance.DiplomaBlank;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DiplomaBlankMapper {

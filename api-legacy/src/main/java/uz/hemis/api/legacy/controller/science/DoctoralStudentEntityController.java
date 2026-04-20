@@ -17,7 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.adapter.JsonNull;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
-import uz.hemis.domain.entity.DoctoralStudent;
+import uz.hemis.domain.entity.student.DoctoralStudent;
 import uz.hemis.service.legacy.science.ScienceDoctorateEntityLegacyService;
 
 import java.time.LocalDate;

@@ -2,7 +2,7 @@ package uz.hemis.service.university.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import uz.hemis.domain.entity.UniversityLegal;
+import uz.hemis.domain.entity.university.UniversityLegal;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

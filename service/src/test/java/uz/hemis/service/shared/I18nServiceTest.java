@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.data.redis.core.RedisTemplate;
-import uz.hemis.domain.entity.SystemMessage;
+import uz.hemis.domain.entity.system.SystemMessage;
 import uz.hemis.domain.repository.SystemMessageRepository;
 import uz.hemis.domain.repository.SystemMessageTranslationRepository;
 import uz.hemis.service.cache.CacheVersionService;

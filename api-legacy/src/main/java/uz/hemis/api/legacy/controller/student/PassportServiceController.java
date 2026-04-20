@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import uz.hemis.common.Jackson2Response;
+import uz.hemis.common.log.LogSafe;
 import uz.hemis.service.shared.CaptchaService;
 import uz.hemis.service.integration.ApiMspdTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -227,7 +228,8 @@ public class PassportServiceController {
         if (captchaId == null && captcha != null) captchaId = captcha;
         if (captchaValue == null && captcha != null) captchaValue = captcha;
 
-        log.info("🔍 GET /app/rest/v2/services/passport-data/getDataBySN - pinfl={}, seriaNumber={}", pinfl, seriaNumber);
+        log.info("🔍 GET /app/rest/v2/services/passport-data/getDataBySN - pinfl={}, seriaNumber={}",
+                LogSafe.pinfl(pinfl), LogSafe.passport(seriaNumber));
 
         // 1. Validate captcha
         if (!captchaService.validateCaptcha(captchaId, captchaValue)) {
@@ -774,7 +776,8 @@ public class PassportServiceController {
         if (captchaId == null && captcha != null) captchaId = captcha;
         if (captchaValue == null && captcha != null) captchaValue = captcha;
 
-        log.info("🔍 GET /app/rest/v2/services/passport-data/getDataByPinflBirthdate - pinfl={}, birthdate={}", pinfl, birthdate);
+        log.info("🔍 GET /app/rest/v2/services/passport-data/getDataByPinflBirthdate - pinfl={}, birthdate=***",
+                LogSafe.pinfl(pinfl));
 
         // 1. Validate captcha
         if (!captchaService.validateCaptcha(captchaId, captchaValue)) {
@@ -872,7 +875,7 @@ public class PassportServiceController {
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")
             @RequestParam String pinfl
     ) {
-        log.info("🔍 GET /app/rest/v2/services/passport-data/getAddress - pinfl={}", pinfl);
+        log.info("🔍 GET /app/rest/v2/services/passport-data/getAddress - pinfl={}", LogSafe.pinfl(pinfl));
 
         // 1. Get API-MSPD token
         String token = apiMspdTokenService.getAccessToken();
@@ -893,7 +896,7 @@ public class PassportServiceController {
             result.put("success", true);
             result.putPOJO("data", addressData);
 
-            log.info("✅ Successfully retrieved address data for PINFL: {}", pinfl);
+            log.info("✅ Successfully retrieved address data for PINFL: {}", LogSafe.pinfl(pinfl));
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {

@@ -165,6 +165,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         // Public endpoints (health checks)
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/api/v1/university/health").permitAll()
                         
                         // Protected actuator endpoints (admin only)
                         .requestMatchers("/actuator/**").hasRole("ADMIN")

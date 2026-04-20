@@ -10,7 +10,7 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.ScheduleDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.Schedule;
+import uz.hemis.domain.entity.student.Schedule;
 import uz.hemis.service.academic.mapper.ScheduleMapper;
 import uz.hemis.domain.repository.ScheduleRepository;
 

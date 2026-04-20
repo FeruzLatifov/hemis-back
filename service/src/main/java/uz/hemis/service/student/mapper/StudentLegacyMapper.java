@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import uz.hemis.common.dto.legacy.StudentLegacyDto;
-import uz.hemis.domain.entity.Student;
+import uz.hemis.domain.entity.student.Student;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -803,7 +803,12 @@ public class StudentLegacyMapper {
             return jdbcTemplate.queryForObject(
                     "SELECT " + field + " FROM hemishe_e_university WHERE code = ? AND delete_ts IS NULL",
                     String.class, universityCode);
-        } catch (Exception e) { return ""; }
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return "";  // Rekord topilmadi — CUBA compat: "" qaytaradi
+        } catch (org.springframework.dao.DataAccessException e) {
+            log.warn("DB lookup failed: {}", e.getMessage());
+            return "";
+        }
     }
 
     private String lookupNameByCode(String tableName, String code) {
@@ -817,7 +822,12 @@ public class StudentLegacyMapper {
             return jdbcTemplate.queryForObject(
                     "SELECT name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
                     String.class, code);
-        } catch (Exception e) { return ""; }
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return "";  // Rekord topilmadi — CUBA compat: "" qaytaradi
+        } catch (org.springframework.dao.DataAccessException e) {
+            log.warn("DB lookup failed: {}", e.getMessage());
+            return "";
+        }
     }
 
     private String lookupSpecialityName(String tableName, java.util.UUID uuid) {
@@ -826,7 +836,12 @@ public class StudentLegacyMapper {
             return jdbcTemplate.queryForObject(
                     "SELECT name FROM " + tableName + " WHERE id = ? AND delete_ts IS NULL",
                     String.class, uuid);
-        } catch (Exception e) { return ""; }
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return "";  // Rekord topilmadi — CUBA compat: "" qaytaradi
+        } catch (org.springframework.dao.DataAccessException e) {
+            log.warn("DB lookup failed: {}", e.getMessage());
+            return "";
+        }
     }
 
     private String lookupSoatoNameUz(String code) {
@@ -835,7 +850,12 @@ public class StudentLegacyMapper {
             return jdbcTemplate.queryForObject(
                     "SELECT name_uz FROM hemishe_h_soato WHERE code = ? AND delete_ts IS NULL",
                     String.class, code);
-        } catch (Exception e) { return ""; }
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return "";  // Rekord topilmadi — CUBA compat: "" qaytaradi
+        } catch (org.springframework.dao.DataAccessException e) {
+            log.warn("DB lookup failed: {}", e.getMessage());
+            return "";
+        }
     }
 
     private String lookupRegionName(String soatoCode) {

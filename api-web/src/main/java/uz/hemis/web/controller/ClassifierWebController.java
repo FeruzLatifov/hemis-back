@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.classifier.*;
 import uz.hemis.service.classifier.ClassifierWebService;
@@ -87,7 +88,7 @@ public class ClassifierWebController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q"),
             @ApiResponse(responseCode = "404", description = "Klasifikator topilmadi")
     })
-    public ResponseEntity<ResponseWrapper<Page<ClassifierItemDto>>> getClassifierItems(
+    public ResponseEntity<ResponseWrapper<PageResponse<ClassifierItemDto>>> getClassifierItems(
             @Parameter(description = "Klasifikator API kaliti", example = "education-type")
             @PathVariable String apiKey,
             @Parameter(description = "Qidiruv so'zi (kod, nom bo'yicha)", example = "bakalavr")
@@ -98,7 +99,7 @@ public class ClassifierWebController {
         log.info("GET /api/v1/web/classifiers/{} - search={}, page={}", apiKey, search, pageable.getPageNumber());
         try {
             Page<ClassifierItemDto> items = classifierWebService.getClassifierItems(apiKey, search, pageable);
-            return ResponseEntity.ok(ResponseWrapper.success(items));
+            return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(items)));
         } catch (IllegalArgumentException e) {
             log.warn("Classifier not found: {}", apiKey);
             return ResponseEntity.notFound().build();

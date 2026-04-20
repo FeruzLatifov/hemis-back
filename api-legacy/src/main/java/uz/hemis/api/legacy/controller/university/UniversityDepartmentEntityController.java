@@ -16,7 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
-import uz.hemis.domain.entity.UniversityDepartment;
+import uz.hemis.domain.entity.university.UniversityDepartment;
 import uz.hemis.service.legacy.UniversityDepartmentLegacyService;
 
 import java.time.LocalDateTime;

@@ -9,8 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
-import uz.hemis.domain.entity.Verification;
-import uz.hemis.domain.entity.VerificationType;
+import uz.hemis.domain.entity.student.Verification;
+import uz.hemis.domain.entity.student.VerificationType;
 import uz.hemis.domain.repository.VerificationRepository;
 import uz.hemis.domain.repository.VerificationTypeRepository;
 

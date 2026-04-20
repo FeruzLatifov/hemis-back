@@ -11,7 +11,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.CourseDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
-import uz.hemis.domain.entity.Course;
+import uz.hemis.domain.entity.academic.Course;
 import uz.hemis.service.academic.mapper.CourseMapper;
 import uz.hemis.domain.repository.CourseRepository;
 import uz.hemis.domain.repository.UniversityRepository;

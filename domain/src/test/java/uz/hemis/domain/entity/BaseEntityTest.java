@@ -5,6 +5,7 @@ import jakarta.persistence.Table;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import uz.hemis.domain.entity.base.BaseEntity;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -36,6 +37,10 @@ class BaseEntityTest {
     @Entity
     @Table(name = "test_entity")
     static class TestConcreteEntity extends BaseEntity {
+        @Override
+        public void onCreate() {
+            super.onCreate();
+        }
     }
 
     // ==================================================================
