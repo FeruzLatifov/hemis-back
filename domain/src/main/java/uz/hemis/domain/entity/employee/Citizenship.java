@@ -4,7 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 /**
  * Citizenship classifier (fuqarolik holati).
@@ -19,8 +20,9 @@ import uz.hemis.domain.entity.base.ReferenceEntity;
  * @since 2.0.0
  */
 @Entity
-@Table(name = "citizenship")
+@Table(name = "hemishe_h_citizenship")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class Citizenship extends ReferenceEntity {
+public class Citizenship extends LegacyClassifierEntity {
 }

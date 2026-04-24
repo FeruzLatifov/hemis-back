@@ -4,11 +4,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 @Entity
-@Table(name = "publication_type")
+@Table(name = "hemishe_h_publication_type")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class PublicationType extends ReferenceEntity {
+public class PublicationType extends LegacyClassifierEntity {
 }

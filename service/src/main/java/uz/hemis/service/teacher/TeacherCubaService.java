@@ -198,7 +198,7 @@ public class TeacherCubaService {
         entity.setEmployee(employee);
         entity.setUniversityCode(extractCode(job.get("university")));
         entity.setDepartmentCode(extractCode(job.get("department")));
-        entity.setEmployeeTypeCode(extractCode(job.get("employeeType")));
+        entity.setPositionTypeCode(extractCode(job.get("employeeType")));
         entity.setPositionCode(extractCode(job.get("employeePosition")));
         entity.setEmployeeRateCode(extractCode(job.get("employeeRate")));
         entity.setEmploymentFormCode(extractCode(job.get("employeeForm")));

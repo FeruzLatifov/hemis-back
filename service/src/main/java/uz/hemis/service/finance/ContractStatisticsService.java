@@ -223,8 +223,8 @@ public class ContractStatisticsService {
 
         try {
             Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, name_ru, name_en, active, version, created_by, updated_by, create_ts, update_ts " +
-                "FROM hemishe_h_education_type WHERE code = ? AND delete_ts IS NULL", code);
+                "SELECT code, name, name_ru, name_en, is_active as active, version, created_by, updated_by, created_at as create_ts, updated_at as update_ts " +
+                "FROM education_type WHERE code = ?", code);
 
             result.put("id", code);
             if (data.get("name_ru") != null) result.put("nameRu", data.get("name_ru"));
@@ -287,8 +287,8 @@ public class ContractStatisticsService {
 
         try {
             Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, active, version, created_by, create_ts, update_ts " +
-                "FROM hemishe_h_education_year WHERE code = ? AND delete_ts IS NULL", code);
+                "SELECT code, name, is_active as active, version, created_by, created_at as create_ts, updated_at as update_ts " +
+                "FROM education_year WHERE code = ?", code);
 
             result.put("id", code);
             result.put("code", code);
@@ -313,8 +313,8 @@ public class ContractStatisticsService {
 
         try {
             Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, name_ru, name_en, active, version, created_by, updated_by, create_ts, update_ts " +
-                "FROM hemishe_h_education_form WHERE code = ? AND delete_ts IS NULL", code);
+                "SELECT code, name, name_ru, name_en, is_active as active, version, created_by, updated_by, created_at as create_ts, updated_at as update_ts " +
+                "FROM education_form WHERE code = ?", code);
 
             result.put("id", code);
             if (data.get("name_ru") != null) result.put("nameRu", data.get("name_ru"));
@@ -367,8 +367,8 @@ public class ContractStatisticsService {
 
         try {
             Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, active, version, created_by, create_ts " +
-                "FROM hemishe_h_course WHERE code = ? AND delete_ts IS NULL", code);
+                "SELECT code, name, is_active as active, version, created_by, created_at as create_ts " +
+                "FROM course WHERE code = ?", code);
 
             result.put("id", code);
             result.put("code", code);
@@ -392,8 +392,8 @@ public class ContractStatisticsService {
 
         try {
             Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, active, version, created_by, updated_by, create_ts " +
-                "FROM hemishe_h_semester WHERE code = ? AND delete_ts IS NULL", code);
+                "SELECT code, name, is_active as active, version, created_by, updated_by, created_at as create_ts " +
+                "FROM semester WHERE code = ?", code);
 
             result.put("id", code);
             result.put("code", code);

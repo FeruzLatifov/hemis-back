@@ -72,8 +72,8 @@ public class UniversityOfficialService {
      */
     public List<OfficialDto> getOfficials(String universityCode, boolean currentOnly) {
         List<EmployeeJobs> jobs = currentOnly
-                ? employeeJobsRepository.findByUniversityCodeAndIsCurrentAndEmployeeTypeCode(universityCode, true, "15")
-                : employeeJobsRepository.findByUniversityCodeAndEmployeeTypeCode(universityCode, "15");
+                ? employeeJobsRepository.findByUniversityCodeAndIsCurrentAndPositionTypeCode(universityCode, true, "15")
+                : employeeJobsRepository.findByUniversityCodeAndPositionTypeCode(universityCode, "15");
 
         return jobs.stream().map(meta -> {
             Employee emp = meta.getEmployee();
@@ -141,7 +141,7 @@ public class UniversityOfficialService {
         meta.setEmployee(employee);
         meta.setUniversityCode(universityCode);
         meta.setPositionCode(request.getPositionCode());
-        meta.setEmployeeTypeCode("15"); // Rahbariyat — leadership type
+        meta.setPositionTypeCode("15"); // Rahbariyat — leadership type
         meta.setIsCurrent(true);
         meta.setStartDate(LocalDate.now());
         // source tracking removed — audit via created_by
@@ -225,11 +225,10 @@ public class UniversityOfficialService {
                 emp.setGenderCode(str(row, "_gender"));
                 emp.setCitizenshipCode(str(row, "_citizenship"));
                 emp.setNationalityCode(str(row, "_nationality"));
-                // serial_number = "AD1234567" → series="AD", number="1234567"
+                // serial_number = "AD1234567" → passport (single column, matches legacy hemishe_e_employee)
                 String serial = str(row, "serial_number");
-                if (serial != null && serial.length() > 2) {
-                    emp.setPassportSeries(serial.substring(0, 2));
-                    emp.setPassportNumber(serial.substring(2));
+                if (serial != null && !serial.isBlank()) {
+                    emp.setPassport(serial);
                 }
                 Object bd = row.get("birthday");
                 if (bd instanceof java.sql.Date) emp.setBirthDate(((java.sql.Date) bd).toLocalDate());
@@ -325,8 +324,11 @@ public class UniversityOfficialService {
                     emp.setGenderCode(textOrNull(json, "sex"));
                     emp.setCitizenshipCode(textOrNull(json, "citizenship"));
                     emp.setNationalityCode(textOrNull(json, "nationality"));
-                    emp.setPassportSeries(textOrNull(json, "doc_serial"));
-                    emp.setPassportNumber(textOrNull(json, "doc_number"));
+                    String docSerial = textOrNull(json, "doc_serial");
+                    String docNumber = textOrNull(json, "doc_number");
+                    String passport = (docSerial != null ? docSerial : "")
+                                    + (docNumber != null ? docNumber : "");
+                    if (!passport.isEmpty()) emp.setPassport(passport);
                     String bd = textOrNull(json, "birth_date");
                     if (bd != null) {
                         try { emp.setBirthDate(java.time.LocalDate.parse(bd)); } catch (Exception ignored) {}

@@ -4,11 +4,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 @Entity
-@Table(name = "student_type")
+@Table(name = "hemishe_h_student_type")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class StudentType extends ReferenceEntity {
+public class StudentType extends LegacyClassifierEntity {
 }

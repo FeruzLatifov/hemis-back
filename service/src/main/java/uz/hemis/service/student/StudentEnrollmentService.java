@@ -216,7 +216,7 @@ public class StudentEnrollmentService {
 
         try {
             jdbcTemplate.queryForMap(
-                    "SELECT code FROM hemishe_h_citizenship WHERE code = ? AND delete_ts IS NULL",
+                    "SELECT code FROM citizenship WHERE code = ? AND is_active = true",
                     data.getCitizenship());
         } catch (org.springframework.dao.EmptyResultDataAccessException e) {
             log.warn("Citizenship code not found: {}", data.getCitizenship());

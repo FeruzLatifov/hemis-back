@@ -8,13 +8,18 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
+import uz.hemis.common.auth.AuthProvider;
 import uz.hemis.common.enums.UserType;
 import uz.hemis.domain.entity.base.AuditableEntity;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * User Entity - Authentication and Authorization
@@ -208,14 +213,6 @@ public class User extends AuditableEntity {
     private University university;
 
     /**
-     * Person link — shaxs bo'lgan user uchun employee jadvaliga bog'lanish.
-     * NULL for B2B/service/system accounts.
-     * Pattern: Banner GOBTPAC → SPRIDEN
-     */
-    @Column(name = "employee_id")
-    private java.util.UUID employeeId;
-
-    /**
      * Get university code (from university relation)
      * Replaces old entityCode field
      */
@@ -256,6 +253,70 @@ public class User extends AuditableEntity {
      */
     @Column(name = "locked_at")
     private LocalDateTime lockedAt;
+
+    // =====================================================
+    // Person Identity Link (V009 / Phase 2 — Banner GOBTPAC pattern)
+    // =====================================================
+
+    /**
+     * FK to {@code employee(id)} — person identity of this login account.
+     *
+     * <p>Pattern: Banner GOBTPAC.PIDM → SPRIDEN.PIDM. Hozircha {@code NULL}
+     * allowed (legacy 339 user satrlari employee bog'lanmagan). MyGov/E-Imzo
+     * SSO onboarding'idan keyin majburiy bo'ladi (PINFL lookup).</p>
+     *
+     * <p>FK constraint V009 migration oxirida qo'shilgan (deferred).</p>
+     */
+    @Column(name = "employee_id")
+    private UUID employeeId;
+
+    // =====================================================
+    // Authentication Provider (context.md — MyGov / OneID / E-Imzo)
+    // =====================================================
+
+    /**
+     * Primary authentication provider for this account.
+     *
+     * <p>Default {@link AuthProvider#PASSWORD} — backward-compat for
+     * legacy BCrypt/PBKDF2 users. Other values activate SSO flows
+     * (MyGov / OneID / E-Imzo / Mobile-ID).</p>
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "primary_auth_provider", length = 20)
+    private AuthProvider primaryAuthProvider = AuthProvider.PASSWORD;
+
+    // =====================================================
+    // Security Hardening (rules.md #5 — Security by default)
+    // =====================================================
+
+    /**
+     * IP whitelist (CIDR blocks). {@code NULL} / empty = no restriction.
+     *
+     * <p>Production use-case: ministry admins restricted to office IPs.</p>
+     */
+    @JdbcTypeCode(SqlTypes.ARRAY)
+    @Column(name = "allowed_ip_cidr", columnDefinition = "text[]")
+    private List<String> allowedIpCidr;
+
+    /** Per-account requests-per-minute ceiling (enforced in IpWhitelistFilter / RateLimitService). */
+    @Column(name = "rate_limit_rpm")
+    private Integer rateLimitRpm = 60;
+
+    /** Timestamp of last password rotation. */
+    @Column(name = "secret_rotated_at")
+    private LocalDateTime secretRotatedAt;
+
+    /** Policy expiry — after this, user must rotate secret on next login. */
+    @Column(name = "secret_expires_at")
+    private LocalDateTime secretExpiresAt;
+
+    /** IP address of last successful login (audit / anomaly detection). */
+    @Column(name = "last_used_ip", length = 45)
+    private String lastUsedIp;
+
+    /** Timestamp of last successful authentication. */
+    @Column(name = "last_used_at")
+    private LocalDateTime lastUsedAt;
 
     // =====================================================
     // Business Methods

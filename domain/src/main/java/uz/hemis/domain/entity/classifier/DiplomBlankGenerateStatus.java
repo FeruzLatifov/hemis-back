@@ -4,11 +4,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 @Entity
-@Table(name = "diplom_blank_generate_status")
+@Table(name = "hemishe_h_diplom_blank_generate_status")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class DiplomBlankGenerateStatus extends ReferenceEntity {
+public class DiplomBlankGenerateStatus extends LegacyClassifierEntity {
 }

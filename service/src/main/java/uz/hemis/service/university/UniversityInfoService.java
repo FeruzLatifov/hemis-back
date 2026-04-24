@@ -204,7 +204,7 @@ public class UniversityInfoService {
                        p.name as position_name
                 FROM hemishe_e_teacher t
                 JOIN hemishe_e_employee_jobs j ON j._employee = t.id AND j.delete_ts IS NULL
-                LEFT JOIN hemishe_h_teacher_position_type p ON p.code = j._employee_position
+                LEFT JOIN position p ON p.code = j._employee_position
                 WHERE t._university = ? AND t.delete_ts IS NULL
                   AND j._employee_position = '20'
                 ORDER BY j.job_start_date DESC NULLS LAST

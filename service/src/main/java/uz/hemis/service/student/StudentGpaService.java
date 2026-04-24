@@ -559,7 +559,7 @@ public class StudentGpaService {
         }
 
         try {
-            String sql = "SELECT code, name FROM hemishe_h_course WHERE code = ?";
+            String sql = "SELECT code, name FROM course WHERE code = ?";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             String name = (String) row.get("name");
@@ -588,7 +588,7 @@ public class StudentGpaService {
         }
 
         try {
-            String sql = "SELECT code, name FROM hemishe_h_education_year WHERE code = ?";
+            String sql = "SELECT code, name FROM education_year WHERE code = ?";
             Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
 
             String name = (String) row.get("name");

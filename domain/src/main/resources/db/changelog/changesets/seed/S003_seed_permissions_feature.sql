@@ -383,6 +383,28 @@ ON CONFLICT (code) DO UPDATE SET
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
 -- =====================================================
+-- Buildings Module (3 permissions — V014 module)
+-- =====================================================
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('buildings', 'view', 'buildings.view', 'View Buildings', 'View university buildings (list, detail, history)', 'CORE', 'system')
+ON CONFLICT (code) DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('buildings', 'edit', 'buildings.edit', 'Edit Buildings', 'Create, update, soft-delete buildings', 'CORE', 'system')
+ON CONFLICT (code) DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('buildings', 'sync', 'buildings.sync', 'Sync Buildings from Univer', 'Bulk sync buildings from OTM via api-university', 'CORE', 'system')
+ON CONFLICT (code) DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+-- =====================================================
 -- Verification
 -- =====================================================
 DO $$

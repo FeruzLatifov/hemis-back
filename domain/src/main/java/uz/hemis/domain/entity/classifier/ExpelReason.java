@@ -4,11 +4,13 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 @Entity
-@Table(name = "expel")
+@Table(name = "hemishe_h_expel")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class ExpelReason extends ReferenceEntity {
+public class ExpelReason extends LegacyClassifierEntity {
 }

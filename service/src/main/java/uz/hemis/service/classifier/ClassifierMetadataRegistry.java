@@ -89,17 +89,19 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_nationality", Category.GENERAL, "Millatlar", "Национальности", "Nationalities", true, false);
         reg("hemishe_h_citizenship", Category.GENERAL, "Fuqarolik turlari", "Типы гражданства", "Citizenship types", true, false);
         reg("hemishe_h_country", Category.GENERAL, "Davlatlar", "Страны", "Countries", true, false);
-        reg("hemishe_h_soato", Category.GENERAL, "Viloyat va tumanlar (SOATO)", "Области и районы (СОАТО)", "Regions and districts (SOATO)", false, true);
+        reg("soato", Category.GENERAL, "Viloyat va tumanlar (SOATO)", "Области и районы (СОАТО)", "Regions and districts (SOATO)", false, true);
         reg("hemishe_h_locality_type", Category.GENERAL, "Joylashuv turlari", "Типы местности", "Locality types", true, false);
         reg("hemishe_h_terrain", Category.GENERAL, "Hudud turi", "Тип территории", "Terrain types", true, false);
         reg("hemishe_h_education_language", Category.GENERAL, "Ta'lim tillari", "Языки обучения", "Education languages", true, false);
         reg("hemishe_h_certificate_type", Category.GENERAL, "Sertifikat turlari", "Типы сертификатов", "Certificate types", true, false);
-        reg("hemishe_h_certificate_names", Category.GENERAL, "Sertifikat nomlari", "Названия сертификатов", "Certificate names", true, false);
-        reg("hemishe_h_certificate_subjects", Category.GENERAL, "Sertifikat fanlari", "Предметы сертификатов", "Certificate subjects", true, false);
-        reg("hemishe_h_certificate_grades", Category.GENERAL, "Sertifikat baholari", "Оценки сертификатов", "Certificate grades", true, false);
+        // RENAMED: DB=certificate_name, apiKey saqlandi
+        reg("hemishe_h_certificate_names", "certificate-names", Category.GENERAL, "Sertifikat nomlari", "Названия сертификатов", "Certificate names", true, false);
+        reg("hemishe_h_certificate_subjects", "certificate-subjects", Category.GENERAL, "Sertifikat fanlari", "Предметы сертификатов", "Certificate subjects", true, false);
+        reg("hemishe_h_certificate_grades", "certificate-grades", Category.GENERAL, "Sertifikat baholari", "Оценки сертификатов", "Certificate grades", true, false);
         reg("hemishe_h_resource_type", Category.GENERAL, "Resurs turlari", "Типы ресурсов", "Resource types", true, false);
-        reg("hemishe_h_hemis_version_type", Category.GENERAL, "HEMIS versiya turlari", "Типы версий HEMIS", "HEMIS version types", false, false);
-        reg("hemishe_h_outside_activities", Category.GENERAL, "Auditoriyadan tashqari mashg'ulotlar", "Внеаудиторные занятия", "Outside activities", true, false);
+        // RENAMED: DB=hemis_version, apiKey saqlandi
+        reg("hemishe_h_hemis_version_type", "hemis-version-type", Category.GENERAL, "HEMIS versiya turlari", "Типы версий HEMIS", "HEMIS version types", false, false);
+        reg("hemishe_h_outside_activities", "outside-activities", Category.GENERAL, "Auditoriyadan tashqari mashg'ulotlar", "Внеаудиторные занятия", "Outside activities", true, false);
         reg("hemishe_h_sport_type", Category.GENERAL, "Sport turlari", "Виды спорта", "Sport types", true, false);
         reg("hemishe_h_device_type", Category.GENERAL, "Qurilma turlari", "Типы устройств", "Device types", true, false);
         reg("hemishe_h_auditorium_type", Category.GENERAL, "Auditoriya turlari", "Типы аудиторий", "Auditorium types", true, false);
@@ -114,10 +116,13 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_ownership", Category.STRUCTURE, "Mulkchilik shakllari", "Формы собственности", "Ownership forms", true, false);
 
         // ─── EMPLOYEE (Xodimlar) ───
-        reg("hemishe_h_teacher_position_type", Category.EMPLOYEE, "O'qituvchi lavozimlari", "Должности преподавателей", "Teacher positions", true, false);
+        // NOTE: teacher_position_type olib tashlandi — position (V013) + S008 seed
+        //       aynan shu ma'lumotni saqlaydi (position_type='12' — Professor-o'qituvchi xodimlar).
         reg("hemishe_h_university_employee_type", Category.EMPLOYEE, "Xodim turlari", "Типы сотрудников", "Employee types", true, false);
         reg("hemishe_h_university_employee_status_type", Category.EMPLOYEE, "Xodim holatlari", "Статусы сотрудников", "Employee status types", true, false);
-        reg("hemishe_h_university_employee_form", Category.EMPLOYEE, "Xodim shtat turlari", "Штатные формы сотрудников", "Employee staff forms", true, false);
+        // RENAMED: DB=employment_form, apiKey=university-employee-form (legacy compat)
+        reg("hemishe_h_university_employee_form", "university-employee-form", Category.EMPLOYEE, "Xodim shtat turlari", "Штатные формы сотрудников", "Employee staff forms", true, false);
+        // UNCHANGED: hemishe_h_employment_form — boshqa jadval, migratsiya qilinmagan
         reg("hemishe_h_employment_form", Category.EMPLOYEE, "Bandlik shakllari", "Формы занятости", "Employment forms", true, false);
         reg("hemishe_h_qualification", Category.EMPLOYEE, "Malaka toifalari", "Категории квалификации", "Qualification categories", true, false);
         reg("hemishe_h_academic_degree", Category.EMPLOYEE, "Ilmiy darajalar", "Ученые степени", "Academic degrees", true, false);
@@ -143,7 +148,7 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_education_type", Category.EDUCATION, "Ta'lim turlari", "Типы образования", "Education types", true, false);
         reg("hemishe_h_education_form", Category.EDUCATION, "Ta'lim shakllari", "Формы образования", "Education forms", true, false);
         reg("hemishe_h_education_year", Category.EDUCATION, "O'quv yillari", "Учебные года", "Education years", true, false);
-        reg("hemishe_h_course", Category.EDUCATION, "O'quv kurslari", "Учебные курсы", "Courses", true, false);
+        reg("course", Category.EDUCATION, "O'quv kurslari", "Учебные курсы", "Courses", true, false);
         reg("hemishe_h_semester", Category.EDUCATION, "Semestrlar", "Семестры", "Semesters", true, false);
         reg("hemishe_h_semester_list", Category.EDUCATION, "Semestr turlari", "Типы семестров", "Semester types", true, false);
         reg("hemishe_h_education_week_type", Category.EDUCATION, "Ta'lim hafta turlari", "Типы учебных недель", "Education week types", true, false);
@@ -182,7 +187,8 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_stipend_rate", Category.FINANCIAL, "Stipendiya turlari", "Типы стипендий", "Stipend rates", true, false);
         reg("hemishe_h_stipend_rate_category", Category.FINANCIAL, "Stipendiya toifalari", "Категории стипендий", "Stipend rate categories", true, false);
         reg("hemishe_h_contract_type", Category.FINANCIAL, "Shartnoma turlari", "Типы договоров", "Contract types", true, false);
-        reg("hemishe_h_contract_types", Category.FINANCIAL, "Shartnoma sinflari", "Классы договоров", "Contract classes", true, false);
+        // RENAMED: DB=contract_class, apiKey=contract-types (legacy compat)
+        reg("hemishe_h_contract_types", "contract-types", Category.FINANCIAL, "Shartnoma sinflari", "Классы договоров", "Contract classes", true, false);
         reg("hemishe_h_contract_summa_type", Category.FINANCIAL, "Shartnoma summa turlari", "Типы сумм договоров", "Contract amount types", true, false);
         reg("hemishe_h_decree_type", Category.FINANCIAL, "Buyruq turlari", "Типы приказов", "Decree types", true, false);
         reg("hemishe_h_scholarship_decree_type", Category.FINANCIAL, "Stipendiya qaror turlari", "Типы решений по стипендиям", "Scholarship decree types", true, false);
@@ -191,7 +197,7 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_diplom_blank_status", Category.DIPLOMA, "Diplom blank holati", "Статус бланка диплома", "Diploma blank status", true, false);
         reg("hemishe_h_diplom_blank_category", Category.DIPLOMA, "Diplom blank toifasi", "Категория бланка диплома", "Diploma blank category", true, false);
 
-        // ─── SPECIALITY (Mutaxassisliklar) ───
+        // ─── SPECIALITY (Mutaxassisliklar) — CUBA legacy, tegilmadi ───
         reg("hemishe_h_bachelor_speciality", Category.SPECIALITY, "Bakalavriat yo'nalishlari", "Направления бакалавриата", "Bachelor specialities", false, false);
         reg("hemishe_h_master_speciality", Category.SPECIALITY, "Magistratura mutaxassisliklari", "Специальности магистратуры", "Master specialities", false, false);
         reg("hemishe_h_speciality_ordinatura", Category.SPECIALITY, "Ordinatura mutaxassisliklari", "Специальности ординатуры", "Ordinatura specialities", false, false);
@@ -200,13 +206,23 @@ public final class ClassifierMetadataRegistry {
     }
 
     /**
-     * Register a classifier table.
-     * Table name: hemishe_h_xxx -> apiKey: xxx (with _ replaced by -)
+     * Register a classifier (apiKey auto-derived from table name).
+     * Simple migrated: reg("gender", ...) → apiKey="gender"
+     * Legacy CUBA: reg("hemishe_h_speciality_master", ...) → apiKey="speciality-master"
      */
     private static void reg(String tableName, Category category,
                             String titleUz, String titleRu, String titleEn,
                             boolean editable, boolean hierarchical) {
-        String apiKey = tableNameToApiKey(tableName);
+        reg(tableName, tableNameToApiKey(tableName), category, titleUz, titleRu, titleEn, editable, hierarchical);
+    }
+
+    /**
+     * Register a classifier with explicit apiKey (used when DB table is renamed but API must stay same).
+     * Example: reg("hemishe_h_contract_types", "contract-types", ...) — yangi jadval "contract_class" lekin API "contract-types" saqlanadi.
+     */
+    private static void reg(String tableName, String apiKey, Category category,
+                            String titleUz, String titleRu, String titleEn,
+                            boolean editable, boolean hierarchical) {
         ClassifierMeta meta = new ClassifierMeta(tableName, apiKey, category,
                 titleUz, titleRu, titleEn, editable, hierarchical);
         REGISTRY.put(apiKey, meta);
@@ -214,17 +230,23 @@ public final class ClassifierMetadataRegistry {
     }
 
     /**
-     * hemishe_h_education_type -> education-type
+     * Derive apiKey from table name.
+     *   hemishe_h_education_type → education-type (legacy)
+     *   education_type → education-type (yangi)
      */
     public static String tableNameToApiKey(String tableName) {
-        if (tableName == null || !tableName.startsWith("hemishe_h_")) {
-            throw new IllegalArgumentException("Invalid classifier table name: " + tableName);
+        if (tableName == null) {
+            throw new IllegalArgumentException("Invalid classifier table name: null");
         }
-        return tableName.substring("hemishe_h_".length()).replace('_', '-');
+        String stripped = tableName.startsWith("hemishe_h_")
+                ? tableName.substring("hemishe_h_".length())
+                : tableName;
+        return stripped.replace('_', '-');
     }
 
     /**
-     * education-type -> hemishe_h_education_type
+     * education-type -> hemishe_h_education_type (legacy)
+     * Tavsiya: {@link #getByApiKey(String)} dan foydalanish — u aniq DB jadvalni qaytaradi.
      */
     public static String apiKeyToTableName(String apiKey) {
         if (apiKey == null) {

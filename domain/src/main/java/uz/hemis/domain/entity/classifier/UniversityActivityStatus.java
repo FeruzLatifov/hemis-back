@@ -1,36 +1,16 @@
 package uz.hemis.domain.entity.classifier;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
-import java.io.Serializable;
-
-@Getter
-@Setter
 @Entity
 @Table(name = "hemishe_h_university_activity_status")
 @SQLRestriction("delete_ts IS NULL")
-public class UniversityActivityStatus implements Serializable {
-
-    @Id
-    @Column(name = "code", length = 32)
-    private String code;
-
-    @Column(name = "name")
-    private String name;
-
-    @Column(name = "name_en")
-    private String nameEn;
-
-    @Column(name = "name_ru")
-    private String nameRu;
-
-    @Column(name = "active")
-    private Boolean active;
-
-    @Version
-    @Column(name = "version")
-    private Integer version;
+@Getter
+@Setter
+public class UniversityActivityStatus extends LegacyClassifierEntity {
 }

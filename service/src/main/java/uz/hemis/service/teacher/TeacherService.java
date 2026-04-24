@@ -282,11 +282,12 @@ public class TeacherService {
                 FROM hemishe_e_employee_jobs ej
                 LEFT JOIN hemishe_e_university u ON u.code = ej._university AND u.delete_ts IS NULL
                 LEFT JOIN hemishe_e_university_department d ON d.code = ej._department AND d.delete_ts IS NULL
-                LEFT JOIN hemishe_h_employee_form ef ON ef.code = ej._employee_form AND ef.delete_ts IS NULL
-                LEFT JOIN hemishe_h_employee_position ep ON ep.code = ej._employee_position AND ep.delete_ts IS NULL
-                LEFT JOIN hemishe_h_employee_rate er ON er.code = ej._employee_rate AND er.delete_ts IS NULL
-                LEFT JOIN hemishe_h_employee_type et ON et.code = ej._employee_type AND et.delete_ts IS NULL
-                LEFT JOIN hemishe_h_employee_status es ON es.code = ej._employee_status AND es.delete_ts IS NULL
+                -- Yangi jadvallarga yo'naltirilgan — Bosqich 4.5 (delete_ts yo'q, is_active bor)
+                LEFT JOIN employment_form ef ON ef.code = ej._employee_form
+                LEFT JOIN position ep ON ep.code = ej._employee_position
+                LEFT JOIN employee_rate er ON er.code = ej._employee_rate
+                LEFT JOIN university_employee_type et ON et.code = ej._employee_type
+                LEFT JOIN university_employee_status_type es ON es.code = ej._employee_status
                 WHERE ej._employee = ? AND ej.delete_ts IS NULL
                 ORDER BY ej.create_ts DESC
                 """;

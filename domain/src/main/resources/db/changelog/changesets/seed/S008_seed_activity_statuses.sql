@@ -1,10 +1,14 @@
 -- =====================================================
--- S008: Position classifiers
+-- S008: Position classifiers seed (14 position_type + 227 position)
 -- Source: /docs/lavozim_klassifikatorlar_2026.xlsx
 -- =====================================================
--- Note: University activity statuses are NOT inserted here.
--- V016 university_lifecycle uses CHECK constraint for event types.
--- Old hemishe_h_university_activity_status table is managed by old-hemis only.
+-- Note (legacy file nomi): tarixan "activity_statuses" deb nomlangan, lekin aslida
+-- position_type + position jadvallariga seed qiladi. Fayl nomi Liquibase changeset
+-- id integrity uchun saqlangan (database_change_log tarixida). Kontent esa to'g'ri.
+--
+-- University activity statuses (science_branch, university_activity_status) NOT here.
+-- Ular V009_create_classifiers.sql ichida `INSERT ... SELECT FROM hemishe_h_*`
+-- orqali hemishe_h_science_branch, hemishe_h_university_activity_status dan copy qilinadi.
 
 -- 1. Position types (14 ta)
 INSERT INTO position_type (code, name, name_ru, name_en) VALUES

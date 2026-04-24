@@ -161,16 +161,104 @@ SET user_type = 'UNIVERSITY',
 WHERE university_id IS NOT NULL
   AND user_type = 'SYSTEM';
 
+-- =====================================================
+-- PHASE 2 DUAL-WRITE: UNIVERSITY users → oauth_client
+-- =====================================================
+-- Strangler Fig Pattern (Martin Fowler): the existing {user_type='UNIVERSITY'} rows keep
+-- working via the legacy password grant AND gain a parallel oauth_client row so they
+-- can opt-in to the new client_credentials grant whenever they're ready.
+--
+-- Idempotent — safe to re-run with M001 runOnChange=true.
+-- Preserves the BCrypt hash (same secret works on both endpoints until OTM rotates it).
+-- =====================================================
+DO $$
+DECLARE
+    otm_client_count INTEGER := 0;
+BEGIN
+    -- 1. Create oauth_client row for every UNIVERSITY user (1:1 with OTM backend).
+    --    Skip if already exists (re-run safe).
+    INSERT INTO oauth_client (
+        id,
+        client_id,
+        client_secret_hash,
+        client_name,
+        client_type,
+        university_code,
+        grant_types,
+        is_active,
+        contact_email,
+        contact_phone,
+        secret_version,
+        version,
+        created_at,
+        created_by
+    )
+    SELECT
+        gen_random_uuid(),
+        u.username,
+        u.password,
+        COALESCE(NULLIF(u.full_name, ''), 'OTM ' || u.university_id),
+        'UNIVERSITY_BACKEND',
+        u.university_id,
+        ARRAY['client_credentials', 'password']::TEXT[],
+        TRUE,
+        u.email,
+        u.phone,
+        1,
+        1,
+        CURRENT_TIMESTAMP,
+        'migration-phase2'
+    FROM users u
+    WHERE u.user_type = 'UNIVERSITY'
+      AND u.university_id IS NOT NULL
+      AND u.deleted_at IS NULL
+    ON CONFLICT (client_id) DO NOTHING;
+
+    GET DIAGNOSTICS otm_client_count = ROW_COUNT;
+    RAISE NOTICE 'M001 (Phase 2 dual-write): % new oauth_client rows from UNIVERSITY users', otm_client_count;
+
+    -- 2. Bind OTM_API role to every UNIVERSITY_BACKEND client so machine tokens
+    --    carry the same permissions as the human-grant tokens did.
+    INSERT INTO oauth_client_role (client_id, role_id, granted_by, granted_at)
+    SELECT c.id, r.id, 'migration-phase2', CURRENT_TIMESTAMP
+    FROM oauth_client c
+    CROSS JOIN role r
+    WHERE c.client_type = 'UNIVERSITY_BACKEND'
+      AND c.deleted_at IS NULL
+      AND r.code = 'OTM_API'
+      AND r.deleted_at IS NULL
+      AND NOT EXISTS (
+          SELECT 1 FROM oauth_client_role cr
+          WHERE cr.client_id = c.id AND cr.role_id = r.id
+      );
+
+    -- 3. Backfill users.primary_auth_provider for legacy rows (no-op if already set).
+    UPDATE users
+    SET primary_auth_provider = 'PASSWORD'
+    WHERE primary_auth_provider IS NULL
+      AND deleted_at IS NULL;
+END $$;
+
+-- =====================================================
 -- Verification
+-- =====================================================
 DO $$
 DECLARE
     total_users INTEGER;
     migrated_users INTEGER;
     with_university INTEGER;
+    total_clients INTEGER;
+    otm_clients INTEGER;
 BEGIN
     SELECT COUNT(*) INTO total_users FROM users;
     SELECT COUNT(*) INTO migrated_users FROM users WHERE created_by = 'migration';
     SELECT COUNT(*) INTO with_university FROM users WHERE university_id IS NOT NULL;
+    SELECT COUNT(*) INTO total_clients FROM oauth_client WHERE deleted_at IS NULL;
+    SELECT COUNT(*) INTO otm_clients FROM oauth_client
+        WHERE client_type = 'UNIVERSITY_BACKEND' AND deleted_at IS NULL;
+
     RAISE NOTICE 'M001 Complete: % total users (% migrated, % with university)',
         total_users, migrated_users, with_university;
+    RAISE NOTICE 'M001 Phase 2: % oauth_client rows (% UNIVERSITY_BACKEND)',
+        total_clients, otm_clients;
 END $$;

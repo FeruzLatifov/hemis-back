@@ -68,6 +68,8 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
     private static final String AUTHORITIES_CLAIM = "authorities";
     private static final String REALM_ACCESS_CLAIM = "realm_access";
     private static final String RESOURCE_ACCESS_CLAIM = "resource_access";
+    private static final String SUBJECT_TYPE_CLAIM = "typ";
+    private static final String CLIENT_SUBJECT_TYPE = "CLIENT";
 
     /**
      * Constructor - used by SecurityConfig bean
@@ -106,6 +108,17 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
      */
     @Override
     public Collection<GrantedAuthority> convert(Jwt jwt) {
+        // ─── Phase 2: CLIENT subjects (oauth_client_credentials) ──────────────
+        // CLIENT tokens carry effective authorities inline (no Redis lookup —
+        // machines come and go in bursts, a per-client cache would churn).
+        // Read directly without ROLE_ prefix coercion or UPPERCASE mangling, which
+        // would break checks like @PreAuthorize("hasAuthority('students.view')").
+        String subjectType = jwt.getClaimAsString(SUBJECT_TYPE_CLAIM);
+        if (CLIENT_SUBJECT_TYPE.equalsIgnoreCase(subjectType)) {
+            return extractClientAuthorities(jwt);
+        }
+
+        // ─── USER subjects: Redis-backed permission cache ─────────────────────
         // ✅ NEW: Extract userId (UUID) from JWT 'sub' claim
         String userIdString = jwt.getSubject();
 
@@ -147,6 +160,29 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
 
         // ⚠️ FALLBACK: Legacy JWT claims extraction (for backward compatibility)
         return extractLegacyAuthorities(jwt);
+    }
+
+    /**
+     * Extract authorities for a {@code typ=CLIENT} token (Phase 2 OAuth
+     * client_credentials grant).
+     *
+     * <p>The token already carries the effective authorities (role permissions
+     * ∪ scopes, narrowed by the requested scope) in the {@code authorities}
+     * claim. No {@code ROLE_} prefix mangling, no UPPERCASE — preserves the
+     * original {@code permission.code} values so {@code @PreAuthorize("hasAuthority('students.view')")}
+     * works for both human and machine subjects.</p>
+     */
+    private Collection<GrantedAuthority> extractClientAuthorities(Jwt jwt) {
+        List<String> authorities = jwt.getClaimAsStringList(AUTHORITIES_CLAIM);
+        if (authorities == null || authorities.isEmpty()) {
+            log.warn("CLIENT JWT has no 'authorities' claim — request will have empty authorities");
+            return List.of();
+        }
+        return authorities.stream()
+                .filter(a -> a != null && !a.isBlank())
+                .distinct()
+                .<GrantedAuthority>map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 
     /**

@@ -28,6 +28,9 @@ dependencies {
     // Validation
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
+    // Micrometer metrics (observability — custom business metrics)
+    implementation("io.micrometer:micrometer-core")
+
     // Mail (jakarta.mail for PasswordResetService)
     implementation("org.springframework.boot:spring-boot-starter-mail")
 

@@ -1,16 +1,22 @@
 -- ═══════════════════════════════════════════════════════════════════
--- M003: Student duplicates feature (menu + analysis MV)
+-- M003: Student duplicates feature + transfer detection (consolidated)
 --
 -- 1. Update students parent menu URL (sidebar navigation)
 -- 2. Add "Duplicates" submenu item
 -- 3. Covering index for duplicate PINFL analysis CTE
 -- 4. Materialized view with pre-computed duplicate categorization
+--    INCLUDING speciality-based transfer detection (ex-M004).
 --
 -- Reason categories (priority order):
---   NORMAL           — 0 or 1 active enrollment
---   MULTI_LEVEL      — different education types active (may be legitimate)
---   CROSS_UNIVERSITY — same type at multiple universities (serious)
---   SAME_UNIVERSITY  — multiple records at same university
+--   Problematic (2+ active enrollments):
+--     MULTI_LEVEL       — different education types active (may be legitimate)
+--     CROSS_UNIVERSITY  — same type at multiple universities (serious)
+--     SAME_UNIVERSITY   — multiple records at same university
+--   Transfer (≤1 active enrollment):
+--     INTERNAL_TRANSFER — same university, different speciality
+--     EXTERNAL_TRANSFER — different universities (any speciality)
+--   Normal:
+--     NORMAL            — everything consistent
 -- ═══════════════════════════════════════════════════════════════════
 
 -- ── Menu ─────────────────────────────────────────────────────────
@@ -33,21 +39,22 @@ VALUES (
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP
 ) ON CONFLICT (code) DO UPDATE SET
-    i18n_key = EXCLUDED.i18n_key,
-    url = EXCLUDED.url,
-    icon = EXCLUDED.icon,
-    permission = EXCLUDED.permission,
+    i18n_key     = EXCLUDED.i18n_key,
+    url          = EXCLUDED.url,
+    icon         = EXCLUDED.icon,
+    permission   = EXCLUDED.permission,
     order_number = EXCLUDED.order_number,
-    parent_id = EXCLUDED.parent_id,
-    updated_at = CURRENT_TIMESTAMP;
+    parent_id    = EXCLUDED.parent_id,
+    updated_at   = CURRENT_TIMESTAMP;
 
 -- ── Covering index for duplicate analysis CTE ────────────────────
 
 CREATE INDEX IF NOT EXISTS idx_student_dup_analysis
-    ON hemishe_e_student (pinfl, "_student_status", "_university", "_education_type")
+    ON hemishe_e_student (pinfl, "_student_status", "_university", "_education_type",
+                          "_speciality_bachelor", "_speciality_master", "_speciality_ordinatura")
     WHERE delete_ts IS NULL AND pinfl IS NOT NULL AND pinfl != '';
 
--- ── Materialized view ────────────────────────────────────────────
+-- ── Materialized view (consolidated M003+M004) ───────────────────
 
 DROP MATERIALIZED VIEW IF EXISTS mv_student_duplicates;
 
@@ -57,22 +64,34 @@ SELECT
     COUNT(*) AS cnt,
     COUNT(DISTINCT "_university") AS univ_count,
     COUNT(CASE WHEN "_student_status" = '11' THEN 1 END) AS active_count,
+    COUNT(DISTINCT COALESCE("_speciality_bachelor"::text,
+                            "_speciality_master"::text,
+                            "_speciality_ordinatura"::text)) AS spec_count,
     CASE
-        WHEN COUNT(CASE WHEN "_student_status" = '11' THEN 1 END) <= 1
-            THEN 'NORMAL'
-        WHEN COUNT(DISTINCT CASE WHEN "_student_status" = '11' THEN "_education_type" END) > 1
+        -- MUAMMOLI: 2+ faol yozuv
+        WHEN COUNT(CASE WHEN "_student_status" = '11' THEN 1 END) > 1
+          AND COUNT(DISTINCT CASE WHEN "_student_status" = '11' THEN "_education_type" END) > 1
             THEN 'MULTI_LEVEL'
-        WHEN COUNT(DISTINCT CASE WHEN "_student_status" = '11' THEN "_university" END) > 1
+        WHEN COUNT(CASE WHEN "_student_status" = '11' THEN 1 END) > 1
+          AND COUNT(DISTINCT CASE WHEN "_student_status" = '11' THEN "_university" END) > 1
             THEN 'CROSS_UNIVERSITY'
-        ELSE 'SAME_UNIVERSITY'
+        WHEN COUNT(CASE WHEN "_student_status" = '11' THEN 1 END) > 1
+            THEN 'SAME_UNIVERSITY'
+        -- KO'CHIRISH: 0-1 faol, mutaxasislik/universitet o'zgargan
+        WHEN COUNT(DISTINCT "_university") = 1
+          AND COUNT(DISTINCT COALESCE("_speciality_bachelor"::text,
+                                      "_speciality_master"::text,
+                                      "_speciality_ordinatura"::text)) > 1
+            THEN 'INTERNAL_TRANSFER'
+        WHEN COUNT(DISTINCT "_university") > 1
+            THEN 'EXTERNAL_TRANSFER'
+        ELSE 'NORMAL'
     END AS reason
 FROM hemishe_e_student
-WHERE delete_ts IS NULL
-    AND pinfl IS NOT NULL
-    AND pinfl != ''
+WHERE delete_ts IS NULL AND pinfl IS NOT NULL AND pinfl <> ''
 GROUP BY pinfl
 HAVING COUNT(*) > 1;
 
-CREATE UNIQUE INDEX idx_mv_dup_pinfl      ON mv_student_duplicates (pinfl);
-CREATE INDEX idx_mv_dup_reason_cnt        ON mv_student_duplicates (reason, cnt DESC, pinfl);
-CREATE INDEX idx_mv_dup_cnt               ON mv_student_duplicates (cnt DESC, pinfl);
+CREATE UNIQUE INDEX idx_mv_dup_pinfl ON mv_student_duplicates (pinfl);
+CREATE INDEX        idx_mv_dup_reason_cnt ON mv_student_duplicates (reason, cnt DESC, pinfl);
+CREATE INDEX        idx_mv_dup_cnt ON mv_student_duplicates (cnt DESC, pinfl);

@@ -490,17 +490,6 @@ public abstract class AbstractGovernmentApiService {
         }
     }
 
-    /**
-     * @deprecated Use {@link #applyGovSsl(HttpURLConnection)} for per-connection SSL bypass.
-     * This method is kept for backward compatibility but now delegates to per-connection approach.
-     */
-    @Deprecated(since = "2.1.0", forRemoval = true)
-    protected void disableSslVerification() {
-        // No-op: SSL bypass is now applied per-connection via applyGovSsl()
-        // Keeping this method to avoid breaking subclasses that override it
-        log.debug("disableSslVerification() called - SSL bypass is now per-connection, this is a no-op");
-    }
-
     // Cached RestTemplate for government APIs with SSL bypass (lazy, thread-safe)
     private static final AtomicReference<RestTemplate> GOV_REST_TEMPLATE = new AtomicReference<>();
 
@@ -545,20 +534,6 @@ public abstract class AbstractGovernmentApiService {
             GOV_REST_TEMPLATE.compareAndSet(null, rt);
             return GOV_REST_TEMPLATE.get();
         }
-    }
-
-    /**
-     * Validate captcha (stub implementation)
-     *
-     * <p>DEFERRED: Integrate with actual captcha service</p>
-     * <p>For now, accepts any non-empty value</p>
-     *
-     * @param captchaId Captcha ID
-     * @param captchaValue User's captcha answer
-     * @return true if valid
-     */
-    protected boolean validateCaptcha(String captchaId, String captchaValue) {
-        return true;
     }
 
     /**

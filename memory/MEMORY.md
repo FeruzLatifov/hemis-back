@@ -1,0 +1,1 @@
+- [Migrations — in-place edits allowed (test DB)](feedback_migrations.md) — test DB holatida mavjud V###.sql faylini o'z joyida to'g'irlash afzal, V020 yaratmasdan

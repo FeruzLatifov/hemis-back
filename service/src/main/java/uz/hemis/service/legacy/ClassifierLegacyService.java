@@ -56,8 +56,11 @@ public class ClassifierLegacyService {
 
     /**
      * OLD-HEMIS /info endpoint uchun classifiers — aniq OLD nomlar va tartib (93 ta).
-     * Key: OLD API dagi classifier nomi, Value: hozirgi DB table nomi.
+     * Key: OLD API dagi classifier nomi (univer tomonidan yuboriladi).
+     * Value: hozirgi DB table nomi — YANGI jadvallar (V009-V013) ga yo'naltirilgan.
      * null = maxsus holat (h_university — repository orqali).
+     * Izoh: Speciality* (bachelor/master/ordinatura/doctoral) va h_employment_form
+     *       hali hemishe_h_* da, chunki yangi jadval yaratilmagan.
      */
     private static final LinkedHashMap<String, String> OLD_CLASSIFIER_MAP = new LinkedHashMap<>() {{
         put("h_admission_type", "hemishe_h_admission_type");
@@ -79,7 +82,7 @@ public class ClassifierLegacyService {
         put("h_conduction_form", "hemishe_h_teacher_conduction_form");
         put("h_terrain", "hemishe_h_terrain");
         put("h_stipend_rate_category", "hemishe_h_stipend_rate_category");
-        put("h_speciality_ordinatura", "hemishe_h_speciality_ordinatura");
+        put("h_speciality_ordinatura", "hemishe_h_speciality_ordinatura"); // legacy (Speciality tegilmagan)
         put("h_academic_mobile_type", "hemishe_h_academic_mobile_type");
         put("h_contract_class", "hemishe_h_contract_types");
         put("h_student_living_status", "hemishe_h_student_living_status");
@@ -97,7 +100,7 @@ public class ClassifierLegacyService {
         put("h_doctorate_student_status", "hemishe_h_doctoral_student_status");
         put("h_education_year", "hemishe_h_education_year");
         put("h_semester", "hemishe_h_semester_list");
-        put("h_science_branch", "hemishe_h_speciality_doctoral");
+        put("h_science_branch", "hemishe_h_speciality_doctoral"); // legacy special (Speciality tegilmagan)
         put("h_exam_finish", "hemishe_h_exam_finish");
         put("h_final_exam_type", "hemishe_h_final_exam_type");
         put("h_locality_type", "hemishe_h_locality_type");
@@ -109,15 +112,17 @@ public class ClassifierLegacyService {
         put("h_nationality", "hemishe_h_nationality");
         put("h_citizenship_type", "hemishe_h_citizenship");
         put("h_gender", "hemishe_h_gender");
-        put("h_bachelor_speciality", "hemishe_h_speciality_bachelor");
-        put("h_master_speciality", "hemishe_h_speciality_master");
+        put("h_bachelor_speciality", "hemishe_h_speciality_bachelor"); // legacy (Speciality tegilmagan)
+        put("h_master_speciality", "hemishe_h_speciality_master"); // legacy (Speciality tegilmagan)
         put("h_university_form", "hemishe_h_university_type");
         put("h_ownership", "hemishe_h_ownership");
         put("h_structure_type", "hemishe_h_university_department_type");
         put("h_employee_type", "hemishe_h_university_employee_type");
         put("h_teacher_status", "hemishe_h_university_employee_status_type");
         put("h_employment_staff", "hemishe_h_university_employee_rate");
-        put("h_employment_form", "hemishe_h_employment_form");
+        put("h_employment_form", "hemishe_h_employment_form"); // legacy (boshqa jadval, migratsiya qilinmagan)
+        // Univer (old-hemis) uchun hemishe_h_teacher_position_type eski CUBA jadvalga yo'naltiriladi.
+        // Yangi backend kodi position + position_type (V013) bilan ishlaydi — dublikatsiya yo'q.
         put("h_teacher_position_type", "hemishe_h_teacher_position_type");
         put("h_qualification", "hemishe_h_qualification");
         put("h_teacher_success", "hemishe_h_teacher_achievement_type");
@@ -435,7 +440,9 @@ public class ClassifierLegacyService {
     }
 
     /**
-     * Get single classifier by name (OLD-HEMIS /single endpoint)
+     * Get single classifier by name (OLD-HEMIS /single endpoint).
+     * Bosqich 3 refactor: OLD_CLASSIFIER_MAP orqali yangi jadvallarga yo'naltiriladi,
+     * shunday qilib /single endpoint ham /allItems/info kabi yangi data manbasiga mos bo'ladi.
      */
     public Map<String, Object> getSingleClassifier(String classifier) {
         if (classifier == null || classifier.isEmpty()) {
@@ -447,13 +454,18 @@ public class ClassifierLegacyService {
             return getUniversityClassifier();
         }
 
-        String tableName = "hemishe_" + classifier;
+        // OLD_CLASSIFIER_MAP orqali to'g'ri jadvalni aniqlash (yangi yoki legacy).
+        // Fallback: agar map'da topilmasa, eski xulq-atvor — "hemishe_" + classifier.
+        String tableName = OLD_CLASSIFIER_MAP.get(classifier);
+        if (tableName == null) {
+            tableName = "hemishe_" + classifier;
+        }
         if (!tableExists(tableName)) {
             return null;
         }
 
         try {
-            Map<String, Object> classifierData = getClassifierWithItems(tableName);
+            Map<String, Object> classifierData = getClassifierWithItems(tableName, classifier);
             if (classifierData == null) {
                 return null;
             }
@@ -507,43 +519,31 @@ public class ClassifierLegacyService {
 
     private String getCubaEntityName(String tableName) {
         return switch (tableName) {
-            case "hemishe_h_soato" -> "hemishe_HSoato";
-            case "hemishe_h_education_type" -> "hemishe_HEducationType";
-            case "hemishe_h_education_form" -> "hemishe_HEducationForm";
-            case "hemishe_h_education_year" -> "hemishe_HEducationYear";
-            case "hemishe_h_student_achievement_type" -> "hemishe_HStudentAchievementType";
-            case "hemishe_h_ownership" -> "hemishe_HOwnership";
-            case "hemishe_h_course" -> "hemishe_HCourse";
-            case "hemishe_h_nationality" -> "hemishe_HNationality";
-            case "hemishe_h_speciality_bachelor" -> "hemishe_HSpecialityBachelor";
-            case "hemishe_h_speciality_master" -> "hemishe_HSpecialityMaster";
-            case "hemishe_h_speciality_doctoral" -> "hemishe_HSpecialityDoctoral";
-            case "hemishe_h_citizenship" -> "hemishe_HCitizenship";
-            case "hemishe_h_student_social_type" -> "hemishe_HStudentSocialType";
-            case "hemishe_h_gender" -> "hemishe_HGender";
-            case "hemishe_h_student_type" -> "hemishe_HStudentType";
-            case "hemishe_h_payment_form" -> "hemishe_HPaymentForm";
-            case "hemishe_h_stipend_rate" -> "hemishe_HStipendRate";
-            case "hemishe_h_education_language" -> "hemishe_HEducationLanguage";
-            case "hemishe_h_accomodation" -> "hemishe_HAccomodation";
-            case "hemishe_h_student_living_status" -> "hemishe_HStudentLivingStatus";
-            case "hemishe_h_student_room_mate_type" -> "hemishe_HStudentRoomMateType";
-            case "hemishe_h_student_status_type" -> "hemishe_HStudentStatusType";
-            case "hemishe_h_country" -> "hemishe_HCountry";
+            // === YANGI jadvallarda LEGACY CUBA entity nomi saqlanadi (rename compat) ===
+            // Univer _entityName'ga tayangan bo'lishi mumkin — eski nomni yubormasak buzilishi mumkin
+            case "hemis_version" -> "hemishe_HHemisVersionType";              // old: hemishe_h_hemis_version_type
+            case "employee_rate" -> "hemishe_HUniversityEmployeeRate";        // old: hemishe_h_university_employee_rate
+            case "contract_class" -> "hemishe_HContractTypes";                // old: hemishe_h_contract_types
+            case "certificate_grade" -> "hemishe_HCertificateGrades";         // old: plural (_grades)
+            case "certificate_subject" -> "hemishe_HCertificateSubjects";     // old: plural (_subjects)
+            case "certificate_name" -> "hemishe_HCertificateNames";           // old: plural (_names)
+            case "outside_activity" -> "hemishe_HOutsideActivities";          // old: plural (_activities)
             default -> {
-                // Generic conversion: hemishe_h_academic_degree -> hemishe_HAcademicDegree
-                if (tableName.startsWith("hemishe_h_")) {
-                    String suffix = tableName.substring("hemishe_h_".length());
-                    StringBuilder sb = new StringBuilder("hemishe_H");
-                    boolean capitalizeNext = true;
-                    for (char c : suffix.toCharArray()) {
-                        if (c == '_') { capitalizeNext = true; continue; }
-                        sb.append(capitalizeNext ? Character.toUpperCase(c) : c);
-                        capitalizeNext = false;
-                    }
-                    yield sb.toString();
+                // Generic conversion:
+                //   hemishe_h_academic_degree → hemishe_HAcademicDegree (eski CUBA)
+                //   gender → hemishe_HGender (yangi jadval, prefixed)
+                //   education_language → hemishe_HEducationLanguage
+                String suffix = tableName.startsWith("hemishe_h_")
+                        ? tableName.substring("hemishe_h_".length())
+                        : tableName;
+                StringBuilder sb = new StringBuilder("hemishe_H");
+                boolean capitalizeNext = true;
+                for (char c : suffix.toCharArray()) {
+                    if (c == '_') { capitalizeNext = true; continue; }
+                    sb.append(capitalizeNext ? Character.toUpperCase(c) : c);
+                    capitalizeNext = false;
                 }
-                yield null;
+                yield sb.toString();
             }
         };
     }
@@ -587,7 +587,8 @@ public class ClassifierLegacyService {
     private Map<String, Object> getClassifierWithItems(String tableName, String apiName) {
         String classifierName = apiName != null ? apiName : tableName.replace("hemishe_", "");
         boolean hasVersion = columnExists(tableName, "version");
-        boolean hasActive = columnExists(tableName, "active");
+        // Eski jadvallar: `active`. Yangi jadvallar: `is_active`. Ikkalasini ham tekshiramiz.
+        boolean hasActive = columnExists(tableName, "active") || columnExists(tableName, "is_active");
         boolean hasDeleteTs = columnExists(tableName, "delete_ts");
 
         String countSql = buildCountSql(tableName, hasVersion, hasDeleteTs);
@@ -678,7 +679,7 @@ public class ClassifierLegacyService {
             long versionSum = ((Number) stats.get("ver")).longValue();
 
             Map<String, Object> classifierInfo = new LinkedHashMap<>();
-            classifierInfo.put("title", "Oliy ta'lim muassasalari ro'yxati");
+            classifierInfo.put("title", "hemishe_h_Oliy ta'lim muassasalari ro'yxati");
             classifierInfo.put("version", versionSum);
             classifierInfo.put("count", count);
 
@@ -746,6 +747,9 @@ public class ClassifierLegacyService {
     private String buildItemsSql(String tableName, boolean hasActive, boolean hasDeleteTs) {
         boolean hasParentUuid = columnExists(tableName, "_parent");
         boolean hasParentCode = columnExists(tableName, "parent_code");
+        // Eski: `active`, Yangi: `is_active` — univer doim `active` kutadi → alias bilan
+        boolean hasActiveCol = columnExists(tableName, "active");
+        boolean hasIsActiveCol = columnExists(tableName, "is_active");
 
         StringBuilder sql = new StringBuilder("SELECT ");
         String alias = hasParentUuid ? "t." : "";
@@ -757,7 +761,8 @@ public class ClassifierLegacyService {
         // Additional columns for CUBA compatibility
         if (columnExists(tableName, "name_en")) sql.append(", ").append(alias).append("name_en as \"nameEn\"");
         if (columnExists(tableName, "name_ru")) sql.append(", ").append(alias).append("name_ru as \"nameRu\"");
-        if (hasActive) sql.append(", ").append(alias).append("active");
+        if (hasActiveCol) sql.append(", ").append(alias).append("active");
+        else if (hasIsActiveCol) sql.append(", ").append(alias).append("is_active as active");
         if (columnExists(tableName, "is_checked")) sql.append(", ").append(alias).append("is_checked as \"isChecked\"");
         if (hasParentCode) sql.append(", ").append(alias).append("parent_code as \"parentCode\"");
         sql.append(", COALESCE(").append(alias).append("version, 1) as version");
@@ -769,7 +774,8 @@ public class ClassifierLegacyService {
             if (columnExists(tableName, "name_ru")) sql.append(", p.name_ru as \"parentNameRu\"");
             sql.append(", COALESCE(p.version, 1) as \"parentVersion\"");
             if (columnExists(tableName, "is_checked")) sql.append(", p.is_checked as \"parentIsChecked\"");
-            if (hasActive) sql.append(", p.active as \"parentActive\"");
+            if (hasActiveCol) sql.append(", p.active as \"parentActive\"");
+            else if (hasIsActiveCol) sql.append(", p.is_active as \"parentActive\"");
         }
         sql.append(" FROM ").append(tableName);
         if (hasParentUuid) {

@@ -8,9 +8,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.auth.SubjectType;
 import uz.hemis.common.dto.TokenResponse;
+import uz.hemis.domain.entity.security.OAuthClient;
+import uz.hemis.domain.entity.security.Permission;
+import uz.hemis.domain.entity.security.Role;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -277,6 +284,155 @@ public class TokenService {
                     log.error("User not found in 'users' or 'sec_user' tables: {}", username);
                     return new IllegalArgumentException("User not found: " + username);
                 });
+    }
+
+    // =====================================================
+    // MACHINE TOKENS (Phase 2.6 — client_credentials grant)
+    // =====================================================
+
+    /**
+     * Issue a machine access token for an authenticated {@link OAuthClient}.
+     *
+     * <p><strong>Additive — does NOT touch the existing {@code generateToken(UserDetails)}
+     * path used by the legacy password grant.</strong></p>
+     *
+     * <p><strong>Effective authorities (Daraja 3 — RBAC + scope hybrid):</strong>
+     * union of (a) permissions from bound roles and (b) the client's {@code scopes}
+     * column. Optionally narrowed by the {@code requestedScope} parameter
+     * (RFC 6749 §3.3 — space-delimited).</p>
+     *
+     * <p>JWT claims:</p>
+     * <pre>
+     * {
+     *   "sub":              "&lt;client uuid&gt;",
+     *   "typ":              "CLIENT",
+     *   "username":         "&lt;client_id&gt;",
+     *   "client_type":      "UNIVERSITY_BACKEND",
+     *   "university_code":  "101",                          // if applicable
+     *   "scope":            "students.view students.search", // space-delimited
+     *   "authorities":      ["students.view", "students.search"]
+     * }
+     * </pre>
+     *
+     * @param client authenticated, operational OAuth client
+     * @param requestedScope space-delimited subset of granted scopes — {@code null}
+     *                       means "issue token for all granted authorities"
+     * @return OAuth token response (no refresh_token — machines rotate via client_credentials)
+     * @throws OAuthClientAuthenticationException with {@code invalid_scope} if a
+     *         requested scope is not granted to the client
+     */
+    public TokenResponse issueClientToken(OAuthClient client, String requestedScope) {
+        if (client == null) {
+            throw new IllegalArgumentException("OAuthClient is required");
+        }
+
+        Instant now = Instant.now();
+        int ttlSeconds = client.getAccessTokenTtlSeconds() == null
+                ? 3600
+                : client.getAccessTokenTtlSeconds();
+        Instant expiry = now.plusSeconds(ttlSeconds);
+
+        // Effective authorities = role permissions ∪ direct scopes
+        Set<String> effective = collectAuthorities(client);
+        if (client.getScopes() != null) {
+            effective.addAll(client.getScopes());
+        }
+
+        // Narrow by requested scope (RFC 6749 §3.3)
+        Set<String> granted = narrowByRequestedScope(effective, requestedScope, client.getClientId());
+
+        String universityCode = client.getUniversity() == null
+                ? null
+                : client.getUniversity().getCode();
+
+        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
+
+        String scopeClaim = String.join(" ", new java.util.TreeSet<>(granted));
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .issuedAt(now)
+                .expiresAt(expiry)
+                .subject(client.getId().toString())
+                .claim("typ", SubjectType.CLIENT.name())
+                .claim("username", client.getClientId())
+                .claim("client_type", client.getClientType().name())
+                .claim("scope", scopeClaim)
+                .claim("authorities", granted.stream().sorted().toList());
+
+        if (universityCode != null) {
+            claims.claim("university_code", universityCode);
+        }
+
+        String accessToken = jwtEncoder
+                .encode(JwtEncoderParameters.from(jwsHeader, claims.build()))
+                .getTokenValue();
+
+        log.info("Issued CLIENT token for '{}' (type={}, univ={}, ttl={}s, authorities={}, scope={})",
+                client.getClientId(),
+                client.getClientType(),
+                universityCode,
+                ttlSeconds,
+                granted.size(),
+                scopeClaim);
+
+        return TokenResponse.builder()
+                .accessToken(accessToken)
+                .tokenType("bearer")
+                .expiresIn(ttlSeconds)
+                .scope(scopeClaim)
+                .build();
+    }
+
+    /**
+     * Validate {@code requestedScope ⊆ effective} and return the narrowed authority set.
+     *
+     * <p>If {@code requestedScope} is {@code null}/blank, returns the full {@code effective}
+     * set (default RFC 6749 behaviour — issue a token with the entire granted scope).</p>
+     */
+    private Set<String> narrowByRequestedScope(Set<String> effective,
+                                               String requestedScope,
+                                               String clientId) {
+        if (requestedScope == null || requestedScope.isBlank()) {
+            return effective;
+        }
+        Set<String> requested = Arrays.stream(requestedScope.trim().split("\\s+"))
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        for (String s : requested) {
+            if (!effective.contains(s)) {
+                log.warn("client_credentials: client '{}' requested ungranted scope '{}'", clientId, s);
+                throw OAuthClientAuthenticationException.invalidScope(
+                        "Scope '" + s + "' is not granted to this client");
+            }
+        }
+        return requested;
+    }
+
+    /**
+     * Flatten an {@link OAuthClient}'s role → permission graph into granted authority strings.
+     *
+     * <p>Machine tokens carry authorities inline (no permission cache) because machines
+     * come and go in bursts — a warm permission cache per client would churn.</p>
+     */
+    private Set<String> collectAuthorities(OAuthClient client) {
+        Set<String> out = new HashSet<>();
+        if (client.getRoleBindings() == null) {
+            return out;
+        }
+        client.getRoleBindings().forEach(binding -> {
+            Role role = binding.getRole();
+            if (role == null || !role.isActive()) {
+                return;
+            }
+            out.add("ROLE_" + role.getCode());
+            if (role.getPermissions() == null) return;
+            for (Permission p : role.getPermissions()) {
+                if (p != null && p.getCode() != null) {
+                    out.add(p.getCode());
+                }
+            }
+        });
+        return out;
     }
 
     // =====================================================

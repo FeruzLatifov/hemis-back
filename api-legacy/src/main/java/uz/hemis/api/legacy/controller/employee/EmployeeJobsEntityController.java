@@ -443,7 +443,7 @@ public class EmployeeJobsEntityController {
                 entity.getId(),
                 entity.getEmployee() != null ? entity.getEmployee().getId() : null,
                 entity.getUniversityCode(), entity.getDepartmentCode(),
-                entity.getEmployeeTypeCode(), entity.getPositionCode(), entity.getEmployeeRateCode(),
+                entity.getPositionTypeCode(), entity.getPositionCode(), entity.getEmployeeRateCode(),
                 entity.getEmploymentFormCode(), null, // employee_status removed — derived from is_current+end_date
                 entity.getVersion(), null,
                 entity.getContractDate(), entity.getContractNumber(),
@@ -570,7 +570,7 @@ public class EmployeeJobsEntityController {
         }
         if (map.containsKey("employeeType")) {
             String value = parseCode(map.get("employeeType"));
-            if (value != null) entity.setEmployeeTypeCode(value);
+            if (value != null) entity.setPositionTypeCode(value);
         }
         if (map.containsKey("employeePosition")) {
             String value = parseCode(map.get("employeePosition"));

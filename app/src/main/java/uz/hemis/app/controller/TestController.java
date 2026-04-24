@@ -3,6 +3,7 @@ package uz.hemis.app.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
@@ -11,6 +12,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Diagnostika endpoint'lari — faqat dev/test profilida faol.
+ * Production'da bu bean ko'tarilmaydi, Swagger'da ko'rinmaydi.
+ * Prod uchun actuator health endpoint mavjud.
+ */
+@Profile("!prod")
 @Tag(name = "59.Test")
 @RestController
 @RequestMapping("/app/rest/v2/test")

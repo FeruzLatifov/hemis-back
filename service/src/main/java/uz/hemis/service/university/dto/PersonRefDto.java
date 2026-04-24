@@ -14,8 +14,7 @@ public class PersonRefDto {
     private String phone;
     private String email;
     private String tin;
-    private String passportSeries;
-    private String passportNumber;
+    private String passport;
     private String address;
 
     public static PersonRefDto from(Employee emp) {
@@ -28,8 +27,7 @@ public class PersonRefDto {
                 .phone(emp.getPhone() != null ? emp.getPhone().value() : null)
                 .email(emp.getEmail())
                 .tin(emp.getTin() != null ? emp.getTin().value() : null)
-                .passportSeries(emp.getPassportSeries())
-                .passportNumber(emp.getPassportNumber())
+                .passport(emp.getPassport())
                 .address(emp.getAddress())
                 .build();
     }
@@ -40,13 +38,5 @@ public class PersonRefDto {
         if (firstName != null) { if (!sb.isEmpty()) sb.append(" "); sb.append(firstName); }
         if (middleName != null) { if (!sb.isEmpty()) sb.append(" "); sb.append(middleName); }
         return sb.isEmpty() ? null : sb.toString();
-    }
-
-    public String getPassport() {
-        if (passportSeries == null && passportNumber == null) return null;
-        StringBuilder sb = new StringBuilder();
-        if (passportSeries != null) sb.append(passportSeries);
-        if (passportNumber != null) { if (!sb.isEmpty()) sb.append(" "); sb.append(passportNumber); }
-        return sb.toString();
     }
 }

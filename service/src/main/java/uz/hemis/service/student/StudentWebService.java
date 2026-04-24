@@ -542,11 +542,12 @@ public class StudentWebService {
                 COALESCE(sb.name, sm.name, so.name) AS speciality_name
             FROM hemishe_e_student s
             LEFT JOIN hemishe_e_university u ON u.code = s."_university" AND u.delete_ts IS NULL
-            LEFT JOIN hemishe_h_student_status_type ss ON ss.code = s."_student_status" AND ss.delete_ts IS NULL
-            LEFT JOIN hemishe_h_education_type et ON et.code = s."_education_type" AND et.delete_ts IS NULL
-            LEFT JOIN hemishe_h_education_form ef ON ef.code = s."_education_form" AND ef.delete_ts IS NULL
-            LEFT JOIN hemishe_h_payment_form pf ON pf.code = s."_payment_form" AND pf.delete_ts IS NULL
-            LEFT JOIN hemishe_h_course c ON c.code = s."_course" AND c.delete_ts IS NULL
+            -- Yangi jadvallarga yo'naltirilgan — Bosqich 4.5
+            LEFT JOIN student_status_type ss ON ss.code = s."_student_status"
+            LEFT JOIN education_type et ON et.code = s."_education_type"
+            LEFT JOIN education_form ef ON ef.code = s."_education_form"
+            LEFT JOIN payment_form pf ON pf.code = s."_payment_form"
+            LEFT JOIN course c ON c.code = s."_course"
             LEFT JOIN hemishe_h_speciality_bachelor sb ON sb.id = s."_speciality_bachelor"
             LEFT JOIN hemishe_h_speciality_master sm ON sm.id = s."_speciality_master"
             LEFT JOIN hemishe_h_speciality_ordinatura so ON so.id = s."_speciality_ordinatura"

@@ -33,9 +33,10 @@ public class HokimiyatClassifierService {
     private static final DateTimeFormatter CUBA_DT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     /**
-     * OLD-HEMIS hokimiyat classifiers - exact mapping (20 ta)
-     * Key: API response dagi nom
-     * Value: Database table nomi
+     * OLD-HEMIS hokimiyat classifiers — exact mapping (20 ta).
+     * Key: API response dagi nom (univer tomonidan yuboriladi).
+     * Value: Hozirgi DB table nomi — YANGI jadvallarga yo'naltirilgan (Bosqich 3 refactor).
+     * h_university — maxsus holat (EUniversity, legacy qoladi).
      */
     private static final Map<String, String> HOKIMIYAT_CLASSIFIER_MAP = new LinkedHashMap<>() {{
         put("h_education_type", "hemishe_h_education_type");
@@ -209,7 +210,7 @@ public class HokimiyatClassifierService {
         List<Map<String, Object>> items = buildUniversityItems();
 
         Map<String, Object> classifierData = new LinkedHashMap<>();
-        classifierData.put("title", "Oliy ta'lim muassasalari ro'yxati");
+        classifierData.put("title", "hemishe_h_Oliy ta'lim muassasalari ro'yxati");
         classifierData.put("version", versionSum);
         classifierData.put("count", count);
         classifierData.put("items", items);
@@ -264,7 +265,7 @@ public class HokimiyatClassifierService {
         long versionSum = ((Number) stats.get("ver")).longValue();
 
         Map<String, Object> classifierInfo = new LinkedHashMap<>();
-        classifierInfo.put("title", "Oliy ta'lim muassasalari ro'yxati");
+        classifierInfo.put("title", "hemishe_h_Oliy ta'lim muassasalari ro'yxati");
         classifierInfo.put("version", versionSum);
         classifierInfo.put("count", count);
 
@@ -346,6 +347,9 @@ public class HokimiyatClassifierService {
     private String buildItemsSql(String tableName, boolean hasActive, boolean hasDeleteTs) {
         boolean hasParentUuid = columnExists(tableName, "_parent");
         boolean hasParentCode = columnExists(tableName, "parent_code");
+        // Eski: `active`, Yangi: `is_active` — univer doim `active` kutadi → alias
+        boolean hasActiveCol = columnExists(tableName, "active");
+        boolean hasIsActiveCol = columnExists(tableName, "is_active");
 
         StringBuilder sql = new StringBuilder("SELECT ");
         String alias = hasParentUuid ? "t." : "";
@@ -357,7 +361,8 @@ public class HokimiyatClassifierService {
         // Additional columns for CUBA compatibility
         if (columnExists(tableName, "name_en")) sql.append(", ").append(alias).append("name_en as \"nameEn\"");
         if (columnExists(tableName, "name_ru")) sql.append(", ").append(alias).append("name_ru as \"nameRu\"");
-        if (hasActive) sql.append(", ").append(alias).append("active");
+        if (hasActiveCol) sql.append(", ").append(alias).append("active");
+        else if (hasIsActiveCol) sql.append(", ").append(alias).append("is_active as active");
         if (columnExists(tableName, "is_checked")) sql.append(", ").append(alias).append("is_checked as \"isChecked\"");
         if (hasParentCode) sql.append(", ").append(alias).append("parent_code as \"parentCode\"");
         sql.append(", COALESCE(").append(alias).append("version, 1) as version");
@@ -369,7 +374,8 @@ public class HokimiyatClassifierService {
             if (columnExists(tableName, "name_ru")) sql.append(", p.name_ru as \"parentNameRu\"");
             sql.append(", COALESCE(p.version, 1) as \"parentVersion\"");
             if (columnExists(tableName, "is_checked")) sql.append(", p.is_checked as \"parentIsChecked\"");
-            if (hasActive) sql.append(", p.active as \"parentActive\"");
+            if (hasActiveCol) sql.append(", p.active as \"parentActive\"");
+            else if (hasIsActiveCol) sql.append(", p.is_active as \"parentActive\"");
         }
         sql.append(" FROM ").append(tableName);
         if (hasParentUuid) {
@@ -456,11 +462,12 @@ public class HokimiyatClassifierService {
                 // Nested: ownership
                 "ow.code as ow_code, ow.name as ow_name " +
                 "FROM hemishe_e_university u " +
-                "LEFT JOIN hemishe_h_soato s ON u._soato = s.code " +
-                "LEFT JOIN hemishe_h_university_type ut ON u._university_type = ut.code " +
-                "LEFT JOIN hemishe_h_university_contract_category ucc ON u._university_contract_category = ucc.code " +
-                "LEFT JOIN hemishe_h_hemis_version_type vt ON u._university_version = vt.code " +
-                "LEFT JOIN hemishe_h_ownership ow ON u._ownership = ow.code " +
+                // Yangi jadvallarga yo'naltirilgan — Bosqich 4 refactor
+                "LEFT JOIN soato s ON u._soato = s.code " +
+                "LEFT JOIN university_type ut ON u._university_type = ut.code " +
+                "LEFT JOIN contract_category ucc ON u._university_contract_category = ucc.code " +
+                "LEFT JOIN hemis_version vt ON u._university_version = vt.code " +
+                "LEFT JOIN ownership ow ON u._ownership = ow.code " +
                 "WHERE u.delete_ts IS NULL " +
                 "ORDER BY u.code";
 

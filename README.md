@@ -141,8 +141,8 @@ domain/src/main/resources/db/changelog/
 ├── db.changelog-master.yaml     # Master changelog
 └── changesets/
     ├── schema/                  # DDL (V001-V010)
-    │   ├── V001_create_users.sql
-    │   ├── V001_create_users_rollback.sql
+    │   ├── V005_create_users.sql
+    │   ├── V005_create_users_rollback.sql
     │   └── ...
     ├── seed/                    # Reference data (S001-S006)
     │   ├── S001_seed_roles.sql

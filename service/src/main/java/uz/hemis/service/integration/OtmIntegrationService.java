@@ -64,14 +64,6 @@ public class OtmIntegrationService {
     }
 
     /**
-     * @deprecated Use {@link #getStudentInfoByPinfl(String, String)} instead
-     */
-    @Deprecated
-    public Map<String, Object> getStudentInfoByPinfl(String pinfl) {
-        return getStudentInfoByPinfl(pinfl, null);
-    }
-
-    /**
      * Get student list by tutor using university code and tutor PINFL (OLD-HEMIS format).
      */
     public List<Map<String, Object>> getStudentListByTutor(String university, String tutorPinfl) {

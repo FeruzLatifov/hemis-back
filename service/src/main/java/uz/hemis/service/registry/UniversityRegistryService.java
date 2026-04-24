@@ -124,25 +124,26 @@ public class UniversityRegistryService {
     public UniversityDictionariesDto getDictionaries() {
         log.debug("Loading university dictionaries from database");
 
+        // Yangi jadvallarga yo'naltirilgan — Bosqich 4.5 (ReferenceEntity: is_active, delete_ts yo'q)
         List<DictionaryItem> ownerships = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_ownership WHERE delete_ts IS NULL AND active = true ORDER BY name");
+                "SELECT code, name FROM ownership WHERE is_active = true ORDER BY name");
 
         List<DictionaryItem> types = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_type WHERE delete_ts IS NULL AND active = true ORDER BY name");
+                "SELECT code, name FROM university_type WHERE is_active = true ORDER BY name");
 
         List<DictionaryItem> regions = loadRegionItems();
 
         List<DictionaryItem> activityStatuses = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_activity_status WHERE delete_ts IS NULL ORDER BY name");
+                "SELECT code, name FROM university_activity_status WHERE is_active = true ORDER BY name");
 
         List<DictionaryItem> belongsToOptions = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_belongs_to WHERE delete_ts IS NULL ORDER BY name");
+                "SELECT code, name FROM university_belongs_to WHERE is_active = true ORDER BY name");
 
         List<DictionaryItem> contractCategories = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_contract_category WHERE delete_ts IS NULL ORDER BY name");
+                "SELECT code, name FROM contract_category WHERE is_active = true ORDER BY name");
 
         List<DictionaryItem> versionTypes = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_hemis_version_type WHERE delete_ts IS NULL ORDER BY name");
+                "SELECT code, name FROM hemis_version WHERE is_active = true ORDER BY name");
 
         List<DictionaryItem> districts = loadDistrictItems();
 
@@ -162,7 +163,7 @@ public class UniversityRegistryService {
     @Transactional(readOnly = true)
     public List<DictionaryItem> getTerrainsBySoato(String soato) {
         Query query = entityManager.createNativeQuery(
-                "SELECT code, name FROM hemishe_h_terrain WHERE _soato = :soato AND delete_ts IS NULL AND active = true ORDER BY name");
+                "SELECT code, name FROM terrain WHERE soato_code = :soato AND is_active = true ORDER BY name");
         query.setParameter("soato", soato);
         List<Object[]> results = query.getResultList();
         return results.stream()
@@ -211,15 +212,16 @@ public class UniversityRegistryService {
      * Build name lookup maps for CSV export (code → name resolution)
      */
     public Map<String, String> getRegionNameMap() {
-        return loadNameMap("SELECT code, name_uz FROM hemishe_h_soato WHERE delete_ts IS NULL AND active = true AND LENGTH(code) = 4");
+        // Yangi soato jadvali: `name` (eski name_uz), `is_active` (eski active + delete_ts)
+        return loadNameMap("SELECT code, name FROM soato WHERE is_active = true AND LENGTH(code) = 4");
     }
 
     public Map<String, String> getOwnershipNameMap() {
-        return loadNameMap("SELECT code, name FROM hemishe_h_ownership WHERE delete_ts IS NULL AND active = true");
+        return loadNameMap("SELECT code, name FROM ownership WHERE is_active = true");
     }
 
     public Map<String, String> getUniversityTypeNameMap() {
-        return loadNameMap("SELECT code, name FROM hemishe_h_university_type WHERE delete_ts IS NULL AND active = true");
+        return loadNameMap("SELECT code, name FROM university_type WHERE is_active = true");
     }
 
     // =====================================================
@@ -461,14 +463,15 @@ public class UniversityRegistryService {
     }
 
     /**
-     * Load region items from hemishe_h_soato (top-level regions only: code length = 4)
+     * Load region items from soato (top-level regions only: code length = 4).
+     * Yangi jadval — Bosqich 4.5.
      */
     @SuppressWarnings("unchecked")
     private List<DictionaryItem> loadRegionItems() {
         Query query = entityManager.createNativeQuery(
-                "SELECT code, name_uz FROM hemishe_h_soato " +
-                "WHERE delete_ts IS NULL AND active = true AND LENGTH(code) = 4 " +
-                "ORDER BY name_uz");
+                "SELECT code, name FROM soato " +
+                "WHERE is_active = true AND LENGTH(code) = 4 " +
+                "ORDER BY name");
 
         List<Object[]> results = query.getResultList();
 
@@ -481,15 +484,16 @@ public class UniversityRegistryService {
     }
 
     /**
-     * Load district items from hemishe_h_soato (7-digit SOATO codes — tuman/shahar).
+     * Load district items from soato (7-digit SOATO codes — tuman/shahar).
      * Includes inactive entries so historical universities still resolve to a name on display.
+     * Yangi jadval — Bosqich 4.5.
      */
     @SuppressWarnings("unchecked")
     private List<DictionaryItem> loadDistrictItems() {
         Query query = entityManager.createNativeQuery(
-                "SELECT code, name_uz FROM hemishe_h_soato " +
-                "WHERE delete_ts IS NULL AND LENGTH(code) = 7 " +
-                "ORDER BY name_uz");
+                "SELECT code, name FROM soato " +
+                "WHERE LENGTH(code) = 7 " +
+                "ORDER BY name");
 
         List<Object[]> results = query.getResultList();
 

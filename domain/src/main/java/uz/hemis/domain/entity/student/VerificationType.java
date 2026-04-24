@@ -4,7 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 /**
  * Verification Type Entity - DTM verification turlari
@@ -15,8 +16,9 @@ import uz.hemis.domain.entity.base.ReferenceEntity;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "verification_type")
+@Table(name = "hemishe_h_verification_type")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class VerificationType extends ReferenceEntity {
+public class VerificationType extends LegacyClassifierEntity {
 }

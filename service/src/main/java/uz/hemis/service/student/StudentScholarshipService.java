@@ -181,7 +181,7 @@ public class StudentScholarshipService {
                            s._expel_reason as "expelReasonCode",
                            h.name as "expelReasonName"
                     FROM hemishe_e_student s
-                    LEFT JOIN hemishe_h_expel h ON h.code = s._expel_reason AND h.delete_ts IS NULL
+                    LEFT JOIN expel h ON h.code = s._expel_reason
                     WHERE s.pinfl IN (%s)
                       AND s._student_status = '12'
                       AND s.delete_ts IS NULL

@@ -36,7 +36,6 @@ import static uz.hemis.service.legacy.CubaEntityMapHelper.*;
  * Extracts toMap / updateFromMap / CRUD logic from 6 employee controllers.
  *
  * Entities handled:
- * - TeacherPositionType (read-only classifier, String PK)
  * - EmployeeRate (read-only classifier, String PK)
  * - EmployeeCertificate (full CRUD + UPSERT, UUID PK)
  * - EmploymentForm (read-only classifier, String PK)
@@ -51,7 +50,6 @@ import static uz.hemis.service.legacy.CubaEntityMapHelper.*;
 @Transactional(readOnly = true)
 public class EmployeeRefLegacyService {
 
-    private final TeacherPositionTypeRepository teacherPositionTypeRepository;
     private final EmployeeRateRepository employeeRateRepository;
     private final EmployeeCertificateRepository employeeCertificateRepository;
     private final EmploymentFormRepository employmentFormRepository;
@@ -62,38 +60,6 @@ public class EmployeeRefLegacyService {
     private final AdministrativeEmployee1Repository administrativeEmployee1Repository;
     private final AdministrativeEmployee2Repository administrativeEmployee2Repository;
     private final AdministrativeEmployee3Repository administrativeEmployee3Repository;
-
-    // ====================================================================
-    //  TeacherPositionType (read-only classifier)
-    // ====================================================================
-
-    private static final String TEACHER_POSITION_TYPE_ENTITY = "hemishe_HTeacherPositionType";
-
-    public Optional<TeacherPositionType> findTeacherPositionTypeById(String code) {
-        return teacherPositionTypeRepository.findById(code);
-    }
-
-    public Page<TeacherPositionType> findAllTeacherPositionType(PageRequest pageRequest) {
-        return teacherPositionTypeRepository.findAll(pageRequest);
-    }
-
-    public List<TeacherPositionType> findAllTeacherPositionType(Sort sort) {
-        return teacherPositionTypeRepository.findAll(sort);
-    }
-
-    public Map<String, Object> toTeacherPositionTypeMap(TeacherPositionType entity, Boolean returnNulls) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("_entityName", TEACHER_POSITION_TYPE_ENTITY);
-        map.put("_instanceName", entity.getName() != null ? entity.getName() : entity.getCode());
-        map.put("id", entity.getCode());
-        map.put("code", entity.getCode());
-        putIfNotNull(map, "name", entity.getName(), returnNulls);
-        putIfNotNull(map, "active", entity.isActive(), returnNulls);
-        putIfNotNull(map, "version", entity.getVersion(), returnNulls);
-        putIfNotNull(map, "deleteTs", null, returnNulls);
-        putIfNotNull(map, "deletedBy", null, returnNulls);
-        return map;
-    }
 
     // ====================================================================
     //  EmployeeRate (read-only classifier)

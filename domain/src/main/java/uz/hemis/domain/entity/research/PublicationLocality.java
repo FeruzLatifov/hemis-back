@@ -4,7 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 /**
  * Nashr Etish Hududi Entity
@@ -23,8 +24,9 @@ import uz.hemis.domain.entity.base.ReferenceEntity;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "publication_locality")
+@Table(name = "hemishe_h_publication_locality")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class PublicationLocality extends ReferenceEntity {
+public class PublicationLocality extends LegacyClassifierEntity {
 }

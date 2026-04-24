@@ -4,8 +4,15 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
 import uz.hemis.domain.entity.base.AuditableEntity;
+import uz.hemis.domain.entity.university.University;
+import uz.hemis.domain.entity.university.UniversityDepartment;
 
 import java.time.LocalDate;
+
+/**
+ * Dual mapping pattern: String code + LAZY FK (insertable=false, updatable=false).
+ * Write via *Code setter (backward compat), read via FK getter (relational access).
+ */
 
 /**
  * EmployeeJobs — one person can hold many positions at many universities.
@@ -38,20 +45,44 @@ public class EmployeeJobs extends AuditableEntity {
     @Column(name = "university_code", nullable = false)
     private String universityCode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "university_code", referencedColumnName = "code", insertable = false, updatable = false)
+    private University university;
+
     @Column(name = "department_code")
     private String departmentCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_code", referencedColumnName = "code", insertable = false, updatable = false)
+    private UniversityDepartment department;
 
     @Column(name = "position_code", length = 10)
     private String positionCode;
 
-    @Column(name = "employee_type_code", length = 10)
-    private String employeeTypeCode;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "position_code", referencedColumnName = "code", insertable = false, updatable = false)
+    private Position position;
+
+    @Column(name = "position_type_code", length = 10)
+    private String positionTypeCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "position_type_code", referencedColumnName = "code", insertable = false, updatable = false)
+    private PositionType positionType;
 
     @Column(name = "employment_form_code", length = 10)
     private String employmentFormCode;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employment_form_code", referencedColumnName = "code", insertable = false, updatable = false)
+    private EmploymentForm employmentForm;
+
     @Column(name = "employee_rate_code", length = 10)
     private String employeeRateCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_rate_code", referencedColumnName = "code", insertable = false, updatable = false)
+    private EmployeeRate employeeRate;
 
     /** Specialty for this job (assignment-scoped, not person-scoped). */
     @Column(name = "specialty", length = 500)

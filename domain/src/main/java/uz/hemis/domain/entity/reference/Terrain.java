@@ -8,7 +8,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 /**
  * Terrain classifier (mahalla/hudud — SOATO bilan bog'liq).
@@ -16,10 +17,11 @@ import uz.hemis.domain.entity.base.ReferenceEntity;
  * @since 2.0.0
  */
 @Entity
-@Table(name = "terrain")
+@Table(name = "hemishe_h_terrain")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class Terrain extends ReferenceEntity {
+public class Terrain extends LegacyClassifierEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "soato_code", referencedColumnName = "code")

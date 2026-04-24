@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS role_permission CASCADE;
+DROP TABLE IF EXISTS user_role       CASCADE;

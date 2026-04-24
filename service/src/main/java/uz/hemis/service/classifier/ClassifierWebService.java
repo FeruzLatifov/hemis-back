@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.classifier.*;
@@ -24,8 +26,12 @@ import java.util.stream.Collectors;
  * <p>Barcha 90+ klasifikator jadvali uchun yagona xizmat.
  * {@link ClassifierMetadataRegistry} orqali whitelist tekshiruvi amalga oshiriladi.</p>
  *
- * <p>Mavjud {@code ClassifierLegacyService} dan {@code buildCountSql()}, {@code buildItemsSql()},
- * {@code columnExists()}, {@code tableExists()} pattern'lari qayta ishlatilgan.</p>
+ * <p>Schema moslashuvchanligi (Bosqich 5 refactor):
+ * <ul>
+ *   <li>Eski CUBA jadvallar: {@code active, delete_ts, create_ts, update_ts, create_by, update_by}</li>
+ *   <li>Yangi jadvallar (V009-V013): {@code is_active, (no delete_ts), created_at, updated_at, created_by, updated_by}</li>
+ * </ul>
+ * Aliasing orqali DTO va API format o'zgarmaydi.</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -36,17 +42,11 @@ public class ClassifierWebService {
 
     // ==================== READ Operations ====================
 
-    /**
-     * Get all categories with classifier counts.
-     */
     @Transactional(readOnly = true)
     public List<ClassifierCategoryDto> getCategories() {
         return ClassifierMetadataRegistry.getAllCategories();
     }
 
-    /**
-     * Get classifiers by category with item counts from DB.
-     */
     @Transactional(readOnly = true)
     public List<ClassifierMetadataDto> getClassifiersByCategory(String categoryKey) {
         Category category = ClassifierMetadataRegistry.resolveCategory(categoryKey);
@@ -79,9 +79,6 @@ public class ClassifierWebService {
         return result;
     }
 
-    /**
-     * Get classifier items with pagination and search.
-     */
     @Transactional(readOnly = true)
     public Page<ClassifierItemDto> getClassifierItems(String apiKey, String search, Pageable pageable) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
@@ -91,20 +88,12 @@ public class ClassifierWebService {
             return Page.empty(pageable);
         }
 
-        boolean hasName = columnExists(tableName, "name");
-        boolean hasDeleteTs = columnExists(tableName, "delete_ts");
-        boolean hasActive = columnExists(tableName, "active");
-        boolean hasNameRu = columnExists(tableName, "name_ru");
-        boolean hasNameEn = columnExists(tableName, "name_en");
-        boolean hasParentCode = columnExists(tableName, "parent_code");
-        boolean hasVersion = columnExists(tableName, "version");
-        boolean hasCreateTs = columnExists(tableName, "create_ts");
-        boolean hasUpdateTs = columnExists(tableName, "update_ts");
+        SchemaInfo schema = detectSchema(tableName);
 
-        // Count query
+        // Count
         StringBuilder countSql = new StringBuilder("SELECT COUNT(*) FROM ").append(tableName);
         List<Object> params = new ArrayList<>();
-        String whereClause = buildWhereClause(hasDeleteTs, search, hasName, hasNameRu, hasNameEn, params);
+        String whereClause = buildWhereClause(schema, search, params);
         countSql.append(whereClause);
 
         Long total = jdbcTemplate.queryForObject(countSql.toString(), Long.class, params.toArray());
@@ -112,57 +101,31 @@ public class ClassifierWebService {
             return Page.empty(pageable);
         }
 
-        // Items query
+        // Items (with aliasing so DTO field names remain stable)
         StringBuilder sql = new StringBuilder("SELECT code");
-        if (hasName) sql.append(", name");
-        if (hasNameRu) sql.append(", name_ru");
-        if (hasNameEn) sql.append(", name_en");
-        if (hasActive) sql.append(", active");
-        if (hasVersion) sql.append(", version");
-        if (hasParentCode) sql.append(", parent_code");
-        if (hasCreateTs) sql.append(", create_ts");
-        if (hasUpdateTs) sql.append(", update_ts");
+        if (schema.hasName) sql.append(", name");
+        if (schema.hasNameRu) sql.append(", name_ru");
+        if (schema.hasNameEn) sql.append(", name_en");
+        if (schema.activeCol != null) sql.append(", ").append(schema.activeCol).append(" as active");
+        if (schema.hasVersion) sql.append(", version");
+        if (schema.hasParentCode) sql.append(", parent_code");
+        if (schema.createTsCol != null) sql.append(", ").append(schema.createTsCol).append(" as create_ts");
+        if (schema.updateTsCol != null) sql.append(", ").append(schema.updateTsCol).append(" as update_ts");
         sql.append(" FROM ").append(tableName);
 
         List<Object> itemParams = new ArrayList<>();
-        sql.append(buildWhereClause(hasDeleteTs, search, hasName, hasNameRu, hasNameEn, itemParams));
+        sql.append(buildWhereClause(schema, search, itemParams));
         sql.append(" ORDER BY code");
         sql.append(" LIMIT ? OFFSET ?");
         itemParams.add(pageable.getPageSize());
         itemParams.add(pageable.getOffset());
 
-        List<ClassifierItemDto> items = jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
-            ClassifierItemDto.ClassifierItemDtoBuilder builder = ClassifierItemDto.builder()
-                    .code(rs.getString("code"));
-            if (hasName) builder.name(rs.getString("name"));
-            if (hasNameRu) builder.nameRu(rs.getString("name_ru"));
-            if (hasNameEn) builder.nameEn(rs.getString("name_en"));
-            if (hasActive) {
-                Object activeVal = rs.getObject("active");
-                builder.active(activeVal != null ? rs.getBoolean("active") : null);
-            }
-            if (hasVersion) {
-                Object versionVal = rs.getObject("version");
-                builder.version(versionVal != null ? rs.getInt("version") : null);
-            }
-            if (hasParentCode) builder.parentCode(rs.getString("parent_code"));
-            if (hasCreateTs) {
-                java.sql.Timestamp ts = rs.getTimestamp("create_ts");
-                builder.createTs(ts != null ? ts.toLocalDateTime() : null);
-            }
-            if (hasUpdateTs) {
-                java.sql.Timestamp ts = rs.getTimestamp("update_ts");
-                builder.updateTs(ts != null ? ts.toLocalDateTime() : null);
-            }
-            return builder.build();
-        }, itemParams.toArray());
+        List<ClassifierItemDto> items = jdbcTemplate.query(sql.toString(),
+                (rs, rowNum) -> mapToDto(rs, schema), itemParams.toArray());
 
         return new PageImpl<>(items, pageable, total);
     }
 
-    /**
-     * Get single classifier item by code.
-     */
     @Transactional(readOnly = true)
     public ClassifierItemDto getClassifierItem(String apiKey, String code) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
@@ -172,63 +135,28 @@ public class ClassifierWebService {
             return null;
         }
 
-        boolean hasName = columnExists(tableName, "name");
-        boolean hasDeleteTs = columnExists(tableName, "delete_ts");
-        boolean hasActive = columnExists(tableName, "active");
-        boolean hasNameRu = columnExists(tableName, "name_ru");
-        boolean hasNameEn = columnExists(tableName, "name_en");
-        boolean hasParentCode = columnExists(tableName, "parent_code");
-        boolean hasVersion = columnExists(tableName, "version");
-        boolean hasCreateTs = columnExists(tableName, "create_ts");
-        boolean hasUpdateTs = columnExists(tableName, "update_ts");
+        SchemaInfo schema = detectSchema(tableName);
 
         StringBuilder sql = new StringBuilder("SELECT code");
-        if (hasName) sql.append(", name");
-        if (hasNameRu) sql.append(", name_ru");
-        if (hasNameEn) sql.append(", name_en");
-        if (hasActive) sql.append(", active");
-        if (hasVersion) sql.append(", version");
-        if (hasParentCode) sql.append(", parent_code");
-        if (hasCreateTs) sql.append(", create_ts");
-        if (hasUpdateTs) sql.append(", update_ts");
-        sql.append(" FROM ").append(tableName);
-        sql.append(" WHERE code = ?");
-        if (hasDeleteTs) sql.append(" AND delete_ts IS NULL");
+        if (schema.hasName) sql.append(", name");
+        if (schema.hasNameRu) sql.append(", name_ru");
+        if (schema.hasNameEn) sql.append(", name_en");
+        if (schema.activeCol != null) sql.append(", ").append(schema.activeCol).append(" as active");
+        if (schema.hasVersion) sql.append(", version");
+        if (schema.hasParentCode) sql.append(", parent_code");
+        if (schema.createTsCol != null) sql.append(", ").append(schema.createTsCol).append(" as create_ts");
+        if (schema.updateTsCol != null) sql.append(", ").append(schema.updateTsCol).append(" as update_ts");
+        sql.append(" FROM ").append(tableName).append(" WHERE code = ?");
+        if (schema.hasDeleteTs) sql.append(" AND delete_ts IS NULL");
 
-        List<ClassifierItemDto> results = jdbcTemplate.query(sql.toString(), (rs, rowNum) -> {
-            ClassifierItemDto.ClassifierItemDtoBuilder builder = ClassifierItemDto.builder()
-                    .code(rs.getString("code"));
-            if (hasName) builder.name(rs.getString("name"));
-            if (hasNameRu) builder.nameRu(rs.getString("name_ru"));
-            if (hasNameEn) builder.nameEn(rs.getString("name_en"));
-            if (hasActive) {
-                Object activeVal = rs.getObject("active");
-                builder.active(activeVal != null ? rs.getBoolean("active") : null);
-            }
-            if (hasVersion) {
-                Object versionVal = rs.getObject("version");
-                builder.version(versionVal != null ? rs.getInt("version") : null);
-            }
-            if (hasParentCode) builder.parentCode(rs.getString("parent_code"));
-            if (hasCreateTs) {
-                java.sql.Timestamp ts = rs.getTimestamp("create_ts");
-                builder.createTs(ts != null ? ts.toLocalDateTime() : null);
-            }
-            if (hasUpdateTs) {
-                java.sql.Timestamp ts = rs.getTimestamp("update_ts");
-                builder.updateTs(ts != null ? ts.toLocalDateTime() : null);
-            }
-            return builder.build();
-        }, code);
+        List<ClassifierItemDto> results = jdbcTemplate.query(sql.toString(),
+                (rs, rowNum) -> mapToDto(rs, schema), code);
 
         return results.isEmpty() ? null : results.getFirst();
     }
 
     // ==================== WRITE Operations ====================
 
-    /**
-     * Create a new classifier item.
-     */
     @Transactional
     public ClassifierItemDto createClassifierItem(String apiKey, ClassifierItemCreateDto dto) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
@@ -241,77 +169,74 @@ public class ClassifierWebService {
             throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
 
-        // Check for existing code (including soft-deleted)
+        SchemaInfo schema = detectSchema(tableName);
+
+        // Check existing
         String checkSql = "SELECT COUNT(*) FROM " + tableName + " WHERE code = ?";
         Integer existingCount = jdbcTemplate.queryForObject(checkSql, Integer.class, dto.getCode());
         if (existingCount != null && existingCount > 0) {
-            // Restore if soft-deleted, otherwise throw
-            boolean hasDeleteTs = columnExists(tableName, "delete_ts");
-            if (hasDeleteTs) {
+            if (schema.hasDeleteTs) {
                 String checkDeletedSql = "SELECT COUNT(*) FROM " + tableName + " WHERE code = ? AND delete_ts IS NOT NULL";
                 Integer deletedCount = jdbcTemplate.queryForObject(checkDeletedSql, Integer.class, dto.getCode());
                 if (deletedCount != null && deletedCount > 0) {
-                    // Restore soft-deleted item
-                    return restoreItem(tableName, dto);
+                    return restoreItem(tableName, dto, schema);
                 }
             }
             throw new IllegalArgumentException("Bu kodli element allaqachon mavjud: " + dto.getCode());
         }
 
         // Build INSERT
-        boolean hasName = columnExists(tableName, "name");
-        boolean hasNameRu = columnExists(tableName, "name_ru");
-        boolean hasNameEn = columnExists(tableName, "name_en");
-        boolean hasActive = columnExists(tableName, "active");
-        boolean hasVersion = columnExists(tableName, "version");
-        boolean hasCreateTs = columnExists(tableName, "create_ts");
-        boolean hasUpdateTs = columnExists(tableName, "update_ts");
-
         List<String> columns = new ArrayList<>(List.of("code"));
         List<Object> values = new ArrayList<>(List.of(dto.getCode()));
-        if (hasName && dto.getName() != null) {
+        if (schema.hasName && dto.getName() != null) {
             columns.add("name");
             values.add(dto.getName());
         }
-
-        if (hasNameRu && dto.getNameRu() != null) {
+        if (schema.hasNameRu && dto.getNameRu() != null) {
             columns.add("name_ru");
             values.add(dto.getNameRu());
         }
-        if (hasNameEn && dto.getNameEn() != null) {
+        if (schema.hasNameEn && dto.getNameEn() != null) {
             columns.add("name_en");
             values.add(dto.getNameEn());
         }
-        if (hasActive) {
-            columns.add("active");
+        if (schema.activeCol != null) {
+            columns.add(schema.activeCol);
             values.add(dto.getActive() != null ? dto.getActive() : true);
         }
-        if (hasVersion) {
+        if (schema.hasVersion) {
             columns.add("version");
             values.add(1);
         }
         LocalDateTime now = LocalDateTime.now();
-        if (hasCreateTs) {
-            columns.add("create_ts");
+        String currentUser = getCurrentUsername();
+        if (schema.createTsCol != null) {
+            columns.add(schema.createTsCol);
             values.add(now);
         }
-        if (hasUpdateTs) {
-            columns.add("update_ts");
+        if (schema.updateTsCol != null) {
+            columns.add(schema.updateTsCol);
             values.add(now);
+        }
+        // Audit: JdbcTemplate JPA Auditing listener'ni chetlab o'tadi → qo'lda o'rnatamiz
+        if (schema.createdByCol != null) {
+            columns.add(schema.createdByCol);
+            values.add(currentUser);
+        }
+        if (schema.updatedByCol != null) {
+            columns.add(schema.updatedByCol);
+            values.add(currentUser);
         }
 
         String placeholders = columns.stream().map(c -> "?").collect(Collectors.joining(", "));
         String insertSql = "INSERT INTO " + tableName + " (" + String.join(", ", columns) + ") VALUES (" + placeholders + ")";
 
         jdbcTemplate.update(insertSql, values.toArray());
-        log.info("Classifier item created: {}.{}", apiKey, dto.getCode());
+        log.info("Classifier item created: {}.{} by {}", apiKey, dto.getCode(), currentUser);
 
         return getClassifierItem(apiKey, dto.getCode());
     }
 
-    /**
-     * Update an existing classifier item.
-     */
     @Transactional
     public ClassifierItemDto updateClassifierItem(String apiKey, String code, ClassifierItemUpdateDto dto) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
@@ -324,44 +249,42 @@ public class ClassifierWebService {
             throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
 
-        // Check item exists
         ClassifierItemDto existing = getClassifierItem(apiKey, code);
         if (existing == null) {
             return null;
         }
 
-        boolean hasName = columnExists(tableName, "name");
-        boolean hasNameRu = columnExists(tableName, "name_ru");
-        boolean hasNameEn = columnExists(tableName, "name_en");
-        boolean hasActive = columnExists(tableName, "active");
-        boolean hasVersion = columnExists(tableName, "version");
-        boolean hasUpdateTs = columnExists(tableName, "update_ts");
+        SchemaInfo schema = detectSchema(tableName);
 
         List<String> setClauses = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
-        if (dto.getName() != null && hasName) {
+        if (dto.getName() != null && schema.hasName) {
             setClauses.add("name = ?");
             params.add(dto.getName());
         }
-        if (dto.getNameRu() != null && hasNameRu) {
+        if (dto.getNameRu() != null && schema.hasNameRu) {
             setClauses.add("name_ru = ?");
             params.add(dto.getNameRu());
         }
-        if (dto.getNameEn() != null && hasNameEn) {
+        if (dto.getNameEn() != null && schema.hasNameEn) {
             setClauses.add("name_en = ?");
             params.add(dto.getNameEn());
         }
-        if (dto.getActive() != null && hasActive) {
-            setClauses.add("active = ?");
+        if (dto.getActive() != null && schema.activeCol != null) {
+            setClauses.add(schema.activeCol + " = ?");
             params.add(dto.getActive());
         }
-        if (hasVersion) {
+        if (schema.hasVersion) {
             setClauses.add("version = COALESCE(version, 0) + 1");
         }
-        if (hasUpdateTs) {
-            setClauses.add("update_ts = ?");
+        if (schema.updateTsCol != null) {
+            setClauses.add(schema.updateTsCol + " = ?");
             params.add(LocalDateTime.now());
+        }
+        if (schema.updatedByCol != null) {
+            setClauses.add(schema.updatedByCol + " = ?");
+            params.add(getCurrentUsername());
         }
 
         if (setClauses.isEmpty()) {
@@ -370,8 +293,7 @@ public class ClassifierWebService {
 
         params.add(code);
         String updateSql = "UPDATE " + tableName + " SET " + String.join(", ", setClauses) + " WHERE code = ?";
-        boolean hasDeleteTs = columnExists(tableName, "delete_ts");
-        if (hasDeleteTs) {
+        if (schema.hasDeleteTs) {
             updateSql += " AND delete_ts IS NULL";
         }
 
@@ -382,7 +304,9 @@ public class ClassifierWebService {
     }
 
     /**
-     * Soft delete a classifier item.
+     * Delete classifier item.
+     * Old CUBA tables → soft delete (set delete_ts).
+     * New tables (no delete_ts) → set is_active = false (soft disable).
      */
     @Transactional
     public void deleteClassifierItem(String apiKey, String code) {
@@ -396,16 +320,33 @@ public class ClassifierWebService {
             throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
 
-        boolean hasDeleteTs = columnExists(tableName, "delete_ts");
-        if (hasDeleteTs) {
-            // Soft delete
+        SchemaInfo schema = detectSchema(tableName);
+
+        if (schema.hasDeleteTs) {
             String sql = "UPDATE " + tableName + " SET delete_ts = ? WHERE code = ? AND delete_ts IS NULL";
             int updated = jdbcTemplate.update(sql, LocalDateTime.now(), code);
             if (updated == 0) {
                 throw new IllegalArgumentException("Element topilmadi yoki allaqachon o'chirilgan: " + code);
             }
+        } else if (schema.activeCol != null) {
+            // Yangi jadvallar: soft-disable (is_active = false)
+            StringBuilder sql = new StringBuilder("UPDATE ").append(tableName)
+                    .append(" SET ").append(schema.activeCol).append(" = false");
+            if (schema.updateTsCol != null) {
+                sql.append(", ").append(schema.updateTsCol).append(" = ?");
+            }
+            sql.append(" WHERE code = ?");
+            int updated;
+            if (schema.updateTsCol != null) {
+                updated = jdbcTemplate.update(sql.toString(), LocalDateTime.now(), code);
+            } else {
+                updated = jdbcTemplate.update(sql.toString(), code);
+            }
+            if (updated == 0) {
+                throw new IllegalArgumentException("Element topilmadi: " + code);
+            }
         } else {
-            // Hard delete (for tables without delete_ts)
+            // Hard delete (no audit columns)
             String sql = "DELETE FROM " + tableName + " WHERE code = ?";
             int deleted = jdbcTemplate.update(sql, code);
             if (deleted == 0) {
@@ -416,7 +357,7 @@ public class ClassifierWebService {
         log.info("Classifier item deleted: {}.{}", apiKey, code);
     }
 
-    // ==================== Helper Methods ====================
+    // ==================== Helpers ====================
 
     private ClassifierMeta resolveAndValidate(String apiKey) {
         ClassifierMeta meta = ClassifierMetadataRegistry.getByApiKey(apiKey);
@@ -426,12 +367,10 @@ public class ClassifierWebService {
         return meta;
     }
 
-    private String buildWhereClause(boolean hasDeleteTs, String search,
-                                    boolean hasName, boolean hasNameRu, boolean hasNameEn,
-                                    List<Object> params) {
+    private String buildWhereClause(SchemaInfo schema, String search, List<Object> params) {
         List<String> conditions = new ArrayList<>();
 
-        if (hasDeleteTs) {
+        if (schema.hasDeleteTs) {
             conditions.add("delete_ts IS NULL");
         }
 
@@ -439,15 +378,15 @@ public class ClassifierWebService {
             String searchPattern = "%" + search.trim().toLowerCase() + "%";
             StringBuilder searchCondition = new StringBuilder("(LOWER(code) LIKE ?");
             params.add(searchPattern);
-            if (hasName) {
+            if (schema.hasName) {
                 searchCondition.append(" OR LOWER(name) LIKE ?");
                 params.add(searchPattern);
             }
-            if (hasNameRu) {
+            if (schema.hasNameRu) {
                 searchCondition.append(" OR LOWER(name_ru) LIKE ?");
                 params.add(searchPattern);
             }
-            if (hasNameEn) {
+            if (schema.hasNameEn) {
                 searchCondition.append(" OR LOWER(name_en) LIKE ?");
                 params.add(searchPattern);
             }
@@ -461,30 +400,57 @@ public class ClassifierWebService {
         return " WHERE " + String.join(" AND ", conditions);
     }
 
-    private ClassifierItemDto restoreItem(String tableName, ClassifierItemCreateDto dto) {
+    private ClassifierItemDto mapToDto(java.sql.ResultSet rs, SchemaInfo schema) throws java.sql.SQLException {
+        ClassifierItemDto.ClassifierItemDtoBuilder builder = ClassifierItemDto.builder()
+                .code(rs.getString("code"));
+        if (schema.hasName) builder.name(rs.getString("name"));
+        if (schema.hasNameRu) builder.nameRu(rs.getString("name_ru"));
+        if (schema.hasNameEn) builder.nameEn(rs.getString("name_en"));
+        if (schema.activeCol != null) {
+            Object activeVal = rs.getObject("active");
+            builder.active(activeVal != null ? rs.getBoolean("active") : null);
+        }
+        if (schema.hasVersion) {
+            Object versionVal = rs.getObject("version");
+            builder.version(versionVal != null ? rs.getInt("version") : null);
+        }
+        if (schema.hasParentCode) builder.parentCode(rs.getString("parent_code"));
+        if (schema.createTsCol != null) {
+            java.sql.Timestamp ts = rs.getTimestamp("create_ts");
+            builder.createTs(ts != null ? ts.toLocalDateTime() : null);
+        }
+        if (schema.updateTsCol != null) {
+            java.sql.Timestamp ts = rs.getTimestamp("update_ts");
+            builder.updateTs(ts != null ? ts.toLocalDateTime() : null);
+        }
+        return builder.build();
+    }
+
+    private ClassifierItemDto restoreItem(String tableName, ClassifierItemCreateDto dto, SchemaInfo schema) {
         List<String> setClauses = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
-        if (columnExists(tableName, "name") && dto.getName() != null) {
+        if (schema.hasName && dto.getName() != null) {
             setClauses.add("name = ?");
             params.add(dto.getName());
         }
-        setClauses.add("delete_ts = NULL");
-
-        if (columnExists(tableName, "name_ru") && dto.getNameRu() != null) {
+        if (schema.hasDeleteTs) {
+            setClauses.add("delete_ts = NULL");
+        }
+        if (schema.hasNameRu && dto.getNameRu() != null) {
             setClauses.add("name_ru = ?");
             params.add(dto.getNameRu());
         }
-        if (columnExists(tableName, "name_en") && dto.getNameEn() != null) {
+        if (schema.hasNameEn && dto.getNameEn() != null) {
             setClauses.add("name_en = ?");
             params.add(dto.getNameEn());
         }
-        if (columnExists(tableName, "active")) {
-            setClauses.add("active = ?");
+        if (schema.activeCol != null) {
+            setClauses.add(schema.activeCol + " = ?");
             params.add(dto.getActive() != null ? dto.getActive() : true);
         }
-        if (columnExists(tableName, "update_ts")) {
-            setClauses.add("update_ts = ?");
+        if (schema.updateTsCol != null) {
+            setClauses.add(schema.updateTsCol + " = ?");
             params.add(LocalDateTime.now());
         }
 
@@ -530,5 +496,77 @@ public class ClassifierWebService {
             log.debug("Error counting {}: {}", tableName, e.getMessage());
             return 0;
         }
+    }
+
+    /**
+     * Jadvalning schema formatini aniqlash — eski CUBA yoki yangi ReferenceEntity.
+     * Aliasing orqali DTO maydonlari bir xil qoladi.
+     */
+    private SchemaInfo detectSchema(String tableName) {
+        SchemaInfo info = new SchemaInfo();
+        info.hasName = columnExists(tableName, "name");
+        info.hasNameRu = columnExists(tableName, "name_ru");
+        info.hasNameEn = columnExists(tableName, "name_en");
+        info.hasVersion = columnExists(tableName, "version");
+        info.hasParentCode = columnExists(tableName, "parent_code");
+        info.hasDeleteTs = columnExists(tableName, "delete_ts");
+
+        // active vs is_active
+        if (columnExists(tableName, "active")) info.activeCol = "active";
+        else if (columnExists(tableName, "is_active")) info.activeCol = "is_active";
+        else info.activeCol = null;
+
+        // create_ts vs created_at
+        if (columnExists(tableName, "create_ts")) info.createTsCol = "create_ts";
+        else if (columnExists(tableName, "created_at")) info.createTsCol = "created_at";
+        else info.createTsCol = null;
+
+        // update_ts vs updated_at
+        if (columnExists(tableName, "update_ts")) info.updateTsCol = "update_ts";
+        else if (columnExists(tableName, "updated_at")) info.updateTsCol = "updated_at";
+        else info.updateTsCol = null;
+
+        // created_by — eski CUBA 'create_by' ham bor (legacy edge-case), yangi 'created_by'
+        if (columnExists(tableName, "created_by")) info.createdByCol = "created_by";
+        else if (columnExists(tableName, "create_by")) info.createdByCol = "create_by";
+        else info.createdByCol = null;
+
+        // updated_by
+        if (columnExists(tableName, "updated_by")) info.updatedByCol = "updated_by";
+        else if (columnExists(tableName, "update_by")) info.updatedByCol = "update_by";
+        else info.updatedByCol = null;
+
+        return info;
+    }
+
+    /**
+     * Joriy foydalanuvchi username'ni olish — SecurityContextHolder orqali.
+     * Fallback: 'system:web' (anonim yoki non-HTTP thread).
+     */
+    private String getCurrentUsername() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getName())) {
+                return auth.getName();
+            }
+        } catch (Exception e) {
+            log.debug("Auth context'dan username olishda xato: {}", e.getMessage());
+        }
+        return "system:web";
+    }
+
+    /** Schema flag'lar — eski CUBA va yangi ReferenceEntity pattern'lar uchun. */
+    private static final class SchemaInfo {
+        boolean hasName;
+        boolean hasNameRu;
+        boolean hasNameEn;
+        boolean hasVersion;
+        boolean hasParentCode;
+        boolean hasDeleteTs;
+        String activeCol;      // "active" | "is_active" | null
+        String createTsCol;    // "create_ts" | "created_at" | null
+        String updateTsCol;    // "update_ts" | "updated_at" | null
+        String createdByCol;   // "created_by" | "create_by" | null
+        String updatedByCol;   // "updated_by" | "update_by" | null
     }
 }

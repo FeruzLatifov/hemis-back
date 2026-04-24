@@ -1,8 +1,15 @@
 databaseChangeLog:
   # =====================================================
-  # HEMIS DATABASE MIGRATIONS
+  # HEMIS DATABASE MIGRATIONS (v2.0 — Clean Architecture, Dependency-First)
   # =====================================================
-  # 18 schema + 9 seed + 5 migration = 32 changeset (+ 3 tag = 35)
+  # 14 schema + 9 seed + 3 migration changesets.
+  #
+  # Order principle: STRICT dependency order — every table is created AFTER
+  # the tables it references. Every FK is declared INLINE; NO cross-file
+  # `ALTER TABLE ADD CONSTRAINT`. Each migration is self-contained and final.
+  #
+  # IMPORTANT: Greenfield-safe EMAS!
+  # employee/users/univ_legal use FKs to legacy hemishe_h_* and hemishe_e_university.
   # =====================================================
 
   - property:
@@ -10,216 +17,130 @@ databaseChangeLog:
       value: db/changelog/db.changelog-master.yaml
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # PHASE 1: SCHEMA — 18 files
+  # PHASE 1: SCHEMA — 14 files (strict dependency order)
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # V001: users + password_history + password_reset_token (3)
-  # V002: role (1)
-  # V003: permission (1)
-  # V004: user_role (1)
-  # V005: role_permission (1)
-  # V006: system_message + system_message_translation (2)
-  # V007: language (1)
-  # V008: menu + user_favorite (2)
-  # V009-V013: ~99 classifier tables (gender, soato, course, country, ...)
-  # V014: organization + university_legal + university_profile (3)
-  # V015: university_founder (1)
-  # V016: university_lifecycle (1)
-  # V017: university_cadastre (1)
-  # V018: position_type + position + employee + employee_job (4) — depends on classifiers + university
+  # V001: role                                      (RBAC catalog leaf)
+  # V002: permission                                (RBAC catalog leaf)
+  # V003: position_type + position                  (HR classifiers — HR-foundation)
+  # V004: employee + employee_job                   (HR core — references V003 position)
+  # V005: organization + university_legal + university_profile
+  #                                                 (references V004 employee inline)
+  # V006: users + password_history + password_reset_token + oauth_client + oauth_client_role
+  #                                                 (employee_id → V004, organization_id → V005, role_id → V001)
+  # V007: user_role + role_permission               (RBAC junctions — references V001/V002/V006)
+  # V008: university_founder                        (references V004 employee, V005 organization)
+  # V009: university_lifecycle                      (immutable log)
+  # V010: university_cadastre                       (real estate from cadastre API)
+  # V011: buildings (5 tables)                      (depends on hemishe_e_university)
+  # V012: system_message + system_message_translation (i18n catalog)
+  # V013: language + configuration                  (i18n + system settings)
+  # V014: menu + user_favorite                      (UI — references V006 users)
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
-      id: V001_create_users
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Auth: users + password_history + password_reset_token"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: users } }
-      changes:
-        - sqlFile: { path: changesets/schema/V001_create_users.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V001_create_users_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V002_create_roles
+      id: V001_create_roles
       author: hemis-team
       logicalFilePath: ${changelog.path}
       preConditions:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: role } }
       changes:
-        - sqlFile: { path: changesets/schema/V002_create_roles.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V001_create_roles.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V002_create_roles_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V001_create_roles_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V003_create_permissions
+      id: V002_create_permissions
       author: hemis-team
       logicalFilePath: ${changelog.path}
       preConditions:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: permission } }
       changes:
-        - sqlFile: { path: changesets/schema/V003_create_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V002_create_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V003_create_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V002_create_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V004_create_user_roles
+      id: V003_create_positions
       author: hemis-team
       logicalFilePath: ${changelog.path}
+      comment: "HR classifiers: position_type + position (HR-foundation)"
       preConditions:
         - onFail: MARK_RAN
-        - not: { tableExists: { tableName: user_role } }
+        - not: { tableExists: { tableName: position } }
       changes:
-        - sqlFile: { path: changesets/schema/V004_create_user_roles.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V003_create_positions.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V004_create_user_roles_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V003_create_positions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V005_create_role_permissions
+      id: V004_create_employee
       author: hemis-team
       logicalFilePath: ${changelog.path}
+      comment: "HR core: employee + employee_job (position FK inline; no cross-file ALTER)"
       preConditions:
         - onFail: MARK_RAN
-        - not: { tableExists: { tableName: role_permission } }
+        - not: { tableExists: { tableName: employee } }
       changes:
-        - sqlFile: { path: changesets/schema/V005_create_role_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V004_create_employee.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V005_create_role_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V004_create_employee_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V006_create_system_messages
+      id: V005_create_university_legal
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "i18n: system_message + system_message_translation"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: system_message } }
-      changes:
-        - sqlFile: { path: changesets/schema/V006_create_system_messages.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V006_create_system_messages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V007_create_languages
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: language } }
-      changes:
-        - sqlFile: { path: changesets/schema/V007_create_languages.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V007_create_languages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V008_create_menus
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Menu: menu + user_favorite + 49 seed items"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: menu } }
-      changes:
-        - sqlFile: { path: changesets/schema/V008_create_menus.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V008_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V009_create_classifiers
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "14 clean classifier tables (gender, soato, ownership, ...) with data from hemishe_h_*"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: gender } }
-      changes:
-        - sqlFile: { path: changesets/schema/V009_create_classifiers.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V009_create_classifiers_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V010_create_classifiers_2
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "16 classifier tables with Entity+Repository (admission_type, course, education_*, student_status_type, ...)"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: admission_type } }
-      changes:
-        - sqlFile: { path: changesets/schema/V010_create_classifiers_2.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V010_create_classifiers_2_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V011_create_classifiers_3
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "29 classifier tables — Student & Academic (certificate_language, score_type, student_achievement_type, absence_reason)"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: academic_mobile_type } }
-      changes:
-        - sqlFile: { path: changesets/schema/V011_create_classifiers_3.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V011_create_classifiers_3_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V012_create_classifiers_4
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "20 classifier tables — Finance & Admin (grant_type, stipend_rate have extra cols)"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: contract_class } }
-      changes:
-        - sqlFile: { path: changesets/schema/V012_create_classifiers_4.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V012_create_classifiers_4_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V013_create_classifiers_5
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "21 classifier tables — Infrastructure & Research (language_certificate has extra col)"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: attandance_setting } }
-      changes:
-        - sqlFile: { path: changesets/schema/V013_create_classifiers_5.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V013_create_classifiers_5_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V014_create_university_legal
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Legal entity info from API (1:1)"
+      comment: "organization + university_legal + university_profile (employee FK inline)"
       preConditions:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: university_legal } }
       changes:
-        - sqlFile: { path: changesets/schema/V014_create_university_legal.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V005_create_university_legal.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V014_create_university_legal_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V005_create_university_legal_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V015_create_university_founder
+      id: V006_create_users
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "Founders/shareholders (1:N)"
+      comment: "Auth module: users + password_* + oauth_client (employee_id, organization_id FK INLINE)"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: users } }
+      changes:
+        - sqlFile: { path: changesets/schema/V006_create_users.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V006_create_users_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V007_create_user_role_permissions
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "RBAC junctions: user_role + role_permission (N:N)"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: user_role } }
+      changes:
+        - sqlFile: { path: changesets/schema/V007_create_user_role_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V007_create_user_role_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V008_create_university_founder
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Founders/shareholders (1:N) — employee + organization FK inline"
       preConditions:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: university_founder } }
       changes:
-        - sqlFile: { path: changesets/schema/V015_create_university_founder.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V008_create_university_founder.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V015_create_university_founder_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V008_create_university_founder_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V016_create_university_lifecycle
+      id: V009_create_university_lifecycle
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "Lifecycle events — immutable log"
@@ -227,12 +148,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: university_lifecycle } }
       changes:
-        - sqlFile: { path: changesets/schema/V016_create_university_lifecycle.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V009_create_university_lifecycle.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V016_create_university_lifecycle_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V009_create_university_lifecycle_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V017_create_university_cadastre
+      id: V010_create_university_cadastre
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "Real estate objects from cadastre API"
@@ -240,22 +161,61 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: university_cadastre } }
       changes:
-        - sqlFile: { path: changesets/schema/V017_create_university_cadastre.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V010_create_university_cadastre.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V017_create_university_cadastre_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V010_create_university_cadastre_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V018_create_employee
+      id: V011_create_university_buildings
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "HR: position_type + position + employee + employee_job (FKs to clean classifiers + deferred FKs to users/university)"
+      comment: "Buildings domain: 3 classifiers + university_building + building_lifecycle"
       preConditions:
         - onFail: MARK_RAN
-        - not: { tableExists: { tableName: employee } }
+        - not: { tableExists: { tableName: university_building } }
       changes:
-        - sqlFile: { path: changesets/schema/V018_create_employee.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V011_create_university_buildings.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V018_create_employee_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V011_create_university_buildings_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V012_create_system_messages
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "i18n: system_message + system_message_translation"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: system_message } }
+      changes:
+        - sqlFile: { path: changesets/schema/V012_create_system_messages.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V012_create_system_messages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V013_create_languages
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "i18n: language + system configuration"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: language } }
+      changes:
+        - sqlFile: { path: changesets/schema/V013_create_languages.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V013_create_languages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: V014_create_menus
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "UI: menu + user_favorite + 49 seed items (references users)"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: menu } }
+      changes:
+        - sqlFile: { path: changesets/schema/V014_create_menus.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V014_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: tag-schema-complete
@@ -342,11 +302,11 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S007_seed_classifier_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: S008_seed_activity_statuses
+      id: S008_seed_positions
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
-      comment: "Activity statuses (12-15) + leadership flag on teacher position type"
+      comment: "14 position_type + 227 position — seeds V008 positions classifier"
       changes:
         - sqlFile: { path: changesets/seed/S008_seed_activity_statuses.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
@@ -371,7 +331,7 @@ databaseChangeLog:
         - tagDatabase: { tag: seed-v1.0 }
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # PHASE 3: MIGRATION — 5 changesets
+  # PHASE 3: MIGRATION — data migrations from legacy
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
@@ -405,25 +365,8 @@ databaseChangeLog:
       id: M003_student_duplicates
       author: hemis-team
       logicalFilePath: ${changelog.path}
+      comment: "Student duplicates MV + transfer detection (M003+M004 consolidated)"
       changes:
         - sqlFile: { path: changesets/migration/M003_student_duplicates.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/migration/M003_student_duplicates_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: M004_student_transfer_detection
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      changes:
-        - sqlFile: { path: changesets/migration/M004_student_transfer_detection.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/migration/M004_student_transfer_detection_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: M005_drop_redundant_indexes
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      changes:
-        - sqlFile: { path: changesets/migration/M005_drop_redundant_indexes.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/migration/M005_drop_redundant_indexes_rollback.sql, relativeToChangelogFile: true, splitStatements: false }

@@ -14,5 +14,6 @@ public enum PermissionAction {
     EXPORT,
     IMPORT,
     MANAGE,
-    ACCESS
+    ACCESS,
+    SYNC
 }

@@ -37,7 +37,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class EmployeeRefLegacyServiceTest {
 
-    @Mock private TeacherPositionTypeRepository teacherPositionTypeRepository;
     @Mock private EmployeeRateRepository employeeRateRepository;
     @Mock private EmployeeCertificateRepository employeeCertificateRepository;
     @Mock private EmploymentFormRepository employmentFormRepository;
@@ -47,48 +46,6 @@ class EmployeeRefLegacyServiceTest {
 
     @InjectMocks
     private EmployeeRefLegacyService service;
-
-    // ====================================================================
-    //  TeacherPositionType
-    // ====================================================================
-
-    @Nested
-    @DisplayName("TeacherPositionType")
-    class TeacherPositionTypeTests {
-
-        @Test
-        void toTeacherPositionTypeMap_shouldBuildCorrectMap() {
-            TeacherPositionType entity = new TeacherPositionType();
-            entity.setCode("12");
-            entity.setName("O'qituvchi");
-            entity.setActive(true);
-            entity.setVersion(1);
-
-            Map<String, Object> map = service.toTeacherPositionTypeMap(entity, false);
-
-            assertThat(map).containsEntry("_entityName", "hemishe_HTeacherPositionType");
-            assertThat(map).containsEntry("_instanceName", "O'qituvchi");
-            assertThat(map).containsEntry("id", "12");
-            assertThat(map).containsEntry("code", "12");
-            assertThat(map).containsEntry("name", "O'qituvchi");
-            assertThat(map).containsEntry("active", true);
-            assertThat(map).doesNotContainKey("deleteTs");
-        }
-
-        @Test
-        void toTeacherPositionTypeMap_withReturnNulls_includesNulls() {
-            TeacherPositionType entity = new TeacherPositionType();
-            entity.setCode("12");
-            entity.setName("O'qituvchi");
-
-            Map<String, Object> map = service.toTeacherPositionTypeMap(entity, true);
-
-            assertThat(map).containsKey("deleteTs");
-            assertThat(map).containsKey("deletedBy");
-            // returnNulls=true da JsonNull.INSTANCE ishlatiladi (JSON null sifatida serialize qilinadi)
-            assertThat(map.get("deleteTs")).isEqualTo(uz.hemis.common.JsonNull.INSTANCE);
-        }
-    }
 
     // ====================================================================
     //  EmployeeRate

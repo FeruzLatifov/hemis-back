@@ -4,7 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 /**
  * Uslubiy nashr turlari klassifikatori
@@ -14,6 +15,7 @@ import uz.hemis.domain.entity.base.ReferenceEntity;
 @Getter
 @Setter
 @Entity
-@Table(name = "methodical_publication_type")
-public class MethodicalPublicationType extends ReferenceEntity {
+@Table(name = "hemishe_h_methodical_publication_type")
+@SQLRestriction("delete_ts IS NULL")
+public class MethodicalPublicationType extends LegacyClassifierEntity {
 }

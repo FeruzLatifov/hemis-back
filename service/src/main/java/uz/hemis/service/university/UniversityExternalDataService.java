@@ -464,6 +464,18 @@ public class UniversityExternalDataService {
         return v.isNull() || v.isMissingNode() ? null : v.asText();
     }
 
+    /**
+     * Concatenate passport series + number into a single identifier
+     * matching legacy {@code hemishe_e_employee.passport} and per-OTM databases.
+     * Returns {@code null} when both inputs are null/blank.
+     */
+    private String concatPassport(String series, String number) {
+        String s = series == null ? "" : series.trim();
+        String n = number == null ? "" : number.trim();
+        String combined = s + n;
+        return combined.isEmpty() ? null : combined;
+    }
+
     private Integer intOrNull(JsonNode node, String field) {
         JsonNode v = node.path(field);
         return v.isNull() || v.isMissingNode() ? null : v.asInt();
@@ -563,8 +575,8 @@ public class UniversityExternalDataService {
             }
             String series = textOrNull(personNode, "passportSeries");
             String number = textOrNull(personNode, "passportNumber");
-            if (series != null) emp.setPassportSeries(series);
-            if (number != null) emp.setPassportNumber(number);
+            String passport = concatPassport(series, number);
+            if (passport != null) emp.setPassport(passport);
             String address = textOrNull(personNode, "address");
             if (address != null) emp.setAddress(address);
         }

@@ -4,7 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.ReferenceEntity;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.LegacyClassifierEntity;
 
 /**
  * Student Status Type Entity - Talaba holatlari klassifikatori
@@ -24,8 +25,9 @@ import uz.hemis.domain.entity.base.ReferenceEntity;
  * @since 1.0.0
  */
 @Entity
-@Table(name = "student_status_type")
+@Table(name = "hemishe_h_student_status_type")
+@SQLRestriction("delete_ts IS NULL")
 @Getter
 @Setter
-public class StudentStatusType extends ReferenceEntity {
+public class StudentStatusType extends LegacyClassifierEntity {
 }
