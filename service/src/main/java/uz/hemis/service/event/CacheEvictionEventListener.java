@@ -2,9 +2,10 @@ package uz.hemis.service.event;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import uz.hemis.domain.event.UserPermissionsChangedEvent;
 import uz.hemis.service.cache.CacheEvictionService;
 
@@ -74,7 +75,7 @@ import uz.hemis.service.cache.CacheEvictionService;
  *         User user = userRepository.findById(userId)
  *             .orElseThrow(() -> new NotFoundException("User not found"));
  *
- *         List&lt;String&gt; oldRoles = user.getRoleSet().stream()
+ *         List&lt;String&gt; oldRoles = user.getRoles().stream()
  *             .map(Role::getCode)
  *             .collect(Collectors.toList());
  *
@@ -124,7 +125,7 @@ public class CacheEvictionEventListener {
      *
      * @param event UserPermissionsChangedEvent
      */
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     @Async
     public void handleUserPermissionsChanged(UserPermissionsChangedEvent event) {
         log.info("🔔 [Event] User permissions changed: userId={}, changeType={}, changedBy={}",
@@ -170,7 +171,7 @@ public class CacheEvictionEventListener {
      *
      * @param event UserPermissionsChangedEvent with changeType=ROLE_MODIFIED
      */
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     @Async
     public void handleRolePermissionsModified(UserPermissionsChangedEvent event) {
         // Only handle ROLE_MODIFIED events

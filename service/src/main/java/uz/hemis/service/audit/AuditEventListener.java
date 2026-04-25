@@ -6,6 +6,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import uz.hemis.common.audit.*;
 
 /**
@@ -23,7 +25,7 @@ public class AuditEventListener {
     private final AuditRepository auditRepository;
 
     @Async("auditTaskExecutor")
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     public void handleActivity(ActivityEvent event) {
         log.debug("Audit activity: {} {} {}", event.getAction(), event.getEntityType(), event.getEntityId());
         auditRepository.saveActivity(event);
