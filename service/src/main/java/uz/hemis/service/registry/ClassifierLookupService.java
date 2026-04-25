@@ -45,15 +45,13 @@ public class ClassifierLookupService {
     @Scheduled(fixedRate = 30 * 60 * 1000L)
     public void reload() {
         try {
-            // Yangi jadvallarga yo'naltirilgan — Bosqich 3/4 refactor (hemishe_h_* tegilmaydi)
-            ownerships = load("SELECT code, name FROM ownership WHERE is_active = true");
-            types = load("SELECT code, name FROM university_type WHERE is_active = true");
-            activityStatuses = load("SELECT code, name FROM university_activity_status WHERE is_active = true");
-            belongsTo = load("SELECT code, name FROM university_belongs_to WHERE is_active = true");
-            contractCategories = load("SELECT code, name FROM contract_category WHERE is_active = true");
-            versionTypes = load("SELECT code, name FROM hemis_version WHERE is_active = true");
-            // Eski soato'da `name_uz` edi, yangi `name` (ReferenceEntity pattern)
-            soato = load("SELECT code, name FROM soato WHERE is_active = true");
+            ownerships = load("SELECT code, name FROM hemishe_h_ownership WHERE delete_ts IS NULL");
+            types = load("SELECT code, name FROM hemishe_h_university_type WHERE delete_ts IS NULL");
+            activityStatuses = load("SELECT code, name FROM hemishe_h_university_activity_status WHERE delete_ts IS NULL");
+            belongsTo = load("SELECT code, name FROM hemishe_h_university_belongs_to WHERE delete_ts IS NULL");
+            contractCategories = load("SELECT code, name FROM hemishe_h_university_contract_category WHERE delete_ts IS NULL");
+            versionTypes = load("SELECT code, name FROM hemishe_h_hemis_version_type WHERE delete_ts IS NULL");
+            soato = load("SELECT code, name_uz FROM hemishe_h_soato WHERE delete_ts IS NULL");
             log.info("Classifier cache reloaded: ownerships={}, types={}, soato={}",
                     ownerships.size(), types.size(), soato.size());
         } catch (Exception e) {
