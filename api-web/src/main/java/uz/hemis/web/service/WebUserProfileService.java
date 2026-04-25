@@ -45,7 +45,7 @@ public class WebUserProfileService {
                 .sorted()
                 .collect(Collectors.toList());
 
-        List<String> roles = user.getRoleSet().stream()
+        List<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .sorted()
                 .collect(Collectors.toList());

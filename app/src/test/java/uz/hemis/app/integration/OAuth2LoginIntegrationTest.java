@@ -107,7 +107,7 @@ class OAuth2LoginIntegrationTest extends AbstractIntegrationTest {
         testUser.setPassword("$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"); // BCrypt: test_password_123
         testUser.setEmail("test@hemis.uz");
         testUser.setEnabled(true);
-        testUser.setRoleSet(Set.of(testRole));
+        testUser.setRoles(Set.of(testRole));
         userRepository.save(testUser);
     }
 

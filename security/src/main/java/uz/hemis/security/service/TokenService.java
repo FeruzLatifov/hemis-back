@@ -416,11 +416,10 @@ public class TokenService {
      */
     private Set<String> collectAuthorities(OAuthClient client) {
         Set<String> out = new HashSet<>();
-        if (client.getRoleBindings() == null) {
+        if (client.getRoles() == null) {
             return out;
         }
-        client.getRoleBindings().forEach(binding -> {
-            Role role = binding.getRole();
+        client.getRoles().forEach(role -> {
             if (role == null || !role.isActive()) {
                 return;
             }

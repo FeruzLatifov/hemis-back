@@ -105,7 +105,7 @@ class PermissionServiceTest {
         user.setUsername("test_admin");
         user.setPassword("$2a$10$hashedpassword");
         user.setEnabled(true);
-        user.setRoleSet(new HashSet<>(Set.of(adminRole)));
+        user.setRoles(new HashSet<>(Set.of(adminRole)));
     }
 
     // =====================================================
@@ -138,7 +138,7 @@ class PermissionServiceTest {
         @DisplayName("merges permissions from multiple roles (no duplicates)")
         void mergesPermissionsFromMultipleRoles() {
             // Given - user has both admin and viewer roles
-            user.setRoleSet(new HashSet<>(Set.of(adminRole, viewerRole)));
+            user.setRoles(new HashSet<>(Set.of(adminRole, viewerRole)));
             when(userRepository.findByIdWithPermissions(userId)).thenReturn(Optional.of(user));
 
             // When
@@ -177,7 +177,7 @@ class PermissionServiceTest {
             noRolesUser.setUsername("no_roles_user");
             noRolesUser.setPassword("$2a$10$hashed");
             noRolesUser.setEnabled(true);
-            noRolesUser.setRoleSet(new HashSet<>());
+            noRolesUser.setRoles(new HashSet<>());
 
             when(userRepository.findByIdWithPermissions(userId)).thenReturn(Optional.of(noRolesUser));
 
@@ -206,7 +206,7 @@ class PermissionServiceTest {
                     )))
                     .build();
 
-            user.setRoleSet(new HashSet<>(Set.of(viewerRole, inactiveRole)));
+            user.setRoles(new HashSet<>(Set.of(viewerRole, inactiveRole)));
             when(userRepository.findByIdWithPermissions(userId)).thenReturn(Optional.of(user));
 
             // When

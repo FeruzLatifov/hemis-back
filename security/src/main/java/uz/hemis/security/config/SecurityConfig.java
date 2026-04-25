@@ -29,13 +29,11 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import uz.hemis.security.filter.CookieJwtAuthenticationFilter;
-import uz.hemis.security.filter.UserIpWhitelistFilter;
 import uz.hemis.security.service.TokenBlacklistService;
 import uz.hemis.security.service.UserPermissionCacheService;
 
@@ -119,8 +117,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationConverter jwtAuthConverter,
-            CookieJwtAuthenticationFilter cookieJwtAuthenticationFilter,
-            UserIpWhitelistFilter userIpWhitelistFilter
+            CookieJwtAuthenticationFilter cookieJwtAuthenticationFilter
     ) throws Exception {
         http
                 // CORS configuration
@@ -164,15 +161,6 @@ public class SecurityConfig {
                 .addFilterBefore(
                         cookieJwtAuthenticationFilter,
                         org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class
-                )
-
-                // ✅ Phase 2: User IP whitelist enforcement (runs AFTER BearerTokenAuthenticationFilter
-                //    so SecurityContext is populated with the JWT subject).
-                //    No-op for users whose allowed_ip_cidr is NULL/empty — backward-compat for all 339 legacy rows.
-                //    CLIENT subjects are whitelisted earlier in OAuthClientAuthenticationService.
-                .addFilterAfter(
-                        userIpWhitelistFilter,
-                        BearerTokenAuthenticationFilter.class
                 )
 
                 // Authorization rules

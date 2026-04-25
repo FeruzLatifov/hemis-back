@@ -60,8 +60,7 @@ public interface OAuthClientRepository extends JpaRepository<OAuthClient, UUID> 
      * @return operational client with roles / permissions
      */
     @Query("SELECT DISTINCT c FROM OAuthClient c " +
-           "LEFT JOIN FETCH c.roleBindings rb " +
-           "LEFT JOIN FETCH rb.role r " +
+           "LEFT JOIN FETCH c.roles r " +
            "LEFT JOIN FETCH r.permissions " +
            "WHERE c.clientId = :clientId " +
            "AND c.isActive = true " +
@@ -69,12 +68,12 @@ public interface OAuthClientRepository extends JpaRepository<OAuthClient, UUID> 
     Optional<OAuthClient> findOperationalByClientIdWithPermissions(@Param("clientId") String clientId);
 
     /**
-     * Find client by ID with role bindings eagerly loaded.
+     * Find client by ID with roles eagerly loaded.
      *
      * @param id client UUID
-     * @return client with role bindings
+     * @return client with roles
      */
-    @EntityGraph(attributePaths = {"roleBindings", "roleBindings.role"})
+    @EntityGraph(attributePaths = {"roles"})
     @Query("SELECT c FROM OAuthClient c WHERE c.id = :id")
     Optional<OAuthClient> findByIdWithRoles(@Param("id") UUID id);
 

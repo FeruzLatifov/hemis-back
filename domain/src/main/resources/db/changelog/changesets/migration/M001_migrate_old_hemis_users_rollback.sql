@@ -29,8 +29,9 @@ BEGIN
     ) INTO oauth_client_role_exists;
 
     -- Phase 2 dual-write: remove bindings + oauth_client rows we created.
-    IF oauth_client_role_exists THEN
-        DELETE FROM oauth_client_role WHERE granted_by = 'migration-phase2';
+    IF oauth_client_role_exists AND oauth_client_exists THEN
+        DELETE FROM oauth_client_role
+        WHERE client_id IN (SELECT id FROM oauth_client WHERE created_by = 'migration-phase2');
         RAISE NOTICE 'M001 Rollback: Deleted Phase 2 oauth_client_role bindings';
     END IF;
 

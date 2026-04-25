@@ -30,7 +30,7 @@ import java.util.UUID;
  *         User user = userRepository.findById(userId)
  *             .orElseThrow(() -> new NotFoundException("User not found"));
  *
- *         List&lt;String&gt; oldRoles = user.getRoleSet().stream()
+ *         List&lt;String&gt; oldRoles = user.getRoles().stream()
  *             .map(Role::getCode)
  *             .collect(Collectors.toList());
  *

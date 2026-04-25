@@ -75,16 +75,10 @@ CREATE TABLE users
     -- Optional hozirda, Oy 6 keyin majburiy bo'ladi (MyGov/E-Imzo SSO uchun PINFL lookup).
     employee_id              UUID         REFERENCES employee(id) ON DELETE RESTRICT,
 
-    -- Authentication provider (MyGov / OneID / E-Imzo / Mobile-ID — context.md integration)
-    primary_auth_provider    VARCHAR(20)           DEFAULT 'PASSWORD',
-
     -- Security hardening (rules.md #5 — Security by default)
-    allowed_ip_cidr          TEXT[],                       -- IP whitelist (CIDR blocks)
     rate_limit_rpm           INTEGER               DEFAULT 60,
     secret_rotated_at        TIMESTAMP,
     secret_expires_at        TIMESTAMP,
-    last_used_ip             VARCHAR(45),                  -- IPv4/IPv6
-    last_used_at             TIMESTAMP,
 
     -- Versioning (Optimistic Locking)
     version                  INTEGER               DEFAULT 1,
@@ -100,9 +94,6 @@ CREATE TABLE users
     -- Constraints
     CONSTRAINT chk_user_type CHECK (
         user_type IN ('UNIVERSITY', 'MINISTRY', 'ORGANIZATION', 'SYSTEM')
-    ),
-    CONSTRAINT chk_users_auth_provider CHECK (
-        primary_auth_provider IN ('PASSWORD', 'MYGOV', 'ONEID', 'E_IMZO', 'MOBILE_ID')
     )
 );
 
@@ -112,8 +103,6 @@ COMMENT ON COLUMN users.version IS 'Optimistic locking version (JPA @Version)';
 COMMENT ON COLUMN users.deleted_at IS 'Soft delete timestamp (null = active)';
 COMMENT ON COLUMN users.locked_at IS 'Timestamp when account was locked (auto-unlock after 15 min)';
 COMMENT ON COLUMN users.employee_id IS 'FK to employee (person identity). Banner GOBTPAC.PIDM pattern.';
-COMMENT ON COLUMN users.primary_auth_provider IS 'Auth provider — future MyGov/OneID/E-Imzo SSO (context.md)';
-COMMENT ON COLUMN users.allowed_ip_cidr IS 'IP whitelist (CIDR). NULL = no restriction. For ministry admin — restricted to office IPs.';
 
 -- Indexes
 CREATE INDEX idx_users_username_lowercase ON users (username_lowercase);
@@ -261,10 +250,8 @@ CREATE INDEX idx_oauth_client_scopes           ON oauth_client USING GIN (scopes
 -- Human → user_role, Machine → oauth_client_role. Ikkalasi `role_permission` orqali permission'larga.
 -- =====================================================
 CREATE TABLE oauth_client_role (
-    client_id  UUID      NOT NULL REFERENCES oauth_client(id) ON DELETE CASCADE,
-    role_id    UUID      NOT NULL REFERENCES role(id)         ON DELETE CASCADE,
-    granted_by VARCHAR(50),
-    granted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    client_id  UUID NOT NULL REFERENCES oauth_client(id) ON DELETE CASCADE,
+    role_id    UUID NOT NULL REFERENCES role(id)         ON DELETE CASCADE,
     PRIMARY KEY (client_id, role_id)
 );
 

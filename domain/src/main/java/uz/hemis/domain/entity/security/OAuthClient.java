@@ -3,6 +3,7 @@ package uz.hemis.domain.entity.security;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
@@ -16,7 +17,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * OAuth 2.0 B2B Machine Account (RFC 6749 §4.4 — client_credentials grant).
@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
  * <p><strong>Table:</strong> {@code oauth_client} (V003)</p>
  *
  * @see ClientType
- * @see OAuthClientRole
  * @since 2.1.0
  */
 @Entity
@@ -213,15 +212,21 @@ public class OAuthClient extends AuditableEntity {
     private String contactPhone;
 
     // =====================================================
-    // Role Bindings (junction — OAuthClientRole)
+    // Roles (many-to-many — shared `role` table with User)
     // =====================================================
 
     /**
-     * Role bindings with audit (granted_by / granted_at).
-     * Use {@link #bindRole(Role, String)} / {@link #unbindRole(Role)} instead of direct mutation.
+     * Roles assigned to this client.
+     * Audit (kim/qachon bergan) alohida audit DB'da saqlanadi.
      */
-    @OneToMany(mappedBy = "client", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<OAuthClientRole> roleBindings = new HashSet<>();
+    @ManyToMany
+    @JoinTable(
+        name = "oauth_client_role",
+        joinColumns = @JoinColumn(name = "client_id"),
+        inverseJoinColumns = @JoinColumn(name = "role_id")
+    )
+    @BatchSize(size = 50)
+    private Set<Role> roles = new HashSet<>();
 
     // =====================================================
     // Business Methods
@@ -259,68 +264,17 @@ public class OAuthClient extends AuditableEntity {
     }
 
     /**
-     * @return flat set of {@link Role}s assigned to this client
-     */
-    public Set<Role> getRoles() {
-        if (roleBindings == null || roleBindings.isEmpty()) {
-            return new HashSet<>();
-        }
-        return roleBindings.stream()
-                .map(OAuthClientRole::getRole)
-                .collect(Collectors.toSet());
-    }
-
-    /**
      * Check whether this client has a given role by code.
      *
      * @param roleCode role code (e.g. {@code "OTM_API"})
      */
     public boolean hasRole(String roleCode) {
-        if (roleCode == null || roleBindings == null) {
+        if (roleCode == null || roles == null || roles.isEmpty()) {
             return false;
         }
-        return roleBindings.stream()
-                .map(OAuthClientRole::getRole)
+        return roles.stream()
                 .filter(java.util.Objects::nonNull)
                 .anyMatch(r -> roleCode.equals(r.getCode()));
-    }
-
-    /**
-     * Bind a role to this client. Creates or re-activates the junction row.
-     *
-     * @param role role to grant (must be non-null and persisted)
-     * @param grantedBy subject that granted the role (username or system actor)
-     */
-    public void bindRole(Role role, String grantedBy) {
-        if (role == null) {
-            return;
-        }
-        boolean alreadyBound = roleBindings.stream()
-                .anyMatch(b -> role.equals(b.getRole()));
-        if (alreadyBound) {
-            return;
-        }
-        // EmbeddedId stays empty — Hibernate's @MapsId on the junction's
-        // @ManyToOne fields will populate {clientId, roleId} from {client.id, role.id}
-        // on persist. Pre-setting here would race with this client's own @PrePersist
-        // (id may be null when bindRole runs before save).
-        OAuthClientRole binding = new OAuthClientRole();
-        binding.setId(new OAuthClientRoleId());
-        binding.setClient(this);
-        binding.setRole(role);
-        binding.setGrantedBy(grantedBy);
-        binding.setGrantedAt(LocalDateTime.now());
-        roleBindings.add(binding);
-    }
-
-    /**
-     * Remove a role binding. Junction row is deleted via orphanRemoval.
-     */
-    public void unbindRole(Role role) {
-        if (role == null || roleBindings == null) {
-            return;
-        }
-        roleBindings.removeIf(b -> role.equals(b.getRole()));
     }
 
     /**

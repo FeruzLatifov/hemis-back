@@ -104,7 +104,7 @@ public class Role extends AuditableEntity {
     /**
      * Users assigned to this role
      */
-    @ManyToMany(mappedBy = "roleSet")
+    @ManyToMany(mappedBy = "roles")
     @Builder.Default
     private Set<User> users = new HashSet<>();
 

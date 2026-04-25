@@ -93,7 +93,7 @@ class OAuth2ClientCredentialsIntegrationTest extends AbstractIntegrationTest {
         testClient.setRateLimitBurst(10);
         testClient.setAccessTokenTtlSeconds(3600);
         testClient.setSecretVersion(1);
-        testClient.bindRole(otmApi, "integration-test");
+        testClient.getRoles().add(otmApi);
         testClient = clientRepository.save(testClient);
     }
 

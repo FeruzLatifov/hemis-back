@@ -62,7 +62,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @param username login username
      * @return user with roles if found
      */
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roleSet WHERE u.username = :username")
+    @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.username = :username")
     Optional<User> findByUsernameWithRoles(@Param("username") String username);
 
     /**
@@ -75,7 +75,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return user with roles and permissions if found
      */
     @Query("SELECT DISTINCT u FROM User u " +
-           "LEFT JOIN FETCH u.roleSet r " +
+           "LEFT JOIN FETCH u.roles r " +
            "LEFT JOIN FETCH r.permissions " +
            "WHERE u.username = :username")
     Optional<User> findByUsernameWithPermissions(@Param("username") String username);
@@ -90,7 +90,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return user with roles and permissions if found
      */
     @Query("SELECT DISTINCT u FROM User u " +
-           "LEFT JOIN FETCH u.roleSet r " +
+           "LEFT JOIN FETCH u.roles r " +
            "LEFT JOIN FETCH r.permissions " +
            "WHERE u.id = :id")
     Optional<User> findByIdWithPermissions(@Param("id") UUID id);
@@ -246,7 +246,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u FROM User u " +
            "WHERE (:search = '' OR LOWER(u.username) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "       OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
-           "AND (:role = '' OR u IN (SELECT u2 FROM User u2 JOIN u2.roleSet r2 WHERE r2.code = :role)) " +
+           "AND (:role = '' OR u IN (SELECT u2 FROM User u2 JOIN u2.roles r2 WHERE r2.code = :role)) " +
            "AND (:university = '' OR u.university.code = :university) " +
            "AND (:enabled IS NULL OR u.enabled = :enabled)")
     Page<User> findAllFiltered(@Param("search") String search,
@@ -264,7 +264,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return user with roles and university
      */
     @Query("SELECT DISTINCT u FROM User u " +
-           "LEFT JOIN FETCH u.roleSet r " +
+           "LEFT JOIN FETCH u.roles r " +
            "LEFT JOIN FETCH r.permissions " +
            "LEFT JOIN FETCH u.university " +
            "WHERE u.id = :id")

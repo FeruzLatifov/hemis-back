@@ -34,7 +34,7 @@ class UserEntityTest {
         assertThat(user.getEnabled()).isTrue();
         assertThat(user.getAccountNonLocked()).isTrue();
         assertThat(user.getFailedAttempts()).isEqualTo(0);
-        assertThat(user.getRoleSet()).isEmpty();
+        assertThat(user.getRoles()).isEmpty();
     }
 
     @Test
@@ -106,24 +106,24 @@ class UserEntityTest {
     }
 
     @Test
-    @DisplayName("hasRole should check roleSet (many-to-many)")
-    void hasRoleShouldCheckRoleSet() {
+    @DisplayName("hasRole should check roles (many-to-many)")
+    void hasRoleShouldCheckRoles() {
         User user = new User();
 
-        // empty roleSet -> false
+        // empty roles -> false
         assertThat(user.hasRole("ADMIN")).isFalse();
         assertThat(user.isSystemAdmin()).isFalse();
 
         Role superAdmin = Role.builder().code("SUPER_ADMIN").name("Super Admin").build();
-        user.getRoleSet().add(superAdmin);
+        user.getRoles().add(superAdmin);
 
         assertThat(user.hasRole("SUPER_ADMIN")).isTrue();
         assertThat(user.hasRole("ROLE_SUPER_ADMIN")).isTrue(); // ROLE_ prefix is stripped
         assertThat(user.isSystemAdmin()).isTrue();
         assertThat(user.isUniversityAdmin()).isFalse();
 
-        user.getRoleSet().clear();
-        user.getRoleSet().add(Role.builder().code("UNIVERSITY_ADMIN").name("University Admin").build());
+        user.getRoles().clear();
+        user.getRoles().add(Role.builder().code("UNIVERSITY_ADMIN").name("University Admin").build());
         assertThat(user.isUniversityAdmin()).isTrue();
         assertThat(user.isSystemAdmin()).isFalse();
     }

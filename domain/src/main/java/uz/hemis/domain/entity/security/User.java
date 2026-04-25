@@ -11,7 +11,6 @@ import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
-import uz.hemis.common.auth.AuthProvider;
 import uz.hemis.common.enums.UserType;
 import uz.hemis.domain.entity.base.AuditableEntity;
 
@@ -101,7 +100,7 @@ public class User extends AuditableEntity {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     @BatchSize(size = 50)
-    private Set<Role> roleSet = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 
     /**
      * Enabled flag
@@ -271,34 +270,10 @@ public class User extends AuditableEntity {
     private UUID employeeId;
 
     // =====================================================
-    // Authentication Provider (context.md — MyGov / OneID / E-Imzo)
-    // =====================================================
-
-    /**
-     * Primary authentication provider for this account.
-     *
-     * <p>Default {@link AuthProvider#PASSWORD} — backward-compat for
-     * legacy BCrypt/PBKDF2 users. Other values activate SSO flows
-     * (MyGov / OneID / E-Imzo / Mobile-ID).</p>
-     */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "primary_auth_provider", length = 20)
-    private AuthProvider primaryAuthProvider = AuthProvider.PASSWORD;
-
-    // =====================================================
     // Security Hardening (rules.md #5 — Security by default)
     // =====================================================
 
-    /**
-     * IP whitelist (CIDR blocks). {@code NULL} / empty = no restriction.
-     *
-     * <p>Production use-case: ministry admins restricted to office IPs.</p>
-     */
-    @JdbcTypeCode(SqlTypes.ARRAY)
-    @Column(name = "allowed_ip_cidr", columnDefinition = "text[]")
-    private List<String> allowedIpCidr;
-
-    /** Per-account requests-per-minute ceiling (enforced in IpWhitelistFilter / RateLimitService). */
+    /** Per-account requests-per-minute ceiling (enforced in RateLimitService). */
     @Column(name = "rate_limit_rpm")
     private Integer rateLimitRpm = 60;
 
@@ -309,14 +284,6 @@ public class User extends AuditableEntity {
     /** Policy expiry — after this, user must rotate secret on next login. */
     @Column(name = "secret_expires_at")
     private LocalDateTime secretExpiresAt;
-
-    /** IP address of last successful login (audit / anomaly detection). */
-    @Column(name = "last_used_ip", length = 45)
-    private String lastUsedIp;
-
-    /** Timestamp of last successful authentication. */
-    @Column(name = "last_used_at")
-    private LocalDateTime lastUsedAt;
 
     // =====================================================
     // Business Methods
@@ -338,14 +305,14 @@ public class User extends AuditableEntity {
      * Accepts role code with or without {@code ROLE_} prefix (prefix is stripped).
      *
      * @param role role code (e.g. {@code "ADMIN"}, {@code "ROLE_ADMIN"}, {@code "SUPER_ADMIN"})
-     * @return {@code true} if user has a matching role in {@link #roleSet}
+     * @return {@code true} if user has a matching role in {@link #roles}
      */
     public boolean hasRole(String role) {
-        if (role == null || roleSet == null || roleSet.isEmpty()) {
+        if (role == null || roles == null || roles.isEmpty()) {
             return false;
         }
         String target = role.startsWith("ROLE_") ? role.substring(5) : role;
-        return roleSet.stream()
+        return roles.stream()
                 .anyMatch(r -> target.equals(r.getCode()));
     }
 
@@ -364,27 +331,15 @@ public class User extends AuditableEntity {
     // =====================================================
 
     /**
-     * Get all roles assigned to this user
-     *
-     * @return Set of roles
-     */
-    public Set<Role> getRoles() {
-        if (roleSet == null) {
-            roleSet = new HashSet<>();
-        }
-        return roleSet;
-    }
-
-    /**
      * Add role to user
      *
      * @param role Role to add
      */
     public void addRole(Role role) {
-        if (roleSet == null) {
-            roleSet = new HashSet<>();
+        if (roles == null) {
+            roles = new HashSet<>();
         }
-        roleSet.add(role);
+        roles.add(role);
         role.getUsers().add(this);
     }
 
@@ -394,8 +349,8 @@ public class User extends AuditableEntity {
      * @param role Role to remove
      */
     public void removeRole(Role role) {
-        if (roleSet != null) {
-            roleSet.remove(role);
+        if (roles != null) {
+            roles.remove(role);
             role.getUsers().remove(this);
         }
     }
@@ -407,10 +362,10 @@ public class User extends AuditableEntity {
      * @return true if user has the role
      */
     public boolean hasRoleByCode(String roleCode) {
-        if (roleSet == null || roleSet.isEmpty()) {
+        if (roles == null || roles.isEmpty()) {
             return false;
         }
-        return roleSet.stream()
+        return roles.stream()
                 .anyMatch(role -> roleCode.equals(role.getCode()));
     }
 
@@ -420,12 +375,12 @@ public class User extends AuditableEntity {
      * @return Set of all permissions (merged from all roles)
      */
     public Set<Permission> getAllPermissions() {
-        if (roleSet == null || roleSet.isEmpty()) {
+        if (roles == null || roles.isEmpty()) {
             return new HashSet<>();
         }
 
         Set<Permission> allPermissions = new HashSet<>();
-        for (Role role : roleSet) {
+        for (Role role : roles) {
             if (role.isActive() && role.getPermissions() != null) {
                 allPermissions.addAll(role.getPermissions());
             }

@@ -219,8 +219,8 @@ BEGIN
 
     -- 2. Bind OTM_API role to every UNIVERSITY_BACKEND client so machine tokens
     --    carry the same permissions as the human-grant tokens did.
-    INSERT INTO oauth_client_role (client_id, role_id, granted_by, granted_at)
-    SELECT c.id, r.id, 'migration-phase2', CURRENT_TIMESTAMP
+    INSERT INTO oauth_client_role (client_id, role_id)
+    SELECT c.id, r.id
     FROM oauth_client c
     CROSS JOIN role r
     WHERE c.client_type = 'UNIVERSITY_BACKEND'
@@ -232,11 +232,6 @@ BEGIN
           WHERE cr.client_id = c.id AND cr.role_id = r.id
       );
 
-    -- 3. Backfill users.primary_auth_provider for legacy rows (no-op if already set).
-    UPDATE users
-    SET primary_auth_provider = 'PASSWORD'
-    WHERE primary_auth_provider IS NULL
-      AND deleted_at IS NULL;
 END $$;
 
 -- =====================================================
