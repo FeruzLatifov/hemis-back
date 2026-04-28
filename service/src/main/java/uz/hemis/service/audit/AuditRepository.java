@@ -28,7 +28,7 @@ public class AuditRepository {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${hemis.audit.redact-fields:pinfl,passport_number,passport,inn,phone}")
+    @Value("${hemis.audit.redact-fields:password}")
     private String redactFieldsConfig;
 
     public AuditRepository(@Qualifier("auditJdbcTemplate") JdbcTemplate jdbcTemplate,
@@ -44,7 +44,7 @@ public class AuditRepository {
                 INSERT INTO activity_log (user_id, username, user_ip, user_agent, session_id,
                     action, entity_type, entity_id, entity_name, old_value, new_value,
                     changed_fields, request_id, endpoint, description, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::text[], ?, ?, ?, ?)
                 """,
                     ctx != null ? ctx.getUserId() : null,
                     ctx != null ? ctx.getUsername() : null,

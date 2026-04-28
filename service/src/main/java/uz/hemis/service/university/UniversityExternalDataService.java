@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.university.UniversityCadastre;
 import uz.hemis.domain.entity.university.UniversityFounder;
@@ -377,6 +379,8 @@ public class UniversityExternalDataService {
      * Sync all external data (legal + cadastre) for a university.
      * Resolves TIN from university record automatically.
      */
+    @Audited(action = AuditAction.UPDATE, entity = "University",
+            entityClass = University.class, keyArg = "universityCode")
     @Transactional
     public void syncAll(String universityCode) {
         String tin = resolveTin(universityCode);

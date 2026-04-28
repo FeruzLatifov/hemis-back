@@ -235,7 +235,7 @@ public class UniversityRegistryService {
     public UniversityDto createUniversity(UniversityRequestDto request) {
         log.info("Creating university: code={}, name={}", request.getCode(), request.getName());
 
-        if (universityRepository.existsById(request.getCode())) {
+        if (universityRepository.existsByCode(request.getCode())) {
             throw new IllegalArgumentException("University with code " + request.getCode() + " already exists");
         }
 

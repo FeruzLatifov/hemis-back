@@ -7,6 +7,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.enums.RoleType;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -93,6 +95,7 @@ public class RoleAdminService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.CREATE, entity = "Role", entityClass = Role.class)
     public RoleResponse create(RoleCreateRequest request) {
         // Validate unique code
         if (roleRepository.existsByCode(request.getCode())) {
@@ -132,6 +135,7 @@ public class RoleAdminService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "Role", entityClass = Role.class, keyArg = "id")
     public RoleResponse update(UUID id, RoleUpdateRequest request) {
         Role role = roleRepository.findByIdWithPermissions(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", id));
@@ -175,6 +179,7 @@ public class RoleAdminService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.DELETE, entity = "Role", entityClass = Role.class, keyArg = "id")
     public void delete(UUID id) {
         Role role = roleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", id));

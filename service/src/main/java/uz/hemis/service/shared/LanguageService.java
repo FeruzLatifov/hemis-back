@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.system.LanguageDto;
 import uz.hemis.domain.entity.reference.Language;
 import uz.hemis.domain.entity.system.SystemConfiguration;
@@ -67,6 +69,7 @@ public class LanguageService {
      * (Only non-system-default languages can be toggled)
      */
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "Language", entityClass = Language.class, keyArg = "code")
     public boolean toggleLanguage(String code, boolean enabled) {
         log.info("Toggling language {} to {}", code, enabled);
         
@@ -115,6 +118,7 @@ public class LanguageService {
      * Update the default language code in system_configuration. No-op if the row does not exist.
      */
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "SystemConfiguration", entityClass = SystemConfiguration.class)
     public void setDefaultLanguageCode(String languageCode) {
         systemConfigurationRepository.findByPath(DEFAULT_LANGUAGE_KEY).ifPresent(config -> {
             config.setValue(languageCode);

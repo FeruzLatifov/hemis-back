@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.domain.entity.security.PasswordResetToken;
 import uz.hemis.domain.entity.security.User;
@@ -101,6 +103,7 @@ public class PasswordResetService {
     /**
      * Reset password using token.
      */
+    @Audited(action = AuditAction.UPDATE, entity = "User")
     @Transactional
     public void resetPassword(String token, String newPassword) {
         if (newPassword == null || newPassword.length() < 6) {

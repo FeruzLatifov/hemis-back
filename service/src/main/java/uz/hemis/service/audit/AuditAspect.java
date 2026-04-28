@@ -14,6 +14,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 import uz.hemis.common.audit.*;
 
 import java.lang.reflect.Parameter;
@@ -147,6 +150,12 @@ public class AuditAspect {
                 .requestId(MDC.get("requestId"))
                 .ip(MDC.get("clientIp"));
 
+        HttpServletRequest request = currentRequest();
+        if (request != null) {
+            builder.userAgent(request.getHeader("User-Agent"));
+            builder.endpoint(request.getMethod() + " " + request.getRequestURI());
+        }
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
             String name = auth.getName();
@@ -160,6 +169,11 @@ public class AuditAspect {
         }
 
         return builder.build();
+    }
+
+    private HttpServletRequest currentRequest() {
+        var attrs = RequestContextHolder.getRequestAttributes();
+        return attrs instanceof ServletRequestAttributes sra ? sra.getRequest() : null;
     }
 
     private String extractEntityId(Object[] args) {
@@ -216,17 +230,51 @@ public class AuditAspect {
     }
 
     private List<String> detectChangedFields(Map<String, Object> oldVal, Map<String, Object> newVal) {
+        // Normalize keys to canonical camelCase to align entity (Jackson default)
+        // with DTO (@JsonProperty snake_case). Compare intersection only — skips
+        // entity-only meta fields (version, updateTs, ...) and DTO-only enrichment.
+        // Output uses the original key names from new_value so changed_fields
+        // matches the JSON keys in new_value/old_value.
+        Map<String, String> oldByCanonical = canonicalKeyIndex(oldVal);
+        Map<String, String> newByCanonical = canonicalKeyIndex(newVal);
+        Set<String> common = new HashSet<>(oldByCanonical.keySet());
+        common.retainAll(newByCanonical.keySet());
         List<String> changed = new ArrayList<>();
-        Set<String> allKeys = new HashSet<>(oldVal.keySet());
-        allKeys.addAll(newVal.keySet());
-        for (String key : allKeys) {
-            Object o = oldVal.get(key);
-            Object n = newVal.get(key);
-            if (!Objects.equals(o, n)) {
-                changed.add(key);
+        for (String canonical : common) {
+            String oldKey = oldByCanonical.get(canonical);
+            String newKey = newByCanonical.get(canonical);
+            if (!Objects.equals(oldVal.get(oldKey), newVal.get(newKey))) {
+                changed.add(newKey);
             }
         }
         return changed.isEmpty() ? null : changed;
+    }
+
+    private Map<String, String> canonicalKeyIndex(Map<String, Object> map) {
+        Map<String, String> result = new HashMap<>();
+        for (String key : map.keySet()) {
+            result.put(toCamelCase(key), key);
+        }
+        return result;
+    }
+
+    private String toCamelCase(String key) {
+        if (key == null || key.isEmpty()) return key;
+        int i = 0;
+        while (i < key.length() && key.charAt(i) == '_') i++;
+        String stripped = key.substring(i);
+        if (!stripped.contains("_")) return stripped;
+        StringBuilder sb = new StringBuilder(stripped.length());
+        boolean upper = false;
+        for (char c : stripped.toCharArray()) {
+            if (c == '_') {
+                upper = true;
+            } else {
+                sb.append(upper ? Character.toUpperCase(c) : c);
+                upper = false;
+            }
+        }
+        return sb.toString();
     }
 
 }

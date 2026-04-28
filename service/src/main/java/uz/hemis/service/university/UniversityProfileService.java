@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.university.UniversityProfile;
 import uz.hemis.domain.repository.UniversityProfileRepository;
 import uz.hemis.service.university.dto.DocumentMetaDto;
@@ -48,6 +50,7 @@ public class UniversityProfileService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "UniversityProfile", keyArg = "universityCode")
     public UniversityProfileDto upsert(String universityCode, UniversityProfileRequest request) {
         UniversityProfile entity = profileRepository.findByUniversityCode(universityCode)
                 .orElseGet(() -> UniversityProfile.builder()

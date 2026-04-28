@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
@@ -102,6 +104,7 @@ public class UniversityOfficialService {
      * Creates employee if not exists, creates employee_jobs with source='ministry'.
      */
     @Transactional
+    @Audited(action = AuditAction.CREATE, entity = "UniversityOfficial", keyArg = "universityCode")
     public OfficialDto appointOfficial(String universityCode, OfficialRequest request) {
         log.info("Appointing official: university={}, pinfl={}, position={}",
                 universityCode, request.getPinfl(), request.getPositionCode());
@@ -176,6 +179,7 @@ public class UniversityOfficialService {
      * Dismiss (deactivate) an official appointment with decree.
      */
     @Transactional
+    @Audited(action = AuditAction.DELETE, entity = "UniversityOfficial", entityClass = EmployeeJobs.class, keyArg = "metaId")
     public void removeOfficial(UUID metaId, String dismissalDecree) {
         employeeJobsRepository.findById(metaId).ifPresent(meta -> {
             meta.setIsCurrent(false);

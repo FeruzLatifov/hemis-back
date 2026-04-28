@@ -130,7 +130,8 @@ public interface UniversityRepository extends JpaRepository<University, String>,
      * @param code university code
      * @return true if exists
      */
-    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM University u WHERE u.code = :code")
+
+//    @Query("select (count(u) > 0) from University u where u.code = :code")
     boolean existsByCode(@Param("code") String code);
 
     /**

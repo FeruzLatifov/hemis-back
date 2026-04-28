@@ -7,6 +7,8 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.university.UniversityCadastre;
 import uz.hemis.domain.entity.university.UniversityFounder;
 import uz.hemis.domain.entity.university.UniversityLegal;
@@ -111,6 +113,7 @@ public class UniversityInfoService {
 
     @Transactional
     @CacheEvict(value = "universityDashboard", key = "#event.universityCode")
+    @Audited(action = AuditAction.CREATE, entity = "UniversityLifecycle", entityClass = UniversityLifecycle.class)
     public UniversityLifecycle addLifecycleEvent(UniversityLifecycle event) {
         return lifecycleRepository.save(event);
     }

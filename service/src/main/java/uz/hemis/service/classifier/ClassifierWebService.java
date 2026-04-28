@@ -10,6 +10,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.classifier.*;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -158,6 +160,7 @@ public class ClassifierWebService {
     // ==================== WRITE Operations ====================
 
     @Transactional
+    @Audited(action = AuditAction.CREATE, entity = "ClassifierItem", keyArg = "apiKey")
     public ClassifierItemDto createClassifierItem(String apiKey, ClassifierItemCreateDto dto) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
         if (!meta.isEditable()) {
@@ -238,6 +241,7 @@ public class ClassifierWebService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "ClassifierItem", keyArg = "code")
     public ClassifierItemDto updateClassifierItem(String apiKey, String code, ClassifierItemUpdateDto dto) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
         if (!meta.isEditable()) {
@@ -309,6 +313,7 @@ public class ClassifierWebService {
      * New tables (no delete_ts) → set is_active = false (soft disable).
      */
     @Transactional
+    @Audited(action = AuditAction.DELETE, entity = "ClassifierItem", keyArg = "code")
     public void deleteClassifierItem(String apiKey, String code) {
         ClassifierMeta meta = resolveAndValidate(apiKey);
         if (!meta.isEditable()) {

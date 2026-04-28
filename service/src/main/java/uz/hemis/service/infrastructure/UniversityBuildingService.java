@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.building.BuildingCreateUpdateDto;
 import uz.hemis.common.dto.building.BuildingDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -54,6 +56,7 @@ public class UniversityBuildingService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.CREATE, entity = "Building", entityClass = UniversityBuilding.class)
     public BuildingDto create(String universityCode, BuildingCreateUpdateDto dto) {
         UniversityBuilding building = mapper.toEntity(dto);
         building.setUniversityCode(universityCode);
@@ -65,6 +68,7 @@ public class UniversityBuildingService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "Building", entityClass = UniversityBuilding.class, keyArg = "id")
     public BuildingDto update(UUID id, BuildingCreateUpdateDto dto) {
         UniversityBuilding existing = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Building", "id", id));
@@ -76,6 +80,7 @@ public class UniversityBuildingService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.DELETE, entity = "Building", entityClass = UniversityBuilding.class, keyArg = "id")
     public void softDelete(UUID id) {
         UniversityBuilding building = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Building", "id", id));
