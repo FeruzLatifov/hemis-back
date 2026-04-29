@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
+import uz.hemis.service.audit.AuditContextHolder;
 import uz.hemis.common.dto.classifier.*;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -168,6 +169,7 @@ public class ClassifierWebService {
         }
 
         String tableName = meta.getTableName();
+        AuditContextHolder.setEntityName(tableName);
         if (!tableExists(tableName)) {
             throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
@@ -249,6 +251,7 @@ public class ClassifierWebService {
         }
 
         String tableName = meta.getTableName();
+        AuditContextHolder.setEntityName(tableName);
         if (!tableExists(tableName)) {
             throw new ResourceNotFoundException("Classifier", "table", tableName);
         }
@@ -257,6 +260,7 @@ public class ClassifierWebService {
         if (existing == null) {
             return null;
         }
+        AuditContextHolder.setOldValue(existing);
 
         SchemaInfo schema = detectSchema(tableName);
 
@@ -321,8 +325,14 @@ public class ClassifierWebService {
         }
 
         String tableName = meta.getTableName();
+        AuditContextHolder.setEntityName(tableName);
         if (!tableExists(tableName)) {
             throw new ResourceNotFoundException("Classifier", "table", tableName);
+        }
+
+        ClassifierItemDto existing = getClassifierItem(apiKey, code);
+        if (existing != null) {
+            AuditContextHolder.setOldValue(existing);
         }
 
         SchemaInfo schema = detectSchema(tableName);

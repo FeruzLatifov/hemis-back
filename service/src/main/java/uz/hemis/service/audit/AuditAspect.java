@@ -16,6 +16,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.persistence.Table;
 import jakarta.servlet.http.HttpServletRequest;
 import uz.hemis.common.audit.*;
 
@@ -40,6 +41,14 @@ public class AuditAspect {
     private final ObjectMapper objectMapper;
     private final EntityManager entityManager;
 
+    /**
+     * Audit/meta maydonlar — changed_fields'dan olib tashlanadi (canonical camelCase).
+     * Snapshot'larda (old_value/new_value) qoladi, faqat diff summary'dan chiqariladi.
+     */
+    private static final Set<String> META_FIELDS = Set.of(
+            "version", "createTs", "createdBy", "updateTs", "updatedBy"
+    );
+
     @Around("@annotation(audited)")
     public Object auditMethod(ProceedingJoinPoint pjp, Audited audited) throws Throwable {
         AuditContext context = buildContext();
@@ -53,54 +62,78 @@ public class AuditAspect {
             oldValue = loadOldValue(audited.entityClass(), entityId);
         }
 
-        Object result;
         try {
-            result = pjp.proceed();
-        } catch (Exception e) {
-            // ErrorEvent faqat GlobalExceptionHandler da publish qilinadi (duplicate oldini olish)
-            throw e;
+            Object result = pjp.proceed();
+
+            // JPA loadOldValue topa olmagan bo'lsa (raw JDBC service'lar — entity yo'q),
+            // service runtime'da o'rnatgan ThreadLocal qiymatga fallback.
+            if (oldValue == null) {
+                Object threadLocalOld = AuditContextHolder.getOldValue();
+                if (threadLocalOld != null) {
+                    oldValue = toMap(threadLocalOld);
+                }
+            }
+
+            // Natijadan new value olish.
+            // DELETE da new_value har doim null — record o'chirildi, after-state yo'q.
+            Map<String, Object> newValue = audited.action() == AuditAction.DELETE
+                    ? null
+                    : toMap(result);
+
+            // Entity nomi — ustuvorlik:
+            // 1. Service runtime'da o'rnatgan qiymat (AuditContextHolder) — dynamic table nomlari uchun.
+            // 2. JPA @Table(name) qiymati (entityClass orqali).
+            // 3. audited.entity() ga fallback.
+            String entityName = AuditContextHolder.getEntityName();
+            if (entityName == null) {
+                entityName = resolveTableName(audited.entityClass());
+            }
+            if (entityName == null) {
+                entityName = audited.entity();
+            }
+
+            // Entity ID ni aniqlash:
+            // - CREATE da PK natijadan keladi (yangi yaratilgan record), argumentdagi qiymat
+            //   (masalan apiKey = "gender") faqat klassifikator turini ifodalaydi → result ustun.
+            // - UPDATE/DELETE da PK argumentdan keladi (oldValue yuklash uchun ham kerak).
+            if (audited.action() == AuditAction.CREATE) {
+                String resultId = extractIdFromResult(result);
+                if (resultId != null) {
+                    entityId = resultId;
+                }
+            } else if (entityId == null) {
+                entityId = extractIdFromResult(result);
+            }
+
+            // Changed fields
+            List<String> changedFields = (oldValue != null && newValue != null)
+                    ? detectChangedFields(oldValue, newValue) : null;
+
+            String description = audited.action() + " " + audited.entity()
+                    + (entityId != null ? "[" + entityId + "]" : "");
+
+            eventPublisher.publishEvent(ActivityEvent.builder()
+                    .context(context)
+                    .action(audited.action())
+                    .entityType(audited.entity())
+                    .entityId(entityId)
+                    .entityName(entityName)
+                    .oldValue(oldValue)
+                    .newValue(newValue)
+                    .changedFields(changedFields)
+                    .description(description)
+                    .build());
+
+            return result;
+        } finally {
+            AuditContextHolder.clear();
         }
-
-        // Natijadan new value olish
-        Map<String, Object> newValue = toMap(result);
-
-        // DELETE da result void bo'lishi mumkin — oldValue ni newValue sifatida ham ko'rsatish
-        if (audited.action() == AuditAction.DELETE && newValue == null) {
-            newValue = oldValue;
-        }
-
-        // Entity nomini aniqlash
-        String entityName = extractEntityName(result != null ? result : (oldValue != null ? oldValue : null));
-
-        // Entity ID ni aniqlash (natijadan yoki argumentdan)
-        if (entityId == null) {
-            entityId = extractIdFromResult(result);
-        }
-
-        // Changed fields
-        List<String> changedFields = (oldValue != null && newValue != null)
-                ? detectChangedFields(oldValue, newValue) : null;
-
-        eventPublisher.publishEvent(ActivityEvent.builder()
-                .context(context)
-                .action(audited.action())
-                .entityType(audited.entity())
-                .entityId(entityId)
-                .entityName(entityName)
-                .oldValue(oldValue)
-                .newValue(newValue)
-                .changedFields(changedFields)
-                .description(audited.action() + " " + audited.entity())
-                .build());
-
-        return result;
     }
 
     /**
      * Entity ni DB dan yuklash va Map ga aylantirish.
      * entityManager.detach() bilan persistence context dan chiqariladi.
      */
-    @SuppressWarnings("unchecked")
     private Map<String, Object> loadOldValue(Class<?> entityClass, String entityId) {
         try {
             Object entity;
@@ -124,25 +157,25 @@ public class AuditAspect {
     }
 
     /**
-     * Entity ID ni aniqlash: keyArg bo'lsa — shu nomli argumentni topish,
-     * aks holda birinchi UUID/String argumentdan olish.
+     * Entity ID ni argumentdan aniqlash: faqat keyArg ko'rsatilgan bo'lsa.
+     * keyArg yo'q bo'lsa — null qaytaramiz, aspect natijadan olishga harakat qiladi
+     * (CREATE'da yangi PK, UPDATE/DELETE'da result.id/code).
      */
     private String resolveEntityId(ProceedingJoinPoint pjp, Audited audited) {
+        String keyArg = audited.keyArg();
+        if (keyArg == null || keyArg.isEmpty()) return null;
+
         Object[] args = pjp.getArgs();
         if (args == null || args.length == 0) return null;
 
-        String keyArg = audited.keyArg();
-        if (keyArg != null && !keyArg.isEmpty()) {
-            MethodSignature sig = (MethodSignature) pjp.getSignature();
-            Parameter[] params = sig.getMethod().getParameters();
-            for (int i = 0; i < params.length; i++) {
-                if (keyArg.equals(params[i].getName()) || keyArg.equals(sig.getParameterNames()[i])) {
-                    return args[i] != null ? args[i].toString() : null;
-                }
+        MethodSignature sig = (MethodSignature) pjp.getSignature();
+        Parameter[] params = sig.getMethod().getParameters();
+        for (int i = 0; i < params.length; i++) {
+            if (keyArg.equals(params[i].getName()) || keyArg.equals(sig.getParameterNames()[i])) {
+                return args[i] != null ? args[i].toString() : null;
             }
         }
-
-        return extractEntityId(args);
+        return null;
     }
 
     private AuditContext buildContext() {
@@ -176,14 +209,6 @@ public class AuditAspect {
         return attrs instanceof ServletRequestAttributes sra ? sra.getRequest() : null;
     }
 
-    private String extractEntityId(Object[] args) {
-        if (args == null || args.length == 0) return null;
-        Object first = args[0];
-        if (first instanceof UUID uuid) return uuid.toString();
-        if (first instanceof String s && s.length() < 128) return s;
-        return null;
-    }
-
     @SuppressWarnings("unchecked")
     private Map<String, Object> toMap(Object obj) {
         if (obj == null) return null;
@@ -195,24 +220,13 @@ public class AuditAspect {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private String extractEntityName(Object result) {
-        if (result == null) return null;
-        Map<String, Object> map;
-        if (result instanceof Map) {
-            map = (Map<String, Object>) result;
-        } else {
-            map = toMap(result);
+    private String resolveTableName(Class<?> entityClass) {
+        if (entityClass == null || entityClass == void.class) return null;
+        Table table = entityClass.getAnnotation(Table.class);
+        if (table != null && !table.name().isEmpty()) {
+            return table.name();
         }
-        if (map == null) return null;
-        try {
-            for (String key : List.of("name", "title", "code", "username")) {
-                Object val = map.get(key);
-                if (val != null) return val.toString();
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
+        return entityClass.getSimpleName();
     }
 
     private String extractIdFromResult(Object result) {
@@ -239,6 +253,7 @@ public class AuditAspect {
         Map<String, String> newByCanonical = canonicalKeyIndex(newVal);
         Set<String> common = new HashSet<>(oldByCanonical.keySet());
         common.retainAll(newByCanonical.keySet());
+        common.removeAll(META_FIELDS);
         List<String> changed = new ArrayList<>();
         for (String canonical : common) {
             String oldKey = oldByCanonical.get(canonical);

@@ -113,10 +113,18 @@ public class AuditRepository {
         }
     }
 
+    /** JSONB snapshot hajmini cheklash — audit DB bloat oldini olish. */
+    private static final int MAX_JSON_BYTES = 100_000;
+
     private String toJson(Map<String, Object> map) {
         if (map == null || map.isEmpty()) return null;
         try {
-            return objectMapper.writeValueAsString(redactSensitiveFields(map));
+            String json = objectMapper.writeValueAsString(redactSensitiveFields(map));
+            if (json.length() > MAX_JSON_BYTES) {
+                log.warn("Audit JSON truncated from {} to {} chars", json.length(), MAX_JSON_BYTES);
+                json = json.substring(0, MAX_JSON_BYTES - 20) + "\"...truncated\"}";
+            }
+            return json;
         } catch (JsonProcessingException e) {
             log.warn("Failed to serialize to JSON: {}", e.getMessage());
             return null;
