@@ -41,16 +41,16 @@ public class AuditRepository {
         try {
             AuditContext ctx = event.getContext();
             jdbcTemplate.update("""
-                INSERT INTO activity_log (user_id, username, user_ip, user_agent, session_id,
+                INSERT INTO activity_log (user_id, username, full_name, user_ip, user_agent,
                     action, entity_type, entity_id, entity_name, old_value, new_value,
                     changed_fields, request_id, endpoint, description, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::text[], ?, ?, ?, ?)
                 """,
                     ctx != null ? ctx.getUserId() : null,
                     ctx != null ? ctx.getUsername() : null,
+                    ctx != null ? ctx.getFullName() : null,
                     ctx != null ? ctx.getIp() : null,
                     ctx != null ? ctx.getUserAgent() : null,
-                    ctx != null ? ctx.getSessionId() : null,
                     event.getAction().name(),
                     event.getEntityType(),
                     event.getEntityId(),

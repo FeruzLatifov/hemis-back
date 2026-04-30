@@ -25,6 +25,12 @@ import java.util.UUID;
 public interface UserIdentificationPort {
 
     /**
+     * Snapshot of identity data needed for JWT generation and audit logging.
+     * Single DB hit per login — no separate fullName lookup.
+     */
+    record UserInfo(UUID id, String fullName) {}
+
+    /**
      * Get user ID by username using hybrid lookup
      *
      * <p><strong>Lookup Strategy:</strong></p>
@@ -37,6 +43,15 @@ public interface UserIdentificationPort {
      * @return Optional containing user ID (UUID)
      */
     Optional<UUID> getUserIdByUsername(String username);
+
+    /**
+     * Get user identity snapshot (id + fullName) by username — single query.
+     * Used for JWT claim enrichment and audit context.
+     *
+     * @param username login username
+     * @return Optional containing UserInfo (id, fullName); fullName may be null
+     */
+    Optional<UserInfo> getUserInfoByUsername(String username);
 
     /**
      * Check which source a user comes from

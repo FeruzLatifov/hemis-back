@@ -118,6 +118,8 @@ class LegacyAuthServiceTest {
     private void stubTokenGeneration(UUID userId, String fakeTokenValue) {
         when(userIdentificationPort.getUserIdByUsername(TEST_USERNAME))
                 .thenReturn(Optional.of(userId));
+        when(userIdentificationPort.getUserInfoByUsername(TEST_USERNAME))
+                .thenReturn(Optional.of(new UserIdentificationPort.UserInfo(userId, "Test User")));
 
         Jwt fakeJwt = Jwt.withTokenValue(fakeTokenValue)
                 .header("alg", "HS256")
@@ -165,8 +167,9 @@ class LegacyAuthServiceTest {
             // When
             tokenService.generateToken(testUser);
 
-            // Then: called twice (once for access token, once for refresh token)
-            verify(userIdentificationPort, times(2)).getUserIdByUsername(TEST_USERNAME);
+            // Then: access uses getUserInfoByUsername, refresh uses getUserIdByUsername
+            verify(userIdentificationPort).getUserInfoByUsername(TEST_USERNAME);
+            verify(userIdentificationPort).getUserIdByUsername(TEST_USERNAME);
         }
 
         @Test
@@ -256,7 +259,7 @@ class LegacyAuthServiceTest {
         @DisplayName("Should throw when user is not found in either table")
         void generateToken_userNotFound_throws() {
             // Given
-            when(userIdentificationPort.getUserIdByUsername(TEST_USERNAME))
+            when(userIdentificationPort.getUserInfoByUsername(TEST_USERNAME))
                     .thenReturn(Optional.empty());
 
             // When / Then
@@ -650,6 +653,10 @@ class LegacyAuthServiceTest {
 
             when(userIdentificationPort.getUserIdByUsername("user1")).thenReturn(Optional.of(userId1));
             when(userIdentificationPort.getUserIdByUsername("user2")).thenReturn(Optional.of(userId2));
+            when(userIdentificationPort.getUserInfoByUsername("user1"))
+                    .thenReturn(Optional.of(new UserIdentificationPort.UserInfo(userId1, "User One")));
+            when(userIdentificationPort.getUserInfoByUsername("user2"))
+                    .thenReturn(Optional.of(new UserIdentificationPort.UserInfo(userId2, "User Two")));
 
             Jwt stub = Jwt.withTokenValue("t")
                     .header("alg", "HS256")
@@ -666,9 +673,11 @@ class LegacyAuthServiceTest {
             tokenService.generateToken(user1);
             tokenService.generateToken(user2);
 
-            // Then: each generateToken calls getUserId twice (access + refresh)
-            verify(userIdentificationPort, times(2)).getUserIdByUsername("user1");
-            verify(userIdentificationPort, times(2)).getUserIdByUsername("user2");
+            // Then: access uses getUserInfoByUsername, refresh uses getUserIdByUsername
+            verify(userIdentificationPort).getUserInfoByUsername("user1");
+            verify(userIdentificationPort).getUserInfoByUsername("user2");
+            verify(userIdentificationPort).getUserIdByUsername("user1");
+            verify(userIdentificationPort).getUserIdByUsername("user2");
             verify(permissionCacheService).cacheUserPermissions(eq(userId1), any());
             verify(permissionCacheService).cacheUserPermissions(eq(userId2), any());
         }

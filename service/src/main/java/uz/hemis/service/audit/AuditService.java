@@ -40,13 +40,13 @@ public class AuditService {
         applyLikeFilter(where, params, filters, "search", "entity_name", "description");
 
         return queryPage("activity_log", where.toString(), params, page, size,
-                "id, user_id, username, user_ip, action, entity_type, entity_id, entity_name, " +
+                "id, user_id, username, full_name, user_ip, action, entity_type, entity_id, entity_name, " +
                 "changed_fields, endpoint, request_id, created_at");
     }
 
     public Map<String, Object> getActivityDetail(String id) {
         return queryById("activity_log", id,
-                "id, user_id, username, user_ip, user_agent, session_id, action, entity_type, " +
+                "id, user_id, username, full_name, user_ip, user_agent, action, entity_type, " +
                 "entity_id, entity_name, old_value, new_value, changed_fields, request_id, " +
                 "endpoint, description, created_at");
     }
@@ -237,9 +237,30 @@ public class AuditService {
     private Map<String, Object> toCamelCaseKeys(Map<String, Object> map) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : map.entrySet()) {
-            result.put(snakeToCamel(entry.getKey()), entry.getValue());
+            result.put(snakeToCamel(entry.getKey()), unwrapJdbcValue(entry.getValue()));
         }
         return result;
+    }
+
+    /**
+     * JDBC qaytargan maxsus tiplar (PgArray) Jackson tomonidan serialize qilib bo'lmaydi —
+     * ular ichidan Connection ga reference yuradi. Shuning uchun ularni oddiy Java tiplarga
+     * o'tkazamiz (String[]/List).
+     */
+    private Object unwrapJdbcValue(Object value) {
+        if (value instanceof java.sql.Array array) {
+            try {
+                Object inner = array.getArray();
+                if (inner instanceof Object[] arr) {
+                    return Arrays.asList(arr);
+                }
+                return inner;
+            } catch (java.sql.SQLException e) {
+                log.warn("Failed to unwrap SQL Array: {}", e.getMessage());
+                return null;
+            }
+        }
+        return value;
     }
 
     private String snakeToCamel(String snake) {

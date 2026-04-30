@@ -65,6 +65,26 @@ public class UserIdentificationAdapter implements UserIdentificationPort {
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<UserInfo> getUserInfoByUsername(String username) {
+        // 1. users table (modern) — full_name ustuni bor
+        var userOpt = userRepository.findByUsername(username);
+        if (userOpt.isPresent()) {
+            var u = userOpt.get();
+            return Optional.of(new UserInfo(u.getId(), u.getFullName()));
+        }
+
+        // 2. sec_user fallback (legacy) — `name` field full name sifatida ishlatiladi
+        var secUserOpt = secUserRepository.findByLogin(username);
+        if (secUserOpt.isPresent()) {
+            var s = secUserOpt.get();
+            return Optional.of(new UserInfo(s.getId(), s.getName()));
+        }
+
+        return Optional.empty();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public String getUserSource(String username) {
         // Check users table first
         if (userRepository.findByUsername(username).isPresent()) {

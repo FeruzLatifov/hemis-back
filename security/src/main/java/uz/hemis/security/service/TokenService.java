@@ -92,7 +92,13 @@ public class TokenService {
      */
     public TokenResponse generateToken(UserDetails userDetails) {
         // ✅ HYBRID: Try users table first, fallback to sec_user
-        String userId = getUserId(userDetails.getUsername());
+        var userInfo = userIdentificationPort.getUserInfoByUsername(userDetails.getUsername())
+                .orElseThrow(() -> {
+                    log.error("User not found in 'users' or 'sec_user' tables: {}", userDetails.getUsername());
+                    return new IllegalArgumentException("User not found: " + userDetails.getUsername());
+                });
+        String userId = userInfo.id().toString();
+        String fullName = userInfo.fullName();
         log.info("Generating JWT token for userId: {}", userId);
 
         // Current time
@@ -118,6 +124,7 @@ public class TokenService {
                 .expiresAt(expiry)                        // Expires at: now + 30 days
                 .subject(userId)                          // ✅ Subject: userId (UUID string)
                 .claim("username", userDetails.getUsername())  // Username claim (for display)
+                .claim("full_name", fullName != null ? fullName : "")  // Snapshot — audit log uchun
                 .claim("scope", "rest-api")              // Scope claim (OAuth2)
                 .build();
 
@@ -207,6 +214,12 @@ public class TokenService {
 
             java.util.UUID userId = java.util.UUID.fromString(userIdString);
             String username = jwt.getClaimAsString("username");  // Optional (for logging)
+            // Refresh paytida fullName ni qayta o'qiymiz — user ismini o'zgartirgan bo'lishi mumkin
+            String fullName = username != null
+                    ? userIdentificationPort.getUserInfoByUsername(username)
+                            .map(uz.hemis.common.port.security.UserIdentificationPort.UserInfo::fullName)
+                            .orElse(null)
+                    : null;
 
             log.debug("Refreshing token for userId: {} (username: {})", userId, username);
 
@@ -225,6 +238,7 @@ public class TokenService {
                     .expiresAt(accessExpiry)
                     .subject(userId.toString())  // ✅ userId (UUID)
                     .claim("username", username)  // Username (for display)
+                    .claim("full_name", fullName != null ? fullName : "")  // Snapshot — audit log uchun
                     .claim("scope", "rest-api")
                     .build();
 

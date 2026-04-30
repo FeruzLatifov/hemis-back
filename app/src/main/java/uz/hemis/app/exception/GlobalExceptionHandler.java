@@ -1,5 +1,6 @@
 package uz.hemis.app.exception;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.sentry.Sentry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
@@ -7,6 +8,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.web.util.ContentCachingRequestWrapper;
+
+import java.nio.charset.StandardCharsets;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -52,6 +56,7 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private final ApplicationEventPublisher eventPublisher;
+    private final ObjectMapper objectMapper;
 
     @org.springframework.beans.factory.annotation.Value("${hemis.audit.enabled:false}")
     private boolean auditEnabled;
@@ -505,12 +510,12 @@ public class GlobalExceptionHandler {
     private void publishErrorEvent(Exception ex, HttpServletRequest request) {
         if (!auditEnabled) return;
         try {
-            // Build stack trace (truncated to 4000 chars)
+            // Stack trace 16000 belgigacha — root cause uzun chain'larda kesilmasligi uchun
             java.io.StringWriter sw = new java.io.StringWriter();
             ex.printStackTrace(new java.io.PrintWriter(sw));
             String stackTrace = sw.toString();
-            if (stackTrace.length() > 4000) {
-                stackTrace = stackTrace.substring(0, 4000);
+            if (stackTrace.length() > 16000) {
+                stackTrace = stackTrace.substring(0, 16000);
             }
 
             String clientIp = MDC.get("clientIp");
@@ -518,19 +523,34 @@ public class GlobalExceptionHandler {
             // User context — kim xato qilganini aniqlash
             AuditContext.AuditContextBuilder ctxBuilder = AuditContext.builder()
                     .ip(clientIp != null ? clientIp : request.getRemoteAddr())
-                    .userAgent(request.getHeader("User-Agent"))
                     .requestId(MDC.get("requestId"))
                     .endpoint(request.getRequestURI());
 
             org.springframework.security.core.Authentication auth =
                     org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated()) {
-                String name = auth.getName();
-                if (name != null) {
-                    try {
-                        ctxBuilder.userId(java.util.UUID.fromString(name));
-                    } catch (IllegalArgumentException ignored) {
-                        ctxBuilder.username(name);
+                if (auth instanceof org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken jwtAuth) {
+                    org.springframework.security.oauth2.jwt.Jwt jwt = jwtAuth.getToken();
+                    String sub = jwt.getSubject();
+                    if (sub != null) {
+                        try {
+                            ctxBuilder.userId(java.util.UUID.fromString(sub));
+                        } catch (IllegalArgumentException ignored) {
+                            ctxBuilder.username(sub);
+                        }
+                    }
+                    String usernameClaim = jwt.getClaimAsString("username");
+                    if (usernameClaim != null && !usernameClaim.isBlank()) {
+                        ctxBuilder.username(usernameClaim);
+                    }
+                } else {
+                    String name = auth.getName();
+                    if (name != null) {
+                        try {
+                            ctxBuilder.userId(java.util.UUID.fromString(name));
+                        } catch (IllegalArgumentException ignored) {
+                            ctxBuilder.username(name);
+                        }
                     }
                 }
             }
@@ -541,9 +561,29 @@ public class GlobalExceptionHandler {
                     .errorMessage(ex.getMessage())
                     .stackTrace(stackTrace)
                     .endpoint(request.getMethod() + " " + request.getRequestURI())
+                    .requestBody(extractRequestBody(request))
                     .build());
         } catch (Exception e) {
             log.warn("Failed to publish error audit event: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Cached body'dan request payload'ni JSON Map sifatida o'qish.
+     * AuditRequestFilter ContentCachingRequestWrapper bilan o'rab qo'ygan bo'lsa ishlaydi.
+     * AuditRepository.toJson() darajasida sezgir maydonlar (password) niqoblanadi.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> extractRequestBody(HttpServletRequest request) {
+        if (!(request instanceof ContentCachingRequestWrapper wrapper)) return null;
+        byte[] bytes = wrapper.getContentAsByteArray();
+        if (bytes == null || bytes.length == 0) return null;
+        try {
+            return objectMapper.readValue(bytes, Map.class);
+        } catch (Exception e) {
+            // JSON emas yoki noto'g'ri formatda — raw matn sifatida saqlash
+            String raw = new String(bytes, StandardCharsets.UTF_8);
+            return Map.of("_raw", raw.length() > 500 ? raw.substring(0, 500) + "..." : raw);
         }
     }
 

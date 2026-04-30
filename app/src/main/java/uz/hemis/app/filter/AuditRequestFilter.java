@@ -11,6 +11,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,6 +31,9 @@ public class AuditRequestFilter extends OncePerRequestFilter {
 
     @Value("${hemis.audit.enabled:false}")
     private boolean auditEnabled;
+
+    @Value("${hemis.audit.max-body-size:10240}")
+    private int maxBodyBytes;
 
     private static final List<String> SKIP_PATTERNS = List.of(
             "/actuator", "/swagger-ui", "/v3/api-docs", "/favicon.ico",
@@ -53,12 +57,28 @@ public class AuditRequestFilter extends OncePerRequestFilter {
         MDC.put("requestId", requestId);
         MDC.put("clientIp", getClientIp(request));
 
+        // Write so'rovlarni body caching wrapper'ga o'rash — error_log uchun body capture.
+        // GlobalExceptionHandler ContentCachingRequestWrapper'dan body'ni o'qiy oladi.
+        HttpServletRequest wrapped = shouldCacheBody(request)
+                ? new ContentCachingRequestWrapper(request, maxBodyBytes)
+                : request;
+
         try {
-            filterChain.doFilter(request, response);
+            filterChain.doFilter(wrapped, response);
         } finally {
             // ErrorEvent faqat GlobalExceptionHandler da publish qilinadi (duplicate oldini olish)
             MDC.clear();
         }
+    }
+
+    private boolean shouldCacheBody(HttpServletRequest request) {
+        String method = request.getMethod();
+        if (!"POST".equals(method) && !"PUT".equals(method) && !"PATCH".equals(method)) {
+            return false;
+        }
+        String contentType = request.getContentType();
+        // Multipart (file upload) — kesh qilmaslik (katta hajm, binary)
+        return contentType == null || !contentType.toLowerCase().startsWith("multipart/");
     }
 
     @Override

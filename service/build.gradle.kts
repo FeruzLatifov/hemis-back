@@ -36,6 +36,8 @@ dependencies {
 
     // Spring Security (for SecurityContextHolder in audit trail)
     implementation("org.springframework.security:spring-security-core")
+    // Spring Security OAuth2 (Jwt + JwtAuthenticationToken — audit JWT claim extraction)
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
 
     // Apache HttpClient5 (for SSL-bypassing RestTemplate in government API calls)
     implementation("org.apache.httpcomponents.client5:httpclient5")

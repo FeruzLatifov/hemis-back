@@ -15,9 +15,9 @@ import java.util.UUID;
 public class AuditContext {
     private UUID userId;
     private String username;
+    private String fullName;
     private String ip;
     private String userAgent;
-    private String sessionId;
     private String requestId;
     private String endpoint;
 }

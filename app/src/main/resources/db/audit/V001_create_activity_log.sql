@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS activity_log (
     -- Kim
     user_id         UUID,
     username        VARCHAR(255),
+    full_name       VARCHAR(255),
     user_ip         VARCHAR(45),
     user_agent      VARCHAR(512),
-    session_id      VARCHAR(128),
     -- Nima qildi
     action          VARCHAR(20) NOT NULL,
     entity_type     VARCHAR(255),

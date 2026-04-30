@@ -38,9 +38,10 @@ public class WebAuthTokenService {
      *
      * @param userId   user UUID (real or synthetic for legacy)
      * @param username username (stored in refresh token for legacy validation)
+     * @param fullName full name snapshot for audit log (nullable)
      * @return token pair with JTI identifiers
      */
-    public TokenPair generateTokenPair(UUID userId, String username) {
+    public TokenPair generateTokenPair(UUID userId, String username, String fullName) {
         Instant now = Instant.now();
         JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
 
@@ -54,6 +55,9 @@ public class WebAuthTokenService {
                 .id(accessJti);
         if (username != null) {
             accessBuilder.claim("username", username);
+        }
+        if (fullName != null && !fullName.isBlank()) {
+            accessBuilder.claim("full_name", fullName);
         }
         JwtClaimsSet accessClaims = accessBuilder.build();
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, accessClaims)).getTokenValue();

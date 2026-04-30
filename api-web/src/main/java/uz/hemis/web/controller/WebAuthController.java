@@ -30,6 +30,7 @@ import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import uz.hemis.common.audit.AuditContext;
 import uz.hemis.common.audit.LoginEvent;
+import uz.hemis.common.port.security.UserIdentificationPort;
 import uz.hemis.security.service.RateLimitService;
 import uz.hemis.security.service.TokenBlacklistService;
 import uz.hemis.security.service.UserPermissionCacheService;
@@ -78,6 +79,7 @@ public class WebAuthController {
     private final WebAccountStatusValidator accountValidator;
     private final WebUserProfileService userProfileService;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserIdentificationPort userIdentificationPort;
 
     // ==========================================================
     //  POST /login
@@ -120,8 +122,11 @@ public class WebAuthController {
             // Resolve userId (new or legacy account)
             UUID userId = accountValidator.resolveUserId(username);
 
-            // Generate tokens
-            TokenPair tokens = tokenService.generateTokenPair(userId, username);
+            // Generate tokens — fullName JWT'ga snapshot sifatida o'rnatiladi (audit log uchun)
+            String fullName = userIdentificationPort.getUserInfoByUsername(username)
+                    .map(UserIdentificationPort.UserInfo::fullName)
+                    .orElse(null);
+            TokenPair tokens = tokenService.generateTokenPair(userId, username, fullName);
 
             // Cache permissions
             Set<String> permissions = userDetails.getAuthorities().stream()
@@ -292,9 +297,14 @@ public class WebAuthController {
             // Validate account is still active
             accountValidator.validateForRefresh(userId, decoded);
 
-            // Generate new token pair
+            // Generate new token pair — refresh paytida fullName ni qayta o'qiymiz (snapshot)
             String username = decoded.getClaimAsString("username");
-            TokenPair tokens = tokenService.generateTokenPair(userId, username);
+            String fullName = username != null
+                    ? userIdentificationPort.getUserInfoByUsername(username)
+                            .map(UserIdentificationPort.UserInfo::fullName)
+                            .orElse(null)
+                    : null;
+            TokenPair tokens = tokenService.generateTokenPair(userId, username, fullName);
 
             // Set new cookies
             cookieService.setAuthCookies(httpResponse, tokens.accessToken(), tokens.refreshToken());

@@ -12,6 +12,8 @@ import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -191,12 +193,35 @@ public class AuditAspect {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
-            String name = auth.getName();
-            if (name != null) {
-                try {
-                    builder.userId(UUID.fromString(name));
-                } catch (IllegalArgumentException ignored) {
-                    builder.username(name);
+            // JWT'da sub = userId (UUID), username — alohida claim.
+            // Ikkalasini ham snapshot qilamiz: userId stable identifier,
+            // username — auditor uchun human-readable, cross-DB join'siz.
+            if (auth instanceof JwtAuthenticationToken jwtAuth) {
+                Jwt jwt = jwtAuth.getToken();
+                String sub = jwt.getSubject();
+                if (sub != null) {
+                    try {
+                        builder.userId(UUID.fromString(sub));
+                    } catch (IllegalArgumentException ignored) {
+                        builder.username(sub);
+                    }
+                }
+                String usernameClaim = jwt.getClaimAsString("username");
+                if (usernameClaim != null && !usernameClaim.isBlank()) {
+                    builder.username(usernameClaim);
+                }
+                String fullNameClaim = jwt.getClaimAsString("full_name");
+                if (fullNameClaim != null && !fullNameClaim.isBlank()) {
+                    builder.fullName(fullNameClaim);
+                }
+            } else {
+                String name = auth.getName();
+                if (name != null) {
+                    try {
+                        builder.userId(UUID.fromString(name));
+                    } catch (IllegalArgumentException ignored) {
+                        builder.username(name);
+                    }
                 }
             }
         }
