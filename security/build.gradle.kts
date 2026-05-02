@@ -27,7 +27,7 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // SpringDoc OpenAPI for Swagger annotations
-    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
     // Redis for distributed cache (L2 - shared across pods)
     api("org.springframework.boot:spring-boot-starter-data-redis") {
