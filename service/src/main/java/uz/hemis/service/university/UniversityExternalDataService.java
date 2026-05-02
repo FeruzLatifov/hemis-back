@@ -365,7 +365,10 @@ public class UniversityExternalDataService {
         if (bans.isArray()) c.setBans(bans.toString());
 
         // Meta
-        c.setDataSource(textOrNull(resp, "data_source"));
+        // chk_ucadastre_data_source allows only 'api_kadastr' | 'manual'.
+        // The API ships an upstream identifier ("1C", "Lite", ...) which is
+        // preserved inside api_raw_response but not used as data_source.
+        c.setDataSource("api_kadastr");
         c.setApiRawResponse(resp.toString());
         c.setSyncedAt(LocalDateTime.now());
 
