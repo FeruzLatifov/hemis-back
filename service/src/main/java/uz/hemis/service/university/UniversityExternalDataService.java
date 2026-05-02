@@ -211,10 +211,14 @@ public class UniversityExternalDataService {
     private void syncFounders(String universityCode, JsonNode foundersNode) {
         if (!foundersNode.isArray()) return;
 
-        // Delete ALL existing founders for this university (idempotent sync)
+        // Delete ALL existing founders for this university (idempotent sync).
+        // deleteAllInBatch + flush forces the DELETE to hit the DB before the
+        // subsequent INSERT, otherwise Hibernate's action queue runs INSERTs
+        // first and idx_ufounder_unique_current_legal trips on the same key.
         List<UniversityFounder> existing = founderRepository.findByUniversityCode(universityCode);
         if (!existing.isEmpty()) {
-            founderRepository.deleteAll(existing);
+            founderRepository.deleteAllInBatch(existing);
+            founderRepository.flush();
             log.info("Deleted {} old founders for university={}", existing.size(), universityCode);
         }
 
