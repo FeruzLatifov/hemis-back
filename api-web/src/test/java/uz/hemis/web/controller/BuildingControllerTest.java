@@ -4,15 +4,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import uz.hemis.app.exception.GlobalExceptionHandler;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import uz.hemis.common.dto.building.BuildingCreateUpdateDto;
@@ -45,8 +49,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   <li>DELETE — 200 soft delete</li>
  * </ul></p>
  */
-@WebMvcTest(controllers = BuildingController.class)
-@Import(BuildingControllerTest.Config.class)
+@WebMvcTest(
+        controllers = BuildingController.class,
+        excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class
+)
+@Import({BuildingControllerTest.Config.class, GlobalExceptionHandler.class})
 @DisplayName("BuildingController Web Layer Tests")
 class BuildingControllerTest {
 
@@ -62,11 +69,15 @@ class BuildingControllerTest {
     @MockitoBean
     private BuildingLifecycleService lifecycleService;
 
+    @SpringBootApplication
+    @EnableMethodSecurity
+    static class TestApp {
+    }
+
     @TestConfiguration
     static class Config {
         @Bean
         I18nService i18nService() {
-            // Mock i18n for exception handler
             I18nService mock = org.mockito.Mockito.mock(I18nService.class);
             when(mock.getMessage(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString()))
                     .thenAnswer(inv -> inv.getArgument(0));
