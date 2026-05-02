@@ -32,7 +32,7 @@ subprojects {
     // Import for dependency management extension
     configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.2")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:4.0.6")
         }
     }
     
