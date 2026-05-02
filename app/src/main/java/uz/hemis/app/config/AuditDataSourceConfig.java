@@ -124,7 +124,6 @@ public class AuditDataSourceConfig {
             populator.addScript(new ClassPathResource("db/audit/V001_create_activity_log.sql"));
             populator.addScript(new ClassPathResource("db/audit/V003_create_error_log.sql"));
             populator.addScript(new ClassPathResource("db/audit/V004_create_login_log.sql"));
-            populator.addScript(new ClassPathResource("db/audit/V005_add_full_name_to_activity_log.sql"));
             populator.setContinueOnError(true);
             populator.execute(dataSource);
             log.info("Audit DB schema initialized successfully");
