@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
 import uz.hemis.app.HemisApplication;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -44,16 +46,20 @@ class RegistryUniversityControllerTest {
 
     private static final String BASE_URL = "/api/v1/web/registry/universities";
 
-    // ======================================================================
-    // Test 1: List universities — with permission
-    // ======================================================================
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor adminAuth() {
+        return jwt().authorities(new SimpleGrantedAuthority("institutions.universities.view"));
+    }
+
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor basicAuth() {
+        return jwt().authorities(new SimpleGrantedAuthority("basic.view"));
+    }
 
     @Test
     @Order(1)
     @DisplayName("GET /universities — returns paginated list")
-    @WithMockUser(username = "admin", authorities = {"institutions.universities.view"})
     void testGetUniversities() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("page", "0")
                 .param("size", "20"))
             .andExpect(status().isOk())
@@ -61,29 +67,20 @@ class RegistryUniversityControllerTest {
             .andExpect(jsonPath("$.data").exists());
     }
 
-    // ======================================================================
-    // Test 2: List universities — without permission
-    // ======================================================================
-
     @Test
     @Order(2)
     @DisplayName("GET /universities — without permission returns 403")
-    @WithMockUser(username = "user", authorities = {"basic.view"})
     void testGetUniversitiesForbidden() throws Exception {
-        mockMvc.perform(get(BASE_URL))
+        mockMvc.perform(get(BASE_URL).with(basicAuth()))
             .andExpect(status().isForbidden());
     }
-
-    // ======================================================================
-    // Test 3: List universities with search filter
-    // ======================================================================
 
     @Test
     @Order(3)
     @DisplayName("GET /universities — search filter works")
-    @WithMockUser(username = "admin", authorities = {"institutions.universities.view"})
     void testGetUniversitiesWithSearch() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("q", "TATU")
                 .param("page", "0")
                 .param("size", "20"))
@@ -91,37 +88,23 @@ class RegistryUniversityControllerTest {
             .andExpect(jsonPath("$.success").value(true));
     }
 
-    // ======================================================================
-    // Test 4: Get university by non-existent ID
-    // ======================================================================
-
     @Test
     @Order(4)
     @DisplayName("GET /universities/{id} — non-existent returns 404")
-    @WithMockUser(username = "admin", authorities = {"institutions.universities.view"})
     void testGetUniversityNotFound() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/NON_EXISTENT_CODE"))
+        mockMvc.perform(get(BASE_URL + "/NON_EXISTENT_CODE").with(adminAuth()))
             .andExpect(status().isNotFound());
     }
-
-    // ======================================================================
-    // Test 5: Get dictionaries
-    // ======================================================================
 
     @Test
     @Order(5)
     @DisplayName("GET /universities/dictionaries — returns dictionaries")
-    @WithMockUser(username = "admin", authorities = {"institutions.universities.view"})
     void testGetDictionaries() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/dictionaries"))
+        mockMvc.perform(get(BASE_URL + "/dictionaries").with(adminAuth()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data").isMap());
     }
-
-    // ======================================================================
-    // Test 6: Unauthenticated access
-    // ======================================================================
 
     @Test
     @Order(6)
@@ -131,47 +114,34 @@ class RegistryUniversityControllerTest {
             .andExpect(status().is(anyOf(is(401), is(403))));
     }
 
-    // ======================================================================
-    // Test 7: Pagination edge case — large page number
-    // ======================================================================
-
     @Test
     @Order(7)
     @DisplayName("GET /universities — large page number returns empty")
-    @WithMockUser(username = "admin", authorities = {"institutions.universities.view"})
     void testGetUniversitiesLargePage() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("page", "9999")
                 .param("size", "20"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true));
     }
 
-    // ======================================================================
-    // Test 8: Create university — without edit permission
-    // ======================================================================
-
     @Test
     @Order(8)
     @DisplayName("POST /universities — without edit permission returns 403")
-    @WithMockUser(username = "user", authorities = {"institutions.universities.view"})
     void testCreateUniversityForbidden() throws Exception {
         mockMvc.perform(post(BASE_URL)
+                .with(adminAuth())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"name\":\"Test\"}"))
+                .content("{\"code\":\"TEST_CODE\",\"name\":\"Test University\"}"))
             .andExpect(status().isForbidden());
     }
-
-    // ======================================================================
-    // Test 9: Delete university — without delete permission
-    // ======================================================================
 
     @Test
     @Order(9)
     @DisplayName("DELETE /universities/{code} — without delete permission returns 403")
-    @WithMockUser(username = "user", authorities = {"institutions.universities.view"})
     void testDeleteUniversityForbidden() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/TEST_CODE"))
+        mockMvc.perform(delete(BASE_URL + "/TEST_CODE").with(adminAuth()))
             .andExpect(status().isForbidden());
     }
 }

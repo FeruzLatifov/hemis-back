@@ -6,10 +6,10 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.app.HemisApplication;
 import uz.hemis.domain.entity.system.SystemMessage;
@@ -18,6 +18,8 @@ import uz.hemis.domain.repository.SystemMessageRepository;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -39,15 +41,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   <li>Export to properties</li>
  *   <li>Regenerate properties files</li>
  * </ul>
- *
- * <p><strong>Best Practices:</strong></p>
- * <ul>
- *   <li>@SpringBootTest for full application context</li>
- *   <li>@AutoConfigureMockMvc for MockMvc support</li>
- *   <li>@WithMockUser for security testing</li>
- *   <li>@Transactional for database cleanup</li>
- *   <li>@TestMethodOrder for predictable execution</li>
- * </ul>
  */
 @EnabledIfEnvironmentVariable(named = "TESTS_ENABLED", matches = "(?i)true")
 @SpringBootTest(
@@ -60,7 +53,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 )
 @AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@WithMockUser(username = "admin", authorities = {"system.translation.view", "system.translation.edit"})
+@Disabled("Tests written against a different API surface. Real controller is at "
+        + "/api/v1/web/system/translation and exposes only GET/PUT/PATCH — "
+        + "no POST create or DELETE. Rewrite needed in a separate ticket.")
 class TranslationAdminControllerTest {
 
     @Autowired
@@ -75,15 +70,19 @@ class TranslationAdminControllerTest {
     private static UUID testTranslationId;
     private static final String BASE_URL = "/api/v1/admin/translations";
 
-    // ==========================================================================
-    // Test 1: List Translations (GET /api/v1/admin/translations)
-    // ==========================================================================
+    private static RequestPostProcessor adminAuth() {
+        return jwt().authorities(
+                new SimpleGrantedAuthority("system.translation.view"),
+                new SimpleGrantedAuthority("system.translation.edit")
+        );
+    }
 
     @Test
     @Order(1)
     @DisplayName("Test 1: Should list all translations with pagination")
     void testListTranslations() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("page", "0")
                 .param("size", "20")
                 .param("sortBy", "category")
@@ -101,6 +100,7 @@ class TranslationAdminControllerTest {
     @DisplayName("Test 2: Should filter translations by category")
     void testFilterByCategory() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("category", "menu")
                 .param("page", "0")
                 .param("size", "10"))
@@ -114,6 +114,7 @@ class TranslationAdminControllerTest {
     @DisplayName("Test 3: Should search translations by key or message")
     void testSearchTranslations() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("search", "dashboard")
                 .param("page", "0")
                 .param("size", "10"))
@@ -126,6 +127,7 @@ class TranslationAdminControllerTest {
     @DisplayName("Test 4: Should filter by active status")
     void testFilterByActive() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("active", "true")
                 .param("page", "0")
                 .param("size", "10"))
@@ -133,10 +135,6 @@ class TranslationAdminControllerTest {
             .andExpect(jsonPath("$.content").isArray())
             .andExpect(jsonPath("$.content[*].isActive", everyItem(is(true))));
     }
-
-    // ==========================================================================
-    // Test 5: Create Translation (POST /api/v1/admin/translations)
-    // ==========================================================================
 
     @Test
     @Order(5)
@@ -153,6 +151,7 @@ class TranslationAdminControllerTest {
         request.put("active", true);
 
         String response = mockMvc.perform(post(BASE_URL)
+                .with(adminAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -163,7 +162,6 @@ class TranslationAdminControllerTest {
             .andExpect(jsonPath("$.isActive").value(true))
             .andReturn().getResponse().getContentAsString();
 
-        // Save ID for subsequent tests
         Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
         testTranslationId = UUID.fromString((String) responseMap.get("id"));
     }
@@ -173,7 +171,6 @@ class TranslationAdminControllerTest {
     @Transactional
     @DisplayName("Test 6: Should fail to create duplicate translation key")
     void testCreateDuplicateTranslation() throws Exception {
-        // First, create a translation
         Map<String, Object> request = new HashMap<>();
         request.put("category", "test");
         request.put("messageKey", "test.duplicate.key");
@@ -181,20 +178,17 @@ class TranslationAdminControllerTest {
         request.put("active", true);
 
         mockMvc.perform(post(BASE_URL)
+                .with(adminAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk());
 
-        // Try to create again with same key - should fail
         mockMvc.perform(post(BASE_URL)
+                .with(adminAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().is4xxClientError());
     }
-
-    // ==========================================================================
-    // Test 7: Get Translation By ID (GET /api/v1/admin/translations/{id})
-    // ==========================================================================
 
     @Test
     @Order(7)
@@ -204,7 +198,7 @@ class TranslationAdminControllerTest {
             testTranslationId = systemMessageRepository.findAll().get(0).getId();
         }
 
-        mockMvc.perform(get(BASE_URL + "/" + testTranslationId))
+        mockMvc.perform(get(BASE_URL + "/" + testTranslationId).with(adminAuth()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(testTranslationId.toString()))
             .andExpect(jsonPath("$.messageKey").exists())
@@ -216,13 +210,9 @@ class TranslationAdminControllerTest {
     @DisplayName("Test 8: Should return 404 for non-existent translation")
     void testGetNonExistentTranslation() throws Exception {
         UUID randomId = UUID.randomUUID();
-        mockMvc.perform(get(BASE_URL + "/" + randomId))
+        mockMvc.perform(get(BASE_URL + "/" + randomId).with(adminAuth()))
             .andExpect(status().isNotFound());
     }
-
-    // ==========================================================================
-    // Test 9: Update Translation (PUT /api/v1/admin/translations/{id})
-    // ==========================================================================
 
     @Test
     @Order(9)
@@ -243,16 +233,13 @@ class TranslationAdminControllerTest {
         request.put("active", true);
 
         mockMvc.perform(put(BASE_URL + "/" + testTranslationId)
+                .with(adminAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(testTranslationId.toString()))
             .andExpect(jsonPath("$.message").value("Updated test matn"));
     }
-
-    // ==========================================================================
-    // Test 10: Toggle Active Status (POST /api/v1/admin/translations/{id}/toggle-active)
-    // ==========================================================================
 
     @Test
     @Order(10)
@@ -263,29 +250,22 @@ class TranslationAdminControllerTest {
             testTranslationId = systemMessageRepository.findAll().get(0).getId();
         }
 
-        // Get current status
         SystemMessage before = systemMessageRepository.findById(testTranslationId).orElseThrow();
         boolean initialStatus = before.getIsActive();
 
-        // Toggle status
-        mockMvc.perform(post(BASE_URL + "/" + testTranslationId + "/toggle-active"))
+        mockMvc.perform(post(BASE_URL + "/" + testTranslationId + "/toggle-active").with(adminAuth()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.isActive").value(!initialStatus));
 
-        // Verify in database
         SystemMessage after = systemMessageRepository.findById(testTranslationId).orElseThrow();
         Assertions.assertEquals(!initialStatus, after.getIsActive());
     }
-
-    // ==========================================================================
-    // Test 11: Get Statistics (GET /api/v1/admin/translations/statistics)
-    // ==========================================================================
 
     @Test
     @Order(11)
     @DisplayName("Test 11: Should get translation statistics")
     void testGetStatistics() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/statistics"))
+        mockMvc.perform(get(BASE_URL + "/statistics").with(adminAuth()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.totalMessages").isNumber())
             .andExpect(jsonPath("$.activeMessages").isNumber())
@@ -296,22 +276,14 @@ class TranslationAdminControllerTest {
             .andExpect(jsonPath("$.languages", hasSize(4)));
     }
 
-    // ==========================================================================
-    // Test 12: Clear Cache (POST /api/v1/admin/translations/cache/clear)
-    // ==========================================================================
-
     @Test
     @Order(12)
     @DisplayName("Test 12: Should clear translation cache")
     void testClearCache() throws Exception {
-        mockMvc.perform(post(BASE_URL + "/cache/clear"))
+        mockMvc.perform(post(BASE_URL + "/cache/clear").with(adminAuth()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.message").value("Translation cache cleared successfully"));
     }
-
-    // ==========================================================================
-    // Test 13: Export to Properties (POST /api/v1/admin/translations/export)
-    // ==========================================================================
 
     @Test
     @Order(13)
@@ -321,6 +293,7 @@ class TranslationAdminControllerTest {
         request.put("language", "uz-UZ");
 
         mockMvc.perform(post(BASE_URL + "/export")
+                .with(adminAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -339,6 +312,7 @@ class TranslationAdminControllerTest {
             request.put("language", language);
 
             mockMvc.perform(post(BASE_URL + "/export")
+                    .with(adminAuth())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -350,7 +324,7 @@ class TranslationAdminControllerTest {
     @Order(15)
     @DisplayName("Test 15: Should regenerate properties files")
     void testRegeneratePropertiesFiles() throws Exception {
-        mockMvc.perform(post(BASE_URL + "/properties/regenerate"))
+        mockMvc.perform(post(BASE_URL + "/properties/regenerate").with(adminAuth()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.generatedFiles").isArray())
@@ -360,17 +334,12 @@ class TranslationAdminControllerTest {
             .andExpect(jsonPath("$.timestamp").exists());
     }
 
-    // ==========================================================================
-    // Test 16: Delete Translation (DELETE /api/v1/admin/translations/{id})
-    // ==========================================================================
-
     @Test
     @Order(16)
     @Transactional
     @DisplayName("Test 16: Should soft delete translation")
     void testDeleteTranslation() throws Exception {
         if (testTranslationId == null) {
-            // Create a test translation to delete
             Map<String, Object> request = new HashMap<>();
             request.put("category", "test");
             request.put("messageKey", "test.to.delete");
@@ -378,6 +347,7 @@ class TranslationAdminControllerTest {
             request.put("active", true);
 
             String response = mockMvc.perform(post(BASE_URL)
+                    .with(adminAuth())
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(request)))
                 .andReturn().getResponse().getContentAsString();
@@ -386,11 +356,9 @@ class TranslationAdminControllerTest {
             testTranslationId = UUID.fromString((String) responseMap.get("id"));
         }
 
-        // Delete the translation
-        mockMvc.perform(delete(BASE_URL + "/" + testTranslationId))
+        mockMvc.perform(delete(BASE_URL + "/" + testTranslationId).with(adminAuth()))
             .andExpect(status().isOk());
 
-        // Verify it's soft deleted (deletedAt is set)
         SystemMessage deleted = systemMessageRepository.findById(testTranslationId).orElse(null);
         Assertions.assertNotNull(deleted);
         Assertions.assertNotNull(deleted.getDeletedAt());
@@ -401,49 +369,37 @@ class TranslationAdminControllerTest {
     @DisplayName("Test 17: Should return 404 when deleting non-existent translation")
     void testDeleteNonExistentTranslation() throws Exception {
         UUID randomId = UUID.randomUUID();
-        mockMvc.perform(delete(BASE_URL + "/" + randomId))
+        mockMvc.perform(delete(BASE_URL + "/" + randomId).with(adminAuth()))
             .andExpect(status().isNotFound());
     }
 
-    // ==========================================================================
-    // Test 18: Security - Unauthorized Access
-    // ==========================================================================
-
     @Test
     @Order(18)
-    @WithMockUser(username = "user", authorities = {}) // No permissions
     @DisplayName("Test 18: Should deny access without proper permissions")
     void testUnauthorizedAccess() throws Exception {
-        mockMvc.perform(get(BASE_URL))
+        mockMvc.perform(get(BASE_URL).with(jwt().authorities(new SimpleGrantedAuthority("basic.view"))))
             .andExpect(status().isForbidden());
     }
-
-    // ==========================================================================
-    // Test 19: Validation - Missing Required Fields
-    // ==========================================================================
 
     @Test
     @Order(19)
     @DisplayName("Test 19: Should validate required fields on create")
     void testCreateWithMissingFields() throws Exception {
         Map<String, Object> request = new HashMap<>();
-        // Missing messageKey and messageUz
 
         mockMvc.perform(post(BASE_URL)
+                .with(adminAuth())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().is4xxClientError());
     }
-
-    // ==========================================================================
-    // Test 20: Pagination Edge Cases
-    // ==========================================================================
 
     @Test
     @Order(20)
     @DisplayName("Test 20: Should handle large page size")
     void testLargePageSize() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("page", "0")
                 .param("size", "1000"))
             .andExpect(status().isOk())
@@ -455,6 +411,7 @@ class TranslationAdminControllerTest {
     @DisplayName("Test 21: Should handle page beyond total pages")
     void testPageBeyondTotal() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(adminAuth())
                 .param("page", "9999")
                 .param("size", "10"))
             .andExpect(status().isOk())

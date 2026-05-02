@@ -7,12 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import uz.hemis.app.HemisApplication;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -50,6 +53,18 @@ class WebAuthControllerTest {
     private ObjectMapper objectMapper;
 
     private static final String BASE_URL = "/api/v1/web/auth";
+
+    private static final String ADMIN_USER_ID = "60885987-1b61-4247-94c7-dff348347f93";
+
+    private static RequestPostProcessor authWith(String... authorities) {
+        SimpleGrantedAuthority[] grants = new SimpleGrantedAuthority[authorities.length];
+        for (int i = 0; i < authorities.length; i++) {
+            grants[i] = new SimpleGrantedAuthority(authorities[i]);
+        }
+        return jwt()
+                .jwt(j -> j.subject(ADMIN_USER_ID))
+                .authorities(grants);
+    }
 
     // ======================================================================
     // Test 1: Login with invalid credentials
@@ -115,11 +130,10 @@ class WebAuthControllerTest {
     @Test
     @Order(5)
     @DisplayName("GET /me — authenticated returns user info")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testGetMeAuthenticated() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/me"))
+        mockMvc.perform(get(BASE_URL + "/me").with(authWith("system.view")))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true));
+            .andExpect(jsonPath("$.user").exists());
     }
 
     // ======================================================================
@@ -155,9 +169,8 @@ class WebAuthControllerTest {
     @Test
     @Order(8)
     @DisplayName("POST /cache/clear — authenticated clears cache")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testCacheClear() throws Exception {
-        mockMvc.perform(post(BASE_URL + "/cache/clear"))
+        mockMvc.perform(post(BASE_URL + "/cache/clear").with(authWith("system.view")))
             .andExpect(status().isOk());
     }
 }

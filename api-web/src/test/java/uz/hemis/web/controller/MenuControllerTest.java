@@ -6,9 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import uz.hemis.app.HemisApplication;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -43,25 +46,29 @@ class MenuControllerTest {
 
     private static final String BASE_URL = "/api/v1/web/menu";
 
-    // ======================================================================
-    // Test 1: Get Menu — authenticated
-    // ======================================================================
+    private static final String ADMIN_USER_ID = "60885987-1b61-4247-94c7-dff348347f93";
+
+    private static RequestPostProcessor authWith(String... authorities) {
+        SimpleGrantedAuthority[] grants = new SimpleGrantedAuthority[authorities.length];
+        for (int i = 0; i < authorities.length; i++) {
+            grants[i] = new SimpleGrantedAuthority(authorities[i]);
+        }
+        return jwt()
+                .jwt(j -> j.subject(ADMIN_USER_ID))
+                .authorities(grants);
+    }
 
     @Test
     @Order(1)
     @DisplayName("GET /menu — returns menu structure")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testGetMenu() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(authWith("system.view"))
                 .param("locale", "uz-UZ"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data").exists());
     }
-
-    // ======================================================================
-    // Test 2: Get Menu — unauthenticated
-    // ======================================================================
 
     @Test
     @Order(2)
@@ -71,88 +78,61 @@ class MenuControllerTest {
             .andExpect(status().is(anyOf(is(401), is(403))));
     }
 
-    // ======================================================================
-    // Test 3: Get Menu with different locale
-    // ======================================================================
-
     @Test
     @Order(3)
     @DisplayName("GET /menu — different locale returns menu")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testGetMenuWithLocale() throws Exception {
         mockMvc.perform(get(BASE_URL)
+                .with(authWith("system.view"))
                 .param("locale", "ru-RU"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true));
     }
 
-    // ======================================================================
-    // Test 4: Check Access
-    // ======================================================================
-
     @Test
     @Order(4)
     @DisplayName("POST /check-access — returns access result")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testCheckAccess() throws Exception {
         mockMvc.perform(post(BASE_URL + "/check-access")
+                .with(authWith("system.view"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"path\": \"/dashboard\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true));
     }
 
-    // ======================================================================
-    // Test 5: Clear Cache — requires permission
-    // ======================================================================
-
     @Test
     @Order(5)
     @DisplayName("POST /clear-cache — with permission clears cache")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testClearCache() throws Exception {
-        mockMvc.perform(post(BASE_URL + "/clear-cache"))
+        mockMvc.perform(post(BASE_URL + "/clear-cache").with(authWith("system.view")))
             .andExpect(status().isOk());
     }
-
-    // ======================================================================
-    // Test 6: Clear Cache — without permission
-    // ======================================================================
 
     @Test
     @Order(6)
     @DisplayName("POST /clear-cache — without permission returns 403")
-    @WithMockUser(username = "user", authorities = {"basic.view"})
     void testClearCacheForbidden() throws Exception {
-        mockMvc.perform(post(BASE_URL + "/clear-cache"))
+        mockMvc.perform(post(BASE_URL + "/clear-cache").with(authWith("basic.view")))
             .andExpect(status().isForbidden());
     }
-
-    // ======================================================================
-    // Test 7: Get Structure — requires system.menu.view
-    // ======================================================================
 
     @Test
     @Order(7)
     @DisplayName("GET /structure — with permission returns full structure")
-    @WithMockUser(username = "admin", authorities = {"system.menu.view"})
     void testGetStructure() throws Exception {
         mockMvc.perform(get(BASE_URL + "/structure")
+                .with(authWith("system.menu.view"))
                 .param("locale", "uz-UZ"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true));
     }
 
-    // ======================================================================
-    // Test 8: Get Structure — without permission
-    // ======================================================================
-
     @Test
     @Order(8)
     @DisplayName("GET /structure — without permission returns 403")
-    @WithMockUser(username = "user", authorities = {"basic.view"})
     void testGetStructureForbidden() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/structure"))
+        mockMvc.perform(get(BASE_URL + "/structure").with(authWith("basic.view")))
             .andExpect(status().isForbidden());
     }
 }
