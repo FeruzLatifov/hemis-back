@@ -52,15 +52,16 @@ subprojects {
     }
 
     // =====================================================
-    // JDK 21 LTS Toolchain
+    // JDK 25 LTS Toolchain
     // =====================================================
-    // CRITICAL: Boot 4.0.2 supports Java 17+
-    // Using JDK 21 LTS for long-term stability
+    // Boot 4.0.6 supports Java 17/21/25.
+    // Using JDK 25 LTS (released 2025-09) for long-term stability.
+    // Class file major version 69. Auto-downloaded via Gradle toolchains.
     // =====================================================
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(21))
+            languageVersion.set(JavaLanguageVersion.of(25))
         }
     }
 
