@@ -10,7 +10,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import uz.hemis.common.audit.*;
 
+import java.sql.Array;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,34 +42,51 @@ public class AuditRepository {
     }
 
     public void saveActivity(ActivityEvent event) {
+        AuditContext ctx = event.getContext();
+        String oldJson = toJson(event.getOldValue());
+        String newJson = toJson(event.getNewValue());
+        List<String> changedFields = event.getChangedFields();
+        Timestamp createdAt = Timestamp.from(event.getTimestamp() != null ? event.getTimestamp() : Instant.now());
+
         try {
-            AuditContext ctx = event.getContext();
-            jdbcTemplate.update("""
-                INSERT INTO activity_log (user_id, username, full_name, user_ip, user_agent,
-                    action, entity_type, entity_id, entity_name, old_value, new_value,
-                    changed_fields, request_id, endpoint, description, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?::text[], ?, ?, ?, ?)
-                """,
-                    ctx != null ? ctx.getUserId() : null,
-                    ctx != null ? ctx.getUsername() : null,
-                    ctx != null ? ctx.getFullName() : null,
-                    ctx != null ? ctx.getIp() : null,
-                    ctx != null ? ctx.getUserAgent() : null,
-                    event.getAction().name(),
-                    event.getEntityType(),
-                    event.getEntityId(),
-                    event.getEntityName(),
-                    toJson(event.getOldValue()),
-                    toJson(event.getNewValue()),
-                    toTextArray(event.getChangedFields()),
-                    ctx != null ? ctx.getRequestId() : null,
-                    ctx != null ? ctx.getEndpoint() : null,
-                    event.getDescription(),
-                    Timestamp.from(event.getTimestamp() != null ? event.getTimestamp() : Instant.now())
-            );
+            jdbcTemplate.update(con -> {
+                PreparedStatement ps = con.prepareStatement("""
+                    INSERT INTO activity_log (user_id, username, full_name, user_ip, user_agent,
+                        action, entity_type, entity_id, entity_name, old_value, new_value,
+                        changed_fields, request_id, endpoint, description, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?)
+                    """);
+                setObjectOrNull(ps, 1, ctx != null ? ctx.getUserId() : null, Types.OTHER);
+                ps.setString(2, ctx != null ? ctx.getUsername() : null);
+                ps.setString(3, ctx != null ? ctx.getFullName() : null);
+                ps.setString(4, ctx != null ? ctx.getIp() : null);
+                ps.setString(5, ctx != null ? ctx.getUserAgent() : null);
+                ps.setString(6, event.getAction().name());
+                ps.setString(7, event.getEntityType());
+                ps.setString(8, event.getEntityId());
+                ps.setString(9, event.getEntityName());
+                ps.setString(10, oldJson);
+                ps.setString(11, newJson);
+                if (changedFields == null || changedFields.isEmpty()) {
+                    ps.setNull(12, Types.ARRAY);
+                } else {
+                    Array array = con.createArrayOf("text", changedFields.toArray(new String[0]));
+                    ps.setArray(12, array);
+                }
+                ps.setString(13, ctx != null ? ctx.getRequestId() : null);
+                ps.setString(14, ctx != null ? ctx.getEndpoint() : null);
+                ps.setString(15, event.getDescription());
+                ps.setTimestamp(16, createdAt);
+                return ps;
+            });
         } catch (Exception e) {
             log.error("Failed to save activity log: {}", e.getMessage());
         }
+    }
+
+    private static void setObjectOrNull(PreparedStatement ps, int index, Object value, int sqlType) throws SQLException {
+        if (value == null) ps.setNull(index, sqlType);
+        else ps.setObject(index, value, sqlType);
     }
 
     public void saveError(ErrorEvent event) {
@@ -145,10 +166,4 @@ public class AuditRepository {
         return result;
     }
 
-    private String toTextArray(List<String> list) {
-        if (list == null || list.isEmpty()) return null;
-        return "{" + String.join(",", list.stream()
-                .map(s -> "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\"")
-                .toList()) + "}";
-    }
 }
