@@ -90,7 +90,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
 
     // ArchUnit — compile-time arxitektura qoidalari (modul boundary, paket naming)
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
+    // 1.4.2: Java 25 class file (major 69) support
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.2")
 }
 
 // =====================================================
