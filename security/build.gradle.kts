@@ -46,11 +46,6 @@ dependencies {
     
     // H2 for tests (in-memory database)
     testRuntimeOnly("com.h2database:h2")
-    
-    // Embedded Redis for tests (optional)
-    testImplementation("it.ozimov:embedded-redis:0.7.3") {
-        exclude(group = "org.slf4j", module = "slf4j-simple")
-    }
 }
 
 // =====================================================
