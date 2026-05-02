@@ -111,7 +111,7 @@ public class UniversityOfficialService {
 
         // Find or create employee — request.pinfl/phone DTO darajasida String,
         // entity darajasida VO. VO constructor format'ni validate qiladi.
-        Employee employee = employeeRepository.findByPinfl(request.getPinfl())
+        Employee employee = employeeRepository.findByPinfl(uz.hemis.common.vo.Pinfl.of(request.getPinfl()))
                 .orElseGet(() -> {
                     Employee emp = new Employee();
                     emp.setPinfl(uz.hemis.common.vo.Pinfl.of(request.getPinfl()));
@@ -199,7 +199,7 @@ public class UniversityOfficialService {
     @Transactional
     public Map<String, Object> lookupByPinfl(String pinfl, String document, String birthDate) {
         // 1. Check new employee table
-        var fromEmployee = employeeRepository.findByPinfl(pinfl);
+        var fromEmployee = employeeRepository.findByPinfl(uz.hemis.common.vo.Pinfl.of(pinfl));
         if (fromEmployee.isPresent()) {
             Employee emp = fromEmployee.get();
             return buildResult("employee", emp);

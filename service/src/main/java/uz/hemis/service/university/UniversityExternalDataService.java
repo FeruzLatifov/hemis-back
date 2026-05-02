@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.university.UniversityCadastre;
 import uz.hemis.domain.entity.university.UniversityFounder;
@@ -547,7 +548,7 @@ public class UniversityExternalDataService {
      * Ensures no duplicate — PINFL UNIQUE in employee table.
      */
     private Employee findOrCreateEmployee(String pinfl, JsonNode personNode, JsonNode contactNode, String universityCode) {
-        Employee existing = employeeRepository.findByPinfl(pinfl).orElse(null);
+        Employee existing = employeeRepository.findByPinfl(Pinfl.of(pinfl)).orElse(null);
 
         String newLastName = textOrNull(personNode, "lastName");
         String newFirstName = textOrNull(personNode, "firstName");
