@@ -90,8 +90,10 @@ subprojects {
         options.compilerArgs.addAll(
             listOf(
                 "-parameters",           // Preserve parameter names for Spring
-                "-Xlint:unchecked",     // Warn about unchecked operations
-                "-Xlint:deprecation"    // Warn about deprecated API usage
+                "-Xlint:unchecked",      // Warn about unchecked operations
+                "-Xlint:deprecation",    // Warn about deprecated API usage
+                "-proc:full"             // JDK 23+ disabled annotation processing default;
+                                         // Lombok + MapStruct require explicit -proc:full
             )
         )
     }
