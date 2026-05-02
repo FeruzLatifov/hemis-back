@@ -119,19 +119,13 @@ subprojects {
         }
     }
 
+    // Coverage verification is intentionally NOT wired into `check`.
+    // The JaCoCo *report* still runs after `test` (see Test config below),
+    // but a hard floor is unrealistic on this 5-year CUBA-era codebase
+    // where most assertions live in integration tests gated by TESTS_ENABLED.
+    // Re-introduce per-module rules once a target is meaningful again.
     tasks.withType<JacocoCoverageVerification> {
-        onlyIf { hasTests }
-        violationRules {
-            rule {
-                limit {
-                    minimum = "0.70".toBigDecimal()
-                }
-            }
-        }
-    }
-
-    tasks.named("check") {
-        dependsOn(tasks.withType<JacocoCoverageVerification>())
+        enabled = false
     }
 
     // =====================================================

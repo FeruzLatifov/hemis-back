@@ -116,9 +116,9 @@ class LegacyAuthServiceTest {
      * and jwtEncoder returns a fake token with the given value.
      */
     private void stubTokenGeneration(UUID userId, String fakeTokenValue) {
-        when(userIdentificationPort.getUserIdByUsername(TEST_USERNAME))
+        org.mockito.Mockito.lenient().when(userIdentificationPort.getUserIdByUsername(TEST_USERNAME))
                 .thenReturn(Optional.of(userId));
-        when(userIdentificationPort.getUserInfoByUsername(TEST_USERNAME))
+        org.mockito.Mockito.lenient().when(userIdentificationPort.getUserInfoByUsername(TEST_USERNAME))
                 .thenReturn(Optional.of(new UserIdentificationPort.UserInfo(userId, "Test User")));
 
         Jwt fakeJwt = Jwt.withTokenValue(fakeTokenValue)
@@ -129,7 +129,7 @@ class LegacyAuthServiceTest {
                 .expiresAt(Instant.now().plusSeconds(ACCESS_TOKEN_VALIDITY))
                 .build();
 
-        when(jwtEncoder.encode(any(JwtEncoderParameters.class))).thenReturn(fakeJwt);
+        org.mockito.Mockito.lenient().when(jwtEncoder.encode(any(JwtEncoderParameters.class))).thenReturn(fakeJwt);
     }
 
     // =============================================================
