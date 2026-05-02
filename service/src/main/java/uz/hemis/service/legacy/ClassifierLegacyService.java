@@ -2,6 +2,9 @@ package uz.hemis.service.legacy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.academic.*;
@@ -162,6 +165,7 @@ public class ClassifierLegacyService {
 
     // ==================== EducationType ====================
 
+    @Cacheable(value = "classifierEducationType", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<EducationType> findAllEducationTypes() {
         return educationTypeRepository.findAll();
     }
@@ -178,6 +182,7 @@ public class ClassifierLegacyService {
 
     // ==================== EducationForm ====================
 
+    @Cacheable(value = "classifierEducationForm", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<EducationForm> findAllEducationForms() {
         return educationFormRepository.findAll();
     }
@@ -194,6 +199,7 @@ public class ClassifierLegacyService {
 
     // ==================== HCourse ====================
 
+    @Cacheable(value = "classifierCourse", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<HCourse> findAllCourses() {
         return hCourseRepository.findAll();
     }
@@ -210,6 +216,7 @@ public class ClassifierLegacyService {
 
     // ==================== EducationYear ====================
 
+    @Cacheable(value = "classifierEducationYear", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<EducationYear> findAllEducationYears() {
         return educationYearRepository.findAll();
     }
@@ -226,6 +233,7 @@ public class ClassifierLegacyService {
 
     // ==================== TransferType ====================
 
+    @Cacheable(value = "classifierTransferType", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<TransferType> findAllTransferTypes() {
         return transferTypeRepository.findAll();
     }
@@ -242,6 +250,7 @@ public class ClassifierLegacyService {
 
     // ==================== AdmissionType ====================
 
+    @Cacheable(value = "classifierAdmissionType", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<AdmissionType> findAllAdmissionTypes() {
         return admissionTypeRepository.findAll();
     }
@@ -892,16 +901,19 @@ public class ClassifierLegacyService {
         return universityDepartmentTypeRepository.findById(code);
     }
 
+    @Cacheable(value = "classifierDepartmentType", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<UniversityDepartmentType> findAllDepartmentTypes() {
         return universityDepartmentTypeRepository.findAll();
     }
 
     @Transactional
+    @CacheEvict(value = "classifierDepartmentType", key = "'all'")
     public UniversityDepartmentType saveDepartmentType(UniversityDepartmentType entity) {
         return universityDepartmentTypeRepository.save(entity);
     }
 
     @Transactional
+    @CacheEvict(value = "classifierDepartmentType", key = "'all'")
     public void softDeleteDepartmentType(UniversityDepartmentType entity) {
         entity.setActive(false);
         universityDepartmentTypeRepository.save(entity);
