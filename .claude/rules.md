@@ -1,7 +1,8 @@
-# HEMIS Backend – Coding Standards (v2.0)
+# HEMIS Backend – Coding Standards (v3.0)
 
-**Oxirgi yangilanish:** 2026-04-23
+**Oxirgi yangilanish:** 2026-05-02
 **Status:** Active
+**Scale:** 230 universitet, ~1.15M talaba (Vazirlik miqyosi)
 
 ---
 
@@ -11,10 +12,14 @@
 2. **No destructive schema changes:** All database alterations via Liquibase migrations. Never `ALTER`, `DROP`, `RENAME` structure on legacy `hemishe_*` tables (DML `INSERT`/`UPDATE` ruxsat etiladi).
 3. **Single Source of Truth:** Har business concept uchun bitta jadval. Dublikat jadval yaratilmaydi.
 4. **Service layer required:** Controllers delegate to services. Repositories never called directly from controllers.
-5. **Security by default:** All endpoints require authentication and authorisation. Validate input; no raw SQL; no exposed internal exceptions.
-6. **Documentation & tests mandatory:** Every endpoint → Swagger annotations + integration test. Every service method → unit test. Minimum coverage 70%.
+5. **Security by default:** All endpoints require authentication and authorisation. Validate input; no raw SQL; no exposed internal exceptions. OWASP Top 10:2025 checklist mandatory.
+6. **Documentation & tests mandatory:** Every endpoint → Swagger annotations + integration test. Every service method → unit test. Minimum coverage 70% (service layer 90%) — enforced via Jacoco gate.
 7. **Idempotent migrations:** Safe to run multiple times; always include rollback. Test forward + rollback on staging first.
-8. **No hardcoded secrets:** Use environment variables; never commit secrets.
+8. **No hardcoded secrets:** Use environment variables; never commit secrets. Rotation policy: JWT 90 days, DB password 180 days.
+9. **AOP self-invocation awareness:** `@Cacheable`, `@Transactional`, `@Async`, `@PreAuthorize` on private methods or same-class calls **do NOT work** — Spring proxy bypasses them. Extract to separate `@Service` bean.
+10. **Java 21 modern features:** Prefer `record` for DTOs, pattern matching for `switch`, sealed classes for closed hierarchies. **Forbidden:** Lombok `@Data` on JPA entities (triggers N+1 via `equals`/`hashCode`).
+11. **External integration timeout:** Hozir RestTemplate'da global timeout aniq belgilanmagan — har yangi integration'da `RestClient.Builder().requestFactory(...)` orqali connect+read timeout (10s/30s) sozlanishi kerak.
+12. **Cache invariant:** Every `@Cacheable` MUST have a corresponding `@CacheEvict` on mutation methods. Cache name MUST be configured in `DashboardCacheConfig.TwoLevelCacheManager` with explicit TTL.
 
 ---
 
@@ -139,6 +144,23 @@ Java tomonida composition pattern orqali birlashtirilishi mumkin.
 
 ## Entity qoidalari
 
+### Entity qoidalari — Senior Patterns (v3.0)
+
+**MAJBURIY:**
+- `@Getter @Setter` (NOT `@Data` — `equals`/`hashCode` lazy-load triggerlaydi → N+1)
+- Har `@ManyToOne` da explicit `(fetch = FetchType.LAZY)` (default EAGER trap)
+- `@Version` optimistic locking (lost-update himoyasi)
+- `String` field'da explicit `length` + `@Size` (DB constraint + Bean Validation mos)
+- Soft delete: `@SQLRestriction("delete_ts IS NULL")`
+- FK ustuniga indeks (PostgreSQL avtomatik yaratmaydi)
+
+**TAQIQLANGAN:**
+- `@Data` JPA entity'da
+- `cascade = CascadeType.ALL` operational entity'larda
+- `@OneToMany(fetch = FetchType.EAGER)` — har doim LAZY
+- `Optional<T>` field type sifatida (faqat return type)
+- `final` field with `@Column` (Hibernate proxy break)
+
 ### Classifier entity (hemishe_h_* ga map)
 
 ```java
@@ -244,6 +266,33 @@ ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...
 
 ## Module Guidelines
 
+### Spring Modulith — modul chegaralarini saqlash
+
+Loyihada Spring Modulith 1.4.0 ishlatiladi (`app/build.gradle.kts`). Modul chegaralarini compile-time tekshiradi.
+
+```java
+// package-info.java — har modulning ildizida
+@ApplicationModule(
+    displayName = "Service Layer",
+    allowedDependencies = {"common", "domain", "security"}
+)
+package uz.hemis.service;
+
+import org.springframework.modulith.ApplicationModule;
+```
+
+**Verification:**
+```bash
+./gradlew :app:test --tests "ModularityTests"
+```
+
+**TAQIQ:**
+- Modul ichidan `allowedDependencies` da yo'q boshqa modulga import — compile error
+- Cyclic dependency — compile error
+- Direct field access cross-module — only events yoki public APIs
+
+**Test:** `app/src/test/java/uz/hemis/app/modulith/ModularityTests.java` — har CI run'da bajariladi.
+
 ### `common` — DTOs, exceptions, utilities
 - Use Lombok (`@Value`, `@Builder`, `@Data`) and Jackson (`@JsonProperty`) for legacy field names
 - NO Spring dependencies, NO business logic, NO entity classes
@@ -255,8 +304,11 @@ ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...
 
 ### `security` — Authentication & authorisation
 - `@PreAuthorize` on service methods for permissions
-- Cache user authorities in Redis. BCrypt for passwords; never store plain text
+- Cache user authorities in Redis. **BCrypt strength factor 12 minimum** (OWASP 2025); consider Argon2id for new services
+- Never store plain text passwords; never log JWT tokens, PINFL, passwords, or other PII
 - Security config stays in this module — don't duplicate in controllers
+- Rate limiting per role: VIEWER 60 req/min, UNIVERSITY_ADMIN 300, MINISTRY_ADMIN 600, SUPER_ADMIN 1000
+- Audit log for every CRUD action (7 yil retention — Vazirlik talabi)
 
 ### `service` — Business logic
 - `@Service` + `@Transactional`. Use `readOnly=true` for queries
@@ -305,6 +357,409 @@ ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...
 - 4 spaces indentation; max 120 chars per line
 - Import order: JDK → third-party → Spring → project
 - `@RequiredArgsConstructor` for constructor injection
+- DTO: prefer Java 21 `record` over class (immutability default)
+- `switch`: prefer pattern matching (Java 21 feature)
+- **Configuration:** prefer `@ConfigurationProperties` over `@Value` (type-safe + validation)
+
+### `@ConfigurationProperties` over `@Value`
+
+```java
+// ✗ Eski — type-unsafe, validation yo'q, scattered
+@Value("${hemis.jwt.secret}") private String jwtSecret;
+@Value("${hemis.jwt.access-token-validity:43200}") private long accessTokenValidity;
+@Value("${hemis.jwt.refresh-token-validity:604800}") private long refreshTokenValidity;
+
+// ✓ Modern — type-safe, validated, grouped
+@ConfigurationProperties(prefix = "hemis.jwt")
+@Validated
+public record JwtProperties(
+    @NotBlank @Size(min = 32) String secret,
+    @Positive long accessTokenValiditySeconds,
+    @Positive long refreshTokenValiditySeconds,
+    String jwkSetUri  // optional — production'da JWK Set URI uchun
+) {}
+
+// Foydalanish
+@Service
+@RequiredArgsConstructor
+public class TokenService {
+    private final JwtProperties jwt;
+    // jwt.secret(), jwt.accessTokenValiditySeconds() — type-safe
+}
+```
+
+**Migration plan:** har sprintda 5-10 ta `@Value` ni `@ConfigurationProperties` ga ko'chirish. Yangi config — har doim `@ConfigurationProperties`.
+
+
+---
+
+## Cache Strategy (v3.0)
+
+### 2-Level Cache Architecture
+
+```
+Application
+   ├─ L1: Caffeine (per-instance JVM, fast, ~100ns)
+   └─ L2: Redis (shared across instances, ~1ms)
+         └─ Database (~10ms)
+```
+
+Manager: `DashboardCacheConfig.TwoLevelCacheManager`
+
+### Cache Invariant — MAJBURIY
+
+**Har `@Cacheable` uchun:**
+1. Cache name `DashboardCacheConfig.TwoLevelCacheManager` da explicit TTL bilan ro'yxatda bo'lishi
+2. Mutation method'da `@CacheEvict` corresponding pair
+3. Method `public` (private = AOP fail)
+4. Method **boshqa bean** dan chaqirilishi (same-class call = AOP fail)
+5. `unless = "#result == null"` agar nullable return
+
+```java
+// ✓ TO'G'RI
+@Service
+public class FacultyService {
+    @Cacheable(value = "faculties", key = "#id", unless = "#result == null")
+    public FacultyDto findById(Long id) { ... }
+
+    @CacheEvict(value = "faculties", key = "#dto.id")
+    public FacultyDto update(FacultyUpdateDto dto) { ... }
+
+    @Caching(evict = {
+        @CacheEvict(value = "faculties", key = "#id"),
+        @CacheEvict(value = "faculties:list", allEntries = true)
+    })
+    public void delete(Long id) { ... }
+}
+```
+
+### TTL Tavsiyasi
+
+| Data turi | TTL | Misol |
+|-----------|-----|-------|
+| Classifier (kam o'zgaradi) | 24h | `hokimiyatClassifiers`, `classifierEducationType` |
+| Hot entity (tez o'qiladi, kam o'zgaradi) | 5-15m | `students`, `faculties` |
+| User permissions | 1h | `permissions` |
+| Sessions | 12h | JWT validity |
+| List/search results | 1-5m | `students:search` |
+| Mutation-heavy | Don't cache | — |
+
+### AOP Self-Invocation Trap
+
+```java
+// ✗ XATO — same-class call, proxy bypass, cache silently fails
+@Service
+public class StudentService {
+    public Student get(Long id) { return load(id); }
+
+    @Cacheable("students")
+    private Student load(Long id) { ... }  // private + same-class = double fail
+}
+
+// ✓ TO'G'RI — alohida bean
+@Service @RequiredArgsConstructor
+public class StudentService {
+    private final StudentLoader loader;
+    public Student get(Long id) { return loader.loadById(id); }
+}
+
+@Service
+public class StudentLoader {
+    @Cacheable(value = "students", key = "#id")
+    public Student loadById(Long id) { ... }
+}
+```
+
+**Real misol:** `ClassifierReferenceLoader` — `StudentLegacyMapper` ichidan extract qilingan, AOP self-invocation muammosini hal qildi.
+
+---
+
+## Reliability — Hozirgi Loyiha Holati
+
+**Hozir:** Loyihada Resilience4j dependency yo'q. `AbstractGovernmentApiService` RestTemplate'ni to'g'ridan-to'g'ri ishlatadi.
+
+**Bugun amaliy qoidalar (hozir ishlatish mumkin):**
+
+### Timeout — RestTemplate/RestClient'da
+
+```java
+// Yangi external integration qilsangiz — timeout aniq belgilang
+@Bean
+public RestClient ministryClient() {
+    return RestClient.builder()
+        .baseUrl("https://student.hemis.uz")
+        .requestFactory(clientHttpRequestFactory())
+        .build();
+}
+
+private ClientHttpRequestFactory clientHttpRequestFactory() {
+    SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
+    f.setConnectTimeout(10_000);  // 10s connect
+    f.setReadTimeout(30_000);     // 30s read
+    return f;
+}
+```
+
+### Graceful Shutdown — bugun config bilan yoqiladi
+
+```yaml
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+server:
+  shutdown: graceful
+```
+
+**Effect:** SIGTERM keladi → in-flight request'lar yakunlanmaguncha process tugamaydi (max 30s).
+
+### Kelajak — Resilience4j
+
+Kelajakda yangi external integration qo'shilsa (yoki mavjudini yaxshilash kerak bo'lsa), Resilience4j (yoki o'xshash kutubxona) qo'shish kerak. Detallar — rasmiy hujjatlar. **Qoidalar bugun ishlatilmaydigan kutubxona uchun yozilmaydi.**
+
+---
+
+## Spring Boot 4.0 / Spring 6.x Modernization — Tavsiya
+
+> Loyiha Spring Boot 4.0 ga ko'chgan, lekin ba'zi joylarda eski Spring 5/6.0 API'lari hali ishlatiladi. Yangi kod yozilganda **modern API afzal**.
+
+### `@MockBean` → `@MockitoBean` (Spring Boot 4.x)
+
+`@MockBean` Spring Boot 3.4 da deprecated, 4.x da to'liq olib tashlanishi mumkin.
+
+```java
+// ✗ Eski (deprecated)
+import org.springframework.boot.test.mock.mockito.MockBean;
+
+@SpringBootTest
+class ControllerTest {
+    @MockBean private StudentService service;
+}
+
+// ✓ Modern (Spring 6.2+)
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+@SpringBootTest
+class ControllerTest {
+    @MockitoBean private StudentService service;
+}
+```
+
+**Migration:** Testlar yozilayotganda yangisini ishlatish. Eski testlarni sprint'larda asta-sekin almashtirish.
+
+### `RestTemplate` → `RestClient` (Spring 6.1+)
+
+`AbstractGovernmentApiService`, `RestTemplateConfig` — RestTemplate (eski). Modern API:
+
+```java
+// ✗ Eski — RestTemplate
+ResponseEntity<Map> response = restTemplate.exchange(
+    url, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
+
+// ✓ Modern — RestClient (fluent, type-safe)
+@Bean
+public RestClient governmentApiClient() {
+    return RestClient.builder()
+        .baseUrl("https://student.hemis.uz")
+        .defaultHeader("Authorization", "Bearer " + token)
+        .build();
+}
+
+// Foydalanish
+PersonalDataDto data = client.get()
+    .uri("/api/persons/{pinfl}", pinfl)
+    .retrieve()
+    .body(PersonalDataDto.class);
+```
+
+**Foyda:** Type-safe, fluent, testable, Spring 6.1+ standart. WebClient (reactive) ham mavjud agar reactive stack kerak bo'lsa.
+
+### `JdbcTemplate` → `JdbcClient` (Spring 6.1+)
+
+```java
+// ✗ Eski
+List<Student> students = jdbcTemplate.query(
+    "SELECT * FROM hemishe_e_student WHERE faculty_id = ?",
+    new Object[]{facultyId}, studentRowMapper);
+
+// ✓ Modern — JdbcClient (fluent, type-safe)
+List<Student> students = jdbcClient.sql("""
+        SELECT * FROM hemishe_e_student
+        WHERE faculty_id = :facultyId
+          AND delete_ts IS NULL
+        """)
+    .param("facultyId", facultyId)
+    .query(Student.class)
+    .list();
+```
+
+**Migration:** Yangi JDBC code → JdbcClient. Eski `ClassifierReferenceLoader` kelajakda migration kandidat.
+
+### HikariCP Leak Detection — Master Pool'da Yo'q
+
+**Real holat:**
+- `application-replica.yml:38` — `leak-detection-threshold: 60000` ✓
+- `application.yml` (master) — config yo'q ❌
+
+**Tuzatish:**
+```yaml
+# application.yml master pool
+spring:
+  datasource:
+    hikari:
+      leak-detection-threshold: 60000  # 60s — connection 60s+ ushlansa log + stack trace
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 5000          # 5s connect timeout
+      max-lifetime: 1800000              # 30 min
+      idle-timeout: 600000               # 10 min
+      validation-timeout: 5000
+```
+
+**Foyda:** Connection leak (close()'siz qoldirilgan tx) bot 60s da loglanadi → root cause topish oson.
+
+### PostgreSQL `statement_timeout` — Dev Profile'da Yo'q
+
+**Real holat:**
+- `application-prod.yml:35` — `statement_timeout=60000` ✓
+- `application-dev.yml`, `application.yml` — yo'q ❌
+
+**Effect:** Developer hung query yozadi → dev'da topilmaydi → prod'da chiqadi (kech).
+
+**Tuzatish:**
+```yaml
+# application.yml (har profilda)
+spring:
+  datasource:
+    hikari:
+      data-source-properties:
+        options: "-c statement_timeout=30000"  # 30s dev, 60s prod
+```
+
+Yoki per-role:
+```sql
+-- migration
+ALTER ROLE hemis_dev SET statement_timeout = '30s';
+ALTER ROLE hemis_app SET statement_timeout = '60s';
+```
+
+### `@ConfigurationProperties` Migration (mavjud aytildi)
+
+Loyiha 63 ta `@Value` ishlatadi. Yangi config — har doim `@ConfigurationProperties`. Eski'lar sprint'larda almashtiriladi.
+
+---
+
+## Java 21 Modern Features — MAJBURIY
+
+### Records for DTO
+
+```java
+// ✓ TO'G'RI — immutable, concise, no boilerplate
+public record StudentDto(
+    Long id,
+    String firstName,
+    String lastName,
+    String maskedPinfl,
+    Long facultyId
+) {}
+
+// ✗ ESKI — class with @Data + boilerplate
+@Data
+public class StudentDto {
+    private Long id;
+    private String firstName;
+    // ...
+}
+```
+
+### Pattern Matching for Switch
+
+```java
+// ✓ TO'G'RI
+public String describe(Object obj) {
+    return switch (obj) {
+        case Integer i when i > 0 -> "positive: " + i;
+        case Integer i -> "non-positive: " + i;
+        case String s -> "string: " + s;
+        case null -> "null";
+        default -> "other";
+    };
+}
+
+// ✗ ESKI — instanceof chain
+if (obj instanceof Integer) { ... }
+else if (obj instanceof String) { ... }
+```
+
+### Sealed Classes for Closed Hierarchies
+
+```java
+// Permission types — closed set
+public sealed interface Permission
+    permits ResourcePermission, AdminPermission, SystemPermission {}
+
+public record ResourcePermission(String resource, String action) implements Permission {}
+public record AdminPermission(String scope) implements Permission {}
+public record SystemPermission(String name) implements Permission {}
+```
+
+### Virtual Threads (TAVSIYA — avval audit)
+
+```yaml
+# Faqat synchronized audit + JFR profiling keyin yoqish
+spring.threads.virtual.enabled: true
+```
+
+**Audit qadamlari:**
+1. `grep -rn "synchronized" service/ api-*/` — pinning xavfi
+2. ThreadLocal usage check (custom ThreadLocal'lar)
+3. Excel/CPU-bound operations → alohida platform thread executor
+4. Dev'da load test, JFR profiling
+5. Prod'da staged rollout
+
+**Java 24+ JEP 491:** synchronized pinning yo'qoladi. Hozircha audit majburiy.
+
+---
+
+## Architecture Decision Records (ADR)
+
+Har "muhim arxitektura qaror" uchun ADR yozilishi shart. ADR papka: `/home/adm1n/projects/startup/hemis-back/docs/adr/`
+
+**ADR yozish trigger'lari:**
+- Yangi jadval yaratilsa (mavjud jadval kengaytirilishi alternative emas, sabab yozish kerak)
+- Yangi external integration (Resilience4j config, fallback strategy sabab)
+- Cache pattern qaror (TTL, evict strategy)
+- Schema separation (yangi schema yaratish sababi)
+- Library tanlash (BCrypt vs Argon2id, MapStruct vs ModelMapper)
+- Async vs Sync qaror (long-running endpoint)
+
+**ADR template (`ADR-NNN-<short-title>.md`):**
+```markdown
+# ADR-NNN: <Title>
+
+**Sana:** YYYY-MM-DD
+**Status:** Proposed | Accepted | Deprecated | Superseded by ADR-XXX
+**Deciders:** <names/team>
+**Kontekst:** <one-line summary>
+
+## Kontekst
+<Background, current state, problem to solve>
+
+## Qaror
+<What we decided, with the chosen alternative>
+
+## Mulohaza (Considered alternatives)
+<Other options considered, and why rejected>
+
+## Oqibatlar (Consequences)
+<Trade-offs accepted, monitoring needed, follow-ups>
+
+## Misol kod / sxema
+<Code snippets, table designs, diagrams>
+```
+
+**Misol:** `docs/adr/ADR-001-building-table-design.md` — yangi `university_building` jadvali sababi (cadastre kengaytirish emas).
+
+**Tavsiya:** Qaror qilingach ADR keyinroq emas, **qaror jarayonida** yozilishi (PR description'da link bo'lishi).
 
 ---
 

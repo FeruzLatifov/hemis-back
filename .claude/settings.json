@@ -3,30 +3,73 @@
     "allow": [
       "Bash(./gradlew:*)",
       "Bash(gradle:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
       "WebSearch",
       "WebFetch(domain:mvnrepository.com)",
       "WebFetch(domain:docs.spring.io)",
-      "WebFetch(domain:docs.sentry.io)"
+      "WebFetch(domain:docs.sentry.io)",
+      "WebFetch(domain:hibernate.org)",
+      "WebFetch(domain:resilience4j.readme.io)",
+      "WebFetch(domain:openjdk.org)",
+      "WebFetch(domain:postgresql.org)"
     ],
     "deny": [
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)",
-      "Read(./config/credentials.json)"
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/credentials*)",
+      "Read(**/*.pem)",
+      "Read(**/*.p12)",
+      "Read(**/*.jks)",
+      "Read(**/keystore*)",
+      "Read(**/truststore*)",
+      "Read(**/id_rsa*)",
+      "Read(**/id_ed25519*)",
+      "Read(**/private*.key)",
+      "Read(./application-prod.yml)",
+      "Read(./app/src/main/resources/application-prod.yml)"
     ],
     "ask": [
       "Bash(rm:*)",
       "Bash(sudo:*)",
       "Bash(git push:*)",
-      "Bash(docker run:*)"
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git rebase:*)",
+      "Bash(docker run:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker rmi:*)",
+      "Bash(./gradlew :*publishProd*:*)",
+      "Bash(./gradlew :*deploy*:*)",
+      "Bash(./gradlew liquibaseRollback:*)",
+      "Bash(./gradlew liquibaseDropAll:*)",
+      "Bash(psql:*)",
+      "Bash(redis-cli:*)"
     ]
   },
   "env": {
     "TESTS_ENABLED": "true"
   },
   "companyAnnouncements": [
-    "Remember: all endpoints must have Swagger documentation and tests.",
-    "Use Liquibase migrations instead of direct SQL changes.",
-    "Do not modify legacy tables in ministry.sql without approval."
+    "SCALE: 230 universities, ~1.15M students — every change affects national infrastructure.",
+    "BACKWARD COMPATIBILITY MANDATORY: api-legacy CUBA format must not break.",
+    "All endpoints MUST have: Swagger annotations + integration test + unit test (70% coverage).",
+    "Database changes ONLY via Liquibase migrations with mandatory rollback file.",
+    "NEVER modify hemishe_* legacy tables structure (ALTER/DROP/RENAME forbidden).",
+    "JPA entities: use @Getter @Setter (NOT @Data) — equals/hashCode triggers N+1.",
+    "@Cacheable on private methods does NOT work (Spring AOP self-invocation).",
+    "External integrations: Resilience4j (timeout/retry/CB) tavsiya — hozir AbstractGovernmentApiService RestTemplate'siz protection. Yangi integratsiyada qo'shish.",
+    "Tests: prefer real shared dev DB (5-year CUBA data) + @Transactional rollback isolation. Testcontainers only for app-level integration tests.",
+    "Modern Spring 6.x: @MockitoBean (not @MockBean), RestClient (not RestTemplate), JdbcClient (not JdbcTemplate) for new code.",
+    "Spring Modulith 1.4.0 in use — ModularityTests verifies module boundaries. Don't break dependency graph.",
+    "JWT: TokenBlacklistService + Redis already implemented. Future enhancement: jti claim + kid header + refresh rotation (see security/CLAUDE.md 2.2).",
+    "BCrypt strength factor: 12 minimum (OWASP 2025); consider Argon2id for new services.",
+    "Java 21 features: prefer records for DTOs, pattern matching for switch."
   ]
 }
