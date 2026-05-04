@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -27,6 +28,15 @@ import java.util.stream.Stream;
  * @since 2.1.0
  * @see StudentDto
  */
+// Lightweight student list payload — declaration order matches StudentDto for consistency
+@JsonPropertyOrder({
+    "id", "code",
+    "firstname", "lastname", "fathername", "pinfl",
+    "_university", "_faculty", "_speciality",
+    "_student_status", "_payment_form",
+    "_education_type", "_education_form", "_course", "_education_year",
+    "_gender", "groupName", "active", "fullname"
+})
 public record StudentListDto(
         @JsonProperty("id") UUID id,
         @JsonProperty("code") String code,

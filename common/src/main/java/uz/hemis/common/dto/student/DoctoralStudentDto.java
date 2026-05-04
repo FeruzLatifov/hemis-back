@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,22 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: api-legacy /entities/hemishe_EDoctorateStudent/* CUBA klient
+@JsonPropertyOrder({
+    "id", "u_id",
+    "first_name", "second_name", "third_name",
+    "passport_number", "passport_pin", "birth_date",
+    "dissertation_theme", "home_address",
+    "accepted_date", "student_id_number",
+    "_science_branch", "_payment_form",
+    "_citizenship", "_nationality", "_gender", "_country",
+    "_province", "_district", "_soato",
+    "_doctoral_student_type", "_doctorate_student_status",
+    "_level", "_university", "_department", "_position",
+    "active", "_translations",
+    "_speciality", "_education_year",
+    "create_ts", "created_by", "update_ts", "updated_by"
+})
 public class DoctoralStudentDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

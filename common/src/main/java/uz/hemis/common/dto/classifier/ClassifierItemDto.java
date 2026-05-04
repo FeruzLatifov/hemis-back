@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.classifier;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({
+    "code", "name", "nameRu", "nameEn",
+    "active", "version", "parentCode",
+    "createTs", "updateTs"
+})
 @Schema(name = "ClassifierItem", description = "Klasifikator elementi")
 public class ClassifierItemDto implements Serializable {
 

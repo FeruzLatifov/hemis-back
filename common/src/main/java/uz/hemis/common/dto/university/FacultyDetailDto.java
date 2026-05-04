@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.university;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,13 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "id", "code", "name", "shortName",
+    "universityCode", "universityName",
+    "facultyType", "facultyTypeName",
+    "active",
+    "createdAt", "createdBy", "updatedAt", "updatedBy"
+})
 public class FacultyDetailDto {
     private UUID id;
     private String code;
