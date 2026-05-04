@@ -2,6 +2,8 @@ package uz.hemis.service.student;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -73,6 +75,7 @@ public class StudentGpaService {
      */
     @Transactional
     @SuppressWarnings("unchecked")
+    @CacheEvict(value = "studentGpa", allEntries = true)
     public Map<String, Object> create(Map<String, Object> requestBody) {
         log.info("Creating/Upserting GPA record: {}", requestBody);
 
@@ -225,6 +228,7 @@ public class StudentGpaService {
      */
     @Transactional
     @SuppressWarnings("unchecked")
+    @CacheEvict(value = "studentGpa", allEntries = true)
     public Map<String, Object> upsert(Map<String, Object> requestBody, String username) {
         log.info("Upserting GPA record: {}", requestBody);
 
@@ -457,11 +461,15 @@ public class StudentGpaService {
     }
 
     /**
-     * Get single GPA record by ID - OLD-HEMIS format
+     * Get single GPA record by ID - OLD-HEMIS format.
+     *
+     * <p>Cached 24h: per-student GPA is heavy to compute and changes only on
+     * exam grade upserts (which evict via {@link #upsert} and {@link #create}).</p>
      *
      * @param id GPA record UUID
      * @return GPA record in CUBA format or null
      */
+    @Cacheable(value = "studentGpa", key = "#id", unless = "#result == null")
     public Map<String, Object> findById(UUID id) {
         log.info("Finding GPA record by ID: {}", id);
 
@@ -486,6 +494,7 @@ public class StudentGpaService {
      * @param entity GPA entity to delete
      */
     @Transactional
+    @CacheEvict(value = "studentGpa", key = "#entity.id")
     public void delete(StudentGpa entity) {
         studentGpaRepository.delete(entity);
         log.info("Deleted GPA record: {}", entity.getId());

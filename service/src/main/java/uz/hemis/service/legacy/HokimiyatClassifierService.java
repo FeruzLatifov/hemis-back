@@ -2,6 +2,7 @@ package uz.hemis.service.legacy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +65,12 @@ public class HokimiyatClassifierService {
     /**
      * Get hokimiyat classifiers (OLD-HEMIS /hokimiyat endpoint)
      * OLD-HEMIS bilan 100% mos - 20 ta classifier
+     *
+     * <p>Cached 24h: each call performs ~180 JDBC queries (20 classifiers × ~9 introspection
+     * + data queries). Reference data only changes via admin classifier edits, which evict
+     * the cache through {@link ClassifierLegacyService} mutation methods.</p>
      */
+    @Cacheable(value = "hokimiyatClassifiers", key = "'all'", unless = "#result == null")
     public Map<String, Object> getHokimiyatClassifiers() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("success", true);
@@ -101,7 +107,10 @@ public class HokimiyatClassifierService {
     /**
      * Get hokimiyat classifiers info (metadata only, no items)
      * OLD-HEMIS /hokimiyatInfo endpoint
+     *
+     * <p>Cached 24h. Same invalidation triggers as {@link #getHokimiyatClassifiers()}.</p>
      */
+    @Cacheable(value = "hokimiyatClassifiersInfo", key = "'all'", unless = "#result == null")
     public Map<String, Object> getHokimiyatClassifiersInfo() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("success", true);

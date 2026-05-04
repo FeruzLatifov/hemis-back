@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import uz.hemis.common.dto.legacy.StudentLegacyDto;
 import uz.hemis.domain.entity.student.Student;
+import uz.hemis.service.cache.ClassifierReferenceLoader;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,6 +43,7 @@ public class StudentLegacyMapper {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final ClassifierReferenceLoader classifierLoader;
 
     /**
      * Convert Student entity to OLD-HEMIS CUBA format
@@ -189,117 +191,19 @@ public class StudentLegacyMapper {
     }
 
     /**
-     * Load simple classifier reference from CUBA tables
+     * Load simple classifier reference from CUBA tables.
+     *
+     * <p>Delegates to {@link ClassifierReferenceLoader} so the result is cached
+     * per (tableName, entityName, code) for 24h. Previously each student mapping
+     * issued ~20 JDBC reads here; with the cache warm, repeat lookups within a
+     * batch (e.g. paginated student list) are served from Redis/Caffeine.</p>
      *
      * @param tableName  actual database table name (hemishe_h_*)
      * @param entityName CUBA entity name for response (hemishe_H*)
      * @param code       classifier code
      */
     private StudentLegacyDto.SimpleReferenceDto loadSimpleReference(String tableName, String entityName, String code) {
-        if (code == null || code.isBlank()) {
-            return null;
-        }
-
-        try {
-            String sql = "SELECT code, name, name_ru, name_en, active, version FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL";
-            Map<String, Object> row = jdbcTemplate.queryForMap(sql, code);
-
-            StudentLegacyDto.SimpleReferenceDto ref = new StudentLegacyDto.SimpleReferenceDto();
-            ref.setEntityName(entityName);
-            ref.setId(code);
-            String name = (String) row.get("name");
-            ref.setName(name);
-
-            // _instanceName format: depends on entity type
-            if ("hemishe_HEducationYear".equals(entityName)) {
-                ref.setInstanceName(name != null ? name : code);
-            } else if ("hemishe_HPaymentForm".equals(entityName)) {
-                // Payment form uses "12 - To'lov-shartnoma" format with dash
-                ref.setInstanceName(code + " - " + (name != null ? name : ""));
-            } else if ("hemishe_HExpel".equals(entityName)) {
-                // OLD-HEMIS: expelReason _instanceName is name-only (no code prefix)
-                ref.setInstanceName(name != null ? name : "");
-            } else {
-                ref.setInstanceName(code + " " + (name != null ? name : ""));
-            }
-
-            // OLD-HEMIS compatibility: different classifiers return different fields
-            // Verified against actual OLD-HEMIS responses:
-            switch (entityName) {
-                case "hemishe_HCountry":
-                case "hemishe_HEducationLanguage":
-                case "hemishe_HEducationForm":
-                case "hemishe_HCourse":
-                case "hemishe_HPaymentForm":
-                case "hemishe_HCitizenship":
-                case "hemishe_HNationality":
-                case "hemishe_HAccomodation":
-                case "hemishe_HStudentLivingStatus":
-                case "hemishe_HStudentRoomMateType":
-                case "hemishe_HAcademicReason":
-                case "hemishe_HAcademicMobileType":
-                case "hemishe_HGrantType":
-                case "hemishe_HAdmissionType":
-                case "hemishe_HTransferType":
-                case "hemishe_HDoctoralStudentType":
-                case "hemishe_HStipendRate":
-                case "hemishe_HStudentType":
-                case "hemishe_HPovertyLevel":
-                    // These return: code (no nameRu, nameEn, active)
-                    ref.setCode(code);
-                    break;
-                case "hemishe_HExpel":
-                    // OLD-HEMIS: expelReason returns active (no code, nameRu, nameEn)
-                    ref.setActive(getBoolean(row, "active"));
-                    break;
-                case "hemishe_HEducationType":
-                    // Returns: code, nameRu, nameEn, active
-                    ref.setCode(code);
-                    ref.setNameRu((String) row.get("name_ru"));
-                    ref.setNameEn((String) row.get("name_en"));
-                    ref.setActive(getBoolean(row, "active"));
-                    break;
-                case "hemishe_HStudentSocialType":
-                    // Returns: code, active (no nameRu, nameEn)
-                    ref.setCode(code);
-                    ref.setActive(getBoolean(row, "active"));
-                    break;
-                case "hemishe_HGender":
-                    // Returns: code only (no active, nameRu, nameEn)
-                    ref.setCode(code);
-                    break;
-                case "hemishe_HStudentStatusType":
-                    // OLD-HEMIS: returns code only (no nameRu, nameEn, active)
-                    ref.setCode(code);
-                    break;
-                case "hemishe_HEducationYear":
-                    // Returns: code + name (no nameRu, nameEn, active)
-                    ref.setCode(code);
-                    ref.setNameRu((String) row.get("name_ru"));
-                    ref.setNameEn((String) row.get("name_en"));
-                    break;
-                case "hemishe_HHemisVersionType":
-                case "hemishe_HUniversityContractCategory":
-                    // Returns: code, nameRu, name, active, nameEn
-                    ref.setCode(code);
-                    ref.setNameRu((String) row.get("name_ru"));
-                    ref.setActive(getBoolean(row, "active"));
-                    ref.setNameEn((String) row.get("name_en"));
-                    break;
-                default:
-                    // Default: return code
-                    ref.setCode(code);
-                    break;
-            }
-
-            // OLD-HEMIS service endpoints include version in ALL classifiers
-            ref.setVersion(getInteger(row, "version"));
-
-            return ref;
-        } catch (Exception e) {
-            log.debug("Failed to load reference {}.{}: {}", tableName, code, e.getMessage());
-            return null;
-        }
+        return classifierLoader.loadSimpleReference(tableName, entityName, code);
     }
 
     /**

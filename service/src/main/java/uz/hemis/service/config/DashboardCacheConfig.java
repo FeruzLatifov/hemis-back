@@ -168,6 +168,28 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Student dictionaries (static): 6 hours
         redisCacheConfigurations.put("studentDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
 
+        // Hokimiyat classifier endpoints — 20 classifiers × 9 JDBC each (~180 queries/req).
+        // Univer-side polls these on schedule; data changes only via admin classifier edits.
+        redisCacheConfigurations.put("hokimiyatClassifiers", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("hokimiyatClassifiersInfo", defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // Reference classifier findAll() caches — small static lookup tables.
+        // Names match the @Cacheable values used in ClassifierLegacyService.
+        redisCacheConfigurations.put("classifierEducationType", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("classifierEducationForm", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("classifierCourse", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("classifierEducationYear", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("classifierTransferType", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("classifierAdmissionType", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("classifierDepartmentType", defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // Student GPA cache — heavy aggregation, refreshes after exam grade changes.
+        redisCacheConfigurations.put("studentGpa", defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // Classifier reference loader — per (table, entity, code) lookup cache used by
+        // StudentLegacyMapper to avoid N+1 JDBC reads while mapping student → CUBA DTO.
+        redisCacheConfigurations.put("classifierReference", defaultConfig.entryTtl(Duration.ofHours(24)));
+
         // Create Redis cache manager (L2)
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
