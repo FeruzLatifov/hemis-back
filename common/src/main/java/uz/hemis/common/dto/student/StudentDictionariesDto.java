@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.student;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,6 +20,10 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "courses", "studentStatuses", "paymentForms",
+    "educationTypes", "educationForms", "genders"
+})
 @Schema(
     name = "StudentDictionaries",
     description = "Reference data for student filter dropdowns (cached for performance)"
@@ -65,6 +70,7 @@ public class StudentDictionariesDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonPropertyOrder({"code", "name"})
     @Schema(
         name = "StudentDictionaryItem",
         description = "Dictionary item for student filter dropdown"

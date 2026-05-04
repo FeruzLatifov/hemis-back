@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.building;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,12 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({
+    "id", "eventType", "eventDate",
+    "previousCategoryCode", "newCategoryCode",
+    "cost", "decreeNumber", "decreeDate",
+    "note", "createdAt", "createdBy"
+})
 @Schema(name = "BuildingLifecycle", description = "Bino tarixi voqeasi")
 public class BuildingLifecycleDto implements Serializable {
 
