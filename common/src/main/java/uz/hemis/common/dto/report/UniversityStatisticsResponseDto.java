@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.report;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +13,10 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "content", "totalElements", "totalPages",
+    "currentPage", "pageSize", "appliedFilters"
+})
 public class UniversityStatisticsResponseDto {
     private List<Map<String, Object>> content;
     private Long totalElements;

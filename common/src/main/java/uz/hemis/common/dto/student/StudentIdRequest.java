@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import uz.hemis.common.validation.ValidPinfl;
 
@@ -28,6 +29,10 @@ import uz.hemis.common.validation.ValidPinfl;
  * @since 1.0.0
  */
 @Data
+@JsonPropertyOrder({
+    "citizenship", "pinfl", "serial", "year",
+    "education_type", "education_form"
+})
 public class StudentIdRequest {
 
     /**

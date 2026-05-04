@@ -1,5 +1,7 @@
 package uz.hemis.common.dto.student;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -17,6 +19,12 @@ import java.util.List;
  * @param recommendation     suggested action
  * @param students           enrollment cards with resolved names, active first
  */
+@JsonPropertyOrder({
+    "pinfl", "fullName",
+    "count", "universityCount", "activeCount",
+    "reason", "reasonDescription", "recommendation",
+    "students"
+})
 public record DuplicateGroupDetailDto(
         String pinfl,
         String fullName,

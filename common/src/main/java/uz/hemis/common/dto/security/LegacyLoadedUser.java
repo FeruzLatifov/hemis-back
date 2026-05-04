@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.security;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -34,6 +35,14 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+// Internal cache DTO — Redis serialization order saqlash uchun
+@JsonPropertyOrder({
+    "id", "login", "password",
+    "active", "deleted",
+    "groupNames", "systemAdmin", "universityCode",
+    "accountNonLocked", "credentialsNonExpired",
+    "authorities"
+})
 public class LegacyLoadedUser {
 
     /**

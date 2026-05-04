@@ -2,6 +2,7 @@ package uz.hemis.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,6 +28,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+// Generic API response envelope — har endpoint javobining root structure'i
+@JsonPropertyOrder({"success", "message", "data", "error"})
 public class ResponseWrapper<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;

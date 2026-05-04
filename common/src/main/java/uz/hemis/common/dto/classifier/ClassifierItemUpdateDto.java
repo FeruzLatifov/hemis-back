@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.classifier;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -13,6 +14,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({"name", "nameRu", "nameEn", "active"})
 @Schema(name = "ClassifierItemUpdate", description = "Klasifikator elementini tahrirlash")
 public class ClassifierItemUpdateDto implements Serializable {
 

@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.report;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
@@ -13,6 +14,10 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "horizontalColumns", "search",
+    "page", "size", "sort", "direction"
+})
 public class UniversityStatisticsRequestDto {
     
     private List<SelectedFilterDto> horizontalColumns;

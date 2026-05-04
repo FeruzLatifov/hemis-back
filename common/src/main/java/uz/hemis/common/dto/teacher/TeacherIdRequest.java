@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.teacher;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 
 /**
@@ -27,6 +28,9 @@ import lombok.Data;
  * @since 1.0.0
  */
 @Data
+@JsonPropertyOrder({
+    "citizenship", "pinfl", "serial", "year", "gender", "main_university"
+})
 public class TeacherIdRequest {
 
     /**

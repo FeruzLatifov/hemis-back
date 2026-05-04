@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.university;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,6 +12,7 @@ import java.util.Map;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({"statuses"})
 public class FacultyDictionariesDto {
     private List<Map<String, Object>> statuses;
 }

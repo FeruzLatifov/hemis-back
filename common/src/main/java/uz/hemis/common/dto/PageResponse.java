@@ -2,6 +2,7 @@ package uz.hemis.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,6 +42,14 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+// Spring PageImpl JSON drop-in compat + legacy alias fields
+@JsonPropertyOrder({
+    "content",
+    "number", "size", "totalElements", "totalPages", "numberOfElements",
+    "first", "last", "empty",
+    "pageable", "sort",
+    "page", "hasNext", "hasPrevious"
+})
 public class PageResponse<T> implements Serializable {
 
     private static final long serialVersionUID = 2L;
@@ -108,6 +117,7 @@ public class PageResponse<T> implements Serializable {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonPropertyOrder({"pageNumber", "pageSize", "sort", "offset", "paged", "unpaged"})
     public static class PageableInfo implements Serializable {
         private static final long serialVersionUID = 1L;
 
@@ -141,6 +151,7 @@ public class PageResponse<T> implements Serializable {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonPropertyOrder({"empty", "sorted", "unsorted"})
     public static class SortInfo implements Serializable {
         private static final long serialVersionUID = 1L;
 

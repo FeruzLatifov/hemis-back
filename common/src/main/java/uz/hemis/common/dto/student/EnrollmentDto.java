@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,14 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: 200+ OTM CUBA klient enrollment payload
+@JsonPropertyOrder({
+    "id", "enrollment_number",
+    "_student", "_university", "_specialty", "_faculty",
+    "enrollment_date", "academic_year", "course",
+    "_education_type", "_education_form", "_payment_form",
+    "_enrollment_status", "active"
+})
 public class EnrollmentDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

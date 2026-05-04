@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,7 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({"total", "grantCount", "contractCount", "graduateCount"})
 public class StudentStatsDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

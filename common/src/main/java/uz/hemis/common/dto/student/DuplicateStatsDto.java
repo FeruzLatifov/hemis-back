@@ -1,5 +1,7 @@
 package uz.hemis.common.dto.student;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import java.io.Serializable;
 
 /**
@@ -25,6 +27,12 @@ import java.io.Serializable;
  * @param externalTransferCount   different universities, 0-1 active (external transfer)
  * @param maxDuplicateCount       highest number of records sharing one PINFL
  */
+@JsonPropertyOrder({
+    "totalDuplicatePinfls", "totalAffectedStudents",
+    "normalCount", "crossUniversityCount", "sameUniversityCount",
+    "multiLevelCount", "internalTransferCount", "externalTransferCount",
+    "maxDuplicateCount"
+})
 public record DuplicateStatsDto(
         long totalDuplicatePinfls,
         long totalAffectedStudents,

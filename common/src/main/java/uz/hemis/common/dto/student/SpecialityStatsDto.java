@@ -1,5 +1,7 @@
 package uz.hemis.common.dto.student;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+
 import java.io.Serializable;
 
 /**
@@ -8,6 +10,10 @@ import java.io.Serializable;
  *
  * @since 2.0.0
  */
+@JsonPropertyOrder({
+    "id", "code", "name", "educationType",
+    "totalStudents", "activeStudents", "graduatedStudents", "expelledStudents"
+})
 public record SpecialityStatsDto(
     String id,
     String code,

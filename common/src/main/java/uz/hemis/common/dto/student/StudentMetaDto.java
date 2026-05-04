@@ -2,6 +2,7 @@ package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -25,6 +26,22 @@ import java.util.UUID;
  * @since 1.0.0
  */
 @Data
+// FROZEN: 200+ OTM CUBA klient student meta payload
+@JsonPropertyOrder({
+    "id", "uId", "university", "studentIdNumber",
+    "student", "department",
+    "educationType", "educationForm", "semester", "level",
+    "educationYear", "paymentForm", "studentStatus",
+    "groupId", "groupName", "subgroupId", "subgroupName",
+    "diplomaRegistration", "employmentRegistration",
+    "orderNumber", "orderDate", "statusChangeReason",
+    "speciality", "accreditationAccepted",
+    "decreeNumber", "decreeName", "decreeDate",
+    "academicMobile", "grantType", "studentDataContract", "restoreMetaId",
+    "active",
+    "universityCreatedAt", "universityUpdatedAt",
+    "version"
+})
 public class StudentMetaDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

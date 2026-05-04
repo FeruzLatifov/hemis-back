@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.classifier;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -14,6 +15,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({"code", "name", "nameRu", "nameEn", "active"})
 @Schema(name = "ClassifierItemCreate", description = "Yangi klasifikator elementi yaratish")
 public class ClassifierItemCreateDto implements Serializable {
 
