@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.building;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
@@ -14,6 +15,7 @@ import java.util.List;
  */
 @Data
 @Builder
+@JsonPropertyOrder({"totalProcessed", "successCount", "failureCount", "failures"})
 @Schema(name = "BuildingSyncResult")
 public class BuildingSyncResult implements Serializable {
 

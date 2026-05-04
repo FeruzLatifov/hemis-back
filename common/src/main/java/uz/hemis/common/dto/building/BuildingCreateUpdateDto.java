@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.building;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -18,6 +19,15 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "name", "categoryCode",
+    "address", "yearBuilt", "floorCount", "capacity",
+    "totalArea", "usableArea",
+    "constructionMaterialCode", "roofTypeCode",
+    "lastRenovationDate",
+    "latitude", "longitude", "mapUrl",
+    "cadNumber", "note"
+})
 @Schema(name = "BuildingCreateUpdate", description = "Bino yaratish/yangilash uchun ma'lumot")
 public class BuildingCreateUpdateDto implements Serializable {
 

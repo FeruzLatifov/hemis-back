@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.classifier;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,9 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "key", "titleUz", "titleRu", "titleEn", "classifierCount"
+})
 @Schema(name = "ClassifierCategory", description = "Klasifikator kategoriyasi")
 public class ClassifierCategoryDto implements Serializable {
 
