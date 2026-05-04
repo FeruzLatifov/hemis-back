@@ -264,12 +264,32 @@ EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
 
-### Resource Requirements
+### Resource Requirements (230 universitet, ~1.15M talaba)
 
-| Environment | CPU | RAM | Disk |
-|-------------|-----|-----|------|
-| Production (per instance) | 4 cores | 4 GB (JVM: -Xmx1024m) | 20 GB |
-| Development | 2 cores | 2 GB | 10 GB |
+**Production cluster (minimum 3 instances behind LB):**
+
+| Environment | CPU | RAM | JVM Heap | Disk | Notes |
+|-------------|-----|-----|----------|------|-------|
+| Production (per app instance) | 8 cores | 8 GB | `-Xmx4g -Xms2g` | 50 GB | 3+ instances, stateless |
+| PostgreSQL Master | 16 cores | 32 GB | — | 500 GB SSD | shared_buffers=8GB, work_mem=64MB |
+| PostgreSQL Replica | 16 cores | 32 GB | — | 500 GB SSD | streaming replication |
+| Redis cluster | 4 cores | 16 GB | — | 50 GB SSD | 3 nodes (cache + token + session) |
+| Development (per dev) | 2 cores | 4 GB | `-Xmx2g` | 20 GB | H2 in-memory uchun yetadi |
+
+**Capacity planning:**
+- Peak: ~1000 concurrent users → 3 instance × 250-350 users each
+- DB connections: 30 master pool + 60 replica pool (per cluster, not per instance)
+- Redis ops: ~5K req/s peak (cache hit ratio target 85%+)
+- Excel report generation: separate executor, max 5 concurrent
+
+**JVM flags (production):**
+```
+-Xmx4g -Xms2g
+-XX:+UseG1GC -XX:MaxGCPauseMillis=200
+-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/hemis/
+-XX:+ExitOnOutOfMemoryError
+-Dfile.encoding=UTF-8
+```
 
 ### Scalability
 - Stateless (JWT) → horizontal scaling behind load balancer

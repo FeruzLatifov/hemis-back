@@ -9,7 +9,14 @@
 
 **Core Functions:** Student management, academic programs, staff, university structure, finance (payments/scholarships), ministry reports, government integrations (HEMIS, OneID, MyGov).
 
-**Scale:** 340+ users (legacy CUBA dan ko'chirilgan), 5 asosiy rol, 30+ universitetlar.
+**Scale (Vazirlik miqyosi):**
+- **230 universitet** (Oliy ta'lim vazirligi tasarrufida)
+- **~5,000 admin foydalanuvchi** (universitet o'rtacha 20-30 admin × 230)
+- **~1.15M talaba** (universitet o'rtacha 5,000 × 230)
+- **~50,000 o'qituvchi** (universitet o'rtacha 200 × 230)
+- **5 ta asosiy rol** (SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER, REPORT_VIEWER)
+- **Peak concurrent:** ~500-1000 (sessiya boshlanishida, hisobotlar davrida 2x)
+- **Migrated baseline:** 340+ legacy CUBA users (productionga chiqishda asos)
 
 ---
 
