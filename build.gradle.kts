@@ -1,7 +1,7 @@
 // =====================================================
 // HEMIS Root Build Configuration
 // =====================================================
-// Stack: Spring Boot 4.0.2 + JDK 21 LTS + Gradle 9.3.0
+// Stack: Spring Boot 4.0.6 + JDK 25 LTS + Gradle 9.3.0
 // Mode: NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
 // =====================================================
 
@@ -198,7 +198,7 @@ tasks.register("testAll") {
 // =====================================================
 // Technology Stack (Managed by Spring Boot BOM)
 // =====================================================
-// Java: JDK 21 LTS
+// Java: JDK 25 LTS
 // Gradle: 9.3.0
 // Spring Boot: 4.0.2
 // Spring Framework: 7.x (via Boot)

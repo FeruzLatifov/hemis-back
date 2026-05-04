@@ -25,7 +25,7 @@
 | Component | Version |
 |-----------|---------|
 | Spring Boot | 4.0.2 |
-| Java | 21 LTS (Temurin, toolchain; fallback JDK 25) |
+| Java | 25 LTS (Temurin, toolchain) |
 | Gradle | 9.3.0 (Kotlin DSL) |
 | PostgreSQL | 18 (master/replica) |
 | Redis | 7 (cache + token store) |

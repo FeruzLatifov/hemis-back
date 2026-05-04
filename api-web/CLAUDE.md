@@ -95,7 +95,7 @@ public ResponseEntity<ResponseWrapper<StudentDto>> create(
     @Valid @RequestBody StudentCreateDto dto  // @Valid avto-validate
 ) { ... }
 
-// DTO record (Java 21)
+// DTO record (Java 25)
 public record StudentCreateDto(
     @NotBlank(message = "{validation.pinfl.required}")
     @Pattern(regexp = "\\d{14}", message = "{validation.pinfl.format}")
@@ -390,7 +390,7 @@ public class WebExceptionHandler {
 
 - [ ] `@RestController` + `@RequestMapping` URL: `/api/v1/web/*`
 - [ ] Har endpoint `@PreAuthorize` permission
-- [ ] DTO record (Java 21) + Bean Validation annotations
+- [ ] DTO record (Java 25) + Bean Validation annotations
 - [ ] `@Valid @RequestBody` POST/PUT'da
 - [ ] HTTP status to'g'ri (200/201/204/400/404/409)
 - [ ] `ResponseWrapper<T>` har response'da

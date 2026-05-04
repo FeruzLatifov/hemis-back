@@ -139,9 +139,30 @@ PR review yoki code audit uchun maxsus agent'lar:
 | `@.claude/ENDPOINT_PORTING_GUIDE.md` | Old-hemis endpoint ko'chirish workflow |
 | `@.claude/LIQUIBASE_GUIDE.md` | Database migration yaratish |
 | `@.claude/architecture.md` | Modul diagrammalari, DB routing, cache, deploy |
-| `@.claude/context.md` | Biznes domain (230 universitet), tech stack |
-| `@.claude/rules.md` | Kodlash standartlari v3.0 (Java 21, OWASP 2025) |
+| `@.claude/context.md` | Biznes domain (224 universitet), tech stack |
+| `@.claude/rules.md` | Kodlash standartlari v3.0 (Java 25, OWASP 2025) |
 | `@.claude/MANDATORY_REQUIREMENTS.md` | Swagger, test environment, kod misollari |
 | `@.claude/MENU_GUIDE.md` | Menu + i18n + xavfsizlik arxitekturasi |
 
 `@` sintaksisi fayllarni on-demand import qiladi.
+
+## Architecture Decision Records (ADR) — `docs/adr/`
+
+Muhim qarorlar yozma tarixi. Yangi feature yoki refactoring oldidan o'qish tavsiya etiladi:
+
+| ADR | Mavzu | Qachon o'qish |
+|-----|-------|----------------|
+| [0001](docs/adr/0001-building-table-design.md) | university_building alohida jadval (cadastre kengaytirish emas) | Bino-related ish |
+| [0002](docs/adr/0002-java-25-upgrade.md) | Java 25 LTS + Spring Boot 4.0.6 | Build/dependency ish |
+| [0003](docs/adr/0003-audit-db-isolation.md) | Audit DB alohida `hemis_audit` bazasi | Audit/logging ish |
+| [0004](docs/adr/0004-api-university-module.md) | api-university yangi modul (224 OTM B2B) | API endpoint ish |
+| [0005](docs/adr/0005-oauth-client-credentials.md) | OAuth client_credentials migration plan | Auth/security ish |
+
+Yangi qaror qabul qilinganda — `docs/adr/template.md` orqali yangi ADR yarating.
+
+## Recent State (2026-05-04)
+
+- `users` jadvali toza schema'ga o'tdi (41 → 30 ustun, 11 ta legacy CUBA olib tashlangan)
+- Soft-delete + UNIQUE konflikti hal qilindi (partial UNIQUE indekslar)
+- 224 OTM B2B uchun `oauth_client` migration plan (ADR-0005)
+- Old-hemis CUBA `sec_user` parallel ishlaydi (HybridUserDetailsService)

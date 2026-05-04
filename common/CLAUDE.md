@@ -29,7 +29,7 @@ common CANNOT import:
 
 ## DTO Patterns
 
-### Java 21 Records — Default Choice
+### Java 25 Records — Default Choice
 
 ```java
 // ✓ TO'G'RI — immutable, concise

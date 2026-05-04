@@ -161,7 +161,7 @@ public class StudentService {
 }
 ```
 
-**DTO record (Java 21):**
+**DTO record (Java 25):**
 ```java
 public record StudentCreateDto(
     @NotBlank @Pattern(regexp = "\\d{14}") String pinfl,

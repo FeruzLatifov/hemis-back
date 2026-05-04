@@ -17,7 +17,7 @@
 7. **Idempotent migrations:** Safe to run multiple times; always include rollback. Test forward + rollback on staging first.
 8. **No hardcoded secrets:** Use environment variables; never commit secrets. Rotation policy: JWT 90 days, DB password 180 days.
 9. **AOP self-invocation awareness:** `@Cacheable`, `@Transactional`, `@Async`, `@PreAuthorize` on private methods or same-class calls **do NOT work** — Spring proxy bypasses them. Extract to separate `@Service` bean.
-10. **Java 21 modern features:** Prefer `record` for DTOs, pattern matching for `switch`, sealed classes for closed hierarchies. **Forbidden:** Lombok `@Data` on JPA entities (triggers N+1 via `equals`/`hashCode`).
+10. **Java 25 modern features:** Prefer `record` for DTOs, pattern matching for `switch`, sealed classes for closed hierarchies. **Forbidden:** Lombok `@Data` on JPA entities (triggers N+1 via `equals`/`hashCode`).
 11. **External integration timeout:** Hozir RestTemplate'da global timeout aniq belgilanmagan — har yangi integration'da `RestClient.Builder().requestFactory(...)` orqali connect+read timeout (10s/30s) sozlanishi kerak.
 12. **Cache invariant:** Every `@Cacheable` MUST have a corresponding `@CacheEvict` on mutation methods. Cache name MUST be configured in `DashboardCacheConfig.TwoLevelCacheManager` with explicit TTL.
 
@@ -357,8 +357,8 @@ import org.springframework.modulith.ApplicationModule;
 - 4 spaces indentation; max 120 chars per line
 - Import order: JDK → third-party → Spring → project
 - `@RequiredArgsConstructor` for constructor injection
-- DTO: prefer Java 21 `record` over class (immutability default)
-- `switch`: prefer pattern matching (Java 21 feature)
+- DTO: prefer Java 25 `record` over class (immutability default)
+- `switch`: prefer pattern matching (Java 25 feature)
 - **Configuration:** prefer `@ConfigurationProperties` over `@Value` (type-safe + validation)
 
 ### `@ConfigurationProperties` over `@Value`
@@ -648,7 +648,7 @@ Loyiha 63 ta `@Value` ishlatadi. Yangi config — har doim `@ConfigurationProper
 
 ---
 
-## Java 21 Modern Features — MAJBURIY
+## Java 25 Modern Features — MAJBURIY
 
 ### Records for DTO
 

@@ -70,6 +70,6 @@
     "Spring Modulith 1.4.0 in use — ModularityTests verifies module boundaries. Don't break dependency graph.",
     "JWT: TokenBlacklistService + Redis already implemented. Future enhancement: jti claim + kid header + refresh rotation (see security/CLAUDE.md 2.2).",
     "BCrypt strength factor: 12 minimum (OWASP 2025); consider Argon2id for new services.",
-    "Java 21 features: prefer records for DTOs, pattern matching for switch."
+    "Java 25 features: prefer records for DTOs, pattern matching for switch."
   ]
 }
