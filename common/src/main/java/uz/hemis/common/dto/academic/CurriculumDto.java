@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.academic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,14 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: 200+ OTM CUBA klient curriculum payload
+@JsonPropertyOrder({
+    "id", "code", "name",
+    "_university", "_specialty",
+    "academic_year", "total_credits", "study_duration",
+    "_education_type", "_education_form", "_curriculum_type",
+    "active", "is_approved"
+})
 public class CurriculumDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
