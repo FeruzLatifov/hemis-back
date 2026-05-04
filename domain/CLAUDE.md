@@ -1,6 +1,6 @@
 # domain module — Entity, Repository, Liquibase
 
-> **Eng kritik modul.** Bu yerdagi xato 1.15M talaba va 230 universitetga ta'sir qiladi.
+> **Eng kritik modul.** Bu yerdagi xato 1.15M talaba va 224 universitetga ta'sir qiladi.
 > JPA entity, Spring Data repository, Liquibase migration — hammasi shu yerda.
 >
 > **Avval bu hujjatni o'qing, keyin kod yozing.**
@@ -469,13 +469,12 @@ PostgreSQL avtomatik (autovacuum), lekin yirik DELETE keyin manual:
 VACUUM ANALYZE hemishe_e_student;
 ```
 
-### Connection pool sizing rationale
+### Connection pool sizing
 
-- **Master:** 30 (write traffic, oz lekin uzun)
-- **Replica:** 60 (read traffic, ko'p lekin tez)
-- **Formula:** `connections = (cores × 2) + effective_spindles`
+> Pool sizing aniq tafsiloti: `@../.claude/architecture.md` (Master 10 + Replica 20 per-instance).
 
-**Diqqat:** Connection pool **app instance bo'yicha emas, butun cluster bo'yicha**. 3 instance × 30 = 90 master connection — DB sizing'ga mos kelishi kerak.
+**Formula:** `connections = (cores × 2) + effective_spindles`
+**Diqqat:** Production cluster (3 instance) → 30 master + 60 replica DB-side capacity zarur.
 
 ---
 
@@ -530,22 +529,26 @@ Page<Student> result = repository.findAll(
 
 ---
 
-## Schema Separation Rules
+## Naming Convention (Single Schema)
 
-| Schema | Maqsad | Ko'rsatkich |
-|--------|--------|-------------|
-| `public` | Eski CUBA jadvallar (FROZEN) | `hemishe_e_*`, `hemishe_h_*`, `sec_user` |
-| `auth` | Yangi auth | `users`, `role`, `permission` |
-| `hr` | HR/employee | `employee`, `position` |
-| `univ` | Universitet domain | `organization`, `university_legal` |
-| `ui` | UI state | `menu`, `user_favorite` |
-| `i18n` | Lokalizatsiya | `language`, `system_message` |
-| `ref_ext` | Classifier extension | Eski jadvalga qo'shimcha column |
-| `analytics` | Hisobotlar | Denormalized, partitioned |
+**Qaror:** Schema separation BEKOR — barcha jadvallar `public` schema ichida.
+Sabab: cross-schema FK overhead, search_path murakkabliklari, hemis_337 (224 OTM ekosistemi) bilan moslashish.
+
+| Prefiks | Maqsad | Misol |
+|---------|--------|-------|
+| `hemishe_e_*` | Eski CUBA entity (FROZEN) | `hemishe_e_student`, `hemishe_e_university` |
+| `hemishe_h_*` | Eski CUBA klassifikator (FROZEN) | `hemishe_h_gender`, `hemishe_h_soato` |
+| `h_*` (yangi) | Yangi klassifikatorlar (FK target) | `h_building_category`, `h_position` |
+| (prefiksiz) | Yangi entity (biznes ob'ekt) | `users`, `employee`, `organization`, `university_building` |
+| `sec_user` | Old CUBA auth (FROZEN, parallel) | sec_user_role, sec_role_permission |
+
+**Klassifikator (`h_*`) mezoni:** boshqa jadvallar tomonidan FK reference target sifatida ishlatilsa
+VA universitet ekosistemi (224 OTM) bilan sync mantiqiy bo'lsa.
 
 **FK qoidalari:**
-- Yangi schema → eski classifier: `gender_code REFERENCES public.hemishe_h_gender(code)`
-- Yangi schema → yangi: `employee_id REFERENCES hr.employee(id)`
+- Eski klassifikatorga: `gender_code REFERENCES hemishe_h_gender(code)`
+- Yangi klassifikatorga: `category_code REFERENCES h_building_category(code)`
+- Entity'lar orasida: `employee_id REFERENCES employee(id)`
 
 ---
 

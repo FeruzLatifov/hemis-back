@@ -2,10 +2,12 @@
 
 ## Project Overview
 
-HEMIS Backend — Java 21 + Spring Boot modular monolith. Clean architecture: API → Service → Domain → Common.
+HEMIS Backend — Java 25 LTS + Spring Boot modular monolith. Clean architecture: API → Service → Domain → Common.
 Legacy CUBA platform bilan 100% backward compatibility saqlanadi.
 
-**Stack:** Spring Boot 4.0.2, PostgreSQL 18, Redis 7, Liquibase 4.31.1, MapStruct, Lombok
+**Stack:** Spring Boot 4.0.6, PostgreSQL 18, Redis 7, Liquibase 4.31.1, MapStruct, Lombok
+**Auxiliary DB:** `hemis_audit` (alohida PostgreSQL — activity_log, error_log, login_log)
+**Universitetlar soni:** 224 ta hemis_NNN bazasi (224 OTM)
 
 ## Daily Commands
 
