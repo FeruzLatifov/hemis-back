@@ -1,0 +1,64 @@
+# Architecture Decision Records (ADR)
+
+Bu katalog HEMIS-back loyihasidagi muhim arxitektura qarorlarini saqlaydi.
+
+## ADR nima?
+
+**ADR (Architecture Decision Record)** — bir arxitektura qarorining yozma izohi. Bitta ADR = bitta qaror.
+
+Maqsadi:
+- **Tarix saqlash** — kelajakdagi developerlar nimaga shu yo'l tanlanganini biladi
+- **Onboarding tezlashtirish** — yangi a'zo loyihaga 1 hafta o'rniga 1 kunda kiradi
+- **"Nima uchun?" savolini kamaytirish** — har qaror uchun kontekst bor
+- **Refactoring xavfsizroq** — qaysi qaror qaysi sababga asoslangani aniq
+
+ADR — bu qisqa Markdown fayl (1-2 sahifa). Git tarixi orqali version-controlled.
+
+## Naming convention
+
+```
+docs/adr/NNNN-short-title.md
+```
+- `NNNN` — 4 raqamli ketma-ket nomer (0001, 0002, ...)
+- `short-title` — kichik harf, defis bilan (`java-25-upgrade`, `audit-db-isolation`)
+
+## Index
+
+| ADR | Title | Status | Date |
+|-----|-------|--------|------|
+| [0001](0001-building-table-design.md) | University Buildings — Alohida jadval (Cadastre'ni kengaytirish emas) | Accepted | 2026-04-21 |
+| [0002](0002-java-25-upgrade.md) | Java 21 → 25 LTS migration | Accepted | 2026-05-04 |
+| [0003](0003-audit-db-isolation.md) | Audit DB alohida hemis_audit bazasi | Accepted | 2026-05-04 |
+| [0004](0004-api-university-module.md) | api-university yangi modul | Accepted | 2026-05-04 |
+| [0005](0005-oauth-client-credentials.md) | OAuth client_credentials grant 224 OTM uchun | Proposed | 2026-05-04 |
+
+## Status qiymatlari
+
+- **Proposed** — taklif, hali muhokama jarayonida
+- **Accepted** — qabul qilingan, ishga tushirilgan
+- **Deprecated** — eskirgan, lekin hali ham qoidaviy kuchda
+- **Superseded by ADR-NNNN** — boshqa ADR bilan almashtirilgan
+
+## Yangi ADR qachon yoziladi?
+
+ADR yozish kerak bo'lgan holatlar:
+- ✅ Yangi modul yoki kutubxona qo'shilganda
+- ✅ Texnologiya stack'da o'zgarish (Java versiyasi, DB engine)
+- ✅ Xavfsizlik yoki performans masalasi (cache strategy, auth flow)
+- ✅ Schema yoki API breaking change
+- ✅ Migration plan (eski ↔ yangi)
+
+ADR yozish KERAK EMAS:
+- ❌ Kichik bugfix yoki refactoring
+- ❌ Code style preferences (linter qoidalari)
+- ❌ Vaqtinchalik workaround
+
+## Template
+
+Yangi ADR yaratish uchun [template.md](template.md) dan foydalaning.
+
+## References
+
+- [Michael Nygard — "Documenting Architecture Decisions"](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
+- [ThoughtWorks — ADR adoption](https://www.thoughtworks.com/insights/blog/architecture/scaling-architecture-conversationally)
+- [GitHub — adr-tools](https://github.com/npryce/adr-tools)
