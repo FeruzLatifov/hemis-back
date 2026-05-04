@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Tag(name = "30.Inspeksiya", description = "Inspeksiya hisobotlari")
@@ -27,7 +27,7 @@ public class InspectionController {
     ) {
         log.debug("Generating quality control report for university: {}, year: {}", university, academicYear);
 
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "quality_control");
         report.put("university", university);
         report.put("academicYear", academicYear);
@@ -44,7 +44,7 @@ public class InspectionController {
     ) {
         log.debug("Generating compliance report for university: {}", university);
 
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "compliance");
         report.put("university", university);
         report.put("complianceRate", 0.0);
@@ -63,7 +63,7 @@ public class InspectionController {
         log.debug("Generating audit report for university: {}, period: {} to {}",
                   university, startDate, endDate);
 
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "audit");
         report.put("university", university);
         report.put("startDate", startDate);

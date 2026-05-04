@@ -8,7 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,7 +24,7 @@ public class BillingController {
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getInvoices(
             @RequestParam(required = false) String university
     ) {
-        Map<String, Object> invoices = new HashMap<>();
+        Map<String, Object> invoices = new LinkedHashMap<>();
         invoices.put("university", university);
         invoices.put("totalInvoices", 0);
         invoices.put("totalAmount", 0.0);
@@ -37,7 +37,7 @@ public class BillingController {
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> processPayment(@RequestBody Map<String, Object> payment) {
         log.info("Processing payment");
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "processed");
         result.put("transactionId", "TXN-" + System.currentTimeMillis());
 
@@ -47,7 +47,7 @@ public class BillingController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/balance/{studentId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentBalance(@PathVariable UUID studentId) {
-        Map<String, Object> balance = new HashMap<>();
+        Map<String, Object> balance = new LinkedHashMap<>();
         balance.put("studentId", studentId);
         balance.put("balance", 0.0);
         balance.put("currency", "UZS");

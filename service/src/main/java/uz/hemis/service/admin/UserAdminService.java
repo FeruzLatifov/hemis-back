@@ -244,15 +244,15 @@ public class UserAdminService {
 
         validateWriteScope(caller, target);
 
-        String oldHash = target.getPassword() != null ? target.getPassword().substring(0, 20) : "NULL";
-        String encodedPassword = passwordEncoder.encode(newPassword);
-        target.setPassword(encodedPassword);
-        String newHash = encodedPassword.substring(0, 20);
+        boolean hadPassword = target.getPassword() != null;
+        target.setPassword(passwordEncoder.encode(newPassword));
 
         userRepository.saveAndFlush(target);
 
-        log.info("PASSWORD CHANGE: id={}, user={}, oldHash={}..., newHash={}..., by={}",
-                id, target.getUsername(), oldHash, newHash, callerUserId);
+        // PII-safe: do NOT log password hash prefixes (even partial — they aid offline bruteforce
+        // when correlated with leaked databases). Audit trail covers the actual change.
+        log.info("PASSWORD CHANGE: id={}, user={}, hadPriorPassword={}, by={}",
+                id, target.getUsername(), hadPassword, callerUserId);
     }
 
     /**

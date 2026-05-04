@@ -1,5 +1,6 @@
 package uz.hemis.service.base;
 
+import uz.hemis.common.vo.Pinfl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -185,7 +186,7 @@ public final class CubaResponseHelper {
         String trimmedPinfl = pinfl.trim();
 
         if (!trimmedPinfl.matches("\\d{14}")) {
-            log.warn("Invalid PINFL format: {}", pinfl);
+            log.warn("Invalid PINFL format: {}", Pinfl.maskOrEmpty(pinfl));
             return errorResponse("invalid_pinfl",
                     "PINFL must be exactly 14 digits. Example: 12345678901234");
         }

@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.document;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,15 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+// Legacy JSON field tartibi /app/rest/diplom-blank/* uchun FROZEN
+@JsonPropertyOrder({
+    "id", "blank_code", "series", "number",
+    "_university", "_blank_type", "_status",
+    "received_date", "issued_date", "academic_year",
+    "supplier", "batch_number", "status_reason",
+    "security_features", "notes",
+    "create_ts", "created_by", "update_ts", "updated_by"
+})
 public class DiplomaBlankDto implements Serializable {
 
     private String id;  // Using String for legacy compatibility (was VARCHAR in old HEMIS)

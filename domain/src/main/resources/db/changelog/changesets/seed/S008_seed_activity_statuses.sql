@@ -1,17 +1,17 @@
 -- =====================================================
--- S008: Position classifiers seed (14 position_type + 227 position)
+-- S008: Position classifiers seed (14 h_position_type + 227 h_position)
 -- Source: /docs/lavozim_klassifikatorlar_2026.xlsx
 -- =====================================================
 -- Note (legacy file nomi): tarixan "activity_statuses" deb nomlangan, lekin aslida
--- position_type + position jadvallariga seed qiladi. Fayl nomi Liquibase changeset
+-- h_position_type + h_position jadvallariga seed qiladi. Fayl nomi Liquibase changeset
 -- id integrity uchun saqlangan (database_change_log tarixida). Kontent esa to'g'ri.
 --
 -- University activity statuses (science_branch, university_activity_status) NOT here.
 -- Ular V009_create_classifiers.sql ichida `INSERT ... SELECT FROM hemishe_h_*`
 -- orqali hemishe_h_science_branch, hemishe_h_university_activity_status dan copy qilinadi.
 
--- 1. Position types (14 ta)
-INSERT INTO position_type (code, name, name_ru, name_en) VALUES
+-- 1. h_position_type (14 ta) — h_* prefiks: ADR-0006
+INSERT INTO h_position_type (code, name, name_ru, name_en) VALUES
   ('10', 'Boshqa', '', ''),
   ('11', 'Administrativ-boshqaruv xodim', '', ''),
   ('12', 'Professor-o''qituvchi xodimlar', '', ''),
@@ -28,8 +28,8 @@ INSERT INTO position_type (code, name, name_ru, name_en) VALUES
   ('23', 'Tibbiyot, biologiya va san''at xodimlari', '', '')
 ON CONFLICT (code) DO UPDATE SET name = EXCLUDED.name;
 
--- 3. Positions (227 ta — to'g'ridan-to'g'ri Excel dan)
-INSERT INTO position (code, name, name_ru, name_en, type_code) VALUES
+-- 3. h_position (227 ta — to'g'ridan-to'g'ri Excel dan) — h_* prefiks: ADR-0006
+INSERT INTO h_position (code, name, name_ru, name_en, type_code) VALUES
   ('47', 'Boshqarma boshlig''i', '', '', '11'),
   ('48', 'Boshqarma boshlig''i muovini', '', '', '11'),
   ('19', 'Markaz boshlig‘i', '', '', '11'),

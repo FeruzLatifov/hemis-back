@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.academic.CourseService;
 import uz.hemis.common.dto.academic.CourseDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class CourseController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<CourseDto> courses = courseService.findAll(pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -59,7 +60,7 @@ public class CourseController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<CourseDto> courses = courseService.findByUniversity(universityCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -78,7 +79,7 @@ public class CourseController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<CourseDto> courses = courseService.findBySubject(subjectId, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -88,7 +89,7 @@ public class CourseController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<CourseDto> courses = courseService.findByNameContaining(name, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -97,7 +98,7 @@ public class CourseController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<CourseDto> courses = courseService.findActive(pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -107,7 +108,7 @@ public class CourseController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<CourseDto> courses = courseService.findBySemester(semester, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(courses)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
     @PostMapping

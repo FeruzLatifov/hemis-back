@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.academic;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +35,7 @@ public class ScheduleEntityController {
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Schedule> entity = academicService.findScheduleById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ESchedule with id " + entityId + " not found"));
+        if (entity.isEmpty()) return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_ESchedule with id " + entityId + " not found"));
         return ResponseEntity.ok(academicService.toScheduleMap(entity.get(), returnNulls));
     }
 
@@ -41,7 +43,7 @@ public class ScheduleEntityController {
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Schedule> existingOpt = academicService.findScheduleById(entityId);
-        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_ESchedule with id " + entityId + " not found"));
+        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_ESchedule with id " + entityId + " not found"));
         Schedule saved = academicService.saveSchedule(existingOpt.get());
         return ResponseEntity.ok(academicService.toScheduleMap(saved, returnNulls));
     }

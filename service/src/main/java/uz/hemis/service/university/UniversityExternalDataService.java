@@ -567,7 +567,7 @@ public class UniversityExternalDataService {
                     && java.util.Objects.equals(existing.getFirstName(), newFirstName)
                     && java.util.Objects.equals(existing.getTin(), newTin);
             if (same) {
-                log.debug("Employee unchanged: pinfl={}, skipping", pinfl);
+                log.debug("Employee unchanged: pinfl={}, skipping", Pinfl.maskOrEmpty(pinfl));
                 return existing;
             }
         }

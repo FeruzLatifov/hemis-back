@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.academic;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -47,11 +49,11 @@ public class AcademicSubjectsEntityController {
             UUID id = UUID.fromString(entityId);
             Optional<AcademicSubjects> entity = academicService.findAcademicSubjectsById(id);
             if (entity.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
             }
             return ResponseEntity.ok(academicService.toAcademicSubjectsMap(entity.get(), returnNulls));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of("error", "Invalid UUID", "details", "Invalid UUID format: " + entityId));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -63,7 +65,7 @@ public class AcademicSubjectsEntityController {
             UUID id = UUID.fromString(entityId);
             Optional<AcademicSubjects> existingOpt = academicService.findAcademicSubjectsById(id);
             if (existingOpt.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
             }
             AcademicSubjects entity = existingOpt.get();
             academicService.updateAcademicSubjectsFromMap(entity, entityData);
@@ -71,7 +73,7 @@ public class AcademicSubjectsEntityController {
             AcademicSubjects saved = academicService.saveAcademicSubjects(entity);
             return ResponseEntity.ok(academicService.toAcademicSubjectsMap(saved, false));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of("error", "Invalid UUID", "details", "Invalid UUID format: " + entityId));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -83,12 +85,12 @@ public class AcademicSubjectsEntityController {
             UUID id = UUID.fromString(entityId);
             Optional<AcademicSubjects> entity = academicService.findAcademicSubjectsById(id);
             if (entity.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
             }
             academicService.deleteAcademicSubjects(entity.get());
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of("error", "Invalid UUID", "details", "Invalid UUID format: " + entityId));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -149,7 +151,7 @@ public class AcademicSubjectsEntityController {
             return ResponseEntity.ok(academicService.toAcademicSubjectsMap(saved, false));
         } catch (Exception e) {
             log.error("CREATE xatosi: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Server error", "details", e.getClass().getSimpleName() + ": " + e.getMessage()));
+            return ResponseEntity.status(500).body(LegacyResponseHelper.errorMap("Server error", e.getClass().getSimpleName() + ": " + e.getMessage()));
         }
     }
 

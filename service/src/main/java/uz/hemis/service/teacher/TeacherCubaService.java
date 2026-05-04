@@ -1,6 +1,8 @@
 package uz.hemis.service.teacher;
 
+import uz.hemis.common.vo.Pinfl;
 import lombok.RequiredArgsConstructor;
+import uz.hemis.common.vo.Pinfl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uz.hemis.domain.entity.employee.Employee;
@@ -124,7 +126,7 @@ public class TeacherCubaService {
      * @return Teacher data map or error
      */
     public Map<String, Object> get(String pinfl) {
-        log.info("Getting teacher by PINFL - PINFL: {}", pinfl);
+        log.info("Getting teacher by PINFL - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         Map<String, Object> validationError = CubaResponseHelper.validateRequired("pinfl", pinfl);
         if (validationError != null) {

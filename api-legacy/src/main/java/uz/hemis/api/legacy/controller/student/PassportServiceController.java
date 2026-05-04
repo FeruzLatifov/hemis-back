@@ -25,7 +25,7 @@ import uz.hemis.service.integration.ApiMspdTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -420,7 +420,7 @@ public class PassportServiceController {
         String baseUrl = apiMspdTokenService.getBaseUrl();
         try {
             // 1. Get person data via API-MSPD
-            Map<String, String> body = new HashMap<>();
+            Map<String, String> body = new LinkedHashMap<>();
             body.put("pinfl", pinfl);
             body.put("document", document);
 
@@ -459,7 +459,7 @@ public class PassportServiceController {
 
         String baseUrl = apiMspdTokenService.getBaseUrl();
         try {
-            Map<String, String> body = new HashMap<>();
+            Map<String, String> body = new LinkedHashMap<>();
             body.put("document", document);
             body.put("birth_date", birthdate);
 
@@ -500,7 +500,7 @@ public class PassportServiceController {
 
         String baseUrl = apiMspdTokenService.getBaseUrl();
         try {
-            Map<String, String> body = new HashMap<>();
+            Map<String, String> body = new LinkedHashMap<>();
             body.put("pinfl", pinfl);
             body.put("birth_date", birthdate);
 
@@ -533,7 +533,7 @@ public class PassportServiceController {
     private Object getAddressViaMspd(String pinfl, String token, String baseUrl) {
         if (pinfl == null || pinfl.isBlank()) return null;
         try {
-            Map<String, String> body = new HashMap<>();
+            Map<String, String> body = new LinkedHashMap<>();
             body.put("pinfl", pinfl);
 
             HttpHeaders headers = new HttpHeaders();
@@ -577,7 +577,7 @@ public class PassportServiceController {
 
         // Re-wrap: api_mspd returns data as single object, old-hemis expects data array
         Object personData = mspdData.get("data");
-        Map<String, Object> guvdLikeData = new HashMap<>();
+        Map<String, Object> guvdLikeData = new LinkedHashMap<>();
         guvdLikeData.put("result", resultCode);
         guvdLikeData.put("data", personData != null ? List.of(personData) : List.of());
         guvdLikeData.put("comments", mspdData.getOrDefault("comments", ""));

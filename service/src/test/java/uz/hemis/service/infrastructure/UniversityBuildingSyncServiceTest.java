@@ -1,5 +1,6 @@
 package uz.hemis.service.infrastructure;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,16 +8,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uz.hemis.common.dto.building.BuildingSyncDto;
 import uz.hemis.common.dto.building.BuildingSyncResult;
 import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
 import uz.hemis.domain.repository.UniversityBuildingRepository;
 import uz.hemis.service.infrastructure.mapper.BuildingMapper;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -61,6 +68,28 @@ class UniversityBuildingSyncServiceTest {
                 .categoryCode("ACADEMIC")
                 .yearBuilt(2010)
                 .build();
+        // Default authenticated tenant: university_code=401 — mos endpoint chaqiruvchi.
+        // Har test bu setup'ni override qilishi mumkin.
+        setAuthenticatedTenant("401");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    /** OAuth2 client_credentials JWT bilan SecurityContext'ni populate qiladi. */
+    private void setAuthenticatedTenant(String universityCode) {
+        Jwt jwt = Jwt.withTokenValue("mock-test-token")
+                .header("alg", "HS256")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .subject("00000000-0000-0000-0000-000000000001")
+                .claim("client_type", "UNIVERSITY_BACKEND")
+                .claim("university_code", universityCode)
+                .build();
+        SecurityContextHolder.getContext()
+                .setAuthentication(new JwtAuthenticationToken(jwt));
     }
 
     @Test
@@ -186,5 +215,59 @@ class UniversityBuildingSyncServiceTest {
 
     private String safe(Object o) {
         return o == null ? "" : o.toString();
+    }
+
+    // =====================================================
+    // Cross-tenant scope enforcement (defense-in-depth)
+    // =====================================================
+
+    @Test
+    @DisplayName("Cross-tenant: caller universityCode=999, request=401 → SecurityException (403)")
+    void sync_whenForeignTenant_throwsSecurityException() {
+        setAuthenticatedTenant("999");  // caller boshqa OTM
+        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("Caller does not own university 401");
+        verifyNoInteractions(repo, mapper, autoFiller);
+    }
+
+    @Test
+    @DisplayName("Missing JWT claim: token'da university_code yo'q → SecurityException")
+    void sync_whenJwtHasNoUniversityClaim_throwsSecurityException() {
+        Jwt jwt = Jwt.withTokenValue("no-claim-token")
+                .header("alg", "HS256")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .subject("00000000-0000-0000-0000-000000000001")
+                .claim("client_type", "EXTERNAL_SYSTEM")  // no university_code claim
+                .build();
+        SecurityContextHolder.getContext()
+                .setAuthentication(new JwtAuthenticationToken(jwt));
+
+        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
+                .isInstanceOf(SecurityException.class)
+                .hasMessageContaining("Caller does not own university 401");
+        verifyNoInteractions(repo, mapper, autoFiller);
+    }
+
+    @Test
+    @DisplayName("Non-JWT auth (UsernamePasswordToken) → SecurityException (USER tokeni bilan kirib bo'lmaydi)")
+    void sync_whenNonJwtAuth_throwsSecurityException() {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken("user", "pass", List.of())
+        );
+
+        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(repo, mapper, autoFiller);
+    }
+
+    @Test
+    @DisplayName("Anonymous (no SecurityContext) → SecurityException")
+    void sync_whenAnonymous_throwsSecurityException() {
+        SecurityContextHolder.clearContext();
+        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
+                .isInstanceOf(SecurityException.class);
+        verifyNoInteractions(repo, mapper, autoFiller);
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 import uz.hemis.domain.entity.academic.AcademicMethodologicPublications;
 import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
@@ -41,8 +42,7 @@ public class AcademicMethodologicPublicationsEntityController {
             @RequestParam(required = false) String view) {
         Optional<AcademicMethodologicPublications> entity = academicService.findAcademicMethodologicPublicationsById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Entity not found",
-                "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+            return ResponseEntity.status(404).body(LegacyResponseHelper.notFoundMap(ENTITY_NAME, entityId));
         }
         return ResponseEntity.ok(academicService.toAcademicMethodologicPublicationsMap(entity.get(), returnNulls, view));
     }
@@ -55,8 +55,7 @@ public class AcademicMethodologicPublicationsEntityController {
             @RequestParam(required = false) String view) {
         Optional<AcademicMethodologicPublications> existingOpt = academicService.findAcademicMethodologicPublicationsById(entityId);
         if (existingOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Entity not found",
-                "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+            return ResponseEntity.status(404).body(LegacyResponseHelper.notFoundMap(ENTITY_NAME, entityId));
         }
         AcademicMethodologicPublications entity = existingOpt.get();
         academicService.updateAcademicMethodologicPublicationsFromMap(entity, body);
@@ -70,8 +69,7 @@ public class AcademicMethodologicPublicationsEntityController {
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {
         Optional<AcademicMethodologicPublications> entity = academicService.findAcademicMethodologicPublicationsById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Entity not found",
-                "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+            return ResponseEntity.status(404).body(LegacyResponseHelper.notFoundMap(ENTITY_NAME, entityId));
         }
         academicService.deleteAcademicMethodologicPublications(entity.get());
         return ResponseEntity.ok().build();

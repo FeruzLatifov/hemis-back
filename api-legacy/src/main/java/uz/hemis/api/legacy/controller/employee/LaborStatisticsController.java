@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Tag(name = "48.Mehnat", description = "Mehnat statistikasi")
@@ -27,7 +27,7 @@ public class LaborStatisticsController {
     ) {
         log.debug("Getting employment statistics for university: {}, year: {}", university, academicYear);
 
-        Map<String, Object> statistics = new HashMap<>();
+        Map<String, Object> statistics = new LinkedHashMap<>();
         statistics.put("reportType", "employment");
         statistics.put("university", university);
         statistics.put("academicYear", academicYear);
@@ -46,7 +46,7 @@ public class LaborStatisticsController {
     ) {
         log.debug("Getting staff statistics for university: {}", university);
 
-        Map<String, Object> statistics = new HashMap<>();
+        Map<String, Object> statistics = new LinkedHashMap<>();
         statistics.put("reportType", "staff");
         statistics.put("university", university);
         statistics.put("totalStaff", 0);
@@ -65,7 +65,7 @@ public class LaborStatisticsController {
     ) {
         log.debug("Getting workload statistics for university: {}, year: {}", university, academicYear);
 
-        Map<String, Object> statistics = new HashMap<>();
+        Map<String, Object> statistics = new LinkedHashMap<>();
         statistics.put("reportType", "workload");
         statistics.put("university", university);
         statistics.put("academicYear", academicYear);

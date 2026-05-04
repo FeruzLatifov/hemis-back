@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.student.StudentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.student.Student;
 import uz.hemis.service.student.mapper.StudentMapper;
 import uz.hemis.domain.repository.StudentRepository;
@@ -59,7 +60,7 @@ public class StudentCoreService {
 
     @Cacheable(value = "students", key = "'pinfl:' + #pinfl", unless = "#result == null")
     public StudentDto findByPinfl(String pinfl) {
-        log.debug("Finding master student by PINFL: {} (cache miss)", pinfl);
+        log.debug("Finding master student by PINFL: {} (cache miss)", Pinfl.maskOrEmpty(pinfl));
 
         Student student = studentRepository.findMasterByPinfl(pinfl)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "pinfl", pinfl));
@@ -68,7 +69,7 @@ public class StudentCoreService {
     }
 
     public List<StudentDto> findAllByPinfl(String pinfl) {
-        log.debug("Finding all students (including duplicates) by PINFL: {}", pinfl);
+        log.debug("Finding all students (including duplicates) by PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         List<Student> students = studentRepository.findAllByPinfl(pinfl);
         return studentMapper.toDtoList(students);
@@ -122,7 +123,7 @@ public class StudentCoreService {
     @CachePut(value = "students", key = "#result.id")
     public StudentDto create(StudentDto studentDto) {
         log.info("Creating new student (OLD-HEMIS compatible) - PINFL: {}, University: {}, EducationType: {}, Year: {}",
-                studentDto.getPinfl(), studentDto.getUniversity(), studentDto.getEducationType(), studentDto.getEducationYear());
+                Pinfl.maskOrEmpty(studentDto.getPinfl()), studentDto.getUniversity(), studentDto.getEducationType(), studentDto.getEducationYear());
 
         // STEP 1: Check for existing MASTER (isDuplicate=TRUE)
         if (studentDto.getPinfl() != null && !studentDto.getPinfl().isEmpty()) {
@@ -130,7 +131,7 @@ public class StudentCoreService {
 
             if (existingMaster.isPresent()) {
                 log.info("OLD-HEMIS Step 1: Found existing MASTER for PINFL: {}. Returning existing.",
-                        studentDto.getPinfl());
+                        Pinfl.maskOrEmpty(studentDto.getPinfl()));
                 log.info("Existing master - ID: {}, Code: {}, Status: {}",
                         existingMaster.get().getId(),
                         existingMaster.get().getCode(),
@@ -151,7 +152,7 @@ public class StudentCoreService {
 
             if (existingInProgram.isPresent()) {
                 log.info("OLD-HEMIS Step 2: Found existing student in same program. PINFL: {}, Type: {}, Year: {}",
-                        studentDto.getPinfl(), studentDto.getEducationType(), studentDto.getEducationYear());
+                        Pinfl.maskOrEmpty(studentDto.getPinfl()), studentDto.getEducationType(), studentDto.getEducationYear());
                 log.info("Existing student - ID: {}, Code: {}",
                         existingInProgram.get().getId(),
                         existingInProgram.get().getCode());
@@ -184,7 +185,7 @@ public class StudentCoreService {
             int updatedCount = studentRepository.markPreviousMastersAsDuplicates(studentDto.getPinfl());
             if (updatedCount > 0) {
                 log.info("OLD-HEMIS: Marked {} previous master(s) as isDuplicate=FALSE for PINFL: {}",
-                        updatedCount, studentDto.getPinfl());
+                        updatedCount, Pinfl.maskOrEmpty(studentDto.getPinfl()));
             }
         }
 
@@ -197,14 +198,14 @@ public class StudentCoreService {
         }
 
         log.info("Creating NEW student (OLD-HEMIS compatible) - Code: {}, PINFL: {}, isDuplicate: FALSE",
-                generatedCode, studentDto.getPinfl());
+                generatedCode, Pinfl.maskOrEmpty(studentDto.getPinfl()));
 
         Student saved = studentRepository.save(student);
 
         log.info("Student created successfully - ID: {}, Code: {}, PINFL: {}",
                 saved.getId(),
                 saved.getCode(),
-                saved.getPinfl());
+                Pinfl.maskOrEmpty(saved.getPinfl()));
 
         return studentMapper.toDto(saved);
     }

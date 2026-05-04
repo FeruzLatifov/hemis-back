@@ -2,6 +2,7 @@ package uz.hemis.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +39,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)  // ✅ Don't include null fields (old-hemis compatibility)
+// CUBA klient OAuth2 spec field tartibni qat'iy kutadi — old-hemis bilan bir xil
+@JsonPropertyOrder({"access_token", "token_type", "refresh_token", "expires_in", "scope"})
 public class TokenResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;

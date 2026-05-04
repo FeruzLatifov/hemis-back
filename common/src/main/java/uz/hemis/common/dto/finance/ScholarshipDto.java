@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.finance;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,18 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: api-legacy /finance/scholarship/* CUBA klient field tartibi
+@JsonPropertyOrder({
+    "id",
+    "_student", "_university",
+    "_education_type", "_education_form", "_payment_form",
+    "_semester", "_education_year",
+    "_stipend_category", "_stipend_type",
+    "decree", "group", "curriculum",
+    "start_date", "end_date",
+    "local_id", "semester_number",
+    "create_ts", "created_by", "update_ts", "updated_by"
+})
 public class ScholarshipDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

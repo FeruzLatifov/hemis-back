@@ -8,7 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -24,7 +24,7 @@ public class QrDiplomaController {
     public ResponseEntity<ResponseWrapper<Map<String, String>>> generateQrCode(@PathVariable UUID diplomaId) {
         log.info("Generating QR code for diploma: {}", diplomaId);
 
-        Map<String, String> result = new HashMap<>();
+        Map<String, String> result = new LinkedHashMap<>();
         result.put("diplomaId", diplomaId.toString());
         result.put("qrCode", "QR-" + System.currentTimeMillis());
         result.put("qrImageUrl", "/api/qr-diploma/image/" + result.get("qrCode"));
@@ -35,7 +35,7 @@ public class QrDiplomaController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyQrCode(@RequestParam String qrCode) {
-        Map<String, Object> verification = new HashMap<>();
+        Map<String, Object> verification = new LinkedHashMap<>();
         verification.put("qrCode", qrCode);
         verification.put("valid", true);
 

@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -21,7 +21,7 @@ public class ServicesApiController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/available")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAvailableServices() {
-        Map<String, Object> services = new HashMap<>();
+        Map<String, Object> services = new LinkedHashMap<>();
         services.put("totalServices", 0);
         services.put("activeServices", 0);
 
@@ -31,7 +31,7 @@ public class ServicesApiController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/info/{serviceCode}")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getServiceInfo(@PathVariable String serviceCode) {
-        Map<String, String> info = new HashMap<>();
+        Map<String, String> info = new LinkedHashMap<>();
         info.put("serviceCode", serviceCode);
         info.put("serviceName", "Service " + serviceCode);
         info.put("status", "active");

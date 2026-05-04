@@ -1,6 +1,5 @@
 package uz.hemis.domain.entity.security;
 
-import uz.hemis.domain.entity.employee.Position;
 import uz.hemis.domain.entity.reference.Language;
 import uz.hemis.domain.entity.student.Group;
 import uz.hemis.domain.entity.university.University;

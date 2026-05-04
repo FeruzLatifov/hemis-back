@@ -20,6 +20,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.registry.FacultyRegistryService;
 import uz.hemis.service.registry.dto.*;
@@ -186,7 +187,7 @@ public class FacultyRegistryController {
                  q, status, pageable.getPageNumber());
 
         Page<FacultyGroupRowDto> groups = facultyRegistryService.getFacultyGroups(q, status, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(groups)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(groups)));
     }
 
     @Schema(name = "FacultyGroupResponse")
@@ -310,7 +311,7 @@ public class FacultyRegistryController {
         Page<FacultyRowDto> faculties = facultyRegistryService.getFacultiesByUniversity(
             universityCode, q, status, pageable
         );
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(faculties)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(faculties)));
     }
 
     @Schema(name = "FacultyRowResponse")

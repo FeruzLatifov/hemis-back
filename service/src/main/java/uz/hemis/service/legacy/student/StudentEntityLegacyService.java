@@ -93,10 +93,12 @@ public class StudentEntityLegacyService {
     }
 
     public Map<String, Object> toStudentCertificateMap(StudentCertificate entity, Boolean returnNulls, String view) {
+        // CUBA convention: _entityName va _instanceName id'dan OLDIN qo'yilishi shart
+        // (LegacyEntityAdapter.toMap:65 bilan bir xil tartib)
         Map<String, Object> map = new LinkedHashMap<>();
-        map.put("id", entity.getId());
         map.put("_entityName", "hemishe_EStudentCertificate");
         map.put("_instanceName", "com.company.hemishe.entity.EStudentCertificate-" + entity.getId() + " [detached]");
+        map.put("id", entity.getId());
 
         // Reference fields: faqat view mode da qaytariladi
         boolean useNested = view != null && !view.isEmpty();

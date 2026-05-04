@@ -1,18 +1,19 @@
 -- =====================================================
--- V003: HR CLASSIFIERS — position_type + position
+-- V003: HR CLASSIFIERS — h_position_type + h_position
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2026-04-23
 -- Purpose: Position classifiers for HR domain.
 --   Pattern: Banner SPRIDEN/NBRJOBS, PeopleSoft PERSONAL_DATA/JOB
---   Note: position_type + position are NEW clean classifiers (not old hemishe_h_*).
+--   Note: h_position_type + h_position are NEW clean classifiers (h_* prefiks: ADR-0006).
 --         They feed employee_job (V004) and must exist before it.
 -- =====================================================
 
 -- =====================================================
--- POSITION_TYPE (lavozim turi — 14 ta guruh)
+-- h_position_type (lavozim turi — 14 ta guruh)
+-- h_* prefiks: 224 OTM ekosistemi (hemis_NNN bazalari) konvensiyasi (ADR-0006)
 -- =====================================================
-CREATE TABLE position_type (
+CREATE TABLE h_position_type (
     code       VARCHAR(10) PRIMARY KEY,
     name       VARCHAR(255) NOT NULL,
     name_ru    VARCHAR(255),
@@ -26,17 +27,17 @@ CREATE TABLE position_type (
     updated_by VARCHAR(50)
 );
 
-COMMENT ON TABLE position_type IS 'Position type classifier: Leadership, Academic, Administrative, etc.';
+COMMENT ON TABLE h_position_type IS 'Position type classifier: Leadership, Academic, Administrative, etc.';
 
 -- =====================================================
--- POSITION (lavozim — type ga bog'langan)
+-- h_position (lavozim — type ga bog'langan)
 -- =====================================================
-CREATE TABLE position (
+CREATE TABLE h_position (
     code       VARCHAR(10) PRIMARY KEY,
     name       VARCHAR(255) NOT NULL,
     name_ru    VARCHAR(255),
     name_en    VARCHAR(255),
-    type_code  VARCHAR(10)  NOT NULL REFERENCES position_type(code),
+    type_code  VARCHAR(10)  NOT NULL REFERENCES h_position_type(code),
     is_active  BOOLEAN      NOT NULL DEFAULT true,
     sort_order INTEGER               DEFAULT 0,
     version    INTEGER               DEFAULT 1,
@@ -46,5 +47,5 @@ CREATE TABLE position (
     updated_by VARCHAR(50)
 );
 
-COMMENT ON TABLE position IS 'Position classifier: Rektor, Professor, Buxgalter, etc. Linked to position_type.';
-CREATE INDEX idx_position_type ON position(type_code);
+COMMENT ON TABLE h_position IS 'Position classifier: Rektor, Professor, Buxgalter, etc. Linked to h_position_type.';
+CREATE INDEX idx_h_position_type ON h_position(type_code);

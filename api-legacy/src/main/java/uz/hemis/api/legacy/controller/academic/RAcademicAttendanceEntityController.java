@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.academic;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -43,11 +45,11 @@ public class RAcademicAttendanceEntityController {
             UUID id = UUID.fromString(entityId);
             Optional<RAcademicAttendance> entity = academicService.findRAcademicAttendanceById(id);
             if (entity.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
             }
             return ResponseEntity.ok(academicService.toRAcademicAttendanceMap(entity.get(), returnNulls));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of("error", "Invalid UUID", "details", "Invalid UUID format: " + entityId));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -59,7 +61,7 @@ public class RAcademicAttendanceEntityController {
             UUID id = UUID.fromString(entityId);
             Optional<RAcademicAttendance> existingOpt = academicService.findRAcademicAttendanceById(id);
             if (existingOpt.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
             }
             RAcademicAttendance entity = existingOpt.get();
             academicService.updateRAcademicAttendanceFromMap(entity, entityData);
@@ -67,7 +69,7 @@ public class RAcademicAttendanceEntityController {
             RAcademicAttendance saved = academicService.saveRAcademicAttendance(entity);
             return ResponseEntity.ok(academicService.toRAcademicAttendanceMap(saved, false));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of("error", "Invalid UUID", "details", "Invalid UUID format: " + entityId));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -79,12 +81,12 @@ public class RAcademicAttendanceEntityController {
             UUID id = UUID.fromString(entityId);
             Optional<RAcademicAttendance> entity = academicService.findRAcademicAttendanceById(id);
             if (entity.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"));
             }
             academicService.deleteRAcademicAttendance(entity.get());
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of("error", "Invalid UUID", "details", "Invalid UUID format: " + entityId));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -145,7 +147,7 @@ public class RAcademicAttendanceEntityController {
             return ResponseEntity.ok(academicService.toRAcademicAttendanceMap(saved, false));
         } catch (Exception e) {
             log.error("CREATE xatosi: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of("error", "Server error", "details", e.getClass().getSimpleName() + ": " + e.getMessage()));
+            return ResponseEntity.status(500).body(LegacyResponseHelper.errorMap("Server error", e.getClass().getSimpleName() + ": " + e.getMessage()));
         }
     }
 

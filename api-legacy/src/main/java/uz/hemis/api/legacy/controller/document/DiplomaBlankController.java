@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.document.DiplomaBlankService;
 import uz.hemis.common.dto.document.DiplomaBlankDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.List;
@@ -79,7 +80,7 @@ public class DiplomaBlankController {
         log.debug("GET /app/rest/v2/diploma-blanks - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
 
         Page<DiplomaBlankDto> diplomas = diplomaBlankService.findAll(pageable);
-        PageResponse<DiplomaBlankDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaBlankDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -162,7 +163,7 @@ public class DiplomaBlankController {
         log.debug("GET /app/rest/v2/diploma-blanks?university={}", universityCode);
 
         Page<DiplomaBlankDto> diplomas = diplomaBlankService.findByUniversity(universityCode, pageable);
-        PageResponse<DiplomaBlankDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaBlankDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -188,7 +189,7 @@ public class DiplomaBlankController {
         log.debug("GET /app/rest/v2/diploma-blanks?university={}&status={}", universityCode, status);
 
         Page<DiplomaBlankDto> diplomas = diplomaBlankService.findByUniversityAndStatus(universityCode, status, pageable);
-        PageResponse<DiplomaBlankDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaBlankDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -214,7 +215,7 @@ public class DiplomaBlankController {
         log.debug("GET /app/rest/v2/diploma-blanks?university={}&year={}", universityCode, academicYear);
 
         Page<DiplomaBlankDto> diplomas = diplomaBlankService.findByUniversityAndYear(universityCode, academicYear, pageable);
-        PageResponse<DiplomaBlankDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaBlankDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }

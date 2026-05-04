@@ -165,7 +165,7 @@ public class LegacyEntityAdapter {
         try {
             T dto = dtoClass.getDeclaredConstructor().newInstance();
 
-            Map<String, Object> cleanMap = new HashMap<>(map);
+            Map<String, Object> cleanMap = new LinkedHashMap<>(map);
             cleanMap.remove("_entityName");
             cleanMap.remove("_instanceName");
 

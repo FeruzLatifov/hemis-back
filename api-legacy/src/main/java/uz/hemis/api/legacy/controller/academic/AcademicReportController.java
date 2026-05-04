@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,7 +30,7 @@ public class AcademicReportController {
         log.debug("Generating student report for university: {}, faculty: {}, year: {}",
                   university, faculty, academicYear);
 
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "students");
         report.put("university", university);
         report.put("faculty", faculty);
@@ -52,7 +52,7 @@ public class AcademicReportController {
         log.debug("Generating grade report for university: {}, specialty: {}, year: {}",
                   university, specialty, academicYear);
 
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "grades");
         report.put("university", university);
         report.put("specialty", specialty);
@@ -74,7 +74,7 @@ public class AcademicReportController {
         log.debug("Generating attendance report for university: {}, group: {}, period: {} to {}",
                   university, group, startDate, endDate);
 
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "attendance");
         report.put("university", university);
         report.put("group", group);
@@ -94,7 +94,7 @@ public class AcademicReportController {
     ) {
         log.debug("Generating summary report for university: {}, year: {}", university, academicYear);
 
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("reportType", "summary");
         report.put("university", university);
         report.put("academicYear", academicYear);

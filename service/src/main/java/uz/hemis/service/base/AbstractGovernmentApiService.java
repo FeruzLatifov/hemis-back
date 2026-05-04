@@ -402,7 +402,7 @@ public abstract class AbstractGovernmentApiService {
      * @return Success response map
      */
     protected Map<String, Object> buildFlagResponse(String flagName, boolean value) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
         response.put(flagName, value);
         return response;
@@ -418,7 +418,8 @@ public abstract class AbstractGovernmentApiService {
      * @return Error response map
      */
     protected Map<String, Object> errorResponse(String code, String message) {
-        Map<String, Object> error = new HashMap<>();
+        // CUBA klient {success, code, message} tartibni kutadi — LinkedHashMap shart
+        Map<String, Object> error = new LinkedHashMap<>();
         error.put("success", false);
         error.put("code", code);
         error.put("message", message);

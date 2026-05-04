@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.finance.EmploymentService;
 import uz.hemis.common.dto.finance.EmploymentDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class EmploymentController {
             @PageableDefault(size = 20, sort = "employmentDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<EmploymentDto> employments = employmentService.findAll(pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(employments)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(employments)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -59,7 +60,7 @@ public class EmploymentController {
             @PageableDefault(size = 20, sort = "employmentDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<EmploymentDto> employments = employmentService.findByUniversity(universityCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(employments)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(employments)));
     }
 
     @PreAuthorize("isAuthenticated()")

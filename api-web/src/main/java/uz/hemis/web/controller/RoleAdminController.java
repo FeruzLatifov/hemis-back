@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.admin.RoleAdminService;
 import uz.hemis.service.admin.dto.*;
@@ -58,7 +59,7 @@ public class RoleAdminController {
     ) {
         Pageable pageable = buildPageable(page, size, sort);
         Page<RoleResponse> roles = roleAdminService.getAll(search, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(roles)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(roles)));
     }
 
     @GetMapping("/{id}")

@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.university;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,26 @@ import java.io.Serializable;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// Field tartibi 200+ universitet CUBA klient (Univer Yii2 PHP) bilan FROZEN — declaration order
+@JsonPropertyOrder({
+    "code",
+    "tin", "name", "address", "cadastre",
+    "university_url", "student_url", "teacher_url", "uzbmb_url",
+    "_soato", "_soato_region",
+    "_university_type", "_ownership", "_university_version",
+    "_university_activity_status", "_university_belongs_to",
+    "_university_contract_category", "_parent_university",
+    "active", "gpa_edit", "accreditation_edit", "add_student",
+    "allow_grouping", "allow_transfer_outside",
+    "_version_type", "_terrain",
+    "mail_address", "bank_info", "accreditation_info",
+    "add_foreign_student", "grading_system", "one_id",
+    "add_transfer_student", "add_academic_mobile_student",
+    "_ownership_name", "_university_type_name",
+    "_university_activity_status_name", "_university_belongs_to_name",
+    "_university_contract_category_name", "_university_version_name",
+    "_soato_name", "_soato_region_name", "_terrain_name"
+})
 public class UniversityDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

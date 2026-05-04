@@ -15,9 +15,10 @@
 -- =====================================================
 
 -- =====================================================
--- 1. building_category — bino kategoriyasi classifier (kengayadigan)
+-- 1. h_building_category — bino kategoriyasi classifier (kengayadigan)
+-- h_* prefiks: 224 OTM ekosistemi konvensiyasi (ADR-0006)
 -- =====================================================
-CREATE TABLE building_category (
+CREATE TABLE h_building_category (
     code VARCHAR(20) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     name_ru VARCHAR(255),
@@ -31,7 +32,7 @@ CREATE TABLE building_category (
     updated_by VARCHAR(50)
 );
 
-INSERT INTO building_category (code, name, name_ru, name_en, sort_order) VALUES
+INSERT INTO h_building_category (code, name, name_ru, name_en, sort_order) VALUES
     ('ACADEMIC',   'O''quv binolari',        'Учебные здания',        'Academic buildings',      1),
     ('DORMITORY',  'Talabalar turar joyi',   'Студенческие общежития','Student dormitories',     2),
     ('ACTIVITY',   'Faollar zali',           'Актовый зал',           'Activity hall',           3),
@@ -41,9 +42,9 @@ INSERT INTO building_category (code, name, name_ru, name_en, sort_order) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
--- 2. construction_material — qurilish materiali classifier
+-- 2. h_construction_material — qurilish materiali classifier
 -- =====================================================
-CREATE TABLE construction_material (
+CREATE TABLE h_construction_material (
     code VARCHAR(20) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     name_ru VARCHAR(255),
@@ -57,7 +58,7 @@ CREATE TABLE construction_material (
     updated_by VARCHAR(50)
 );
 
-INSERT INTO construction_material (code, name, name_ru, name_en, sort_order) VALUES
+INSERT INTO h_construction_material (code, name, name_ru, name_en, sort_order) VALUES
     ('BRICK',    'G''isht',    'Кирпич',        'Brick',    1),
     ('CONCRETE', 'Beton',      'Бетон',         'Concrete', 2),
     ('PANEL',    'Panel',      'Панель',        'Panel',    3),
@@ -68,9 +69,9 @@ INSERT INTO construction_material (code, name, name_ru, name_en, sort_order) VAL
 ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
--- 3. roof_type — tom qoplamasi turi classifier
+-- 3. h_roof_type — tom qoplamasi turi classifier
 -- =====================================================
-CREATE TABLE roof_type (
+CREATE TABLE h_roof_type (
     code VARCHAR(20) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     name_ru VARCHAR(255),
@@ -84,7 +85,7 @@ CREATE TABLE roof_type (
     updated_by VARCHAR(50)
 );
 
-INSERT INTO roof_type (code, name, name_ru, name_en, sort_order) VALUES
+INSERT INTO h_roof_type (code, name, name_ru, name_en, sort_order) VALUES
     ('METAL_SHEET', 'Metall qoplama',    'Металлическое',        'Metal sheet',      1),
     ('TILE',        'Cherepitsa',        'Черепица',             'Tile',             2),
     ('SHIFER',      'Shifer',            'Шифер',                'Slate',            3),
@@ -112,7 +113,7 @@ CREATE TABLE university_building (
 
     -- Excel: Kategoriya (6 ta, kengayuvchi)
     category_code VARCHAR(20) NOT NULL
-        REFERENCES building_category(code) ON DELETE RESTRICT,
+        REFERENCES h_building_category(code) ON DELETE RESTRICT,
 
     -- Excel col 3: Yuridik manzil (cadastre'dan auto-fill)
     address TEXT,
@@ -128,9 +129,9 @@ CREATE TABLE university_building (
 
     -- Excel col 9-10: Material va tom (classifier FK)
     construction_material_code VARCHAR(20)
-        REFERENCES construction_material(code) ON DELETE SET NULL,
+        REFERENCES h_construction_material(code) ON DELETE SET NULL,
     roof_type_code VARCHAR(20)
-        REFERENCES roof_type(code) ON DELETE SET NULL,
+        REFERENCES h_roof_type(code) ON DELETE SET NULL,
 
     -- Excel col 11: Oxirgi ta'mir (tarixi — building_lifecycle'da)
     last_renovation_date DATE,
@@ -239,8 +240,8 @@ CREATE TABLE building_lifecycle (
     event_date DATE NOT NULL,
 
     -- REPURPOSED holat uchun
-    previous_category_code VARCHAR(20) REFERENCES building_category(code),
-    new_category_code VARCHAR(20) REFERENCES building_category(code),
+    previous_category_code VARCHAR(20) REFERENCES h_building_category(code),
+    new_category_code VARCHAR(20) REFERENCES h_building_category(code),
 
     -- Moliyaviy ma'lumot (ta'mir xarajati)
     cost NUMERIC(15,2),

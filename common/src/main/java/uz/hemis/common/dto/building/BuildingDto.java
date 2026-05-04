@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.building;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +22,19 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+// Field tartibi declaration order bilan deterministik (Lombok getter order'ga bog'liq emas)
+@JsonPropertyOrder({
+    "id", "universityCode",
+    "name", "categoryCode", "categoryName",
+    "address", "yearBuilt", "capacity", "floorCount",
+    "totalArea", "usableArea",
+    "constructionMaterialCode", "constructionMaterialName", "roofTypeCode", "roofTypeName",
+    "lastRenovationDate",
+    "latitude", "longitude", "mapUrl",
+    "cadNumber", "note",
+    "source", "syncedAt",
+    "version", "createdAt", "updatedAt"
+})
 @Schema(name = "Building", description = "Universitet binosi")
 public class BuildingDto implements Serializable {
 

@@ -27,6 +27,7 @@ import uz.hemis.service.integration.HemisApiService;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 import java.util.UUID;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -381,10 +382,7 @@ public class StudentServiceController {
         Object dataObj = request.get("data");
         if (dataObj == null) {
             log.warn("Missing 'data' parameter in request");
-            return ResponseEntity.ok(Map.of(
-                    "success", false,
-                    "message", "Missing 'data' parameter"
-            ));
+            return ResponseEntity.ok(LegacyResponseHelper.failureMap("Missing 'data' parameter"));
         }
 
         // Convert to StudentIdRequest
@@ -406,10 +404,7 @@ public class StudentServiceController {
         // Validate university code
         if (universityCode == null || universityCode.isEmpty()) {
             log.error("University code not found for current user");
-            return ResponseEntity.ok(Map.of(
-                    "success", false,
-                    "message", "User university not configured"
-            ));
+            return ResponseEntity.ok(LegacyResponseHelper.failureMap("User university not configured"));
         }
 
         log.info("Using university code: {} for student/id request", universityCode);
@@ -685,10 +680,7 @@ public class StudentServiceController {
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             log.warn("[CUBA Service] student/gpa: Invalid request - {}", e.getMessage());
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "Bad Request",
-                    "message", e.getMessage()
-            ));
+            return ResponseEntity.badRequest().body(LegacyResponseHelper.errorMap("Bad Request", e.getMessage()));
         }
     }
 
@@ -911,8 +903,7 @@ public class StudentServiceController {
     public ResponseEntity<?> isExpel(
             @Parameter(description = "PINFL lar (vergul bilan ajratilgan)") @RequestParam String pinfls) {
         if (pinfls == null || pinfls.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false, "message", "pinfls required"));
+            return ResponseEntity.badRequest().body(LegacyResponseHelper.failureMap("pinfls required"));
         }
         String[] pinflArray = java.util.Arrays.stream(pinfls.split(","))
                 .map(String::trim)
@@ -920,8 +911,7 @@ public class StudentServiceController {
                 .toArray(String[]::new);
         log.info("[CUBA Service] student/isExpel: {} PINFL qabul qilindi", pinflArray.length);
         if (pinflArray.length == 0) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false, "message", "No valid PINFLs provided"));
+            return ResponseEntity.badRequest().body(LegacyResponseHelper.failureMap("No valid PINFLs provided"));
         }
         Map<String, Object> result = studentService.isExpel(pinflArray);
         return ResponseEntity.ok(result);

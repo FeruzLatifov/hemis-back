@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.university;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,13 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// CUBA klient field tartibi
+@JsonPropertyOrder({
+    "id",
+    "_university", "_education_type", "_education_year",
+    "groupId", "groupName",
+    "active"
+})
 public class GroupDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -1,7 +1,5 @@
 package uz.hemis.domain.entity.reference;
 
-import uz.hemis.domain.entity.employee.Position;
-
 import jakarta.persistence.*;
 import lombok.*;
 import uz.hemis.domain.entity.base.AuditableEntity;

@@ -2,6 +2,7 @@ package uz.hemis.api.legacy.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,6 +52,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.ALWAYS)  // Include null fields for old-hemis compatibility
+// CUBA klient response wrapper old-hemis bilan bir xil tartibda bo'lishi shart
+@JsonPropertyOrder({"success", "status", "statusText", "responseTime", "data"})
 @Schema(description = "Legacy user info response wrapper (old-hemis format)")
 public class LegacyUserInfoResponse implements Serializable {
 
@@ -87,6 +90,12 @@ public class LegacyUserInfoResponse implements Serializable {
     @NoArgsConstructor
     @AllArgsConstructor
     @JsonInclude(JsonInclude.Include.ALWAYS)  // Include null fields
+    // CUBA convention: old-hemis User payload field tartibi
+    @JsonPropertyOrder({
+            "id", "login", "name", "firstName", "middleName", "lastName",
+            "position", "email", "timeZone", "language",
+            "_instanceName", "locale", "university"
+    })
     @Schema(description = "User data")
     public static class UserData implements Serializable {
 

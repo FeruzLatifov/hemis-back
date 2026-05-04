@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.teacher;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,14 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: 200+ OTM CUBA klient teacher payload field tartibi
+@JsonPropertyOrder({
+    "id",
+    "firstname", "lastname", "fathername", "fullName",
+    "birthday", "_gender", "pinfl",
+    "_university",
+    "_academic_degree", "_academic_rank"
+})
 public class TeacherDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

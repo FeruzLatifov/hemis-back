@@ -3,13 +3,13 @@ package uz.hemis.domain.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.infrastructure.ConstructionMaterial;
+import uz.hemis.domain.entity.infrastructure.HRoofType;
 
 import java.util.List;
 
 @Repository
 @Transactional(readOnly = true)
-public interface ConstructionMaterialRepository extends JpaRepository<ConstructionMaterial, String> {
+public interface HRoofTypeRepository extends JpaRepository<HRoofType, String> {
 
-    List<ConstructionMaterial> findByIsActiveTrueOrderBySortOrder();
+    List<HRoofType> findByIsActiveTrueOrderBySortOrder();
 }

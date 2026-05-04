@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.academic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,6 +31,14 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: 200+ OTM CUBA klient field tartibi
+@JsonPropertyOrder({
+    "id", "code", "name", "short_name",
+    "_university", "_subject",
+    "credit_count", "total_hours", "lecture_hours", "practice_hours", "lab_hours", "semester",
+    "_course_type", "_assessment_type",
+    "active", "is_elective"
+})
 public class CourseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

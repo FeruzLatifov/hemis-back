@@ -178,7 +178,7 @@ public class UniversityInfoService {
                        m.position_code, p.name as position_name
                 FROM employee_job m
                 JOIN employee e ON e.id = m.employee_id
-                LEFT JOIN position p ON p.code = m.position_code
+                LEFT JOIN h_position p ON p.code = m.position_code
                 WHERE m.university_code = ? AND m.is_current = true
                   AND m.position_code = '20' AND m.deleted_at IS NULL
                 LIMIT 1
@@ -207,7 +207,7 @@ public class UniversityInfoService {
                        p.name as position_name
                 FROM hemishe_e_teacher t
                 JOIN hemishe_e_employee_jobs j ON j._employee = t.id AND j.delete_ts IS NULL
-                LEFT JOIN position p ON p.code = j._employee_position
+                LEFT JOIN h_position p ON p.code = j._employee_position
                 WHERE t._university = ? AND t.delete_ts IS NULL
                   AND j._employee_position = '20'
                 ORDER BY j.job_start_date DESC NULLS LAST

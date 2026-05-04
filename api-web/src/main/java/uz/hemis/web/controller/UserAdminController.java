@@ -23,6 +23,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.admin.UserAdminService;
 import uz.hemis.service.admin.dto.*;
@@ -94,7 +95,7 @@ public class UserAdminController {
         Page<UserAdminResponse> users = userAdminService.getUsers(
                 search, role, university, enabled, pageable, callerId);
 
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(users)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(users)));
     }
 
     @GetMapping("/{id}")

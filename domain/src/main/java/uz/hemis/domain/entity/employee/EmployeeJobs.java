@@ -61,14 +61,14 @@ public class EmployeeJobs extends AuditableEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_code", referencedColumnName = "code", insertable = false, updatable = false)
-    private Position position;
+    private HPosition position;
 
     @Column(name = "position_type_code", length = 10)
     private String positionTypeCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "position_type_code", referencedColumnName = "code", insertable = false, updatable = false)
-    private PositionType positionType;
+    private HPositionType positionType;
 
     @Column(name = "employment_form_code", length = 10)
     private String employmentFormCode;

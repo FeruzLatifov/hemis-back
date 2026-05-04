@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.document;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,7 +39,7 @@ public class DiplomaBlankEntityController {
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> entity = documentService.findDiplomaBlankById(entityId);
-        if (entity.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EDiplomBlank with id " + entityId + " not found"));
+        if (entity.isEmpty()) return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_EDiplomBlank with id " + entityId + " not found"));
         return ResponseEntity.ok(documentService.toDiplomaBlankMap(entity.get(), returnNulls));
     }
 
@@ -45,7 +47,7 @@ public class DiplomaBlankEntityController {
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> existingOpt = documentService.findDiplomaBlankById(entityId);
-        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EDiplomBlank with id " + entityId + " not found"));
+        if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_EDiplomBlank with id " + entityId + " not found"));
         DiplomaBlank entity = existingOpt.get();
         documentService.updateDiplomaBlankFromMap(entity, body);
         DiplomaBlank saved = documentService.saveDiplomaBlank(entity);

@@ -25,6 +25,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.service.registry.UniversityRegistryService;
@@ -193,7 +194,7 @@ public class RegistryUniversityController {
                 oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent, pageable
         );
 
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(universities)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(universities)));
     }
 
     @GetMapping("/{id}")

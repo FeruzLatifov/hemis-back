@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.building.BuildingCreateUpdateDto;
 import uz.hemis.common.dto.building.BuildingDto;
@@ -64,7 +65,7 @@ public class BuildingController {
             Pageable pageable) {
         log.info("GET /universities/{}/buildings page={}", universityCode, pageable.getPageNumber());
         Page<BuildingDto> page = buildingService.findByUniversity(universityCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(page)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(page)));
     }
 
     @PostMapping("/universities/{universityCode}/buildings")

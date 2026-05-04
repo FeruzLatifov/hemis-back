@@ -60,7 +60,8 @@ public class UserLegacyService {
      * Build user response map for /app/rest/v2/user/me endpoint
      */
     public Map<String, Object> toUserMeResponse(User user) {
-        Map<String, Object> response = new HashMap<>();
+        // CUBA klient (Univer Yii2 PHP) field tartibni kutadi — LinkedHashMap MAJBURIY
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("id", user.getId().toString());
         response.put("username", user.getUsername());
         response.put("fullName", user.getFullName());
@@ -79,7 +80,8 @@ public class UserLegacyService {
      * Build validate token response
      */
     public Map<String, Object> toValidateResponse(User user) {
-        Map<String, Object> response = new HashMap<>();
+        // CUBA klient field tartibni kutadi — LinkedHashMap MAJBURIY
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("valid", true);
         response.put("userId", user.getId().toString());
         response.put("username", user.getUsername());

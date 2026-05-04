@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.finance.Contract;
 import uz.hemis.domain.entity.student.Student;
 import uz.hemis.domain.repository.ContractRepository;
@@ -74,7 +75,7 @@ public class StudentCubaService {
      * Verify student exists by PINFL
      */
     public Map<String, Object> verify(String pinfl) {
-        log.info("Verifying student - PINFL: {}", pinfl);
+        log.info("Verifying student - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         // ✅ SECURITY FIX: PINFL format validatsiyasi
         if (pinfl == null || !pinfl.matches("\\d{14}")) {
@@ -106,7 +107,7 @@ public class StudentCubaService {
      * Get student by PINFL
      */
     public Map<String, Object> get(String pinfl) {
-        log.info("Getting student by PINFL - PINFL: {}", pinfl);
+        log.info("Getting student by PINFL - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
 
@@ -121,7 +122,7 @@ public class StudentCubaService {
      * Get student with enrollment status
      */
     public Map<String, Object> getWithStatus(String pinfl) {
-        log.info("Getting student with status - PINFL: {}", pinfl);
+        log.info("Getting student with status - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
 
@@ -168,7 +169,7 @@ public class StudentCubaService {
      * Searches for students with education type 40 (PhD) or 50 (DSc)
      */
     public Map<String, Object> getDoctoral(String pinfl) {
-        log.info("Getting doctoral student - PINFL: {}", pinfl);
+        log.info("Getting doctoral student - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         // Search all students with this PINFL, find doctoral one
         List<Student> allStudents = studentRepository.findAllByPinfl(pinfl);
@@ -223,7 +224,7 @@ public class StudentCubaService {
      * Get contract information for student
      */
     public Map<String, Object> contractInfo(String pinfl) {
-        log.info("Getting contract info - PINFL: {}", pinfl);
+        log.info("Getting contract info - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
 
@@ -333,7 +334,7 @@ public class StudentCubaService {
      * Calculate student GPA
      */
     public Map<String, Object> gpa(String pinfl) {
-        log.info("Calculating GPA - PINFL: {}", pinfl);
+        log.info("Calculating GPA - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
 
@@ -428,7 +429,7 @@ public class StudentCubaService {
      * Check scholarship eligibility
      */
     public Map<String, Object> checkScholarship(String pinfl) {
-        log.info("Checking scholarship eligibility - PINFL: {}", pinfl);
+        log.info("Checking scholarship eligibility - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
 
@@ -478,7 +479,7 @@ public class StudentCubaService {
      * Check scholarship eligibility (alternative method with semester)
      */
     public Map<String, Object> checkScholarship2(String pinfl, String semester) {
-        log.info("Checking scholarship eligibility (v2) - PINFL: {}, Semester: {}", pinfl, semester);
+        log.info("Checking scholarship eligibility (v2) - PINFL: {}, Semester: {}", Pinfl.maskOrEmpty(pinfl), semester);
 
         Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
 

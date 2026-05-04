@@ -1,6 +1,8 @@
 package uz.hemis.service.student;
 
+import uz.hemis.common.vo.Pinfl;
 import lombok.RequiredArgsConstructor;
+import uz.hemis.common.vo.Pinfl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -62,7 +64,7 @@ public class VerificationService {
      * @return OLD-HEMIS formatted response with verification records
      */
     public Map<String, Object> verifyByPinfl(String pinfl) {
-        log.info("Verifying student by PINFL: {}", pinfl);
+        log.info("Verifying student by PINFL: {}", Pinfl.maskOrEmpty(pinfl));
         Map<String, Object> result = new LinkedHashMap<>();
 
         try {

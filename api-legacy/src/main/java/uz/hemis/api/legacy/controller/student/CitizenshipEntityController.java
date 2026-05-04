@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.domain.entity.employee.Citizenship;
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
 import java.util.*;
@@ -195,17 +196,11 @@ public class CitizenshipEntityController {
         String name = (String) entityData.get("name");
 
         if (code == null || code.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "code is required",
-                "details", "code maydoni majburiy"
-            ));
+            return ResponseEntity.badRequest().body(LegacyResponseHelper.errorMap("code is required", "code maydoni majburiy"));
         }
 
         if (name == null || name.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "name is required",
-                "details", "name maydoni majburiy"
-            ));
+            return ResponseEntity.badRequest().body(LegacyResponseHelper.errorMap("name is required", "name maydoni majburiy"));
         }
 
         // OLD-HEMIS COMPATIBLE: CUBA Platform does upsert

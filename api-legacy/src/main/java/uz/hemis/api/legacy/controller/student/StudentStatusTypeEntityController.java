@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 import uz.hemis.domain.entity.student.StudentStatusType;
 import uz.hemis.service.legacy.student.StudentEntityLegacyService;
 
@@ -285,18 +286,12 @@ public class StudentStatusTypeEntityController {
 
         if (code == null || code.isBlank()) {
             log.warn("POST StudentStatusType - code is required");
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "code is required",
-                "details", "code maydoni majburiy"
-            ));
+            return ResponseEntity.badRequest().body(LegacyResponseHelper.errorMap("code is required", "code maydoni majburiy"));
         }
 
         if (name == null || name.isBlank()) {
             log.warn("POST StudentStatusType - name is required");
-            return ResponseEntity.badRequest().body(Map.of(
-                "error", "name is required",
-                "details", "name maydoni majburiy"
-            ));
+            return ResponseEntity.badRequest().body(LegacyResponseHelper.errorMap("name is required", "name maydoni majburiy"));
         }
 
         // OLD-HEMIS COMPATIBLE: CUBA Platform does upsert

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,7 +28,7 @@ public class StudentCertificateController {
     ) {
         log.info("Generating certificate for student: {}", studentId);
 
-        Map<String, Object> certificate = new HashMap<>();
+        Map<String, Object> certificate = new LinkedHashMap<>();
         certificate.put("studentId", studentId);
         certificate.put("certificateType", certificateType);
         certificate.put("certificateId", "CERT-" + System.currentTimeMillis());
@@ -40,7 +40,7 @@ public class StudentCertificateController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify/{certificateId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyCertificate(@PathVariable String certificateId) {
-        Map<String, Object> verification = new HashMap<>();
+        Map<String, Object> verification = new LinkedHashMap<>();
         verification.put("certificateId", certificateId);
         verification.put("valid", true);
         verification.put("verifiedAt", LocalDate.now());

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Tag(name = "65.Xo'jalik hisobot", description = "Iqtisodiy hisobotlar")
@@ -25,7 +25,7 @@ public class EconomicReportController {
             @RequestParam String university,
             @RequestParam(required = false) Integer year
     ) {
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("university", university);
         report.put("year", year);
         report.put("totalRevenue", 0.0);
@@ -38,7 +38,7 @@ public class EconomicReportController {
     @GetMapping("/budget")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getBudgetReport(@RequestParam String university) {
-        Map<String, Object> report = new HashMap<>();
+        Map<String, Object> report = new LinkedHashMap<>();
         report.put("university", university);
         report.put("budgetAllocated", 0.0);
         report.put("budgetUsed", 0.0);

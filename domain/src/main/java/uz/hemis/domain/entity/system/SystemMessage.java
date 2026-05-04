@@ -156,8 +156,12 @@ public class SystemMessage extends AuditableEntity {
      */
     @OneToMany(
         mappedBy = "systemMessage",
-        cascade = CascadeType.ALL,
-        orphanRemoval = true,
+        // Cascade scope (refactored 2026-05-04): faqat PERSIST + MERGE.
+        // REMOVE va orphanRemoval olib tashlandi — message soft-delete qilinganda
+        // tarjimalarning ham silently yo'qolishi noto'g'ri (i18n tarixini saqlash).
+        // Tarjimalar alohida service-layer'da soft-delete qilinadi.
+        cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+        orphanRemoval = false,
         fetch = FetchType.LAZY
     )
     @Builder.Default

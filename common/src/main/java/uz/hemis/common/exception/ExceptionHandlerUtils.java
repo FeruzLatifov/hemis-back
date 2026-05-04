@@ -2,18 +2,19 @@ package uz.hemis.common.exception;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import uz.hemis.common.dto.ErrorResponse;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Shared utility methods for exception handlers.
+ * Spring-free utility methods for exception handlers.
  *
- * <p>Extracts common logic used across GlobalExceptionHandler and WebExceptionHandler
- * to avoid code duplication.</p>
+ * <p><strong>Module boundary (per common/CLAUDE.md):</strong> {@code common} must NOT depend
+ * on Spring. Only Jakarta Validation API and pure Java are allowed here.</p>
+ *
+ * <p>Spring-coupled helpers (e.g. {@code MethodArgumentNotValidException} translation)
+ * live in {@code uz.hemis.app.exception.SpringValidationUtils}.</p>
  *
  * @since 1.0.0
  */
@@ -21,35 +22,6 @@ public final class ExceptionHandlerUtils {
 
     private ExceptionHandlerUtils() {
         // utility class
-    }
-
-    /**
-     * Extract field errors from MethodArgumentNotValidException.
-     *
-     * @param ex the validation exception
-     * @return list of field errors
-     */
-    public static List<ErrorResponse.FieldError> extractFieldErrors(MethodArgumentNotValidException ex) {
-        return ex.getBindingResult()
-                .getAllErrors()
-                .stream()
-                .map(error -> {
-                    String fieldName = error instanceof FieldError
-                            ? ((FieldError) error).getField()
-                            : error.getObjectName();
-
-                    Object rejectedValue = error instanceof FieldError
-                            ? ((FieldError) error).getRejectedValue()
-                            : null;
-
-                    return ErrorResponse.FieldError.builder()
-                            .field(fieldName)
-                            .rejectedValue(rejectedValue)
-                            .message(error.getDefaultMessage())
-                            .code(error.getCode())
-                            .build();
-                })
-                .collect(Collectors.toList());
     }
 
     /**

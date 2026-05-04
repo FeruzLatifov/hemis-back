@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Tag(name = "13.Klassifikatorlar", description = "Klassifikatorlar zaxira nusxasi")
@@ -25,7 +25,7 @@ public class ClassifierCopyController {
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> backupClassifiers() {
         log.info("Creating classifiers backup");
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "backed_up");
         result.put("backupId", "BKP-" + System.currentTimeMillis());
 
@@ -39,7 +39,7 @@ public class ClassifierCopyController {
         String backupId = request.get("backupId");
         log.info("Restoring classifiers from backup: {}", backupId);
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", "restored");
         result.put("backupId", backupId);
 

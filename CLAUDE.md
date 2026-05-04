@@ -157,6 +157,7 @@ Muhim qarorlar yozma tarixi. Yangi feature yoki refactoring oldidan o'qish tavsi
 | [0003](docs/adr/0003-audit-db-isolation.md) | Audit DB alohida `hemis_audit` bazasi | Audit/logging ish |
 | [0004](docs/adr/0004-api-university-module.md) | api-university yangi modul (224 OTM B2B) | API endpoint ish |
 | [0005](docs/adr/0005-oauth-client-credentials.md) | OAuth client_credentials migration plan | Auth/security ish |
+| [0006](docs/adr/0006-classifier-h-prefix.md) | Klassifikatorlar `h_*` prefiks konventsiyasi | Yangi klassifikator yaratish |
 
 Yangi qaror qabul qilinganda — `docs/adr/template.md` orqali yangi ADR yarating.
 
@@ -166,3 +167,4 @@ Yangi qaror qabul qilinganda — `docs/adr/template.md` orqali yangi ADR yaratin
 - Soft-delete + UNIQUE konflikti hal qilindi (partial UNIQUE indekslar)
 - 224 OTM B2B uchun `oauth_client` migration plan (ADR-0005)
 - Old-hemis CUBA `sec_user` parallel ishlaydi (HybridUserDetailsService)
+- 5 ta klassifikator butun stack bo'ylab `h_*`/`H` prefiks oldi (h_position_type, h_position, h_building_category, h_construction_material, h_roof_type — Java: HPositionType, HPosition, HBuildingCategory, HConstructionMaterial, HRoofType). 224 OTM ekosistemi konvensiyasi (ADR-0006).

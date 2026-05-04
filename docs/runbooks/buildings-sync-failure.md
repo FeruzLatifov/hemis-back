@@ -68,17 +68,17 @@ curl ... | jq '.failures[].message'
 ### Faza B: Data integrity
 
 **Mumkin xatolar:**
-- `foreign key violation`: `category_code='X'` — `building_category` jadvalda yo'q
+- `foreign key violation`: `category_code='X'` — `h_building_category` jadvalda yo'q
 - `unique constraint`: `cad_number` allaqachon boshqa binoda
 - `check constraint violates`: area/year/coords oralig'idan tashqarida
 
 **Yechim (FK misoli):**
 ```sql
 -- 1. Univer kategoriya kodini tekshirish
-SELECT * FROM building_category WHERE code = 'X';
+SELECT * FROM h_building_category WHERE code = 'X';
 
 -- 2. Agar yo'q bo'lsa — kategoriya kengaytirish kerak
-INSERT INTO building_category (code, name, ...) VALUES ('X', 'Yangi tur', ...);
+INSERT INTO h_building_category (code, name, ...) VALUES ('X', 'Yangi tur', ...);
 ```
 
 ### Faza C: Optimistic lock

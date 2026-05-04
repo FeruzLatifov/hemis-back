@@ -6,8 +6,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
 
 import java.io.Serializable;
 import java.util.List;
@@ -28,9 +26,12 @@ import java.util.List;
  * <pre>{@code
  * @GetMapping
  * public PageResponse<UserDto> list(Pageable pageable) {
- *     return PageResponse.of(service.findAll(pageable));
+ *     return PageResponses.from(service.findAll(pageable));  // service.util.PageResponses
  * }
  * }</pre>
+ *
+ * <p><strong>Module boundary:</strong> common is Spring-free. Spring {@code Page<T>}
+ * adapter lives in {@code uz.hemis.service.util.PageResponses}.</p>
  *
  * @param <T> content type
  * @since 2.0.0
@@ -97,48 +98,8 @@ public class PageResponse<T> implements Serializable {
     private Boolean hasPrevious;
 
     // ---------------------------------------------------------------------
-    // Factory methods
-    // ---------------------------------------------------------------------
-
-    public static <T> PageResponse<T> of(Page<T> springPage) {
-        return PageResponse.<T>builder()
-                .content(springPage.getContent())
-                .number(springPage.getNumber())
-                .size(springPage.getSize())
-                .totalElements(springPage.getTotalElements())
-                .totalPages(springPage.getTotalPages())
-                .numberOfElements(springPage.getNumberOfElements())
-                .first(springPage.isFirst())
-                .last(springPage.isLast())
-                .empty(springPage.isEmpty())
-                .pageable(PageableInfo.of(springPage))
-                .sort(SortInfo.of(springPage.getSort()))
-                .page(springPage.getNumber())
-                .hasNext(springPage.hasNext())
-                .hasPrevious(springPage.hasPrevious())
-                .build();
-    }
-
-    /** Transformed content (mappers) bilan factory. */
-    public static <T, E> PageResponse<T> of(Page<E> springPage, List<T> content) {
-        return PageResponse.<T>builder()
-                .content(content)
-                .number(springPage.getNumber())
-                .size(springPage.getSize())
-                .totalElements(springPage.getTotalElements())
-                .totalPages(springPage.getTotalPages())
-                .numberOfElements(content.size())
-                .first(springPage.isFirst())
-                .last(springPage.isLast())
-                .empty(content.isEmpty())
-                .pageable(PageableInfo.of(springPage))
-                .sort(SortInfo.of(springPage.getSort()))
-                .page(springPage.getNumber())
-                .hasNext(springPage.hasNext())
-                .hasPrevious(springPage.hasPrevious())
-                .build();
-    }
-
+    // Factory methods moved to uz.hemis.service.util.PageResponses (Spring-coupled).
+    // common stays Spring-free per common/CLAUDE.md.
     // ---------------------------------------------------------------------
     // Nested: Pageable info (PageImpl.pageable JSON shape bilan mos)
     // ---------------------------------------------------------------------
@@ -168,17 +129,8 @@ public class PageResponse<T> implements Serializable {
         @JsonProperty("unpaged")
         private Boolean unpaged;
 
-        public static PageableInfo of(Page<?> page) {
-            var pageable = page.getPageable();
-            return PageableInfo.builder()
-                    .pageNumber(page.getNumber())
-                    .pageSize(page.getSize())
-                    .sort(SortInfo.of(page.getSort()))
-                    .offset(pageable.isPaged() ? pageable.getOffset() : 0L)
-                    .paged(pageable.isPaged())
-                    .unpaged(pageable.isUnpaged())
-                    .build();
-        }
+        // Factory `of(Page)` removed — Spring-coupled.
+        // Use uz.hemis.service.util.PageResponses for adapter logic.
     }
 
     // ---------------------------------------------------------------------
@@ -201,12 +153,7 @@ public class PageResponse<T> implements Serializable {
         @JsonProperty("unsorted")
         private Boolean unsorted;
 
-        public static SortInfo of(Sort sort) {
-            return SortInfo.builder()
-                    .empty(sort.isEmpty())
-                    .sorted(sort.isSorted())
-                    .unsorted(sort.isUnsorted())
-                    .build();
-        }
+        // Factory `of(Sort)` removed — Spring-coupled.
+        // Use uz.hemis.service.util.PageResponses for adapter logic.
     }
 }

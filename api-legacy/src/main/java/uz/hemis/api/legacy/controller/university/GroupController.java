@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.university.GroupService;
 import uz.hemis.common.dto.university.GroupDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.UUID;
@@ -34,7 +35,7 @@ public class GroupController {
             @PageableDefault(size = 20, sort = "groupName", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<GroupDto> groups = groupService.findAll(pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(groups)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(groups)));
     }
 
     @PreAuthorize("isAuthenticated()")

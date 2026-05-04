@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.university;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,16 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+// CUBA klient field tartibi FROZEN — 200+ OTM
+@JsonPropertyOrder({
+    "id",
+    "department_code", "department_name",
+    "department_name_uz", "department_name_ru", "department_name_en",
+    "_university", "_faculty", "_head", "_department_type",
+    "phone_number", "email", "room_number", "building",
+    "is_active", "description", "sort_order",
+    "create_ts", "created_by", "update_ts", "updated_by"
+})
 public class DepartmentDto implements Serializable {
 
     private UUID id;

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Tag(name = "52.Mail", description = "Email xizmatlari")
@@ -32,7 +32,7 @@ public class MailController {
 
         log.info("Sending email to: {} with subject: {}", to, subject);
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", "sent");
         response.put("to", to);
         response.put("subject", subject);
@@ -49,7 +49,7 @@ public class MailController {
     ) {
         log.debug("Getting email status for messageId: {}", messageId);
 
-        Map<String, Object> status = new HashMap<>();
+        Map<String, Object> status = new LinkedHashMap<>();
         status.put("messageId", messageId);
         status.put("status", "delivered");
         status.put("deliveredAt", LocalDateTime.now());
@@ -60,7 +60,7 @@ public class MailController {
     @GetMapping("/templates")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getEmailTemplates() {
-        Map<String, String> templates = new HashMap<>();
+        Map<String, String> templates = new LinkedHashMap<>();
         templates.put("welcome", "Xush kelibsiz email shabloni");
         templates.put("verification", "Tasdiqlash email shabloni");
         templates.put("notification", "Xabarnoma email shabloni");

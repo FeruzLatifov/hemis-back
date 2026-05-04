@@ -5,16 +5,18 @@ import lombok.*;
 import uz.hemis.domain.entity.base.ReferenceEntity;
 
 /**
- * PositionType — lavozim turi klassifikatori
+ * HPositionType — lavozim turi klassifikatori
  *
  * <p>14 ta guruh: Rektorat, Akademik, Administrativ, Moliyaviy, va boshqalar.</p>
+ *
+ * <p>h_* prefiks: 224 OTM ekosistemi (hemis_NNN bazalari) konvensiyasi (ADR-0006).</p>
  *
  * @since 1.0.0
  */
 @Entity
-@Table(name = "position_type")
+@Table(name = "h_position_type")
 @Getter
 @Setter
 @NoArgsConstructor
-public class PositionType extends ReferenceEntity {
+public class HPositionType extends ReferenceEntity {
 }

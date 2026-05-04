@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDate;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,7 +28,7 @@ public class TranscriptController {
     ) {
         log.debug("Getting transcript for student: {}, year: {}", studentId, academicYear);
 
-        Map<String, Object> transcript = new HashMap<>();
+        Map<String, Object> transcript = new LinkedHashMap<>();
         transcript.put("studentId", studentId);
         transcript.put("academicYear", academicYear);
         transcript.put("gpa", 0.0);
@@ -46,7 +46,7 @@ public class TranscriptController {
     ) {
         log.debug("Generating transcript for student: {} in format: {}", studentId, format);
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("studentId", studentId);
         result.put("format", format);
         result.put("status", "generated");
@@ -63,7 +63,7 @@ public class TranscriptController {
     ) {
         log.debug("Verifying transcript: {}", transcriptId);
 
-        Map<String, Object> verification = new HashMap<>();
+        Map<String, Object> verification = new LinkedHashMap<>();
         verification.put("transcriptId", transcriptId);
         verification.put("isValid", true);
         verification.put("verifiedAt", LocalDate.now());

@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.science;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -66,7 +68,7 @@ public class PublicationMethodicalEntityController {
 
         Optional<PublicationMethodical> entity = scienceService.findPublicationMethodicalById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EPublicationMethodical with id " + entityId + " not found"));
+            return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_EPublicationMethodical with id " + entityId + " not found"));
         }
 
         return ResponseEntity.ok(scienceService.toPublicationMethodicalMap(entity.get(), returnNulls));

@@ -3,6 +3,7 @@ package uz.hemis.service.integration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.common.dto.student.GraduateListRequest;
 import java.util.*;
 
@@ -48,7 +49,7 @@ public class EmploymentIntegrationService {
      * }
      */
     public Map<String, Object> getWorkbook(String pinfl) {
-        log.info("Getting workbook for pinfl: {}", pinfl);
+        log.info("Getting workbook for pinfl: {}", Pinfl.maskOrEmpty(pinfl));
 
         // DEFERRED: Haqiqiy Mehnat vazirligi API integratsiyasi - API endpoint va credential kerak
         // Hozircha ma'lumot topilmagan holat qaytariladi (old-hemis bilan mos)

@@ -67,7 +67,7 @@ public class UniversityBuilding extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_code", referencedColumnName = "code",
                 insertable = false, updatable = false)
-    private BuildingCategory category;
+    private HBuildingCategory category;
 
     // =====================================================
     // Excel col 3: Manzil (cadastre'dan auto-fill mumkin)
@@ -100,7 +100,7 @@ public class UniversityBuilding extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "construction_material_code", referencedColumnName = "code",
                 insertable = false, updatable = false)
-    private ConstructionMaterial constructionMaterial;
+    private HConstructionMaterial constructionMaterial;
 
     // =====================================================
     // Excel col 10: Tom turi (classifier FK)
@@ -111,7 +111,7 @@ public class UniversityBuilding extends AuditableEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "roof_type_code", referencedColumnName = "code",
                 insertable = false, updatable = false)
-    private RoofType roofType;
+    private HRoofType roofType;
 
     // =====================================================
     // Excel col 11: Oxirgi ta'mir (tarixi — BuildingLifecycle'da)

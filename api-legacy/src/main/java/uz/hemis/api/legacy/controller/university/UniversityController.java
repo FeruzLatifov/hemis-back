@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.university.UniversityService;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.university.UniversityDto;
 
@@ -146,7 +147,7 @@ public class UniversityController {
         log.info("GET /app/rest/v2/universities/search?name={}", name);
 
         Page<UniversityDto> universities = universityService.findByName(name, pageable);
-        PageResponse<UniversityDto> pageResponse = PageResponse.of(universities);
+        PageResponse<UniversityDto> pageResponse = PageResponses.from(universities);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -167,7 +168,7 @@ public class UniversityController {
         log.info("GET /app/rest/v2/universities/active");
 
         Page<UniversityDto> universities = universityService.findActiveUniversities(pageable);
-        PageResponse<UniversityDto> pageResponse = PageResponse.of(universities);
+        PageResponse<UniversityDto> pageResponse = PageResponses.from(universities);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -190,7 +191,7 @@ public class UniversityController {
         log.info("GET /app/rest/v2/universities/type/{}", typeCode);
 
         Page<UniversityDto> universities = universityService.findByType(typeCode, pageable);
-        PageResponse<UniversityDto> pageResponse = PageResponse.of(universities);
+        PageResponse<UniversityDto> pageResponse = PageResponses.from(universities);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -213,7 +214,7 @@ public class UniversityController {
         log.info("GET /app/rest/v2/universities/ownership/{}", ownershipCode);
 
         Page<UniversityDto> universities = universityService.findByOwnership(ownershipCode, pageable);
-        PageResponse<UniversityDto> pageResponse = PageResponse.of(universities);
+        PageResponse<UniversityDto> pageResponse = PageResponses.from(universities);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -236,7 +237,7 @@ public class UniversityController {
         log.info("GET /app/rest/v2/universities/region/{}", soatoRegion);
 
         Page<UniversityDto> universities = universityService.findByRegion(soatoRegion, pageable);
-        PageResponse<UniversityDto> pageResponse = PageResponse.of(universities);
+        PageResponse<UniversityDto> pageResponse = PageResponses.from(universities);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }

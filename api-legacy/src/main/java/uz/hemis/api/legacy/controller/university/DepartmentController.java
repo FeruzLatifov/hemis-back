@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.university.DepartmentService;
 import uz.hemis.common.dto.university.DepartmentDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.List;
@@ -77,7 +78,7 @@ public class DepartmentController {
         log.debug("GET /app/rest/v2/departments - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
 
         Page<DepartmentDto> departments = departmentService.findAll(pageable);
-        PageResponse<DepartmentDto> pageResponse = PageResponse.of(departments);
+        PageResponse<DepartmentDto> pageResponse = PageResponses.from(departments);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -137,7 +138,7 @@ public class DepartmentController {
         log.debug("GET /app/rest/v2/departments?university={}", universityCode);
 
         Page<DepartmentDto> departments = departmentService.findByUniversity(universityCode, pageable);
-        PageResponse<DepartmentDto> pageResponse = PageResponse.of(departments);
+        PageResponse<DepartmentDto> pageResponse = PageResponses.from(departments);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -181,7 +182,7 @@ public class DepartmentController {
         log.debug("GET /app/rest/v2/departments?faculty={}", facultyId);
 
         Page<DepartmentDto> departments = departmentService.findByFaculty(facultyId, pageable);
-        PageResponse<DepartmentDto> pageResponse = PageResponse.of(departments);
+        PageResponse<DepartmentDto> pageResponse = PageResponses.from(departments);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }

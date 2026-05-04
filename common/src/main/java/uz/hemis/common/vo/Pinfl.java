@@ -46,6 +46,19 @@ public record Pinfl(@JsonValue String value) {
         return mask(value);
     }
 
+    /**
+     * Defensive masking helper — does NOT throw on invalid input.
+     * <p>Use in logs / audit when caller may receive any string and PII must never appear in plain.</p>
+     *
+     * @param raw any string (may be null, blank, malformed)
+     * @return masked representation safe for logs
+     */
+    public static String maskOrEmpty(String raw) {
+        if (raw == null) return "null";
+        if (raw.isBlank()) return "(blank)";
+        return mask(raw);
+    }
+
     private static String mask(String raw) {
         if (raw == null || raw.length() < 9) return "****";
         return raw.substring(0, 5) + "*****" + raw.substring(raw.length() - 4);

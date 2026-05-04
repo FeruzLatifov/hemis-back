@@ -8,7 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Tag(name = "67.OTM Config", description = "OTM sozlamalari")
@@ -21,7 +21,7 @@ public class UniversitySettingsController {
     @GetMapping("/{universityCode}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getSettings(@PathVariable String universityCode) {
-        Map<String, Object> settings = new HashMap<>();
+        Map<String, Object> settings = new LinkedHashMap<>();
         settings.put("universityCode", universityCode);
         settings.put("language", "uz");
         settings.put("timezone", "Asia/Tashkent");
@@ -37,7 +37,7 @@ public class UniversitySettingsController {
     ) {
         log.info("Updating settings for university: {}", universityCode);
 
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         result.put("universityCode", universityCode);
         result.put("status", "updated");
 

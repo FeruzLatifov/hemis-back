@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.system;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -32,6 +33,15 @@ import java.util.UUID;
  * @since 2.0.0
  */
 @Data
+// FROZEN: hemis-front consumer (`menu.json` static export) field tartibi
+@JsonPropertyOrder({
+    "id", "code",
+    "labelUz", "labelRu", "labelEn",
+    "route", "icon",
+    "parentId", "children", "orderNum",
+    "permissionCode", "visible",
+    "createdAt", "updatedAt"
+})
 public class MenuItemDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

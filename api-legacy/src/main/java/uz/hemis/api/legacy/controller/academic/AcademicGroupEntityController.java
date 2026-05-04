@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.api.legacy.util.CubaSearchBodyParser;
 import uz.hemis.domain.entity.academic.AcademicGroup;
@@ -74,18 +75,12 @@ public class AcademicGroupEntityController {
             Optional<AcademicGroup> entity = academicService.findAcademicGroupById(id);
 
             if (entity.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of(
-                    "error", "Entity not found",
-                    "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"
-                ));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.notFoundMap(ENTITY_NAME, entityId));
             }
 
             return ResponseEntity.ok(academicService.toAcademicGroupMap(entity.get(), returnNulls));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of(
-                "error", "Invalid UUID",
-                "details", "Invalid UUID format: " + entityId
-            ));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -114,10 +109,7 @@ public class AcademicGroupEntityController {
             Optional<AcademicGroup> existingOpt = academicService.findAcademicGroupById(id);
 
             if (existingOpt.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of(
-                    "error", "Entity not found",
-                    "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"
-                ));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.notFoundMap(ENTITY_NAME, entityId));
             }
 
             AcademicGroup entity = existingOpt.get();
@@ -127,10 +119,7 @@ public class AcademicGroupEntityController {
             AcademicGroup saved = academicService.saveAcademicGroup(entity);
             return ResponseEntity.ok(academicService.toAcademicGroupMap(saved, false));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of(
-                "error", "Invalid UUID",
-                "details", "Invalid UUID format: " + entityId
-            ));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -157,19 +146,13 @@ public class AcademicGroupEntityController {
             Optional<AcademicGroup> entity = academicService.findAcademicGroupById(id);
 
             if (entity.isEmpty()) {
-                return ResponseEntity.status(404).body(Map.of(
-                    "error", "Entity not found",
-                    "details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found"
-                ));
+                return ResponseEntity.status(404).body(LegacyResponseHelper.notFoundMap(ENTITY_NAME, entityId));
             }
 
             academicService.deleteAcademicGroup(entity.get());
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(400).body(Map.of(
-                "error", "Invalid UUID",
-                "details", "Invalid UUID format: " + entityId
-            ));
+            return ResponseEntity.status(400).body(LegacyResponseHelper.errorMap("Invalid UUID", "Invalid UUID format: " + entityId));
         }
     }
 
@@ -292,10 +275,7 @@ public class AcademicGroupEntityController {
 
         } catch (Exception e) {
             log.error("CREATE xatosi: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(Map.of(
-                "error", "Server error",
-                "details", e.getClass().getSimpleName() + ": " + e.getMessage()
-            ));
+            return ResponseEntity.status(500).body(LegacyResponseHelper.errorMap("Server error", e.getClass().getSimpleName() + ": " + e.getMessage()));
         }
     }
 

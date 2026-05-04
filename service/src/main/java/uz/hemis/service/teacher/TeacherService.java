@@ -284,7 +284,7 @@ public class TeacherService {
                 LEFT JOIN hemishe_e_university_department d ON d.code = ej._department AND d.delete_ts IS NULL
                 -- Yangi jadvallarga yo'naltirilgan — Bosqich 4.5 (delete_ts yo'q, is_active bor)
                 LEFT JOIN employment_form ef ON ef.code = ej._employee_form
-                LEFT JOIN position ep ON ep.code = ej._employee_position
+                LEFT JOIN h_position ep ON ep.code = ej._employee_position
                 LEFT JOIN employee_rate er ON er.code = ej._employee_rate
                 LEFT JOIN university_employee_type et ON et.code = ej._employee_type
                 LEFT JOIN university_employee_status_type es ON es.code = ej._employee_status

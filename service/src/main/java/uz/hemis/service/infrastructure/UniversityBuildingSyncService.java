@@ -2,6 +2,10 @@ package uz.hemis.service.infrastructure;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.building.BuildingSyncDto;
@@ -28,6 +32,8 @@ import java.util.Optional;
 @Slf4j
 public class UniversityBuildingSyncService {
 
+    private static final String CLAIM_UNIVERSITY_CODE = "university_code";
+
     private final UniversityBuildingRepository repo;
     private final BuildingCadastreAutoFiller autoFiller;
     private final BuildingMapper mapper;
@@ -37,6 +43,9 @@ public class UniversityBuildingSyncService {
     @io.micrometer.core.annotation.Timed(value = "buildings.sync.duration",
             description = "Univer bulk sync duration")
     public BuildingSyncResult syncFromUniver(String universityCode, List<BuildingSyncDto> items) {
+        // Defense-in-depth: even if controller @PreAuthorize is bypassed (test, refactor),
+        // verify caller's JWT university_code claim matches the path variable.
+        verifyTenantOwnership(universityCode);
         BuildingSyncResult result = BuildingSyncResult.builder().build();
         for (BuildingSyncDto item : items) {
             try {
@@ -119,5 +128,19 @@ public class UniversityBuildingSyncService {
 
     private static String str(Object o) {
         return o == null ? "" : o.toString();
+    }
+
+    private void verifyTenantOwnership(String universityCode) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String callerCode = null;
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            Jwt jwt = jwtAuth.getToken();
+            callerCode = jwt.getClaimAsString(CLAIM_UNIVERSITY_CODE);
+        }
+        if (callerCode == null || !callerCode.equals(universityCode)) {
+            log.warn("Cross-university sync blocked: caller={}, requested={}", callerCode, universityCode);
+            throw new SecurityException(
+                    "Caller does not own university " + universityCode + " (cross-tenant sync forbidden)");
+        }
     }
 }

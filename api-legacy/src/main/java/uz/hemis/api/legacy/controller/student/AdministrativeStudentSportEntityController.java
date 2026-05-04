@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.student;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -45,7 +47,7 @@ public class AdministrativeStudentSportEntityController {
 
         Optional<AdministrativeStudentSport> entity = studentService.findAdministrativeStudentSportById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_RIAdministrativeStudentSport with id " + entityId + " not found"));
+            return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_RIAdministrativeStudentSport with id " + entityId + " not found"));
         }
 
         return ResponseEntity.ok(studentService.toAdministrativeStudentSportMap(entity.get(), returnNulls));

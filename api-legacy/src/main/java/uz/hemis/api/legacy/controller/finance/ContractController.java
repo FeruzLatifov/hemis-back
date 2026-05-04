@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.finance.ContractService;
 import uz.hemis.common.dto.finance.ContractDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class ContractController {
             @PageableDefault(size = 20, sort = "contractDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<ContractDto> contracts = contractService.findAll(pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(contracts)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(contracts)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -59,7 +60,7 @@ public class ContractController {
             @PageableDefault(size = 20, sort = "contractDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Page<ContractDto> contracts = contractService.findByUniversity(universityCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(contracts)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(contracts)));
     }
 
     @PreAuthorize("isAuthenticated()")

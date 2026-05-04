@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 
 import java.util.*;
 
@@ -173,7 +174,7 @@ public class AuditService {
                         content,
                         org.springframework.data.domain.PageRequest.of(page, size),
                         totalElements);
-        return PageResponse.of(springPage);
+        return PageResponses.from(springPage);
     }
 
     private Map<String, Object> queryById(String table, String id, String columns) {

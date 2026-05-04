@@ -39,9 +39,10 @@ public class BuildingSyncController {
     private final UniversityBuildingSyncService syncService;
 
     @PostMapping("/{universityCode}/buildings/sync")
-    @PreAuthorize("hasAuthority('buildings.sync')")
+    @PreAuthorize("hasAuthority('buildings.sync') and @subject.ownsUniversity(#universityCode)")
     @Operation(summary = "Binolarni sync qilish (bulk upsert)",
-            description = "OTM'ning binolar ro'yxatini markazga yuboradi. Idempotent — o'zgarmagan yozuvlar skip qilinadi.")
+            description = "OTM'ning binolar ro'yxatini markazga yuboradi. Idempotent — o'zgarmagan yozuvlar skip qilinadi. " +
+                    "Caller (UNIVERSITY_BACKEND OAuth client) faqat o'z universityCode'ini sync qila oladi — boshqasi 403.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Sync natijasi (muvaffaqiyatli/xatolar soni)"),
             @ApiResponse(responseCode = "400", description = "Validatsiya xatosi"),

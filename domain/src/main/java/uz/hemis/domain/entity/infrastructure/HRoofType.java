@@ -10,11 +10,13 @@ import uz.hemis.domain.entity.base.ReferenceEntity;
  * Tom qoplamasi turi (metall, cherepitsa, shifer, ruberoyd, ...).
  * Excel col 10: "Бино томининг ёпилиши тури"
  *
+ * <p>h_* prefiks: 224 OTM ekosistemi (hemis_NNN bazalari) konvensiyasi (ADR-0006).</p>
+ *
  * @since 2.0.0
  */
 @Entity
-@Table(name = "roof_type")
+@Table(name = "h_roof_type")
 @Getter
 @Setter
-public class RoofType extends ReferenceEntity {
+public class HRoofType extends ReferenceEntity {
 }

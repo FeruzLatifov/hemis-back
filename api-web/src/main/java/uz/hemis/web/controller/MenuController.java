@@ -120,6 +120,7 @@ public class MenuController {
             description = "Unauthorized - Token missing or invalid"
         )
     })
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<MenuResponse>> getMenu(
         @Parameter(
             description = "Locale code (BCP-47 format)",
@@ -185,6 +186,7 @@ public class MenuController {
             description = "Unauthorized"
         )
     })
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Boolean>>> checkAccess(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Path to check",

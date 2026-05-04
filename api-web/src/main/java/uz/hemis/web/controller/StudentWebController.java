@@ -17,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.student.DuplicateGroupDetailDto;
 import uz.hemis.common.dto.student.DuplicateGroupDto;
@@ -355,7 +356,7 @@ public class StudentWebController {
         log.info("GET /api/v1/web/students/duplicates - university={}, reason={}, page={}", university, reason, pageable.getPageNumber());
 
         Page<DuplicateGroupDto> duplicates = studentWebService.getDuplicates(university, reason, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(duplicates)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(duplicates)));
     }
 
     @GetMapping("/duplicates/groups/{pinfl}")

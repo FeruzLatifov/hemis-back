@@ -1,6 +1,8 @@
 package uz.hemis.service.student;
 
+import uz.hemis.common.vo.Pinfl;
 import lombok.RequiredArgsConstructor;
+import uz.hemis.common.vo.Pinfl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -38,7 +40,7 @@ public class StudentLegacyApiService {
      * Verify student exists by PINFL (CUBA compatible)
      */
     public Object verify(String pinfl) {
-        log.debug("CUBA API: verify student by PINFL: {}", pinfl);
+        log.debug("CUBA API: verify student by PINFL: {}", Pinfl.maskOrEmpty(pinfl));
         return studentRepository.existsMasterByPinfl(pinfl);
     }
 

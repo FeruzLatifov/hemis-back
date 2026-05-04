@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.university.SpecialtyService;
 import uz.hemis.common.dto.university.SpecialtyDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.List;
@@ -35,7 +36,7 @@ public class SpecialtyController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<SpecialtyDto> specialties = specialtyService.findAll(pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -59,7 +60,7 @@ public class SpecialtyController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<SpecialtyDto> specialties = specialtyService.findByUniversity(universityCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -78,7 +79,7 @@ public class SpecialtyController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<SpecialtyDto> specialties = specialtyService.findByNameContaining(name, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -87,7 +88,7 @@ public class SpecialtyController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<SpecialtyDto> specialties = specialtyService.findActive(pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
     @PreAuthorize("isAuthenticated()")
@@ -97,7 +98,7 @@ public class SpecialtyController {
             @PageableDefault(size = 20, sort = "name", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<SpecialtyDto> specialties = specialtyService.findByEducationType(educationTypeCode, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(specialties)));
+        return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
     @PostMapping

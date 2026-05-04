@@ -30,6 +30,7 @@ import uz.hemis.common.dto.ErrorResponse;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ExceptionHandlerUtils;
 import uz.hemis.common.exception.ResourceNotFoundException;
+// SpringValidationUtils is in the same package as this class (uz.hemis.app.exception)
 import uz.hemis.common.exception.ValidationException;
 
 import java.util.*;
@@ -259,7 +260,7 @@ public class GlobalExceptionHandler {
     ) {
         log.error("Method argument validation failed");
 
-        List<ErrorResponse.FieldError> fieldErrors = ExceptionHandlerUtils.extractFieldErrors(ex);
+        List<ErrorResponse.FieldError> fieldErrors = SpringValidationUtils.extractFieldErrors(ex);
 
         ErrorResponse error = ErrorResponse.validationError(
                 HttpStatus.BAD_REQUEST.value(),

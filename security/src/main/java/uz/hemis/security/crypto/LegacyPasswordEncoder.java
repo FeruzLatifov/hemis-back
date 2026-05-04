@@ -34,7 +34,9 @@ import java.util.HexFormat;
 @Slf4j
 public class LegacyPasswordEncoder implements PasswordEncoder {
 
-    private final BCryptPasswordEncoder bcryptEncoder = new BCryptPasswordEncoder();
+    // OWASP 2025: BCrypt strength 12 minimum (was default 10).
+    // Backward compat: BCrypt stores cost in hash prefix, so existing $2a$10$... passwords still verify.
+    private final BCryptPasswordEncoder bcryptEncoder = new BCryptPasswordEncoder(12);
     private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
     private static final int KEY_LENGTH = 160; // 160 bits = 20 bytes
 

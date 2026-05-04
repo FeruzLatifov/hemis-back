@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.student;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -39,7 +41,7 @@ public class StudentCertificateEntityController {
             @RequestParam(required = false) String view) {
         Optional<StudentCertificate> studentCertificateOpt = studentService.findStudentCertificateById(id);
         if (studentCertificateOpt.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EStudentCertificate with id " + id + " not found"));
+            return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_EStudentCertificate with id " + id + " not found"));
         }
         return ResponseEntity.ok(studentService.toStudentCertificateMap(studentCertificateOpt.get(), returnNulls, view));
     }
@@ -131,7 +133,7 @@ public class StudentCertificateEntityController {
                 .map(e -> studentService.toStudentCertificateMap(e, false, viewParam))
                 .collect(Collectors.toList());
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("data", result);
         response.put("total", page.getTotalElements());
 

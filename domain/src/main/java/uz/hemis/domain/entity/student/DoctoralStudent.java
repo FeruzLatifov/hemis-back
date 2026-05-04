@@ -5,7 +5,6 @@ import uz.hemis.domain.entity.base.BaseEntity;
 import uz.hemis.domain.entity.employee.Citizenship;
 import uz.hemis.domain.entity.employee.Gender;
 import uz.hemis.domain.entity.employee.Nationality;
-import uz.hemis.domain.entity.employee.Position;
 import uz.hemis.domain.entity.university.University;
 
 import jakarta.persistence.*;

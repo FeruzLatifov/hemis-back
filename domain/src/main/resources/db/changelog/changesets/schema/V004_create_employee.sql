@@ -9,7 +9,7 @@
 -- Self-contained: only own tables, no cross-file ALTER. Auth (V006), university
 -- domain (V005, V008) reference {employee, employee_job} via INLINE FK.
 --
--- Depends on: V003 positions (position_type, position)
+-- Depends on: V003 positions (h_position_type, h_position)
 --             + legacy hemishe_h_* classifiers
 --             + legacy hemishe_e_university.
 -- =====================================================
@@ -110,8 +110,8 @@ CREATE TABLE employee_job (
     university_code       VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE RESTRICT,
     -- Department FK — legacy CUBA jadvalga yo'naltirilgan
     department_code       VARCHAR(255) REFERENCES hemishe_e_university_department(code) ON DELETE SET NULL,
-    position_code         VARCHAR(10) REFERENCES position(code) ON DELETE RESTRICT,
-    position_type_code    VARCHAR(10) REFERENCES position_type(code) ON DELETE RESTRICT,
+    position_code         VARCHAR(10) REFERENCES h_position(code) ON DELETE RESTRICT,
+    position_type_code    VARCHAR(10) REFERENCES h_position_type(code) ON DELETE RESTRICT,
     -- Legacy classifier FK'lar — hemishe_h_*
     employment_form_code  VARCHAR(20) REFERENCES hemishe_h_university_employee_form(code) ON DELETE RESTRICT,
     employee_rate_code    VARCHAR(20) REFERENCES hemishe_h_university_employee_rate(code) ON DELETE RESTRICT,

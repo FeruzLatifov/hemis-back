@@ -1,5 +1,7 @@
 package uz.hemis.api.legacy.controller.university;
 
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -46,7 +48,7 @@ public class FacultyEntityController {
         log.debug("GET faculty by id: {}", entityId);
         Optional<Faculty> entity = universityRefService.findFacultyById(entityId);
         if (entity.isEmpty()) {
-            return ResponseEntity.status(404).body(Map.of("error", "Entity not found", "details", "Entity hemishe_EFaculty with id " + entityId + " not found"));
+            return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_EFaculty with id " + entityId + " not found"));
         }
         return ResponseEntity.ok(universityRefService.toFacultyMap(entity.get(), returnNulls));
     }

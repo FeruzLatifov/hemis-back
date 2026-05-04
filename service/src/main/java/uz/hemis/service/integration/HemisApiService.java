@@ -1,7 +1,9 @@
 package uz.hemis.service.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import uz.hemis.common.vo.Pinfl;
 import lombok.RequiredArgsConstructor;
+import uz.hemis.common.vo.Pinfl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.*;
@@ -100,7 +102,7 @@ public class HemisApiService {
      * @return Contract info map (from api.hemis.uz)
      */
     public Map<String, Object> getContractInfo(String pinfl) {
-        log.info("[HEMIS API] Getting contract info for PINFL: {}", pinfl);
+        log.info("[HEMIS API] Getting contract info for PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
         // Check if API is configured
         if (!properties.isConfigured()) {
@@ -137,13 +139,13 @@ public class HemisApiService {
 
             // Parse JSON response
             if (body == null || body.isEmpty()) {
-                log.warn("[HEMIS API] Empty response for PINFL: {}", pinfl);
+                log.warn("[HEMIS API] Empty response for PINFL: {}", Pinfl.maskOrEmpty(pinfl));
                 return notAuthenticatedResponse();
             }
 
             @SuppressWarnings("unchecked")
             Map<String, Object> result = objectMapper.readValue(body, LinkedHashMap.class);
-            log.info("[HEMIS API] Contract info retrieved successfully for PINFL: {}", pinfl);
+            log.info("[HEMIS API] Contract info retrieved successfully for PINFL: {}", Pinfl.maskOrEmpty(pinfl));
             return result;
 
         } catch (org.springframework.web.client.HttpClientErrorException e) {

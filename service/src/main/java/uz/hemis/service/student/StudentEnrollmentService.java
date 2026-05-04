@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.common.dto.student.StudentIdRequest;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.domain.entity.student.Student;
@@ -132,14 +133,14 @@ public class StudentEnrollmentService {
      * Validate student status (OLD-HEMIS Compatible).
      */
     public Map<String, Object> validateStudent(String data) {
-        log.info("Validating student by PINFL or Serial: {}", data);
+        log.info("Validating student by PINFL or Serial: {}", Pinfl.maskOrEmpty(data));
         Map<String, Object> result = new LinkedHashMap<>();
 
         try {
             List<Student> students = studentRepository.findByPinflOrSerialNumber(data);
 
             if (students.isEmpty()) {
-                log.info("Student not found for data: {} - can create new", data);
+                log.info("Student not found for data: {} - can create new", Pinfl.maskOrEmpty(data));
                 result.put("success", true);
                 result.put("code", "not_active");
                 result.put("message", "Student not found. You can create it!");

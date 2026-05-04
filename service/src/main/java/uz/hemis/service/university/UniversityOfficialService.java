@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.employee.Employee;
@@ -240,7 +241,7 @@ public class UniversityOfficialService {
                 emp.setAcademicRankCode(str(row, "_academic_rank"));
                 // source removed — audit via created_by
                 emp = employeeRepository.save(emp);
-                log.info("Employee created from hemishe_e_teacher: pinfl={}", pinfl);
+                log.info("Employee created from hemishe_e_teacher: pinfl={}", Pinfl.maskOrEmpty(pinfl));
                 return buildResult("hemishe_e_teacher", emp);
             }
         } catch (Exception e) {
@@ -344,7 +345,7 @@ public class UniversityOfficialService {
                     if (address != null) emp.setAddress(address);
 
                     emp = employeeRepository.save(emp);
-                    log.info("Employee created from external API: pinfl={}", pinfl);
+                    log.info("Employee created from external API: pinfl={}", Pinfl.maskOrEmpty(pinfl));
                     return buildResult("external_api", emp);
                 }
             }
@@ -404,19 +405,19 @@ public class UniversityOfficialService {
     }
 
     /**
-     * Get leadership positions from NEW position table (type_code = '15').
+     * Get leadership positions from NEW h_position table (type_code = '15').
      */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getLeadershipPositions() {
         return jdbcTemplate.queryForList(
-                "SELECT code, name FROM position WHERE type_code = '15' AND is_active = true ORDER BY name");
+                "SELECT code, name FROM h_position WHERE type_code = '15' AND is_active = true ORDER BY name");
     }
 
     private String resolvePositionName(String positionCode) {
         if (positionCode == null) return null;
         try {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList(
-                    "SELECT name FROM position WHERE code = ?", positionCode);
+                    "SELECT name FROM h_position WHERE code = ?", positionCode);
             return rows.isEmpty() ? positionCode : rows.get(0).get("name").toString();
         } catch (Exception e) {
             return positionCode;

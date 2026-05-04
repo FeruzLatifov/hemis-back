@@ -2,6 +2,7 @@ package uz.hemis.api.legacy.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,6 +42,8 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+// CUBA klient (Univer Yii2 PHP) field tartibni qat'iy kutadi — old-hemis OAuth2 spec
+@JsonPropertyOrder({"access_token", "token_type", "refresh_token", "expires_in", "scope"})
 @Schema(description = "Legacy OAuth2 token response (old-hemis format)")
 public class LegacyTokenResponse implements Serializable {
 

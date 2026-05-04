@@ -17,6 +17,7 @@ import uz.hemis.service.finance.ContractStatisticsService;
 import uz.hemis.service.student.StudentService;
 
 import java.util.Map;
+import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
@@ -128,10 +129,8 @@ public class StudentExtraServiceController {
         } catch (Exception e) {
             // OLD-HEMIS compatible: return 200 with {success: false, message: ...}
             log.error("[CUBA Service] contractStatistics error: {}", e.getMessage());
-            return ResponseEntity.ok(Map.of(
-                "success", false,
-                "message", e.getMessage() != null ? e.getMessage() : "Unknown error"
-            ));
+            return ResponseEntity.ok(LegacyResponseHelper.failureMap(
+                e.getMessage() != null ? e.getMessage() : "Unknown error"));
         }
     }
 

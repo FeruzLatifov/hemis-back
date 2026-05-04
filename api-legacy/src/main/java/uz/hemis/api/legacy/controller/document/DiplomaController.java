@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.service.document.DiplomaService;
 import uz.hemis.common.dto.document.DiplomaDto;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.util.List;
@@ -79,7 +80,7 @@ public class DiplomaController {
         log.debug("GET /app/rest/v2/diplomas - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
 
         Page<DiplomaDto> diplomas = diplomaService.findAll(pageable);
-        PageResponse<DiplomaDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -161,7 +162,7 @@ public class DiplomaController {
         log.debug("GET /app/rest/v2/diplomas?university={}", universityCode);
 
         Page<DiplomaDto> diplomas = diplomaService.findByUniversity(universityCode, pageable);
-        PageResponse<DiplomaDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -207,7 +208,7 @@ public class DiplomaController {
         log.debug("GET /app/rest/v2/diplomas?university={}&status={}", universityCode, status);
 
         Page<DiplomaDto> diplomas = diplomaService.findByUniversityAndStatus(universityCode, status, pageable);
-        PageResponse<DiplomaDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }
@@ -233,7 +234,7 @@ public class DiplomaController {
         log.debug("GET /app/rest/v2/diplomas?university={}&year={}", universityCode, graduationYear);
 
         Page<DiplomaDto> diplomas = diplomaService.findByUniversityAndYear(universityCode, graduationYear, pageable);
-        PageResponse<DiplomaDto> pageResponse = PageResponse.of(diplomas);
+        PageResponse<DiplomaDto> pageResponse = PageResponses.from(diplomas);
 
         return ResponseEntity.ok(ResponseWrapper.success(pageResponse));
     }

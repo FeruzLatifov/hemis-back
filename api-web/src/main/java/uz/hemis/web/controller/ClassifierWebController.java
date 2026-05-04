@@ -18,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
+import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.classifier.*;
 import uz.hemis.service.classifier.ClassifierWebService;
@@ -99,7 +100,7 @@ public class ClassifierWebController {
         log.info("GET /api/v1/web/classifiers/{} - search={}, page={}", apiKey, search, pageable.getPageNumber());
         try {
             Page<ClassifierItemDto> items = classifierWebService.getClassifierItems(apiKey, search, pageable);
-            return ResponseEntity.ok(ResponseWrapper.success(PageResponse.of(items)));
+            return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(items)));
         } catch (IllegalArgumentException e) {
             log.warn("Classifier not found: {}", apiKey);
             return ResponseEntity.notFound().build();

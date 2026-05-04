@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Tag(name = "53.Healthcheck")
@@ -22,7 +22,7 @@ public class HealthController {
     @GetMapping
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getHealth() {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", "UP");
         response.put("timestamp", LocalDateTime.now());
         response.put("application", "HEMIS");
@@ -34,7 +34,7 @@ public class HealthController {
     @GetMapping("/ping")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> ping() {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", "UP");
         response.put("timestamp", LocalDateTime.now());
         response.put("message", "Service is running");
@@ -45,7 +45,7 @@ public class HealthController {
     @GetMapping("/version")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getVersion() {
-        Map<String, String> version = new HashMap<>();
+        Map<String, String> version = new LinkedHashMap<>();
         version.put("application", "HEMIS");
         version.put("version", "2.0.0");
         version.put("build", LocalDateTime.now().toString());

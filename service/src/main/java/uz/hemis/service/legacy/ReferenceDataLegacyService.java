@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -45,7 +45,12 @@ public class ReferenceDataLegacyService {
         try {
             Map<String, String> data = jdbcTemplate.queryForObject(
                 "SELECT code, name FROM hemishe_e_university WHERE code = ?",
-                (rs, rowNum) -> Map.of("code", rs.getString("code"), "name", rs.getString("name")),
+                (rs, rowNum) -> {
+                    Map<String, String> m = new LinkedHashMap<>();
+                    m.put("code", rs.getString("code"));
+                    m.put("name", rs.getString("name"));
+                    return m;
+                },
                 code
             );
             if (data != null) {
@@ -56,7 +61,10 @@ public class ReferenceDataLegacyService {
             log.warn("University not found for code: {}", code);
         }
 
-        return Map.of("code", code, "name", "University " + code);
+        Map<String, String> fallback = new LinkedHashMap<>();
+        fallback.put("code", code);
+        fallback.put("name", "University " + code);
+        return fallback;
     }
 
     /**
@@ -73,7 +81,12 @@ public class ReferenceDataLegacyService {
         try {
             Map<String, String> data = jdbcTemplate.queryForObject(
                 "SELECT code, name FROM hemishe_h_education_year WHERE code = ?",
-                (rs, rowNum) -> Map.of("code", rs.getString("code"), "name", rs.getString("name")),
+                (rs, rowNum) -> {
+                    Map<String, String> m = new LinkedHashMap<>();
+                    m.put("code", rs.getString("code"));
+                    m.put("name", rs.getString("name"));
+                    return m;
+                },
                 code
             );
             if (data != null) {
@@ -84,7 +97,10 @@ public class ReferenceDataLegacyService {
             log.warn("Education year not found for code: {}", code);
         }
 
-        return Map.of("code", code, "name", code);
+        Map<String, String> fallback = new LinkedHashMap<>();
+        fallback.put("code", code);
+        fallback.put("name", code);
+        return fallback;
     }
 
     /**
@@ -102,7 +118,7 @@ public class ReferenceDataLegacyService {
             Map<String, String> data = jdbcTemplate.queryForObject(
                 "SELECT code, name FROM hemishe_h_course WHERE code = ?",
                 (rs, rowNum) -> {
-                    Map<String, String> result = new HashMap<>();
+                    Map<String, String> result = new LinkedHashMap<>();
                     result.put("code", rs.getString("code"));
                     result.put("name", rs.getString("name"));
                     return result;
@@ -117,7 +133,7 @@ public class ReferenceDataLegacyService {
             log.warn("Course not found for code: {}", code);
         }
 
-        Map<String, String> fallback = new HashMap<>();
+        Map<String, String> fallback = new LinkedHashMap<>();
         fallback.put("code", code);
         fallback.put("name", code + "-kurs");
         return fallback;

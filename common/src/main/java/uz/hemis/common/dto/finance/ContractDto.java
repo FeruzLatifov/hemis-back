@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.finance;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +17,18 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: api-legacy /finance/contract/* CUBA klient field tartibi
+@JsonPropertyOrder({
+    "id", "contract_number",
+    "_student", "_university", "_education_year",
+    "_contract_type",
+    "contract_sum", "paid_sum", "remaining_sum",
+    "contract_date", "start_date", "end_date",
+    "_payment_form", "_status",
+    "contractor_name", "contractor_passport", "contractor_address", "contractor_phone",
+    "notes", "is_active",
+    "create_ts", "created_by", "update_ts", "updated_by"
+})
 public class ContractDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

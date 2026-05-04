@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.document;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,17 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: /app/rest/diploma/* CUBA klient field tartibi
+@JsonPropertyOrder({
+    "id", "diploma_number",
+    "_student", "_university", "_specialty", "_diploma_blank",
+    "serial_number", "_diploma_type",
+    "issue_date", "registration_date", "graduation_year",
+    "qualification", "average_grade", "_honors",
+    "diploma_hash", "rector_name", "_status",
+    "qr_code", "verification_url", "notes",
+    "create_ts", "created_by", "update_ts", "updated_by"
+})
 public class DiplomaDto implements Serializable {
 
     private UUID id;

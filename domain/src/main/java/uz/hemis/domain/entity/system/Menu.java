@@ -150,10 +150,14 @@ public class Menu extends AuditableEntity {
      * Child menus
      *
      * <p>Automatically populated by JPA</p>
-     * <p>CascadeType.ALL: Deleting parent deletes children</p>
-     * <p>orphanRemoval: Removing from list deletes child</p>
+     * <p><strong>Cascade scope (refactored 2026-05-04):</strong> faqat PERSIST + MERGE.
+     * REMOVE va orphanRemoval olib tashlandi — soft-delete'da parent yo'q qilinsa,
+     * children'lar ham `delete_ts` qilinardi va parent restore'da hierarchy'ni qaytarib bo'lmasdi
+     * (audit trail buziladi). Endi children alohida service-layer'da soft-delete qilinadi.</p>
      */
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "parent",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+            orphanRemoval = false)
     @OrderBy("orderNumber ASC")
     private List<Menu> children = new ArrayList<>();
 

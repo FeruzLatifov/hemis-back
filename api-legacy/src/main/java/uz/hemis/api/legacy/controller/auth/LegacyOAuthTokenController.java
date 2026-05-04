@@ -25,7 +25,7 @@ import uz.hemis.security.service.TokenService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Base64;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -427,7 +427,7 @@ public class LegacyOAuthTokenController {
     }
 
     private Map<String, String> errorResponse(String error, String description) {
-        Map<String, String> response = new HashMap<>();
+        Map<String, String> response = new LinkedHashMap<>();
         response.put("error", error);
         response.put("error_description", description);
         return response;
