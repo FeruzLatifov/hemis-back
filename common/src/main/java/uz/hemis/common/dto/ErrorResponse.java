@@ -2,6 +2,7 @@ package uz.hemis.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,6 +32,12 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+// Standardized error response field tartibi — har xato javobida ishlatiladi
+@JsonPropertyOrder({
+    "timestamp", "status", "error", "message", "path",
+    "eventId", "errorCode",
+    "errors", "details"
+})
 public class ErrorResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -111,6 +118,7 @@ public class ErrorResponse implements Serializable {
     @NoArgsConstructor
     @AllArgsConstructor
     @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonPropertyOrder({"field", "rejectedValue", "message", "code"})
     public static class FieldError implements Serializable {
 
         private static final long serialVersionUID = 1L;

@@ -1,5 +1,6 @@
 package uz.hemis.common.dto.system;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,6 +17,10 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "id", "createdAt", "category", "messageKey", "message",
+    "isActive", "translations"
+})
 public class TranslationDto {
 
     private UUID id;
