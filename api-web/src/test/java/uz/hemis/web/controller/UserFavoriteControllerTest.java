@@ -7,11 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import uz.hemis.app.HemisApplication;
 
 import java.util.*;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -50,24 +53,27 @@ class UserFavoriteControllerTest {
 
     private static final String BASE_URL = "/api/v1/web/favorites";
 
-    // ======================================================================
-    // Test 1: Get favorites — authenticated
-    // ======================================================================
+    private static final String ADMIN_USER_ID = "60885987-1b61-4247-94c7-dff348347f93";
+
+    private static RequestPostProcessor authWith(String... authorities) {
+        SimpleGrantedAuthority[] grants = new SimpleGrantedAuthority[authorities.length];
+        for (int i = 0; i < authorities.length; i++) {
+            grants[i] = new SimpleGrantedAuthority(authorities[i]);
+        }
+        return jwt()
+                .jwt(j -> j.subject(ADMIN_USER_ID))
+                .authorities(grants);
+    }
 
     @Test
     @Order(1)
     @DisplayName("GET /favorites — returns user favorites list")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testGetFavorites() throws Exception {
-        mockMvc.perform(get(BASE_URL))
+        mockMvc.perform(get(BASE_URL).with(authWith("system.view")))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data").isArray());
     }
-
-    // ======================================================================
-    // Test 2: Get favorites — unauthenticated
-    // ======================================================================
 
     @Test
     @Order(2)
@@ -77,57 +83,39 @@ class UserFavoriteControllerTest {
             .andExpect(status().is(anyOf(is(401), is(403))));
     }
 
-    // ======================================================================
-    // Test 3: Add favorite — missing body
-    // ======================================================================
-
     @Test
     @Order(3)
     @DisplayName("POST /favorites — empty body returns 400")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testAddFavoriteEmptyBody() throws Exception {
         mockMvc.perform(post(BASE_URL)
+                .with(authWith("system.view"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"))
             .andExpect(status().isBadRequest());
     }
 
-    // ======================================================================
-    // Test 4: Delete non-existent favorite — idempotent
-    // ======================================================================
-
     @Test
     @Order(4)
     @DisplayName("DELETE /favorites/{code} — non-existent returns 204 or 404")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testDeleteNonExistentFavorite() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/NON_EXISTENT_CODE"))
+        mockMvc.perform(delete(BASE_URL + "/NON_EXISTENT_CODE").with(authWith("system.view")))
             .andExpect(status().is(anyOf(is(200), is(204), is(404))));
     }
-
-    // ======================================================================
-    // Test 5: Reorder favorites — empty list
-    // ======================================================================
 
     @Test
     @Order(5)
     @DisplayName("PATCH /favorites/reorder — empty list")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testReorderFavoritesEmpty() throws Exception {
         mockMvc.perform(patch(BASE_URL + "/reorder")
+                .with(authWith("system.view"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("[]"))
             .andExpect(status().is(anyOf(is(200), is(204))));
     }
 
-    // ======================================================================
-    // Test 6: Add and delete favorite flow
-    // ======================================================================
-
     @Test
     @Order(6)
     @DisplayName("POST + DELETE /favorites — add and remove flow")
-    @WithMockUser(username = "admin", authorities = {"system.view"})
     void testAddAndDeleteFavorite() throws Exception {
         Map<String, String> body = new HashMap<>();
         body.put("menuCode", "test_menu_code");
@@ -135,20 +123,15 @@ class UserFavoriteControllerTest {
         body.put("path", "/test/path");
         body.put("icon", "Star");
 
-        // Add favorite
         mockMvc.perform(post(BASE_URL)
+                .with(authWith("system.view"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
             .andExpect(status().is(anyOf(is(200), is(201), is(400))));
 
-        // Remove it
-        mockMvc.perform(delete(BASE_URL + "/test_menu_code"))
+        mockMvc.perform(delete(BASE_URL + "/test_menu_code").with(authWith("system.view")))
             .andExpect(status().is(anyOf(is(200), is(204), is(404))));
     }
-
-    // ======================================================================
-    // Test 7: Reorder — unauthenticated
-    // ======================================================================
 
     @Test
     @Order(7)

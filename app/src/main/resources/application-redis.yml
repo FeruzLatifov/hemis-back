@@ -25,13 +25,13 @@ spring:
       database: ${REDIS_DATABASE:0}
       timeout: 10000  # Connection timeout: 10 seconds
 
-      # Lettuce Client (Default)
-      lettuce:
+      # Jedis Client (Lettuce excluded in build.gradle.kts — see security/build.gradle.kts:34)
+      jedis:
         pool:
-          max-active: 50  # Max connections (200+ universities)
-          max-idle: 20    # Max idle connections
-          min-idle: 5     # Min idle connections
-          max-wait: 30000  # Max wait time for connection (30 seconds)
+          max-active: 100  # Sized for virtual threads (vthreads can saturate small pools)
+          max-idle: 50     # Max idle connections
+          min-idle: 10     # Min idle connections (warm pool)
+          max-wait: 2000   # 2s fail-fast (was 30000 — too lenient with virtual threads)
 
         # Cluster configuration (if using Redis Cluster)
         # cluster:

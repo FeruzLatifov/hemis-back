@@ -61,12 +61,12 @@ dependencies {
     implementation("org.liquibase:liquibase-core")
 
     // SpringDoc OpenAPI (Swagger)
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.1")
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.3")
 
     // ⭐ Sentry Error Tracking & Performance Monitoring
     // Spring Boot 4.x uchun sentry-spring-boot-4 ishlatiladi
-    implementation("io.sentry:sentry-spring-boot-4:8.29.0")
-    implementation("io.sentry:sentry-logback:8.29.0")
+    implementation("io.sentry:sentry-spring-boot-4:8.40.0")
+    implementation("io.sentry:sentry-logback:8.40.0")
 
     // HikariCP (connection pooling - included in spring-boot-starter-data-jpa)
     // No need to declare explicitly
@@ -90,7 +90,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
 
     // ArchUnit — compile-time arxitektura qoidalari (modul boundary, paket naming)
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
+    // 1.4.2: Java 25 class file (major 69) support
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.2")
 }
 
 // =====================================================

@@ -1,2 +1,0 @@
--- Removed: HTTP request logging is handled by Nginx.
--- This file is kept as a placeholder to avoid file-not-found errors.

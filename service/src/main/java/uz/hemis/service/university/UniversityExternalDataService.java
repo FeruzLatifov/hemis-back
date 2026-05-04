@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.university.UniversityCadastre;
 import uz.hemis.domain.entity.university.UniversityFounder;
@@ -210,10 +211,14 @@ public class UniversityExternalDataService {
     private void syncFounders(String universityCode, JsonNode foundersNode) {
         if (!foundersNode.isArray()) return;
 
-        // Delete ALL existing founders for this university (idempotent sync)
+        // Delete ALL existing founders for this university (idempotent sync).
+        // deleteAllInBatch + flush forces the DELETE to hit the DB before the
+        // subsequent INSERT, otherwise Hibernate's action queue runs INSERTs
+        // first and idx_ufounder_unique_current_legal trips on the same key.
         List<UniversityFounder> existing = founderRepository.findByUniversityCode(universityCode);
         if (!existing.isEmpty()) {
-            founderRepository.deleteAll(existing);
+            founderRepository.deleteAllInBatch(existing);
+            founderRepository.flush();
             log.info("Deleted {} old founders for university={}", existing.size(), universityCode);
         }
 
@@ -364,7 +369,10 @@ public class UniversityExternalDataService {
         if (bans.isArray()) c.setBans(bans.toString());
 
         // Meta
-        c.setDataSource(textOrNull(resp, "data_source"));
+        // chk_ucadastre_data_source allows only 'api_kadastr' | 'manual'.
+        // The API ships an upstream identifier ("1C", "Lite", ...) which is
+        // preserved inside api_raw_response but not used as data_source.
+        c.setDataSource("api_kadastr");
         c.setApiRawResponse(resp.toString());
         c.setSyncedAt(LocalDateTime.now());
 
@@ -547,7 +555,7 @@ public class UniversityExternalDataService {
      * Ensures no duplicate — PINFL UNIQUE in employee table.
      */
     private Employee findOrCreateEmployee(String pinfl, JsonNode personNode, JsonNode contactNode, String universityCode) {
-        Employee existing = employeeRepository.findByPinfl(pinfl).orElse(null);
+        Employee existing = employeeRepository.findByPinfl(Pinfl.of(pinfl)).orElse(null);
 
         String newLastName = textOrNull(personNode, "lastName");
         String newFirstName = textOrNull(personNode, "firstName");

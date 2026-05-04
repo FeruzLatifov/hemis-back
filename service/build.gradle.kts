@@ -43,7 +43,7 @@ dependencies {
     implementation("org.apache.httpcomponents.client5:httpclient5")
 
     // Swagger/OpenAPI annotations for DTOs
-    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:3.0.1")
+    compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:3.0.3")
 
     // Lombok (MUST be before MapStruct)
     compileOnly("org.projectlombok:lombok")

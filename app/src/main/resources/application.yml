@@ -14,6 +14,16 @@ spring:
     # include: redis  # Disabled - using JWT (stateless), not Redis sessions
 
   # =====================================================
+  # Virtual Threads (Java 25 LTS, JEP 491 — synchronized pinning fixed)
+  # =====================================================
+  # Tomcat HTTP request threads + @Async (default executor) → virtual threads.
+  # Bounded executors with explicit names (e.g. auditTaskExecutor) keep their
+  # platform thread pool — backpressure semantics preserved.
+  threads:
+    virtual:
+      enabled: true
+
+  # =====================================================
   # Graceful Shutdown Phase Timeout
   # =====================================================
   # Spring SmartLifecycle phase'ida har bir bean uchun shutdown timeout.
@@ -82,16 +92,19 @@ spring:
 
   data:
     redis:
+      client-type: jedis
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       timeout: 60000
-      lettuce:
+      jedis:
         pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
-          max-wait: -1
+          # Sized for virtual threads (1000+ concurrent vthreads possible).
+          # Without sufficient pool size, Redis becomes a bottleneck.
+          max-active: 100
+          max-idle: 50
+          min-idle: 10
+          max-wait: 2000   # 2s — fail-fast instead of indefinite wait
 
   # =====================================================
   # Spring Cache Configuration
