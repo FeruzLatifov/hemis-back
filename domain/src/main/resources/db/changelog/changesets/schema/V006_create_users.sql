@@ -24,24 +24,21 @@ CREATE TABLE users
     id                       UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
 
     -- Authentication (Partial UNIQUE'lar pastda — soft-delete uyg'unligi)
+    -- Case-insensitive collision oldini olish — functional UNIQUE INDEX (LOWER(username)) pastda
     username                 VARCHAR(255) NOT NULL,
-    username_lowercase       VARCHAR(255),
     password                 VARCHAR(255) NOT NULL,
-    password_encryption      VARCHAR(50),
     email                    VARCHAR(255),
 
-    -- Personal Information
-    name                     VARCHAR(255),
+    -- Personal Information (HUMAN account display)
     first_name               VARCHAR(255),
     last_name                VARCHAR(255),
     middle_name              VARCHAR(255),
     full_name                VARCHAR(255),
     position                 VARCHAR(255),
 
-    -- User Settings
+    -- User Settings (UI preferences)
     language                 VARCHAR(20),
     time_zone                VARCHAR(50),
-    time_zone_auto           BOOLEAN,
     locale                   VARCHAR(20),
 
     -- User Context (Multi-tenancy)
@@ -51,24 +48,11 @@ CREATE TABLE users
                                           ON DELETE SET NULL ON UPDATE CASCADE,
     phone                    VARCHAR(50),
 
-    -- Legacy CUBA Relations
-    group_id                 UUID,
-    group_names              VARCHAR(255),
-
     -- Account Status
     enabled                  BOOLEAN      NOT NULL DEFAULT TRUE,
-    active                   BOOLEAN      NOT NULL DEFAULT TRUE,
     account_non_locked       BOOLEAN      NOT NULL DEFAULT TRUE,
     failed_attempts          INTEGER               DEFAULT 0,
     locked_at                TIMESTAMP,
-
-    -- Security Settings
-    ip_mask                  VARCHAR(200),
-    change_password_at_logon BOOLEAN,
-
-    -- Multi-tenancy
-    sys_tenant_id            VARCHAR(255),
-    dtype                    VARCHAR(100),
 
     -- Person identity link → V004 employee(id).
     -- Pattern: Banner GOBTPAC.PIDM → SPRIDEN.PIDM.
@@ -105,20 +89,21 @@ COMMENT ON COLUMN users.locked_at IS 'Timestamp when account was locked (auto-un
 COMMENT ON COLUMN users.employee_id IS 'FK to employee (person identity). Banner GOBTPAC.PIDM pattern.';
 
 -- Indexes
-CREATE INDEX idx_users_username_lowercase ON users (username_lowercase);
 CREATE INDEX idx_users_email              ON users (email)          WHERE email IS NOT NULL;
 CREATE INDEX idx_users_university_id      ON users (university_id)  WHERE university_id IS NOT NULL;
 CREATE INDEX idx_users_deleted_at         ON users (deleted_at)     WHERE deleted_at IS NULL;
-CREATE INDEX idx_users_active             ON users (active)         WHERE active = TRUE;
+CREATE INDEX idx_users_enabled            ON users (enabled)        WHERE enabled = TRUE;
 CREATE INDEX idx_users_user_type          ON users (user_type);
 CREATE INDEX idx_users_employee_id        ON users (employee_id)    WHERE employee_id IS NOT NULL;
 CREATE INDEX idx_users_secret_expires     ON users (secret_expires_at) WHERE secret_expires_at IS NOT NULL;
 
 -- Partial UNIQUE indekslar: soft-deleted user'lar username/email'ni qayta ishlatishga ruxsat beradi
--- username_lowercase ham UNIQUE — case-insensitive collision oldini olish ("Admin" vs "admin")
-CREATE UNIQUE INDEX uq_users_username           ON users (username)           WHERE deleted_at IS NULL;
-CREATE UNIQUE INDEX uq_users_username_lowercase ON users (username_lowercase) WHERE deleted_at IS NULL AND username_lowercase IS NOT NULL;
-CREATE UNIQUE INDEX uq_users_email              ON users (email)              WHERE deleted_at IS NULL AND email IS NOT NULL;
+CREATE UNIQUE INDEX uq_users_username       ON users (username)        WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_users_email          ON users (email)           WHERE deleted_at IS NULL AND email IS NOT NULL;
+
+-- Functional UNIQUE INDEX: case-insensitive collision oldini olish ("Admin" vs "admin")
+-- Avval username_lowercase ustuni shu vazifani bajarar edi — endi functional index, ustun saqlash kerak emas
+CREATE UNIQUE INDEX uq_users_username_lower ON users (LOWER(username)) WHERE deleted_at IS NULL;
 
 -- =====================================================
 -- PASSWORD HISTORY (parol qayta ishlatishni oldini olish)

@@ -21,15 +21,17 @@ BEGIN
     ) INTO old_table_exists;
 
     IF old_table_exists THEN
-        -- Migrate users that don't already exist
+        -- Migrate users that don't already exist.
+        -- 11 ta legacy CUBA ustun (username_lowercase, password_encryption, name,
+        -- time_zone_auto, active, group_id, group_names, ip_mask,
+        -- change_password_at_logon, sys_tenant_id, dtype) — V006 dan olib tashlangan,
+        -- shu sababli INSERT'da ham ishlatilmaydi.
+        -- sec_user.active → users.enabled (unify, dublikat emas).
         INSERT INTO users (
             id,
             username,
-            username_lowercase,
             password,
-            password_encryption,
             email,
-            name,
             first_name,
             last_name,
             middle_name,
@@ -37,17 +39,9 @@ BEGIN
             position,
             language,
             time_zone,
-            time_zone_auto,
             user_type,
             university_id,
-            group_id,
-            group_names,
             enabled,
-            active,
-            ip_mask,
-            change_password_at_logon,
-            sys_tenant_id,
-            dtype,
             version,
             created_at,
             created_by,
@@ -57,11 +51,8 @@ BEGIN
         SELECT
             COALESCE(old.id, gen_random_uuid()),
             old.login_lc,
-            old.login_lc,
             COALESCE(old.password, '$2a$10$DISABLED_ACCOUNT_NO_PASSWORD'),
-            old.password_encryption,
             old.email,
-            old.name,
             old.first_name,
             old.last_name,
             old.middle_name,
@@ -69,17 +60,9 @@ BEGIN
             old.position_,
             old.language_,
             old.time_zone,
-            old.time_zone_auto,
             CASE WHEN old._university IS NOT NULL AND old._university != '' THEN 'UNIVERSITY' ELSE 'SYSTEM' END,
             old._university,
-            old.group_id,
-            old.group_names,
-            COALESCE(old.active, TRUE),
-            COALESCE(old.active, TRUE),
-            old.ip_mask,
-            old.change_password_at_logon,
-            old.sys_tenant_id,
-            old.dtype,
+            COALESCE(old.active, TRUE),  -- sec_user.active → users.enabled
             COALESCE(old.version, 1),
             COALESCE(old.create_ts, CURRENT_TIMESTAMP),
             'migration',
@@ -87,17 +70,14 @@ BEGIN
             old.updated_by
         FROM sec_user old
         WHERE old.delete_ts IS NULL
-        ON CONFLICT (username) DO UPDATE SET
+        ON CONFLICT (username) WHERE deleted_at IS NULL DO UPDATE SET
             password = EXCLUDED.password,
-            password_encryption = EXCLUDED.password_encryption,
             email = EXCLUDED.email,
-            name = EXCLUDED.name,
             first_name = EXCLUDED.first_name,
             last_name = EXCLUDED.last_name,
             middle_name = EXCLUDED.middle_name,
             full_name = EXCLUDED.full_name,
             enabled = EXCLUDED.enabled,
-            active = EXCLUDED.active,
             university_id = EXCLUDED.university_id,
             user_type = CASE WHEN EXCLUDED.university_id IS NOT NULL AND EXCLUDED.university_id != '' THEN 'UNIVERSITY' ELSE users.user_type END,
             updated_at = CURRENT_TIMESTAMP,
