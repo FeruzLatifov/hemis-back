@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.academic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,15 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "id",
+    "_university", "_group", "_course", "_teacher", "_auditorium",
+    "schedule_date", "start_time", "end_time",
+    "day_of_week", "pair_number",
+    "academic_year", "semester", "week_number",
+    "_lesson_type", "_schedule_type",
+    "active", "is_cancelled"
+})
 public class ScheduleDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

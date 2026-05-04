@@ -2,6 +2,7 @@ package uz.hemis.common.dto.student;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -26,6 +27,32 @@ import java.util.UUID;
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true) // Ignore unknown fields during Redis cache deserialization
+// FROZEN: 200+ OTM CUBA klient field tartibi (declaration order — NO RENAME, NO BREAKING)
+@JsonPropertyOrder({
+    "id", "code",
+    "firstname", "lastname", "fathername", "pinfl", "birthday",
+    "serialNumber", "phone", "address", "currentAddress",
+    "_soato", "_current_soato",
+    "_university", "_faculty", "_speciality",
+    "_student_status", "_payment_form",
+    "_education_type", "_education_form", "_course", "_education_year",
+    "_gender", "_nationality", "_citizenship", "_country", "_language", "_social_category",
+    "status", "email", "parentPhone", "responsiblePersonPhone",
+    "geoAddress", "passportGivenDate", "tag",
+    "groupId", "groupName", "isGraduate", "isDuplicate",
+    "enrollOrderName", "enrollOrderDate", "enrollOrderNumber", "enrollOrderCategory",
+    "statusOrderName", "statusOrderDate", "statusOrderNumber", "statusOrderCategory",
+    "admissionType", "transferCountry", "transferUniversity", "transferType",
+    "studentType", "academicMobileType", "academicReason",
+    "terrain", "currentTerrain",
+    "graduationYear", "statusEducationYear",
+    "decreeInfoName", "decreeInfoNumber", "decreeInfoDate",
+    "eduStartDate", "graduationDate", "studyDuration", "specialityOrdinatura",
+    "_grant_type", "_roommate_type", "_living_status", "_poverty_level",
+    "_expel_reason", "_doctoral_student_type", "_accomodation", "_stipend_rate",
+    "_speciality_bachelor", "_speciality_master",
+    "roommateCount", "version", "active", "verified", "points", "fullname"
+})
 public class StudentDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

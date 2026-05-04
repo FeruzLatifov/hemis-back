@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.academic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,15 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+// FROZEN: 200+ OTM CUBA klient grade payload field tartibi
+@JsonPropertyOrder({
+    "id",
+    "_student", "_course", "_university", "_teacher",
+    "grade_value", "grade_letter", "grade_points", "grade_date",
+    "academic_year", "semester", "attempt_number",
+    "_assessment_type", "_grade_type",
+    "is_passed", "is_finalized"
+})
 public class GradeDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

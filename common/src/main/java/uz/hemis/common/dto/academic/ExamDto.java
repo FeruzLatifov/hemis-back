@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.academic;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -13,6 +14,15 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonPropertyOrder({
+    "id", "exam_name",
+    "_course", "_group", "_teacher", "_university", "_auditorium",
+    "exam_date", "start_time", "end_time", "duration_minutes",
+    "academic_year", "semester",
+    "_exam_type",
+    "max_score", "passing_score",
+    "active", "is_published"
+})
 public class ExamDto implements Serializable {
     private static final long serialVersionUID = 1L;
 
