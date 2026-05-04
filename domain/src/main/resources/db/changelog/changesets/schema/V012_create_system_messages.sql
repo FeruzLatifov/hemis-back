@@ -3,7 +3,7 @@
 CREATE TABLE system_message (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category VARCHAR(100) NOT NULL,
-    message_key VARCHAR(255) NOT NULL UNIQUE,
+    message_key VARCHAR(255) NOT NULL,  -- Partial UNIQUE pastda (soft-delete uyg'unligi)
     message TEXT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -18,6 +18,11 @@ CREATE TABLE system_message (
 
 CREATE INDEX idx_system_message_category ON system_message(category);
 CREATE INDEX idx_system_message_deleted_at ON system_message(deleted_at) WHERE deleted_at IS NULL;
+
+-- Partial UNIQUE: soft-deleted xabar key'ini qayta ishlatishga ruxsat
+CREATE UNIQUE INDEX uq_system_message_key
+    ON system_message(message_key)
+    WHERE deleted_at IS NULL;
 
 CREATE TABLE system_message_translation (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

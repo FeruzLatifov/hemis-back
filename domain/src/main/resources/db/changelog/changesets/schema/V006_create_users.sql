@@ -23,12 +23,12 @@ CREATE TABLE users
     -- Primary Key
     id                       UUID PRIMARY KEY      DEFAULT gen_random_uuid(),
 
-    -- Authentication
-    username                 VARCHAR(255) NOT NULL UNIQUE,
+    -- Authentication (Partial UNIQUE'lar pastda — soft-delete uyg'unligi)
+    username                 VARCHAR(255) NOT NULL,
     username_lowercase       VARCHAR(255),
     password                 VARCHAR(255) NOT NULL,
     password_encryption      VARCHAR(50),
-    email                    VARCHAR(255) UNIQUE,
+    email                    VARCHAR(255),
 
     -- Personal Information
     name                     VARCHAR(255),
@@ -113,6 +113,12 @@ CREATE INDEX idx_users_active             ON users (active)         WHERE active
 CREATE INDEX idx_users_user_type          ON users (user_type);
 CREATE INDEX idx_users_employee_id        ON users (employee_id)    WHERE employee_id IS NOT NULL;
 CREATE INDEX idx_users_secret_expires     ON users (secret_expires_at) WHERE secret_expires_at IS NOT NULL;
+
+-- Partial UNIQUE indekslar: soft-deleted user'lar username/email'ni qayta ishlatishga ruxsat beradi
+-- username_lowercase ham UNIQUE — case-insensitive collision oldini olish ("Admin" vs "admin")
+CREATE UNIQUE INDEX uq_users_username           ON users (username)           WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uq_users_username_lowercase ON users (username_lowercase) WHERE deleted_at IS NULL AND username_lowercase IS NOT NULL;
+CREATE UNIQUE INDEX uq_users_email              ON users (email)              WHERE deleted_at IS NULL AND email IS NOT NULL;
 
 -- =====================================================
 -- PASSWORD HISTORY (parol qayta ishlatishni oldini olish)
@@ -218,10 +224,12 @@ CREATE TABLE oauth_client (
     CONSTRAINT chk_oauth_client_type CHECK (
         client_type IN ('UNIVERSITY_BACKEND', 'EXTERNAL_SYSTEM', 'INTERNAL_SERVICE')
     ),
+    -- Strict XOR: UNIVERSITY_BACKEND faqat university_code, boshqalar faqat organization_id (yoki ikkalasi NULL)
+    -- Bu data ambiguity'ni oldini oladi — bir client_type ikkala FK'ga ega bo'lolmaydi
     CONSTRAINT chk_oauth_client_tenancy CHECK (
-        (client_type = 'UNIVERSITY_BACKEND' AND university_code IS NOT NULL)
+        (client_type = 'UNIVERSITY_BACKEND' AND university_code IS NOT NULL AND organization_id IS NULL)
         OR
-        (client_type <> 'UNIVERSITY_BACKEND')
+        (client_type <> 'UNIVERSITY_BACKEND' AND university_code IS NULL)
     ),
     CONSTRAINT chk_oauth_grant_types CHECK (
         grant_types <@ ARRAY['client_credentials', 'password', 'refresh_token']::TEXT[]

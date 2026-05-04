@@ -19,7 +19,7 @@
 -- =====================================================
 CREATE TABLE employee (
     id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    pinfl                VARCHAR(14) NOT NULL UNIQUE,
+    pinfl                VARCHAR(14) NOT NULL,  -- Partial UNIQUE pastda (soft-delete uyg'unligi)
     first_name           VARCHAR(255) NOT NULL,
     last_name            VARCHAR(255) NOT NULL,
     middle_name          VARCHAR(255),
@@ -91,6 +91,12 @@ CREATE INDEX idx_employee_soato ON employee(soato_code) WHERE soato_code IS NOT 
 CREATE UNIQUE INDEX uq_employee_passport
     ON employee(passport)
     WHERE passport IS NOT NULL AND deleted_at IS NULL;
+
+-- PINFL globally unique per LIVING person.
+-- Partial UNIQUE: soft-deleted xodim PINFL'ini qayta ishlatish mumkin (xodim qaytsa).
+CREATE UNIQUE INDEX uq_employee_pinfl
+    ON employee(pinfl)
+    WHERE deleted_at IS NULL;
 
 -- =====================================================
 -- TABLE 2: employee_job (one person = many positions at many universities)

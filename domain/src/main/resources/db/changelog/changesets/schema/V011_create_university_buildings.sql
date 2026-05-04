@@ -140,8 +140,8 @@ CREATE TABLE university_building (
     longitude NUMERIC(10,7),
     map_url TEXT,                              -- Google/Yandex Maps link
 
-    -- Excel col 13: Kadastr bog'lanish (UNIQUE — 1:1)
-    cad_number VARCHAR(50) UNIQUE
+    -- Excel col 13: Kadastr bog'lanish (1:1 — partial UNIQUE pastda, soft-delete uyg'unligi)
+    cad_number VARCHAR(50)
         REFERENCES university_cadastre(cad_number) ON DELETE SET NULL,
 
     -- Excel col 14: Izoh
@@ -207,6 +207,12 @@ CREATE INDEX idx_ub_synced ON university_building(synced_at) WHERE synced_at IS 
 CREATE UNIQUE INDEX uq_ub_univer_source
     ON university_building (university_code, source_uid)
     WHERE source_uid IS NOT NULL AND deleted_at IS NULL;
+
+-- Cadastre raqami unique per LIVING building (soft-delete uyg'unligi)
+-- Bino soft-delete bo'lsa, kadastr boshqa binoga (qayta foydalaniladigan kadastr) biriktirilishi mumkin
+CREATE UNIQUE INDEX uq_ub_cad_number
+    ON university_building (cad_number)
+    WHERE cad_number IS NOT NULL AND deleted_at IS NULL;
 
 -- =====================================================
 -- 5. building_lifecycle — immutable event log

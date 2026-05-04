@@ -19,11 +19,13 @@ CREATE TABLE university_founder (
     -- Individual founder (jismoniy shaxs)
     -- employee_id = asosiy bog'lanish (sync da PINFL bo'yicha topiladi yoki yaratiladi)
     -- name/tin alohida SAQLANMAYDI — employee jadvalidan JOIN orqali olinadi
-    employee_id UUID REFERENCES employee(id) ON DELETE SET NULL,
+    -- ON DELETE RESTRICT: chk_ufounder_xor (employee_id IS NOT NULL talab qiladi) buzilmasligi uchun
+    -- Avval founder row'ni o'chirish kerak, keyin employee'ni
+    employee_id UUID REFERENCES employee(id) ON DELETE RESTRICT,
 
     -- Legal founder (yuridik shaxs → organization FK)
-    -- ON DELETE SET NULL: tashkilot o'chirilsa founder row qoladi, organization_id NULL bo'ladi
-    organization_id UUID REFERENCES organization(id) ON DELETE SET NULL,
+    -- ON DELETE RESTRICT: chk_ufounder_xor (organization_id IS NOT NULL talab qiladi) buzilmasligi uchun
+    organization_id UUID REFERENCES organization(id) ON DELETE RESTRICT,
 
     -- Share info
     share_percent NUMERIC(5,2),

@@ -24,7 +24,7 @@
 -- =====================================================
 CREATE TABLE organization (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    tin VARCHAR(20) NOT NULL UNIQUE,
+    tin VARCHAR(20) NOT NULL,  -- Partial UNIQUE pastda (soft-delete uyg'unligi)
     name VARCHAR(500) NOT NULL,
     short_name VARCHAR(255),
     opf INTEGER,                      -- tashkiliy-huquqiy shakli
@@ -61,6 +61,12 @@ CREATE INDEX idx_organization_name ON organization(name);
 CREATE INDEX idx_organization_deleted_at ON organization(deleted_at) WHERE deleted_at IS NULL;
 CREATE INDEX idx_organization_synced_at ON organization(synced_at) WHERE synced_at IS NOT NULL;
 CREATE INDEX idx_organization_source ON organization(source) WHERE source IS NOT NULL;
+
+-- TIN globally unique per LIVING legal entity.
+-- Partial UNIQUE: soft-deleted tashkilot TIN'ini qayta ishlatish mumkin (re-registration).
+CREATE UNIQUE INDEX uq_organization_tin
+    ON organization(tin)
+    WHERE deleted_at IS NULL;
 
 -- =====================================================
 -- TABLE 2: university_legal — universitet yuridik ma'lumotlari

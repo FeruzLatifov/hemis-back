@@ -8,7 +8,7 @@
 
 CREATE TABLE role (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(100) NOT NULL UNIQUE,
+    code VARCHAR(100) NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
     role_type VARCHAR(50) NOT NULL DEFAULT 'CUSTOM',
@@ -31,3 +31,7 @@ CREATE TABLE role (
 CREATE INDEX idx_role_active ON role(active) WHERE active = TRUE;
 CREATE INDEX idx_role_type ON role(role_type);
 CREATE INDEX idx_role_deleted ON role(deleted_at) WHERE deleted_at IS NULL;
+
+-- Partial UNIQUE: soft-deleted yozuvlar code'ni qayta ishlatishga ruxsat beradi
+-- (e.g. LIQUIDATED_ADMIN o'chirilsa, qayta yaratilishi mumkin)
+CREATE UNIQUE INDEX uq_role_code ON role(code) WHERE deleted_at IS NULL;

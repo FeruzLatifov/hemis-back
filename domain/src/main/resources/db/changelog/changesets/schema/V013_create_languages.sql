@@ -10,7 +10,7 @@
 
 CREATE TABLE language (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code VARCHAR(10) NOT NULL UNIQUE,
+    code VARCHAR(10) NOT NULL,  -- Partial UNIQUE pastda
     name VARCHAR(100) NOT NULL,
     native_name VARCHAR(100) NOT NULL,
     iso_code VARCHAR(2),
@@ -37,13 +37,18 @@ CREATE INDEX idx_language_active ON language(is_active) WHERE is_active = TRUE;
 CREATE INDEX idx_language_position ON language(position);
 CREATE INDEX idx_language_deleted_at ON language(deleted_at) WHERE deleted_at IS NULL;
 
+-- Partial UNIQUE: soft-deleted til code'ini qayta ishlatishga ruxsat
+CREATE UNIQUE INDEX uq_language_code
+    ON language(code)
+    WHERE deleted_at IS NULL;
+
 -- =====================================================
 -- configuration — system-wide key/value store
 -- =====================================================
 CREATE TABLE configuration (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    path VARCHAR(255) NOT NULL UNIQUE,
+    path VARCHAR(255) NOT NULL,  -- Partial UNIQUE pastda
     value TEXT,
     category VARCHAR(64),
     description TEXT,
@@ -67,3 +72,8 @@ COMMENT ON COLUMN configuration.value_type IS 'Hint for UI rendering: boolean | 
 
 CREATE INDEX idx_configuration_category ON configuration(category) WHERE category IS NOT NULL;
 CREATE INDEX idx_configuration_deleted_at ON configuration(deleted_at) WHERE deleted_at IS NULL;
+
+-- Partial UNIQUE: soft-deleted config path'ini qayta ishlatishga ruxsat
+CREATE UNIQUE INDEX uq_configuration_path
+    ON configuration(path)
+    WHERE deleted_at IS NULL;
