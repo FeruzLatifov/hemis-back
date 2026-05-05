@@ -116,7 +116,24 @@ public class EmployeeRefLegacyService {
     @Transactional
     public void softDeleteEmployeeCertificate(EmployeeCertificate entity) {
         entity.setDeleteTs(LocalDateTime.now());
+        // Audit P2.T4: deletedBy field — Vazirlik 7 yil retention compliance.
+        entity.setDeletedBy(currentAuditor());
         employeeCertificateRepository.save(entity);
+    }
+
+    /**
+     * SecurityContext'dan auditor username — fallback "SYSTEM" (anonymous/system events).
+     * Mirror of {@code SecurityAuditorAware} (security/audit/) — bu service modul'da
+     * direct access yo'q, lokal helper.
+     */
+    private String currentAuditor() {
+        org.springframework.security.core.Authentication auth =
+                org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()
+                || "anonymousUser".equals(auth.getPrincipal())) {
+            return "SYSTEM";
+        }
+        return auth.getName();
     }
 
     @Transactional
@@ -527,7 +544,12 @@ public class EmployeeRefLegacyService {
         return administrativeEmployee1Repository.findById(id);
     }
 
+    /**
+     * @deprecated OOM risk — use Pageable variant. Doctoral/PhD records 224 OTM × multi-year.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
     public List<AdministrativeEmployee1> findAllAdministrativeEmployee1() {
+        log.warn("DEPRECATED: findAllAdministrativeEmployee1() — use Pageable variant.");
         return administrativeEmployee1Repository.findAll();
     }
 
@@ -539,6 +561,7 @@ public class EmployeeRefLegacyService {
     @Transactional
     public void softDeleteAdministrativeEmployee1(AdministrativeEmployee1 entity) {
         entity.setDeleteTs(LocalDateTime.now());
+        entity.setDeletedBy(currentAuditor());
         administrativeEmployee1Repository.save(entity);
     }
 
@@ -619,7 +642,12 @@ public class EmployeeRefLegacyService {
         return administrativeEmployee2Repository.findById(id);
     }
 
+    /**
+     * @deprecated OOM risk — use Pageable variant.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
     public List<AdministrativeEmployee2> findAllAdministrativeEmployee2() {
+        log.warn("DEPRECATED: findAllAdministrativeEmployee2() — use Pageable variant.");
         return administrativeEmployee2Repository.findAll();
     }
 
@@ -631,6 +659,7 @@ public class EmployeeRefLegacyService {
     @Transactional
     public void softDeleteAdministrativeEmployee2(AdministrativeEmployee2 entity) {
         entity.setDeleteTs(LocalDateTime.now());
+        entity.setDeletedBy(currentAuditor());
         administrativeEmployee2Repository.save(entity);
     }
 
@@ -716,7 +745,12 @@ public class EmployeeRefLegacyService {
         return administrativeEmployee3Repository.findById(id);
     }
 
+    /**
+     * @deprecated OOM risk — use Pageable variant.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
     public List<AdministrativeEmployee3> findAllAdministrativeEmployee3() {
+        log.warn("DEPRECATED: findAllAdministrativeEmployee3() — use Pageable variant.");
         return administrativeEmployee3Repository.findAll();
     }
 
@@ -728,6 +762,7 @@ public class EmployeeRefLegacyService {
     @Transactional
     public void softDeleteAdministrativeEmployee3(AdministrativeEmployee3 entity) {
         entity.setDeleteTs(LocalDateTime.now());
+        entity.setDeletedBy(currentAuditor());
         administrativeEmployee3Repository.save(entity);
     }
 

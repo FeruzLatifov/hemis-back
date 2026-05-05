@@ -48,6 +48,13 @@ class TeacherServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    /** P2.T1 — generateUniqueCode endi pg_advisory_xact_lock orqali JdbcTemplate ishlatadi. */
+    @Mock
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Mock
+    private uz.hemis.domain.repository.EmployeeJobsRepository employeeJobsRepository;
+
     @InjectMocks
     private TeacherService teacherService;
 

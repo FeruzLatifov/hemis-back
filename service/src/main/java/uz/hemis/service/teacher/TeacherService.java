@@ -253,11 +253,29 @@ public class TeacherService {
         }
     }
 
+    /**
+     * Race-free teacher code generation (audit P2.T1, OWASP A04).
+     *
+     * <p>Format: {@code UUU + YY + GG + NNN} (university+year+gender+sequence).</p>
+     *
+     * <p><strong>Race fix:</strong> avval count + retry loop concurrent inserts'da
+     * duplicate key generate qilardi (224 OTM × API workers). Fallback
+     * {@code currentTimeMillis() % 100000} non-OLD-HEMIS format buzilishi mumkin edi.
+     * Endi {@code pg_advisory_xact_lock} (transaction-scoped) bilan har
+     * (university, year, gender) bucket sequencely processed.</p>
+     */
     private String generateUniqueCode(String universityCode, String yearSuffix, String gender) {
-        // Format: UUU + YY + GG + NNN
         String codePrefix = universityCode + yearSuffix + gender;
+
+        // Acquire advisory lock — concurrent transactions wait on same bucket.
+        // 64-bit FNV-1a hash; collision risk negligible (~10^-9), even on collision
+        // serializes two unrelated buckets (perf cost only, no correctness bug).
+        long lockKey = computeAdvisoryLockKey(codePrefix);
+        jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(?)", Object.class, lockKey);
+
         long count = teacherRepository.countByCodePrefix(codePrefix);
-        // Retry loop to avoid duplicate key
+        // Retry loop — race window now closed by advisory lock; retry only handles
+        // soft-deleted code reuse + concurrent-bucket collisions (rare).
         for (int i = 0; i < 100; i++) {
             String sequence = String.format("%03d", count + 1 + i);
             String candidate = codePrefix + sequence;
@@ -265,8 +283,20 @@ public class TeacherService {
                 return candidate;
             }
         }
-        // Fallback: timestamp-based unique code
+        // Fallback: timestamp-based unique code (signals exhaustion — should never hit).
+        log.error("SECURITY: code generation exhausted 100 retries for prefix={}, fallback used", codePrefix);
         return codePrefix + System.currentTimeMillis() % 100000;
+    }
+
+    /** Stable 64-bit FNV-1a hash for advisory lock key (per-bucket serialization). */
+    private static long computeAdvisoryLockKey(String prefix) {
+        String composite = "teacher-code:" + prefix;
+        long h = 1469598103934665603L;
+        for (int i = 0; i < composite.length(); i++) {
+            h ^= composite.charAt(i);
+            h *= 1099511628211L;
+        }
+        return h;
     }
 
     private Map<String, Object> teacherToMap(Teacher teacher) {

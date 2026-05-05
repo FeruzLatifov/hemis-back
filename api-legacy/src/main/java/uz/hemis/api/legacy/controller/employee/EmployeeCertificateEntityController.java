@@ -35,6 +35,24 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class EmployeeCertificateEntityController {
 
     private final EmployeeRefLegacyService employeeRefService;
+    private final uz.hemis.api.legacy.util.LegacySecurityHelper securityHelper;
+
+    /** OWASP A01 BOLA defense — caller must own the certificate's university. */
+    private boolean isAccessAllowed(EmployeeCertificate cert) {
+        String callerCode = securityHelper.getUniversityCodeFromContext();
+        if (callerCode == null || callerCode.isEmpty()) {
+            // Admin/system (no university scope) — allowed.
+            return true;
+        }
+        return callerCode.equals(cert.getUniversity());
+    }
+
+    private Map<String, Object> forbiddenBody() {
+        Map<String, Object> err = new java.util.LinkedHashMap<>();
+        err.put("error", "Forbidden");
+        err.put("details", "Resource belongs to another university");
+        return err;
+    }
 
     @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{id}")
@@ -48,6 +66,9 @@ public class EmployeeCertificateEntityController {
         Optional<EmployeeCertificate> opt = employeeRefService.findEmployeeCertificateById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_EEmpoyeeCertificate with id " + id + " not found"));
+        }
+        if (!isAccessAllowed(opt.get())) {
+            return ResponseEntity.status(403).body(forbiddenBody());
         }
         return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(opt.get(),
                 returnNulls != null ? returnNulls : false, view));
@@ -65,6 +86,12 @@ public class EmployeeCertificateEntityController {
         }
 
         EmployeeCertificate cert = opt.get();
+        if (!isAccessAllowed(cert)) {
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
+        // Mass-assignment defense — body cannot relocate certificate to another OTM.
+        data.remove("_university");
+        data.remove("university");
         employeeRefService.updateEmployeeCertificateFromMap(cert, data);
         cert.setUpdateTs(LocalDateTime.now());
         employeeRefService.saveEmployeeCertificate(cert);
@@ -75,13 +102,15 @@ public class EmployeeCertificateEntityController {
     @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini o'chirish")
-    public ResponseEntity<Void> deleteEmployeeCertificate(
+    public ResponseEntity<?> deleteEmployeeCertificate(
             @Parameter(description = "Employee certificate ID") @PathVariable UUID id) {
         Optional<EmployeeCertificate> opt = employeeRefService.findEmployeeCertificateById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
+        if (!isAccessAllowed(opt.get())) {
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
         employeeRefService.softDeleteEmployeeCertificate(opt.get());
         return ResponseEntity.ok().build();
     }
