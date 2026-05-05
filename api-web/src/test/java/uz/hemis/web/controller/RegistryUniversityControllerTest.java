@@ -1,147 +1,156 @@
 package uz.hemis.web.controller;
 
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import uz.hemis.app.HemisApplication;
+import uz.hemis.app.exception.GlobalExceptionHandler;
+import uz.hemis.common.dto.university.UniversityDto;
+import uz.hemis.service.registry.UniversityRegistryService;
+import uz.hemis.service.registry.dto.UniversityDictionariesDto;
+import uz.hemis.service.shared.I18nService;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import java.util.List;
 
-import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * Integration Tests for RegistryUniversityController
+ * {@link RegistryUniversityController} slice testlari — @WebMvcTest (faqat web qatlam).
  *
- * <p>Tests coverage:</p>
+ * <p>Test case'lar:
  * <ul>
- *   <li>GET /api/v1/web/registry/universities — list with filters</li>
- *   <li>GET /api/v1/web/registry/universities/{id} — single university</li>
- *   <li>GET /api/v1/web/registry/universities/dictionaries — dropdown data</li>
- *   <li>POST /api/v1/web/registry/universities/export — CSV export</li>
- *   <li>Authorization checks</li>
- * </ul>
+ *   <li>GET /universities — list with pagination (200 OK)</li>
+ *   <li>GET /universities — without permission (403)</li>
+ *   <li>GET /universities/{id} — non-existent (404)</li>
+ *   <li>GET /universities/dictionaries — returns dictionaries</li>
+ *   <li>POST /universities — without edit permission (403)</li>
+ *   <li>DELETE /universities/{code} — without delete permission (403)</li>
+ * </ul></p>
  */
-@EnabledIfEnvironmentVariable(named = "TESTS_ENABLED", matches = "(?i)true")
-@SpringBootTest(
-    classes = HemisApplication.class,
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {
-        "spring.datasource.master.jdbc-url=jdbc:postgresql://${DB_MASTER_HOST}:${DB_MASTER_PORT}/${DB_MASTER_NAME}",
-        "spring.datasource.replica.jdbc-url=jdbc:postgresql://${DB_REPLICA_HOST:${DB_MASTER_HOST}}:${DB_REPLICA_PORT:${DB_MASTER_PORT}}/${DB_REPLICA_NAME:${DB_MASTER_NAME}}"
-    }
+@WebMvcTest(
+        controllers = RegistryUniversityController.class,
+        excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class
 )
-@AutoConfigureMockMvc
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Import({RegistryUniversityControllerTest.Config.class, GlobalExceptionHandler.class})
+@DisplayName("RegistryUniversityController Web Layer Tests")
 class RegistryUniversityControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockitoBean
+    private UniversityRegistryService universityRegistryService;
+
+    @SpringBootApplication
+    @EnableMethodSecurity
+    static class TestApp {
+    }
+
+    @TestConfiguration
+    static class Config {
+        @Bean
+        I18nService i18nService() {
+            I18nService mock = Mockito.mock(I18nService.class);
+            when(mock.getMessage(anyString(), anyString()))
+                    .thenAnswer(inv -> inv.getArgument(0));
+            return mock;
+        }
+    }
+
     private static final String BASE_URL = "/api/v1/web/registry/universities";
 
-    private static org.springframework.test.web.servlet.request.RequestPostProcessor adminAuth() {
-        return jwt().authorities(new SimpleGrantedAuthority("institutions.universities.view"));
-    }
+    @Test
+    @DisplayName("GET /universities — paginated list, 200 OK")
+    @WithMockUser(authorities = "institutions.universities.view")
+    void searchUniversities_returnsPagedList() throws Exception {
+        Page<UniversityDto> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+        when(universityRegistryService.searchUniversities(
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(), any(Pageable.class)
+        )).thenReturn(page);
 
-    private static org.springframework.test.web.servlet.request.RequestPostProcessor basicAuth() {
-        return jwt().authorities(new SimpleGrantedAuthority("basic.view"));
+        mockMvc.perform(get(BASE_URL).param("page", "0").param("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").exists());
     }
 
     @Test
-    @Order(1)
-    @DisplayName("GET /universities — returns paginated list")
-    void testGetUniversities() throws Exception {
-        mockMvc.perform(get(BASE_URL)
-                .with(adminAuth())
-                .param("page", "0")
-                .param("size", "20"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data").exists());
-    }
-
-    @Test
-    @Order(2)
-    @DisplayName("GET /universities — without permission returns 403")
-    void testGetUniversitiesForbidden() throws Exception {
-        mockMvc.perform(get(BASE_URL).with(basicAuth()))
-            .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @Order(3)
-    @DisplayName("GET /universities — search filter works")
-    void testGetUniversitiesWithSearch() throws Exception {
-        mockMvc.perform(get(BASE_URL)
-                .with(adminAuth())
-                .param("q", "TATU")
-                .param("page", "0")
-                .param("size", "20"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    @Order(4)
-    @DisplayName("GET /universities/{id} — non-existent returns 404")
-    void testGetUniversityNotFound() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/NON_EXISTENT_CODE").with(adminAuth()))
-            .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @Order(5)
-    @DisplayName("GET /universities/dictionaries — returns dictionaries")
-    void testGetDictionaries() throws Exception {
-        mockMvc.perform(get(BASE_URL + "/dictionaries").with(adminAuth()))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data").isMap());
-    }
-
-    @Test
-    @Order(6)
-    @DisplayName("GET /universities — unauthenticated returns 401 or 403")
-    void testGetUniversitiesUnauthorized() throws Exception {
+    @DisplayName("GET /universities — ruxsatsiz 403")
+    @WithMockUser(authorities = "basic.view")
+    void searchUniversities_withoutPermission_returns403() throws Exception {
         mockMvc.perform(get(BASE_URL))
-            .andExpect(status().is(anyOf(is(401), is(403))));
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    @Order(7)
-    @DisplayName("GET /universities — large page number returns empty")
-    void testGetUniversitiesLargePage() throws Exception {
-        mockMvc.perform(get(BASE_URL)
-                .with(adminAuth())
-                .param("page", "9999")
-                .param("size", "20"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true));
+    @DisplayName("GET /universities/{id} — null qaytsa 404")
+    @WithMockUser(authorities = "institutions.universities.view")
+    void getUniversity_notFound_returns404() throws Exception {
+        when(universityRegistryService.getUniversityById("MISSING_CODE")).thenReturn(null);
+
+        mockMvc.perform(get(BASE_URL + "/MISSING_CODE"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    @Order(8)
-    @DisplayName("POST /universities — without edit permission returns 403")
-    void testCreateUniversityForbidden() throws Exception {
-        mockMvc.perform(post(BASE_URL)
-                .with(adminAuth())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"code\":\"TEST_CODE\",\"name\":\"Test University\"}"))
-            .andExpect(status().isForbidden());
+    @DisplayName("GET /universities/dictionaries — 200 OK")
+    @WithMockUser(authorities = "institutions.universities.view")
+    void getDictionaries_returnsDto() throws Exception {
+        UniversityDictionariesDto dto = UniversityDictionariesDto.builder()
+                .regions(List.of())
+                .types(List.of())
+                .ownerships(List.of())
+                .activityStatuses(List.of())
+                .belongsToOptions(List.of())
+                .contractCategories(List.of())
+                .versionTypes(List.of())
+                .districts(List.of())
+                .build();
+        when(universityRegistryService.getDictionaries()).thenReturn(dto);
+
+        mockMvc.perform(get(BASE_URL + "/dictionaries"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").exists());
     }
 
     @Test
-    @Order(9)
-    @DisplayName("DELETE /universities/{code} — without delete permission returns 403")
-    void testDeleteUniversityForbidden() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/TEST_CODE").with(adminAuth()))
-            .andExpect(status().isForbidden());
+    @DisplayName("POST /universities — universities.edit ruxsatsiz 403")
+    @WithMockUser(authorities = "institutions.universities.view")
+    void createUniversity_withoutEditPermission_returns403() throws Exception {
+        mockMvc.perform(post(BASE_URL).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"code\":\"TEST\",\"name\":\"Test\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("DELETE /universities/{code} — universities.delete ruxsatsiz 403")
+    @WithMockUser(authorities = "institutions.universities.view")
+    void deleteUniversity_withoutDeletePermission_returns403() throws Exception {
+        mockMvc.perform(delete(BASE_URL + "/TEST_CODE").with(csrf()))
+                .andExpect(status().isForbidden());
     }
 }

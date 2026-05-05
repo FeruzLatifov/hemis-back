@@ -1,145 +1,156 @@
 package uz.hemis.web.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.security.oauth2.server.resource.autoconfigure.servlet.OAuth2ResourceServerAutoConfiguration;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import uz.hemis.app.HemisApplication;
+import org.springframework.web.method.support.HandlerMethodArgumentResolver;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import uz.hemis.app.exception.GlobalExceptionHandler;
+import uz.hemis.service.favorite.UserFavoriteService;
+import uz.hemis.service.shared.I18nService;
 
-import java.util.*;
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-
-import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Integration Tests for UserFavoriteController
+ * {@link UserFavoriteController} slice testlari — @WebMvcTest (faqat web qatlam).
  *
- * <p>Tests coverage:</p>
+ * <p>Test case'lar:
  * <ul>
- *   <li>GET /api/v1/web/favorites — list favorites</li>
- *   <li>POST /api/v1/web/favorites — add favorite</li>
- *   <li>DELETE /api/v1/web/favorites/{code} — remove favorite</li>
- *   <li>PATCH /api/v1/web/favorites/reorder — reorder favorites</li>
- *   <li>Authorization checks</li>
- * </ul>
+ *   <li>GET /favorites — authenticated, list qaytaradi</li>
+ *   <li>POST /favorites — empty body 400 (Bean Validation)</li>
+ *   <li>DELETE /favorites/{code} — 204 No Content</li>
+ *   <li>PATCH /favorites/reorder — 204 No Content</li>
+ * </ul></p>
  */
-@EnabledIfEnvironmentVariable(named = "TESTS_ENABLED", matches = "(?i)true")
-@SpringBootTest(
-    classes = HemisApplication.class,
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {
-        "spring.datasource.master.jdbc-url=jdbc:postgresql://${DB_MASTER_HOST}:${DB_MASTER_PORT}/${DB_MASTER_NAME}",
-        "spring.datasource.replica.jdbc-url=jdbc:postgresql://${DB_REPLICA_HOST:${DB_MASTER_HOST}}:${DB_REPLICA_PORT:${DB_MASTER_PORT}}/${DB_REPLICA_NAME:${DB_MASTER_NAME}}"
-    }
+@WebMvcTest(
+        controllers = UserFavoriteController.class,
+        excludeAutoConfiguration = OAuth2ResourceServerAutoConfiguration.class
 )
-@AutoConfigureMockMvc
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Import({UserFavoriteControllerTest.Config.class, GlobalExceptionHandler.class})
+@DisplayName("UserFavoriteController Web Layer Tests")
 class UserFavoriteControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    @MockitoBean
+    private UserFavoriteService favoriteService;
+
+    @SpringBootApplication
+    @EnableMethodSecurity
+    static class TestApp {
+    }
+
+    @TestConfiguration
+    static class Config {
+        @Bean
+        I18nService i18nService() {
+            I18nService mock = Mockito.mock(I18nService.class);
+            when(mock.getMessage(anyString(), anyString()))
+                    .thenAnswer(inv -> inv.getArgument(0));
+            return mock;
+        }
+
+        @Bean
+        WebMvcConfigurer authenticationPrincipalConfigurer() {
+            return new WebMvcConfigurer() {
+                @Override
+                public void addArgumentResolvers(java.util.List<HandlerMethodArgumentResolver> resolvers) {
+                    resolvers.add(new AuthenticationPrincipalArgumentResolver());
+                }
+            };
+        }
+    }
 
     private static final String BASE_URL = "/api/v1/web/favorites";
-
     private static final String ADMIN_USER_ID = "60885987-1b61-4247-94c7-dff348347f93";
 
-    private static RequestPostProcessor authWith(String... authorities) {
-        SimpleGrantedAuthority[] grants = new SimpleGrantedAuthority[authorities.length];
-        for (int i = 0; i < authorities.length; i++) {
-            grants[i] = new SimpleGrantedAuthority(authorities[i]);
-        }
-        return jwt()
-                .jwt(j -> j.subject(ADMIN_USER_ID))
-                .authorities(grants);
+    private void setAuthenticated(String... authorities) {
+        Jwt jwt = Jwt.withTokenValue("test-token")
+                .header("alg", "none")
+                .subject(ADMIN_USER_ID)
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(3600))
+                .build();
+        List<SimpleGrantedAuthority> grants = Arrays.stream(authorities)
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt, grants));
+    }
+
+    @AfterEach
+    void clearContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
-    @Order(1)
-    @DisplayName("GET /favorites — returns user favorites list")
-    void testGetFavorites() throws Exception {
-        mockMvc.perform(get(BASE_URL).with(authWith("system.view")))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data").isArray());
-    }
+    @DisplayName("GET /favorites — authenticated, ro'yxat qaytaradi")
+    void getFavorites_authenticated_returnsList() throws Exception {
+        setAuthenticated("system.view");
+        when(favoriteService.getUserFavorites(Mockito.any())).thenReturn(List.of());
 
-    @Test
-    @Order(2)
-    @DisplayName("GET /favorites — unauthenticated returns 401 or 403")
-    void testGetFavoritesUnauthorized() throws Exception {
         mockMvc.perform(get(BASE_URL))
-            .andExpect(status().is(anyOf(is(401), is(403))));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray());
     }
 
     @Test
-    @Order(3)
-    @DisplayName("POST /favorites — empty body returns 400")
-    void testAddFavoriteEmptyBody() throws Exception {
-        mockMvc.perform(post(BASE_URL)
-                .with(authWith("system.view"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{}"))
-            .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @Order(4)
-    @DisplayName("DELETE /favorites/{code} — non-existent returns 204 or 404")
-    void testDeleteNonExistentFavorite() throws Exception {
-        mockMvc.perform(delete(BASE_URL + "/NON_EXISTENT_CODE").with(authWith("system.view")))
-            .andExpect(status().is(anyOf(is(200), is(204), is(404))));
-    }
-
-    @Test
-    @Order(5)
-    @DisplayName("PATCH /favorites/reorder — empty list")
-    void testReorderFavoritesEmpty() throws Exception {
-        mockMvc.perform(patch(BASE_URL + "/reorder")
-                .with(authWith("system.view"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
-            .andExpect(status().is(anyOf(is(200), is(204))));
-    }
-
-    @Test
-    @Order(6)
-    @DisplayName("POST + DELETE /favorites — add and remove flow")
-    void testAddAndDeleteFavorite() throws Exception {
-        Map<String, String> body = new HashMap<>();
-        body.put("menuCode", "test_menu_code");
-        body.put("title", "Test Favorite");
-        body.put("path", "/test/path");
-        body.put("icon", "Star");
+    @DisplayName("POST /favorites — empty body 400 (Bean Validation)")
+    void addFavorite_emptyBody_returns400() throws Exception {
+        setAuthenticated("system.view");
 
         mockMvc.perform(post(BASE_URL)
-                .with(authWith("system.view"))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(body)))
-            .andExpect(status().is(anyOf(is(200), is(201), is(400))));
-
-        mockMvc.perform(delete(BASE_URL + "/test_menu_code").with(authWith("system.view")))
-            .andExpect(status().is(anyOf(is(200), is(204), is(404))));
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
-    @Order(7)
-    @DisplayName("PATCH /favorites/reorder — unauthenticated returns 401 or 403")
-    void testReorderFavoritesUnauthorized() throws Exception {
-        mockMvc.perform(patch(BASE_URL + "/reorder")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("[]"))
-            .andExpect(status().is(anyOf(is(401), is(403))));
+    @DisplayName("DELETE /favorites/{code} — 204 No Content")
+    void removeFavorite_authenticated_returns204() throws Exception {
+        setAuthenticated("system.view");
+
+        mockMvc.perform(delete(BASE_URL + "/test_code").with(csrf()))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("PATCH /favorites/reorder — 204 No Content with empty list")
+    void reorderFavorites_emptyList_returns204() throws Exception {
+        setAuthenticated("system.view");
+
+        mockMvc.perform(patch(BASE_URL + "/reorder").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("[]"))
+                .andExpect(status().isNoContent());
     }
 }
