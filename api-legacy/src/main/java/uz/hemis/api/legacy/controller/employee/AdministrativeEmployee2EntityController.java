@@ -1,6 +1,7 @@
 package uz.hemis.api.legacy.controller.employee;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class AdministrativeEmployee2EntityController {
 
     private static final String ENTITY_NAME = "hemishe_RIAdministrativeEmployee2";
 
+    @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
     @PreAuthorize("hasAuthority('teachers.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
@@ -44,6 +46,7 @@ public class AdministrativeEmployee2EntityController {
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee2Map(saved, returnNulls));
     }
 
+    @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
     @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
@@ -53,6 +56,7 @@ public class AdministrativeEmployee2EntityController {
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee2Map(entity.get(), returnNulls));
     }
 
+    @Operation(summary = "Yangilash (CUBA entity API)")
     @PreAuthorize("hasAuthority('teachers.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
@@ -65,6 +69,7 @@ public class AdministrativeEmployee2EntityController {
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee2Map(saved, returnNulls));
     }
 
+    @Operation(summary = "Soft delete (CUBA entity API)")
     @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -75,6 +80,7 @@ public class AdministrativeEmployee2EntityController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "Barcha entity'lar (CUBA pagination — offset/limit)")
     @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -88,6 +94,7 @@ public class AdministrativeEmployee2EntityController {
         return ResponseEntity.ok(paged.stream().map(e -> employeeService.toAdministrativeEmployee2Map(e, returnNulls)).collect(Collectors.toList()));
     }
 
+    @Operation(summary = "GET search — CUBA filter qidirish")
     @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -96,6 +103,7 @@ public class AdministrativeEmployee2EntityController {
         return search(filter, offset, limit, returnNulls);
     }
 
+    @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
     @PreAuthorize("hasAuthority('teachers.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(

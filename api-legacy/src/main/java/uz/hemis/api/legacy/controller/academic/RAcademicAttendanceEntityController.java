@@ -3,6 +3,7 @@ package uz.hemis.api.legacy.controller.academic;
 import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class RAcademicAttendanceEntityController {
 
     private static final String ENTITY_NAME = "hemishe_RAcademicAttendance";
 
+    @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(@PathVariable String entityId, @RequestParam(required = false) Boolean returnNulls) {
@@ -53,6 +55,7 @@ public class RAcademicAttendanceEntityController {
         }
     }
 
+    @Operation(summary = "Yangilash (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(@PathVariable String entityId, @RequestBody Map<String, Object> entityData) {
@@ -73,6 +76,7 @@ public class RAcademicAttendanceEntityController {
         }
     }
 
+    @Operation(summary = "Soft delete (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(@PathVariable String entityId) {
@@ -90,6 +94,7 @@ public class RAcademicAttendanceEntityController {
         }
     }
 
+    @Operation(summary = "GET search — CUBA filter qidirish")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -100,6 +105,7 @@ public class RAcademicAttendanceEntityController {
         return search(filter, offset, limit, returnCount, returnNulls);
     }
 
+    @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
     @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -117,6 +123,7 @@ public class RAcademicAttendanceEntityController {
         return search(filterStr, bodyOffset, bodyLimit, returnCount, returnNulls);
     }
 
+    @Operation(summary = "Endpoint")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping({"", "/"})
     public ResponseEntity<List<Map<String, Object>>> listAll(
@@ -133,6 +140,7 @@ public class RAcademicAttendanceEntityController {
         return ResponseEntity.ok().headers(headers).body(result);
     }
 
+    @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping({"", "/"})
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {

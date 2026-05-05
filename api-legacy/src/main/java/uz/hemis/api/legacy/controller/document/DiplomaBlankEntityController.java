@@ -4,6 +4,7 @@ import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ public class DiplomaBlankEntityController {
     private final DocumentLegacyService documentService;
     private final CubaFilterHelper filterHelper;
 
+    @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
@@ -43,6 +45,7 @@ public class DiplomaBlankEntityController {
         return ResponseEntity.ok(documentService.toDiplomaBlankMap(entity.get(), returnNulls));
     }
 
+    @Operation(summary = "Yangilash (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.diplomas.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
@@ -54,6 +57,7 @@ public class DiplomaBlankEntityController {
         return ResponseEntity.ok(documentService.toDiplomaBlankMap(saved, returnNulls));
     }
 
+    @Operation(summary = "Soft delete (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.diplomas.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -63,6 +67,7 @@ public class DiplomaBlankEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "GET search — CUBA filter qidirish")
     @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -85,6 +90,7 @@ public class DiplomaBlankEntityController {
             .collect(Collectors.toList()));
     }
 
+    @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
     @PreAuthorize("hasAuthority('students.diplomas.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -111,6 +117,7 @@ public class DiplomaBlankEntityController {
             .collect(Collectors.toList()));
     }
 
+    @Operation(summary = "Barcha entity'lar (CUBA pagination — offset/limit)")
     @PreAuthorize("hasAuthority('students.diplomas.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -131,6 +138,7 @@ public class DiplomaBlankEntityController {
             .collect(Collectors.toList()));
     }
 
+    @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.diplomas.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {

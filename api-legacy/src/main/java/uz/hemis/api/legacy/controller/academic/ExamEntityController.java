@@ -4,6 +4,7 @@ import uz.hemis.api.legacy.adapter.LegacyResponseHelper;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class ExamEntityController {
     private final AcademicEntityLegacyService academicService;
     private final CubaFilterHelper filterHelper;
 
+    @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
@@ -39,6 +41,7 @@ public class ExamEntityController {
         return ResponseEntity.ok(academicService.toExamMap(entity.get(), returnNulls));
     }
 
+    @Operation(summary = "Yangilash (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
@@ -48,6 +51,7 @@ public class ExamEntityController {
         return ResponseEntity.ok(academicService.toExamMap(saved, returnNulls));
     }
 
+    @Operation(summary = "Soft delete (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -57,6 +61,7 @@ public class ExamEntityController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "GET search — CUBA filter qidirish")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -79,6 +84,7 @@ public class ExamEntityController {
             .collect(Collectors.toList()));
     }
 
+    @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
     @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -105,6 +111,7 @@ public class ExamEntityController {
             .collect(Collectors.toList()));
     }
 
+    @Operation(summary = "Barcha entity'lar (CUBA pagination — offset/limit)")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(@RequestParam(defaultValue = "0") Integer offset, @RequestParam(defaultValue = "50") Integer limit, @RequestParam(required = false) String sort, @RequestParam(required = false) Boolean returnNulls) {
@@ -117,6 +124,7 @@ public class ExamEntityController {
         return ResponseEntity.ok(entityPage.getContent().stream().map(e -> academicService.toExamMap(e, returnNulls)).collect(Collectors.toList()));
     }
 
+    @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
