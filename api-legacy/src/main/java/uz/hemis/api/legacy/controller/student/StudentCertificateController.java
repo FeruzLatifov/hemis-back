@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.student;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ public class StudentCertificateController {
         return ResponseEntity.ok(ResponseWrapper.success(certificate));
     }
 
+    @Operation(summary = "verify certificate")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify/{certificateId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyCertificate(@PathVariable String certificateId) {

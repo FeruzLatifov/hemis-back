@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.system;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.Map;
 public class HealthController {
 
     @GetMapping
+    @Operation(summary = "ping")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getHealth() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -32,6 +34,7 @@ public class HealthController {
     }
 
     @GetMapping("/ping")
+    @Operation(summary = "get version")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> ping() {
         Map<String, Object> response = new LinkedHashMap<>();

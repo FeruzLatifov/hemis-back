@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.system;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @Slf4j
 public class ServicesApiController {
 
+    @Operation(summary = "get available services")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/available")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAvailableServices() {
@@ -28,6 +30,7 @@ public class ServicesApiController {
         return ResponseEntity.ok(ResponseWrapper.success(services));
     }
 
+    @Operation(summary = "get service info")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/info/{serviceCode}")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getServiceInfo(@PathVariable String serviceCode) {

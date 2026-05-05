@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.university;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class UniversitySettingsController {
 
     @GetMapping("/{universityCode}")
+    @Operation(summary = "update settings")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getSettings(@PathVariable String universityCode) {
         Map<String, Object> settings = new LinkedHashMap<>();

@@ -52,6 +52,7 @@ public class ProjectExecutorEntityController {
 
     // TEST endpoint
     @GetMapping("/test")
+    @Operation(summary = "Endpoint")
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> test() {
         log.info("TEST endpoint called");

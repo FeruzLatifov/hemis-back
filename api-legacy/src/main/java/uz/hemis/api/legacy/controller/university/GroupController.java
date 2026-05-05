@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.university;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class GroupController {
 
     private final GroupService groupService;
 
+    @Operation(summary = "get all groups")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<GroupDto>>> getAllGroups(
@@ -38,6 +40,7 @@ public class GroupController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(groups)));
     }
 
+    @Operation(summary = "get group by id")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<GroupDto>> getGroupById(@PathVariable UUID id) {
@@ -46,6 +49,7 @@ public class GroupController {
     }
 
     @PostMapping
+    @Operation(summary = "update group")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<GroupDto>> createGroup(@Valid @RequestBody GroupDto groupDto) {
         GroupDto created = groupService.create(groupDto);

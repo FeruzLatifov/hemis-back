@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.system;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class MailController {
         return ResponseEntity.ok(ResponseWrapper.success(response));
     }
 
+    @Operation(summary = "get email status")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/status/{messageId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getEmailStatus(

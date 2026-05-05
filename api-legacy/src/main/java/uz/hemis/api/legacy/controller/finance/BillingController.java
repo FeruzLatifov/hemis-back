@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.finance;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class BillingController {
         return ResponseEntity.ok(ResponseWrapper.success(result));
     }
 
+    @Operation(summary = "get student balance")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/balance/{studentId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentBalance(@PathVariable UUID studentId) {

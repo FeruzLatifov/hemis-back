@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.document;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class QrDiplomaController {
         return ResponseEntity.ok(ResponseWrapper.success(result));
     }
 
+    @Operation(summary = "verify qr code")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyQrCode(@RequestParam String qrCode) {

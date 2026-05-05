@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.academic;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,7 @@ public class TranscriptController {
         return ResponseEntity.ok(ResponseWrapper.success(result));
     }
 
+    @Operation(summary = "verify transcript")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify/{transcriptId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> verifyTranscript(

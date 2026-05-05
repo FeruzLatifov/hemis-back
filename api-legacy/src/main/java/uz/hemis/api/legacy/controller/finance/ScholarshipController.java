@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.finance;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class ScholarshipController {
 
     private final ScholarshipService scholarshipService;
 
+    @Operation(summary = "get all scholarships")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<ScholarshipDto>>> getAllScholarships(
@@ -41,6 +43,7 @@ public class ScholarshipController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(scholarships)));
     }
 
+    @Operation(summary = "get scholarship by id")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> getScholarshipById(@PathVariable UUID id) {
@@ -48,6 +51,7 @@ public class ScholarshipController {
         return ResponseEntity.ok(ResponseWrapper.success(scholarship));
     }
 
+    @Operation(summary = "get scholarships by student")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<ScholarshipDto>>> getScholarshipsByStudent(
