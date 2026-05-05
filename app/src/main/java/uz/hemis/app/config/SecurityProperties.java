@@ -145,6 +145,21 @@ public class SecurityProperties {
          * Default: 1000 requests per minute
          */
         private int globalRequestsPerMinute = 1000;
+
+        /**
+         * Per-IP rate limit for anonymous (non-authenticated) requests.
+         * Login brute-force himoyasi va public endpointlardagi DoS risklari uchun.
+         * Default: 100 req/min per IP
+         */
+        private int requestsPerMinutePerIp = 100;
+
+        /**
+         * Stricter per-IP limit for login/token endpoints (brute-force protection).
+         * Endpoint pattern: /api/v1/web/auth/login, /app/rest/v2/oauth/token,
+         * /api/v1/external/oauth/token, /api/v1/university/oauth/token.
+         * Default: 10 req/min per IP — kalibrlangan: real user 10x'dan kam, bot 10x'dan ortiq.
+         */
+        private int loginRequestsPerMinutePerIp = 10;
     }
 
     // =====================================================
