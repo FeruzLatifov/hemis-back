@@ -144,12 +144,18 @@ PR review yoki code audit uchun maxsus agent'lar:
 | `@.claude/MANDATORY_REQUIREMENTS.md` | Swagger, test environment, kod misollari |
 | `@.claude/MENU_GUIDE.md` | Menu + i18n + xavfsizlik arxitekturasi |
 
-## ⚠️ Univer 224 OTM Klient Contract — `docs/UNIVER_CONTRACT.md`
+## ⚠️ Univer 224 OTM Klient Contract — MAJBURIY o'qish
 
-**MAJBURIY:** Har api-legacy o'zgarish uchun avval `@docs/UNIVER_CONTRACT.md` o'qing.
-- 18 ta frozen endpoint ro'yxati (Yii2 PHP klient ishlatadi)
-- Qaysi field/shape o'zgarmasligi kerak — JSON contract
-- Refactor workflow va smoke test buyruqlari
+**Har api-legacy o'zgarish oldidan** quyidagi ikki hujjatni o'qing:
+
+| Hujjat | Maqsad |
+|--------|--------|
+| `@docs/UNIVER_CONTRACT.md` | Univer (Yii2 PHP, 224 OTM) **67 endpoint** contract'i — frozen properties, refactor workflow |
+| `@docs/UNIVER_ENDPOINT_AUDIT.md` | Per-endpoint detal audit (35 caller class, 67 endpoint) — file:line bilan aniq mapping |
+
+**Real test infrastructure:** `/home/adm1n/projects/startup/hemis-tools/docs/univer_tool/` —
+175 ta integration test (`compare_endpoints.js`), old-hemis (:8082) bilan side-by-side
+solishtiradi. Server'lar ishga tushganda majburiy run.
 
 `@` sintaksisi fayllarni on-demand import qiladi.
 
