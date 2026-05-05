@@ -489,6 +489,20 @@ public class I18nService {
             log.info("✅ Cleared i18n-scope cache (L1 Caffeine + L2 Redis)");
         }
 
+        // ✅ FIX (2026-05): TranslationService cache'lari ham clear bo'lsin
+        // ("translations" va "translations-category" — TranslationService.getAllTranslations,
+        //  getTranslationsByCategory). Avval bu cache'lar 30 daqiqa stale qolardi admin update'dan keyin.
+        org.springframework.cache.Cache translationsCache = cacheManager.getCache("translations");
+        if (translationsCache != null) {
+            translationsCache.clear();
+            log.info("✅ Cleared translations cache");
+        }
+        org.springframework.cache.Cache translationsCategoryCache = cacheManager.getCache("translations-category");
+        if (translationsCategoryCache != null) {
+            translationsCategoryCache.clear();
+            log.info("✅ Cleared translations-category cache");
+        }
+
         // Publish invalidation event (for distributed pods)
         long newVersion = cacheVersionService.incrementVersionAndPublish(CACHE_NAMESPACE);
         log.info("📡 Published invalidation: i18n v{} → All pods will clear L1", newVersion);
