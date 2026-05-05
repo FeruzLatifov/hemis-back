@@ -323,6 +323,17 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S009_seed_universities_translations_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: S010_seed_frontend_translations
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Frontend missing keys — auth, reports, logs, command palette, validation, errors (~260 keys × 4 languages)"
+      changes:
+        - sqlFile: { path: changesets/seed/S010_seed_frontend_translations.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S010_seed_frontend_translations_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-seed-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}

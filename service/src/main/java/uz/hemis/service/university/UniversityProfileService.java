@@ -62,7 +62,6 @@ public class UniversityProfileService {
         UniversityProfile entity = profileRepository.findByUniversityCode(universityCode)
                 .orElseGet(() -> UniversityProfile.builder()
                         .universityCode(universityCode)
-                        .source("manual")
                         .build());
 
         entity.setPhone(request.getPhone());

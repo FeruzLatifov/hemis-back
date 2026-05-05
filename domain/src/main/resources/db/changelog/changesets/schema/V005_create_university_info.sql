@@ -104,11 +104,6 @@ CREATE TABLE IF NOT EXISTS university_profile (
     latitude NUMERIC(10, 7),                  -- -90 .. 90 (WGS84)
     longitude NUMERIC(10, 7),                 -- -180 .. 180 (WGS84)
 
-    -- Sync (univer dan kelganda)
-    source VARCHAR(50) DEFAULT 'manual',  -- manual, hemis_sync
-    source_uid VARCHAR(255),
-    hash VARCHAR(64),
-
     -- Audit (AuditableEntity: 7)
     version INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -120,7 +115,6 @@ CREATE TABLE IF NOT EXISTS university_profile (
 
     CONSTRAINT chk_uprofile_latitude CHECK (latitude IS NULL OR (latitude >= -90 AND latitude <= 90)),
     CONSTRAINT chk_uprofile_longitude CHECK (longitude IS NULL OR (longitude >= -180 AND longitude <= 180)),
-    CONSTRAINT chk_uprofile_source CHECK (source IS NULL OR source IN ('manual', 'hemis_sync')),
     CONSTRAINT chk_uprofile_email CHECK (email IS NULL OR email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$')
 );
 
@@ -131,11 +125,7 @@ COMMENT ON COLUMN university_profile.logo_key IS 'MinIO object key for universit
 COMMENT ON COLUMN university_profile.map_url IS 'External map link (Google/Yandex Maps) — pasted by admin.';
 COMMENT ON COLUMN university_profile.latitude IS 'WGS84 latitude. Extracted from map_url or entered manually.';
 COMMENT ON COLUMN university_profile.longitude IS 'WGS84 longitude. Extracted from map_url or entered manually.';
-COMMENT ON COLUMN university_profile.source IS 'Record origin: manual | hemis_sync';
-COMMENT ON COLUMN university_profile.source_uid IS 'External UID (e.g. univer.uz record ID)';
-COMMENT ON COLUMN university_profile.hash IS 'SHA-256 content hash (hex, 64 chars) — change detection';
 
-CREATE INDEX IF NOT EXISTS idx_uprofile_source ON university_profile(source) WHERE source IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_uprofile_geo    ON university_profile(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 -- NOTE: `idx_uprofile_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 

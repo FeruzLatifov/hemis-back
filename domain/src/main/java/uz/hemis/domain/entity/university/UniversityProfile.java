@@ -69,13 +69,4 @@ public class UniversityProfile extends AuditableEntity {
     /** WGS84 longitude — extracted from map_url or entered manually */
     @Column(name = "longitude", precision = 10, scale = 7)
     private BigDecimal longitude;
-
-    @Column(name = "source", length = 50)
-    private String source;
-
-    @Column(name = "source_uid")
-    private String sourceUid;
-
-    @Column(name = "hash", length = 64)
-    private String hash;
 }
