@@ -145,9 +145,8 @@ public class DashboardCacheConfig implements CachingConfigurer {
         redisCacheConfigurations.put("universityActive", defaultConfig.entryTtl(Duration.ofHours(6)));
         redisCacheConfigurations.put("universityChildren", defaultConfig.entryTtl(Duration.ofHours(24)));
 
-        // University detail caches — 1 hour (legal data syncs daily, profile manual)
+        // University detail caches — 1 hour (profile manual-edited)
         redisCacheConfigurations.put("universityDashboard", defaultConfig.entryTtl(Duration.ofHours(1)));
-        redisCacheConfigurations.put("universityLegal", defaultConfig.entryTtl(Duration.ofHours(1)));
         redisCacheConfigurations.put("universityProfile", defaultConfig.entryTtl(Duration.ofHours(1)));
         // M2-M4 — UniversityInfoService individual endpoints. Admin panel tab-by-tab loading
         // (rector, founders, lifecycle, cadastre) avval har request DB urar edi; endi cached.

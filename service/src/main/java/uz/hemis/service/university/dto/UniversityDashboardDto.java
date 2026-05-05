@@ -17,7 +17,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UniversityDashboardDto {
-    private UniversityLegalDto legal;
     private List<UniversityFounderDto> founders;
     private List<UniversityLifecycleDto> lifecycle;
     private List<UniversityCadastreDto> cadastre;

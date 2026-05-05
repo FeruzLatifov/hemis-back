@@ -20,7 +20,6 @@ import uz.hemis.service.university.UniversityOfficialService;
 import uz.hemis.service.university.UniversityProfileService;
 import uz.hemis.service.university.dto.UniversityCadastreDto;
 import uz.hemis.service.university.dto.UniversityFounderDto;
-import uz.hemis.service.university.dto.UniversityLegalDto;
 import uz.hemis.service.university.dto.UniversityLifecycleDto;
 import uz.hemis.service.university.dto.UniversityLifecycleRequest;
 import uz.hemis.service.university.dto.OfficialDto;
@@ -61,22 +60,6 @@ public class UniversityInfoController {
         log.info("Getting university dashboard for code: {}", code);
         UniversityDashboardDto dashboard = universityInfoService.getUniversityDashboard(code);
         return ResponseEntity.ok(ResponseWrapper.success(dashboard));
-    }
-
-    @GetMapping("/{code}/legal")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get legal entity info", description = "Returns legal entity information for a university")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Legal info retrieved"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    public ResponseEntity<ResponseWrapper<UniversityLegalDto>> getLegal(
-            @Parameter(description = "University code")
-            @PathVariable String code
-    ) {
-        log.info("Getting legal info for university code: {}", code);
-        UniversityLegalDto legal = universityInfoService.getLegalDto(code);
-        return ResponseEntity.ok(ResponseWrapper.success(legal));
     }
 
     @GetMapping("/{code}/founders")

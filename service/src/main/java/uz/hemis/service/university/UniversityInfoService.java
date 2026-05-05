@@ -11,15 +11,12 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.university.UniversityCadastre;
 import uz.hemis.domain.entity.university.UniversityFounder;
-import uz.hemis.domain.entity.university.UniversityLegal;
 import uz.hemis.domain.entity.university.UniversityLifecycle;
 import uz.hemis.service.university.dto.UniversityCadastreDto;
 import uz.hemis.service.university.dto.UniversityFounderDto;
-import uz.hemis.service.university.dto.UniversityLegalDto;
 import uz.hemis.service.university.dto.UniversityLifecycleDto;
 import uz.hemis.domain.repository.UniversityCadastreRepository;
 import uz.hemis.domain.repository.UniversityFounderRepository;
-import uz.hemis.domain.repository.UniversityLegalRepository;
 import uz.hemis.domain.repository.UniversityLifecycleRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -31,14 +28,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * University Info Service - Aggregates all university information for the admin panel
+ * University Info Service - Aggregates university information for the admin panel
  *
  * <p><strong>Responsibilities:</strong></p>
  * <ul>
- *   <li>Legal information management</li>
  *   <li>Founder queries (current and historical)</li>
  *   <li>Lifecycle event tracking</li>
  *   <li>Cadastre record management</li>
+ *   <li>Rector lookup (employee_job position '20')</li>
  *   <li>Dashboard aggregation for a single university</li>
  * </ul>
  *
@@ -50,43 +47,11 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class UniversityInfoService {
 
-    private final UniversityLegalRepository legalRepository;
     private final UniversityFounderRepository founderRepository;
     private final UniversityLifecycleRepository lifecycleRepository;
     private final UniversityCadastreRepository cadastreRepository;
     private final JdbcTemplate jdbcTemplate;
     private final ClassifierLookupService classifiers;
-
-    /** Build a Legal DTO with `billingSoatoName` populated from the SOATO cache. */
-    private UniversityLegalDto legalDto(UniversityLegal entity) {
-        UniversityLegalDto dto = UniversityLegalDto.from(entity);
-        if (dto != null) {
-            dto.setBillingSoatoName(classifiers.resolveSoato(dto.getBillingSoato()));
-        }
-        return dto;
-    }
-
-    // =====================================================
-    // Legal
-    // =====================================================
-
-    public UniversityLegal getLegal(String universityCode) {
-        return legalRepository.findByUniversityCode(universityCode).orElse(null);
-    }
-
-    @Cacheable(value = "universityLegal", key = "#universityCode", unless = "#result == null")
-    public UniversityLegalDto getLegalDto(String universityCode) {
-        return legalDto(getLegal(universityCode));
-    }
-
-    @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "universityDashboard", key = "#legal.universityCode"),
-        @CacheEvict(value = "universityLegal", key = "#legal.universityCode")
-    })
-    public UniversityLegal saveLegal(UniversityLegal legal) {
-        return legalRepository.save(legal);
-    }
 
     // =====================================================
     // Founders
@@ -144,22 +109,20 @@ public class UniversityInfoService {
     // =====================================================
 
     /**
-     * Full university dashboard — legal + founders + lifecycle + cadastre + rector.
+     * Full university dashboard — founders + lifecycle + cadastre + rector.
      *
      * <p><strong>Cache:</strong> {@code universityDashboard} — key = universityCode. TTL 1h.</p>
      *
-     * <p>5-6 separate queries aggregated. Caching saves significant DB load for admin panel.</p>
+     * <p>4-5 separate queries aggregated. Caching saves significant DB load for admin panel.</p>
      *
-     * <p>Invalidated when legal/founder/lifecycle/cadastre changes (see respective save methods).</p>
+     * <p>Invalidated when founder/lifecycle/cadastre changes (see respective save methods).</p>
      */
     @Cacheable(value = "universityDashboard", key = "#universityCode", unless = "#result == null")
     public UniversityDashboardDto getUniversityDashboard(String universityCode) {
         log.debug("Loading university dashboard (cache MISS) for code: {}", universityCode);
-        UniversityLegal legalEntity = getLegal(universityCode);
         List<UniversityFounder> founderEntities = getFounders(universityCode);
 
         return UniversityDashboardDto.builder()
-                .legal(legalDto(legalEntity))
                 .founders(founderEntities.stream().map(UniversityFounderDto::from).toList())
                 .lifecycle(getLifecycle(universityCode).stream().map(UniversityLifecycleDto::from).toList())
                 .cadastre(getCadastre(universityCode).stream().map(UniversityCadastreDto::from).toList())

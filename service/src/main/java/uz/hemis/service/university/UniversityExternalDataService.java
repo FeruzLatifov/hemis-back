@@ -12,12 +12,10 @@ import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.university.UniversityCadastre;
 import uz.hemis.domain.entity.university.UniversityFounder;
-import uz.hemis.domain.entity.university.UniversityLegal;
 import uz.hemis.domain.repository.UniversityCadastreRepository;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.university.Organization;
 import uz.hemis.domain.repository.UniversityFounderRepository;
-import uz.hemis.domain.repository.UniversityLegalRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.integration.ApiMspdTokenService;
 
@@ -37,12 +35,15 @@ import java.util.Optional;
 /**
  * University External Data Service
  *
- * <p>Fetches legal entity and cadastre data from external API (172.18.9.171)
- * and saves to university_legal, university_founder, university_cadastre tables.</p>
+ * <p>Fetches founders and cadastre data from external API (172.18.9.171) and
+ * saves them to {@code university_founder} and {@code university_cadastre}.
+ * The legal-entity snapshot (TIN, registration trail, officials) is NOT cached
+ * locally — fetched on-demand by callers, since all useful columns either
+ * duplicate {@code hemishe_e_university} or have no consumer.</p>
  *
  * <p>API endpoints:</p>
  * <ul>
- *   <li>POST /legalentity/legalentity-info/ — company info, director, accountant, founders</li>
+ *   <li>POST /legalentity/legalentity-info/ — founders (rest of payload ignored)</li>
  *   <li>POST /kadastr/by-inn — list of cadastre numbers by TIN</li>
  *   <li>POST /kadastr/by-cadnum — detailed cadastre info by number</li>
  * </ul>
@@ -54,7 +55,6 @@ public class UniversityExternalDataService {
 
     private final ApiMspdTokenService tokenService;
     private final UniversityRepository universityRepository;
-    private final UniversityLegalRepository legalRepository;
     private final UniversityFounderRepository founderRepository;
     private final UniversityCadastreRepository cadastreRepository;
     private final uz.hemis.domain.repository.EmployeeRepository employeeRepository;
@@ -64,151 +64,19 @@ public class UniversityExternalDataService {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     // =====================================================
-    // LEGAL ENTITY
+    // FOUNDERS (extracted from /legalentity/legalentity-info/)
     // =====================================================
 
     /**
-     * Fetch legal entity data from API and save to university_legal + university_founder
+     * Fetch founders from legal-entity API and persist them.
+     * Idempotent: rewrites the founders for {@code universityCode} every call.
      */
     @Transactional
-    public UniversityLegal syncLegalEntity(String universityCode, String tin) {
-        log.info("Syncing legal entity for university={}, tin={}", universityCode, tin);
-
+    public void syncFoundersFromApi(String universityCode, String tin) {
+        log.info("Syncing founders for university={}, tin={}", universityCode, tin);
         JsonNode response = callApi("/legalentity/legalentity-info/", "{\"tin\": \"" + tin + "\"}");
-        if (response == null) return null;
-
-        String newResponseJson = response.toString();
-
-        // O'zgarish tekshiruvi — API javobi bir xil bo'lsa hech narsa qilmaymiz
-        UniversityLegal existing = legalRepository.findByUniversityCode(universityCode).orElse(null);
-        if (existing != null && newResponseJson.equals(existing.getApiRawResponse())) {
-            log.info("Legal entity unchanged for university={}, skipping", universityCode);
-            return existing;
-        }
-
-        // O'zgarish bor — yangilaymiz
-        UniversityLegal legal = existing != null ? existing : new UniversityLegal();
-        mapLegalEntity(legal, response, universityCode);
-        legal.setApiRawResponse(newResponseJson);
-        legal.setSyncedAt(LocalDateTime.now());
-        legal = legalRepository.save(legal);
-        log.info("Legal entity saved for university={}", universityCode);
-
-        // Update hemishe_e_university with authoritative data from API
-        updateUniversityFromApi(universityCode, response);
-
-        // Founders — faqat o'zgargan bo'lsa
+        if (response == null) return;
         syncFounders(universityCode, response.path("founders"));
-
-        return legal;
-    }
-
-    /**
-     * Update hemishe_e_university with data from external API.
-     * ONLY bank_info is updated — address/soato are NOT touched because:
-     *   - hemishe_e_university.address = university CAMPUS location (entered by university)
-     *   - API billingAddress = LEGAL ENTITY registered address (can be different)
-     *   - Legal address is stored in university_legal.billing_street
-     */
-    private void updateUniversityFromApi(String universityCode, JsonNode resp) {
-        universityRepository.findById(universityCode).ifPresent(uni -> {
-            boolean changed = false;
-
-            // Bank accounts — API field names: mfo, paymentAccount, status
-            JsonNode banks = resp.path("companyBanks");
-            if (banks.isArray() && !banks.isEmpty()) {
-                StringBuilder bankInfo = new StringBuilder();
-                for (JsonNode bank : banks) {
-                    if (!bankInfo.isEmpty()) bankInfo.append("\n");
-                    String mfo = textOrNull(bank, "mfo");
-                    String account = textOrNull(bank, "paymentAccount");
-                    if (mfo != null) bankInfo.append("MFO: ").append(mfo);
-                    if (account != null) bankInfo.append(" h/r: ").append(account);
-                }
-                if (!bankInfo.isEmpty()) {
-                    uni.setBankInfo(bankInfo.toString());
-                    changed = true;
-                }
-            }
-
-            if (changed) {
-                universityRepository.save(uni);
-                log.info("hemishe_e_university updated from API for code={}", universityCode);
-            }
-        });
-    }
-
-    private void mapLegalEntity(UniversityLegal legal, JsonNode resp, String universityCode) {
-        legal.setUniversityCode(universityCode);
-
-        JsonNode company = resp.path("company");
-        if (!company.isMissingNode()) {
-            legal.setShortName(textOrNull(company, "shortName"));
-            legal.setOpf(intOrNull(company, "opf"));
-            legal.setKfs(intOrNull(company, "kfs"));
-            legal.setTin(textOrNull(company, "tin"));
-            legal.setOked(textOrNull(company, "oked"));
-            legal.setSoogu(textOrNull(company, "soogu"));
-            legal.setSooguRegistrator(textOrNull(company, "sooguRegistrator"));
-            legal.setRegistrationDate(dateOrNull(company, "registrationDate"));
-            legal.setRegistrationNumber(textOrNull(company, "registrationNumber"));
-            legal.setReregistrationDate(dateOrNull(company, "reregistrationDate"));
-            legal.setStatus(intOrNull(company, "status"));
-            legal.setStatusUpdated(dateOrNull(company, "statusUpdated"));
-            legal.setTaxMode(intOrNull(company, "taxMode"));
-            legal.setVatNumber(longOrNull(company, "vatNumber"));
-            legal.setTaxpayerType(intOrNull(company, "taxpayerType"));
-            legal.setBusinessType(intOrNull(company, "businessType"));
-            legal.setBusinessFund(longOrNull(company, "businessFund"));
-            legal.setBusinessStructure(intOrNull(company, "businessStructure"));
-        }
-
-        JsonNode extraInfo = resp.path("companyExtraInfo");
-        if (!extraInfo.isMissingNode()) {
-            legal.setAvgEmployees(intOrNull(extraInfo, "avgNumberEmployees"));
-        }
-
-        JsonNode billing = resp.path("companyBillingAddress");
-        if (!billing.isMissingNode()) {
-            legal.setBillingCountryCode(intOrNull(billing, "countryCode"));
-            legal.setBillingSoato(textOrNull(billing, "soato"));
-            legal.setBillingStreet(textOrNull(billing, "streetName"));
-            legal.setBillingPostcode(textOrNull(billing, "postcode"));
-            legal.setBillingCadastre(textOrNull(billing, "cadastreNumber"));
-        }
-
-        JsonNode shipping = resp.path("companyShippingAddresses");
-        if (shipping.isArray() && !shipping.isEmpty()) {
-            legal.setShippingAddresses(shipping.toString());
-        }
-
-        // Director — find or create employee, link by PINFL
-        JsonNode director = resp.path("director");
-        JsonNode dirContact = resp.path("directorContact");
-        if (!director.isMissingNode()) {
-            String dirPinfl = textOrNull(director, "pinfl");
-            if (dirPinfl != null && !dirPinfl.isBlank()) {
-                Employee dirEmployee = findOrCreateEmployee(dirPinfl, director, dirContact, universityCode);
-                legal.setDirectorEmployee(dirEmployee);
-            }
-        }
-
-        // Accountant — find or create employee, link by PINFL
-        JsonNode accountant = resp.path("accountant");
-        JsonNode accContact = resp.path("accountantContact");
-        if (!accountant.isMissingNode()) {
-            String accPinfl = textOrNull(accountant, "pinfl");
-            if (accPinfl != null && !accPinfl.isBlank()) {
-                Employee accEmployee = findOrCreateEmployee(accPinfl, accountant, accContact, universityCode);
-                legal.setAccountantEmployee(accEmployee);
-            }
-        }
-
-        // Bank accounts
-        JsonNode banks = resp.path("companyBanks");
-        if (banks.isArray() && !banks.isEmpty()) {
-            legal.setBankAccounts(banks.toString());
-        }
     }
 
     private void syncFounders(String universityCode, JsonNode foundersNode) {
@@ -415,7 +283,7 @@ public class UniversityExternalDataService {
     // =====================================================
 
     /**
-     * Sync all external data (legal + cadastre) for a university.
+     * Sync all external data (founders + cadastre) for a university.
      * Resolves TIN from university record automatically.
      */
     @Audited(action = AuditAction.UPDATE, entity = "University",
@@ -427,12 +295,12 @@ public class UniversityExternalDataService {
     }
 
     /**
-     * Sync all external data (legal + cadastre) for a university
+     * Sync all external data (founders + cadastre) for a university
      */
     @Transactional
     public void syncAll(String universityCode, String tin) {
         log.info("Full external data sync for university={}, tin={}", universityCode, tin);
-        syncLegalEntity(universityCode, tin);
+        syncFoundersFromApi(universityCode, tin);
         syncCadastre(universityCode, tin);
         log.info("Full sync completed for university={}", universityCode);
     }

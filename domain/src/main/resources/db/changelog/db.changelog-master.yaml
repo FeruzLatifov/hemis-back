@@ -244,6 +244,19 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V016_student_search_indexes_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: V017_drop_university_legal
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "DROP university_legal — duplicate data already in hemishe_e_university; on-demand legalentity API; officials via employee_job"
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists: { tableName: university_legal }
+      changes:
+        - sqlFile: { path: changesets/schema/V017_drop_university_legal.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V017_drop_university_legal_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-schema-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}
