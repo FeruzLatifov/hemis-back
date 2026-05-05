@@ -507,12 +507,19 @@ sentry:
   in-app-includes:
     - uz.hemis
 
-  # Ignore noisy exceptions (expected runtime errors)
+  # Ignore noisy exceptions (expected runtime errors — 4xx client mistakes,
+  # not server bugs). Sentry should focus on real 5xx server-side issues.
   ignored-exceptions-for-type:
-    - uz.hemis.common.exception.ResourceNotFoundException
-    - uz.hemis.common.exception.BadRequestException
+    - uz.hemis.common.exception.ResourceNotFoundException     # 404 — not found
+    - uz.hemis.common.exception.BadRequestException           # 400 — client input
+    - uz.hemis.common.exception.ValidationException           # 400 — Bean Validation
+    - uz.hemis.common.exception.ConflictException             # 409 — duplicate
+    - uz.hemis.common.exception.ForbiddenException            # 403 — permission
     - org.springframework.security.access.AccessDeniedException
     - org.springframework.security.authentication.BadCredentialsException
+    - org.springframework.web.bind.MethodArgumentNotValidException
+    - jakarta.validation.ConstraintViolationException
+    - org.springframework.http.converter.HttpMessageNotReadableException
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
