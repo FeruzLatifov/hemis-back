@@ -24,7 +24,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     native_name = EXCLUDED.native_name,
     iso_code = EXCLUDED.iso_code,
@@ -49,7 +49,7 @@ VALUES (
     FALSE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     native_name = EXCLUDED.native_name,
     iso_code = EXCLUDED.iso_code,
@@ -74,7 +74,7 @@ VALUES (
     FALSE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     native_name = EXCLUDED.native_name,
     iso_code = EXCLUDED.iso_code,
@@ -99,7 +99,7 @@ VALUES (
     FALSE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     native_name = EXCLUDED.native_name,
     iso_code = EXCLUDED.iso_code,

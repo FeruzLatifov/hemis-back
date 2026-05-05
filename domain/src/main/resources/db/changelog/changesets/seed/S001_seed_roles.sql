@@ -26,7 +26,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     role_type = EXCLUDED.role_type,
@@ -46,7 +46,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     role_type = EXCLUDED.role_type,
@@ -65,7 +65,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     role_type = EXCLUDED.role_type,
@@ -84,7 +84,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     role_type = EXCLUDED.role_type,
@@ -103,7 +103,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     role_type = EXCLUDED.role_type,
@@ -122,7 +122,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     role_type = EXCLUDED.role_type,
@@ -141,7 +141,7 @@ VALUES (
     TRUE,
     'system'
 )
-ON CONFLICT (code) DO UPDATE SET
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name,
     description = EXCLUDED.description,
     role_type = EXCLUDED.role_type,

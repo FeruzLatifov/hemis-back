@@ -46,7 +46,7 @@ BEGIN
     -- Insert or update the base message (default = Uzbek Latin)
     INSERT INTO system_message (id, category, message_key, message, is_active, created_at, updated_at, created_by, updated_by)
     VALUES (gen_random_uuid(), _cat, _key, _uz, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system')
-    ON CONFLICT (message_key) DO UPDATE SET
+    ON CONFLICT (message_key) WHERE deleted_at IS NULL DO UPDATE SET
         message = EXCLUDED.message,
         category = EXCLUDED.category,
         updated_at = CURRENT_TIMESTAMP,
