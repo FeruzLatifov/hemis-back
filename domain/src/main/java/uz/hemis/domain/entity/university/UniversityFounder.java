@@ -9,7 +9,6 @@ import uz.hemis.domain.entity.base.AuditableEntity;
 import uz.hemis.domain.entity.enums.FounderType;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 /**
  * University Founder — shareholders (individuals and legal entities)
@@ -17,7 +16,8 @@ import java.time.LocalDate;
  * <p><strong>Table:</strong> university_founder (1:N with university)</p>
  *
  * <p>Extends AuditableEntity — soft delete via deleted_at/deleted_by.
- * Founder records are also tracked historically via is_current + effective_from/to.</p>
+ * Sync uses DELETE+INSERT (no historical tracking — rely on hemis_audit
+ * activity_log for change history).</p>
  *
  * <p><strong>Founder types:</strong></p>
  * <ul>
@@ -88,27 +88,12 @@ public class UniversityFounder extends AuditableEntity {
     @Column(name = "share_sum")
     private Long shareSum;
 
-    // =====================================================
-    // Historical Tracking
-    // =====================================================
-
-    @Column(name = "is_current", nullable = false)
-    @Builder.Default
-    private Boolean isCurrent = true;
-
-    @Column(name = "effective_from")
-    private LocalDate effectiveFrom;
-
-    @Column(name = "effective_to")
-    private LocalDate effectiveTo;
-
     @Override
     public String toString() {
         return "UniversityFounder{" +
                 "id=" + getId() +
                 ", universityCode='" + universityCode + '\'' +
                 ", founderType=" + founderType +
-                ", isCurrent=" + isCurrent +
                 '}';
     }
 }

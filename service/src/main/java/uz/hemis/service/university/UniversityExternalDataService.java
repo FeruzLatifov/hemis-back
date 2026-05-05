@@ -98,7 +98,6 @@ public class UniversityExternalDataService {
         for (JsonNode founderNode : foundersNode) {
             UniversityFounder founder = new UniversityFounder();
             founder.setUniversityCode(universityCode);
-            founder.setIsCurrent(true);
 
             JsonNode individual = founderNode.path("founderIndividual");
             JsonNode legal = founderNode.path("founderLegal");

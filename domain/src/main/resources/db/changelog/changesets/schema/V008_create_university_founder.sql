@@ -31,11 +31,6 @@ CREATE TABLE IF NOT EXISTS university_founder (
     share_percent NUMERIC(5,2),
     share_sum BIGINT,
 
-    -- Historical tracking
-    is_current BOOLEAN NOT NULL DEFAULT true,
-    effective_from DATE,
-    effective_to DATE,
-
     -- Audit (AuditableEntity: 7)
     version INTEGER DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -54,13 +49,10 @@ CREATE TABLE IF NOT EXISTS university_founder (
     CONSTRAINT chk_ufounder_share_percent CHECK (
         share_percent IS NULL OR (share_percent >= 0 AND share_percent <= 100)
     ),
-    CONSTRAINT chk_ufounder_effective_range CHECK (
-        effective_to IS NULL OR effective_from IS NULL OR effective_to >= effective_from
-    ),
     CONSTRAINT chk_ufounder_share_sum CHECK (share_sum IS NULL OR share_sum >= 0)
 );
 
-COMMENT ON TABLE university_founder IS 'University founders — individual (→ employee) or legal (→ organization)';
+COMMENT ON TABLE university_founder IS 'University founders — individual (→ employee) or legal (→ organization). Sync pattern: DELETE+INSERT (no historical tracking; rely on hemis_audit.activity_log for history).';
 COMMENT ON COLUMN university_founder.employee_id IS 'FK to employee — individual founder. PINFL-based lookup during sync.';
 COMMENT ON COLUMN university_founder.organization_id IS 'FK to organization — legal founder. TIN-based lookup during sync.';
 COMMENT ON COLUMN university_founder.version IS 'Optimistic locking version (JPA @Version)';
@@ -68,14 +60,13 @@ COMMENT ON COLUMN university_founder.version IS 'Optimistic locking version (JPA
 CREATE INDEX IF NOT EXISTS idx_ufounder_university ON university_founder(university_code);
 CREATE INDEX IF NOT EXISTS idx_ufounder_employee   ON university_founder(employee_id) WHERE employee_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_ufounder_org        ON university_founder(organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_ufounder_current    ON university_founder(university_code, is_current) WHERE is_current = true;
--- NOTE: `idx_ufounder_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 
--- Bitta ta'sischi bitta universitet uchun bir vaqtda faqat bitta is_current=true yozuv bo'lishi kerak
-CREATE UNIQUE INDEX IF NOT EXISTS idx_ufounder_unique_current_individual
+-- Partial UNIQUE — bitta universitet uchun bir vaqtda bitta active founder.
+-- Soft-delete'dan keyin qayta yaratish mumkin (deleted_at IS NULL gating).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ufounder_unique_active_individual
     ON university_founder(university_code, employee_id)
-    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'INDIVIDUAL';
+    WHERE deleted_at IS NULL AND founder_type = 'INDIVIDUAL';
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_ufounder_unique_current_legal
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ufounder_unique_active_legal
     ON university_founder(university_code, organization_id)
-    WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'LEGAL';
+    WHERE deleted_at IS NULL AND founder_type = 'LEGAL';

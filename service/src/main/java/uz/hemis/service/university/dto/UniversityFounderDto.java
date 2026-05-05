@@ -1,13 +1,11 @@
 package uz.hemis.service.university.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 import uz.hemis.domain.entity.university.UniversityFounder;
 import uz.hemis.domain.entity.enums.FounderType;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 @Data
 @Builder
@@ -18,10 +16,6 @@ public class UniversityFounderDto {
     private String pinfl;           // employee PINFL (null for legal)
     private BigDecimal sharePercent;
     private Long shareSum;
-    @JsonProperty("isCurrent")
-    private boolean isCurrent;
-    private LocalDate effectiveFrom;
-    private LocalDate effectiveTo;
 
     // Nested refs (for detail view)
     private PersonRefDto person;           // individual → employee
@@ -54,9 +48,6 @@ public class UniversityFounderDto {
                 .pinfl(pinfl)
                 .sharePercent(entity.getSharePercent())
                 .shareSum(entity.getShareSum())
-                .isCurrent(entity.getIsCurrent())
-                .effectiveFrom(entity.getEffectiveFrom())
-                .effectiveTo(entity.getEffectiveTo())
                 .person(person)
                 .organization(org)
                 .build();

@@ -57,13 +57,8 @@ public class UniversityInfoService {
     // Founders
     // =====================================================
 
-    @Cacheable(value = "universityFounders", key = "'current:' + #universityCode")
+    @Cacheable(value = "universityFounders", key = "#universityCode")
     public List<UniversityFounder> getFounders(String universityCode) {
-        return founderRepository.findByUniversityCodeAndIsCurrent(universityCode, true);
-    }
-
-    @Cacheable(value = "universityFounders", key = "'all:' + #universityCode")
-    public List<UniversityFounder> getAllFounders(String universityCode) {
         return founderRepository.findByUniversityCode(universityCode);
     }
 

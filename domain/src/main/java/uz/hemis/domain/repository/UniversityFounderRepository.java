@@ -11,20 +11,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Repository for UniversityFounder entity
+ * Repository for UniversityFounder entity.
  *
- * <p><strong>Purpose:</strong></p>
- * <ul>
- *   <li>CRUD operations for university founders</li>
- *   <li>Query current and historical founders by university code</li>
- *   <li>Query by PINFL and employee ID</li>
- * </ul>
- *
- * <p><strong>Soft Delete Filtering:</strong></p>
- * <ul>
- *   <li>@SQLRestriction("delete_ts IS NULL") on entity</li>
- *   <li>All queries automatically filter deleted records</li>
- * </ul>
+ * <p>Sync uses DELETE+INSERT pattern — there is no historical tracking on the
+ * entity. Past founders are recorded only in {@code hemis_audit.activity_log}.
+ * All queries automatically filter {@code deleted_at IS NULL} via the entity-level
+ * Hibernate {@code @SQLRestriction}.</p>
  *
  * @see UniversityFounder
  * @since 1.0.0
@@ -35,9 +27,6 @@ public interface UniversityFounderRepository extends JpaRepository<UniversityFou
 
     @EntityGraph(attributePaths = {"employee", "organization"})
     List<UniversityFounder> findByUniversityCode(String universityCode);
-
-    @EntityGraph(attributePaths = {"employee", "organization"})
-    List<UniversityFounder> findByUniversityCodeAndIsCurrent(String universityCode, boolean isCurrent);
 
     /**
      * Plain-string accessor — Spring Data derived query. Caller layer
@@ -55,6 +44,4 @@ public interface UniversityFounderRepository extends JpaRepository<UniversityFou
     }
 
     List<UniversityFounder> findByEmployee_Id(UUID employeeId);
-
-    long countByUniversityCodeAndIsCurrent(String universityCode, boolean isCurrent);
 }
