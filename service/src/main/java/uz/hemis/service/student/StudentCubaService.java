@@ -171,20 +171,19 @@ public class StudentCubaService {
     public Map<String, Object> getDoctoral(String pinfl) {
         log.info("Getting doctoral student - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
 
-        // Search all students with this PINFL, find doctoral one
-        List<Student> allStudents = studentRepository.findAllByPinfl(pinfl);
+        // SQL-level filter (was: findAllByPinfl + stream.filter — loaded all 5+ rows
+        // for transfer history then dropped most). Single targeted query is cheaper.
+        List<Student> matches = studentRepository.findByPinflAndEducationTypeInAndStudentStatusIn(
+                pinfl, DOCTORAL_EDUCATION_TYPES, java.util.Set.of("11", "16"));
 
-        Optional<Student> doctoral = allStudents.stream()
-                .filter(s -> s.getEducationType() != null && DOCTORAL_EDUCATION_TYPES.contains(s.getEducationType()))
-                .findFirst();
-
-        if (doctoral.isEmpty()) {
+        if (matches.isEmpty()) {
             return CubaResponseHelper.errorResponse("not_found", "Doctoral student not found");
         }
 
-        Map<String, Object> data = studentToMap(doctoral.get());
+        Student doctoral = matches.get(0);
+        Map<String, Object> data = studentToMap(doctoral);
         data.put("is_doctoral", true);
-        data.put("education_type", doctoral.get().getEducationType());
+        data.put("education_type", doctoral.getEducationType());
 
         return data;
     }
@@ -203,15 +202,17 @@ public class StudentCubaService {
             return result;
         }
 
-        Map<String, Boolean> expelled = new HashMap<>();
+        // Batch master lookup — single SQL query (was: per-PINFL loop = N queries).
+        // Tax authority calls with 1000+ PINFLs → 1000 queries → 1.
+        java.util.Map<String, Student> byPinfl = studentRepository.findMasterByPinflIn(pinfls)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        Student::getPinfl, s -> s, (a, b) -> a));
 
+        Map<String, Boolean> expelled = new java.util.LinkedHashMap<>();
         for (String pinfl : pinfls) {
-            Optional<Student> student = studentRepository.findMasterByPinfl(pinfl);
-            if (student.isPresent()) {
-                expelled.put(pinfl, isExpelledStatus(student.get().getStudentStatus()));
-            } else {
-                expelled.put(pinfl, null);
-            }
+            Student s = byPinfl.get(pinfl);
+            expelled.put(pinfl, s == null ? null : isExpelledStatus(s.getStudentStatus()));
         }
 
         result.put("count", pinfls.length);
@@ -447,9 +448,8 @@ public class StudentCubaService {
         Double gpa = gradeRepository.calculateGPA(s.getId());
         boolean gpaOk = gpa != null && gpa >= 3.5;
 
-        // Check contract debts
-        List<Contract> contracts = contractRepository.findByStudent(s.getId());
-        boolean hasDebt = contracts.stream().anyMatch(c -> !c.isFullyPaid());
+        // Boolean debt check — single SQL exists query (was: load full contract list + JVM stream).
+        boolean hasDebt = contractRepository.existsUnpaidByStudent(s.getId());
 
         boolean eligible = isGrant && isActive && !hasDebt;
 
@@ -493,9 +493,8 @@ public class StudentCubaService {
         Double gpa = gradeRepository.calculateGPA(s.getId());
         boolean gpaCheck = gpa != null && gpa >= 3.5;
 
-        // Debt check
-        List<Contract> contracts = contractRepository.findByStudent(s.getId());
-        boolean hasDebt = contracts.stream().anyMatch(c -> !c.isFullyPaid());
+        // Boolean debt check — single SQL exists query (no full list load).
+        boolean hasDebt = contractRepository.existsUnpaidByStudent(s.getId());
 
         // Payment form check
         boolean isGrant = "11".equals(s.getPaymentForm()) || "10".equals(s.getPaymentForm());

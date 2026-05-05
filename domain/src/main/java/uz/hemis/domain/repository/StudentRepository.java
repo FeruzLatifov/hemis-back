@@ -76,6 +76,34 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
     Optional<Student> findMasterByPinfl(@Param("pinfl") String pinfl);
 
     /**
+     * Batch master lookup — eliminates N+1 in batch tax/expulsion checks.
+     *
+     * <p>Used by {@code StudentCubaService.isExpel(String[])} and similar bulk
+     * verification flows where caller checks 100..1000 PINFLs at once.
+     * Single SQL query with {@code = ANY(:pinfls)} replaces per-PINFL loop.</p>
+     *
+     * <p>Returns master records only (is_duplicate=true), filters soft-deleted.
+     * If a PINFL has no master record, it is simply absent from the result list.</p>
+     */
+    @Query(value = "SELECT DISTINCT ON (pinfl) * FROM hemishe_e_student "
+            + "WHERE pinfl = ANY(CAST(:pinfls AS text[])) "
+            + "  AND is_duplicate = true AND delete_ts IS NULL "
+            + "ORDER BY pinfl, create_ts DESC", nativeQuery = true)
+    List<Student> findMasterByPinflIn(@Param("pinfls") String[] pinfls);
+
+    /**
+     * Doctoral student by PINFL — pushes filter to SQL (avoids
+     * {@code findAllByPinfl().stream().filter(...)} in-memory).
+     *
+     * <p>Doctoral education_type codes ('13'=PhD, '50'=DSc) hardcoded in caller —
+     * this method accepts the list and active status set ('11', '16').</p>
+     */
+    List<Student> findByPinflAndEducationTypeInAndStudentStatusIn(
+            String pinfl,
+            java.util.Collection<String> educationTypes,
+            java.util.Collection<String> studentStatuses);
+
+    /**
      * Find ALL students with same PINFL (including duplicates)
      *
      * <p><strong>Use case:</strong> Finding transfer history, duplicate detection</p>

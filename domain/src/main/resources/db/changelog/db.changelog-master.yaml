@@ -218,6 +218,19 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V014_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: V015_student_domain_indexes
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Student domain perf indexes — Grade/Attendance per-uni/student, PINFL master uniqueness, keyset paging"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { indexExists: { indexName: idx_grade_university_active } }
+      changes:
+        - sqlFile: { path: changesets/schema/V015_student_domain_indexes.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V015_student_domain_indexes_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-schema-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}

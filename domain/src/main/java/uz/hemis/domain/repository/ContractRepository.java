@@ -44,5 +44,20 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
 
     boolean existsByContractNumber(String contractNumber);
 
+    /**
+     * Check whether student has any UNPAID contract — boolean predicate
+     * (avoids loading full contract list just to test {@code anyMatch(!isFullyPaid)}).
+     *
+     * <p>Mirror of {@link Contract#isFullyPaid} predicate at SQL level:
+     * paidSum NULL/contractSum NULL/paidSum &lt; contractSum → unpaid.</p>
+     *
+     * <p>Used by {@code StudentCubaService.checkScholarship} — single SQL boolean
+     * instead of fetching N contracts and iterating in JVM.</p>
+     */
+    @Query("SELECT (COUNT(c) > 0) FROM Contract c "
+            + "WHERE c.student = :studentId "
+            + "  AND (c.paidSum IS NULL OR c.contractSum IS NULL OR c.paidSum < c.contractSum)")
+    boolean existsUnpaidByStudent(@Param("studentId") UUID studentId);
+
     // NO DELETE METHODS (NDG - Non-Deletion Guarantee)
 }
