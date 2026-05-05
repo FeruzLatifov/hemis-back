@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.finance;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class ContractController {
 
     private final ContractService contractService;
 
+    @Operation(summary = "Barcha shartnomalar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<ContractDto>>> getAllContracts(
@@ -39,6 +41,7 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(contracts)));
     }
 
+    @Operation(summary = "Shartnomani ID bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<ContractDto>> getContractById(@PathVariable UUID id) {
@@ -46,6 +49,7 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(contract));
     }
 
+    @Operation(summary = "Shartnomani nomer bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/number/{number}")
     public ResponseEntity<ResponseWrapper<ContractDto>> getContractByNumber(@PathVariable String number) {
@@ -53,6 +57,7 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(contract));
     }
 
+    @Operation(summary = "OTM bo'yicha shartnomalar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<ContractDto>>> getContractsByUniversity(
@@ -63,6 +68,7 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(contracts)));
     }
 
+    @Operation(summary = "Talaba bo'yicha shartnomalar (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<ContractDto>>> getContractsByStudent(
@@ -72,6 +78,7 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(contracts));
     }
 
+    @Operation(summary = "Yangi shartnoma yaratish")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ContractDto>> createContract(@Valid @RequestBody ContractDto contractDto) {
@@ -79,6 +86,7 @@ public class ContractController {
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
+    @Operation(summary = "Shartnomani yangilash")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ContractDto>> updateContract(

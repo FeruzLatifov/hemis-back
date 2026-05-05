@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.finance;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,6 +35,7 @@ public class ScholarshipEntityController {
     private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_EStudentScholarshipFull";
 
+    @Operation(summary = "Stipendiyani ID bo'yicha topish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
@@ -46,6 +48,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.ok(financeService.toScholarshipMap(entity.get(), returnNulls));
     }
 
+    @Operation(summary = "Stipendiyani yangilash (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.edit')")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
@@ -60,6 +63,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.ok(financeService.toScholarshipMap(saved, returnNulls));
     }
 
+    @Operation(summary = "Stipendiyani soft delete (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -70,6 +74,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "GET search — CUBA filter qidirish")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -92,6 +97,7 @@ public class ScholarshipEntityController {
             .collect(Collectors.toList()));
     }
 
+    @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
     @PreAuthorize("hasAuthority('students.view')")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -118,6 +124,7 @@ public class ScholarshipEntityController {
             .collect(Collectors.toList()));
     }
 
+    @Operation(summary = "Barcha stipendiyalar (CUBA pagination — offset/limit)")
     @PreAuthorize("hasAuthority('students.view')")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -147,6 +154,7 @@ public class ScholarshipEntityController {
         return ResponseEntity.ok(result);
     }
 
+    @Operation(summary = "Yangi stipendiya yaratish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,
