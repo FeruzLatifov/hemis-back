@@ -59,5 +59,38 @@ public interface ContractRepository extends JpaRepository<Contract, UUID> {
             + "  AND (c.paidSum IS NULL OR c.contractSum IS NULL OR c.paidSum < c.contractSum)")
     boolean existsUnpaidByStudent(@Param("studentId") UUID studentId);
 
+    /**
+     * Atomic payment increment — race-condition free.
+     *
+     * <p>OWASP A04 fix: avval {@code findById + setPaidSum + save} pattern lost-update
+     * qilardi (concurrent kassa + portal: ikkala transaction same {@code paidSum}+amount
+     * o'qiydi → oxirgi save'i wins, biri yo'qoladi).</p>
+     *
+     * <p>Endi: bitta atomic UPDATE — {@code paid_sum = paid_sum + :amount}. Single
+     * round-trip, DB-level row lock guaranteed. {@code @Modifying}+{@code @Query}
+     * standart Spring Data pattern.</p>
+     *
+     * <p><strong>WHERE clause:</strong> {@code paid_sum + :amount &lt;= contract_sum}
+     * — overflow yopiladi (over-payment refused, return value 0). Caller checks rows
+     * affected: 0 → throw ConflictException (insufficient remaining).</p>
+     *
+     * @param contractId contract UUID
+     * @param amount payment amount (must be &gt; 0; caller's responsibility)
+     * @return rows updated (1 = success, 0 = constraint violation or contract missing)
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
+    @Query(value = "UPDATE hemishe_e_contract "
+            + "SET paid_sum = COALESCE(paid_sum, 0) + :amount, "
+            + "    remaining_sum = contract_sum - (COALESCE(paid_sum, 0) + :amount), "
+            + "    update_ts = CURRENT_TIMESTAMP, "
+            + "    version = version + 1 "
+            + "WHERE id = :contractId "
+            + "  AND delete_ts IS NULL "
+            + "  AND COALESCE(paid_sum, 0) + :amount <= contract_sum",
+            nativeQuery = true)
+    int addPayment(@Param("contractId") UUID contractId,
+                   @Param("amount") java.math.BigDecimal amount);
+
     // NO DELETE METHODS (NDG - Non-Deletion Guarantee)
 }

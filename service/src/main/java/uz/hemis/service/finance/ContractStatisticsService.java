@@ -47,7 +47,13 @@ public class ContractStatisticsService {
     /**
      * Submit contract statistics (OLD-HEMIS Compatible)
      */
-    @Transactional(noRollbackFor = Exception.class)
+    /**
+     * Submit contract statistics. NOTE: {@code noRollbackFor = Exception} REMOVED
+     * (audit P1.F2): exception happen → result.put("success", false) qaytarilardi
+     * lekin transaction commit ham bo'lardi → "yarim-yozuv" idempotency buzilgan.
+     * Endi exception transaction'ni rollback qiladi (yoki try/catch ichida outside emas).
+     */
+    @Transactional
     @SuppressWarnings("unchecked")
     public Map<String, Object> submitContractStatistics(Map<String, Object> request, String username) {
         log.info("[ContractStatistics] Submitting: {}", request);

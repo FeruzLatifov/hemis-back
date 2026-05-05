@@ -55,7 +55,13 @@ public class FinanceEntityLegacyService {
         return scholarshipAmountRepository.findById(id);
     }
 
+    /**
+     * @deprecated OOM risk on 1.15M students × 12 months = ~14M rows. Use
+     *             {@link #findAllScholarshipAmount(Pageable)} instead.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
     public List<ScholarshipAmount> findAllScholarshipAmount() {
+        log.warn("DEPRECATED: findAllScholarshipAmount() — use Pageable variant. OOM risk on large dataset.");
         return scholarshipAmountRepository.findAll();
     }
 
@@ -127,7 +133,12 @@ public class FinanceEntityLegacyService {
         return scholarshipRepository.findById(id);
     }
 
+    /**
+     * @deprecated OOM risk — use {@link #findAllScholarship(Pageable)} instead.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
     public List<Scholarship> findAllScholarship() {
+        log.warn("DEPRECATED: findAllScholarship() — use Pageable variant.");
         return scholarshipRepository.findAll();
     }
 
@@ -295,7 +306,12 @@ public class FinanceEntityLegacyService {
         return contractStatisticsRepository.findById(id);
     }
 
+    /**
+     * @deprecated OOM risk — use Pageable variant.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
     public List<ContractStatistics> findAllContractStatistics() {
+        log.warn("DEPRECATED: findAllContractStatistics() — use Pageable variant.");
         return contractStatisticsRepository.findAll();
     }
 
@@ -384,7 +400,12 @@ public class FinanceEntityLegacyService {
         return rEmploymentRepository.findById(id);
     }
 
+    /**
+     * @deprecated OOM risk — use Pageable variant.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
     public List<REmployment> findAllREmployment() {
+        log.warn("DEPRECATED: findAllREmployment() — use Pageable variant.");
         return rEmploymentRepository.findAll();
     }
 

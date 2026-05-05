@@ -9,6 +9,20 @@ import jakarta.servlet.http.HttpServletRequest;
  * <p>Single source of truth for IP resolution so OAuth controllers, the IP whitelist
  * filter and rate limiters all see the same address for a given request.</p>
  *
+ * <p><strong>SECURITY (audit 2026-05-05):</strong> XFF trust unconditional. Production
+ * deploy talab qiladi: <em>only Nginx LB</em> direct-hits Spring app — pod-to-pod traffic
+ * yopiq. Agar app internet-facing yoki internal proxy-bypass bo'lsa, XFF spoofing orqali
+ * IP whitelist va rate-limiter aldab bo'ladi. Production checklist:</p>
+ * <ul>
+ *   <li>K8s NetworkPolicy: faqat ingress controller'dan {@code 8080/tcp} ruxsat.</li>
+ *   <li>Nginx ingress: {@code proxy_set_header X-Forwarded-For $remote_addr} (overwrite,
+ *       not append) — eski header'larni client tomonidan olib tashlab tashlaydi.</li>
+ * </ul>
+ *
+ * <p><strong>Future improvement:</strong> {@code @Component} refactor + trusted-proxies
+ * CIDR config. {@code request.getRemoteAddr()} trusted CIDR'da bo'lsa XFF ishlat,
+ * aks holda {@code getRemoteAddr()} qaytar. 10+ caller refactor — alohida sprint.</p>
+ *
  * @since 2.1.0
  */
 public final class HttpClientIpResolver {

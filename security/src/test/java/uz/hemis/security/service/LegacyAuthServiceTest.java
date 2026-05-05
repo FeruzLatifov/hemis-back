@@ -89,7 +89,14 @@ class LegacyAuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        tokenService = new TokenService(jwtEncoder, jwtDecoder, permissionCacheService, userIdentificationPort);
+        // ObjectProvider mock — refresh token rotation feature (P1.A3). Default getIfAvailable()
+        // returns null (no Redis blacklist in unit tests). Lenient — generate-token flow doesn't
+        // touch blacklist (only refresh flow does), strict Mockito would fail.
+        @SuppressWarnings("unchecked")
+        org.springframework.beans.factory.ObjectProvider<TokenBlacklistService> blacklistProvider =
+                org.mockito.Mockito.mock(org.springframework.beans.factory.ObjectProvider.class);
+        org.mockito.Mockito.lenient().when(blacklistProvider.getIfAvailable()).thenReturn(null);
+        tokenService = new TokenService(jwtEncoder, jwtDecoder, permissionCacheService, userIdentificationPort, blacklistProvider);
 
         // Inject @Value fields via reflection
         ReflectionTestUtils.setField(tokenService, "accessTokenValiditySeconds", ACCESS_TOKEN_VALIDITY);

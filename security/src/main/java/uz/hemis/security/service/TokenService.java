@@ -56,6 +56,11 @@ public class TokenService {
     private final JwtDecoder jwtDecoder;
     private final UserPermissionCacheService permissionCacheService;
     private final uz.hemis.common.port.security.UserIdentificationPort userIdentificationPort;
+    /**
+     * Refresh token rotation — old jti blacklisted on consume (replay detection).
+     * Optional (autowire by type, may be null in unit tests without Redis).
+     */
+    private final org.springframework.beans.factory.ObjectProvider<TokenBlacklistService> blacklistProvider;
 
     // Default 12 hours (43200 sec) — OWASP & security/CLAUDE.md (rule). Old-hemis 30-day default
     // edi, lekin leaked token'lar 30 kun valid bo'lar edi. application.yml ENV bilan override qiladi.
@@ -221,6 +226,18 @@ public class TokenService {
                 throw new IllegalArgumentException("Invalid token type: not a refresh token");
             }
 
+            // OWASP A04 — Refresh token rotation + replay detection.
+            // 1) Old jti must NOT be blacklisted (replay attempt).
+            // 2) After successful refresh: blacklist old jti for remaining lifetime
+            //    (so the same refresh token cannot be used twice).
+            String oldJti = jwt.getId();
+            TokenBlacklistService blacklistService = blacklistProvider.getIfAvailable();
+            if (oldJti != null && blacklistService != null && blacklistService.isBlacklisted(oldJti)) {
+                // Replay attempt — token already consumed. Suspicious.
+                log.warn("SECURITY: refresh token replay detected — jti={} already blacklisted", oldJti);
+                throw new IllegalArgumentException("Refresh token already consumed");
+            }
+
             // Extract userId from JWT 'sub' claim
             String userIdString = jwt.getSubject();
 
@@ -265,6 +282,13 @@ public class TokenService {
                     .build();
 
             String newRefreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader(), refreshClaims)).getTokenValue();
+
+            // Rotation — blacklist consumed refresh jti for remaining lifetime.
+            if (oldJti != null && blacklistService != null && jwt.getExpiresAt() != null) {
+                blacklistService.addToBlacklist(oldJti, jwt.getExpiresAt());
+                log.debug("Refresh rotation — old jti {} blacklisted until {}",
+                        oldJti, jwt.getExpiresAt());
+            }
 
             // Build response (OLD-HEMIS format)
             TokenResponse tokenResponse = TokenResponse.builder()

@@ -100,11 +100,18 @@ public class WebAuthController {
     ) {
         String username = request.getUsername();
 
-        // Rate limit check
+        // Rate limit — IP + username (NAT scenarios: shared IP across many users).
+        // Per-IP (5/15min OWASP) + per-username (separate counter) — attacker rotating IPs
+        // still locked by username-based limit.
         String clientIp = clientIpResolver.resolve(httpRequest);
-        if (!rateLimitService.isAllowed(clientIp)) {
-            int remaining = (int) rateLimitService.getSecondsUntilReset(clientIp);
-            log.warn("Rate limit exceeded for IP: {} (retry in {}s)", clientIp, remaining);
+        String userKey = "user:" + (username == null ? "<empty>" : username.toLowerCase());
+        boolean ipAllowed = rateLimitService.isAllowed(clientIp);
+        boolean userAllowed = rateLimitService.isAllowed(userKey);
+        if (!ipAllowed || !userAllowed) {
+            String blockedKey = !ipAllowed ? clientIp : userKey;
+            int remaining = (int) rateLimitService.getSecondsUntilReset(blockedKey);
+            log.warn("Rate limit exceeded — ip-blocked={}, user-blocked={} (retry in {}s)",
+                    !ipAllowed, !userAllowed, remaining);
             return ResponseEntity.status(429).body(LoginResponse.builder()
                     .error("too_many_requests")
                     .errorDescription(String.format("Juda ko'p urinish. %d soniyadan keyin qayta urinib ko'ring.", remaining))
@@ -141,6 +148,7 @@ public class WebAuthController {
             accountValidator.resetFailedAttempts(username);
 
             rateLimitService.reset(clientIp);
+            rateLimitService.reset("user:" + username.toLowerCase());
             log.info("Login successful - user: {}, {} permissions", username, permissions.size());
 
             eventPublisher.publishEvent(LoginEvent.builder()
