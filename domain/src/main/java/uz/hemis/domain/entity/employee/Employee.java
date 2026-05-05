@@ -13,11 +13,8 @@ import uz.hemis.domain.converter.TinConverter;
 import uz.hemis.domain.entity.academic.AcademicDegree;
 import uz.hemis.domain.entity.academic.AcademicRank;
 import uz.hemis.domain.entity.base.AuditableEntity;
-import uz.hemis.domain.entity.reference.Soato;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "employee")
@@ -99,9 +96,6 @@ public class Employee extends AuditableEntity {
     @Column(name = "passport", length = 20)
     private String passport;
 
-    @Column(name = "passport_date")
-    private LocalDate passportDate;
-
     @Column(name = "phone", length = 50)
     @Convert(converter = PhoneNumberConverter.class)
     private PhoneNumber phone;
@@ -111,14 +105,6 @@ public class Employee extends AuditableEntity {
 
     @Column(name = "address", columnDefinition = "TEXT")
     private String address;
-
-    /** Hierarchical SOATO code → soato.code FK (V009 yangi jadval). */
-    @Column(name = "soato_code", length = 20)
-    private String soatoCode;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "soato_code", referencedColumnName = "code", insertable = false, updatable = false)
-    private Soato soato;
 
     @Column(name = "academic_degree_code", length = 20)
     private String academicDegreeCode;
@@ -138,30 +124,8 @@ public class Employee extends AuditableEntity {
     @Convert(converter = TinConverter.class)
     private Tin tin;
 
-    /**
-     * Academic credentials (degrees + titles) awarded to this employee.
-     *
-     * <p>Populated by the SAC (Science Academic Center) sync service. One row per
-     * credential — a PhD, DSc, Doцent or Professor award. Discriminator ({@code credentialType})
-     * chooses the active classifier on each row.</p>
-     *
-     * <p>Denormalised "primary" degree/rank still lives in {@link #academicDegreeCode}
-     * and {@link #academicRankCode} for fast UI lookup (Banner SIS pattern —
-     * {@code SORDEGR} historical vs {@code SPRIDEN.degree} current).</p>
-     */
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL,
-               orphanRemoval = true, fetch = FetchType.LAZY)
-    @Builder.Default
-    private Set<EmployeeAcademicCredential> academicCredentials = new HashSet<>();
-
-    /**
-     * Attach a credential to this employee, maintaining the bidirectional link.
-     * Service layer should prefer upsert-by-diploma_number via the repository
-     * (idempotent against re-sync).
-     */
-    public void addCredential(EmployeeAcademicCredential credential) {
-        if (credential == null) return;
-        academicCredentials.add(credential);
-        credential.setEmployee(this);
-    }
+    // NOTE: academic credentials are managed via EmployeeAcademicCredentialRepository
+    // directly (idempotent upsert by diploma_number_key). The previous @OneToMany
+    // Set + addCredential() helper was orphan code (never invoked) and has been
+    // removed.
 }

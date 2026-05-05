@@ -38,13 +38,10 @@ CREATE TABLE IF NOT EXISTS employee (
     -- (2 letters + 7 digits). SSO callbacks that deliver series/number separately
     -- are concatenated at the service layer before persistence.
     passport             VARCHAR(20),
-    passport_date        DATE,
     phone                VARCHAR(50),
     email                VARCHAR(255),
     address              TEXT,
 
-    -- Single hierarchical SOATO code: first 4 digits = region, 7 = district, 11 = neighborhood.
-    soato_code           VARCHAR(20) REFERENCES hemishe_h_soato(code),
     academic_degree_code VARCHAR(20) REFERENCES hemishe_h_academic_degree(code),
     academic_rank_code   VARCHAR(20) REFERENCES hemishe_h_academic_rank(code),
     tin                  VARCHAR(20),
@@ -72,7 +69,6 @@ CREATE TABLE IF NOT EXISTS employee (
 COMMENT ON TABLE  employee IS 'Universal person registry — OTM staff + ministry + centers + external orgs. PINFL unique per person. MyGov/E-Imzo SSO lookup ga asos.';
 COMMENT ON COLUMN employee.pinfl IS 'Personal identification number (JSHSHIR) — unique identifier. SSO integratsiya asosi (context.md).';
 COMMENT ON COLUMN employee.person_type IS 'Discriminator: UNIVERSITY_STAFF (46K OTM) | MINISTRY_STAFF | CENTER_STAFF (DTM/UzACI) | OTHER_ORG_STAFF (GUVD/Hokimiyat)';
-COMMENT ON COLUMN employee.soato_code IS 'Address SOATO (hierarchical): 4=region, 7=district, 11=neighborhood';
 COMMENT ON COLUMN employee.version IS 'Optimistic locking version (JPA @Version)';
 COMMENT ON COLUMN employee.deleted_at IS 'Soft delete timestamp (null = active)';
 
@@ -81,7 +77,6 @@ CREATE INDEX IF NOT EXISTS idx_employee_pinfl        ON employee(pinfl);        
 CREATE INDEX IF NOT EXISTS idx_employee_person_type  ON employee(person_type);
 CREATE INDEX IF NOT EXISTS idx_employee_name         ON employee(last_name, first_name);
 CREATE INDEX IF NOT EXISTS idx_employee_tin          ON employee(tin) WHERE tin IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_employee_soato        ON employee(soato_code) WHERE soato_code IS NOT NULL;
 -- NOTE: `idx_employee_deleted ON (deleted_at) WHERE deleted_at IS NULL` removed —
 -- it was always empty (partial-index on the very column being filtered to NULL).
 -- Soft-delete filtering uses partial indexes on other columns (e.g. uq_employee_pinfl below).
@@ -120,7 +115,6 @@ CREATE TABLE IF NOT EXISTS employee_job (
     -- Legacy classifier FK'lar — hemishe_h_*
     employment_form_code  VARCHAR(20) REFERENCES hemishe_h_university_employee_form(code) ON DELETE RESTRICT,
     employee_rate_code    VARCHAR(20) REFERENCES hemishe_h_university_employee_rate(code) ON DELETE RESTRICT,
-    specialty             VARCHAR(500),
 
     is_current            BOOLEAN NOT NULL DEFAULT true,
     start_date            DATE,
@@ -144,7 +138,6 @@ CREATE TABLE IF NOT EXISTS employee_job (
 COMMENT ON TABLE employee_job IS 'Employment records — one person can hold many jobs at many universities. PeopleSoft: PS_JOB. Banner: NBRJOBS.';
 COMMENT ON COLUMN employee_job.university_code IS 'Which university (like PeopleSoft SetID)';
 COMMENT ON COLUMN employee_job.is_current IS 'Active assignment flag — false when person leaves or position changes';
-COMMENT ON COLUMN employee_job.specialty IS 'Specialty for this specific job (assignment-scoped, not person-scoped)';
 COMMENT ON COLUMN employee_job.version IS 'Optimistic locking version (JPA @Version)';
 COMMENT ON COLUMN employee_job.deleted_at IS 'Soft delete timestamp (null = active)';
 

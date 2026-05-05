@@ -84,10 +84,6 @@ public class EmployeeJobs extends AuditableEntity {
     @JoinColumn(name = "employee_rate_code", referencedColumnName = "code", insertable = false, updatable = false)
     private EmployeeRate employeeRate;
 
-    /** Specialty for this job (assignment-scoped, not person-scoped). */
-    @Column(name = "specialty", length = 500)
-    private String specialty;
-
     @Builder.Default
     @Column(name = "is_current", nullable = false)
     private Boolean isCurrent = true;
