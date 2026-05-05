@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -64,6 +65,20 @@ public class TokenService {
 
     @Value("${hemis.security.jwt.issuer:hemis-backend}")
     private String issuer;
+
+    /** Key ID for JWS header — supports key rotation (kid header per OAuth2/OIDC RFC 7515 §4.1.4). */
+    @Value("${hemis.security.jwt.key-id:hemis-jwt-default}")
+    private String keyId;
+
+    /** Build JWS header with HS256 algorithm + kid (key rotation support).
+     *  Defensive: keyId null/blank bo'lsa (test/profile yo'q), kid'siz quriladi. */
+    private JwsHeader jwsHeader() {
+        JwsHeader.Builder b = JwsHeader.with(MacAlgorithm.HS256);
+        if (keyId != null && !keyId.isBlank()) {
+            b = b.keyId(keyId);
+        }
+        return b.build();
+    }
 
     /**
      * Generate OAuth2 JWT token
@@ -114,11 +129,10 @@ public class TokenService {
         permissionCacheService.cacheUserPermissions(java.util.UUID.fromString(userId), permissions);
         log.info("✅ Cached {} permissions for userId: {}", permissions.size(), userId);
 
-        // Build JWS Header with explicit HS256 algorithm
-        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
-
         // ✅ MINIMAL JWT - No permissions, only essential claims
+        // jti (RFC 7519 §4.1.7) — token blacklist key sifatida ishlatamiz (CookieJwtAuthenticationFilter check qiladi)
         JwtClaimsSet claims = JwtClaimsSet.builder()
+                .id(UUID.randomUUID().toString())         // ✅ jti — unique token ID for blacklist
                 .issuer(issuer)                          // Issuer: hemis-backend
                 .issuedAt(now)                            // Issued at: now
                 .expiresAt(expiry)                        // Expires at: now + 30 days
@@ -129,7 +143,7 @@ public class TokenService {
                 .build();
 
         // Encode JWT with explicit headers (algorithm must match JWK)
-        String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+        String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader(), claims)).getTokenValue();
 
         // ✅ Generate refresh token (old-hemis compatibility)
         String refreshToken = generateRefreshToken(userDetails);
@@ -161,11 +175,9 @@ public class TokenService {
         Instant now = Instant.now();
         Instant expiry = now.plusSeconds(refreshTokenValiditySeconds);
 
-        // Build JWS Header with explicit HS256 algorithm
-        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
-
-        // ✅ MINIMAL JWT - No permissions, only essential claims
+        // ✅ MINIMAL JWT - No permissions, only essential claims + jti for blacklist support
         JwtClaimsSet claims = JwtClaimsSet.builder()
+                .id(UUID.randomUUID().toString())         // ✅ jti — unique token ID for refresh rotation
                 .issuer(issuer)
                 .issuedAt(now)
                 .expiresAt(expiry)
@@ -174,7 +186,7 @@ public class TokenService {
                 .claim("type", "refresh")  // Mark as refresh token
                 .build();
 
-        String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, claims)).getTokenValue();
+        String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader(), claims)).getTokenValue();
 
         log.info("Refresh token generated for userId: {} (expires in {} days)",
                 userId, refreshTokenValiditySeconds / 86400);
@@ -228,11 +240,9 @@ public class TokenService {
             Instant accessExpiry = now.plusSeconds(accessTokenValiditySeconds);
             Instant refreshExpiry = now.plusSeconds(refreshTokenValiditySeconds);
 
-            // Build JWS Header with explicit HS256 algorithm
-            JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
-
-            // ✅ MINIMAL JWT - No permissions, only essential claims
+            // ✅ MINIMAL JWT - No permissions, only essential claims + jti for blacklist
             JwtClaimsSet accessClaims = JwtClaimsSet.builder()
+                    .id(UUID.randomUUID().toString())     // ✅ jti — unique token ID
                     .issuer(issuer)
                     .issuedAt(now)
                     .expiresAt(accessExpiry)
@@ -242,10 +252,11 @@ public class TokenService {
                     .claim("scope", "rest-api")
                     .build();
 
-            String newAccessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, accessClaims)).getTokenValue();
+            String newAccessToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader(), accessClaims)).getTokenValue();
 
-            // ✅ MINIMAL JWT - No permissions, only essential claims
+            // ✅ MINIMAL JWT - No permissions, only essential claims + jti for refresh rotation
             JwtClaimsSet refreshClaims = JwtClaimsSet.builder()
+                    .id(UUID.randomUUID().toString())     // ✅ jti — unique token ID for rotation
                     .issuer(issuer)
                     .issuedAt(now)
                     .expiresAt(refreshExpiry)
@@ -254,7 +265,7 @@ public class TokenService {
                     .claim("type", "refresh")
                     .build();
 
-            String newRefreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader, refreshClaims)).getTokenValue();
+            String newRefreshToken = jwtEncoder.encode(JwtEncoderParameters.from(jwsHeader(), refreshClaims)).getTokenValue();
 
             // Build response (OLD-HEMIS format)
             TokenResponse tokenResponse = TokenResponse.builder()
@@ -359,10 +370,9 @@ public class TokenService {
                 ? null
                 : client.getUniversity().getCode();
 
-        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
-
         String scopeClaim = String.join(" ", new java.util.TreeSet<>(granted));
         JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
+                .id(UUID.randomUUID().toString())         // ✅ jti — unique token ID for blacklist
                 .issuer(issuer)
                 .issuedAt(now)
                 .expiresAt(expiry)
@@ -378,7 +388,7 @@ public class TokenService {
         }
 
         String accessToken = jwtEncoder
-                .encode(JwtEncoderParameters.from(jwsHeader, claims.build()))
+                .encode(JwtEncoderParameters.from(jwsHeader(), claims.build()))
                 .getTokenValue();
 
         log.info("Issued CLIENT token for '{}' (type={}, univ={}, ttl={}s, authorities={}, scope={})",

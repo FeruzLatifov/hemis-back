@@ -2,6 +2,7 @@ package uz.hemis.web.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,10 @@ public class WebAuthTokenService {
     private final JwtEncoder jwtEncoder;
     private final JwtDecoder jwtDecoder;
 
+    /** Key ID for JWS header — supports key rotation (kid header per RFC 7515 §4.1.4). */
+    @Value("${hemis.security.jwt.key-id:hemis-jwt-default}")
+    private String keyId;
+
     public record TokenPair(
             String accessToken,
             String accessJti,
@@ -43,7 +48,7 @@ public class WebAuthTokenService {
      */
     public TokenPair generateTokenPair(UUID userId, String username, String fullName) {
         Instant now = Instant.now();
-        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).build();
+        JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256).keyId(keyId).build();
 
         // Access token
         String accessJti = UUID.randomUUID().toString();
