@@ -254,7 +254,7 @@ public final class CubaResponseHelper {
 
         String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
         if (!email.matches(emailRegex)) {
-            log.warn("Invalid email format: {}", email);
+            log.warn("Invalid email format: {}", uz.hemis.common.util.PiiMask.email(email));
             return errorResponse("invalid_email",
                     "Invalid email format. Example: user@example.com");
         }
@@ -275,7 +275,7 @@ public final class CubaResponseHelper {
 
         String phoneRegex = "^(\\+?998)?\\d{9}$";
         if (!phone.replaceAll("[-\\s]", "").matches(phoneRegex)) {
-            log.warn("Invalid phone format: {}", phone);
+            log.warn("Invalid phone format: {}", uz.hemis.common.util.PiiMask.phone(phone));
             return errorResponse("invalid_phone",
                     "Invalid phone number format. Example: +998901234567");
         }

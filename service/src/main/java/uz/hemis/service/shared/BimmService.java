@@ -181,7 +181,7 @@ public class BimmService extends AbstractGovernmentApiService {
      * @return raw API response (object)
      */
     public Object smsUserPay(String message, String phone) {
-        log.info("Sending SMS via BIMM - phone: {}", phone);
+        log.info("Sending SMS via BIMM - phone: {}", uz.hemis.common.util.PiiMask.phone(phone));
 
         String token = getTokenOrEmpty();
 
