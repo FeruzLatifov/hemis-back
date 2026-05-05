@@ -103,6 +103,24 @@ tasks.bootJar {
     mainClass.set("uz.hemis.app.HemisApplication")
 }
 
+// =====================================================
+// Build Info — /actuator/info endpoint uchun
+// =====================================================
+// Spring Boot Actuator /actuator/info endpoint'da version + build time + main class
+// ko'rsatadi. Production deploy'da qaysi versiya ishlayotganini bilish uchun foydali.
+springBoot {
+    buildInfo {
+        properties {
+            additional.set(
+                mapOf(
+                    "module" to "hemis-back",
+                    "java" to System.getProperty("java.version"),
+                )
+            )
+        }
+    }
+}
+
 tasks.bootRun {
     // Set active Spring profile from command line
     // Usage: ./gradlew :app:bootRun -Pprofile=prod
