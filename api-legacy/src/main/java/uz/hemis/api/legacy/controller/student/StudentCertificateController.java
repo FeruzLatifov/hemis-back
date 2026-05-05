@@ -21,6 +21,7 @@ import java.util.UUID;
 @Slf4j
 public class StudentCertificateController {
 
+    @Operation(summary = "generate certificate")
     @PostMapping("/generate/{studentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> generateCertificate(

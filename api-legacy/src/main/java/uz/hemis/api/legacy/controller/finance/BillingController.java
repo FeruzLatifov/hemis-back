@@ -20,6 +20,7 @@ import java.util.UUID;
 @Slf4j
 public class BillingController {
 
+    @Operation(summary = "get invoices")
     @GetMapping("/invoices")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getInvoices(
@@ -33,6 +34,7 @@ public class BillingController {
         return ResponseEntity.ok(ResponseWrapper.success(invoices));
     }
 
+    @Operation(summary = "process payment")
     @PostMapping("/payment")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> processPayment(@RequestBody Map<String, Object> payment) {

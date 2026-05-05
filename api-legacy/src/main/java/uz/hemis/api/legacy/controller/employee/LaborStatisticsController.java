@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.employee;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import java.util.Map;
 @Slf4j
 public class LaborStatisticsController {
 
+    @Operation(summary = "get employment statistics")
     @GetMapping("/employment")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getEmploymentStatistics(
@@ -39,6 +41,7 @@ public class LaborStatisticsController {
         return ResponseEntity.ok(ResponseWrapper.success(statistics));
     }
 
+    @Operation(summary = "get staff statistics")
     @GetMapping("/staff")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'HR')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStaffStatistics(
@@ -57,6 +60,7 @@ public class LaborStatisticsController {
         return ResponseEntity.ok(ResponseWrapper.success(statistics));
     }
 
+    @Operation(summary = "get workload statistics")
     @GetMapping("/workload")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getWorkloadStatistics(

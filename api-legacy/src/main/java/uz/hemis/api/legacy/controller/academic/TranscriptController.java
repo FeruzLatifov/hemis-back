@@ -21,6 +21,7 @@ import java.util.UUID;
 @Slf4j
 public class TranscriptController {
 
+    @Operation(summary = "get student transcript")
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN', 'STUDENT')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentTranscript(
@@ -39,6 +40,7 @@ public class TranscriptController {
         return ResponseEntity.ok(ResponseWrapper.success(transcript));
     }
 
+    @Operation(summary = "generate transcript")
     @GetMapping("/generate/{studentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> generateTranscript(

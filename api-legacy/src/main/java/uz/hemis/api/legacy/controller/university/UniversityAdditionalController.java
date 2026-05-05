@@ -19,6 +19,7 @@ import java.util.Map;
 @Slf4j
 public class UniversityAdditionalController {
 
+    @Operation(summary = "get infrastructure")
     @GetMapping("/{universityCode}/infrastructure")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getInfrastructure(@PathVariable String universityCode) {

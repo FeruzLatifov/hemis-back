@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.academic;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.util.UUID;
 @Slf4j
 public class AcademicReportController {
 
+    @Operation(summary = "get student report")
     @GetMapping("/students")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentReport(
@@ -42,6 +44,7 @@ public class AcademicReportController {
         return ResponseEntity.ok(ResponseWrapper.success(report));
     }
 
+    @Operation(summary = "get grade report")
     @GetMapping("/grades")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN', 'TEACHER')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getGradeReport(
@@ -63,6 +66,7 @@ public class AcademicReportController {
         return ResponseEntity.ok(ResponseWrapper.success(report));
     }
 
+    @Operation(summary = "get attendance report")
     @GetMapping("/attendance")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN', 'TEACHER')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAttendanceReport(
@@ -86,6 +90,7 @@ public class AcademicReportController {
         return ResponseEntity.ok(ResponseWrapper.success(report));
     }
 
+    @Operation(summary = "get summary report")
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getSummaryReport(

@@ -218,6 +218,7 @@ public class LegacyOAuthTokenController {
      * <p>PHP (Yii2) HTTP Client Content-Type: application/json bilan yuboradi.
      * 200 ta universitetda ishlayotgan PHP kodga moslik uchun JSON ham qabul qilinadi.</p>
      */
+    @Operation(summary = "token json")
     @PostMapping(
         value = {
             "/app/rest/v2/oauth/token",

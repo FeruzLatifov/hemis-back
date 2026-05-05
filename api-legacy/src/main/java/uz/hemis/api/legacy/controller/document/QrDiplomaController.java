@@ -20,6 +20,7 @@ import java.util.UUID;
 @Slf4j
 public class QrDiplomaController {
 
+    @Operation(summary = "generate qr code")
     @PostMapping("/generate/{diplomaId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> generateQrCode(@PathVariable UUID diplomaId) {

@@ -20,8 +20,8 @@ import java.util.Map;
 @Slf4j
 public class HealthController {
 
+    @Operation(summary = "Health status — UP/DOWN ko'rsatkich")
     @GetMapping
-    @Operation(summary = "ping")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getHealth() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -33,8 +33,8 @@ public class HealthController {
         return ResponseEntity.ok(ResponseWrapper.success(response));
     }
 
+    @Operation(summary = "Ping — connectivity test")
     @GetMapping("/ping")
-    @Operation(summary = "get version")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> ping() {
         Map<String, Object> response = new LinkedHashMap<>();
@@ -45,6 +45,7 @@ public class HealthController {
         return ResponseEntity.ok(ResponseWrapper.success(response));
     }
 
+    @Operation(summary = "get version")
     @GetMapping("/version")
     @PreAuthorize("permitAll()")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getVersion() {

@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.finance;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import java.util.Map;
 @Slf4j
 public class EconomicReportController {
 
+    @Operation(summary = "get financial report")
     @GetMapping("/financial")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getFinancialReport(
@@ -35,6 +37,7 @@ public class EconomicReportController {
         return ResponseEntity.ok(ResponseWrapper.success(report));
     }
 
+    @Operation(summary = "get budget report")
     @GetMapping("/budget")
     @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getBudgetReport(@RequestParam String university) {

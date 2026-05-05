@@ -22,6 +22,7 @@ import java.util.Map;
 @Slf4j
 public class MailController {
 
+    @Operation(summary = "send email")
     @PostMapping("/send")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> sendEmail(
@@ -59,6 +60,7 @@ public class MailController {
         return ResponseEntity.ok(ResponseWrapper.success(status));
     }
 
+    @Operation(summary = "get email templates")
     @GetMapping("/templates")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getEmailTemplates() {

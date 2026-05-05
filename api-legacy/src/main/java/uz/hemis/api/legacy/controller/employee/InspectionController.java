@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.employee;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import java.util.Map;
 @Slf4j
 public class InspectionController {
 
+    @Operation(summary = "get quality control report")
     @GetMapping("/quality-control")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSPECTOR')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getQualityControlReport(
@@ -37,6 +39,7 @@ public class InspectionController {
         return ResponseEntity.ok(ResponseWrapper.success(report));
     }
 
+    @Operation(summary = "get compliance report")
     @GetMapping("/compliance")
     @PreAuthorize("hasAnyRole('ADMIN', 'INSPECTOR')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getComplianceReport(
@@ -53,6 +56,7 @@ public class InspectionController {
         return ResponseEntity.ok(ResponseWrapper.success(report));
     }
 
+    @Operation(summary = "get audit report")
     @GetMapping("/audit")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAuditReport(

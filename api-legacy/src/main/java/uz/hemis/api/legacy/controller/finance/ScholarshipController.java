@@ -61,6 +61,7 @@ public class ScholarshipController {
         return ResponseEntity.ok(ResponseWrapper.success(scholarships));
     }
 
+    @Operation(summary = "create scholarship")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> createScholarship(
@@ -70,6 +71,7 @@ public class ScholarshipController {
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
+    @Operation(summary = "update scholarship")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> updateScholarship(

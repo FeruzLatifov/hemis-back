@@ -48,14 +48,15 @@ public class GroupController {
         return ResponseEntity.ok(ResponseWrapper.success(group));
     }
 
+    @Operation(summary = "Yangi guruh yaratish")
     @PostMapping
-    @Operation(summary = "update group")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<GroupDto>> createGroup(@Valid @RequestBody GroupDto groupDto) {
         GroupDto created = groupService.create(groupDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
+    @Operation(summary = "update group")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<GroupDto>> updateGroup(
@@ -66,6 +67,7 @@ public class GroupController {
         return ResponseEntity.ok(ResponseWrapper.success(updated));
     }
 
+    @Operation(summary = "delete group")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Void>> deleteGroup(@PathVariable UUID id) {

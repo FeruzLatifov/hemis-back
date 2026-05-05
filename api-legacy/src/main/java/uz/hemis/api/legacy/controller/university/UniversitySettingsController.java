@@ -19,8 +19,8 @@ import java.util.Map;
 @Slf4j
 public class UniversitySettingsController {
 
+    @Operation(summary = "Universitet sozlamalarini olish")
     @GetMapping("/{universityCode}")
-    @Operation(summary = "update settings")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getSettings(@PathVariable String universityCode) {
         Map<String, Object> settings = new LinkedHashMap<>();
@@ -31,6 +31,7 @@ public class UniversitySettingsController {
         return ResponseEntity.ok(ResponseWrapper.success(settings));
     }
 
+    @Operation(summary = "update settings")
     @PutMapping("/{universityCode}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> updateSettings(
