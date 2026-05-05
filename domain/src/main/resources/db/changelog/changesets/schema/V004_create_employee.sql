@@ -17,7 +17,7 @@
 -- =====================================================
 -- TABLE 1: employee (one person = one record, PINFL unique)
 -- =====================================================
-CREATE TABLE employee (
+CREATE TABLE IF NOT EXISTS employee (
     id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     pinfl                VARCHAR(14) NOT NULL,  -- Partial UNIQUE pastda (soft-delete uyg'unligi)
     first_name           VARCHAR(255) NOT NULL,
@@ -77,24 +77,26 @@ COMMENT ON COLUMN employee.version IS 'Optimistic locking version (JPA @Version)
 COMMENT ON COLUMN employee.deleted_at IS 'Soft delete timestamp (null = active)';
 
 -- Indexes
-CREATE INDEX idx_employee_pinfl        ON employee(pinfl);         -- MyGov/E-Imzo lookup
-CREATE INDEX idx_employee_person_type  ON employee(person_type);
-CREATE INDEX idx_employee_name         ON employee(last_name, first_name);
-CREATE INDEX idx_employee_tin ON employee(tin) WHERE tin IS NOT NULL;
-CREATE INDEX idx_employee_deleted ON employee(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_employee_soato ON employee(soato_code) WHERE soato_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_employee_pinfl        ON employee(pinfl);         -- MyGov/E-Imzo lookup
+CREATE INDEX IF NOT EXISTS idx_employee_person_type  ON employee(person_type);
+CREATE INDEX IF NOT EXISTS idx_employee_name         ON employee(last_name, first_name);
+CREATE INDEX IF NOT EXISTS idx_employee_tin          ON employee(tin) WHERE tin IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_employee_soato        ON employee(soato_code) WHERE soato_code IS NOT NULL;
+-- NOTE: `idx_employee_deleted ON (deleted_at) WHERE deleted_at IS NULL` removed —
+-- it was always empty (partial-index on the very column being filtered to NULL).
+-- Soft-delete filtering uses partial indexes on other columns (e.g. uq_employee_pinfl below).
 
 -- Passport is globally unique for a living person.
 -- Partial UNIQUE index — multiple NULLs allowed (employees with unknown passport),
 -- but any non-null value must be unique. Restored uniqueness on soft-delete
 -- undo so a former employee's passport can be re-bound if restored.
-CREATE UNIQUE INDEX uq_employee_passport
+CREATE UNIQUE INDEX IF NOT EXISTS uq_employee_passport
     ON employee(passport)
     WHERE passport IS NOT NULL AND deleted_at IS NULL;
 
 -- PINFL globally unique per LIVING person.
 -- Partial UNIQUE: soft-deleted xodim PINFL'ini qayta ishlatish mumkin (xodim qaytsa).
-CREATE UNIQUE INDEX uq_employee_pinfl
+CREATE UNIQUE INDEX IF NOT EXISTS uq_employee_pinfl
     ON employee(pinfl)
     WHERE deleted_at IS NULL;
 
@@ -103,9 +105,12 @@ CREATE UNIQUE INDEX uq_employee_pinfl
 -- Pattern: PeopleSoft PS_JOB, Oracle PER_ALL_ASSIGNMENTS_F, Banner NBRJOBS
 -- Direct successor of hemishe_e_employee_jobs (old CUBA table, stripped of prefix)
 -- =====================================================
-CREATE TABLE employee_job (
+CREATE TABLE IF NOT EXISTS employee_job (
     id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    employee_id           UUID NOT NULL REFERENCES employee(id) ON DELETE CASCADE,
+    -- ON DELETE RESTRICT: physical employee delete blocked while assignments exist.
+    -- Loyiha qoidasi: faqat soft-delete (deleted_at). RESTRICT defense-in-depth —
+    -- agar bevosita SQL DELETE bajarilsa ham audit history (job records) yo'qolmaydi.
+    employee_id           UUID NOT NULL REFERENCES employee(id) ON DELETE RESTRICT,
     -- ON DELETE RESTRICT: universitetni o'chirish uchun avval xodim assignment'larini qo'lda hal qilish
     university_code       VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE RESTRICT,
     -- Department FK — legacy CUBA jadvalga yo'naltirilgan
@@ -144,12 +149,12 @@ COMMENT ON COLUMN employee_job.version IS 'Optimistic locking version (JPA @Vers
 COMMENT ON COLUMN employee_job.deleted_at IS 'Soft delete timestamp (null = active)';
 
 -- Indexes
-CREATE INDEX idx_ejob_employee ON employee_job(employee_id);
-CREATE INDEX idx_ejob_university ON employee_job(university_code);
-CREATE INDEX idx_ejob_department ON employee_job(department_code) WHERE department_code IS NOT NULL;
-CREATE INDEX idx_ejob_current ON employee_job(employee_id, is_current) WHERE is_current = true AND deleted_at IS NULL;
-CREATE INDEX idx_ejob_position ON employee_job(position_code) WHERE deleted_at IS NULL;
-CREATE INDEX idx_ejob_deleted ON employee_job(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_ejob_employee   ON employee_job(employee_id);
+CREATE INDEX IF NOT EXISTS idx_ejob_university ON employee_job(university_code);
+CREATE INDEX IF NOT EXISTS idx_ejob_department ON employee_job(department_code) WHERE department_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ejob_current    ON employee_job(employee_id, is_current) WHERE is_current = true AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_ejob_position   ON employee_job(position_code) WHERE deleted_at IS NULL;
+-- NOTE: `idx_ejob_deleted ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 
 -- =====================================================
 -- TABLE 3: employee_academic_credential (STI — Single Table Inheritance)
@@ -159,9 +164,11 @@ CREATE INDEX idx_ejob_deleted ON employee_job(deleted_at) WHERE deleted_at IS NU
 -- Mirrors legacy hemis_337 credential table shape and SAC API response structure
 -- (each response row already contains either 'ilmiy_unvon' OR 'ilmiy_daraja').
 -- =====================================================
-CREATE TABLE employee_academic_credential (
+CREATE TABLE IF NOT EXISTS employee_academic_credential (
     id                     UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    employee_id            UUID         NOT NULL REFERENCES employee(id) ON DELETE CASCADE,
+    -- ON DELETE RESTRICT — defense-in-depth: physical employee delete blocked while
+    -- credentials exist (PhD/title history is sensitive — must be archived, not lost).
+    employee_id            UUID         NOT NULL REFERENCES employee(id) ON DELETE RESTRICT,
 
     -- STI discriminator
     credential_type        VARCHAR(10)  NOT NULL,
@@ -250,10 +257,10 @@ COMMENT ON COLUMN employee_academic_credential.external_sector_name IS 'Text nam
 COMMENT ON COLUMN employee_academic_credential.theme IS 'Dissertation theme. DEGREE-only — NULL for TITLE rows (enforced by CHECK).';
 COMMENT ON COLUMN employee_academic_credential.source_raw IS 'Original API response JSON — debug/audit trail.';
 
-CREATE INDEX idx_eac_employee      ON employee_academic_credential(employee_id);
-CREATE INDEX idx_eac_type          ON employee_academic_credential(credential_type);
-CREATE INDEX idx_eac_degree        ON employee_academic_credential(degree_code)   WHERE degree_code IS NOT NULL;
-CREATE INDEX idx_eac_rank          ON employee_academic_credential(rank_code)     WHERE rank_code IS NOT NULL;
-CREATE INDEX idx_eac_confirmed     ON employee_academic_credential(confirmed_date) WHERE confirmed_date IS NOT NULL;
-CREATE INDEX idx_eac_deleted       ON employee_academic_credential(deleted_at)    WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_eac_employee   ON employee_academic_credential(employee_id);
+CREATE INDEX IF NOT EXISTS idx_eac_type       ON employee_academic_credential(credential_type);
+CREATE INDEX IF NOT EXISTS idx_eac_degree     ON employee_academic_credential(degree_code)   WHERE degree_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_eac_rank       ON employee_academic_credential(rank_code)     WHERE rank_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_eac_confirmed  ON employee_academic_credential(confirmed_date) WHERE confirmed_date IS NOT NULL;
+-- NOTE: `idx_eac_deleted ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 

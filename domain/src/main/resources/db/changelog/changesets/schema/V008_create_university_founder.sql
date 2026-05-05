@@ -8,7 +8,7 @@
 -- Individual → employee_id FK, Legal → legal_tin + legal_name
 -- =====================================================
 
-CREATE TABLE university_founder (
+CREATE TABLE IF NOT EXISTS university_founder (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     -- ON DELETE CASCADE: universitet o'chirilsa ta'sischilar ham avtomatik o'chadi
     university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
@@ -65,17 +65,17 @@ COMMENT ON COLUMN university_founder.employee_id IS 'FK to employee — individu
 COMMENT ON COLUMN university_founder.organization_id IS 'FK to organization — legal founder. TIN-based lookup during sync.';
 COMMENT ON COLUMN university_founder.version IS 'Optimistic locking version (JPA @Version)';
 
-CREATE INDEX idx_ufounder_university ON university_founder(university_code);
-CREATE INDEX idx_ufounder_employee ON university_founder(employee_id) WHERE employee_id IS NOT NULL;
-CREATE INDEX idx_ufounder_org ON university_founder(organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX idx_ufounder_current ON university_founder(university_code, is_current) WHERE is_current = true;
-CREATE INDEX idx_ufounder_deleted_at ON university_founder(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_ufounder_university ON university_founder(university_code);
+CREATE INDEX IF NOT EXISTS idx_ufounder_employee   ON university_founder(employee_id) WHERE employee_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ufounder_org        ON university_founder(organization_id) WHERE organization_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ufounder_current    ON university_founder(university_code, is_current) WHERE is_current = true;
+-- NOTE: `idx_ufounder_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 
 -- Bitta ta'sischi bitta universitet uchun bir vaqtda faqat bitta is_current=true yozuv bo'lishi kerak
-CREATE UNIQUE INDEX idx_ufounder_unique_current_individual
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ufounder_unique_current_individual
     ON university_founder(university_code, employee_id)
     WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'INDIVIDUAL';
 
-CREATE UNIQUE INDEX idx_ufounder_unique_current_legal
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ufounder_unique_current_legal
     ON university_founder(university_code, organization_id)
     WHERE is_current = true AND deleted_at IS NULL AND founder_type = 'LEGAL';

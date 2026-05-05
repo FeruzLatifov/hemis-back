@@ -22,7 +22,7 @@
 -- Pattern: employee (PINFL UNIQUE) bilan analogik
 -- World equivalent: SAP Business Partner (type=ORG), PeopleSoft VENDOR
 -- =====================================================
-CREATE TABLE organization (
+CREATE TABLE IF NOT EXISTS organization (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tin VARCHAR(20) NOT NULL,  -- Partial UNIQUE pastda (soft-delete uyg'unligi)
     name VARCHAR(500) NOT NULL,
@@ -57,14 +57,14 @@ COMMENT ON COLUMN organization.opf IS 'Organizational-legal form code (OPF class
 COMMENT ON COLUMN organization.source IS 'Record origin: api_legal | manual';
 COMMENT ON COLUMN organization.api_raw_response IS 'Raw JSON snapshot from legalentity API (full response)';
 
-CREATE INDEX idx_organization_name ON organization(name);
-CREATE INDEX idx_organization_deleted_at ON organization(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_organization_synced_at ON organization(synced_at) WHERE synced_at IS NOT NULL;
-CREATE INDEX idx_organization_source ON organization(source) WHERE source IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_organization_name      ON organization(name);
+CREATE INDEX IF NOT EXISTS idx_organization_synced_at ON organization(synced_at) WHERE synced_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_organization_source    ON organization(source) WHERE source IS NOT NULL;
+-- NOTE: `idx_organization_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 
 -- TIN globally unique per LIVING legal entity.
 -- Partial UNIQUE: soft-deleted tashkilot TIN'ini qayta ishlatish mumkin (re-registration).
-CREATE UNIQUE INDEX uq_organization_tin
+CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_tin
     ON organization(tin)
     WHERE deleted_at IS NULL;
 
@@ -74,9 +74,13 @@ CREATE UNIQUE INDEX uq_organization_tin
 -- 1:1 with hemishe_e_university
 -- Tashqi API (172.18.9.171/legalentity/) dan sync qilinadi
 -- =====================================================
-CREATE TABLE university_legal (
+CREATE TABLE IF NOT EXISTS university_legal (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    university_code VARCHAR(255) NOT NULL UNIQUE REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
+    -- ON DELETE CASCADE saqlandi: 1:1 relation, university physical-delete bo'lsa
+    -- (rare, normal flow soft-delete) extension yozuvlar ham bekor qilinadi.
+    -- UNIQUE inline'dan olib tashlandi — partial UNIQUE (pastda) soft-delete'da
+    -- university_code'ni qayta sync qilishga ruxsat beradi.
+    university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
 
     -- FK to organization registry (TIN UNIQUE). tin kept as API snapshot for historical data.
     -- ON DELETE SET NULL: tashkilot o'chirilsa, legal info jadvalda qoladi (organization_id NULL)
@@ -154,13 +158,19 @@ COMMENT ON COLUMN university_legal.taxpayer_type IS 'Taxpayer category code (0-9
 COMMENT ON COLUMN university_legal.business_type IS 'Business activity type code (0-99).';
 COMMENT ON COLUMN university_legal.business_structure IS 'Organizational structure code (0-99).';
 
-CREATE INDEX idx_ulegal_tin ON university_legal(tin) WHERE tin IS NOT NULL;
-CREATE INDEX idx_ulegal_organization ON university_legal(organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX idx_ulegal_director_emp ON university_legal(director_employee_id) WHERE director_employee_id IS NOT NULL;
-CREATE INDEX idx_ulegal_accountant_emp ON university_legal(accountant_employee_id) WHERE accountant_employee_id IS NOT NULL;
-CREATE INDEX idx_ulegal_billing_soato ON university_legal(billing_soato) WHERE billing_soato IS NOT NULL;
-CREATE INDEX idx_ulegal_deleted_at ON university_legal(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_ulegal_synced_at ON university_legal(synced_at);
+CREATE INDEX IF NOT EXISTS idx_ulegal_tin            ON university_legal(tin) WHERE tin IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ulegal_organization   ON university_legal(organization_id) WHERE organization_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ulegal_director_emp   ON university_legal(director_employee_id) WHERE director_employee_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ulegal_accountant_emp ON university_legal(accountant_employee_id) WHERE accountant_employee_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ulegal_billing_soato  ON university_legal(billing_soato) WHERE billing_soato IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ulegal_synced_at      ON university_legal(synced_at);
+-- NOTE: `idx_ulegal_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
+
+-- Partial UNIQUE — 1:1 active record per university. Soft-deleted university_legal
+-- yozuv'i bo'lsa, yangi sync uchun yangi row create qilish mumkin (eski archive sifatida qoladi).
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ulegal_university_code_active
+    ON university_legal(university_code)
+    WHERE deleted_at IS NULL;
 
 COMMENT ON COLUMN university_legal.director_employee_id IS 'Optional FK to employee — linked by PINFL during sync. NULL if person not in employee table.';
 COMMENT ON COLUMN university_legal.accountant_employee_id IS 'Optional FK to employee — linked by PINFL during sync. NULL if person not in employee table.';
@@ -172,10 +182,12 @@ COMMENT ON COLUMN university_legal.accountant_employee_id IS 'Optional FK to emp
 -- Admin yoki univer (230 ta universitet) tomonidan kiritiladi/yangilanadi
 -- Fayl saqlash: MinIO (S3-compatible), bazada faqat metadata (file_key)
 -- =====================================================
-CREATE TABLE university_profile (
+CREATE TABLE IF NOT EXISTS university_profile (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    -- ON DELETE CASCADE: universitet o'chirilsa profile ham avtomatik o'chadi
-    university_code VARCHAR(255) NOT NULL UNIQUE REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
+    -- ON DELETE CASCADE: universitet o'chirilsa profile ham avtomatik o'chadi.
+    -- UNIQUE inline'dan olib tashlandi — partial UNIQUE (pastda) soft-delete'da
+    -- university_code'ni qayta yaratish imkonini beradi (1:1 active per uni).
+    university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
 
     -- Aloqa
     phone VARCHAR(50),
@@ -231,6 +243,11 @@ COMMENT ON COLUMN university_profile.source IS 'Record origin: manual | hemis_sy
 COMMENT ON COLUMN university_profile.source_uid IS 'External UID (e.g. univer.uz record ID)';
 COMMENT ON COLUMN university_profile.hash IS 'SHA-256 content hash (hex, 64 chars) — change detection';
 
-CREATE INDEX idx_uprofile_source ON university_profile(source) WHERE source IS NOT NULL;
-CREATE INDEX idx_uprofile_geo ON university_profile(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
-CREATE INDEX idx_uprofile_deleted_at ON university_profile(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_uprofile_source ON university_profile(source) WHERE source IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_uprofile_geo    ON university_profile(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
+-- NOTE: `idx_uprofile_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
+
+-- Partial UNIQUE — 1:1 active record per university (same rationale as university_legal).
+CREATE UNIQUE INDEX IF NOT EXISTS uq_uprofile_university_code_active
+    ON university_profile(university_code)
+    WHERE deleted_at IS NULL;

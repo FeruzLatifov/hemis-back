@@ -22,6 +22,7 @@ import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.registry.dto.UniversityDictionariesDto;
 import uz.hemis.service.registry.dto.UniversityDictionariesDto.DictionaryItem;
 import uz.hemis.service.registry.dto.UniversityRequestDto;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.shared.mapper.UniversityDtoConverter;
 
 import java.time.LocalDateTime;
@@ -51,6 +52,7 @@ public class UniversityRegistryService {
     private final UniversityDtoConverter universityMapper;
     private final EntityManager entityManager;
     private final ClassifierLookupService classifiers;
+    private final TenantGuard tenantGuard;
 
     /** Populate human-readable `*Name` fields from cached classifier maps (in-memory, O(1)). */
     private UniversityDto enrich(UniversityDto dto) {
@@ -261,6 +263,7 @@ public class UniversityRegistryService {
     })
     public UniversityDto updateUniversity(String code, UniversityRequestDto request) {
         log.info("Updating university: {}", code);
+        tenantGuard.verifyOwnershipOrAdmin(code);
 
         University university = universityRepository.findById(code)
                 .orElseThrow(() -> new IllegalArgumentException("University not found: " + code));
@@ -286,6 +289,7 @@ public class UniversityRegistryService {
     })
     public void deleteUniversity(String code) {
         log.info("Deleting university: {}", code);
+        tenantGuard.verifyOwnershipOrAdmin(code);
 
         University university = universityRepository.findById(code)
                 .orElseThrow(() -> new IllegalArgumentException("University not found: " + code));

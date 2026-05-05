@@ -11,6 +11,7 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.university.UniversityProfile;
 import uz.hemis.domain.repository.UniversityProfileRepository;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.university.dto.DocumentMetaDto;
 import uz.hemis.service.university.dto.SocialLinksDto;
 import uz.hemis.service.university.dto.UniversityProfileDto;
@@ -35,6 +36,7 @@ public class UniversityProfileService {
 
     private final UniversityProfileRepository profileRepository;
     private final ObjectMapper objectMapper;
+    private final TenantGuard tenantGuard;
 
     private static final TypeReference<List<DocumentMetaDto>> DOCS_TYPE = new TypeReference<>() {};
 
@@ -52,6 +54,7 @@ public class UniversityProfileService {
     @Transactional
     @Audited(action = AuditAction.UPDATE, entity = "UniversityProfile", keyArg = "universityCode")
     public UniversityProfileDto upsert(String universityCode, UniversityProfileRequest request) {
+        tenantGuard.verifyOwnershipOrAdmin(universityCode);
         UniversityProfile entity = profileRepository.findByUniversityCode(universityCode)
                 .orElseGet(() -> UniversityProfile.builder()
                         .universityCode(universityCode)

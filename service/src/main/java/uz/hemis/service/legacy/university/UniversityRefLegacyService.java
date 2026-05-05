@@ -86,9 +86,14 @@ public class UniversityRefLegacyService {
         return ictEquipmentRepository.save(entity);
     }
 
+    /**
+     * Soft delete — sets {@code delete_ts} (CUBA pattern). Physical DELETE is forbidden on
+     * {@code hemishe_*} tables (domain/CLAUDE.md): cascade FK chains can wipe related data.
+     */
     @Transactional
     public void deleteIctEquipment(IctEquipment entity) {
-        ictEquipmentRepository.delete(entity);
+        entity.setDeleteTs(LocalDateTime.now());
+        ictEquipmentRepository.save(entity);
     }
 
     public Map<String, Object> toIctEquipmentMap(IctEquipment entity, Boolean returnNulls) {
@@ -184,9 +189,13 @@ public class UniversityRefLegacyService {
         return laboratoriesRepository.save(entity);
     }
 
+    /**
+     * Soft delete — sets {@code delete_ts} (CUBA pattern). See {@link #deleteIctEquipment}.
+     */
     @Transactional
     public void deleteLaboratories(Laboratories entity) {
-        laboratoriesRepository.delete(entity);
+        entity.setDeleteTs(LocalDateTime.now());
+        laboratoriesRepository.save(entity);
     }
 
     public Map<String, Object> toLaboratoriesMap(Laboratories entity, Boolean returnNulls) {
@@ -535,9 +544,15 @@ public class UniversityRefLegacyService {
         return groupRepository.save(entity);
     }
 
+    /**
+     * Soft delete — sets {@code active=false}. The {@code hemishe_e_university_group} table
+     * does not have {@code delete_ts} (CUBA legacy schema), so we use the {@code active} flag
+     * to deactivate. Physical DELETE is forbidden on {@code hemishe_*} tables.
+     */
     @Transactional
     public void deleteGroup(Group entity) {
-        groupRepository.delete(entity);
+        entity.setActive(false);
+        groupRepository.save(entity);
     }
 
     public Map<String, Object> toGroupMap(Group entity, Boolean returnNulls) {
@@ -678,9 +693,15 @@ public class UniversityRefLegacyService {
         return specialtyRepository.save(entity);
     }
 
+    /**
+     * Soft delete — sets {@code active=false}. The {@code hemishe_e_university_speciality}
+     * table does not have {@code delete_ts} (CUBA legacy schema), so we use the {@code active}
+     * flag to deactivate. Physical DELETE is forbidden on {@code hemishe_*} tables.
+     */
     @Transactional
     public void deleteSpecialty(Specialty entity) {
-        specialtyRepository.delete(entity);
+        entity.setActive(false);
+        specialtyRepository.save(entity);
     }
 
     public Map<String, Object> toSpecialtyMap(Specialty entity, Boolean returnNulls) {
@@ -851,9 +872,13 @@ public class UniversityRefLegacyService {
         return universityRepository.save(entity);
     }
 
+    /**
+     * Soft delete — delegates to {@link #softDeleteUniversity}. Physical DELETE is forbidden
+     * on {@code hemishe_e_university} (224 OTM ekosistemi, FK CASCADE chains).
+     */
     @Transactional
     public void deleteUniversity(University entity) {
-        universityRepository.delete(entity);
+        softDeleteUniversity(entity);
     }
 
     @Transactional

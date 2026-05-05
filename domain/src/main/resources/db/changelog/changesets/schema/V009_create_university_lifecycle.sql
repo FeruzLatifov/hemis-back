@@ -8,7 +8,7 @@
 -- Immutable event log — no version, no soft delete
 -- =====================================================
 
-CREATE TABLE university_lifecycle (
+CREATE TABLE IF NOT EXISTS university_lifecycle (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     -- ON DELETE RESTRICT: tarixiy lifecycle log'ni accidental delete'dan himoya qilish
     -- (Universitet o'chirilishi uchun avval lifecycle row'larni qo'lda o'chirish kerak — qaror qabul etilgan)
@@ -75,7 +75,7 @@ COMMENT ON TABLE university_lifecycle IS 'University lifecycle events — full c
 COMMENT ON COLUMN university_lifecycle.successor_code IS 'Successor university. MERGED: target. SPLIT: each new university gets a row.';
 COMMENT ON COLUMN university_lifecycle.students_count IS 'Student count at time of event (historical snapshot)';
 
-CREATE INDEX idx_lifecycle_university ON university_lifecycle(university_code);
-CREATE INDEX idx_lifecycle_successor ON university_lifecycle(successor_code) WHERE successor_code IS NOT NULL;
-CREATE INDEX idx_lifecycle_event_type ON university_lifecycle(event_type);
-CREATE INDEX idx_lifecycle_date ON university_lifecycle(event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_lifecycle_university ON university_lifecycle(university_code);
+CREATE INDEX IF NOT EXISTS idx_lifecycle_successor  ON university_lifecycle(successor_code) WHERE successor_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_lifecycle_event_type ON university_lifecycle(event_type);
+CREATE INDEX IF NOT EXISTS idx_lifecycle_date       ON university_lifecycle(event_date DESC);

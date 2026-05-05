@@ -17,6 +17,7 @@ import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.university.University;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.university.mapper.UniversityMapper;
 import uz.hemis.domain.repository.UniversityRepository;
 
@@ -59,6 +60,7 @@ public class UniversityService {
 
     private final UniversityRepository universityRepository;
     private final UniversityMapper universityMapper;
+    private final TenantGuard tenantGuard;
 
     // =====================================================
     // Read Operations (Read-Only Transactions)
@@ -311,6 +313,7 @@ public class UniversityService {
     })
     public UniversityDto update(String code, UniversityDto dto) {
         log.info("Updating university with code: {}", code);
+        tenantGuard.verifyOwnershipOrAdmin(code);
 
         // Find existing
         University existing = universityRepository.findById(code)
@@ -379,6 +382,7 @@ public class UniversityService {
     })
     public UniversityDto partialUpdate(String code, UniversityDto dto) {
         log.info("Partially updating university with code: {}", code);
+        tenantGuard.verifyOwnershipOrAdmin(code);
 
         // Find existing
         University existing = universityRepository.findById(code)
@@ -428,6 +432,7 @@ public class UniversityService {
     })
     public void softDelete(String code) {
         log.info("Soft deleting university with code: {}", code);
+        tenantGuard.verifyOwnershipOrAdmin(code);
 
         University university = universityRepository.findById(code)
                 .orElseThrow(() -> new ResourceNotFoundException("University", "code", code));
@@ -457,6 +462,7 @@ public class UniversityService {
     })
     public void restore(String code) {
         log.info("Restoring university with code: {}", code);
+        tenantGuard.verifyOwnershipOrAdmin(code);
 
         // Note: This will NOT find soft-deleted records due to @Where clause
         // We need a special query or temporary disable the filter

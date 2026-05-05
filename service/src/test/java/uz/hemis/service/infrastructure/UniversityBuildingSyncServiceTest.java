@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,7 @@ import uz.hemis.common.dto.building.BuildingSyncResult;
 import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
 import uz.hemis.domain.repository.UniversityBuildingRepository;
 import uz.hemis.service.infrastructure.mapper.BuildingMapper;
+import uz.hemis.service.security.TenantGuard;
 
 import java.time.Instant;
 import java.util.List;
@@ -54,6 +56,13 @@ class UniversityBuildingSyncServiceTest {
 
     @Mock
     private BuildingMetrics metrics;
+
+    /**
+     * Real TenantGuard — SecurityContextHolder bilan integratsiya saqlanadi.
+     * {@code setAuthenticatedTenant} bilan testlar JWT contextni populate qiladi.
+     */
+    @Spy
+    private TenantGuard tenantGuard = new TenantGuard();
 
     @InjectMocks
     private UniversityBuildingSyncService service;

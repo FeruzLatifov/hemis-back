@@ -18,7 +18,7 @@
 -- 1. h_building_category — bino kategoriyasi classifier (kengayadigan)
 -- h_* prefiks: 224 OTM ekosistemi konvensiyasi (ADR-0006)
 -- =====================================================
-CREATE TABLE h_building_category (
+CREATE TABLE IF NOT EXISTS h_building_category (
     code VARCHAR(20) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     name_ru VARCHAR(255),
@@ -44,7 +44,7 @@ ON CONFLICT (code) DO NOTHING;
 -- =====================================================
 -- 2. h_construction_material — qurilish materiali classifier
 -- =====================================================
-CREATE TABLE h_construction_material (
+CREATE TABLE IF NOT EXISTS h_construction_material (
     code VARCHAR(20) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     name_ru VARCHAR(255),
@@ -71,7 +71,7 @@ ON CONFLICT (code) DO NOTHING;
 -- =====================================================
 -- 3. h_roof_type — tom qoplamasi turi classifier
 -- =====================================================
-CREATE TABLE h_roof_type (
+CREATE TABLE IF NOT EXISTS h_roof_type (
     code VARCHAR(20) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     name_ru VARCHAR(255),
@@ -101,12 +101,14 @@ ON CONFLICT (code) DO NOTHING;
 -- Linkage: university_cadastre via cad_number (optional, 1:1)
 -- Excel mapping: docs/Бино ва иншоотлар жадвали.xlsx dagi 14 ustunga to'liq mos
 -- =====================================================
-CREATE TABLE university_building (
+CREATE TABLE IF NOT EXISTS university_building (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    -- Universitet (CASCADE: OTM o'chsa barcha bino'lar ham)
+    -- Universitet — ON DELETE RESTRICT (defense-in-depth, ADR-0001 — building alohida domain).
+    -- Loyiha qoidasi: faqat soft-delete (deleted_at SET, FK trigger emas). Bevosita SQL DELETE
+    -- bajarilsa RESTRICT bilan blokirovka qilinadi va manual cleanup talab qilinadi.
     university_code VARCHAR(255) NOT NULL
-        REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
+        REFERENCES hemishe_e_university(code) ON DELETE RESTRICT,
 
     -- Excel col 2: Binoning nomi
     name VARCHAR(500) NOT NULL,
@@ -195,23 +197,23 @@ COMMENT ON COLUMN university_building.cad_number IS
      Agar to''ldirilsa, address/total_area/usable_area avtomatik olinadi (boshlang''ich saqlash paytida)';
 
 -- Indexes (query pattern bo'yicha)
-CREATE INDEX idx_ub_university ON university_building(university_code);
-CREATE INDEX idx_ub_category ON university_building(category_code);
-CREATE INDEX idx_ub_material ON university_building(construction_material_code) WHERE construction_material_code IS NOT NULL;
-CREATE INDEX idx_ub_roof ON university_building(roof_type_code) WHERE roof_type_code IS NOT NULL;
-CREATE INDEX idx_ub_cad ON university_building(cad_number) WHERE cad_number IS NOT NULL;
-CREATE INDEX idx_ub_geo ON university_building(latitude, longitude) WHERE latitude IS NOT NULL;
-CREATE INDEX idx_ub_deleted ON university_building(deleted_at) WHERE deleted_at IS NULL;
-CREATE INDEX idx_ub_synced ON university_building(synced_at) WHERE synced_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ub_university ON university_building(university_code);
+CREATE INDEX IF NOT EXISTS idx_ub_category   ON university_building(category_code);
+CREATE INDEX IF NOT EXISTS idx_ub_material   ON university_building(construction_material_code) WHERE construction_material_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ub_roof       ON university_building(roof_type_code) WHERE roof_type_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ub_cad        ON university_building(cad_number) WHERE cad_number IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ub_geo        ON university_building(latitude, longitude) WHERE latitude IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ub_synced     ON university_building(synced_at) WHERE synced_at IS NOT NULL;
+-- NOTE: `idx_ub_deleted ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 
 -- Univer sync idempotency: (OTM, source_uid) juftligi bir marta keladi
-CREATE UNIQUE INDEX uq_ub_univer_source
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ub_univer_source
     ON university_building (university_code, source_uid)
     WHERE source_uid IS NOT NULL AND deleted_at IS NULL;
 
 -- Cadastre raqami unique per LIVING building (soft-delete uyg'unligi)
 -- Bino soft-delete bo'lsa, kadastr boshqa binoga (qayta foydalaniladigan kadastr) biriktirilishi mumkin
-CREATE UNIQUE INDEX uq_ub_cad_number
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ub_cad_number
     ON university_building (cad_number)
     WHERE cad_number IS NOT NULL AND deleted_at IS NULL;
 
@@ -222,10 +224,12 @@ CREATE UNIQUE INDEX uq_ub_cad_number
 -- Purpose: Tarixni yo'qotmaslik — ta'mir, yiqilish, qaytadan maqsadiga o'zgartirish
 -- Trigger: building.last_renovation_date yangilansa, avtomatik RENOVATED event yoziladi (service layer)
 -- =====================================================
-CREATE TABLE building_lifecycle (
+CREATE TABLE IF NOT EXISTS building_lifecycle (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- ON DELETE RESTRICT (defense-in-depth) — bino tarixi yo'qolmasligi kerak (immutable log).
+    -- Loyiha qoidasi: bino soft-delete'd; lifecycle row physical delete'siz arxiv sifatida saqlanadi.
     building_id UUID NOT NULL
-        REFERENCES university_building(id) ON DELETE CASCADE,
+        REFERENCES university_building(id) ON DELETE RESTRICT,
 
     -- Event turi (CHECK enum — kengayuvchi bo'lsa yangi migration kerak)
     event_type VARCHAR(30) NOT NULL CHECK (event_type IN (
@@ -272,7 +276,7 @@ COMMENT ON TABLE building_lifecycle IS
      Fills automatically from building.last_renovation_date updates (via @EventListener).
      No UPDATE/DELETE allowed at application layer — audit integrity.';
 
-CREATE INDEX idx_bl_building ON building_lifecycle(building_id);
-CREATE INDEX idx_bl_event_type ON building_lifecycle(event_type);
-CREATE INDEX idx_bl_date ON building_lifecycle(event_date DESC);
-CREATE INDEX idx_bl_building_date ON building_lifecycle(building_id, event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_bl_building      ON building_lifecycle(building_id);
+CREATE INDEX IF NOT EXISTS idx_bl_event_type    ON building_lifecycle(event_type);
+CREATE INDEX IF NOT EXISTS idx_bl_date          ON building_lifecycle(event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_bl_building_date ON building_lifecycle(building_id, event_date DESC);

@@ -7,10 +7,12 @@
 -- Pattern: ARCHIBUS property table + Banner SLBBLDG
 -- =====================================================
 
-CREATE TABLE university_cadastre (
+CREATE TABLE IF NOT EXISTS university_cadastre (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    -- ON DELETE CASCADE: universitet o'chirilsa uning kadastr ob'ektlari ham o'chadi
-    university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
+    -- ON DELETE RESTRICT: defense-in-depth. Cadastre — alohida domain (ADR-0001), real estate
+    -- yashaydi universitetdan mustaqil. Universitet soft-delete'da FK trigger emas (delete_ts SET);
+    -- agar bevosita SQL DELETE bajarilsa — bu RESTRICT bilan blokirovka qilinadi, manual cleanup talab.
+    university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE RESTRICT,
 
     -- Cadastre identity
     cad_number VARCHAR(50) NOT NULL UNIQUE,
@@ -127,8 +129,8 @@ COMMENT ON COLUMN university_cadastre.data_source IS 'Sync source: api_kadastr |
 -- Historical state is tracked via api_raw_response + synced_at, not soft-delete rows.
 -- If a cadastre object disappears from the API, the record stays as the last known state.
 
-CREATE INDEX idx_ucadastre_university ON university_cadastre(university_code);
-CREATE INDEX idx_ucadastre_region ON university_cadastre(region_id) WHERE region_id IS NOT NULL;
-CREATE INDEX idx_ucadastre_district ON university_cadastre(district_id) WHERE district_id IS NOT NULL;
-CREATE INDEX idx_ucadastre_ban ON university_cadastre(ban_is) WHERE ban_is = true;
-CREATE INDEX idx_ucadastre_synced_at ON university_cadastre(synced_at);
+CREATE INDEX IF NOT EXISTS idx_ucadastre_university ON university_cadastre(university_code);
+CREATE INDEX IF NOT EXISTS idx_ucadastre_region     ON university_cadastre(region_id) WHERE region_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ucadastre_district   ON university_cadastre(district_id) WHERE district_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ucadastre_ban        ON university_cadastre(ban_is) WHERE ban_is = true;
+CREATE INDEX IF NOT EXISTS idx_ucadastre_synced_at  ON university_cadastre(synced_at);
