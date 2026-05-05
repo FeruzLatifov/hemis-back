@@ -376,7 +376,8 @@ public class StudentServiceController {
     })
     @SuppressWarnings("unchecked")
     public ResponseEntity<?> id(@RequestBody Map<String, Object> request) {
-        log.info("[CUBA Service] student/id: request={}", request);
+        // PII safety: never log full request body (contains PINFL, passport, address).
+        log.info("[CUBA Service] student/id: keys={}", request.keySet());
 
         // Extract "data" wrapper (old-hemis format)
         Object dataObj = request.get("data");
@@ -479,7 +480,8 @@ public class StudentServiceController {
     @PostMapping("/update")
     @Operation(summary = "Talabani o'zgartirish", description = "Talaba ma'lumotlarini yangilash (transfer yoki data update). Transfer bo'lmasa {id, code, verified, points} qaytaradi.")
     public ResponseEntity<?> update(@RequestBody Map<String, Object> request) {
-        log.info("[CUBA Service] student/update: request={}", request);
+        // PII safety: never log full request body (contains PINFL, passport, parent_phone).
+        log.info("[CUBA Service] student/update: keys={}", request.keySet());
         Object result = studentService.updateStudent(request);
 
         // OLD-HEMIS returns 200 OK with empty body when no transfer conditions met
@@ -537,7 +539,9 @@ public class StudentServiceController {
     public ResponseEntity<?> validate(
             @Parameter(description = "PINFL yoki Passport seriya/raqami", example = "A0939758")
             @RequestParam String data) {
-        log.info("[CUBA Service] student/validate: data={}", data);
+        // PII safety: input may be PINFL or passport — mask via Pinfl helper (graceful for non-PINFL).
+        log.info("[CUBA Service] student/validate: data={}",
+                uz.hemis.common.vo.Pinfl.maskOrEmpty(data));
         return ResponseEntity.ok(studentService.validateStudent(data));
     }
 
@@ -670,7 +674,8 @@ public class StudentServiceController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
     public ResponseEntity<?> gpa(@RequestBody Map<String, Object> request) {
-        log.info("[CUBA Service] student/gpa: request={}", request);
+        // PII safety: never log full request body (contains PINFL).
+        log.info("[CUBA Service] student/gpa: keys={}", request.keySet());
 
         // Get current username for createdBy field
         String username = getCurrentUsername();

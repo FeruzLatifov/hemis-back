@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.service.base.AbstractGovernmentApiService;
 import uz.hemis.service.integration.ApiMspdTokenService;
 import uz.hemis.service.integration.GuvdTokenService;
@@ -41,7 +42,7 @@ public class SocialService extends AbstractGovernmentApiService {
      * API-MSPD: POST /social/social-protection/
      */
     public Object singleRegister(String pinfl) {
-        log.info("Checking single register - PINFL: {}", pinfl);
+        log.info("Checking single register - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
         Map<String, String> body = new HashMap<>();
         body.put("pinfl", pinfl);
         return callApiMspd("/social/social-protection/", body, "SocialService.singleRegister");
@@ -52,7 +53,7 @@ public class SocialService extends AbstractGovernmentApiService {
      * API-MSPD da yo'q — egov.uz ga to'g'ridan-to'g'ri
      */
     public Object daftarFull(String pinfl) {
-        log.info("Fetching full daftar info - PINFL: {}", pinfl);
+        log.info("Fetching full daftar info - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
         String body = String.format("{\"pinfl\":\"%s\"}", pinfl);
         return callEgovDirect("https://apimgw.egov.uz:8243/services/daftar/v1/full-info", body, "SocialService.daftarFull");
     }
@@ -62,7 +63,7 @@ public class SocialService extends AbstractGovernmentApiService {
      * API-MSPD da yo'q — egov.uz ga to'g'ridan-to'g'ri
      */
     public Object daftarShort(String pinfl) {
-        log.info("Fetching short daftar info - PINFL: {}", pinfl);
+        log.info("Fetching short daftar info - PINFL: {}", Pinfl.maskOrEmpty(pinfl));
         String body = String.format("{\"pinfl\":\"%s\"}", pinfl);
         return callEgovDirect("https://apimgw.egov.uz:8243/services/daftar/v1/short-info", body, "SocialService.daftarShort");
     }
@@ -72,7 +73,9 @@ public class SocialService extends AbstractGovernmentApiService {
      * API-MSPD: POST /women/women-register/
      */
     public Object women(String pinfl, String sn) {
-        log.info("Checking women registry - PINFL: {}, SN: {}", pinfl, sn);
+        // PII: passport SN partially logged is also sensitive — keep last 3 chars only.
+        String snMasked = (sn == null || sn.length() < 4) ? "***" : "***" + sn.substring(sn.length() - 3);
+        log.info("Checking women registry - PINFL: {}, SN: {}", Pinfl.maskOrEmpty(pinfl), snMasked);
         Map<String, String> body = new HashMap<>();
         body.put("pinfl", pinfl);
         body.put("document", sn != null ? sn : "");
@@ -84,7 +87,9 @@ public class SocialService extends AbstractGovernmentApiService {
      * API-MSPD: POST /youth/youth-register/
      */
     public Object young(String pinfl, String seria, String number) {
-        log.info("Checking youth registry - PINFL: {}, Seria: {}, Number: {}", pinfl, seria, number);
+        // PII: passport seria/number — masked.
+        log.info("Checking youth registry - PINFL: {}, Seria: ***, Number: ***",
+                Pinfl.maskOrEmpty(pinfl));
         Map<String, String> body = new HashMap<>();
         body.put("pinfl", pinfl);
         body.put("passport_seria", seria != null ? seria : "");

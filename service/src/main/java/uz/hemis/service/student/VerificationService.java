@@ -91,9 +91,11 @@ public class VerificationService {
             return result;
 
         } catch (Exception e) {
-            log.error("Error verifying student: {}", e.getMessage(), e);
+            // OWASP A05 — never echo internal exception message to client (Postgres errors
+            // leak schema/column/constraint names, EmptyResultDataAccessException reveals query shape).
+            log.error("Error verifying student", e);
             result.put("success", false);
-            result.put("error", e.getMessage());
+            result.put("error", "Internal verification error");
             return result;
         }
     }

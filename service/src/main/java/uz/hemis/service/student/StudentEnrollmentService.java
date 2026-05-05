@@ -93,8 +93,9 @@ public class StudentEnrollmentService {
 
             if (transferCandidate.isPresent()) {
                 Student originalStudent = transferCandidate.get();
-                log.info("Student transfer detected - {} from {} to {}",
-                        originalStudent.getPinfl(), originalStudent.getUniversity(), targetUniversityCode);
+                log.info("Student transfer detected - PINFL={} from {} to {}",
+                        uz.hemis.common.vo.Pinfl.maskOrEmpty(originalStudent.getPinfl()),
+                        originalStudent.getUniversity(), targetUniversityCode);
 
                 Student transferredStudent = copyStudentForTransfer(originalStudent, targetUniversityCode, statusCode);
 
@@ -174,10 +175,11 @@ public class StudentEnrollmentService {
             return result;
 
         } catch (Exception e) {
-            log.error("Error validating student: {}", e.getMessage(), e);
+            // OWASP A05 — never echo internal exception (Postgres constraints/schema leak).
+            log.error("Error validating student", e);
             result.put("success", false);
             result.put("code", "error");
-            result.put("message", "Error validating student: " + e.getMessage());
+            result.put("message", "Internal validation error");
             return result;
         }
     }

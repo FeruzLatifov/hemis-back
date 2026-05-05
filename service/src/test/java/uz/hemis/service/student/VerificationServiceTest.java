@@ -165,9 +165,9 @@ class VerificationServiceTest {
             Map<String, Object> result = verificationService.verifyByPinfl(pinfl);
 
             // Then
+            // OWASP A05: error message sanitized — internal exception text never leaked to client.
             assertThat(result).containsEntry("success", false);
-            assertThat(result).containsKey("error");
-            assertThat((String) result.get("error")).contains("Database connection lost");
+            assertThat(result).containsEntry("error", "Internal verification error");
         }
 
         @Test

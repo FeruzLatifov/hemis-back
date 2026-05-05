@@ -53,6 +53,13 @@ class StudentCoreServiceTest {
     @Mock
     private StudentMapper studentMapper;
 
+    /**
+     * Mocked tenant guard — real impl talab qiladi JWT SecurityContext.
+     * Default void no-op behavior — testlar business logic'ni tekshiradi.
+     */
+    @Mock
+    private uz.hemis.service.security.TenantGuard tenantGuard;
+
     @InjectMocks
     private StudentCoreService studentCoreService;
 

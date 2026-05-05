@@ -14,6 +14,7 @@ import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.student.Student;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.student.mapper.StudentMapper;
 import uz.hemis.domain.repository.StudentRepository;
 
@@ -43,6 +44,7 @@ public class StudentCoreService {
 
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
+    private final TenantGuard tenantGuard;
 
     // =====================================================
     // Read Operations (Read-Only Transactions)
@@ -260,6 +262,10 @@ public class StudentCoreService {
         Student existing = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
+        // Cross-tenant IDOR protection — caller must own the student's university (or be admin).
+        // Student's university is fetched FIRST, then verified against caller's JWT claim.
+        tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
+
         if (studentDto.getCode() != null &&
                 !studentDto.getCode().equals(existing.getCode())) {
             var existingByCode = studentRepository.findByCode(studentDto.getCode());
@@ -283,12 +289,18 @@ public class StudentCoreService {
 
     @Audited(action = AuditAction.UPDATE, entity = "Student", entityClass = Student.class, keyArg = "id")
     @Transactional
-    @CacheEvict(value = "students", allEntries = true)
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "students", key = "#id"),
+        @CacheEvict(value = "students", key = "'pinfl:' + #result.pinfl", condition = "#result != null")
+    })
     public StudentDto partialUpdate(UUID id, StudentDto studentDto) {
         log.info("Partial update for student ID: {}", id);
 
         Student existing = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
+
+        // Cross-tenant IDOR protection — same pattern as update().
+        tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
 
         studentMapper.partialUpdate(studentDto, existing);
 
@@ -305,23 +317,31 @@ public class StudentCoreService {
 
     @Audited(action = AuditAction.DELETE, entity = "Student", entityClass = Student.class, keyArg = "id")
     @Transactional
-    @CacheEvict(value = "students", allEntries = true)
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "students", key = "#id"),
+        @CacheEvict(value = "students", key = "'pinfl:' + #result.pinfl", condition = "#result != null")
+    })
     public StudentDto softDelete(UUID id, String userUniversityCode) {
         log.warn("Soft deleting student ID: {} by university: {}", id, userUniversityCode);
 
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
+        // Cross-tenant IDOR protection — TenantGuard.verifyOwnershipOrAdmin (defense-in-depth).
+        // Old userUniversityCode parameter retained for backward compat (controller-supplied),
+        // but JWT-based check is authoritative and runs before the legacy string comparison.
+        tenantGuard.verifyOwnershipOrAdmin(student.getUniversity());
+
         if (userUniversityCode != null && !userUniversityCode.isEmpty()) {
             String studentUniversity = student.getUniversity();
             if (studentUniversity != null && !studentUniversity.equals(userUniversityCode)) {
+                // PII enumeration leak fix: error message no longer reveals foreign universityCode.
                 log.error("AUTHORIZATION FAILED: User from university {} tried to delete student from university {}",
                         userUniversityCode, studentUniversity);
                 throw new ValidationException(
                         "Access denied",
                         "university",
-                        "You can only delete students from your own university. " +
-                        "Student belongs to university: " + studentUniversity + ", your university: " + userUniversityCode
+                        "You can only delete students from your own university."
                 );
             }
         }
@@ -345,12 +365,18 @@ public class StudentCoreService {
     }
 
     @Transactional
-    @CacheEvict(value = "students", allEntries = true)
+    // NOTE: PINFL cache key not evicted here — Student is loaded inside the method,
+    // so SpEL has no access to it. Pinfl-keyed entry will refresh after natural TTL
+    // (24h) or on next update(). Acceptable for restore (rare, audit-tracked).
+    @CacheEvict(value = "students", key = "#id")
     public void restore(UUID id) {
         log.info("Restoring soft-deleted student ID: {}", id);
 
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
+
+        // Cross-tenant IDOR protection — restore is also a sensitive operation.
+        tenantGuard.verifyOwnershipOrAdmin(student.getUniversity());
 
         if (!student.isDeleted()) {
             log.warn("Student is not deleted, nothing to restore: {}", id);

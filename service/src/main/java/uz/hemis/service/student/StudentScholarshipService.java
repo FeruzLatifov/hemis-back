@@ -69,9 +69,10 @@ public class StudentScholarshipService {
             result.put("success", true);
             result.put("data", items);
         } catch (Exception e) {
+            // OWASP A05 — sanitize internal exception (DB constraint names leak via e.getMessage()).
             log.error("Error in checkScholarship", e);
             result.put("success", false);
-            result.put("data", e.getMessage());
+            result.put("data", "Internal error");
         }
         return result;
     }
@@ -146,9 +147,10 @@ public class StudentScholarshipService {
                 result.put("students", items);
             }
         } catch (Exception e) {
+            // OWASP A05 — sanitize internal exception.
             log.error("Error in checkScholarship2", e);
             result.put("success", false);
-            result.put("data", e.getMessage());
+            result.put("data", "Internal error");
         }
         return result;
     }

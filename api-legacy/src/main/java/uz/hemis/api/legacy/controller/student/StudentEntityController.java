@@ -738,7 +738,8 @@ public class StudentEntityController {
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
 
-        log.info("POST create student - request body: {}", body);
+        // PII safety: never log full request body (contains PINFL, passport, address, parent_phone).
+        log.info("POST create student - keys={}", body == null ? "null" : body.keySet());
 
         try {
             // CUBA UPSERT: if body contains 'id' and student exists, update instead of create
@@ -773,7 +774,8 @@ public class StudentEntityController {
             // Convert CUBA Map to DTO
             StudentDto dto = adapter.fromMap(body, StudentDto.class);
             log.info("Converted DTO: code={}, pinfl={}, university={}, educationType={}",
-                     dto.getCode(), dto.getPinfl(), dto.getUniversity(), dto.getEducationType());
+                     dto.getCode(), uz.hemis.common.vo.Pinfl.maskOrEmpty(dto.getPinfl()),
+                     dto.getUniversity(), dto.getEducationType());
 
             // Service layer - with validation, cache, audit
             StudentDto created = studentService.create(dto);

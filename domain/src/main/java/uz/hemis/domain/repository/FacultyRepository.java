@@ -9,9 +9,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.academic.Faculty;
+import uz.hemis.domain.repository.projection.FacultyDetailRow;
+import uz.hemis.domain.repository.projection.FacultyExportRow;
+import uz.hemis.domain.repository.projection.FacultyRow;
+import uz.hemis.domain.repository.projection.UniversityGroupRow;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Repository
@@ -49,7 +52,7 @@ public interface FacultyRepository extends JpaRepository<Faculty, UUID>, JpaSpec
                 OR (:status = false AND (u.active = false OR u.active IS NULL)))
         """,
         nativeQuery = true)
-    Page<Map<String, Object>> findUniversityGroups(
+    Page<UniversityGroupRow> findUniversityGroups(
         @Param("q") String searchQuery,
         @Param("status") Boolean status,
         Pageable pageable
@@ -87,7 +90,7 @@ public interface FacultyRepository extends JpaRepository<Faculty, UUID>, JpaSpec
                 OR (:status = false AND (f.active = false OR f.active IS NULL)))
         """,
         nativeQuery = true)
-    Page<Map<String, Object>> findByUniversityCode(
+    Page<FacultyRow> findByUniversityCode(
         @Param("universityCode") String universityCode,
         @Param("q") String searchQuery,
         @Param("status") Boolean status,
@@ -116,7 +119,7 @@ public interface FacultyRepository extends JpaRepository<Faculty, UUID>, JpaSpec
         WHERE f.id = :id AND f.delete_ts IS NULL
         """,
         nativeQuery = true)
-    Map<String, Object> findFacultyDetailById(@Param("id") UUID id);
+    FacultyDetailRow findFacultyDetailById(@Param("id") UUID id);
 
     /**
      * Find faculties for export with hard memory limit (defense against unbounded result).
@@ -148,7 +151,7 @@ public interface FacultyRepository extends JpaRepository<Faculty, UUID>, JpaSpec
         LIMIT :limit
         """,
         nativeQuery = true)
-    List<Map<String, Object>> findAllForExport(
+    List<FacultyExportRow> findAllForExport(
         @Param("universityCode") String universityCode,
         @Param("q") String searchQuery,
         @Param("status") Boolean status,
