@@ -8,7 +8,8 @@
 plugins {
     java
     jacoco
-    id("org.springframework.boot") version "4.0.2" apply false
+    // Plugin va BOM versiyasi mos bo'lishi kerak (CLAUDE.md va dependencies BOM 4.0.6)
+    id("org.springframework.boot") version "4.0.6" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
@@ -46,7 +47,7 @@ subprojects {
             // Fix: dependency-management plugin mis-resolves ${project.version} in netty-bom
             if (requested.group == "io.netty") {
                 useVersion("4.2.9.Final")
-                because("Pin Netty to Boot 4.0.2 managed version")
+                because("Pin Netty to Boot 4.0.6 managed version")
             }
         }
     }
