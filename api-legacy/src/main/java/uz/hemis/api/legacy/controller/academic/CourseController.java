@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.academic;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class CourseController {
 
     private final CourseService courseService;
 
+    @Operation(summary = "Barcha fanlar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getAllCourses(
@@ -39,6 +41,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
+    @Operation(summary = "Fanni ID bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<CourseDto>> getCourseById(@PathVariable UUID id) {
@@ -46,6 +49,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(course));
     }
 
+    @Operation(summary = "Fanni kod bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<CourseDto>> getCourseByCode(@PathVariable String code) {
@@ -53,6 +57,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(course));
     }
 
+    @Operation(summary = "OTM bo'yicha fanlar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getCoursesByUniversity(
@@ -63,6 +68,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
+    @Operation(summary = "OTM bo'yicha BARCHA fanlar (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "universityAll")
     public ResponseEntity<ResponseWrapper<List<CourseDto>>> getAllCoursesByUniversity(
@@ -72,6 +78,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(courses));
     }
 
+    @Operation(summary = "Subject bo'yicha fanlar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "subject")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getCoursesBySubject(
@@ -82,6 +89,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
+    @Operation(summary = "Fan nomi bo'yicha qidirish (partial match)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "search")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> searchCoursesByName(
@@ -92,6 +100,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
+    @Operation(summary = "Aktiv fanlar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "active")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getActiveCourses(
@@ -101,6 +110,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
+    @Operation(summary = "Semestr bo'yicha fanlar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "semester")
     public ResponseEntity<ResponseWrapper<PageResponse<CourseDto>>> getCoursesBySemester(
@@ -111,6 +121,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(courses)));
     }
 
+    @Operation(summary = "Yangi fan yaratish", description = "ADMIN yoki OTM_API roli kerak.")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<CourseDto>> createCourse(@Valid @RequestBody CourseDto courseDto) {
@@ -118,6 +129,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
+    @Operation(summary = "Fanni yangilash", description = "ADMIN yoki OTM_API roli kerak.")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<CourseDto>> updateCourse(
@@ -128,6 +140,7 @@ public class CourseController {
         return ResponseEntity.ok(ResponseWrapper.success(updated));
     }
 
+    @Operation(summary = "Fanni soft delete", description = "ADMIN roli kerak. delete_ts qo'yiladi, ma'lumot saqlanadi.")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Void>> deleteCourse(@PathVariable UUID id) {

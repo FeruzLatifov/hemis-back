@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.university;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -80,6 +81,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @Operation(summary = "Barcha OTM ro'yxati", description = "Old-hemis CUBA klient uchun: barcha aktiv 200+ universitetlar (paginatsiyasiz, JSON `data` array).")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllUniversities() {
@@ -103,6 +105,7 @@ public class UniversityController {
      * @param code university code (PK - VARCHAR)
      * @return ResponseWrapper with UniversityDto
      */
+    @Operation(summary = "Kod bo'yicha OTM topish", description = "PK - VARCHAR. CUBA klient va OTM B2B integratsiyasi uchun.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{code}")
     public ResponseEntity<ResponseWrapper<UniversityDto>> getUniversityByCode(@PathVariable String code) {
@@ -120,6 +123,7 @@ public class UniversityController {
      * @param tin Tax Identification Number
      * @return ResponseWrapper with UniversityDto
      */
+    @Operation(summary = "STIR bo'yicha OTM topish", description = "Soliq Identifikatsion Raqami orqali — moliyaviy hisobotlar uchun.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/tin/{tin}")
     public ResponseEntity<ResponseWrapper<UniversityDto>> getUniversityByTin(@PathVariable String tin) {
@@ -138,6 +142,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @Operation(summary = "OTM nomi bo'yicha qidirish", description = "Partial match, case-insensitive. CUBA admin paneli filter uchun.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> searchUniversities(
@@ -160,6 +165,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @Operation(summary = "Faqat aktiv OTM lar", description = "active=true bo'lgan universitetlar (yopilgan/sus filterlash uchun).")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/active")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getActiveUniversities(
@@ -182,6 +188,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @Operation(summary = "Tur bo'yicha OTM lar", description = "Universitet, Institut, Akademiya, Filial — h_university_type kodi.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/type/{typeCode}")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversitiesByType(
@@ -205,6 +212,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @Operation(summary = "Mulkchilik turi bo'yicha OTM lar", description = "Davlat, Xususiy, Aralash — h_ownership kodi.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/ownership/{ownershipCode}")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversitiesByOwnership(
@@ -228,6 +236,7 @@ public class UniversityController {
      * @param pageable pagination parameters
      * @return ResponseWrapper with PageResponse<UniversityDto>
      */
+    @Operation(summary = "Hudud bo'yicha OTM lar", description = "SOATO viloyat kodi (Toshkent, Samarqand, Farg'ona, ...).")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/region/{soatoRegion}")
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversitiesByRegion(
@@ -250,6 +259,7 @@ public class UniversityController {
      * @param parentCode parent university code
      * @return ResponseWrapper with List<UniversityDto>
      */
+    @Operation(summary = "Bosh OTM ning filiallari", description = "Hierarchical structure — parent OTM kodi orqali farzand OTMlar.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/parent/{parentCode}/children")
     public ResponseEntity<ResponseWrapper<List<UniversityDto>>> getChildUniversities(@PathVariable String parentCode) {
@@ -266,6 +276,7 @@ public class UniversityController {
      *
      * @return ResponseWrapper with count
      */
+    @Operation(summary = "Aktiv OTMlar soni", description = "Dashboard statistika uchun count(*) WHERE active=true.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/count/active")
     public ResponseEntity<ResponseWrapper<Long>> countActiveUniversities() {
@@ -289,6 +300,7 @@ public class UniversityController {
      * @param dto university DTO
      * @return ResponseWrapper with created UniversityDto
      */
+    @Operation(summary = "Yangi OTM yaratish", description = "ADMIN roli kerak. Code (PK) takrorlana olmaydi.")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<UniversityDto>> createUniversity(@Valid @RequestBody UniversityDto dto) {
@@ -309,6 +321,7 @@ public class UniversityController {
      * @param dto university DTO
      * @return ResponseWrapper with updated UniversityDto
      */
+    @Operation(summary = "OTM ni to'liq yangilash (PUT)", description = "ADMIN roli kerak. Code (PK) o'zgartirib bo'lmaydi — boshqa fieldlar to'liq replace.")
     @PutMapping("/{code}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<UniversityDto>> updateUniversity(
@@ -332,6 +345,7 @@ public class UniversityController {
      * @param dto university DTO with fields to update
      * @return ResponseWrapper with updated UniversityDto
      */
+    @Operation(summary = "OTM ni qisman yangilash (PATCH)", description = "ADMIN roli kerak. Faqat null bo'lmagan fieldlar yangilanadi.")
     @PatchMapping("/{code}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<UniversityDto>> partialUpdateUniversity(

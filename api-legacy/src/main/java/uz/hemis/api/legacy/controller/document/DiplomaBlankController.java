@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.document;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +72,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks
      */
+    @Operation(summary = "Barcha diplom blanklar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getAllDiplomaBlanks(
@@ -94,6 +96,7 @@ public class DiplomaBlankController {
      * @param id diploma blank ID (UUID)
      * @return diploma blank details
      */
+    @Operation(summary = "Diplom blankni ID bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> getDiplomaBlankById(@PathVariable UUID id) {
@@ -112,6 +115,7 @@ public class DiplomaBlankController {
      * @param blankCode blank code (e.g., "AB 1234567")
      * @return diploma blank details
      */
+    @Operation(summary = "Diplom blankni unique code bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{blankCode}")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> getDiplomaBlankByCode(@PathVariable String blankCode) {
@@ -131,6 +135,7 @@ public class DiplomaBlankController {
      * @param number number (e.g., "1234567")
      * @return diploma blank details
      */
+    @Operation(summary = "Seriya va nomer bo'yicha topish", description = "Seriya (masalan, 'AA') + nomer (masalan, '1234567').")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/series/{series}/number/{number}")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> getDiplomaBlankBySeriesAndNumber(
@@ -153,6 +158,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks for the university
      */
+    @Operation(summary = "OTM bo'yicha diplom blanklar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getDiplomaBlanksByUniversity(
@@ -178,6 +184,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks
      */
+    @Operation(summary = "OTM + status bo'yicha blanklar (paginated)", description = "Statusi: AVAILABLE, ISSUED, DAMAGED, CANCELLED.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "status"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getDiplomaBlanksByUniversityAndStatus(
@@ -204,6 +211,7 @@ public class DiplomaBlankController {
      * @param pageable pagination parameters
      * @return paginated list of diploma blanks
      */
+    @Operation(summary = "OTM + yil bo'yicha blanklar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "year"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaBlankDto>>> getDiplomaBlanksByUniversityAndYear(
@@ -231,6 +239,7 @@ public class DiplomaBlankController {
      * @param blankType blank type (BACHELOR, MASTER, DOCTORATE, etc.)
      * @return list of available diploma blanks
      */
+    @Operation(summary = "Mavjud (AVAILABLE) blanklar OTM va tur bo'yicha", description = "Diplom yozish vaqtida bo'sh blanklarni olish uchun.")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/available", params = {"university", "type"})
     public ResponseEntity<ResponseWrapper<List<DiplomaBlankDto>>> getAvailableDiplomaBlanks(
@@ -252,6 +261,7 @@ public class DiplomaBlankController {
      * @param series series (e.g., "AB")
      * @return list of diploma blanks (ordered by number)
      */
+    @Operation(summary = "Seriya bo'yicha barcha blanklar")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/series/{series}")
     public ResponseEntity<ResponseWrapper<List<DiplomaBlankDto>>> getDiplomaBlanksBySeries(
@@ -278,6 +288,7 @@ public class DiplomaBlankController {
      * @param diplomaBlankDto diploma blank data
      * @return created diploma blank (HTTP 201 CREATED)
      */
+    @Operation(summary = "Yangi diplom blank yaratish", description = "ADMIN roli kerak.")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> createDiplomaBlank(
@@ -303,6 +314,7 @@ public class DiplomaBlankController {
      * @param diplomaBlankDto diploma blank data
      * @return updated diploma blank
      */
+    @Operation(summary = "Diplom blankni yangilash", description = "ADMIN roli kerak.")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> updateDiplomaBlank(
@@ -328,6 +340,7 @@ public class DiplomaBlankController {
      * @param status new status (AVAILABLE, ASSIGNED, ISSUED, DAMAGED, LOST, ANNULLED)
      * @return updated diploma blank
      */
+    @Operation(summary = "Blank statusini yangilash", description = "AVAILABLE → ISSUED, DAMAGED yoki CANCELLED. OTM_API ham yangilashi mumkin.")
     @PutMapping("/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> updateDiplomaBlankStatus(
