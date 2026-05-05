@@ -27,7 +27,12 @@ spring:
       minimum-idle: 2
       connection-timeout: 30000
       idle-timeout: 600000
+      leak-detection-threshold: 60000
       pool-name: HikariPool-Dev
+      data-source-properties:
+        # Hung query protection — dev'da ham (slow query'larni vaqtida tutish uchun).
+        # Prod'da 60s, dev'da uzoqroq qiymat (interactive debugging uchun) — 120s.
+        options: "-c statement_timeout=120000"
 
   # =====================================================
   # Development JPA Configuration

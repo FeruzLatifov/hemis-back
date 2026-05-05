@@ -60,6 +60,10 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
+        # Connection leak detection — agar 60s'dan ortiq connection qaytarilmasa,
+        # Hikari WARN log yozadi va stack trace beradi (debugging uchun).
+        # Production'da connection leak tez-tez sodir bo'lib turadi (try-with-resources unutsa).
+        leak-detection-threshold: 60000
         pool-name: HikariPool-Master
         auto-commit: false
         data-source-properties:
@@ -77,6 +81,7 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
+        leak-detection-threshold: 60000
         pool-name: HikariPool-Replica
         read-only: true
         auto-commit: false
