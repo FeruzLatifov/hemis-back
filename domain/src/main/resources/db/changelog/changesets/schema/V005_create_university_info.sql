@@ -1,17 +1,16 @@
 -- =====================================================
--- V005: UNIVERSITY INFO — organization + university_legal + university_profile
+-- V005: UNIVERSITY INFO — organization + university_profile
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2026-03-23
 -- Purpose: University info extension tables
 --   TABLE 1: organization — yuridik shaxslar registri (TIN UNIQUE)
---   TABLE 2: university_legal — soliq/ro'yxat API dan sync
---   TABLE 3: university_profile — aloqa, ijtimoiy tarmoq, hujjatlar (admin/univer kiritadi)
+--   TABLE 2: university_profile — aloqa, ijtimoiy tarmoq, hujjatlar (admin/univer kiritadi)
 --
 -- Self-contained: only own tables, no cross-file ALTER. Auth (V006) references
 -- organization(id) via INLINE FK from oauth_client.
 --
--- Depends on: V004 employee (director/accountant FK) + legacy hemishe_e_university.
+-- Depends on: legacy hemishe_e_university.
 -- =====================================================
 
 -- =====================================================
@@ -69,114 +68,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_organization_tin
     WHERE deleted_at IS NULL;
 
 -- =====================================================
--- TABLE 2: university_legal — universitet yuridik ma'lumotlari
--- =====================================================
--- 1:1 with hemishe_e_university
--- Tashqi API (172.18.9.171/legalentity/) dan sync qilinadi
--- =====================================================
-CREATE TABLE IF NOT EXISTS university_legal (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    -- ON DELETE CASCADE saqlandi: 1:1 relation, university physical-delete bo'lsa
-    -- (rare, normal flow soft-delete) extension yozuvlar ham bekor qilinadi.
-    -- UNIQUE inline'dan olib tashlandi — partial UNIQUE (pastda) soft-delete'da
-    -- university_code'ni qayta sync qilishga ruxsat beradi.
-    university_code VARCHAR(255) NOT NULL REFERENCES hemishe_e_university(code) ON DELETE CASCADE,
-
-    -- FK to organization registry (TIN UNIQUE). tin kept as API snapshot for historical data.
-    -- ON DELETE SET NULL: tashkilot o'chirilsa, legal info jadvalda qoladi (organization_id NULL)
-    organization_id UUID REFERENCES organization(id) ON DELETE SET NULL,
-
-    -- Company info
-    short_name VARCHAR(500),
-    opf INTEGER,
-    kfs INTEGER,
-    tin VARCHAR(20),
-    oked VARCHAR(20),
-    soogu VARCHAR(20),
-    soogu_registrator VARCHAR(20),
-    registration_date DATE,
-    registration_number VARCHAR(100),
-    reregistration_date DATE,
-    status INTEGER DEFAULT 0,
-    status_updated DATE,
-    vat_number BIGINT,
-    tax_mode INTEGER,
-    taxpayer_type INTEGER,
-    business_type INTEGER,
-    business_fund BIGINT,
-    business_structure INTEGER,
-    avg_employees INTEGER,
-
-    -- Billing address (flat columns for efficient queries)
-    billing_country_code INTEGER,
-    billing_soato VARCHAR(20) REFERENCES hemishe_h_soato(code),
-    billing_street TEXT,
-    billing_postcode VARCHAR(20),
-    billing_cadastre VARCHAR(50),
-
-    -- Shipping addresses (JSONB array)
-    shipping_addresses JSONB,
-
-    -- Director & Accountant
-    -- employee_id = asosiy bog'lanish (PINFL orqali sync da topiladi)
-    -- name/phone/email alohida SAQLANMAYDI — employee jadvalidan JOIN orqali olinadi
-    director_employee_id   UUID REFERENCES employee(id) ON DELETE SET NULL,
-    accountant_employee_id UUID REFERENCES employee(id) ON DELETE SET NULL,
-
-    -- Bank accounts
-    bank_accounts JSONB,
-
-    -- API sync metadata
-    api_raw_response JSONB,
-    synced_at TIMESTAMP,
-
-    -- Audit (AuditableEntity: 7)
-    version INTEGER DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP,
-    updated_by VARCHAR(50),
-    deleted_at TIMESTAMP,
-    deleted_by VARCHAR(50),
-
-    -- Data integrity
-    CONSTRAINT chk_ulegal_status CHECK (status BETWEEN 0 AND 9),
-    CONSTRAINT chk_ulegal_avg_employees CHECK (avg_employees IS NULL OR avg_employees >= 0),
-    CONSTRAINT chk_ulegal_tax_mode CHECK (tax_mode IS NULL OR (tax_mode >= 0 AND tax_mode <= 99)),
-    CONSTRAINT chk_ulegal_taxpayer_type CHECK (taxpayer_type IS NULL OR (taxpayer_type >= 0 AND taxpayer_type <= 99)),
-    CONSTRAINT chk_ulegal_business_type CHECK (business_type IS NULL OR (business_type >= 0 AND business_type <= 99)),
-    CONSTRAINT chk_ulegal_business_structure CHECK (business_structure IS NULL OR (business_structure >= 0 AND business_structure <= 99)),
-    CONSTRAINT chk_ulegal_billing_country CHECK (billing_country_code IS NULL OR (billing_country_code >= 0 AND billing_country_code <= 999))
-);
-
-COMMENT ON TABLE university_legal IS 'University legal entity info from tax/registration API (1:1 with university)';
-COMMENT ON COLUMN university_legal.version IS 'Optimistic locking version (JPA @Version)';
-COMMENT ON COLUMN university_legal.organization_id IS 'FK to organization (TIN UNIQUE registry). tin column kept as API snapshot.';
-COMMENT ON COLUMN university_legal.status IS 'Status code: 0=INACTIVE, 1=ACTIVE, 2=SUSPENDED, 3=LIQUIDATED, 4=UNDER_REORGANIZATION';
-COMMENT ON COLUMN university_legal.tax_mode IS 'Tax regime code (0-99). Classifier reference TBD.';
-COMMENT ON COLUMN university_legal.taxpayer_type IS 'Taxpayer category code (0-99).';
-COMMENT ON COLUMN university_legal.business_type IS 'Business activity type code (0-99).';
-COMMENT ON COLUMN university_legal.business_structure IS 'Organizational structure code (0-99).';
-
-CREATE INDEX IF NOT EXISTS idx_ulegal_tin            ON university_legal(tin) WHERE tin IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_ulegal_organization   ON university_legal(organization_id) WHERE organization_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_ulegal_director_emp   ON university_legal(director_employee_id) WHERE director_employee_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_ulegal_accountant_emp ON university_legal(accountant_employee_id) WHERE accountant_employee_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_ulegal_billing_soato  ON university_legal(billing_soato) WHERE billing_soato IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_ulegal_synced_at      ON university_legal(synced_at);
--- NOTE: `idx_ulegal_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
-
--- Partial UNIQUE — 1:1 active record per university. Soft-deleted university_legal
--- yozuv'i bo'lsa, yangi sync uchun yangi row create qilish mumkin (eski archive sifatida qoladi).
-CREATE UNIQUE INDEX IF NOT EXISTS uq_ulegal_university_code_active
-    ON university_legal(university_code)
-    WHERE deleted_at IS NULL;
-
-COMMENT ON COLUMN university_legal.director_employee_id IS 'Optional FK to employee — linked by PINFL during sync. NULL if person not in employee table.';
-COMMENT ON COLUMN university_legal.accountant_employee_id IS 'Optional FK to employee — linked by PINFL during sync. NULL if person not in employee table.';
-
--- =====================================================
--- TABLE 3: university_profile — aloqa, ijtimoiy tarmoq, hujjatlar
+-- TABLE 2: university_profile — aloqa, ijtimoiy tarmoq, hujjatlar
 -- =====================================================
 -- 1:1 with hemishe_e_university
 -- Admin yoki univer (230 ta universitet) tomonidan kiritiladi/yangilanadi
@@ -247,7 +139,7 @@ CREATE INDEX IF NOT EXISTS idx_uprofile_source ON university_profile(source) WHE
 CREATE INDEX IF NOT EXISTS idx_uprofile_geo    ON university_profile(latitude, longitude) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 -- NOTE: `idx_uprofile_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
 
--- Partial UNIQUE — 1:1 active record per university (same rationale as university_legal).
+-- Partial UNIQUE — 1:1 active record per university (soft-delete-aware).
 CREATE UNIQUE INDEX IF NOT EXISTS uq_uprofile_university_code_active
     ON university_profile(university_code)
     WHERE deleted_at IS NULL;

@@ -9,7 +9,7 @@ databaseChangeLog:
   # `ALTER TABLE ADD CONSTRAINT`. Each migration is self-contained and final.
   #
   # IMPORTANT: Greenfield-safe EMAS!
-  # employee/users/univ_legal use FKs to legacy hemishe_h_* and hemishe_e_university.
+  # employee/users use FKs to legacy hemishe_h_* and hemishe_e_university.
   # =====================================================
 
   - property:
@@ -23,8 +23,7 @@ databaseChangeLog:
   # V002: permission                                (RBAC catalog leaf)
   # V003: position_type + position                  (HR classifiers — HR-foundation)
   # V004: employee + employee_job                   (HR core — references V003 position)
-  # V005: organization + university_legal + university_profile
-  #                                                 (references V004 employee inline)
+  # V005: organization + university_profile         (TIN registry + admin-managed contacts)
   # V006: users + password_history + password_reset_token + oauth_client + oauth_client_role
   #                                                 (employee_id → V004, organization_id → V005, role_id → V001)
   # V007: user_role + role_permission               (RBAC junctions — references V001/V002/V006)
@@ -88,17 +87,17 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V004_create_employee_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V005_create_university_legal
+      id: V005_create_university_info
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "organization + university_legal + university_profile (employee FK inline)"
+      comment: "organization (TIN registry) + university_profile (admin-managed contacts/social/docs)"
       preConditions:
         - onFail: MARK_RAN
-        - not: { tableExists: { tableName: university_legal } }
+        - not: { tableExists: { tableName: organization } }
       changes:
-        - sqlFile: { path: changesets/schema/V005_create_university_legal.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V005_create_university_info.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V005_create_university_legal_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V005_create_university_info_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: V006_create_users
@@ -216,45 +215,6 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V014_create_menus.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/schema/V014_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V015_student_domain_indexes
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Student domain perf indexes — Grade/Attendance per-uni/student, PINFL master uniqueness, keyset paging"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { indexExists: { indexName: idx_grade_university_active } }
-      changes:
-        - sqlFile: { path: changesets/schema/V015_student_domain_indexes.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V015_student_domain_indexes_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V016_student_search_indexes
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Student search indexes — pg_trgm GIN diploma_number, StudentMeta (u_id, _university) race fix"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { indexExists: { indexName: idx_diploma_number_trgm } }
-      changes:
-        - sqlFile: { path: changesets/schema/V016_student_search_indexes.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V016_student_search_indexes_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V017_drop_university_legal
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "DROP university_legal — duplicate data already in hemishe_e_university; on-demand legalentity API; officials via employee_job"
-      preConditions:
-        - onFail: MARK_RAN
-        - tableExists: { tableName: university_legal }
-      changes:
-        - sqlFile: { path: changesets/schema/V017_drop_university_legal.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V017_drop_university_legal_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: tag-schema-complete
@@ -395,6 +355,8 @@ databaseChangeLog:
       id: M002_student_performance_indexes
       author: hemis-team
       logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Index migrations on legacy hemishe_e_* (Student/Grade/Attendance/Diploma/StudentMeta) — pg_trgm + filter + composite + race-fix UNIQUEs"
       changes:
         - sqlFile: { path: changesets/migration/M002_student_performance_indexes.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:

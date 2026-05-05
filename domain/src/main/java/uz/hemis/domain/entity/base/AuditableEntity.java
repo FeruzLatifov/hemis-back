@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Base for main business entities (employee, university_legal, organization, ...).
+ * Base for main business entities (employee, organization, university_profile, ...).
  *
  * <p>Provides 7 audit columns: version, created_at/by, updated_at/by, deleted_at/by.</p>
  * <p>Soft delete: {@code deleted_at IS NULL} = active.</p>
