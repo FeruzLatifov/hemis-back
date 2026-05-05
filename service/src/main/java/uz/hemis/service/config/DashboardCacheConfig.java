@@ -201,6 +201,10 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // reference data (education_type, education_year, course, semester, etc.) rarely changes.
         redisCacheConfigurations.put("legacyClassifierMaps", defaultConfig.entryTtl(Duration.ofHours(24)));
 
+        // Citizenship classifier active-flag check — used by StudentEnrollmentService
+        // for every student-id generation. ~250 countries, closed list, 24h TTL.
+        redisCacheConfigurations.put("citizenshipActive", defaultConfig.entryTtl(Duration.ofHours(24)));
+
         // Create Redis cache manager (L2)
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

@@ -195,7 +195,15 @@ public class StudentMetaService {
      * @throws ValidationException if business validation fails
      */
     @Transactional
-    @CacheEvict(value = "studentMetas", allEntries = true)
+    // Targeted evict — only the new entry's keys (id + uid composite). Avoids
+    // cluster-wide cache thrash on every create. Cache namespace has only 2
+    // key patterns: by id (line 63), by 'uid:'+uid+':'+university (line 81).
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "studentMetas", key = "#result.id", condition = "#result != null"),
+        @CacheEvict(value = "studentMetas",
+                    key = "'uid:' + #result.uId + ':' + #result.university",
+                    condition = "#result != null && #result.uId != null && #result.university != null")
+    })
     public StudentMetaDto create(StudentMetaDto dto) {
         log.info("Creating new student meta for university: {}", dto.getUniversity());
 
@@ -233,7 +241,12 @@ public class StudentMetaService {
      * @throws ValidationException if business validation fails
      */
     @Transactional
-    @CacheEvict(value = "studentMetas", allEntries = true)
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "studentMetas", key = "#id"),
+        @CacheEvict(value = "studentMetas",
+                    key = "'uid:' + #result.uId + ':' + #result.university",
+                    condition = "#result != null && #result.uId != null && #result.university != null")
+    })
     public StudentMetaDto update(UUID id, StudentMetaDto dto) {
         log.info("Updating student meta: {}", id);
 
@@ -266,7 +279,12 @@ public class StudentMetaService {
      * @throws ResourceNotFoundException if not found
      */
     @Transactional
-    @CacheEvict(value = "studentMetas", allEntries = true)
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "studentMetas", key = "#id"),
+        @CacheEvict(value = "studentMetas",
+                    key = "'uid:' + #result.uId + ':' + #result.university",
+                    condition = "#result != null && #result.uId != null && #result.university != null")
+    })
     public StudentMetaDto partialUpdate(UUID id, StudentMetaDto dto) {
         log.info("Partial updating student meta: {}", id);
 
@@ -294,7 +312,11 @@ public class StudentMetaService {
      * @throws ResourceNotFoundException if not found
      */
     @Transactional
-    @CacheEvict(value = "studentMetas", allEntries = true)
+    // softDelete: by-id cache evict only. Composite 'uid:' key evict skipped —
+    // entity's uId/university not accessible in @CacheEvict SpEL (loaded inside method).
+    // Soft-deleted record will be filtered by @SQLRestriction next read; stale 'uid:' entry
+    // refreshes after natural TTL.
+    @CacheEvict(value = "studentMetas", key = "#id")
     public void softDelete(UUID id) {
         log.info("Soft deleting student meta: {}", id);
 
@@ -329,7 +351,12 @@ public class StudentMetaService {
      * @return saved entity
      */
     @Transactional
-    @CacheEvict(value = "studentMetas", allEntries = true)
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "studentMetas", key = "#result.id", condition = "#result != null"),
+        @CacheEvict(value = "studentMetas",
+                    key = "'uid:' + #result.uId + ':' + #result.university",
+                    condition = "#result != null && #result.uId != null && #result.university != null")
+    })
     public StudentMeta saveEntity(StudentMeta entity) {
         return studentMetaRepository.save(entity);
     }

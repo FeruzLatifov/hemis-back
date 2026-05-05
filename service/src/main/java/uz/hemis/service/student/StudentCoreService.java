@@ -302,6 +302,16 @@ public class StudentCoreService {
         // Cross-tenant IDOR protection — same pattern as update().
         tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
 
+        // OWASP A04 — mass assignment fix: server-managed fields IGNORE qilinadi.
+        // Caller (admin panel) bu fieldlarni yuborolmaydi:
+        //   pinfl — only initial create flow can set (PINFL is identity, not editable)
+        //   studentStatus — controlled by enrollment/expel/transfer business flows
+        //   university — transfer flow only (StudentEnrollmentService)
+        //   verified, points — DTM verification result, not user input
+        //   isDuplicate — managed by transfer flow
+        //   id, code, version, createTs, deleteTs — DB-managed audit
+        sanitizeServerManagedFields(studentDto);
+
         studentMapper.partialUpdate(studentDto, existing);
 
         Student updated = studentRepository.save(existing);
@@ -362,6 +372,23 @@ public class StudentCoreService {
         log.warn("Student soft deleted: {} from university: {}", id, student.getUniversity());
 
         return studentMapper.toDto(deleted);
+    }
+
+    /**
+     * Server-managed fields whitelist — OWASP A04 mass assignment defense.
+     * Called from {@link #partialUpdate} to prevent caller from mutating
+     * sensitive fields (pinfl, status, university, verified, etc.) via PATCH body.
+     */
+    private void sanitizeServerManagedFields(StudentDto dto) {
+        if (dto == null) return;
+        dto.setPinfl(null);              // identity — only initial create
+        dto.setStudentStatus(null);      // enrollment/expel/transfer flows
+        dto.setUniversity(null);         // transfer flow only
+        dto.setVerified(null);           // DTM verification result
+        dto.setPoints(null);             // DTM verification result
+        dto.setIsDuplicate(null);        // transfer flow
+        dto.setCode(null);               // generated server-side
+        dto.setVersion(null);            // optimistic locking — Hibernate-managed
     }
 
     @Transactional

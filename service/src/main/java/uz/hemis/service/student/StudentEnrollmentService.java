@@ -37,6 +37,11 @@ public class StudentEnrollmentService {
     private final StudentRepository studentRepository;
     private final StudentLegacyMapper studentLegacyMapper;
     private final JdbcTemplate jdbcTemplate;
+    /**
+     * Citizenship code validator — cached (24h TTL) to avoid per-enrollment
+     * DB lookup. Closed list (~250 countries).
+     */
+    private final CitizenshipValidator citizenshipValidator;
 
     /**
      * Update student information (university transfer)
@@ -217,11 +222,8 @@ public class StudentEnrollmentService {
             return result;
         }
 
-        try {
-            jdbcTemplate.queryForMap(
-                    "SELECT code FROM citizenship WHERE code = ? AND is_active = true",
-                    data.getCitizenship());
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+        // Cached validation — citizenship classifier is closed list (~250 codes).
+        if (!Boolean.TRUE.equals(citizenshipValidator.isActive(data.getCitizenship()))) {
             log.warn("Citizenship code not found: {}", data.getCitizenship());
             result.put("success", false);
             result.put("message", "Citizenship value not available!");
