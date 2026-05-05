@@ -187,7 +187,9 @@ class TeacherCubaServiceTest {
             UUID jobId = UUID.randomUUID();
             EmployeeJobs savedJob = new EmployeeJobs();
             savedJob.setId(jobId);
-            when(employeeJobsRepository.saveAndFlush(any(EmployeeJobs.class))).thenReturn(savedJob);
+            // P1.T4 — addJob endi save() ishlatadi (saveAndFlush emas) + pre-check
+            // existsBy*. Default false (no conflict).
+            when(employeeJobsRepository.save(any(EmployeeJobs.class))).thenReturn(savedJob);
 
             Map<String, Object> jobData = new HashMap<>();
             jobData.put("employee", teacher.getId().toString());

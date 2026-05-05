@@ -9,6 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.JsonNull;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.employee.Teacher;
 import uz.hemis.domain.repository.TeacherRepository;
 
@@ -55,11 +57,13 @@ public class TeacherLegacyService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "Teacher", entityClass = Teacher.class)
     public Teacher save(Teacher entity) {
         return teacherRepository.save(entity);
     }
 
     @Transactional
+    @Audited(action = AuditAction.DELETE, entity = "Teacher", entityClass = Teacher.class)
     public void softDelete(Teacher entity) {
         entity.setDeleteTs(LocalDateTime.now());
         teacherRepository.save(entity);

@@ -225,12 +225,12 @@ class TeacherServiceTest {
     class GetTeacherByPinfl {
 
         @Test
-        @DisplayName("returns success with teacher data when found by PINFL")
+        @DisplayName("returns success with teacher data when found by PINFL (with university scope)")
         void returnsSuccess_whenFoundByPinfl() {
-            when(teacherRepository.findAllByPinfl("12345678901234"))
-                    .thenReturn(java.util.List.of(sampleTeacher));
+            when(teacherRepository.findByPinflAndUniversity("12345678901234", "401"))
+                    .thenReturn(Optional.of(sampleTeacher));
 
-            Map<String, Object> result = teacherService.getTeacherByPinfl("12345678901234");
+            Map<String, Object> result = teacherService.getTeacherByPinfl("12345678901234", "401");
 
             assertThat(result.get("success")).isEqualTo(true);
             assertThat(result.get("code")).isEqualTo("ok");
@@ -240,35 +240,35 @@ class TeacherServiceTest {
             assertThat(data.get("id")).isEqualTo("40124101001");
             assertThat(data.get("pinfl")).isEqualTo("12345678901234");
 
-            verify(teacherRepository).findAllByPinfl("12345678901234");
+            verify(teacherRepository).findByPinflAndUniversity("12345678901234", "401");
         }
 
         @Test
         @DisplayName("falls back to serial number search when not found by PINFL")
         void fallsBackToSerial_whenNotFoundByPinfl() {
-            when(teacherRepository.findAllByPinfl("SERIAL_NUM"))
-                    .thenReturn(java.util.List.of());
-            when(teacherRepository.findAll(any(Example.class)))
-                    .thenReturn(java.util.List.of(sampleTeacher));
+            when(teacherRepository.findByPinflAndUniversity("SERIAL_NUM", "401"))
+                    .thenReturn(Optional.empty());
+            when(teacherRepository.findBySerialNumberAndUniversity("SERIAL_NUM", "401"))
+                    .thenReturn(Optional.of(sampleTeacher));
 
-            Map<String, Object> result = teacherService.getTeacherByPinfl("SERIAL_NUM");
+            Map<String, Object> result = teacherService.getTeacherByPinfl("SERIAL_NUM", "401");
 
             assertThat(result.get("success")).isEqualTo(true);
             assertThat(result.get("code")).isEqualTo("ok");
 
-            verify(teacherRepository).findAllByPinfl("SERIAL_NUM");
-            verify(teacherRepository).findAll(any(Example.class));
+            verify(teacherRepository).findByPinflAndUniversity("SERIAL_NUM", "401");
+            verify(teacherRepository).findBySerialNumberAndUniversity("SERIAL_NUM", "401");
         }
 
         @Test
         @DisplayName("returns not_found when teacher not found anywhere")
         void returnsNotFound_whenNotFoundAnywhere() {
-            when(teacherRepository.findByPinfl("99999999999999"))
+            when(teacherRepository.findByPinflAndUniversity("99999999999999", "401"))
                     .thenReturn(Optional.empty());
-            when(teacherRepository.findOne(any(Example.class)))
+            when(teacherRepository.findBySerialNumberAndUniversity("99999999999999", "401"))
                     .thenReturn(Optional.empty());
 
-            Map<String, Object> result = teacherService.getTeacherByPinfl("99999999999999");
+            Map<String, Object> result = teacherService.getTeacherByPinfl("99999999999999", "401");
 
             assertThat(result.get("success")).isEqualTo(false);
             assertThat(result.get("code")).isEqualTo("not_found");
@@ -277,13 +277,22 @@ class TeacherServiceTest {
         @Test
         @DisplayName("returns bad_request when PINFL is null or empty")
         void returnsBadRequest_whenPinflEmpty() {
-            Map<String, Object> resultNull = teacherService.getTeacherByPinfl(null);
+            Map<String, Object> resultNull = teacherService.getTeacherByPinfl(null, "401");
             assertThat(resultNull.get("success")).isEqualTo(false);
             assertThat(resultNull.get("code")).isEqualTo("bad_request");
 
-            Map<String, Object> resultEmpty = teacherService.getTeacherByPinfl("");
+            Map<String, Object> resultEmpty = teacherService.getTeacherByPinfl("", "401");
             assertThat(resultEmpty.get("success")).isEqualTo(false);
             assertThat(resultEmpty.get("code")).isEqualTo("bad_request");
+        }
+
+        @Test
+        @DisplayName("returns forbidden when university scope is missing")
+        void returnsForbidden_whenScopeMissing() {
+            // OWASP A01 — universityCode majburiy parametr.
+            Map<String, Object> result = teacherService.getTeacherByPinfl("12345678901234", null);
+            assertThat(result.get("success")).isEqualTo(false);
+            assertThat(result.get("code")).isEqualTo("forbidden");
         }
     }
 
@@ -298,7 +307,8 @@ class TeacherServiceTest {
         @Test
         @DisplayName("returns success with teacher data when found by code")
         void returnsSuccess_whenFound() {
-            when(teacherRepository.findOne(any(Example.class)))
+            // P1.T2 — direct findByCode, no Example.of probe.
+            when(teacherRepository.findByCode("40124101001"))
                     .thenReturn(Optional.of(sampleTeacher));
 
             Map<String, Object> result = teacherService.getTeacherByCode("40124101001");
@@ -306,13 +316,13 @@ class TeacherServiceTest {
             assertThat(result.get("success")).isEqualTo(true);
             assertThat(result.get("code")).isEqualTo("ok");
 
-            verify(teacherRepository).findOne(any(Example.class));
+            verify(teacherRepository).findByCode("40124101001");
         }
 
         @Test
         @DisplayName("returns not_found when code not found")
         void returnsNotFound_whenCodeNotFound() {
-            when(teacherRepository.findOne(any(Example.class)))
+            when(teacherRepository.findByCode("NONEXIST"))
                     .thenReturn(Optional.empty());
 
             Map<String, Object> result = teacherService.getTeacherByCode("NONEXIST");

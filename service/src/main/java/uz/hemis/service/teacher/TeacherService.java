@@ -144,10 +144,17 @@ public class TeacherService {
     }
 
     /**
-     * Get teacher by PINFL or serial number
+     * Get teacher by PINFL or serial number — tenant-scoped lookup.
+     *
+     * <p><strong>OWASP A01 fix (audit P1.T1):</strong> avval {@code findAllByPinfl} +
+     * {@code findFirst()} cross-tenant teacher PII'ni qaytarardi (caller boshqa OTM
+     * teacher'ni olishi mumkin edi). Endi {@code universityCode} majburiy parametr.</p>
+     *
+     * <p>Backward compat overload: {@link #getTeacherByPinfl(String)} eski caller'lar
+     * uchun saqlangan va WARN log + scope'siz qaytaradi (faqat caller PINFL'iga ega).</p>
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> getTeacherByPinfl(String pinfl) {
+    public Map<String, Object> getTeacherByPinfl(String pinfl, String universityCode) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         if (pinfl == null || pinfl.isEmpty()) {
@@ -156,16 +163,17 @@ public class TeacherService {
             result.put("data", "Bad request!");
             return result;
         }
+        if (universityCode == null || universityCode.isEmpty()) {
+            result.put("success", false);
+            result.put("code", "forbidden");
+            result.put("data", "University scope required");
+            return result;
+        }
 
-        // Use findAllByPinfl — same PINFL may exist at multiple universities
-        List<Teacher> teachers = teacherRepository.findAllByPinfl(pinfl);
-        Optional<Teacher> teacher = teachers.stream().findFirst();
-        if (!teacher.isPresent()) {
-            // Try by serial number
-            Teacher probe = new Teacher();
-            probe.setSerialNumber(pinfl);
-            List<Teacher> bySerial = teacherRepository.findAll(Example.of(probe));
-            teacher = bySerial.stream().findFirst();
+        Optional<Teacher> teacher = teacherRepository.findByPinflAndUniversity(pinfl, universityCode);
+        if (teacher.isEmpty()) {
+            // Serial number fallback — also tenant-scoped (no Example.of unbounded scan).
+            teacher = teacherRepository.findBySerialNumberAndUniversity(pinfl, universityCode);
         }
 
         if (teacher.isPresent()) {
@@ -182,7 +190,27 @@ public class TeacherService {
     }
 
     /**
-     * Get teacher by code
+     * @deprecated Use {@link #getTeacherByPinfl(String, String)} — cross-tenant safe.
+     * Backward compat wrapper logs SECURITY warning.
+     */
+    @Deprecated(since = "2.5.0", forRemoval = true)
+    @Transactional(readOnly = true)
+    public Map<String, Object> getTeacherByPinfl(String pinfl) {
+        log.warn("SECURITY: getTeacherByPinfl(pinfl) called without universityCode — "
+                + "use getTeacherByPinfl(pinfl, universityCode) for tenant scope.");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", false);
+        result.put("code", "forbidden");
+        result.put("data", "University scope required");
+        return result;
+    }
+
+    /**
+     * Get teacher by code — direct repository lookup (was: JPA Example.of probe).
+     *
+     * <p>Teacher.code unique globally (each university issues its own prefix), so
+     * tenant scope param emas — teacher.code orqali lookup bo'yicha. Lekin teacher
+     * tegishli universityCode tekshiruvi caller (controller @PreAuthorize)'da.</p>
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getTeacherByCode(String code) {
@@ -195,10 +223,7 @@ public class TeacherService {
             return result;
         }
 
-        // JPA Example query - mavjud Repository metodlaridan foydalanish
-        Teacher probe = new Teacher();
-        probe.setCode(code);
-        Optional<Teacher> teacher = teacherRepository.findOne(Example.of(probe));
+        Optional<Teacher> teacher = teacherRepository.findByCode(code);
 
         if (teacher.isPresent()) {
             result.put("success", true);

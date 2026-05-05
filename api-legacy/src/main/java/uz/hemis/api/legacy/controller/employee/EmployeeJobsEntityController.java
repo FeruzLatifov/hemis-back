@@ -105,7 +105,35 @@ public class EmployeeJobsEntityController {
             return ResponseEntity.status(404).body(errorResponse);
         }
 
+        // OWASP A01 BOLA — tenant scope check (audit P1.T3): caller must own the
+        // university the EmployeeJob belongs to (or be admin via JWT claim).
+        if (!isAccessAllowed(entity.get())) {
+            log.warn("SECURITY: cross-tenant EmployeeJob access blocked: id={}, owner_university={}",
+                    entityId, entity.get().getUniversityCode());
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
+
         return ResponseEntity.ok(toMap(entity.get(), returnNulls, view));
+    }
+
+    /**
+     * Resource ownership check — caller's JWT university_code must match the
+     * EmployeeJob's universityCode (or caller is admin: null callerCode → fallback).
+     */
+    private boolean isAccessAllowed(EmployeeJobs entity) {
+        String callerCode = securityHelper.getUniversityCodeFromContext();
+        if (callerCode == null || callerCode.isEmpty()) {
+            // No university scope in JWT → admin (Vazirlik) or system. Allow.
+            return true;
+        }
+        return callerCode.equals(entity.getUniversityCode());
+    }
+
+    private Map<String, Object> forbiddenBody() {
+        Map<String, Object> err = new LinkedHashMap<>();
+        err.put("error", "Forbidden");
+        err.put("details", "Resource belongs to another university");
+        return err;
     }
 
     /**
@@ -173,6 +201,14 @@ public class EmployeeJobsEntityController {
         }
 
         EmployeeJobs entity = existingOpt.get();
+        // OWASP A01 BOLA — tenant scope check.
+        if (!isAccessAllowed(entity)) {
+            log.warn("SECURITY: cross-tenant EmployeeJob update blocked: id={}", entityId);
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
+        // Mass-assignment defense — body cannot relocate the job to another OTM.
+        body.remove("universityCode");
+        body.remove("_university");
         updateFromMap(entity, body);
 
         EmployeeJobs saved = employeeJobsService.save(entity);
@@ -223,6 +259,12 @@ public class EmployeeJobsEntityController {
             errorResponse.put("error", "Entity not found");
             errorResponse.put("details", "Entity " + ENTITY_NAME + " with id " + entityId + " not found");
             return ResponseEntity.status(404).body(errorResponse);
+        }
+
+        // OWASP A01 BOLA — tenant scope check.
+        if (!isAccessAllowed(entity.get())) {
+            log.warn("SECURITY: cross-tenant EmployeeJob delete blocked: id={}", entityId);
+            return ResponseEntity.status(403).body(forbiddenBody());
         }
 
         employeeJobsService.delete(entity.get());

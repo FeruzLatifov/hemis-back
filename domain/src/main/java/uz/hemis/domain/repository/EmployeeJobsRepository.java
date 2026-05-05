@@ -41,4 +41,26 @@ public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID
     List<EmployeeJobs> findByEmployeePinfl(@Param("pinfl") String pinfl);
 
     Page<EmployeeJobs> findByUniversityCode(String universityCode, Pageable pageable);
+
+    /**
+     * Concurrent addJob race detection — boolean exists (audit P1.T4).
+     *
+     * <p>Used by {@code TeacherCubaService.addJob} pre-check: if employee already has
+     * a current (active, soft-not-deleted) job at the same university+position,
+     * reject the new request before save.</p>
+     */
+    boolean existsByEmployeeIdAndUniversityCodeAndPositionCodeAndIsCurrentAndDeletedAtIsNull(
+            UUID employeeId,
+            String universityCode,
+            String positionCode,
+            boolean isCurrent);
+
+    /**
+     * Convenience overload — pre-check assumes isCurrent=true.
+     */
+    default boolean existsByEmployeeIdAndUniversityCodeAndPositionCodeAndIsCurrentAndDeletedAtIsNull(
+            UUID employeeId, String universityCode, String positionCode) {
+        return existsByEmployeeIdAndUniversityCodeAndPositionCodeAndIsCurrentAndDeletedAtIsNull(
+                employeeId, universityCode, positionCode, true);
+    }
 }

@@ -358,6 +358,16 @@ public interface TeacherRepository extends JpaRepository<Teacher, UUID> {
     );
 
     /**
+     * Tenant-scoped serial number lookup — PINFL fallback path
+     * (audit P1.T1: cross-tenant scope fix).
+     */
+    @Query("SELECT t FROM Teacher t WHERE t.serialNumber = :serialNumber AND t.university = :universityCode")
+    java.util.Optional<Teacher> findBySerialNumberAndUniversity(
+            @Param("serialNumber") String serialNumber,
+            @Param("universityCode") String universityCode
+    );
+
+    /**
      * Count teachers by code prefix (for ID generation)
      *
      * <p><strong>Use case:</strong> Generating unique teacher ID codes</p>

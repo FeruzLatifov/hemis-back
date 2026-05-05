@@ -218,8 +218,29 @@ public class TeacherCubaService {
         entity.setDecreeDate(parseDate(job.get("decreeDate")));
         entity.setDecreeNumber(job.get("decreeNumber") != null ? job.get("decreeNumber").toString() : null);
 
+        // OWASP A04 — concurrent addJob race condition fix (audit P1.T4).
+        // Avval ikki concurrent POST same employee+university+department uchun
+        // ikki "is_current=true" yozuv yarata olardi (DB constraint qachon
+        // mavjud emas yoki partial unique). Endi pre-check + saveAndFlush.
+        // Eng kuchli yechim: pessimistic lock yoki advisory lock — hozircha
+        // existing-row check + DB constraint reliance (defense-in-depth).
+        if (Boolean.TRUE.equals(entity.getIsCurrent())) {
+            boolean conflict = employeeJobsRepository.existsByEmployeeIdAndUniversityCodeAndPositionCodeAndIsCurrentAndDeletedAtIsNull(
+                    employeeId,
+                    entity.getUniversityCode(),
+                    entity.getPositionCode());
+            if (conflict) {
+                Map<String, Object> error = new LinkedHashMap<>();
+                error.put("success", false);
+                error.put("message", "Xodimda bunday faol lavozim allaqachon mavjud");
+                return error;
+            }
+        }
+
         try {
-            EmployeeJobs saved = employeeJobsRepository.saveAndFlush(entity);
+            // save() — Hibernate batches; saveAndFlush'ni olib tashladim (P1.F: data
+            // consistency — partial flush + outer rollback senariosi).
+            EmployeeJobs saved = employeeJobsRepository.save(entity);
             log.info("Job created: id={}, employee={}", saved.getId(), employeeId);
 
             Map<String, Object> result = new LinkedHashMap<>();
@@ -230,11 +251,11 @@ public class TeacherCubaService {
 
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             log.warn("Constraint violation on addJob: {}", e.getMessage());
-            // Old-hemis format: {success: false, message: "Xodimda bunday lavozim mavjud", data: error_details}
+            // OWASP A05 fix: don't echo internal constraint name (schema info disclosure).
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("success", false);
             error.put("message", "Xodimda bunday lavozim mavjud");
-            error.put("data", e.getMostSpecificCause().getMessage());
+            error.put("data", "Constraint violation");
             return error;
         }
     }

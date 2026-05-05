@@ -406,7 +406,16 @@ public class CubaTeacherServiceController {
     ) {
         log.info("GET /app/rest/v2/services/teacher/get - pinfl={}",
                 uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl));
-        Map<String, Object> result = teacherService.getTeacherByPinfl(pinfl);
+        // OWASP A01 — tenant scope from JWT (no fallback "520").
+        String universityCode = getUniversityCodeFromContext();
+        if (universityCode == null) {
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("success", false);
+            err.put("code", "forbidden");
+            err.put("data", "University scope required");
+            return ResponseEntity.status(403).body(err);
+        }
+        Map<String, Object> result = teacherService.getTeacherByPinfl(pinfl, universityCode);
         return ResponseEntity.ok(result);
     }
 
