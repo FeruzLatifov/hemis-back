@@ -316,7 +316,7 @@ databaseChangeLog:
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
-      comment: "Translations for /institutions/universities pages (127 keys × 4 languages)"
+      comment: "Translations for /institutions/universities pages (~115 keys × 4 languages)"
       changes:
         - sqlFile: { path: changesets/seed/S009_seed_universities_translations.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
