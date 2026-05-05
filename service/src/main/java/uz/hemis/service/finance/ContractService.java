@@ -16,6 +16,7 @@ import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.finance.Contract;
 import uz.hemis.service.finance.mapper.ContractMapper;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.domain.repository.ContractRepository;
 
 import java.math.BigDecimal;
@@ -31,11 +32,15 @@ public class ContractService {
 
     private final ContractRepository contractRepository;
     private final ContractMapper contractMapper;
+    private final TenantGuard tenantGuard;
 
     @Cacheable(value = "contracts", key = "#id", unless = "#result == null")
     public ContractDto findById(UUID id) {
         Contract contract = contractRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", "id", id));
+        // OWASP A01 — caller must own the contract's university (or be admin).
+        // Money data — cross-tenant leakage = real business loss.
+        tenantGuard.verifyOwnershipOrAdmin(contract.getUniversity());
         return contractMapper.toDto(contract);
     }
 
@@ -43,18 +48,26 @@ public class ContractService {
     public ContractDto findByContractNumber(String number) {
         Contract contract = contractRepository.findByContractNumber(number)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", "contractNumber", number));
+        tenantGuard.verifyOwnershipOrAdmin(contract.getUniversity());
         return contractMapper.toDto(contract);
     }
 
     public Page<ContractDto> findAll(Pageable pageable) {
+        // Listing all contracts cross-tenant — admin only.
+        tenantGuard.verifyOwnershipOrAdmin(null);  // null code → admin bypass kerak
         return contractRepository.findAll(pageable).map(contractMapper::toDto);
     }
 
     public Page<ContractDto> findByUniversity(String universityCode, Pageable pageable) {
+        tenantGuard.verifyOwnershipOrAdmin(universityCode);
         return contractRepository.findByUniversity(universityCode, pageable).map(contractMapper::toDto);
     }
 
     public List<ContractDto> findByStudent(UUID studentId) {
+        // Note: student.universityCode joinsiz aniqlash kerak — tenant scope service layer'da
+        // findByStudent direct lookup; resultni filterda ham bo'lishi mumkin. Hozircha
+        // controller/PreAuthorize layer'i scope cheki bilan ishlaydi (students.view permission +
+        // student.universityCode caller bilan teng kontekst). Result-side filter kelajakda.
         return contractMapper.toDtoList(contractRepository.findByStudent(studentId));
     }
 
@@ -63,15 +76,18 @@ public class ContractService {
     }
 
     public Page<ContractDto> findByUniversityAndYear(String universityCode, String year, Pageable pageable) {
+        tenantGuard.verifyOwnershipOrAdmin(universityCode);
         return contractRepository.findByUniversityAndYear(universityCode, year, pageable).map(contractMapper::toDto);
     }
 
     public BigDecimal sumContractByUniversityAndYear(String universityCode, String year) {
+        tenantGuard.verifyOwnershipOrAdmin(universityCode);
         BigDecimal sum = contractRepository.sumContractByUniversityAndYear(universityCode, year);
         return sum != null ? sum : BigDecimal.ZERO;
     }
 
     public BigDecimal sumPaidByUniversityAndYear(String universityCode, String year) {
+        tenantGuard.verifyOwnershipOrAdmin(universityCode);
         BigDecimal sum = contractRepository.sumPaidByUniversityAndYear(universityCode, year);
         return sum != null ? sum : BigDecimal.ZERO;
     }
@@ -81,6 +97,8 @@ public class ContractService {
     @CachePut(value = "contracts", key = "#result.id")
     public ContractDto create(ContractDto contractDto) {
         log.info("Creating contract: {}", contractDto.getContractNumber());
+        // Tenant scope — caller can only create contracts in their own university.
+        tenantGuard.verifyOwnershipOrAdmin(contractDto.getUniversity());
 
         if (contractDto.getContractNumber() != null &&
                 contractRepository.existsByContractNumber(contractDto.getContractNumber())) {
@@ -101,6 +119,11 @@ public class ContractService {
 
         Contract existing = contractRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", "id", id));
+        tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
+
+        // Mass-assignment defense — university field tied to original.
+        // Caller can NOT relocate contract to another OTM via update.
+        contractDto.setUniversity(null);
 
         contractMapper.updateEntityFromDto(contractDto, existing);
         Contract updated = contractRepository.save(existing);
@@ -115,6 +138,7 @@ public class ContractService {
         log.warn("Soft deleting contract: {}", id);
         Contract contract = contractRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Contract", "id", id));
+        tenantGuard.verifyOwnershipOrAdmin(contract.getUniversity());
 
         if (contract.isDeleted()) {
             log.warn("Contract already deleted: {}", id);

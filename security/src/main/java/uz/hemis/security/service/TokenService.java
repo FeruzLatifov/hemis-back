@@ -140,7 +140,9 @@ public class TokenService {
                 .expiresAt(expiry)                        // Expires at: now + 30 days
                 .subject(userId)                          // ✅ Subject: userId (UUID string)
                 .claim("username", userDetails.getUsername())  // Username claim (for display)
-                .claim("full_name", fullName != null ? fullName : "")  // Snapshot — audit log uchun
+                // OWASP A09 — `full_name` claim REMOVED. Token leaks PII to localStorage,
+                // browser history, proxy/Sentry logs (Bearer often logged). 1.15M users
+                // continuous PII surface. Frontend `/api/v1/web/auth/me` endpoint orqali oladi.
                 .claim("scope", "rest-api")              // Scope claim (OAuth2)
                 .build();
 
@@ -228,12 +230,7 @@ public class TokenService {
 
             java.util.UUID userId = java.util.UUID.fromString(userIdString);
             String username = jwt.getClaimAsString("username");  // Optional (for logging)
-            // Refresh paytida fullName ni qayta o'qiymiz — user ismini o'zgartirgan bo'lishi mumkin
-            String fullName = username != null
-                    ? userIdentificationPort.getUserInfoByUsername(username)
-                            .map(uz.hemis.common.port.security.UserIdentificationPort.UserInfo::fullName)
-                            .orElse(null)
-                    : null;
+            // OWASP A09 — fullName JWT'dan olib tashlandi (PII leak fix). Frontend /me orqali oladi.
 
             log.debug("Refreshing token for userId: {} (username: {})", userId, username);
 
@@ -250,7 +247,7 @@ public class TokenService {
                     .expiresAt(accessExpiry)
                     .subject(userId.toString())  // ✅ userId (UUID)
                     .claim("username", username)  // Username (for display)
-                    .claim("full_name", fullName != null ? fullName : "")  // Snapshot — audit log uchun
+                    // OWASP A09 — full_name removed (frontend /me endpoint orqali oladi).
                     .claim("scope", "rest-api")
                     .build();
 

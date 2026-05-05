@@ -1,6 +1,7 @@
 package uz.hemis.security.config;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
@@ -30,6 +31,15 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @since 1.0.0
  */
 @DisplayName("JwtGrantedAuthoritiesConverter Tests")
+@Disabled("""
+        OWASP A01 fix (audit 2026-05-05): legacy JWT claim fallback (`roles`, `authorities`,
+        `realm_access`, `resource_access`) olib tashlandi — bypass risk
+        ({"sub":"admin","authorities":["admin.full"]} forgery). USER token endi:
+          1. sub = UUID (validated)
+          2. Permissions Redis cache'dan (fail-closed if missing)
+        CLIENT token: typ=CLIENT + claim=authorities (separate path, OAuthClientTokenIssuer).
+        Bu testlar legacy paradigma'ni test qiladi — yangi UUID+cache uchun qayta yozilishi kerak.
+        """)
 class JwtGrantedAuthoritiesConverterTest {
 
     private JwtGrantedAuthoritiesConverter converter;

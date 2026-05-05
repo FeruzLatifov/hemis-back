@@ -147,51 +147,42 @@ public class HybridUserDetailsService implements UserDetailsService, UserDetails
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("🔐 HYBRID AUTH: Attempting to load user: {}", username);
+        // OWASP A07 — username enumeration via log levels yopildi.
+        // Avval: INFO/WARN level + username + system origin (NEW/OLD/not-found) →
+        // anyone with log access enumerated 340 sec_user + 339 users namespace.
+        // Endi: structured DEBUG only + sanitized fallback log line.
+        String safeUsername = sanitizeForLog(username);
+        log.debug("Hybrid auth: load attempt for {}", safeUsername);
 
-        // ========================================
-        // STEP 1: Try NEW system (users table)
-        // ========================================
+        // STEP 1: NEW system (users)
         try {
-            log.debug("→ Trying NEW system (users table)...");
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-
-            log.info("✅ SUCCESS - NEW system: User '{}' found in users table (authorities: {})",
-                    username,
-                    userDetails.getAuthorities().size());
-
+            log.debug("Hybrid auth: NEW system match for {} (authorities: {})",
+                    safeUsername, userDetails.getAuthorities().size());
             return userDetails;
-
-        } catch (UsernameNotFoundException e) {
-            // User not found in new system, continue to old system fallback
-            log.debug("→ User '{}' not found in NEW system, trying fallback to OLD system...", username);
+        } catch (UsernameNotFoundException ignored) {
+            // continue to legacy fallback (silent)
         }
 
-        // ========================================
-        // STEP 2: Fallback to OLD system (sec_user table)
-        // ========================================
+        // STEP 2: OLD system (sec_user)
         try {
-            log.debug("→ Trying OLD system (sec_user table)...");
             UserDetails userDetails = secUserDetailsService.loadUserByUsername(username);
-
-            log.warn("⚠️  FALLBACK - OLD system: User '{}' found in sec_user table (authorities: {})",
-                    username,
-                    userDetails.getAuthorities().size());
-
-            log.warn("📋 ACTION REQUIRED: Migrate user '{}' to new system", username);
-
+            log.debug("Hybrid auth: OLD system match for {} (authorities: {})",
+                    safeUsername, userDetails.getAuthorities().size());
             return userDetails;
-
-        } catch (UsernameNotFoundException e) {
-            // User not found in old system either
-            log.error("❌ FAILURE: User '{}' not found in both NEW and OLD systems", username);
+        } catch (UsernameNotFoundException ignored) {
+            // user not found in either system — generic auth failure
         }
 
-        // ========================================
-        // STEP 3: User not found in either system
-        // ========================================
-        log.error("🚫 AUTHENTICATION FAILED: User '{}' does not exist", username);
-        throw new UsernameNotFoundException("User not found: " + username);
+        // Generic auth failure log — no system origin disclosure (DEBUG only).
+        log.debug("Authentication failed: user not found ({})", safeUsername);
+        throw new UsernameNotFoundException("Authentication failed");
+    }
+
+    /** Strip CR/LF from username before logging — log forging defense (CWE-117). */
+    private static String sanitizeForLog(String username) {
+        if (username == null) return "null";
+        return username.replaceAll("[\\r\\n\\t]", "_");
     }
 
     // =====================================================

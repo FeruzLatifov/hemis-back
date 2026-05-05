@@ -102,7 +102,14 @@ public class FinanceEntityLegacyService {
         }
         if (map.containsKey("summa")) {
             Object val = map.get("summa");
-            if (val != null) entity.setSumma(Double.parseDouble(val.toString()));
+            // Parse via BigDecimal + HALF_UP rounding — preserves money precision before
+            // CUBA-legacy DB column (double precision, FROZEN) silently truncates.
+            // Eski Double.parseDouble("123.456789") IEEE-754 drift; BigDecimal'da 123.46.
+            if (val != null) {
+                java.math.BigDecimal summa = new java.math.BigDecimal(val.toString())
+                        .setScale(2, java.math.RoundingMode.HALF_UP);
+                entity.setSumma(summa.doubleValue());
+            }
         }
         if (map.containsKey("localId")) {
             Object val = map.get("localId");

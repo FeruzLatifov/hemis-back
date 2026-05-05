@@ -69,19 +69,18 @@ public class LegacyPasswordEncoder implements PasswordEncoder {
             return matchesCubaPbkdf2(rawPassword, encodedPassword);
         }
 
-        // 3. Check if MD5 hash (32-char hex)
-        if (encodedPassword.length() == 32 && isHex(encodedPassword)) {
-            log.debug("Using CUBA MD5 encoder for password verification");
-            return matchesMd5(rawPassword, encodedPassword);
+        // 3. Legacy MD5/SHA-1 hashes — REMOVED (OWASP A02 — explicitly forbidden in 2025).
+        // Plain MD5 (32-char hex) and SHA-1 (40-char hex) hashes are vulnerable to rainbow
+        // table attacks — a leaked DB dump = 100% credential compromise. Detection is
+        // retained only to log security events; matching always returns false.
+        if ((encodedPassword.length() == 32 || encodedPassword.length() == 40)
+                && isHex(encodedPassword)) {
+            log.warn("SECURITY: Legacy {} hash detected — rejected. User must reset password.",
+                    encodedPassword.length() == 32 ? "MD5" : "SHA-1");
+            return false;
         }
 
-        // 4. Check if SHA-1 hash (40-char hex)
-        if (encodedPassword.length() == 40 && isHex(encodedPassword)) {
-            log.debug("Using CUBA SHA-1 encoder for password verification");
-            return matchesSha1(rawPassword, encodedPassword);
-        }
-
-        // 5. Unknown format
+        // 4. Unknown format
         log.error("Unknown password format (length={}, prefix={})",
                 encodedPassword.length(),
                 encodedPassword.substring(0, Math.min(10, encodedPassword.length())));
@@ -103,62 +102,11 @@ public class LegacyPasswordEncoder implements PasswordEncoder {
     }
 
     // =====================================================
-    // MD5 Verification (CUBA 7.x Default)
+    // MD5/SHA-1 Verification — REMOVED (OWASP A02 — 2025)
     // =====================================================
-
-    /**
-     * Verify password against CUBA MD5 format
-     *
-     * <p>CUBA Platform 7.x default encryption: plain MD5 hash</p>
-     * <p>Format: 32-character lowercase hexadecimal string</p>
-     *
-     * @param rawPassword plain text password
-     * @param encodedPassword MD5 hex hash (32 chars)
-     * @return true if password matches
-     */
-    private boolean matchesMd5(CharSequence rawPassword, String encodedPassword) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hashBytes = md.digest(rawPassword.toString().getBytes());
-            String computedHash = HexFormat.of().formatHex(hashBytes);
-
-            boolean matches = encodedPassword.equalsIgnoreCase(computedHash);
-            log.debug("MD5 password match: {}", matches);
-            return matches;
-        } catch (NoSuchAlgorithmException e) {
-            log.error("MD5 algorithm not available: {}", e.getMessage());
-            return false;
-        }
-    }
-
-    // =====================================================
-    // SHA-1 Verification (Older CUBA versions)
-    // =====================================================
-
-    /**
-     * Verify password against CUBA SHA-1 format
-     *
-     * <p>Older CUBA Platform versions used SHA-1 hash</p>
-     * <p>Format: 40-character lowercase hexadecimal string</p>
-     *
-     * @param rawPassword plain text password
-     * @param encodedPassword SHA-1 hex hash (40 chars)
-     * @return true if password matches
-     */
-    private boolean matchesSha1(CharSequence rawPassword, String encodedPassword) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-1");
-            byte[] hashBytes = md.digest(rawPassword.toString().getBytes());
-            String computedHash = HexFormat.of().formatHex(hashBytes);
-
-            boolean matches = encodedPassword.equalsIgnoreCase(computedHash);
-            log.debug("SHA-1 password match: {}", matches);
-            return matches;
-        } catch (NoSuchAlgorithmException e) {
-            log.error("SHA-1 algorithm not available: {}", e.getMessage());
-            return false;
-        }
-    }
+    // Plain MD5/SHA-1 hashes are vulnerable to rainbow tables. Old CUBA users
+    // with these hashes must reset password (force flow on next login).
+    // Detection in matches() above logs a SECURITY warning but always returns false.
 
     // =====================================================
     // PBKDF2 Verification (CUBA Platform alternative)

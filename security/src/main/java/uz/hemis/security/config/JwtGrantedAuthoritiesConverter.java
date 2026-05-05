@@ -127,17 +127,20 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
             return List.of();
         }
 
-        // ✅ NEW: Parse userId as UUID
+        // OWASP A01 — Strict UUID-only sub for USER tokens. Legacy fallback REMOVED:
+        // attacker-controlled `roles`/`authorities`/`realm_access` claims (combined with
+        // leaked HS256 secret yoki internal forgery) berishi mumkin edi
+        // `{"sub":"admin","authorities":["admin.full"]}` → bypass Redis cache.
         java.util.UUID userId;
         try {
             userId = java.util.UUID.fromString(userIdString);
         } catch (IllegalArgumentException e) {
-            log.warn("JWT 'sub' claim is not a valid UUID: {} - falling back to legacy mode", userIdString);
-            // Fallback to legacy JWT claims extraction (in case it's username)
-            return extractLegacyAuthorities(jwt);
+            log.warn("SECURITY: JWT USER token with non-UUID 'sub' rejected: {}",
+                    userIdString.length() > 32 ? userIdString.substring(0, 32) + "..." : userIdString);
+            return List.of();
         }
 
-        // ✅ NEW: Load permissions from Redis cache (or DB)
+        // Load permissions from Redis cache (DB fallback inside cache service)
         if (permissionCacheService != null) {
             try {
                 Set<String> permissions = permissionCacheService.getUserPermissions(userId);
@@ -149,17 +152,20 @@ public class JwtGrantedAuthoritiesConverter implements Converter<Jwt, Collection
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
                 }
-
+                // Empty/missing cache → empty authorities (no JWT-claim fallback).
+                log.warn("SECURITY: No permissions in cache for userId: {} — returning empty.", userId);
+                return List.of();
             } catch (Exception e) {
                 log.error("Failed to load permissions from cache for userId: {} - {}", userId, e.getMessage());
-                // Fall through to legacy JWT claims extraction
+                // Cache failure → empty authorities (fail-closed). Avval extractLegacyAuthorities
+                // bypass beruvchi edi → endi taqiqlangan.
+                return List.of();
             }
-        } else {
-            log.debug("UserPermissionCacheService not available - using legacy JWT claims");
         }
 
-        // ⚠️ FALLBACK: Legacy JWT claims extraction (for backward compatibility)
-        return extractLegacyAuthorities(jwt);
+        // No cache service configured → no authorities (fail-closed).
+        log.error("SECURITY: UserPermissionCacheService not configured — denying authorities.");
+        return List.of();
     }
 
     /**

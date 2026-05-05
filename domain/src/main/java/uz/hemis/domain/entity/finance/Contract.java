@@ -5,6 +5,7 @@ import uz.hemis.domain.entity.student.Student;
 import uz.hemis.domain.entity.university.University;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -59,12 +60,17 @@ public class Contract extends BaseEntity {
     @Column(name = "_contract_type", length = 32)
     private String contractType;
 
+    /** Total contract amount — must be ≥ 0 (refund flow handled by separate negative-adjustment entry). */
     @Column(name = "contract_sum", precision = 15, scale = 2)
+    @DecimalMin(value = "0.00", message = "contractSum must be non-negative")
     private BigDecimal contractSum;
 
+    /** Paid amount — must be ≥ 0 and ≤ contractSum (enforced by {@link #validateInvariants}). */
     @Column(name = "paid_sum", precision = 15, scale = 2)
+    @DecimalMin(value = "0.00", message = "paidSum must be non-negative")
     private BigDecimal paidSum;
 
+    /** Remaining = contractSum - paidSum (auto-recomputed in {@link #validateInvariants}). */
     @Column(name = "remaining_sum", precision = 15, scale = 2)
     private BigDecimal remainingSum;
 
@@ -104,5 +110,37 @@ public class Contract extends BaseEntity {
     public boolean isFullyPaid() {
         if (contractSum == null || paidSum == null) return false;
         return paidSum.compareTo(contractSum) >= 0;
+    }
+
+    /**
+     * Money invariant guard — runs before INSERT/UPDATE.
+     *
+     * <p>Enforces: {@code paidSum >= 0}, {@code contractSum >= 0},
+     * {@code paidSum <= contractSum}, {@code remainingSum = contractSum - paidSum}.
+     * Auto-computes {@code remainingSum} if caller didn't set it (or set inconsistently).</p>
+     *
+     * <p>Throws {@link IllegalStateException} on violation — caught by
+     * {@code @ControllerAdvice} and translated to HTTP 422.</p>
+     */
+    @PrePersist
+    @PreUpdate
+    private void validateInvariants() {
+        if (contractSum == null) return;
+        if (contractSum.signum() < 0) {
+            throw new IllegalStateException("Contract.contractSum must be >= 0, was: " + contractSum);
+        }
+        if (paidSum != null) {
+            if (paidSum.signum() < 0) {
+                throw new IllegalStateException("Contract.paidSum must be >= 0, was: " + paidSum);
+            }
+            if (paidSum.compareTo(contractSum) > 0) {
+                throw new IllegalStateException("Contract.paidSum (" + paidSum
+                        + ") must not exceed contractSum (" + contractSum + ")");
+            }
+            // Auto-derive remainingSum — single source of truth.
+            remainingSum = contractSum.subtract(paidSum);
+        } else if (remainingSum == null) {
+            remainingSum = contractSum;
+        }
     }
 }

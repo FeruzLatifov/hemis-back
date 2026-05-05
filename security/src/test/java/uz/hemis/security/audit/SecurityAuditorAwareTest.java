@@ -41,33 +41,36 @@ class SecurityAuditorAwareTest {
     }
 
     @Test
-    void getCurrentAuditor_whenNoAuthentication_returnsEmpty() {
+    void getCurrentAuditor_whenNoAuthentication_returnsSystem() {
+        // OWASP A09 — fail-safe: never null. Anonymous → "SYSTEM" marker for compliance.
         Optional<String> auditor = auditorAware.getCurrentAuditor();
 
-        assertFalse(auditor.isPresent());
+        assertTrue(auditor.isPresent());
+        assertEquals("SYSTEM", auditor.get());
     }
 
     @Test
-    void getCurrentAuditor_whenAnonymous_returnsEmpty() {
+    void getCurrentAuditor_whenAnonymous_returnsSystem() {
         var auth = new AnonymousAuthenticationToken("key", "anonymousUser",
                 List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         Optional<String> auditor = auditorAware.getCurrentAuditor();
 
-        assertFalse(auditor.isPresent());
+        assertTrue(auditor.isPresent());
+        assertEquals("SYSTEM", auditor.get());
     }
 
     @Test
-    void getCurrentAuditor_whenNotAuthenticated_returnsEmpty() {
+    void getCurrentAuditor_whenNotAuthenticated_returnsSystem() {
         var auth = new UsernamePasswordAuthenticationToken("user", "password");
-        // Not authenticated (no authorities set, isAuthenticated depends on implementation)
         auth.setAuthenticated(false);
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         Optional<String> auditor = auditorAware.getCurrentAuditor();
 
-        assertFalse(auditor.isPresent());
+        assertTrue(auditor.isPresent());
+        assertEquals("SYSTEM", auditor.get());
     }
 
     @Test
@@ -83,11 +86,12 @@ class SecurityAuditorAwareTest {
     }
 
     @Test
-    void getCurrentAuditor_whenNullContext_returnsEmpty() {
+    void getCurrentAuditor_whenNullContext_returnsSystem() {
         SecurityContextHolder.getContext().setAuthentication(null);
 
         Optional<String> auditor = auditorAware.getCurrentAuditor();
 
-        assertFalse(auditor.isPresent());
+        assertTrue(auditor.isPresent());
+        assertEquals("SYSTEM", auditor.get());
     }
 }

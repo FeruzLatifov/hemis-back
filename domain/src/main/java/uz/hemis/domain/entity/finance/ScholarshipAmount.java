@@ -38,6 +38,17 @@ public class ScholarshipAmount extends BaseEntity {
     @Column(name = "month_")
     private LocalDate month;
 
+    /**
+     * Monthly scholarship payment amount (UZS).
+     *
+     * <p><strong>WARNING:</strong> CUBA legacy DB column is {@code double precision}
+     * (FROZEN schema — alter taqiq). Java field type tied to DB. To preserve precision,
+     * caller (FinanceEntityLegacyService) parses input via {@link BigDecimal} +
+     * {@code setScale(2, HALF_UP)} before {@link #setSumma(Double)} converts.</p>
+     *
+     * <p><strong>Future migration:</strong> Liquibase {@code ALTER COLUMN summa TYPE
+     * numeric(15,2)} once 224 OTM CUBA installations are decommissioned.</p>
+     */
     @Column(name = "summa")
     private Double summa;
 
