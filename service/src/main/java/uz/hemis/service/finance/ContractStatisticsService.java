@@ -6,11 +6,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.finance.ContractStatistics;
-import uz.hemis.domain.entity.university.University;
-import uz.hemis.domain.entity.university.UniversityDepartment;
 import uz.hemis.domain.repository.ContractStatisticsRepository;
-import uz.hemis.domain.repository.UniversityDepartmentRepository;
-import uz.hemis.domain.repository.UniversityRepository;
+import uz.hemis.service.legacy.LegacyClassifierMapLoader;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,9 +37,12 @@ public class ContractStatisticsService {
     private static final DateTimeFormatter DATETIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     private final ContractStatisticsRepository repository;
-    private final UniversityRepository universityRepository;
-    private final UniversityDepartmentRepository universityDepartmentRepository;
     private final JdbcTemplate jdbcTemplate;
+    /**
+     * Cached classifier nested-map loader — avoids 7+ DB roundtrips per CUBA response row.
+     * Each {@code build*Map} method below is now a thin delegate to the cacheable loader.
+     */
+    private final LegacyClassifierMapLoader classifierMapLoader;
 
     /**
      * Submit contract statistics (OLD-HEMIS Compatible)
@@ -217,207 +217,37 @@ public class ContractStatisticsService {
         return map;
     }
 
+    // =====================================================
+    // Classifier nested maps — delegated to LegacyClassifierMapLoader (cached, 24h TTL).
+    // Eski implementation har response uchun 7+ DB roundtrip qilardi (mapper N+1).
+    // Yangi loader bilan: birinchi response 7 query, keyingi har response 0 query (cache hit).
+    // =====================================================
+
     private Map<String, Object> buildEducationTypeMap(String code) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("_entityName", "hemishe_HEducationType");
-
-        try {
-            Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, name_ru, name_en, is_active as active, version, created_by, updated_by, created_at as create_ts, updated_at as update_ts " +
-                "FROM education_type WHERE code = ?", code);
-
-            result.put("id", code);
-            if (data.get("name_ru") != null) result.put("nameRu", data.get("name_ru"));
-            result.put("code", code);
-            if (data.get("updated_by") != null) result.put("updatedBy", data.get("updated_by"));
-            if (data.get("created_by") != null) result.put("createdBy", data.get("created_by"));
-            if (data.get("name") != null) result.put("name", data.get("name"));
-            if (data.get("active") != null) result.put("active", data.get("active"));
-            if (data.get("create_ts") != null) result.put("createTs", formatTimestamp(data.get("create_ts")));
-            if (data.get("name_en") != null) result.put("nameEn", data.get("name_en"));
-            if (data.get("update_ts") != null) result.put("updateTs", formatTimestamp(data.get("update_ts")));
-            if (data.get("version") != null) result.put("version", data.get("version"));
-        } catch (Exception e) {
-            log.warn("Education type not found: {}", code);
-            result.put("id", code);
-            result.put("code", code);
-        }
-
-        return result;
+        return classifierMapLoader.educationTypeMap(code);
     }
 
     private Map<String, Object> buildUniversityMap(String code) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("_entityName", "hemishe_EUniversity");
-
-        Optional<University> uni = universityRepository.findById(code);
-        if (uni.isPresent()) {
-            University u = uni.get();
-            result.put("id", code);
-            if (u.getStudentUrl() != null) result.put("studentUrl", u.getStudentUrl());
-            if (u.getGradingSystem() != null) result.put("gradingSystem", u.getGradingSystem());
-            result.put("code", code);
-            if (u.getUzbmbUrl() != null) result.put("uzbmbUrl", u.getUzbmbUrl());
-            if (u.getTin() != null) result.put("tin", u.getTin());
-            if (u.getCreateTs() != null) result.put("createTs", u.getCreateTs().format(DATETIME_FORMAT));
-            if (u.getAddStudent() != null) result.put("addStudent", u.getAddStudent());
-            if (u.getAddress() != null) result.put("address", u.getAddress());
-            if (u.getUpdatedBy() != null) result.put("updatedBy", u.getUpdatedBy());
-            if (u.getAccreditationEdit() != null) result.put("accreditationEdit", u.getAccreditationEdit());
-            if (u.getActive() != null) result.put("active", u.getActive());
-            if (u.getVersion() != null) result.put("version", u.getVersion());
-            if (u.getOneId() != null) result.put("oneId", u.getOneId());
-            if (u.getAllowGrouping() != null) result.put("allowGrouping", u.getAllowGrouping());
-            if (u.getAllowTransferOutside() != null) result.put("allowTransferOutside", u.getAllowTransferOutside());
-            if (u.getCreatedBy() != null) result.put("createdBy", u.getCreatedBy());
-            if (u.getName() != null) result.put("name", u.getName());
-            if (u.getGpaEdit() != null) result.put("gpaEdit", u.getGpaEdit());
-            if (u.getUpdateTs() != null) result.put("updateTs", u.getUpdateTs().format(DATETIME_FORMAT));
-        } else {
-            result.put("id", code);
-            result.put("code", code);
-        }
-
-        return result;
+        return classifierMapLoader.universityMap(code);
     }
 
     private Map<String, Object> buildEducationYearMap(String code) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("_entityName", "hemishe_HEducationYear");
-
-        try {
-            Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, is_active as active, version, created_by, created_at as create_ts, updated_at as update_ts " +
-                "FROM education_year WHERE code = ?", code);
-
-            result.put("id", code);
-            result.put("code", code);
-            if (data.get("created_by") != null) result.put("createdBy", data.get("created_by"));
-            if (data.get("name") != null) result.put("name", data.get("name"));
-            if (data.get("active") != null) result.put("active", data.get("active"));
-            if (data.get("create_ts") != null) result.put("createTs", formatTimestamp(data.get("create_ts")));
-            if (data.get("update_ts") != null) result.put("updateTs", formatTimestamp(data.get("update_ts")));
-            if (data.get("version") != null) result.put("version", data.get("version"));
-        } catch (Exception e) {
-            log.warn("Education year not found: {}", code);
-            result.put("id", code);
-            result.put("code", code);
-        }
-
-        return result;
+        return classifierMapLoader.educationYearMap(code);
     }
 
     private Map<String, Object> buildEducationFormMap(String code) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("_entityName", "hemishe_HEducationForm");
-
-        try {
-            Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, name_ru, name_en, is_active as active, version, created_by, updated_by, created_at as create_ts, updated_at as update_ts " +
-                "FROM education_form WHERE code = ?", code);
-
-            result.put("id", code);
-            if (data.get("name_ru") != null) result.put("nameRu", data.get("name_ru"));
-            result.put("code", code);
-            if (data.get("updated_by") != null) result.put("updatedBy", data.get("updated_by"));
-            if (data.get("created_by") != null) result.put("createdBy", data.get("created_by"));
-            if (data.get("name") != null) result.put("name", data.get("name"));
-            if (data.get("active") != null) result.put("active", data.get("active"));
-            if (data.get("create_ts") != null) result.put("createTs", formatTimestamp(data.get("create_ts")));
-            if (data.get("name_en") != null) result.put("nameEn", data.get("name_en"));
-            if (data.get("update_ts") != null) result.put("updateTs", formatTimestamp(data.get("update_ts")));
-            if (data.get("version") != null) result.put("version", data.get("version"));
-        } catch (Exception e) {
-            log.warn("Education form not found: {}", code);
-            result.put("id", code);
-            result.put("code", code);
-        }
-
-        return result;
+        return classifierMapLoader.educationFormMap(code);
     }
 
     private Map<String, Object> buildFacultyMap(String code) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("_entityName", "hemishe_EUniversityDepartment");
-
-        Optional<UniversityDepartment> dept = universityDepartmentRepository.findByCode(code);
-        if (dept.isPresent()) {
-            UniversityDepartment d = dept.get();
-            result.put("id", code);
-            result.put("code", code);
-            if (d.getUpdatedBy() != null) result.put("updatedBy", d.getUpdatedBy());
-            if (d.getVersion() != null) result.put("version", d.getVersion());
-            if (d.getNameUz() != null) result.put("nameUz", d.getNameUz());
-            if (d.getNameRu() != null) result.put("nameRu", d.getNameRu());
-            if (d.getCreatedBy() != null) result.put("createdBy", d.getCreatedBy());
-            if (d.getCreateTs() != null) result.put("createTs", d.getCreateTs().format(DATETIME_FORMAT));
-            if (d.getUpdateTs() != null) result.put("updateTs", d.getUpdateTs().format(DATETIME_FORMAT));
-            if (d.getStatus() != null) result.put("status", d.getStatus());
-        } else {
-            result.put("id", code);
-            result.put("code", code);
-        }
-
-        return result;
+        return classifierMapLoader.facultyMap(code);
     }
 
     private Map<String, Object> buildCourseMap(String code) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("_entityName", "hemishe_HCourse");
-
-        try {
-            Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, is_active as active, version, created_by, created_at as create_ts " +
-                "FROM course WHERE code = ?", code);
-
-            result.put("id", code);
-            result.put("code", code);
-            if (data.get("created_by") != null) result.put("createdBy", data.get("created_by"));
-            if (data.get("name") != null) result.put("name", data.get("name"));
-            if (data.get("active") != null) result.put("active", data.get("active"));
-            if (data.get("create_ts") != null) result.put("createTs", formatTimestamp(data.get("create_ts")));
-            if (data.get("version") != null) result.put("version", data.get("version"));
-        } catch (Exception e) {
-            log.warn("Course not found: {}", code);
-            result.put("id", code);
-            result.put("code", code);
-        }
-
-        return result;
+        return classifierMapLoader.courseMap(code);
     }
 
     private Map<String, Object> buildSemesterMap(String code) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("_entityName", "hemishe_HSemester");
-
-        try {
-            Map<String, Object> data = jdbcTemplate.queryForMap(
-                "SELECT code, name, is_active as active, version, created_by, updated_by, created_at as create_ts " +
-                "FROM semester WHERE code = ?", code);
-
-            result.put("id", code);
-            result.put("code", code);
-            if (data.get("updated_by") != null) result.put("updatedBy", data.get("updated_by"));
-            if (data.get("created_by") != null) result.put("createdBy", data.get("created_by"));
-            if (data.get("name") != null) result.put("name", data.get("name"));
-            if (data.get("active") != null) result.put("active", data.get("active"));
-            if (data.get("create_ts") != null) result.put("createTs", formatTimestamp(data.get("create_ts")));
-            if (data.get("version") != null) result.put("version", data.get("version"));
-        } catch (Exception e) {
-            log.warn("Semester not found: {}", code);
-            result.put("id", code);
-            result.put("code", code);
-        }
-
-        return result;
-    }
-
-    private String formatTimestamp(Object ts) {
-        if (ts instanceof java.sql.Timestamp) {
-            return ((java.sql.Timestamp) ts).toLocalDateTime().format(DATETIME_FORMAT);
-        } else if (ts instanceof LocalDateTime) {
-            return ((LocalDateTime) ts).format(DATETIME_FORMAT);
-        }
-        return ts != null ? ts.toString() : null;
+        return classifierMapLoader.semesterMap(code);
     }
 }

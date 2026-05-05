@@ -148,7 +148,7 @@ public interface OAuthClientRepository extends JpaRepository<OAuthClient, UUID> 
     @Modifying
     @Transactional
     @Query(value = "UPDATE oauth_client SET last_used_at = NOW(), last_used_ip = :ip " +
-                   "WHERE id = :id",
+                   "WHERE id = :id AND deleted_at IS NULL",
            nativeQuery = true)
     int updateLastUsed(@Param("id") UUID id, @Param("ip") String ip);
 

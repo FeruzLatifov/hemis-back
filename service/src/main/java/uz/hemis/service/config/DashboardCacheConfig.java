@@ -149,6 +149,12 @@ public class DashboardCacheConfig implements CachingConfigurer {
         redisCacheConfigurations.put("universityDashboard", defaultConfig.entryTtl(Duration.ofHours(1)));
         redisCacheConfigurations.put("universityLegal", defaultConfig.entryTtl(Duration.ofHours(1)));
         redisCacheConfigurations.put("universityProfile", defaultConfig.entryTtl(Duration.ofHours(1)));
+        // M2-M4 — UniversityInfoService individual endpoints. Admin panel tab-by-tab loading
+        // (rector, founders, lifecycle, cadastre) avval har request DB urar edi; endi cached.
+        redisCacheConfigurations.put("universityRector", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("universityFounders", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("universityLifecycle", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("universityCadastreList", defaultConfig.entryTtl(Duration.ofHours(1)));
 
         // Student list search cache (lightweight DTO, paged + filters): 30 minutes
         redisCacheConfigurations.put("studentsListSearch", defaultConfig.entryTtl(DASHBOARD_TTL));
@@ -189,6 +195,11 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Classifier reference loader — per (table, entity, code) lookup cache used by
         // StudentLegacyMapper to avoid N+1 JDBC reads while mapping student → CUBA DTO.
         redisCacheConfigurations.put("classifierReference", defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // Legacy classifier nested-map loader — used by ContractStatisticsService and other
+        // OLD-HEMIS mappers that need full classifier object inside response. 24h TTL —
+        // reference data (education_type, education_year, course, semester, etc.) rarely changes.
+        redisCacheConfigurations.put("legacyClassifierMaps", defaultConfig.entryTtl(Duration.ofHours(24)));
 
         // Create Redis cache manager (L2)
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(connectionFactory)

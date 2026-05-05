@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"apiRawResponse", "subjects", "documents", "documentsL", "bans"})
 public class UniversityCadastre extends AuditableEntityNoSoftDelete {
 
     private static final long serialVersionUID = 1L;

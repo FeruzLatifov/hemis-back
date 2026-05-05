@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
@@ -41,6 +43,7 @@ public class UniversityProfileService {
     private static final TypeReference<List<DocumentMetaDto>> DOCS_TYPE = new TypeReference<>() {};
 
     @Transactional(readOnly = true)
+    @Cacheable(value = "universityProfile", key = "#universityCode", unless = "#result == null")
     public UniversityProfileDto getProfile(String universityCode) {
         return profileRepository.findByUniversityCode(universityCode)
                 .map(this::toDto)
@@ -53,6 +56,7 @@ public class UniversityProfileService {
 
     @Transactional
     @Audited(action = AuditAction.UPDATE, entity = "UniversityProfile", keyArg = "universityCode")
+    @CacheEvict(value = "universityProfile", key = "#universityCode")
     public UniversityProfileDto upsert(String universityCode, UniversityProfileRequest request) {
         tenantGuard.verifyOwnershipOrAdmin(universityCode);
         UniversityProfile entity = profileRepository.findByUniversityCode(universityCode)

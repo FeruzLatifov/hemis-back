@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"apiRawResponse", "shippingAddresses", "bankAccounts", "organization"})
 public class UniversityLegal extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;

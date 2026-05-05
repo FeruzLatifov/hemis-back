@@ -54,6 +54,14 @@ class UniversityServiceTest {
     @Mock
     private UniversityMapper universityMapper;
 
+    /**
+     * Mocked tenant guard — real implementation talab qiladi JWT SecurityContext.
+     * Test'lar faqat business logic'ni tekshiradi (cross-tenant scenario alohida
+     * UniversityBuildingSyncServiceTest'da). Default void no-op behavior kifoya.
+     */
+    @Mock
+    private uz.hemis.service.security.TenantGuard tenantGuard;
+
     @InjectMocks
     private UniversityService universityService;
 

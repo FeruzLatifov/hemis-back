@@ -35,6 +35,14 @@ public interface UniversityCadastreRepository extends JpaRepository<UniversityCa
 
     Optional<UniversityCadastre> findByCadNumber(String cadNumber);
 
+    /**
+     * Batch lookup — pre-fetches existing rows for sync upsert.
+     *
+     * <p>Used by {@code UniversityExternalDataService.syncCadastre} to avoid N+1
+     * findByCadNumber() loop (50 cadastr → 50 query → 1 single IN query).</p>
+     */
+    List<UniversityCadastre> findByCadNumberIn(java.util.Collection<String> cadNumbers);
+
     boolean existsByCadNumber(String cadNumber);
 
     List<UniversityCadastre> findByRegionId(Integer regionId);

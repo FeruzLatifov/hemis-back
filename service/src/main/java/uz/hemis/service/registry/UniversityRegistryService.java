@@ -4,13 +4,17 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.criteria.Predicate;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +51,17 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional(readOnly = true)
 public class UniversityRegistryService {
+
+    /**
+     * Sort whitelist — frontend ixtiyoriy property nomi yuborolmaydi (security + cache hygiene).
+     * Whitelisted bo'lmagan property'lar olib tashlanadi; bo'sh sort default {@code code ASC} ga
+     * tushadi. 21 filter parametr × Sort permutation cache key ko'payishini chegaralaydi
+     * (har "name,asc" / "name,ASC" / "name" → bitta normalized variant).
+     */
+    private static final Set<String> SORT_WHITELIST = Set.of(
+            "code", "name", "tin", "createTs", "updateTs"
+    );
+    private static final Sort DEFAULT_SORT = Sort.by(Sort.Order.asc("code"));
 
     private final UniversityRepository universityRepository;
     private final UniversityDtoConverter universityMapper;
@@ -105,12 +120,36 @@ public class UniversityRegistryService {
         log.debug("Searching universities: q={}, searchField={}, regionId={}, ownershipId={}, typeId={}",
                 q, searchField, regionId, ownershipId, typeId);
 
+        // Sort'ni whitelist orqali normalize qilamiz — cache key permutation va SQL injection
+        // (Sort property name SpEL/JPQL'ga oqib chiqishi mumkin) himoyasi.
+        Pageable normalized = normalizePageable(pageable);
+
         Specification<University> spec = buildFilterSpecification(q, searchField, regionId, ownershipId, typeId,
                 activityStatusId, belongsToId, contractCategoryId, versionTypeId,
                 districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
                 oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent);
-        Page<University> universities = universityRepository.findAll(spec, pageable);
+        Page<University> universities = universityRepository.findAll(spec, normalized);
         return universities.map(u -> enrich(universityMapper.toDto(u)));
+    }
+
+    /**
+     * Apply Sort whitelist; preserves direction but drops unknown property names.
+     * Empty result → {@link #DEFAULT_SORT} ({@code code ASC}).
+     */
+    private Pageable normalizePageable(Pageable pageable) {
+        if (pageable == null || pageable.getSort().isUnsorted()) {
+            return pageable == null
+                    ? PageRequest.of(0, 20, DEFAULT_SORT)
+                    : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), DEFAULT_SORT);
+        }
+        LinkedHashSet<Sort.Order> orders = new LinkedHashSet<>();
+        for (Sort.Order o : pageable.getSort()) {
+            if (SORT_WHITELIST.contains(o.getProperty())) {
+                orders.add(o);
+            }
+        }
+        Sort safeSort = orders.isEmpty() ? DEFAULT_SORT : Sort.by(orders.toArray(new Sort.Order[0]));
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), safeSort);
     }
 
     @Cacheable(value = "universitiesSearch", key = "'detail:' + #id", unless = "#result == null")
@@ -175,6 +214,13 @@ public class UniversityRegistryService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Hard limit for export — prevents memory exhaustion when filter is too broad.
+     * 224 OTM ekosistemi uchun butun ro'yxat 230 row, lekin filter notilik bilan
+     * yondashilsa boshqa kelajakdagi joinlar 1M+ row qaytarishi mumkin.
+     */
+    private static final int EXPORT_HARD_LIMIT = 5000;
+
     public List<UniversityDto> exportUniversities(
             String q,
             String searchField,
@@ -205,8 +251,14 @@ public class UniversityRegistryService {
                 activityStatusId, belongsToId, contractCategoryId, versionTypeId,
                 districtId, active, gpaEdit, accreditationEdit, addStudent, allowGrouping, allowTransferOutside,
                 oneId, gradingSystem, addForeignStudent, addTransferStudent, addAcademicMobileStudent);
-        List<University> universities = universityRepository.findAll(spec);
-        return universityMapper.toDtoList(universities).stream().map(this::enrich).toList();
+        // Hard limit (5000) — memory exhaustion oldini olish.
+        Pageable exportPage = PageRequest.of(0, EXPORT_HARD_LIMIT, DEFAULT_SORT);
+        Page<University> page = universityRepository.findAll(spec, exportPage);
+        if (page.getTotalElements() > EXPORT_HARD_LIMIT) {
+            log.warn("Export truncated: filter matched {} rows, returning first {} (hard limit)",
+                    page.getTotalElements(), EXPORT_HARD_LIMIT);
+        }
+        return universityMapper.toDtoList(page.getContent()).stream().map(this::enrich).toList();
     }
 
     /**
@@ -233,7 +285,14 @@ public class UniversityRegistryService {
      */
     @Audited(action = AuditAction.CREATE, entity = "University", entityClass = University.class)
     @Transactional
-    @CacheEvict(value = {"universitiesSearch", "universityDictionaries"}, allEntries = true)
+    @Caching(evict = {
+        @CacheEvict(value = "universitiesSearch", allEntries = true),
+        @CacheEvict(value = "universityDictionaries", allEntries = true),
+        // Cross-service desync prevention — UniversityService cache'lar ham yangilanishi kerak
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true)
+    })
     public UniversityDto createUniversity(UniversityRequestDto request) {
         log.info("Creating university: code={}, name={}", request.getCode(), request.getName());
 
@@ -259,7 +318,14 @@ public class UniversityRegistryService {
     @Caching(evict = {
         @CacheEvict(value = "universitiesSearch", allEntries = true),
         @CacheEvict(value = "universityDictionaries", allEntries = true),
-        @CacheEvict(value = "universitiesSearch", key = "'detail:' + #code")
+        @CacheEvict(value = "universitiesSearch", key = "'detail:' + #code"),
+        // Cross-service desync prevention — UniversityService cache namespacelar
+        @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityNullable", key = "#code"),
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        @CacheEvict(value = "universityDashboard", key = "#code")
     })
     public UniversityDto updateUniversity(String code, UniversityRequestDto request) {
         log.info("Updating university: {}", code);
@@ -285,7 +351,14 @@ public class UniversityRegistryService {
     @Caching(evict = {
         @CacheEvict(value = "universitiesSearch", allEntries = true),
         @CacheEvict(value = "universityDictionaries", allEntries = true),
-        @CacheEvict(value = "universitiesSearch", key = "'detail:' + #code")
+        @CacheEvict(value = "universitiesSearch", key = "'detail:' + #code"),
+        // Cross-service desync prevention — UniversityService cache namespacelar
+        @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityNullable", key = "#code"),
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        @CacheEvict(value = "universityDashboard", key = "#code")
     })
     public void deleteUniversity(String code) {
         log.info("Deleting university: {}", code);

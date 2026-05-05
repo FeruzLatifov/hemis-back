@@ -47,6 +47,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class UniversityInfoService {
 
     private final UniversityLegalRepository legalRepository;
@@ -69,12 +70,11 @@ public class UniversityInfoService {
     // Legal
     // =====================================================
 
-    @Transactional(readOnly = true)
     public UniversityLegal getLegal(String universityCode) {
         return legalRepository.findByUniversityCode(universityCode).orElse(null);
     }
 
-    @Transactional(readOnly = true)
+    @Cacheable(value = "universityLegal", key = "#universityCode", unless = "#result == null")
     public UniversityLegalDto getLegalDto(String universityCode) {
         return legalDto(getLegal(universityCode));
     }
@@ -92,12 +92,12 @@ public class UniversityInfoService {
     // Founders
     // =====================================================
 
-    @Transactional(readOnly = true)
+    @Cacheable(value = "universityFounders", key = "'current:' + #universityCode")
     public List<UniversityFounder> getFounders(String universityCode) {
         return founderRepository.findByUniversityCodeAndIsCurrent(universityCode, true);
     }
 
-    @Transactional(readOnly = true)
+    @Cacheable(value = "universityFounders", key = "'all:' + #universityCode")
     public List<UniversityFounder> getAllFounders(String universityCode) {
         return founderRepository.findByUniversityCode(universityCode);
     }
@@ -106,13 +106,16 @@ public class UniversityInfoService {
     // Lifecycle
     // =====================================================
 
-    @Transactional(readOnly = true)
+    @Cacheable(value = "universityLifecycle", key = "#universityCode")
     public List<UniversityLifecycle> getLifecycle(String universityCode) {
         return lifecycleRepository.findByUniversityCodeOrderByEventDateDesc(universityCode);
     }
 
     @Transactional
-    @CacheEvict(value = "universityDashboard", key = "#event.universityCode")
+    @Caching(evict = {
+        @CacheEvict(value = "universityDashboard", key = "#event.universityCode"),
+        @CacheEvict(value = "universityLifecycle", key = "#event.universityCode")
+    })
     @Audited(action = AuditAction.CREATE, entity = "UniversityLifecycle", entityClass = UniversityLifecycle.class)
     public UniversityLifecycle addLifecycleEvent(UniversityLifecycle event) {
         return lifecycleRepository.save(event);
@@ -122,13 +125,16 @@ public class UniversityInfoService {
     // Cadastre
     // =====================================================
 
-    @Transactional(readOnly = true)
+    @Cacheable(value = "universityCadastreList", key = "#universityCode")
     public List<UniversityCadastre> getCadastre(String universityCode) {
         return cadastreRepository.findByUniversityCode(universityCode);
     }
 
     @Transactional
-    @CacheEvict(value = "universityDashboard", key = "#cadastre.universityCode")
+    @Caching(evict = {
+        @CacheEvict(value = "universityDashboard", key = "#cadastre.universityCode"),
+        @CacheEvict(value = "universityCadastreList", key = "#cadastre.universityCode")
+    })
     public UniversityCadastre saveCadastre(UniversityCadastre cadastre) {
         return cadastreRepository.save(cadastre);
     }
@@ -147,7 +153,6 @@ public class UniversityInfoService {
      * <p>Invalidated when legal/founder/lifecycle/cadastre changes (see respective save methods).</p>
      */
     @Cacheable(value = "universityDashboard", key = "#universityCode", unless = "#result == null")
-    @Transactional(readOnly = true)
     public UniversityDashboardDto getUniversityDashboard(String universityCode) {
         log.debug("Loading university dashboard (cache MISS) for code: {}", universityCode);
         UniversityLegal legalEntity = getLegal(universityCode);
@@ -169,7 +174,7 @@ public class UniversityInfoService {
     /**
      * Find rector — first from NEW tables (employee_jobs), then fallback to OLD (hemishe_e_teacher).
      */
-    @Transactional(readOnly = true)
+    @Cacheable(value = "universityRector", key = "#universityCode", unless = "#result == null")
     public RectorDto getRector(String universityCode) {
         // 1. NEW: employee + employee_jobs (vazirlik tayinlagan)
         try {

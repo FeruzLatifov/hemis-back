@@ -29,7 +29,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * University External Data Service
@@ -290,27 +293,54 @@ public class UniversityExternalDataService {
             return List.of();
         }
 
-        // Step 2: Fetch details for each cadastre number
-        List<UniversityCadastre> result = new ArrayList<>();
-        for (JsonNode cadNode : cadastrList) {
-            String cadNumber = cadNode.asText();
+        // Step 2: Pre-fetch existing rows in a single IN query (50→1 DB query, mapper N+1 fix).
+        // External /kadastr/by-cadnum HTTP calls qoladi (har cadastre uchun majburiy alohida resp);
+        // lekin DB roundtrip drastik kamayadi.
+        List<String> cadNumbers = new ArrayList<>();
+        for (JsonNode cn : cadastrList) {
+            String num = cn.asText();
+            if (num != null && !num.isBlank()) cadNumbers.add(num);
+        }
+        Map<String, UniversityCadastre> existingByCad = new HashMap<>();
+        if (!cadNumbers.isEmpty()) {
+            for (UniversityCadastre row : cadastreRepository.findByCadNumberIn(cadNumbers)) {
+                existingByCad.put(row.getCadNumber(), row);
+            }
+        }
+
+        // Step 3: Build/update entities; collect for batch save.
+        List<UniversityCadastre> toSave = new ArrayList<>();
+        for (String cadNumber : cadNumbers) {
             try {
-                UniversityCadastre cadastre = syncSingleCadastre(universityCode, cadNumber);
-                if (cadastre != null) result.add(cadastre);
+                UniversityCadastre updated = syncSingleCadastre(
+                        universityCode, cadNumber,
+                        Optional.ofNullable(existingByCad.get(cadNumber))
+                                .orElseGet(UniversityCadastre::new));
+                if (updated != null) toSave.add(updated);
             } catch (Exception e) {
                 log.error("Failed to sync cadastre {}: {}", cadNumber, e.getMessage());
             }
         }
 
+        // Step 4: Batch save (1 query for many INSERT/UPDATE).
+        List<UniversityCadastre> result = toSave.isEmpty()
+                ? List.of()
+                : cadastreRepository.saveAll(toSave);
+
         log.info("Synced {} cadastre objects for university={}", result.size(), universityCode);
         return result;
     }
 
-    private UniversityCadastre syncSingleCadastre(String universityCode, String cadNumber) {
+    /**
+     * Builds/updates a single cadastre entity from API response. The {@code entity}
+     * parameter must be either a fresh new instance or one pre-fetched from DB —
+     * caller is responsible for batch lookup (see {@link #syncCadastre}).
+     */
+    private UniversityCadastre syncSingleCadastre(String universityCode, String cadNumber,
+                                                   UniversityCadastre c) {
         JsonNode resp = callApi("/kadastr/by-cadnum", "{\"cad_num\": \"" + cadNumber + "\"}");
         if (resp == null || resp.path("code").asInt(0) != 1) return null;
 
-        UniversityCadastre c = cadastreRepository.findByCadNumber(cadNumber).orElse(new UniversityCadastre());
         c.setUniversityCode(universityCode);
         c.setCadNumber(cadNumber);
         c.setCadNumberOld(textOrNull(resp, "cad_number_old"));
@@ -376,7 +406,8 @@ public class UniversityExternalDataService {
         c.setApiRawResponse(resp.toString());
         c.setSyncedAt(LocalDateTime.now());
 
-        return cadastreRepository.save(c);
+        // NOTE: caller (syncCadastre) batch'li saveAll(toSave) chaqiradi — alohida save() emas.
+        return c;
     }
 
     // =====================================================

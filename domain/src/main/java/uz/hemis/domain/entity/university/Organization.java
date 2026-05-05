@@ -33,6 +33,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"apiRawResponse"})
 public class Organization extends AuditableEntity {
 
     @Column(name = "tin", nullable = false, unique = true, length = 20)

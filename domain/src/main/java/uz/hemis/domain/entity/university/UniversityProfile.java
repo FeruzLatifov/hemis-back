@@ -29,6 +29,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"socialLinks", "documents", "phone", "email"})
 public class UniversityProfile extends AuditableEntity {
 
     @Column(name = "university_code", nullable = false, unique = true)
