@@ -341,6 +341,20 @@ public class University implements Serializable {
     @Column(name = "add_academic_mobile_student")
     private Boolean addAcademicMobileStudent;
 
+    /**
+     * Allow academic import flag — Univer ArchiveController gates archive import on this.
+     * Column: allow_academic_import BOOLEAN (added by old-hemis 2026-03-11, FROZEN schema)
+     */
+    @Column(name = "allow_academic_import")
+    private Boolean allowAcademicImport;
+
+    /**
+     * Financial independence flag.
+     * Column: is_financial_independent BOOLEAN (added by old-hemis 2026-04-29, FROZEN schema)
+     */
+    @Column(name = "is_financial_independent")
+    private Boolean isFinancialIndependent;
+
     // NOTE: _version_type column exists in DB but NOT mapped to entity
     // Reason: CUBA legacy field, not used in new system
     // Hibernate would include it in SELECT even with insertable=false, updatable=false

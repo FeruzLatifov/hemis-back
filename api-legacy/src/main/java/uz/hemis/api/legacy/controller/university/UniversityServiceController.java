@@ -69,6 +69,9 @@ public class UniversityServiceController {
             result.put("addForeignStudent", uni.getAddForeignStudent() != null ? uni.getAddForeignStudent() : false);
             result.put("addTransferStudent", uni.getAddTransferStudent() != null ? uni.getAddTransferStudent() : false);
             result.put("addAcademicMobileStudentField", uni.getAddAcademicMobileStudent() != null ? uni.getAddAcademicMobileStudent() : false);
+            // Univer ArchiveController.php:4528,4542,4651 + SyncController.php:119 gate archive
+            // import on this flag — must be exposed in CUBA `services/university/config` contract.
+            result.put("allowAcademicImport", uni.getAllowAcademicImport() != null ? uni.getAllowAcademicImport() : false);
 
             return ResponseEntity.ok(result);
         } catch (ResourceNotFoundException e) {

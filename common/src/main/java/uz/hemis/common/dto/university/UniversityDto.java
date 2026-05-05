@@ -47,6 +47,7 @@ import java.io.Serializable;
     "mail_address", "bank_info", "accreditation_info",
     "add_foreign_student", "grading_system", "one_id",
     "add_transfer_student", "add_academic_mobile_student",
+    "allow_academic_import", "is_financial_independent",
     "_ownership_name", "_university_type_name",
     "_university_activity_status_name", "_university_belongs_to_name",
     "_university_contract_category_name", "_university_version_name",
@@ -331,6 +332,20 @@ public class UniversityDto implements Serializable {
      */
     @JsonProperty("add_academic_mobile_student")
     private Boolean addAcademicMobileStudent;
+
+    /**
+     * Allow academic import flag — Univer ArchiveController gates archive import on this.
+     * JSON: "allow_academic_import"
+     */
+    @JsonProperty("allow_academic_import")
+    private Boolean allowAcademicImport;
+
+    /**
+     * Financial independence flag.
+     * JSON: "is_financial_independent"
+     */
+    @JsonProperty("is_financial_independent")
+    private Boolean isFinancialIndependent;
 
     // =====================================================
     // Resolved display names (NOT persisted, populated via ClassifierLookupService)

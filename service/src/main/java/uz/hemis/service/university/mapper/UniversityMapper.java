@@ -94,6 +94,8 @@ public interface UniversityMapper extends UniversityDtoConverter {
     @Mapping(target = "addForeignStudent", ignore = true)
     @Mapping(target = "addTransferStudent", ignore = true)
     @Mapping(target = "addAcademicMobileStudent", ignore = true)
+    @Mapping(target = "allowAcademicImport", ignore = true)
+    @Mapping(target = "isFinancialIndependent", ignore = true)
     University toEntity(UniversityDto dto);
 
     /**

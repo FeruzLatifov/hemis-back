@@ -96,6 +96,7 @@ class UniversityServiceControllerTest {
             dto.setAddStudent(false);
             dto.setAllowGrouping(false);
             dto.setAllowTransferOutside(false);
+            dto.setAllowAcademicImport(true);
 
             when(securityHelper.getUniversityCodeFromContext()).thenReturn("00520");
             when(universityService.findByCode("00520")).thenReturn(dto);
@@ -114,6 +115,8 @@ class UniversityServiceControllerTest {
             assertThat(body).containsEntry("allowGrouping", false);
             assertThat(body).containsEntry("allowTransferOutside", false);
             assertThat(body).containsEntry("oneId", true);
+            // Univer ArchiveController gates archive import on this field.
+            assertThat(body).containsEntry("allowAcademicImport", true);
         }
 
         @Test
@@ -141,6 +144,7 @@ class UniversityServiceControllerTest {
             assertThat(body).containsEntry("allowGrouping", true);        // default: true
             assertThat(body).containsEntry("allowTransferOutside", true); // default: true
             assertThat(body).containsEntry("oneId", true);                // always true
+            assertThat(body).containsEntry("allowAcademicImport", false); // default: false
         }
 
         @Test

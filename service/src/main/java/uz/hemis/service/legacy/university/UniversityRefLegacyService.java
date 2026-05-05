@@ -927,6 +927,8 @@ public class UniversityRefLegacyService {
         CubaEntityMapHelper.putIfNotNull(map, "addForeignStudent", entity.getAddForeignStudent(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "addAcademicMobileStudent", entity.getAddAcademicMobileStudent(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "addTransferStudent", entity.getAddTransferStudent(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "allowAcademicImport", entity.getAllowAcademicImport(), returnNulls);
+        CubaEntityMapHelper.putIfNotNull(map, "isFinancialIndependent", entity.getIsFinancialIndependent(), returnNulls);
 
         CubaEntityMapHelper.putIfNotNull(map, "mailAddress", entity.getMailAddress(), returnNulls);
         CubaEntityMapHelper.putIfNotNull(map, "bankInfo", entity.getBankInfo(), returnNulls);
@@ -975,6 +977,9 @@ public class UniversityRefLegacyService {
         if (map.containsKey("gradingSystem")) entity.setGradingSystem(CubaEntityMapHelper.getBooleanValue(map.get("gradingSystem")));
         if (map.containsKey("addForeignStudent")) entity.setAddForeignStudent(CubaEntityMapHelper.getBooleanValue(map.get("addForeignStudent")));
         if (map.containsKey("addTransferStudent")) entity.setAddTransferStudent(CubaEntityMapHelper.getBooleanValue(map.get("addTransferStudent")));
+        if (map.containsKey("addAcademicMobileStudent")) entity.setAddAcademicMobileStudent(CubaEntityMapHelper.getBooleanValue(map.get("addAcademicMobileStudent")));
+        if (map.containsKey("allowAcademicImport")) entity.setAllowAcademicImport(CubaEntityMapHelper.getBooleanValue(map.get("allowAcademicImport")));
+        if (map.containsKey("isFinancialIndependent")) entity.setIsFinancialIndependent(CubaEntityMapHelper.getBooleanValue(map.get("isFinancialIndependent")));
         if (map.containsKey("mailAddress")) entity.setMailAddress(CubaEntityMapHelper.getStringValue(map.get("mailAddress")));
         if (map.containsKey("bankInfo")) entity.setBankInfo(CubaEntityMapHelper.getStringValue(map.get("bankInfo")));
         if (map.containsKey("accreditationInfo")) entity.setAccreditationInfo(CubaEntityMapHelper.getStringValue(map.get("accreditationInfo")));
