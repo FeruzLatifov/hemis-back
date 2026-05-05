@@ -435,6 +435,8 @@ hemis:
     jwt:
       # JWT Secret Key (for HMAC-SHA256 signing)
       secret: ${JWT_SECRET}
+      # Key ID — JWS header `kid` (must match JWK in SecurityConfig.jwtEncoder)
+      key-id: ${JWT_KEY_ID:hemis-jwt-key}
       # Token expiration (seconds) - default: 12 hours
       expiration: ${JWT_EXPIRATION:43200}
       # Refresh token expiration (seconds) - default: 7 days
@@ -513,8 +515,8 @@ sentry:
     - uz.hemis.common.exception.ResourceNotFoundException     # 404 — not found
     - uz.hemis.common.exception.BadRequestException           # 400 — client input
     - uz.hemis.common.exception.ValidationException           # 400 — Bean Validation
-    - uz.hemis.common.exception.ConflictException             # 409 — duplicate
-    - uz.hemis.common.exception.ForbiddenException            # 403 — permission
+#    - uz.hemis.common.exception.ConflictException             # 409 — duplicate (TODO: class yaratilmagan)
+#    - uz.hemis.common.exception.ForbiddenException            # 403 — permission (TODO: class yaratilmagan)
     - org.springframework.security.access.AccessDeniedException
     - org.springframework.security.authentication.BadCredentialsException
     - org.springframework.web.bind.MethodArgumentNotValidException
