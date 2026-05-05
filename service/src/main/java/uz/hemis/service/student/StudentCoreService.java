@@ -283,6 +283,7 @@ public class StudentCoreService {
 
     @Audited(action = AuditAction.UPDATE, entity = "Student", entityClass = Student.class, keyArg = "id")
     @Transactional
+    @CacheEvict(value = "students", allEntries = true)
     public StudentDto partialUpdate(UUID id, StudentDto studentDto) {
         log.info("Partial update for student ID: {}", id);
 
@@ -344,6 +345,7 @@ public class StudentCoreService {
     }
 
     @Transactional
+    @CacheEvict(value = "students", allEntries = true)
     public void restore(UUID id) {
         log.info("Restoring soft-deleted student ID: {}", id);
 
