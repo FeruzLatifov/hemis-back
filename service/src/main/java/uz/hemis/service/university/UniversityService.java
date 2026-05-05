@@ -302,6 +302,7 @@ public class UniversityService {
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityNullable", key = "#code"),
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
@@ -369,6 +370,7 @@ public class UniversityService {
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityNullable", key = "#code"),
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
@@ -503,11 +505,16 @@ public class UniversityService {
     }
 
     /**
-     * Get university by code (CUBA compatible)
+     * Get university by code (CUBA compatible — null on not found, no exception).
+     *
+     * <p><strong>Cache:</strong> alohida cache namespace ("universityNullable") chunki
+     * same-class chaqiriqi {@code findByCode} AOP self-invocation trap (cache bypass).
+     * Bu metod o'zi Spring proxy orqali chaqirilganda cache hit qiladi.</p>
      *
      * @param code university code
      * @return university DTO or null
      */
+    @Cacheable(value = "universityNullable", key = "#code")
     public Object getByCode(String code) {
         log.debug("CUBA API: get university by code: {}", code);
         try {

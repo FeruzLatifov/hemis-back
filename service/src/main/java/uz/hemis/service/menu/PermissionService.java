@@ -2,19 +2,21 @@ package uz.hemis.service.menu;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.security.Permission;
 import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.repository.UserRepository;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Permission Service
- * Manages user permissions and access control
+ * Manages user permissions and access control.
+ *
+ * <p><strong>Cache strategy:</strong> {@link UserPermissionLoader} alohida bean — Spring AOP
+ * self-invocation trap'i yopiladi (avval {@code @Cacheable} shu class'da edi va same-class
+ * {@code hasPermission}/{@code canAccessPath} chaqiriqlari cache'ni silently bypass qilardi).</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class PermissionService {
 
     private final UserRepository userRepository;
+    private final UserPermissionLoader permissionLoader;
 
     /**
      * Check if user (by username) can access specific path
@@ -30,55 +33,28 @@ public class PermissionService {
      */
     public boolean canAccessPath(String username, String path) {
         log.debug("Checking path access for username: {}, path: {}", username, path);
-        
+
         User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new IllegalArgumentException("User not found: " + username));
-        
+
         return canAccessPath(user.getId(), path);
     }
 
     /**
-     * Get all permissions for a user (from all roles) - PERFORMANCE OPTIMIZED
+     * Get all permissions for a user (delegates to cached loader).
      *
-     * <p><strong>FIXED - N+1 Problem Eliminated:</strong></p>
-     * <ul>
-     *   <li>✅ Uses eager fetch (findByIdWithPermissions)</li>
-     *   <li>✅ 1 query instead of 3-5 queries</li>
-     *   <li>✅ No lazy loading triggers</li>
-     *   <li>✅ Cached per user (TTL managed by Spring Cache config)</li>
-     * </ul>
+     * <p>Eager fetch + cache + AOP-proxy-aware (loader is a separate bean).</p>
      */
-    @Cacheable(value = "userPermissions", key = "#userId")
     public List<String> getUserPermissions(UUID userId) {
-        // ✅ FIX: Use eager fetch to avoid N+1 queries
-        Optional<User> userOpt = userRepository.findByIdWithPermissions(userId);
-
-        if (userOpt.isEmpty()) {
-            log.warn("User not found: {}", userId);
-            return Collections.emptyList();
-        }
-
-        User user = userOpt.get();
-
-        // ✅ OPTIMIZED: Permissions already loaded via join fetch (no lazy loading!)
-        Set<Permission> allPermissions = user.getAllPermissions();
-
-        // Immutable wrap: cached qiymat — hech qaysi caller uni modify qilib cache ni buzmasligi kerak
-        List<String> permissionCodes = allPermissions.stream()
-            .map(Permission::getCode)
-            .sorted()
-            .toList();
-
-        log.debug("✅ Loaded {} permissions for user {} (eager fetch, 1 query)",
-            permissionCodes.size(), userId);
-        return permissionCodes;
+        return permissionLoader.load(userId);
     }
 
     /**
      * Check if user has specific permission
      */
     public boolean hasPermission(UUID userId, String permissionCode) {
-        List<String> permissions = getUserPermissions(userId);
+        // ✅ Loader chaqiriladi — Spring proxy orqali, cache hit
+        List<String> permissions = permissionLoader.load(userId);
         return hasPermissionInternal(permissionCode, permissions);
     }
 
