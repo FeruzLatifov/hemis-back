@@ -36,7 +36,7 @@ DECLARE
         'Role name','Role details','Permissions','Current status','Changed fields','Created',
         'Endpoint','Entity','Entity type','Event','Event type','Errors','Error type','Failure reason',
         'Old value','New value','Total activities','Total errors','Total logins','Top user','Synced',
-        'Group','Groups','Per page','Shown','From','To','Gender','Education form','Education year',
+        'Group','Groups','Per page','Shown','Gender','Education form','Education year',
         'Enrollment records','Living area','Object area','Utility area',
         'Cadastral cost','Share sum','Successor','Duplicate analysis','Column settings',
         'Message','Text','Version','Security','University','University Information',

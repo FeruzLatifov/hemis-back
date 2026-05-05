@@ -30,10 +30,6 @@ public class UniversityLifecycleDto {
     private String successorCode;
     private String decreeNumber;
     private LocalDate decreeDate;
-    private Integer studentsCount;
-    private Integer employeesCount;
-    private String oldName;
-    private String newName;
     private String note;
     private LocalDateTime createdAt;
     private String createdBy;
@@ -48,10 +44,6 @@ public class UniversityLifecycleDto {
                 .successorCode(e.getSuccessorCode())
                 .decreeNumber(e.getDecreeNumber())
                 .decreeDate(e.getDecreeDate())
-                .studentsCount(e.getStudentsCount())
-                .employeesCount(e.getEmployeesCount())
-                .oldName(e.getOldName())
-                .newName(e.getNewName())
                 .note(e.getNote())
                 .createdAt(e.getCreatedAt())
                 .createdBy(e.getCreatedBy())

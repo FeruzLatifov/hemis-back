@@ -139,7 +139,7 @@ public class UniversityInfoController {
 
     @PostMapping("/{code}/lifecycle")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Add lifecycle event", description = "Add a lifecycle event (CLOSED, MERGED, SPLIT, etc.)")
+    @Operation(summary = "Add lifecycle event", description = "Add a lifecycle event (CLOSED, MERGED, SUSPENDED, REACTIVATED, REORGANIZED, LICENSE_REVOKED)")
     public ResponseEntity<ResponseWrapper<UniversityLifecycleDto>> addLifecycleEvent(
             @PathVariable String code,
             @Valid @RequestBody UniversityLifecycleRequest request

@@ -131,8 +131,6 @@ PERFORM _seed_msg('label',  'Group',                                  'Guruh',  
 PERFORM _seed_msg('label',  'Groups',                                 'Guruhlar',                        'Гуруҳлар',                        'Группы');
 PERFORM _seed_msg('label',  'Per page',                               'Sahifada',                        'Саҳифада',                        'На странице');
 PERFORM _seed_msg('label',  'Shown',                                  'Ko''rsatilgan',                   'Кўрсатилган',                     'Показано');
-PERFORM _seed_msg('label',  'From',                                   'Dan',                             'Дан',                             'От');
-PERFORM _seed_msg('label',  'To',                                     'Gacha',                           'Гача',                            'До');
 PERFORM _seed_msg('label',  'Gender',                                 'Jinsi',                           'Жинси',                           'Пол');
 PERFORM _seed_msg('label',  'Education form',                         'Ta''lim shakli',                  'Таълим шакли',                    'Форма обучения');
 PERFORM _seed_msg('label',  'Education year',                         'O''quv yili',                     'Ўқув йили',                       'Учебный год');

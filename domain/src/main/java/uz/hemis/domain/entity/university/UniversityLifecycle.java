@@ -18,13 +18,11 @@ import java.time.LocalDate;
  * <p><strong>Event types:</strong></p>
  * <ul>
  *   <li>CLOSED — yopilgan</li>
- *   <li>MERGED — boshqa universitetga qo'shilgan</li>
- *   <li>SPLIT — bo'lingan</li>
+ *   <li>MERGED — boshqa universitetga qo'shilgan (successor required)</li>
  *   <li>LICENSE_REVOKED — litsenziya bekor qilingan</li>
  *   <li>SUSPENDED — muvaqqat to'xtatilgan</li>
  *   <li>REACTIVATED — qayta faollashtirilgan</li>
- *   <li>RENAMED — nomi o'zgartirilgan</li>
- *   <li>REORGANIZED — qayta tashkil etilgan</li>
+ *   <li>REORGANIZED — qayta tashkil etilgan (successor required)</li>
  * </ul>
  *
  * @since 2.0.0
@@ -72,9 +70,8 @@ public class UniversityLifecycle extends ImmutableEntity {
     // =====================================================
 
     /**
-     * Successor university code (for MERGED/SPLIT/REORGANIZED events).
+     * Successor university code (for MERGED/REORGANIZED events).
      * <p>MERGED: A to B — successor = B</p>
-     * <p>SPLIT: A to B,C — 2 records: successor=B and successor=C</p>
      */
     @Column(name = "successor_code")
     private String successorCode;
@@ -90,33 +87,7 @@ public class UniversityLifecycle extends ImmutableEntity {
     private LocalDate decreeDate;
 
     // =====================================================
-    // Snapshot at Time of Event
-    // =====================================================
-
-    /**
-     * Number of students at time of event (historical snapshot).
-     */
-    @Column(name = "students_count")
-    private Integer studentsCount;
-
-    /**
-     * Number of employees at time of event (historical snapshot).
-     */
-    @Column(name = "employees_count")
-    private Integer employeesCount;
-
-    // =====================================================
-    // Old/New Name (RENAMED events)
-    // =====================================================
-
-    @Column(name = "old_name", length = 1024)
-    private String oldName;
-
-    @Column(name = "new_name", length = 1024)
-    private String newName;
-
-    // =====================================================
-    // Notes
+    // Notes (free-form description)
     // =====================================================
 
     @Column(name = "note", columnDefinition = "TEXT")

@@ -33,15 +33,6 @@ public class UniversityLifecycleRequest {
 
     private LocalDate decreeDate;
 
-    private Integer studentsCount;
-    private Integer employeesCount;
-
-    @Size(max = 1024)
-    private String oldName;
-
-    @Size(max = 1024)
-    private String newName;
-
     private String note;
 
     public UniversityLifecycle toEntity(String universityCode) {
@@ -52,10 +43,6 @@ public class UniversityLifecycleRequest {
         e.setSuccessorCode(successorCode);
         e.setDecreeNumber(decreeNumber);
         e.setDecreeDate(decreeDate);
-        e.setStudentsCount(studentsCount);
-        e.setEmployeesCount(employeesCount);
-        e.setOldName(oldName);
-        e.setNewName(newName);
         e.setNote(note);
         return e;
     }
