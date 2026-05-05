@@ -272,6 +272,19 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+      # K8s readiness/liveness probes:
+      #   /actuator/health/liveness — Pod ishlamasa restart kerakmi?
+      #   /actuator/health/readiness — Pod traffic qabul qilishga tayyormi?
+      probes:
+        enabled: true
+      group:
+        # Liveness — minimal check (faqat application running, DB/Redis emas).
+        # DB down bo'lsa, K8s restart qilsa ham foyda yo'q.
+        liveness:
+          include: livenessState
+        # Readiness — DB + Redis ulangan, traffic qabul qila oladi.
+        readiness:
+          include: readinessState,db,redis
 
   health:
     db:
@@ -279,6 +292,11 @@ management:
     diskspace:
       enabled: true
     redis:
+      enabled: true
+    # LivenessState va ReadinessState health indicator'lari (probes uchun)
+    livenessstate:
+      enabled: true
+    readinessstate:
       enabled: true
 
 # =====================================================
