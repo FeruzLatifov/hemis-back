@@ -99,6 +99,7 @@ public class ClassifierLegacyService {
         put("h_contract_summa_type", "hemishe_h_contract_summa_type");
         put("h_contract_type", "hemishe_h_contract_type");
         put("h_decree_type", "hemishe_h_decree_type");
+        put("h_decree_type_param", "hemishe_h_decree_type_param");
         put("h_scientific_platform", "hemishe_h_scholar_database");
         put("h_doctorate_student_status", "hemishe_h_doctoral_student_status");
         put("h_education_year", "hemishe_h_education_year");
@@ -831,6 +832,7 @@ public class ClassifierLegacyService {
             case "h_contract_summa_type" -> "Shartnoma summa turlari";
             case "h_contract_type" -> "Shartnoma turlari";
             case "h_decree_type" -> "Buyruq turlari";
+            case "h_decree_type_param" -> "Buyruq turi parametrlari";
             case "h_scientific_platform" -> "Ilmiy platformalar";
             case "h_doctorate_student_status" -> "Doktorant holatlari";
             case "h_education_year" -> "O'quv yillar ro'yxati";

@@ -191,6 +191,7 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_contract_types", "contract-types", Category.FINANCIAL, "Shartnoma sinflari", "Классы договоров", "Contract classes", true, false);
         reg("hemishe_h_contract_summa_type", Category.FINANCIAL, "Shartnoma summa turlari", "Типы сумм договоров", "Contract amount types", true, false);
         reg("hemishe_h_decree_type", Category.FINANCIAL, "Buyruq turlari", "Типы приказов", "Decree types", true, false);
+        reg("hemishe_h_decree_type_param", Category.FINANCIAL, "Buyruq turi parametrlari", "Параметры типа приказа", "Decree type parameters", true, false);
         reg("hemishe_h_scholarship_decree_type", Category.FINANCIAL, "Stipendiya qaror turlari", "Типы решений по стипендиям", "Scholarship decree types", true, false);
 
         // ─── DIPLOMA (Diplom) ───

@@ -632,6 +632,7 @@ public class HokimiyatClassifierService {
             case "h_contract_summa_type" -> "Shartnoma summa turlari";
             case "h_contract_type" -> "Shartnoma turlari";
             case "h_decree_type" -> "Buyruq turlari";
+            case "h_decree_type_param" -> "Buyruq turi parametrlari";
             case "h_scientific_platform" -> "Ilmiy platformalar";
             case "h_doctorate_student_status" -> "Doktorant holatlari";
             case "h_education_year" -> "O'quv yillar ro'yxati";
