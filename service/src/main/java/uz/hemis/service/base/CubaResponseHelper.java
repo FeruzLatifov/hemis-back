@@ -40,7 +40,9 @@ public final class CubaResponseHelper {
      * @return Success response map
      */
     public static Map<String, Object> successResponse(Object data) {
-        Map<String, Object> response = new HashMap<>();
+        // LinkedHashMap — CUBA klient field tartibi bo'yicha parse qiladi.
+        // 67 invocation orqali api-legacy controller'lariga oqib chiqadi.
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
         response.put("data", data);
         return response;
@@ -54,7 +56,7 @@ public final class CubaResponseHelper {
      * @return Success response map
      */
     public static Map<String, Object> successListResponse(List<?> items, int count) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
         response.put("data", items);
         response.put("count", count);
@@ -127,7 +129,7 @@ public final class CubaResponseHelper {
      * @return Entity map
      */
     public static Map<String, Object> buildSimpleEntityMap(UUID id, String code, String name) {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new LinkedHashMap<>();
         map.put("id", id);
         map.put("code", code);
         map.put("name", name);
@@ -408,7 +410,7 @@ public final class CubaResponseHelper {
      */
     public static <T> Map<String, Object> paginatedResponse(List<T> allItems, List<T> paginatedItems,
                                                             Integer limit, Integer offset) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", true);
         response.put("data", paginatedItems);
         response.put("count", paginatedItems.size());

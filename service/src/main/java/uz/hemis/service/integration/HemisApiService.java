@@ -150,7 +150,7 @@ public class HemisApiService {
 
         } catch (org.springframework.web.client.HttpClientErrorException e) {
             // OLD-HEMIS compatible: return api.hemis.uz error response directly
-            log.error("[HEMIS API] HTTP error getting contract info for PINFL: {} - {}", pinfl, e.getStatusCode());
+            log.error("[HEMIS API] HTTP error getting contract info for PINFL: {} - {}", Pinfl.maskOrEmpty(pinfl), e.getStatusCode());
             try {
                 // Parse the error body from api.hemis.uz and return it as-is
                 String errorBody = e.getResponseBodyAsString();
@@ -173,7 +173,7 @@ public class HemisApiService {
             error.put("timeStamp", LocalDateTime.now().toString());
             return error;
         } catch (Exception e) {
-            log.error("[HEMIS API] Error getting contract info for PINFL: {} - {}", pinfl, e.getMessage(), e);
+            log.error("[HEMIS API] Error getting contract info for PINFL: {} - {}", Pinfl.maskOrEmpty(pinfl), e.getMessage(), e);
             // OLD-HEMIS style error response
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("statusCode", 500);

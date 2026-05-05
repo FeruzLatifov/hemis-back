@@ -605,8 +605,10 @@ public class UniversityExternalDataService {
         }
 
         Employee saved = employeeRepository.save(emp);
-        log.info("Employee {}: pinfl={}, name={} {}",
-                existing == null ? "created" : "updated", pinfl, saved.getLastName(), saved.getFirstName());
+        log.info("Employee {}: pinfl={}, name={}",
+                existing == null ? "created" : "updated",
+                uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl),
+                uz.hemis.common.util.PiiMask.name(saved.getLastName() + " " + saved.getFirstName()));
         return saved;
     }
 }

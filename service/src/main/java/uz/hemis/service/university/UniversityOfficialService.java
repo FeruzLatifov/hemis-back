@@ -108,7 +108,7 @@ public class UniversityOfficialService {
     @Audited(action = AuditAction.CREATE, entity = "UniversityOfficial", keyArg = "universityCode")
     public OfficialDto appointOfficial(String universityCode, OfficialRequest request) {
         log.info("Appointing official: university={}, pinfl={}, position={}",
-                universityCode, request.getPinfl(), request.getPositionCode());
+                universityCode, uz.hemis.common.vo.Pinfl.maskOrEmpty(request.getPinfl()), request.getPositionCode());
 
         // Find or create employee — request.pinfl/phone DTO darajasida String,
         // entity darajasida VO. VO constructor format'ni validate qiladi.
@@ -351,7 +351,7 @@ public class UniversityOfficialService {
             }
             conn.disconnect();
         } catch (Exception e) {
-            log.debug("External person API error for PINFL {}: {}", pinfl, e.getMessage());
+            log.debug("External person API error for PINFL {}: {}", uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl), e.getMessage());
         }
         return null;
     }
@@ -399,7 +399,7 @@ public class UniversityOfficialService {
             }
             conn.disconnect();
         } catch (Exception e) {
-            log.debug("Person address API error for PINFL {}: {}", pinfl, e.getMessage());
+            log.debug("Person address API error for PINFL {}: {}", uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl), e.getMessage());
         }
         return null;
     }

@@ -203,7 +203,7 @@ public class StudentEnrollmentService {
     public Map<String, Object> generateStudentId(StudentIdRequest data, String universityCode) {
         Map<String, Object> result = new LinkedHashMap<>();
         log.info("Generating student ID - PINFL: {}, Serial: {}, University: {}",
-                data.getPinfl(), data.getSerial(), universityCode);
+                uz.hemis.common.vo.Pinfl.maskOrEmpty(data.getPinfl()), data.getSerial(), universityCode);
 
         try {
             data.validate();
@@ -276,7 +276,7 @@ public class StudentEnrollmentService {
             if (data.getPinfl() != null && !data.getPinfl().isEmpty()) {
                 int updatedCount = studentRepository.markPreviousMastersAsDuplicates(data.getPinfl());
                 if (updatedCount > 0) {
-                    log.info("Reset {} isDuplicate=TRUE record(s) to FALSE for PINFL: {}", updatedCount, data.getPinfl());
+                    log.info("Reset {} isDuplicate=TRUE record(s) to FALSE for PINFL: {}", updatedCount, uz.hemis.common.vo.Pinfl.maskOrEmpty(data.getPinfl()));
                 }
             }
 

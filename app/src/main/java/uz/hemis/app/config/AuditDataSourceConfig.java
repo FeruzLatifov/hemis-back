@@ -46,7 +46,7 @@ public class AuditDataSourceConfig {
     public DataSource auditDataSource(
             @Value("${hemis.audit.datasource.master.url:${hemis.audit.datasource.url:jdbc:postgresql://localhost:5434/hemis_audit}}") String url,
             @Value("${hemis.audit.datasource.master.username:${hemis.audit.datasource.username:hemis_audit}}") String username,
-            @Value("${hemis.audit.datasource.master.password:${hemis.audit.datasource.password:audit_secret}}") String password) {
+            @Value("${hemis.audit.datasource.master.password:${hemis.audit.datasource.password:}}") String password) {
 
         HikariDataSource dataSource = DataSourceBuilder.create()
                 .type(HikariDataSource.class)
@@ -80,7 +80,7 @@ public class AuditDataSourceConfig {
     public DataSource auditReplicaDataSource(
             @Value("${hemis.audit.datasource.replica.url:${hemis.audit.datasource.master.url:${hemis.audit.datasource.url:jdbc:postgresql://localhost:5434/hemis_audit}}}") String url,
             @Value("${hemis.audit.datasource.replica.username:${hemis.audit.datasource.master.username:${hemis.audit.datasource.username:hemis_audit}}}") String username,
-            @Value("${hemis.audit.datasource.replica.password:${hemis.audit.datasource.master.password:${hemis.audit.datasource.password:audit_secret}}}") String password) {
+            @Value("${hemis.audit.datasource.replica.password:${hemis.audit.datasource.master.password:${hemis.audit.datasource.password:}}}") String password) {
 
         HikariDataSource dataSource = DataSourceBuilder.create()
                 .type(HikariDataSource.class)

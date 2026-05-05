@@ -154,8 +154,10 @@ hemis:
 
   security:
     oauth:
-      client-id: ${OAUTH_CLIENT_ID:client}
-      client-secret: ${OAUTH_CLIENT_SECRET:secret}
+      # OAuth credentials .env (yoki .env.local)dan o'rnatilishi shart.
+      # Default 'client/secret' guessable — dev image accidentally ship qilinsa xavfli.
+      client-id: ${OAUTH_CLIENT_ID:}
+      client-secret: ${OAUTH_CLIENT_SECRET:}
     jwt:
       # Development JWT configuration (OLD-HEMIS compatible)
       # CRITICAL: JWT_SECRET must be set via environment variable or .env.local

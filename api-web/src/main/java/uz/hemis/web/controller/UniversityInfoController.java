@@ -215,7 +215,7 @@ public class UniversityInfoController {
             @RequestParam(required = false) String document,
             @RequestParam(required = false) String birthDate
     ) {
-        log.info("Looking up person: pinfl={}, doc={}, birth={}", pinfl, document != null ? "***" : null, birthDate);
+        log.info("Looking up person: pinfl={}, doc={}, birth={}", uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl), document != null ? "***" : null, birthDate);
         Map<String, Object> person = officialService.lookupByPinfl(pinfl, document, birthDate);
         return ResponseEntity.ok(ResponseWrapper.success(person));
     }

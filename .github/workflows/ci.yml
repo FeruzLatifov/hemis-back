@@ -65,7 +65,9 @@ jobs:
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
-      JWT_SECRET: dGVzdC1zZWNyZXQta2V5LWZvci1jaS1waXBlbGluZS1oZW1pcy1iYWNrZW5kLXRlc3Rpbmc=
+      # JWT_SECRET — CI-only test secret from GitHub Secret. Plaintext fallback bo'lmasligi kerak.
+      # Repository Secret yaratish: Settings > Secrets and variables > Actions > New secret (CI_JWT_SECRET).
+      JWT_SECRET: ${{ secrets.CI_JWT_SECRET }}
 
     steps:
       - name: Checkout

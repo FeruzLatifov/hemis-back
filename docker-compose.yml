@@ -42,7 +42,8 @@ services:
     environment:
       POSTGRES_DB: ${AUDIT_DB_NAME:-hemis_audit}
       POSTGRES_USER: ${AUDIT_DB_USER:-hemis_audit}
-      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:-audit_secret}
+      # AUDIT_DB_PASSWORD .env'da o'rnatilishi shart (lokal dev uchun .env.example'da namuna).
+      POSTGRES_PASSWORD: ${AUDIT_DB_PASSWORD:?AUDIT_DB_PASSWORD must be set in .env}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "${AUDIT_DB_PORT:-5434}:5432"

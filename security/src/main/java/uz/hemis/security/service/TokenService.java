@@ -57,7 +57,9 @@ public class TokenService {
     private final UserPermissionCacheService permissionCacheService;
     private final uz.hemis.common.port.security.UserIdentificationPort userIdentificationPort;
 
-    @Value("${hemis.security.jwt.expiration:2592000}")  // 30 days (2592000 seconds) - OLD-HEMIS compatible
+    // Default 12 hours (43200 sec) — OWASP & security/CLAUDE.md (rule). Old-hemis 30-day default
+    // edi, lekin leaked token'lar 30 kun valid bo'lar edi. application.yml ENV bilan override qiladi.
+    @Value("${hemis.security.jwt.expiration:43200}")
     private long accessTokenValiditySeconds;
 
     @Value("${hemis.security.jwt.refresh-expiration:604800}")  // 7 days
