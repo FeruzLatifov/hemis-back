@@ -1,10 +1,11 @@
 package uz.hemis.service.teacher;
 
-import uz.hemis.common.vo.Pinfl;
 import lombok.RequiredArgsConstructor;
-import uz.hemis.common.vo.Pinfl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
 import uz.hemis.domain.entity.employee.Teacher;
@@ -45,6 +46,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class TeacherCubaService {
 
     private final TeacherRepository teacherRepository;
@@ -168,8 +170,11 @@ public class TeacherCubaService {
      * @return Success or error response
      */
     @SuppressWarnings("unchecked")
+    @org.springframework.transaction.annotation.Transactional
+    @Audited(action = AuditAction.CREATE, entity = "EmployeeJobs")
     public Map<String, Object> addJob(Map<String, Object> requestBody) {
-        log.info("Adding job to teacher - request: {}", requestBody);
+        // PII safety: keys-only log (request contains decreeNumber, contractNumber, employee UUID).
+        log.info("Adding job to teacher - keys={}", requestBody == null ? "null" : requestBody.keySet());
 
         if (requestBody == null || requestBody.isEmpty()) {
             Map<String, Object> error = new LinkedHashMap<>();

@@ -156,7 +156,9 @@ public class CubaTeacherServiceController {
     public ResponseEntity<Map<String, Object>> getTeacherId(
             @RequestBody Map<String, Object> requestBody
     ) {
-        log.info("POST /app/rest/v2/services/teacher/id - request: {}", requestBody);
+        // PII safety: never log full request body (contains PINFL, passport, etc.).
+        log.info("POST /app/rest/v2/services/teacher/id - keys={}",
+                requestBody == null ? "null" : requestBody.keySet());
 
         // Extract "data" wrapper (CUBA format)
         @SuppressWarnings("unchecked")
@@ -175,8 +177,12 @@ public class CubaTeacherServiceController {
             return ResponseEntity.badRequest().body(error);
         }
 
-        log.info("Processing teacher ID request - University: {}, PINFL: {}, Serial: {}",
-                universityCode, data.get("pinfl"), data.get("serial"));
+        // PII safety: PINFL masked, passport serial NOT logged (sensitive).
+        Object pinflRaw = data.get("pinfl");
+        log.info("Processing teacher ID request - University: {}, PINFL: {}",
+                universityCode,
+                pinflRaw == null ? "null"
+                        : uz.hemis.common.vo.Pinfl.maskOrEmpty(pinflRaw.toString()));
 
         Map<String, Object> result = teacherService.generateTeacherId(data, universityCode);
         return ResponseEntity.ok(result);
@@ -213,9 +219,12 @@ public class CubaTeacherServiceController {
             }
         }
 
-        // Fallback: default test university for development
-        log.warn("Using default university code for development");
-        return "520";
+        // SECURITY (audit P0.T3): hardcoded fallback "520" REMOVED.
+        // Avval JWT'da scope yo'q paytda Tashkent OTM ostida ish bajarilardi —
+        // cross-tenant data injection + audit trail "kim qildi" bo'sh.
+        // Endi: caller tegishli universityCode'siz operatsiya bajarolmaydi.
+        log.warn("SECURITY: caller has no university scope — operation rejected");
+        return null;
     }
 
     /**
@@ -332,6 +341,13 @@ public class CubaTeacherServiceController {
     ) {
         // Security: Foydalanuvchining universitetini olish
         String userUniversityCode = getUniversityCodeFromContext();
+        if (userUniversityCode == null) {
+            // SECURITY (audit P0.T3): JWT scope yo'q → operatsiya rad etiladi.
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("success", false);
+            err.put("error", "University scope required");
+            return ResponseEntity.status(403).body(err);
+        }
         log.info("POST /app/rest/v2/services/teacher/addJob - university: {}", userUniversityCode);
 
         // So'rovdagi universitetni tekshirish
@@ -388,7 +404,8 @@ public class CubaTeacherServiceController {
             @Parameter(description = "PINFL yoki passport serial", required = true)
             @RequestParam String pinfl
     ) {
-        log.info("GET /app/rest/v2/services/teacher/get - pinfl={}", pinfl);
+        log.info("GET /app/rest/v2/services/teacher/get - pinfl={}",
+                uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl));
         Map<String, Object> result = teacherService.getTeacherByPinfl(pinfl);
         return ResponseEntity.ok(result);
     }

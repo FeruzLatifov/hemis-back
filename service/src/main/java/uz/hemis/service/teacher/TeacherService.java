@@ -27,6 +27,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class TeacherService {
 
     private final TeacherRepository teacherRepository;
@@ -42,9 +43,12 @@ public class TeacherService {
      * @return Map with success, is_new, unique_id, teacher
      */
     @Audited(action = AuditAction.CREATE, entity = "Teacher", entityClass = Teacher.class)
+    @org.springframework.transaction.annotation.Transactional
     public Map<String, Object> generateTeacherId(Map<String, Object> data, String universityCode) {
         Map<String, Object> result = new LinkedHashMap<>();
-        log.info("Generating teacher ID - data: {}, university: {}", data, universityCode);
+        // PII safety: never log full data map (contains PINFL, passport, name).
+        log.info("Generating teacher ID - keys={}, university={}",
+                data == null ? "null" : data.keySet(), universityCode);
 
         // Validate parameters
         String citizenship = safeString(data.get("citizenship"));
@@ -270,6 +274,11 @@ public class TeacherService {
      */
     private List<Map<String, Object>> loadJobsForTeacher(UUID teacherId) {
         try {
+            // OWASP A04 / Performance: per-row faculty lookup N+1 fix.
+            // Avval har row uchun alohida `SELECT FROM hemishe_e_university_department`
+            // qilinardi — 5 jobs = 6 query. Endi single LEFT JOIN bilan faculty lookup.
+            // depCode pattern: "<faculty>-<dept>" (CUBA convention) — agar `-` mavjud bo'lsa
+            // 4-belgidan keyingi birinchi `-` orqali faculty code ajratiladi (SQL'da SUBSTRING).
             String sql = """
                 SELECT ej._university, u.name as university_name, u.tin as university_tin,
                        ej._department, d.name_uz as department_name,
@@ -278,10 +287,19 @@ public class TeacherService {
                        ej._employee_rate, er.name as employee_rate_name,
                        ej._employee_type, et.name as employee_type_name,
                        ej._employee_status, es.name as employee_status_name,
-                       ej.job_start_date, ej.job_end_date
+                       ej.job_start_date, ej.job_end_date,
+                       fac.code as faculty_code, fac.name_uz as faculty_name
                 FROM hemishe_e_employee_jobs ej
                 LEFT JOIN hemishe_e_university u ON u.code = ej._university AND u.delete_ts IS NULL
                 LEFT JOIN hemishe_e_university_department d ON d.code = ej._department AND d.delete_ts IS NULL
+                LEFT JOIN hemishe_e_university_department fac
+                    ON fac.code = CASE
+                        WHEN ej._department IS NULL THEN NULL
+                        WHEN POSITION('-' IN SUBSTRING(ej._department FROM 5)) > 0 THEN
+                            SUBSTRING(ej._department FROM 1 FOR 4 + POSITION('-' IN SUBSTRING(ej._department FROM 5)) - 1)
+                        ELSE ej._department
+                    END
+                    AND fac.delete_ts IS NULL
                 -- Yangi jadvallarga yo'naltirilgan — Bosqich 4.5 (delete_ts yo'q, is_active bor)
                 LEFT JOIN employment_form ef ON ef.code = ej._employee_form
                 LEFT JOIN h_position ep ON ep.code = ej._employee_position
@@ -302,25 +320,8 @@ public class TeacherService {
                 jobMap.put("university_tin", row.get("university_tin"));
                 jobMap.put("department_code", row.get("_department"));
                 jobMap.put("department_name", row.get("department_name"));
-
-                // Faculty lookup from department code (old-hemis logic)
-                String depCode = row.get("_department") != null ? row.get("_department").toString() : null;
-                String fCode = null;
-                String fName = null;
-                if (depCode != null) {
-                    try {
-                        List<Map<String, Object>> facRows = jdbcTemplate.queryForList(
-                            "SELECT code, name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
-                            depCode.length() > 4 ? depCode.substring(0, depCode.indexOf("-", 4) > 0 ? depCode.indexOf("-", 4) : depCode.length()) : depCode
-                        );
-                        if (!facRows.isEmpty()) {
-                            fCode = facRows.getFirst().get("code") != null ? facRows.getFirst().get("code").toString() : null;
-                            fName = facRows.getFirst().get("name_uz") != null ? facRows.getFirst().get("name_uz").toString() : null;
-                        }
-                    } catch (Exception ignored) {}
-                }
-                jobMap.put("faculty_code", fCode);
-                jobMap.put("faculty_name", fName);
+                jobMap.put("faculty_code", row.get("faculty_code"));
+                jobMap.put("faculty_name", row.get("faculty_name"));
 
                 jobMap.put("employee_form_code", row.get("_employee_form"));
                 jobMap.put("employee_form_name", row.get("employee_form_name"));

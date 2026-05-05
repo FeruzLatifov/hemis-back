@@ -302,7 +302,9 @@ public class EmployeeJobsEntityController {
             @Parameter(description = "View nomi (eEmployeeJob-view)")
             @RequestParam(required = false) String view) {
 
-        log.debug("POST search EmployeeJobs - body: {}, view: {}", body, view);
+        // PII safety: never log full body (contains decreeNumber, contractNumber, employee UUID).
+        log.debug("POST search EmployeeJobs - keys={}, view={}",
+                body == null ? "null" : body.keySet(), view);
 
         if (body == null || body.isEmpty()) {
             return ResponseEntity.ok(List.of());
@@ -310,7 +312,8 @@ public class EmployeeJobsEntityController {
 
         String employeeCode = extractEmployeeCodeFromFilter(body);
         if (employeeCode != null) {
-            log.debug("Searching by employee.pinfl: {}", employeeCode);
+            log.debug("Searching by employee.pinfl: {}",
+                    uz.hemis.common.vo.Pinfl.maskOrEmpty(employeeCode));
             List<EmployeeJobs> entities = employeeJobsService.findByEmployeePinfl(employeeCode);
             return ResponseEntity.ok(entities.stream()
                 .map(e -> toMap(e, returnNulls, view))
@@ -404,7 +407,8 @@ public class EmployeeJobsEntityController {
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
 
-        log.debug("POST create EmployeeJobs - body: {}", body);
+        // PII safety: keys-only log (body contains decreeNumber, contractNumber, employee UUID).
+        log.debug("POST create EmployeeJobs - keys={}", body == null ? "null" : body.keySet());
 
         EmployeeJobs entity = new EmployeeJobs();
         updateFromMap(entity, body);

@@ -50,7 +50,8 @@ public class EmploymentServiceController {
     public ResponseEntity<Map<String, Object>> getWorkbook(
         @Parameter(description = "PINFL", required = true, example = "31503776560016") @RequestParam String pinfl
     ) {
-        log.info("GET /services/employment/workbook - pinfl: {}", pinfl);
+        log.info("GET /services/employment/workbook - pinfl: {}",
+                uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl));
         return ResponseEntity.ok(employmentIntegrationService.getWorkbook(pinfl));
     }
 }

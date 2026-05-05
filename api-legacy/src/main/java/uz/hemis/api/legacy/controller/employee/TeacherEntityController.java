@@ -55,6 +55,18 @@ public class TeacherEntityController {
     private final CubaFilterHelper filterHelper;
     private final LegacySecurityHelper securityHelper;
 
+    /**
+     * Sort property whitelist — OWASP A03 (SQL injection / DoS via reflection-based ORDER BY).
+     * User-supplied {@code sort} parameter o'zboshimcha property nomi bera oladi (CubaFilterHelper
+     * reflection orqali Hibernate'da arbitrary column'larni sort qiladi). Whitelisted bo'lmagan
+     * property → fallback {@code createTs} + WARN log.
+     */
+    private static final java.util.Set<String> TEACHER_SORT_WHITELIST = java.util.Set.of(
+            "id", "code", "firstname", "lastname", "fathername",
+            "createTs", "updateTs", "active", "employeeYear",
+            "gender", "university", "passport"
+    );
+
     @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     @Operation(
@@ -231,7 +243,12 @@ public class TeacherEntityController {
         Sort sorting = Sort.unsorted();
         if (sort != null && !sort.isEmpty()) {
             String[] parts = sort.split("-");
-            String field = parts[0];
+            String field = parts[0].trim();
+            // OWASP A03 — sort whitelist (reflection-based bypass yopildi).
+            if (!TEACHER_SORT_WHITELIST.contains(field)) {
+                log.warn("Rejected non-whitelisted sort property: {}", field);
+                field = "createTs"; // safe fallback
+            }
             Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1])
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
             sorting = Sort.by(direction, field);
@@ -428,8 +445,12 @@ public class TeacherEntityController {
             if (universityCode == null || universityCode.isEmpty()) {
                 universityCode = securityHelper.getUniversityCodeFromContext();
             }
-            if (universityCode == null) {
-                universityCode = "520";
+            // SECURITY (audit P0.T3): hardcoded fallback "520" REMOVED — caller bilan
+            // bog'liq bo'lmagan default OTM ostida teacher yaratish cross-tenant data
+            // injection edi. JWT scope'i yoki entity body'sida universityCode majburiy.
+            if (universityCode == null || universityCode.isEmpty()) {
+                throw new uz.hemis.common.exception.BadRequestException(
+                        "University scope required (set entity.university or authenticate with university JWT claim)");
             }
 
             String year = entity.getEmployeeYear();
