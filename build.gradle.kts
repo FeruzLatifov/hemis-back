@@ -11,6 +11,40 @@ plugins {
     // Plugin va BOM versiyasi mos bo'lishi kerak (CLAUDE.md va dependencies BOM 4.0.6)
     id("org.springframework.boot") version "4.0.6" apply false
     id("io.spring.dependency-management") version "1.1.7" apply false
+    // OWASP Dependency-Check — vulnerability scan (CVE database).
+    // Run: ./gradlew dependencyCheckAggregate
+    // Output: build/reports/dependency-check-report.html
+    // CI'da fail threshold: CVSS 9.0+ (CRITICAL only) — false positive noise oldini olish.
+    id("org.owasp.dependencycheck") version "10.0.4"
+}
+
+// =====================================================
+// OWASP Dependency-Check Configuration
+// =====================================================
+dependencyCheck {
+    // CVSS 9.0+ (CRITICAL severity only) — build fail bo'lsa
+    failBuildOnCVSS = 9.0f
+
+    // Scan formats — HTML report + JSON for CI artifacts
+    formats = listOf("HTML", "JSON")
+
+    // Skip non-runtime configurations (test deps don't ship to prod)
+    skipConfigurations = listOf("testCompileClasspath", "testRuntimeClasspath")
+
+    // NVD API key (kelajakda tezroq scan uchun): https://nvd.nist.gov/developers/request-an-api-key
+    // System.getenv("NVD_API_KEY")?.let { nvd.apiKey = it }
+
+    analyzers {
+        // Disable analyzers that don't apply to Java/Gradle
+        assemblyEnabled = false
+        nodeAuditEnabled = false
+        nodeEnabled = false
+        nuspecEnabled = false
+        ossIndex.warnOnlyOnRemoteErrors = true
+    }
+
+    // Output directory
+    outputDirectory = "build/reports/dependency-check"
 }
 
 // =====================================================
