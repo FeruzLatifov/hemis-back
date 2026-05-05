@@ -205,6 +205,10 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // for every student-id generation. ~250 countries, closed list, 24h TTL.
         redisCacheConfigurations.put("citizenshipActive", defaultConfig.entryTtl(Duration.ofHours(24)));
 
+        // Student total-count estimate — pg_class.reltuples (planner statistic, autovacuum-updated).
+        // 1.15M qator full COUNT(*) ~5s; estimate ~1ms. 1 daqiqa TTL — health-check only.
+        redisCacheConfigurations.put("studentCountEstimate", defaultConfig.entryTtl(Duration.ofMinutes(1)));
+
         // Create Redis cache manager (L2)
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

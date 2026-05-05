@@ -40,6 +40,8 @@ public class StudentCubaService {
     private final StudentRepository studentRepository;
     private final ContractRepository contractRepository;
     private final GradeRepository gradeRepository;
+    /** Cached planner-statistics for 1.15M Student table — health checks. */
+    private final StudentStatsCache studentStatsCache;
 
     // Tashkent SOATO code prefix
     private static final String TASHKENT_SOATO_PREFIX = "1726";
@@ -280,13 +282,17 @@ public class StudentCubaService {
         result.put("timestamp", new Date());
 
         try {
-            long count = studentRepository.count();
+            // pg_class.reltuples estimate (1.15M qator full COUNT 5s+ sequential scan).
+            // Off-by < 5% in steady state — acceptable for health-check display.
+            long count = studentStatsCache.estimateTotalCount();
             result.put("student_count", count);
+            result.put("count_type", "estimate");
             result.put("database", "connected");
         } catch (Exception e) {
             log.error("Database check failed", e);
             result.put("database", "error");
-            result.put("error", e.getMessage());
+            // Sanitized error — no internal exception text leak (OWASP A05).
+            result.put("error", "health check failed");
         }
 
         return result;

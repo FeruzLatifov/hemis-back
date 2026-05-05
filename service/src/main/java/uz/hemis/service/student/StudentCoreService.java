@@ -7,6 +7,7 @@ import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.student.StudentDto;
@@ -45,6 +46,11 @@ public class StudentCoreService {
     private final StudentRepository studentRepository;
     private final StudentMapper studentMapper;
     private final TenantGuard tenantGuard;
+    /**
+     * Used by {@link #generateOldHemisCode} for {@code pg_advisory_xact_lock}
+     * to serialize concurrent code generation per (university, year, eduType).
+     */
+    private final JdbcTemplate jdbcTemplate;
 
     // =====================================================
     // Read Operations (Read-Only Transactions)
@@ -230,6 +236,15 @@ public class StudentCoreService {
                 ? educationYear.substring(educationYear.length() - 2)
                 : educationYear;
 
+        // Race condition fix (OWASP A04 — Insecure Design): concurrent enrollments
+        // for the same (university, year, eduType) tuple read the same count → produce
+        // duplicate codes → DataIntegrityViolation. Acquire a transaction-scoped
+        // advisory lock to serialize. Lock auto-releases at tx commit/rollback.
+        // 64-bit hash of the tuple — collision risk negligible (~10^-9) and even on
+        // collision we just serialize two unrelated buckets (perf cost only, no bug).
+        long lockKey = computeAdvisoryLockKey(universityCode, yearSuffix, educationType);
+        jdbcTemplate.queryForObject("SELECT pg_advisory_xact_lock(?)", Object.class, lockKey);
+
         long count = studentRepository.countForIdGeneration(universityCode, educationType, educationYear) + 1;
 
         String uniqueCode;
@@ -250,6 +265,20 @@ public class StudentCoreService {
         } while (studentRepository.existsByCode(uniqueCode));
 
         return uniqueCode;
+    }
+
+    /**
+     * Stable 64-bit hash for advisory lock key (university+year+eduType bucket).
+     * String.hashCode() returns int; widen to long to use full pg advisory key space.
+     */
+    private static long computeAdvisoryLockKey(String university, String yearSuffix, String eduType) {
+        String composite = "student-code:" + university + ":" + yearSuffix + ":" + eduType;
+        long h = 1469598103934665603L;
+        for (int i = 0; i < composite.length(); i++) {
+            h ^= composite.charAt(i);
+            h *= 1099511628211L;
+        }
+        return h;
     }
 
     @Audited(action = AuditAction.UPDATE, entity = "Student", entityClass = Student.class, keyArg = "id")
@@ -378,17 +407,31 @@ public class StudentCoreService {
      * Server-managed fields whitelist — OWASP A04 mass assignment defense.
      * Called from {@link #partialUpdate} to prevent caller from mutating
      * sensitive fields (pinfl, status, university, verified, etc.) via PATCH body.
+     *
+     * <p><strong>Monitoring:</strong> Each detected mutation attempt logs a WARN —
+     * Sentry/ELK aggregator picks it up. If 1 hafta production'da legitimate
+     * Univer Yii2 PHP flow bo'lsa, alohida endpoint ({@code /student/transfer},
+     * {@code /student/verify}) ga ko'chirish kerak. Hozircha silently ignore.</p>
      */
     private void sanitizeServerManagedFields(StudentDto dto) {
         if (dto == null) return;
-        dto.setPinfl(null);              // identity — only initial create
-        dto.setStudentStatus(null);      // enrollment/expel/transfer flows
-        dto.setUniversity(null);         // transfer flow only
-        dto.setVerified(null);           // DTM verification result
-        dto.setPoints(null);             // DTM verification result
-        dto.setIsDuplicate(null);        // transfer flow
-        dto.setCode(null);               // generated server-side
-        dto.setVersion(null);            // optimistic locking — Hibernate-managed
+        // Track which server-managed fields the caller attempted to mutate (for ops monitoring).
+        java.util.List<String> attempted = new java.util.ArrayList<>(8);
+        if (dto.getPinfl() != null)         { attempted.add("pinfl");         dto.setPinfl(null); }
+        if (dto.getStudentStatus() != null) { attempted.add("studentStatus"); dto.setStudentStatus(null); }
+        if (dto.getUniversity() != null)    { attempted.add("university");    dto.setUniversity(null); }
+        if (dto.getVerified() != null)      { attempted.add("verified");      dto.setVerified(null); }
+        if (dto.getPoints() != null)        { attempted.add("points");        dto.setPoints(null); }
+        if (dto.getIsDuplicate() != null)   { attempted.add("isDuplicate");   dto.setIsDuplicate(null); }
+        if (dto.getCode() != null)          { attempted.add("code");          dto.setCode(null); }
+        if (dto.getVersion() != null)       { attempted.add("version");       dto.setVersion(null); }
+        if (!attempted.isEmpty()) {
+            // Sentry-trackable: caller attempted mass assignment of protected fields.
+            // If repeated for the same flow, evaluate dedicated endpoint (transfer/verify/...).
+            log.warn("Mass-assignment ignored: caller PATCH-attempted server-managed fields {} — "
+                    + "use dedicated flow (StudentEnrollmentService for status/university, "
+                    + "VerificationService for verified/points).", attempted);
+        }
     }
 
     @Transactional

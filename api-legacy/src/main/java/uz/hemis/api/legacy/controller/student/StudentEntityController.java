@@ -77,6 +77,18 @@ public class StudentEntityController {
     private static final String VIEW_LOCAL = "_local";
 
     /**
+     * Sort property whitelist — OWASP A03 (SQL injection / DoS via arbitrary ORDER BY).
+     * Faqat indexed/safe columnlar (CUBA klient request qiladi). Whitelisted bo'lmagan
+     * property'lar {@code createTs} ga fallback qilinadi va WARN log'ga yoziladi.
+     */
+    private static final java.util.Set<String> STUDENT_SORT_WHITELIST = java.util.Set.of(
+            "id", "code", "firstname", "lastname", "fathername", "pinfl",
+            "createTs", "updateTs", "studentStatus", "active",
+            "university", "faculty", "speciality", "course",
+            "educationType", "educationForm", "educationYear"
+    );
+
+    /**
      * Build _instanceName for CUBA compatibility
      * Format: "LASTNAME FIRSTNAME FATHERNAME"
      */
@@ -623,15 +635,22 @@ public class StudentEntityController {
 
         log.debug("GET all students - offset: {}, limit: {} (via service)", offset, limit);
 
-        // Parse sort parameter
+        // Parse sort parameter — whitelist guard (OWASP A03 SQL injection vector via ORDER BY).
+        // PostgreSQL'da arbitrary property name = sequential scan DoS yoki @Formula column'ni
+        // expose qilish riski. Faqat indexed/safe columnlar ruxsat etiladi.
         Sort sorting = Sort.unsorted();
         if (sort != null && !sort.isEmpty()) {
             String[] sortParts = sort.split(",");
             if (sortParts.length >= 2) {
-                Sort.Direction direction = sortParts[1].equalsIgnoreCase("DESC") 
-                    ? Sort.Direction.DESC 
+                String property = sortParts[0].trim();
+                if (!STUDENT_SORT_WHITELIST.contains(property)) {
+                    log.warn("Rejected non-whitelisted sort property: {}", property);
+                    property = "createTs"; // safe fallback
+                }
+                Sort.Direction direction = sortParts[1].equalsIgnoreCase("DESC")
+                    ? Sort.Direction.DESC
                     : Sort.Direction.ASC;
-                sorting = Sort.by(direction, sortParts[0]);
+                sorting = Sort.by(direction, property);
             }
         }
 

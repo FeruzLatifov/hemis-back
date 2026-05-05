@@ -60,6 +60,13 @@ class StudentCoreServiceTest {
     @Mock
     private uz.hemis.service.security.TenantGuard tenantGuard;
 
+    /**
+     * JdbcTemplate mock — generateOldHemisCode pg_advisory_xact_lock uchun.
+     * Default null-return — lock ishlaydi (advisory_lock void).
+     */
+    @Mock
+    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @InjectMocks
     private StudentCoreService studentCoreService;
 
