@@ -119,10 +119,16 @@ public interface FacultyRepository extends JpaRepository<Faculty, UUID>, JpaSpec
     Map<String, Object> findFacultyDetailById(@Param("id") UUID id);
 
     /**
-     * Find all faculties for export (with filters)
+     * Find faculties for export with hard memory limit (defense against unbounded result).
+     *
+     * <p>224 OTM × ~30 fakultet = 6,720 row baseline; filter notilik bilan yondashilsa
+     * 1M+ row potentsiali (cross-table, agar kelajak join qo'shilsa). Hard limit 10,000
+     * — admin export uchun yetarli, memory exhaustion oldini oladi.</p>
+     *
+     * @param limit upper bound for result (suggested {@code 10000})
      */
     @Query(value = """
-        SELECT 
+        SELECT
             f.id,
             f.code,
             f.name as nameUz,
@@ -135,15 +141,17 @@ public interface FacultyRepository extends JpaRepository<Faculty, UUID>, JpaSpec
         WHERE f.delete_ts IS NULL
             AND (:universityCode IS NULL OR f._university = :universityCode)
             AND (:q IS NULL OR f.name ILIKE '%' || :q || '%' OR f.code ILIKE '%' || :q || '%')
-            AND (:status IS NULL 
+            AND (:status IS NULL
                 OR (:status = true AND f.active = true)
                 OR (:status = false AND (f.active = false OR f.active IS NULL)))
         ORDER BY u.name, f.name
+        LIMIT :limit
         """,
         nativeQuery = true)
     List<Map<String, Object>> findAllForExport(
         @Param("universityCode") String universityCode,
         @Param("q") String searchQuery,
-        @Param("status") Boolean status
+        @Param("status") Boolean status,
+        @Param("limit") int limit
     );
 }

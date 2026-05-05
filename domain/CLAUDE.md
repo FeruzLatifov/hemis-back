@@ -431,6 +431,59 @@ public class Student extends BaseEntity { ... }
        value = "SELECT * FROM hemishe_e_student WHERE faculty_id = :id AND delete_ts IS NULL")
 ```
 
+### Audit Column Naming Convention — `delete_ts` vs `deleted_at`
+
+Loyihada **ikki audit naming convention** parallel ishlatiladi. Yangi entity yaratayotganda
+to'g'ri base class ishlatish — har bir convention'ning aniq qoidasi:
+
+| Convention | Base class | Soft-delete | Audit columns | Qachon |
+|------------|-----------|-------------|---------------|--------|
+| **CUBA legacy** | `BaseEntity`, `LegacyClassifierEntity` | `delete_ts`, `deleted_by` | `create_ts`, `created_by`, `update_ts`, `updated_by` | Eski `hemishe_*` jadvallari (FROZEN schema) |
+| **Modern** | `AuditableEntity`, `ImmutableEntity` | `deleted_at`, `deleted_by` | `created_at`, `created_by`, `updated_at`, `updated_by` | Yangi jadvallar (prefiks-siz, `h_*` yangi classifierlar, modular monolith) |
+
+**Qoida:**
+- Eski `hemishe_*` jadvalga **map qilinayotgan** entity → `BaseEntity` extend (column'lar CUBA tomonidan boshqariladi, FROZEN)
+- Yangi yaratayotgan jadval (Liquibase V### ichida) → `AuditableEntity` extend, `deleted_at`/`created_at` columnlar qo'l bilan ko'rsatilsin
+- **Aralashtirish TAQIQ** — bitta jadvalda `delete_ts` va `deleted_at` birga bo'lmasin
+
+**Misol:**
+```java
+// ✓ Eski CUBA jadval — BaseEntity (delete_ts/create_ts)
+@Entity
+@Table(name = "hemishe_e_student")
+@SQLRestriction("delete_ts IS NULL")
+public class Student extends BaseEntity { ... }
+
+// ✓ Yangi modular jadval — AuditableEntity (deleted_at/created_at)
+@Entity
+@Table(name = "university_legal")
+@SQLRestriction("deleted_at IS NULL")
+public class UniversityLegal extends AuditableEntity { ... }
+```
+
+**Migration tomonida:**
+```sql
+-- ✓ Yangi jadval — modern naming
+CREATE TABLE university_building (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- ...
+    version    INTEGER   DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(50),
+    deleted_at TIMESTAMP,
+    deleted_by VARCHAR(50)
+);
+
+-- ✗ TAQIQ — yangi jadvalda CUBA naming (delete_ts) — convention buzilgan
+```
+
+**Sabab — nega ikki convention?**
+- `hemishe_*` jadvallari — old-hemis CUBA Platform tomonidan boshqariladi (FROZEN). Ustun nomlarini o'zgartirib bo'lmaydi (replication, 224 OTM bazasi).
+- Yangi jadvallar — modern Spring Data JPA + `@CreatedDate`/`@LastModifiedDate` annotation default `created_at`/`updated_at` bilan ishlaydi.
+- Hibrid yondashuv: backward compat + modern semantic.
+
 ---
 
 ## PostgreSQL-Specific (Senior tips)

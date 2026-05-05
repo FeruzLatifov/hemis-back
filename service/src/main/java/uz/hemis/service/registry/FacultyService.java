@@ -82,17 +82,28 @@ public class FacultyService {
     }
 
     /**
-     * Get all faculties for export (with filters applied)
+     * Hard limit for export — memory exhaustion oldini olish (224 OTM × ~30 fakultet = 6720 row baseline).
+     */
+    private static final int EXPORT_HARD_LIMIT = 10_000;
+
+    /**
+     * Get all faculties for export (with filters applied, hard limit 10000)
      */
     public List<Map<String, Object>> getFacultiesForExport(
         String universityCode,
         String searchQuery,
         Boolean status
     ) {
-        log.debug("Getting faculties for export: university={}, q={}, status={}", 
+        log.debug("Getting faculties for export: university={}, q={}, status={}",
             universityCode, searchQuery, status);
 
-        return facultyRepository.findAllForExport(universityCode, searchQuery, status);
+        List<Map<String, Object>> rows = facultyRepository.findAllForExport(
+                universityCode, searchQuery, status, EXPORT_HARD_LIMIT);
+        if (rows.size() == EXPORT_HARD_LIMIT) {
+            log.warn("Faculty export hit hard limit ({}). Filter may be too broad — refine criteria.",
+                    EXPORT_HARD_LIMIT);
+        }
+        return rows;
     }
 
     /**

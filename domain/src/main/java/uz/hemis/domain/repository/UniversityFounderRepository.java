@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.university.UniversityFounder;
 
 import java.util.List;
@@ -38,7 +39,20 @@ public interface UniversityFounderRepository extends JpaRepository<UniversityFou
     @EntityGraph(attributePaths = {"employee", "organization"})
     List<UniversityFounder> findByUniversityCodeAndIsCurrent(String universityCode, boolean isCurrent);
 
+    /**
+     * Plain-string accessor — Spring Data derived query. Caller layer
+     * (service) where possible should use {@link #findByEmployeePinfl(Pinfl)} for
+     * compile-time validation (14-digit format).
+     */
     List<UniversityFounder> findByEmployee_Pinfl(String pinfl);
+
+    /**
+     * Type-safe overload — accepts validated {@link Pinfl} VO. Pre-construction
+     * format check eliminates "garbage in" lookups.
+     */
+    default List<UniversityFounder> findByEmployeePinfl(Pinfl pinfl) {
+        return findByEmployee_Pinfl(pinfl == null ? null : pinfl.value());
+    }
 
     List<UniversityFounder> findByEmployee_Id(UUID employeeId);
 

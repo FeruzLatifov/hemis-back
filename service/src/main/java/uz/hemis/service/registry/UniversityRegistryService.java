@@ -165,38 +165,59 @@ public class UniversityRegistryService {
     public UniversityDictionariesDto getDictionaries() {
         log.debug("Loading university dictionaries from database");
 
-        List<DictionaryItem> ownerships = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_ownership WHERE delete_ts IS NULL AND active = true ORDER BY name");
-
-        List<DictionaryItem> types = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_type WHERE delete_ts IS NULL AND active = true ORDER BY name");
-
-        List<DictionaryItem> regions = loadRegionItems();
-
-        List<DictionaryItem> activityStatuses = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_activity_status WHERE delete_ts IS NULL ORDER BY name");
-
-        List<DictionaryItem> belongsToOptions = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_belongs_to WHERE delete_ts IS NULL ORDER BY name");
-
-        List<DictionaryItem> contractCategories = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_university_contract_category WHERE delete_ts IS NULL ORDER BY name");
-
-        List<DictionaryItem> versionTypes = loadClassifierItems(
-                "SELECT code, name FROM hemishe_h_hemis_version_type WHERE delete_ts IS NULL ORDER BY name");
-
-        List<DictionaryItem> districts = loadDistrictItems();
+        // M8 — UNION ALL: 6 ta classifier query → bitta DB roundtrip
+        // (cache MISS holatida — har deploy/restart). Region/district alohida
+        // chunki ular `hemishe_h_soato` da LENGTH(code) filter bilan.
+        Map<String, List<DictionaryItem>> classifiers = loadClassifierItemsBatch();
 
         return UniversityDictionariesDto.builder()
-                .ownerships(ownerships)
-                .types(types)
-                .regions(regions)
-                .activityStatuses(activityStatuses)
-                .belongsToOptions(belongsToOptions)
-                .contractCategories(contractCategories)
-                .versionTypes(versionTypes)
-                .districts(districts)
+                .ownerships(classifiers.getOrDefault("ownership", List.of()))
+                .types(classifiers.getOrDefault("type", List.of()))
+                .regions(loadRegionItems())
+                .activityStatuses(classifiers.getOrDefault("activity_status", List.of()))
+                .belongsToOptions(classifiers.getOrDefault("belongs_to", List.of()))
+                .contractCategories(classifiers.getOrDefault("contract_category", List.of()))
+                .versionTypes(classifiers.getOrDefault("version_type", List.of()))
+                .districts(loadDistrictItems())
                 .build();
+    }
+
+    /**
+     * Single UNION ALL query — fetches 6 classifier datasets in one DB roundtrip.
+     * Ordering: classifier tag (asc), then name (asc) for deterministic dropdown order.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, List<DictionaryItem>> loadClassifierItemsBatch() {
+        String sql =
+                "SELECT 'ownership' AS tag, code, name FROM hemishe_h_ownership "
+                        + "  WHERE delete_ts IS NULL AND active = true "
+                        + "UNION ALL "
+                        + "SELECT 'type' AS tag, code, name FROM hemishe_h_university_type "
+                        + "  WHERE delete_ts IS NULL AND active = true "
+                        + "UNION ALL "
+                        + "SELECT 'activity_status' AS tag, code, name FROM hemishe_h_university_activity_status "
+                        + "  WHERE delete_ts IS NULL "
+                        + "UNION ALL "
+                        + "SELECT 'belongs_to' AS tag, code, name FROM hemishe_h_university_belongs_to "
+                        + "  WHERE delete_ts IS NULL "
+                        + "UNION ALL "
+                        + "SELECT 'contract_category' AS tag, code, name FROM hemishe_h_university_contract_category "
+                        + "  WHERE delete_ts IS NULL "
+                        + "UNION ALL "
+                        + "SELECT 'version_type' AS tag, code, name FROM hemishe_h_hemis_version_type "
+                        + "  WHERE delete_ts IS NULL "
+                        + "ORDER BY tag, name";
+        List<Object[]> rows = entityManager.createNativeQuery(sql).getResultList();
+        Map<String, List<DictionaryItem>> grouped = new java.util.HashMap<>();
+        for (Object[] row : rows) {
+            String tag = (String) row[0];
+            grouped.computeIfAbsent(tag, k -> new ArrayList<>())
+                    .add(DictionaryItem.builder()
+                            .code((String) row[1])
+                            .name((String) row[2])
+                            .build());
+        }
+        return grouped;
     }
 
     @SuppressWarnings("unchecked")
