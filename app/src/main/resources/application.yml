@@ -307,17 +307,19 @@ hemis:
     server-url: ${SWAGGER_SERVER_URL:http://localhost:${SERVER_PORT:8081}}
 
   # Audit Logging Configuration
+  # SECURITY: AUDIT_DB_PASSWORD ENV majburiy AUDIT_ENABLED=true bo'lganda.
+  # Hardcoded default ataylab olib tashlangan (production'da ENV unutilishi xavfli).
   audit:
     enabled: ${AUDIT_ENABLED:false}
     datasource:
       master:
         url: jdbc:postgresql://${AUDIT_DB_HOST:localhost}:${AUDIT_DB_PORT:5434}/${AUDIT_DB_NAME:hemis_audit}
         username: ${AUDIT_DB_USER:hemis_audit}
-        password: ${AUDIT_DB_PASSWORD:audit_secret}
+        password: ${AUDIT_DB_PASSWORD:}
       replica:
         url: jdbc:postgresql://${AUDIT_DB_REPLICA_HOST:${AUDIT_DB_HOST:localhost}}:${AUDIT_DB_REPLICA_PORT:${AUDIT_DB_PORT:5434}}/${AUDIT_DB_REPLICA_NAME:${AUDIT_DB_NAME:hemis_audit}}
         username: ${AUDIT_DB_REPLICA_USER:${AUDIT_DB_USER:hemis_audit}}
-        password: ${AUDIT_DB_REPLICA_PASSWORD:${AUDIT_DB_PASSWORD:audit_secret}}
+        password: ${AUDIT_DB_REPLICA_PASSWORD:${AUDIT_DB_PASSWORD:}}
     # Qaysi endpointlarni log qilmaslik
     exclude-patterns:
       - /actuator/**

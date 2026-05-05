@@ -1,0 +1,996 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 3200 2680"
+     width="3200" height="2680"
+     style="background: #FAFAFA; font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;"
+     shape-rendering="geometricPrecision"
+     text-rendering="optimizeLegibility">
+<defs>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+    <feOffset dx="0" dy="2" result="offsetblur"/>
+    <feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer>
+    <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+</defs>
+<rect x="0" y="0" width="3200" height="2680" fill="#FAFAFA"/>
+<text x="1600.0" y="60" text-anchor="middle" font-size="34" font-weight="800" fill="#0F172A" letter-spacing="-0.5">HEMIS University Domain — Enterprise ER Diagram</text>
+<text x="1600.0" y="92" text-anchor="middle" font-size="14" font-weight="500" fill="#64748B">Project Manager / Team Lead taqdimoti  ·  13 jadval  ·  16 munosabat  ·  ~210 ustun (real schema)  ·  V3.0  ·  2026-05-05</text>
+<line x1="80" y1="118" x2="3120" y2="118" stroke="#E5E7EB" stroke-width="2"/>
+<rect x="20" y="140" width="3160" height="220" rx="14" ry="14" fill="#FEE2E2" opacity="0.22"/>
+<text x="40" y="164" font-size="13" font-weight="700" fill="#1F2937" letter-spacing="0.6" opacity="0.75">🏛️ FOUNDATION (CUBA Legacy — FROZEN)</text>
+<rect x="20" y="380" width="3160" height="1080" rx="14" ry="14" fill="#DBEAFE" opacity="0.22"/>
+<text x="40" y="404" font-size="13" font-weight="700" fill="#1F2937" letter-spacing="0.6" opacity="0.75">📋 CORE 1:1 + 📦 REFERENCE MASTER</text>
+<rect x="20" y="1480" width="3160" height="780" rx="14" ry="14" fill="#FED7AA" opacity="0.22"/>
+<text x="40" y="1504" font-size="13" font-weight="700" fill="#1F2937" letter-spacing="0.6" opacity="0.75">🧱 COMPOSITE 1:N + 📜 IMMUTABLE EVENT LOG</text>
+<rect x="20" y="2280" width="3160" height="240" rx="14" ry="14" fill="#D1FAE5" opacity="0.22"/>
+<text x="40" y="2304" font-size="13" font-weight="700" fill="#1F2937" letter-spacing="0.6" opacity="0.75">🏷️ CLASSIFIER (h_* prefiks · ADR-0006)</text>
+<g id="edges">
+<g class="edge" data-edge="UNI-ULEG">
+<path d="M 1680.0,454.0 L 1680.0,378.0 Q 1680.0,370.0 1672.0,370.0 L 708.0,370.0 Q 700.0,370.0 700.0,378.0 L 700.0,420.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1674.0" y1="442.0" x2="1686.0" y2="442.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1674.0" y1="434.0" x2="1686.0" y2="434.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="694.0" y1="408.0" x2="706.0" y2="408.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="694.0" y1="400.0" x2="706.0" y2="400.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<rect x="1135.0" y="359.0" width="110" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1190.0" y="374.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">1:1 CASCADE</text>
+</g>
+<g class="edge" data-edge="UNI-UPRO">
+<path d="M 1720.0,454.0 L 1720.0,358.0 Q 1720.0,350.0 1712.0,350.0 L 1178.0,350.0 Q 1170.0,350.0 1170.0,358.0 L 1170.0,420.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1714.0" y1="442.0" x2="1726.0" y2="442.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1714.0" y1="434.0" x2="1726.0" y2="434.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1164.0" y1="408.0" x2="1176.0" y2="408.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1164.0" y1="400.0" x2="1176.0" y2="400.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<rect x="1390.0" y="339.0" width="110" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1445.0" y="354.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">1:1 CASCADE</text>
+</g>
+<g class="edge" data-edge="UNI-UFON">
+<path d="M 1590.0,454.0 L 1590.0,338.0 Q 1590.0,330.0 1582.0,330.0 L 43.0,330.0 Q 35.0,330.0 35.0,338.0 L 35.0,1472.0 Q 35.0,1480.0 43.0,1480.0 L 152.0,1480.0 Q 160.0,1480.0 160.0,1488.0 L 160.0,1520.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1584.0" y1="442.0" x2="1596.0" y2="442.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1584.0" y1="434.0" x2="1596.0" y2="434.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="160.0" cy="1502.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="160.0" y1="1520.0" x2="160.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="160.0" y1="1520.0" x2="153.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="160.0" y1="1520.0" x2="167.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="757.5" y="319.0" width="110" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="812.5" y="334.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">1:N CASCADE</text>
+</g>
+<g class="edge" data-edge="UNI-ULIF">
+<path d="M 1620.0,454.0 L 1620.0,318.0 Q 1620.0,310.0 1612.0,310.0 L 458.0,310.0 Q 450.0,310.0 450.0,318.0 L 450.0,1452.0 Q 450.0,1460.0 458.0,1460.0 L 662.0,1460.0 Q 670.0,1460.0 670.0,1468.0 L 670.0,1520.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1614.0" y1="442.0" x2="1626.0" y2="442.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1614.0" y1="434.0" x2="1626.0" y2="434.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="670.0" cy="1502.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="670.0" y1="1520.0" x2="670.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="670.0" y1="1520.0" x2="663.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="670.0" y1="1520.0" x2="677.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="975.0" y="299.0" width="120" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1035.0" y="314.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">1:N RESTRICT</text>
+</g>
+<g class="edge" data-edge="UNI-UCAD">
+<path d="M 1660.0,454.0 L 1660.0,298.0 Q 1660.0,290.0 1652.0,290.0 L 978.0,290.0 Q 970.0,290.0 970.0,298.0 L 970.0,1432.0 Q 970.0,1440.0 978.0,1440.0 L 1072.0,1440.0 Q 1080.0,1440.0 1080.0,1448.0 L 1080.0,1520.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1654.0" y1="442.0" x2="1666.0" y2="442.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1654.0" y1="434.0" x2="1666.0" y2="434.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1080.0" cy="1502.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="1080.0" y1="1520.0" x2="1080.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1080.0" y1="1520.0" x2="1073.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1080.0" y1="1520.0" x2="1087.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="915.0" y="854.0" width="110" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="970.0" y="869.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">1:N CASCADE</text>
+</g>
+<g class="edge" data-edge="UNI-UBLD">
+<path d="M 1760.0,454.0 L 1760.0,338.0 Q 1760.0,330.0 1768.0,330.0 L 1817.0,330.0 Q 1825.0,330.0 1825.0,338.0 L 1825.0,1472.0 Q 1825.0,1480.0 1817.0,1480.0 L 1628.0,1480.0 Q 1620.0,1480.0 1620.0,1488.0 L 1620.0,1520.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1754.0" y1="442.0" x2="1766.0" y2="442.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1754.0" y1="434.0" x2="1766.0" y2="434.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1620.0" cy="1502.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="1620.0" y1="1520.0" x2="1620.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1620.0" y1="1520.0" x2="1613.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1620.0" y1="1520.0" x2="1627.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="1770.0" y="894.0" width="110" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1825.0" y="909.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">1:N CASCADE</text>
+</g>
+<g class="edge" data-edge="UBLD-BLIF">
+<path d="M 1840.0,1800.0 L 1900.0,1701.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1841.1" y1="1786.6" x2="1851.4" y2="1792.8" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1845.2" y1="1779.8" x2="1855.5" y2="1786.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1890.7" cy="1716.4" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="1900.0" y1="1701.0" x2="1892.7" y2="1713.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1900.0" y1="1701.0" x2="1898.7" y2="1716.6" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1900.0" y1="1701.0" x2="1886.8" y2="1709.3" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="1815.0" y="1739.5" width="110" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1870.0" y="1754.5" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">1:N CASCADE</text>
+</g>
+<g class="edge" data-edge="UCAD-UBLD">
+<path d="M 1340.0,1720.0 L 1400.0,1900.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="1345.7" cy="1737.1" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="1349.5" y1="1729.5" x2="1338.1" y2="1733.3" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="1394.3" cy="1882.9" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="1400.0" y1="1900.0" x2="1395.6" y2="1886.7" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1400.0" y1="1900.0" x2="1388.9" y2="1888.9" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1400.0" y1="1900.0" x2="1402.2" y2="1884.5" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="1310.0" y="1799.0" width="120" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1370.0" y="1814.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">0:1 SET NULL</text>
+</g>
+<g class="edge" data-edge="UBLD-HBC">
+<path d="M 1500.0,2080.0 L 1500.0,2262.0 Q 1500.0,2270.0 1492.0,2270.0 L 338.0,2270.0 Q 330.0,2270.0 330.0,2278.0 L 330.0,2320.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1500.0" y1="2080.0" x2="1500.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1500.0" y1="2080.0" x2="1507.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1500.0" y1="2080.0" x2="1493.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="324.0" y1="2308.0" x2="336.0" y2="2308.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="324.0" y1="2300.0" x2="336.0" y2="2300.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<rect x="830.0" y="2259.0" width="170" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="915.0" y="2274.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">category RESTRICT</text>
+</g>
+<g class="edge" data-edge="UBLD-HCM">
+<path d="M 1600.0,2080.0 L 1600.0,2242.0 Q 1600.0,2250.0 1592.0,2250.0 L 838.0,2250.0 Q 830.0,2250.0 830.0,2258.0 L 830.0,2320.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1600.0" y1="2080.0" x2="1600.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1600.0" y1="2080.0" x2="1607.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1600.0" y1="2080.0" x2="1593.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<circle cx="830.0" cy="2302.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="824.0" y1="2308.0" x2="836.0" y2="2308.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<rect x="1130.0" y="2239.0" width="170" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1215.0" y="2254.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">material SET NULL</text>
+</g>
+<g class="edge" data-edge="UBLD-HRT">
+<path d="M 1700.0,2080.0 L 1700.0,2222.0 Q 1700.0,2230.0 1692.0,2230.0 L 1338.0,2230.0 Q 1330.0,2230.0 1330.0,2238.0 L 1330.0,2320.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1700.0" y1="2080.0" x2="1700.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1700.0" y1="2080.0" x2="1707.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="1700.0" y1="2080.0" x2="1693.0" y2="2094.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<circle cx="1330.0" cy="2302.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="1324.0" y1="2308.0" x2="1336.0" y2="2308.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<rect x="1450.0" y="2219.0" width="130" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1515.0" y="2234.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">roof SET NULL</text>
+</g>
+<g class="edge" data-edge="BLIF-HBC">
+<path d="M 2000.0,1882.0 L 2000.0,2182.0 Q 2000.0,2190.0 1992.0,2190.0 L 388.0,2190.0 Q 380.0,2190.0 380.0,2198.0 L 380.0,2320.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="2000.0" y1="1882.0" x2="2000.0" y2="1896.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="2000.0" y1="1882.0" x2="2007.0" y2="1896.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="2000.0" y1="1882.0" x2="1993.0" y2="1896.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<circle cx="380.0" cy="2302.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="374.0" y1="2308.0" x2="386.0" y2="2308.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<rect x="1105.0" y="2179.0" width="170" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1190.0" y="2194.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">prev/new category</text>
+</g>
+<g class="edge" data-edge="ORG-ULEG">
+<path d="M 1580.0,738.0 L 1580.0,760.0 Q 1580.0,768.0 1572.0,768.0 L 958.0,768.0 Q 950.0,768.0 950.0,760.0 L 950.0,458.0 Q 950.0,450.0 942.0,450.0 L 920.0,450.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1586.0" y1="750.0" x2="1574.0" y2="750.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1586.0" y1="758.0" x2="1574.0" y2="758.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="938.0" cy="450.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="932.0" y1="444.0" x2="932.0" y2="456.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<rect x="1205.0" y="757.0" width="120" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="1265.0" y="772.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">TIN registry</text>
+</g>
+<g class="edge" data-edge="EMP-ULEG">
+<path d="M 440.0,500.0 L 480.0,510.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="453.1" y1="497.1" x2="450.2" y2="508.7" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="460.9" y1="499.0" x2="457.9" y2="510.7" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="462.5" cy="505.6" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="480.0" y1="510.0" x2="466.4" y2="506.6" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="480.0" y1="510.0" x2="464.7" y2="513.4" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="480.0" y1="510.0" x2="468.1" y2="499.8" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="365.0" y="494.0" width="190" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="460.0" y="509.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">director/accountant</text>
+</g>
+<g class="edge" data-edge="EMP-UFON">
+<path d="M 200.0,870.0 L 200.0,1419.5 Q 200.0,1420.0 200.0,1420.0 L 200.0,1420.0 Q 200.0,1420.0 200.0,1420.5 L 200.0,1520.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="206.0" y1="882.0" x2="194.0" y2="882.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="206.0" y1="890.0" x2="194.0" y2="890.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="200.0" cy="1502.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="200.0" y1="1520.0" x2="200.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="200.0" y1="1520.0" x2="193.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="200.0" y1="1520.0" x2="207.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="130.0" y="1134.0" width="140" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="200.0" y="1149.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">INDIVIDUAL XOR</text>
+</g>
+<g class="edge" data-edge="ORG-UFON">
+<path d="M 1640.0,738.0 L 1640.0,1432.0 Q 1640.0,1440.0 1632.0,1440.0 L 93.0,1440.0 Q 85.0,1440.0 85.0,1448.0 L 85.0,1482.0 Q 85.0,1490.0 93.0,1490.0 L 292.0,1490.0 Q 300.0,1490.0 300.0,1498.0 L 300.0,1520.0" fill="none" stroke="#475569" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="1646.0" y1="750.0" x2="1634.0" y2="750.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<line x1="1646.0" y1="758.0" x2="1634.0" y2="758.0" stroke="#475569" stroke-width="2.2" stroke-linecap="round"/>
+<circle cx="300.0" cy="1502.0" r="5" fill="white" stroke="#475569" stroke-width="2"/>
+<line x1="300.0" y1="1520.0" x2="300.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="300.0" y1="1520.0" x2="293.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<line x1="300.0" y1="1520.0" x2="307.0" y2="1506.0" stroke="#475569" stroke-width="2" stroke-linecap="round"/>
+<rect x="817.5" y="1429.0" width="90" height="20" rx="10" fill="white" stroke="#475569" stroke-width="1.1" opacity="0.97"/>
+<text x="862.5" y="1444.0" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1F2937">LEGAL XOR</text>
+</g>
+</g>
+<g id="tables">
+<g id="t_UNI" filter="url(#shadow)">
+<rect x="1480" y="180" width="380" height="274" rx="10" ry="10" fill="white" stroke="#FB7185" stroke-width="2"/>
+<rect x="1480" y="180" width="380" height="64" rx="10" ry="10" fill="#9F1239"/>
+<rect x="1480" y="232" width="380" height="12" fill="#9F1239"/>
+<rect x="1480" y="244" width="380" height="210" rx="10" ry="10" fill="#FFF1F2" opacity="0.5"/>
+<rect x="1480" y="244" width="380" height="14" fill="#FFF1F2" opacity="0.5"/>
+<text x="1670.0" y="204" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">hemishe_e_university</text>
+<text x="1670.0" y="224" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">CUBA legacy · 224 OTM · FROZEN</text>
+<text x="1490" y="262" font-size="11.5" font-weight="700" fill="#9F1239">🔑</text>
+<text x="1508" y="262" font-size="11" font-weight="600" fill="#0F172A">code</text>
+<text x="1850" y="262" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">VARCHAR(255) · OTM kodi</text>
+<rect x="1481" y="268" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1488" y1="268" x2="1852" y2="268" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1492" y="284" font-size="11" font-weight="600" fill="#0F172A">name</text>
+<text x="1850" y="284" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">VARCHAR(1024) · OTM nomi</text>
+<line x1="1488" y1="290" x2="1852" y2="290" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1492" y="306" font-size="11" font-weight="600" fill="#0F172A">short_name</text>
+<text x="1850" y="306" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">VARCHAR(255)</text>
+<rect x="1481" y="312" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1488" y1="312" x2="1852" y2="312" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1490" y="328" font-size="11.5" font-weight="700" fill="#9F1239">🔗</text>
+<text x="1508" y="328" font-size="11" font-weight="600" fill="#0F172A">region_id</text>
+<text x="1850" y="328" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">INTEGER · viloyat (legacy)</text>
+<line x1="1488" y1="334" x2="1852" y2="334" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1492" y="350" font-size="11" font-weight="600" fill="#0F172A">inn</text>
+<text x="1850" y="350" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">VARCHAR(20) · STIR</text>
+<rect x="1481" y="356" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1488" y1="356" x2="1852" y2="356" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1492" y="372" font-size="11" font-weight="600" fill="#0F172A">address</text>
+<text x="1850" y="372" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">TEXT</text>
+<line x1="1488" y1="378" x2="1852" y2="378" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1492" y="394" font-size="11" font-weight="600" fill="#0F172A">phone, email</text>
+<text x="1850" y="394" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">VARCHAR</text>
+<rect x="1481" y="400" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1488" y1="400" x2="1852" y2="400" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1492" y="416" font-size="11" font-weight="600" fill="#0F172A">delete_ts</text>
+<text x="1850" y="416" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">TIMESTAMP · soft-delete</text>
+<line x1="1488" y1="422" x2="1852" y2="422" stroke="#FB7185" stroke-width="0.4" opacity="0.3"/>
+<text x="1492" y="438" font-size="11" font-weight="600" fill="#0F172A">create_ts, update_ts</text>
+<text x="1850" y="438" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9F1239" font-weight="500">TIMESTAMP · CUBA audit</text>
+</g>
+<g id="t_ULEG" filter="url(#shadow)">
+<rect x="480" y="420" width="440" height="670" rx="10" ry="10" fill="white" stroke="#60A5FA" stroke-width="2"/>
+<rect x="480" y="420" width="440" height="64" rx="10" ry="10" fill="#1E40AF"/>
+<rect x="480" y="472" width="440" height="12" fill="#1E40AF"/>
+<rect x="480" y="484" width="440" height="606" rx="10" ry="10" fill="#EFF6FF" opacity="0.5"/>
+<rect x="480" y="484" width="440" height="14" fill="#EFF6FF" opacity="0.5"/>
+<text x="700.0" y="444" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">university_legal</text>
+<text x="700.0" y="464" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V005 · 1:1 · TIN registry · API sync</text>
+<text x="490" y="502" font-size="11.5" font-weight="700" fill="#1E40AF">🔑</text>
+<text x="508" y="502" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="910" y="502" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">UUID · gen_random_uuid()</text>
+<rect x="481" y="508" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="508" x2="912" y2="508" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="490" y="524" font-size="11.5" font-weight="700" fill="#1E40AF">🔗◆</text>
+<text x="508" y="524" font-size="11" font-weight="600" fill="#0F172A">university_code</text>
+<text x="910" y="524" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(255) · → uni · CASCADE</text>
+<line x1="488" y1="530" x2="912" y2="530" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="490" y="546" font-size="11.5" font-weight="700" fill="#1E40AF">🔗</text>
+<text x="508" y="546" font-size="11" font-weight="600" fill="#0F172A">organization_id</text>
+<text x="910" y="546" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">UUID · → organization · SET NULL</text>
+<rect x="481" y="552" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="552" x2="912" y2="552" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="490" y="568" font-size="11.5" font-weight="700" fill="#1E40AF">🔗</text>
+<text x="508" y="568" font-size="11" font-weight="600" fill="#0F172A">director_employee_id</text>
+<text x="910" y="568" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">UUID · → employee · SET NULL</text>
+<line x1="488" y1="574" x2="912" y2="574" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="490" y="590" font-size="11.5" font-weight="700" fill="#1E40AF">🔗</text>
+<text x="508" y="590" font-size="11" font-weight="600" fill="#0F172A">accountant_employee_id</text>
+<text x="910" y="590" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">UUID · → employee · SET NULL</text>
+<rect x="481" y="596" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="596" x2="912" y2="596" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="612" font-size="11" font-weight="600" fill="#0F172A">short_name</text>
+<text x="910" y="612" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(500)</text>
+<line x1="488" y1="618" x2="912" y2="618" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="634" font-size="11" font-weight="600" fill="#0F172A">tin</text>
+<text x="910" y="634" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(20) · API snapshot</text>
+<rect x="481" y="640" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="640" x2="912" y2="640" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="656" font-size="11" font-weight="600" fill="#0F172A">opf, kfs, oked, soogu</text>
+<text x="910" y="656" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">INTEGER/VARCHAR · klassifikatorlar</text>
+<line x1="488" y1="662" x2="912" y2="662" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="678" font-size="11" font-weight="600" fill="#0F172A">soogu_registrator</text>
+<text x="910" y="678" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(20)</text>
+<rect x="481" y="684" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="684" x2="912" y2="684" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="700" font-size="11" font-weight="600" fill="#0F172A">registration_date</text>
+<text x="910" y="700" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">DATE</text>
+<line x1="488" y1="706" x2="912" y2="706" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="722" font-size="11" font-weight="600" fill="#0F172A">registration_number</text>
+<text x="910" y="722" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(100)</text>
+<rect x="481" y="728" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="728" x2="912" y2="728" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="744" font-size="11" font-weight="600" fill="#0F172A">reregistration_date</text>
+<text x="910" y="744" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">DATE</text>
+<line x1="488" y1="750" x2="912" y2="750" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="766" font-size="11" font-weight="600" fill="#0F172A">status</text>
+<text x="910" y="766" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">INTEGER · 0..9 lifecycle</text>
+<rect x="481" y="772" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="772" x2="912" y2="772" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="788" font-size="11" font-weight="600" fill="#0F172A">status_updated</text>
+<text x="910" y="788" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">DATE</text>
+<line x1="488" y1="794" x2="912" y2="794" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="810" font-size="11" font-weight="600" fill="#0F172A">vat_number</text>
+<text x="910" y="810" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">BIGINT · VAT</text>
+<rect x="481" y="816" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="816" x2="912" y2="816" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="832" font-size="11" font-weight="600" fill="#0F172A">tax_mode, taxpayer_type</text>
+<text x="910" y="832" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">INTEGER · 0..99</text>
+<line x1="488" y1="838" x2="912" y2="838" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="854" font-size="11" font-weight="600" fill="#0F172A">business_type, business_structure</text>
+<text x="910" y="854" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">INTEGER · 0..99</text>
+<rect x="481" y="860" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="860" x2="912" y2="860" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="876" font-size="11" font-weight="600" fill="#0F172A">business_fund</text>
+<text x="910" y="876" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">BIGINT</text>
+<line x1="488" y1="882" x2="912" y2="882" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="898" font-size="11" font-weight="600" fill="#0F172A">avg_employees</text>
+<text x="910" y="898" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">INTEGER</text>
+<rect x="481" y="904" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="904" x2="912" y2="904" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="920" font-size="11" font-weight="600" fill="#0F172A">billing_country_code</text>
+<text x="910" y="920" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">INTEGER · 0..999</text>
+<line x1="488" y1="926" x2="912" y2="926" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="490" y="942" font-size="11.5" font-weight="700" fill="#1E40AF">🔗</text>
+<text x="508" y="942" font-size="11" font-weight="600" fill="#0F172A">billing_soato</text>
+<text x="910" y="942" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(20) · → hemishe_h_soato</text>
+<rect x="481" y="948" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="948" x2="912" y2="948" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="964" font-size="11" font-weight="600" fill="#0F172A">billing_street, postcode, cadastre</text>
+<text x="910" y="964" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">TEXT/VARCHAR</text>
+<line x1="488" y1="970" x2="912" y2="970" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="986" font-size="11" font-weight="600" fill="#0F172A">shipping_addresses</text>
+<text x="910" y="986" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">JSONB · array</text>
+<rect x="481" y="992" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="992" x2="912" y2="992" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1008" font-size="11" font-weight="600" fill="#0F172A">bank_accounts</text>
+<text x="910" y="1008" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">JSONB · array</text>
+<line x1="488" y1="1014" x2="912" y2="1014" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1030" font-size="11" font-weight="600" fill="#0F172A">api_raw_response</text>
+<text x="910" y="1030" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">JSONB · audit</text>
+<rect x="481" y="1036" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="1036" x2="912" y2="1036" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1052" font-size="11" font-weight="600" fill="#0F172A">synced_at</text>
+<text x="910" y="1052" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">TIMESTAMP</text>
+<line x1="488" y1="1058" x2="912" y2="1058" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1074" font-size="11" font-weight="600" fill="#0F172A">+ audit</text>
+<text x="910" y="1074" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">7 cols · AuditableEntity</text>
+</g>
+<g id="t_UPRO" filter="url(#shadow)">
+<rect x="980" y="420" width="380" height="362" rx="10" ry="10" fill="white" stroke="#60A5FA" stroke-width="2"/>
+<rect x="980" y="420" width="380" height="64" rx="10" ry="10" fill="#1E40AF"/>
+<rect x="980" y="472" width="380" height="12" fill="#1E40AF"/>
+<rect x="980" y="484" width="380" height="298" rx="10" ry="10" fill="#EFF6FF" opacity="0.5"/>
+<rect x="980" y="484" width="380" height="14" fill="#EFF6FF" opacity="0.5"/>
+<text x="1170.0" y="444" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">university_profile</text>
+<text x="1170.0" y="464" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V005 · 1:1 · MinIO · GIS</text>
+<text x="990" y="502" font-size="11.5" font-weight="700" fill="#1E40AF">🔑</text>
+<text x="1008" y="502" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="1350" y="502" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">UUID</text>
+<rect x="981" y="508" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="988" y1="508" x2="1352" y2="508" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="990" y="524" font-size="11.5" font-weight="700" fill="#1E40AF">🔗◆</text>
+<text x="1008" y="524" font-size="11" font-weight="600" fill="#0F172A">university_code</text>
+<text x="1350" y="524" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(255) · → uni · CASCADE</text>
+<line x1="988" y1="530" x2="1352" y2="530" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="546" font-size="11" font-weight="600" fill="#0F172A">phone, email</text>
+<text x="1350" y="546" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR</text>
+<rect x="981" y="552" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="988" y1="552" x2="1352" y2="552" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="568" font-size="11" font-weight="600" fill="#0F172A">social_links</text>
+<text x="1350" y="568" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">JSONB · website, telegram, ig</text>
+<line x1="988" y1="574" x2="1352" y2="574" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="590" font-size="11" font-weight="600" fill="#0F172A">logo_key</text>
+<text x="1350" y="590" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(500) · MinIO obyekt key</text>
+<rect x="981" y="596" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="988" y1="596" x2="1352" y2="596" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="612" font-size="11" font-weight="600" fill="#0F172A">description</text>
+<text x="1350" y="612" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">TEXT</text>
+<line x1="988" y1="618" x2="1352" y2="618" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="634" font-size="11" font-weight="600" fill="#0F172A">documents</text>
+<text x="1350" y="634" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">JSONB · license, charter array</text>
+<rect x="981" y="640" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="988" y1="640" x2="1352" y2="640" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="656" font-size="11" font-weight="600" fill="#0F172A">map_url</text>
+<text x="1350" y="656" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">TEXT · Yandex/Google</text>
+<line x1="988" y1="662" x2="1352" y2="662" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="678" font-size="11" font-weight="600" fill="#0F172A">latitude, longitude</text>
+<text x="1350" y="678" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">NUMERIC(10,7) · WGS84</text>
+<rect x="981" y="684" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="988" y1="684" x2="1352" y2="684" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="700" font-size="11" font-weight="600" fill="#0F172A">source</text>
+<text x="1350" y="700" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(50) · manual / hemis_sync</text>
+<line x1="988" y1="706" x2="1352" y2="706" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="722" font-size="11" font-weight="600" fill="#0F172A">source_uid</text>
+<text x="1350" y="722" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(255)</text>
+<rect x="981" y="728" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="988" y1="728" x2="1352" y2="728" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="744" font-size="11" font-weight="600" fill="#0F172A">hash</text>
+<text x="1350" y="744" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">VARCHAR(64) · SHA-256 change det.</text>
+<line x1="988" y1="750" x2="1352" y2="750" stroke="#60A5FA" stroke-width="0.4" opacity="0.3"/>
+<text x="992" y="766" font-size="11" font-weight="600" fill="#0F172A">+ audit</text>
+<text x="1350" y="766" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#1E40AF" font-weight="500">7 cols · AuditableEntity</text>
+</g>
+<g id="t_ORG" filter="url(#shadow)">
+<rect x="1420" y="420" width="320" height="318" rx="10" ry="10" fill="white" stroke="#FCD34D" stroke-width="2"/>
+<rect x="1420" y="420" width="320" height="64" rx="10" ry="10" fill="#A16207"/>
+<rect x="1420" y="472" width="320" height="12" fill="#A16207"/>
+<rect x="1420" y="484" width="320" height="254" rx="10" ry="10" fill="#FEFCE8" opacity="0.5"/>
+<rect x="1420" y="484" width="320" height="14" fill="#FEFCE8" opacity="0.5"/>
+<text x="1580.0" y="444" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">organization</text>
+<text x="1580.0" y="464" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V005 · TIN UNIQUE · api_legal</text>
+<text x="1430" y="502" font-size="11.5" font-weight="700" fill="#854D0E">🔑</text>
+<text x="1448" y="502" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="1730" y="502" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">UUID</text>
+<rect x="1421" y="508" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="1428" y1="508" x2="1732" y2="508" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1430" y="524" font-size="11.5" font-weight="700" fill="#854D0E">◆</text>
+<text x="1448" y="524" font-size="11" font-weight="600" fill="#0F172A">tin</text>
+<text x="1730" y="524" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · STIR (partial UQ)</text>
+<line x1="1428" y1="530" x2="1732" y2="530" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="546" font-size="11" font-weight="600" fill="#0F172A">name</text>
+<text x="1730" y="546" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(500)</text>
+<rect x="1421" y="552" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="1428" y1="552" x2="1732" y2="552" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="568" font-size="11" font-weight="600" fill="#0F172A">short_name</text>
+<text x="1730" y="568" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(255)</text>
+<line x1="1428" y1="574" x2="1732" y2="574" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="590" font-size="11" font-weight="600" fill="#0F172A">opf</text>
+<text x="1730" y="590" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">INTEGER · tashkiliy shakli</text>
+<rect x="1421" y="596" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="1428" y1="596" x2="1732" y2="596" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="612" font-size="11" font-weight="600" fill="#0F172A">address</text>
+<text x="1730" y="612" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">TEXT</text>
+<line x1="1428" y1="618" x2="1732" y2="618" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="634" font-size="11" font-weight="600" fill="#0F172A">phone, email</text>
+<text x="1730" y="634" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR</text>
+<rect x="1421" y="640" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="1428" y1="640" x2="1732" y2="640" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="656" font-size="11" font-weight="600" fill="#0F172A">source</text>
+<text x="1730" y="656" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(50) · api_legal default</text>
+<line x1="1428" y1="662" x2="1732" y2="662" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="678" font-size="11" font-weight="600" fill="#0F172A">api_raw_response</text>
+<text x="1730" y="678" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">JSONB</text>
+<rect x="1421" y="684" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="1428" y1="684" x2="1732" y2="684" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="700" font-size="11" font-weight="600" fill="#0F172A">synced_at</text>
+<text x="1730" y="700" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">TIMESTAMP</text>
+<line x1="1428" y1="706" x2="1732" y2="706" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="1432" y="722" font-size="11" font-weight="600" fill="#0F172A">+ audit</text>
+<text x="1730" y="722" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">7 cols · AuditableEntity</text>
+</g>
+<g id="t_EMP" filter="url(#shadow)">
+<rect x="60" y="420" width="380" height="450" rx="10" ry="10" fill="white" stroke="#FCD34D" stroke-width="2"/>
+<rect x="60" y="420" width="380" height="64" rx="10" ry="10" fill="#A16207"/>
+<rect x="60" y="472" width="380" height="12" fill="#A16207"/>
+<rect x="60" y="484" width="380" height="386" rx="10" ry="10" fill="#FEFCE8" opacity="0.5"/>
+<rect x="60" y="484" width="380" height="14" fill="#FEFCE8" opacity="0.5"/>
+<text x="250.0" y="444" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">employee</text>
+<text x="250.0" y="464" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V004 · PINFL UNIQUE · person registry</text>
+<text x="70" y="502" font-size="11.5" font-weight="700" fill="#854D0E">🔑</text>
+<text x="88" y="502" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="430" y="502" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">UUID</text>
+<rect x="61" y="508" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="508" x2="432" y2="508" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="524" font-size="11.5" font-weight="700" fill="#854D0E">◆</text>
+<text x="88" y="524" font-size="11" font-weight="600" fill="#0F172A">pinfl</text>
+<text x="430" y="524" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(14) · JSHSHIR (partial UQ)</text>
+<line x1="68" y1="530" x2="432" y2="530" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="546" font-size="11" font-weight="600" fill="#0F172A">first_name, last_name</text>
+<text x="430" y="546" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(255) · NOT NULL</text>
+<rect x="61" y="552" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="552" x2="432" y2="552" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="568" font-size="11" font-weight="600" fill="#0F172A">middle_name</text>
+<text x="430" y="568" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(255)</text>
+<line x1="68" y1="574" x2="432" y2="574" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="590" font-size="11" font-weight="600" fill="#0F172A">birth_date</text>
+<text x="430" y="590" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">DATE</text>
+<rect x="61" y="596" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="596" x2="432" y2="596" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="612" font-size="11" font-weight="600" fill="#0F172A">person_type</text>
+<text x="430" y="612" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(30) · UNIVERSITY_STAFF default</text>
+<line x1="68" y1="618" x2="432" y2="618" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="634" font-size="11.5" font-weight="700" fill="#854D0E">🔗</text>
+<text x="88" y="634" font-size="11" font-weight="600" fill="#0F172A">gender_code</text>
+<text x="430" y="634" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · → hemishe_h_gender</text>
+<rect x="61" y="640" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="640" x2="432" y2="640" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="656" font-size="11.5" font-weight="700" fill="#854D0E">🔗</text>
+<text x="88" y="656" font-size="11" font-weight="600" fill="#0F172A">citizenship_code</text>
+<text x="430" y="656" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · → hemishe_h_citizenship</text>
+<line x1="68" y1="662" x2="432" y2="662" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="678" font-size="11.5" font-weight="700" fill="#854D0E">🔗</text>
+<text x="88" y="678" font-size="11" font-weight="600" fill="#0F172A">nationality_code</text>
+<text x="430" y="678" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · → hemishe_h_nationality</text>
+<rect x="61" y="684" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="684" x2="432" y2="684" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="700" font-size="11" font-weight="600" fill="#0F172A">passport</text>
+<text x="430" y="700" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · AA1234567 (partial UK)</text>
+<line x1="68" y1="706" x2="432" y2="706" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="722" font-size="11" font-weight="600" fill="#0F172A">passport_date</text>
+<text x="430" y="722" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">DATE</text>
+<rect x="61" y="728" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="728" x2="432" y2="728" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="744" font-size="11" font-weight="600" fill="#0F172A">phone, email, address</text>
+<text x="430" y="744" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR/TEXT</text>
+<line x1="68" y1="750" x2="432" y2="750" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="766" font-size="11.5" font-weight="700" fill="#854D0E">🔗</text>
+<text x="88" y="766" font-size="11" font-weight="600" fill="#0F172A">soato_code</text>
+<text x="430" y="766" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · → hemishe_h_soato</text>
+<rect x="61" y="772" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="772" x2="432" y2="772" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="788" font-size="11.5" font-weight="700" fill="#854D0E">🔗</text>
+<text x="88" y="788" font-size="11" font-weight="600" fill="#0F172A">academic_degree_code</text>
+<text x="430" y="788" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · → hemishe_h_academic_degree</text>
+<line x1="68" y1="794" x2="432" y2="794" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="810" font-size="11.5" font-weight="700" fill="#854D0E">🔗</text>
+<text x="88" y="810" font-size="11" font-weight="600" fill="#0F172A">academic_rank_code</text>
+<text x="430" y="810" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · → hemishe_h_academic_rank</text>
+<rect x="61" y="816" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="816" x2="432" y2="816" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="832" font-size="11" font-weight="600" fill="#0F172A">tin</text>
+<text x="430" y="832" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">VARCHAR(20) · STIR</text>
+<line x1="68" y1="838" x2="432" y2="838" stroke="#FCD34D" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="854" font-size="11" font-weight="600" fill="#0F172A">+ audit</text>
+<text x="430" y="854" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#854D0E" font-weight="500">7 cols · AuditableEntity</text>
+</g>
+<g id="t_UFON" filter="url(#shadow)">
+<rect x="60" y="1520" width="380" height="318" rx="10" ry="10" fill="white" stroke="#FB923C" stroke-width="2"/>
+<rect x="60" y="1520" width="380" height="64" rx="10" ry="10" fill="#9A3412"/>
+<rect x="60" y="1572" width="380" height="12" fill="#9A3412"/>
+<rect x="60" y="1584" width="380" height="254" rx="10" ry="10" fill="#FFF7ED" opacity="0.5"/>
+<rect x="60" y="1584" width="380" height="14" fill="#FFF7ED" opacity="0.5"/>
+<text x="250.0" y="1544" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">university_founder</text>
+<text x="250.0" y="1564" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V008 · 1:N · INDIVIDUAL ⊕ LEGAL XOR</text>
+<text x="70" y="1602" font-size="11.5" font-weight="700" fill="#9A3412">🔑</text>
+<text x="88" y="1602" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="430" y="1602" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">UUID</text>
+<rect x="61" y="1608" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="1608" x2="432" y2="1608" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="1624" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="88" y="1624" font-size="11" font-weight="600" fill="#0F172A">university_code</text>
+<text x="430" y="1624" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(255) · → uni · CASCADE</text>
+<line x1="68" y1="1630" x2="432" y2="1630" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="1646" font-size="11" font-weight="600" fill="#0F172A">founder_type</text>
+<text x="430" y="1646" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(20) · INDIVIDUAL | LEGAL</text>
+<rect x="61" y="1652" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="1652" x2="432" y2="1652" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="1668" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="88" y="1668" font-size="11" font-weight="600" fill="#0F172A">employee_id</text>
+<text x="430" y="1668" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">UUID · → emp · XOR INDIVIDUAL</text>
+<line x1="68" y1="1674" x2="432" y2="1674" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="70" y="1690" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="88" y="1690" font-size="11" font-weight="600" fill="#0F172A">organization_id</text>
+<text x="430" y="1690" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">UUID · → org · XOR LEGAL</text>
+<rect x="61" y="1696" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="1696" x2="432" y2="1696" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="1712" font-size="11" font-weight="600" fill="#0F172A">share_percent</text>
+<text x="430" y="1712" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">NUMERIC(5,2) · 0..100</text>
+<line x1="68" y1="1718" x2="432" y2="1718" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="1734" font-size="11" font-weight="600" fill="#0F172A">share_sum</text>
+<text x="430" y="1734" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">BIGINT · &gt;=0</text>
+<rect x="61" y="1740" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="1740" x2="432" y2="1740" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="1756" font-size="11" font-weight="600" fill="#0F172A">is_current</text>
+<text x="430" y="1756" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">BOOLEAN · true default</text>
+<line x1="68" y1="1762" x2="432" y2="1762" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="1778" font-size="11" font-weight="600" fill="#0F172A">effective_from, effective_to</text>
+<text x="430" y="1778" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">DATE · range</text>
+<rect x="61" y="1784" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="68" y1="1784" x2="432" y2="1784" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="1800" font-size="11" font-weight="600" fill="#0F172A">+ audit</text>
+<text x="430" y="1800" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">7 cols · AuditableEntity</text>
+<line x1="68" y1="1806" x2="432" y2="1806" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="72" y="1822" font-size="11" font-weight="600" fill="#0F172A">CHK</text>
+<text x="430" y="1822" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">chk_ufounder_xor · type ↔ FK consistency</text>
+</g>
+<g id="t_ULIF" filter="url(#shadow)">
+<rect x="480" y="1520" width="380" height="362" rx="10" ry="10" fill="white" stroke="#A78BFA" stroke-width="2"/>
+<rect x="480" y="1520" width="380" height="64" rx="10" ry="10" fill="#5B21B6"/>
+<rect x="480" y="1572" width="380" height="12" fill="#5B21B6"/>
+<rect x="480" y="1584" width="380" height="298" rx="10" ry="10" fill="#F5F3FF" opacity="0.5"/>
+<rect x="480" y="1584" width="380" height="14" fill="#F5F3FF" opacity="0.5"/>
+<text x="670.0" y="1544" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">university_lifecycle</text>
+<text x="670.0" y="1564" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V009 · 📜 IMMUTABLE · 8 events</text>
+<text x="490" y="1602" font-size="11.5" font-weight="700" fill="#5B21B6">🔑</text>
+<text x="508" y="1602" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="850" y="1602" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">UUID</text>
+<rect x="481" y="1608" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="1608" x2="852" y2="1608" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="490" y="1624" font-size="11.5" font-weight="700" fill="#5B21B6">🔗</text>
+<text x="508" y="1624" font-size="11" font-weight="600" fill="#0F172A">university_code</text>
+<text x="850" y="1624" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(255) · → uni · RESTRICT</text>
+<line x1="488" y1="1630" x2="852" y2="1630" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1646" font-size="11" font-weight="600" fill="#0F172A">event_type</text>
+<text x="850" y="1646" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(30) · CLOSED|MERGED|SPLIT|...</text>
+<rect x="481" y="1652" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="1652" x2="852" y2="1652" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1668" font-size="11" font-weight="600" fill="#0F172A">event_date</text>
+<text x="850" y="1668" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">DATE · NOT NULL</text>
+<line x1="488" y1="1674" x2="852" y2="1674" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="490" y="1690" font-size="11.5" font-weight="700" fill="#5B21B6">🔗</text>
+<text x="508" y="1690" font-size="11" font-weight="600" fill="#0F172A">successor_code</text>
+<text x="850" y="1690" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(255) · → uni · SET NULL</text>
+<rect x="481" y="1696" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="1696" x2="852" y2="1696" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1712" font-size="11" font-weight="600" fill="#0F172A">decree_number</text>
+<text x="850" y="1712" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(100) · farmon raqami</text>
+<line x1="488" y1="1718" x2="852" y2="1718" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1734" font-size="11" font-weight="600" fill="#0F172A">decree_date</text>
+<text x="850" y="1734" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">DATE</text>
+<rect x="481" y="1740" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="1740" x2="852" y2="1740" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1756" font-size="11" font-weight="600" fill="#0F172A">students_count</text>
+<text x="850" y="1756" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">INTEGER · snapshot</text>
+<line x1="488" y1="1762" x2="852" y2="1762" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1778" font-size="11" font-weight="600" fill="#0F172A">employees_count</text>
+<text x="850" y="1778" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">INTEGER · snapshot</text>
+<rect x="481" y="1784" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="1784" x2="852" y2="1784" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1800" font-size="11" font-weight="600" fill="#0F172A">old_name, new_name</text>
+<text x="850" y="1800" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(1024) · RENAMED</text>
+<line x1="488" y1="1806" x2="852" y2="1806" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1822" font-size="11" font-weight="600" fill="#0F172A">note</text>
+<text x="850" y="1822" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">TEXT</text>
+<rect x="481" y="1828" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="488" y1="1828" x2="852" y2="1828" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1844" font-size="11" font-weight="600" fill="#0F172A">created_at</text>
+<text x="850" y="1844" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">TIMESTAMP · immutable</text>
+<line x1="488" y1="1850" x2="852" y2="1850" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="492" y="1866" font-size="11" font-weight="600" fill="#0F172A">created_by</text>
+<text x="850" y="1866" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(50)</text>
+</g>
+<g id="t_UCAD" filter="url(#shadow)">
+<rect x="900" y="1520" width="440" height="692" rx="10" ry="10" fill="white" stroke="#FB923C" stroke-width="2"/>
+<rect x="900" y="1520" width="440" height="64" rx="10" ry="10" fill="#9A3412"/>
+<rect x="900" y="1572" width="440" height="12" fill="#9A3412"/>
+<rect x="900" y="1584" width="440" height="628" rx="10" ry="10" fill="#FFF7ED" opacity="0.5"/>
+<rect x="900" y="1584" width="440" height="14" fill="#FFF7ED" opacity="0.5"/>
+<text x="1120.0" y="1544" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">university_cadastre</text>
+<text x="1120.0" y="1564" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V010 · 1:N · api_kadastr · GIS</text>
+<text x="910" y="1602" font-size="11.5" font-weight="700" fill="#9A3412">🔑</text>
+<text x="928" y="1602" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="1330" y="1602" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">UUID</text>
+<rect x="901" y="1608" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1608" x2="1332" y2="1608" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="910" y="1624" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="928" y="1624" font-size="11" font-weight="600" fill="#0F172A">university_code</text>
+<text x="1330" y="1624" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(255) · → uni · CASCADE</text>
+<line x1="908" y1="1630" x2="1332" y2="1630" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="910" y="1646" font-size="11.5" font-weight="700" fill="#9A3412">◆</text>
+<text x="928" y="1646" font-size="11" font-weight="600" fill="#0F172A">cad_number</text>
+<text x="1330" y="1646" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(50) · 10:10:02:01:001</text>
+<rect x="901" y="1652" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1652" x2="1332" y2="1652" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1668" font-size="11" font-weight="600" fill="#0F172A">cad_number_old</text>
+<text x="1330" y="1668" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(50)</text>
+<line x1="908" y1="1674" x2="1332" y2="1674" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1690" font-size="11" font-weight="600" fill="#0F172A">region_id, region</text>
+<text x="1330" y="1690" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">INTEGER/VARCHAR</text>
+<rect x="901" y="1696" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1696" x2="1332" y2="1696" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1712" font-size="11" font-weight="600" fill="#0F172A">district_id, district</text>
+<text x="1330" y="1712" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">INTEGER/VARCHAR</text>
+<line x1="908" y1="1718" x2="1332" y2="1718" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1734" font-size="11" font-weight="600" fill="#0F172A">address, short_address</text>
+<text x="1330" y="1734" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">TEXT/VARCHAR</text>
+<rect x="901" y="1740" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1740" x2="1332" y2="1740" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1756" font-size="11" font-weight="600" fill="#0F172A">street, street_code</text>
+<text x="1330" y="1756" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR</text>
+<line x1="908" y1="1762" x2="1332" y2="1762" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1778" font-size="11" font-weight="600" fill="#0F172A">dom_num</text>
+<text x="1330" y="1778" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(50)</text>
+<rect x="901" y="1784" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1784" x2="1332" y2="1784" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1800" font-size="11" font-weight="600" fill="#0F172A">neighborhood, neighborhood_id</text>
+<text x="1330" y="1800" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR</text>
+<line x1="908" y1="1806" x2="1332" y2="1806" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1822" font-size="11" font-weight="600" fill="#0F172A">type_code, type_name</text>
+<text x="1330" y="1822" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR · tip</text>
+<rect x="901" y="1828" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1828" x2="1332" y2="1828" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1844" font-size="11" font-weight="600" fill="#0F172A">kind_code, kind_name</text>
+<text x="1330" y="1844" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR · vid</text>
+<line x1="908" y1="1850" x2="1332" y2="1850" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1866" font-size="11" font-weight="600" fill="#0F172A">land_area</text>
+<text x="1330" y="1866" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">NUMERIC(12,2) · asosiy</text>
+<rect x="901" y="1872" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1872" x2="1332" y2="1872" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1888" font-size="11" font-weight="600" fill="#0F172A">land_area_{i,b,f,z,d,u}</text>
+<text x="1330" y="1888" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">NUMERIC(12,2)×6 · turlar bo'yicha</text>
+<line x1="908" y1="1894" x2="1332" y2="1894" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1910" font-size="11" font-weight="600" fill="#0F172A">object_area</text>
+<text x="1330" y="1910" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">NUMERIC(12,2) · obyekt</text>
+<rect x="901" y="1916" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1916" x2="1332" y2="1916" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1932" font-size="11" font-weight="600" fill="#0F172A">object_area_{l,u}</text>
+<text x="1330" y="1932" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">NUMERIC(12,2)×2</text>
+<line x1="908" y1="1938" x2="1332" y2="1938" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1954" font-size="11" font-weight="600" fill="#0F172A">cost</text>
+<text x="1330" y="1954" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">BIGINT · UZS</text>
+<rect x="901" y="1960" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="1960" x2="1332" y2="1960" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1976" font-size="11" font-weight="600" fill="#0F172A">eco_zone</text>
+<text x="1330" y="1976" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(10)</text>
+<line x1="908" y1="1982" x2="1332" y2="1982" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="1998" font-size="11" font-weight="600" fill="#0F172A">ban_is</text>
+<text x="1330" y="1998" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">BOOLEAN · cheklov bor?</text>
+<rect x="901" y="2004" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="2004" x2="1332" y2="2004" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2020" font-size="11" font-weight="600" fill="#0F172A">subjects</text>
+<text x="1330" y="2020" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">JSONB · egalar massivi</text>
+<line x1="908" y1="2026" x2="1332" y2="2026" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2042" font-size="11" font-weight="600" fill="#0F172A">documents</text>
+<text x="1330" y="2042" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">JSONB · hujjatlar</text>
+<rect x="901" y="2048" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="2048" x2="1332" y2="2048" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2064" font-size="11" font-weight="600" fill="#0F172A">bans</text>
+<text x="1330" y="2064" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">JSONB · cheklovlar</text>
+<line x1="908" y1="2070" x2="1332" y2="2070" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2086" font-size="11" font-weight="600" fill="#0F172A">rights</text>
+<text x="1330" y="2086" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">JSONB · huquqlar</text>
+<rect x="901" y="2092" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="2092" x2="1332" y2="2092" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2108" font-size="11" font-weight="600" fill="#0F172A">images</text>
+<text x="1330" y="2108" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">JSONB · rasmlar</text>
+<line x1="908" y1="2114" x2="1332" y2="2114" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2130" font-size="11" font-weight="600" fill="#0F172A">data_source</text>
+<text x="1330" y="2130" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(50) · api_kadastr</text>
+<rect x="901" y="2136" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="2136" x2="1332" y2="2136" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2152" font-size="11" font-weight="600" fill="#0F172A">api_raw_response</text>
+<text x="1330" y="2152" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">JSONB · audit</text>
+<line x1="908" y1="2158" x2="1332" y2="2158" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2174" font-size="11" font-weight="600" fill="#0F172A">synced_at</text>
+<text x="1330" y="2174" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">TIMESTAMP</text>
+<rect x="901" y="2180" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="908" y1="2180" x2="1332" y2="2180" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="912" y="2196" font-size="11" font-weight="600" fill="#0F172A">+ audit</text>
+<text x="1330" y="2196" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">7 cols · AuditableEntity</text>
+</g>
+<g id="t_UBLD" filter="url(#shadow)">
+<rect x="1400" y="1520" width="440" height="560" rx="10" ry="10" fill="white" stroke="#FB923C" stroke-width="2"/>
+<rect x="1400" y="1520" width="440" height="64" rx="10" ry="10" fill="#9A3412"/>
+<rect x="1400" y="1572" width="440" height="12" fill="#9A3412"/>
+<rect x="1400" y="1584" width="440" height="496" rx="10" ry="10" fill="#FFF7ED" opacity="0.5"/>
+<rect x="1400" y="1584" width="440" height="14" fill="#FFF7ED" opacity="0.5"/>
+<text x="1620.0" y="1544" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">university_building</text>
+<text x="1620.0" y="1564" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V011 · 1:N · h_* classifier · WGS84</text>
+<text x="1410" y="1602" font-size="11.5" font-weight="700" fill="#9A3412">🔑</text>
+<text x="1428" y="1602" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="1830" y="1602" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">UUID</text>
+<rect x="1401" y="1608" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1608" x2="1832" y2="1608" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1410" y="1624" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="1428" y="1624" font-size="11" font-weight="600" fill="#0F172A">university_code</text>
+<text x="1830" y="1624" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(255) · → uni · CASCADE</text>
+<line x1="1408" y1="1630" x2="1832" y2="1630" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1646" font-size="11" font-weight="600" fill="#0F172A">name</text>
+<text x="1830" y="1646" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(500) · NOT NULL</text>
+<rect x="1401" y="1652" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1652" x2="1832" y2="1652" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1410" y="1668" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="1428" y="1668" font-size="11" font-weight="600" fill="#0F172A">category_code</text>
+<text x="1830" y="1668" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(20) · → h_building_category · RESTRICT</text>
+<line x1="1408" y1="1674" x2="1832" y2="1674" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1690" font-size="11" font-weight="600" fill="#0F172A">address</text>
+<text x="1830" y="1690" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">TEXT · cadastre auto-fill</text>
+<rect x="1401" y="1696" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1696" x2="1832" y2="1696" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1712" font-size="11" font-weight="600" fill="#0F172A">year_built</text>
+<text x="1830" y="1712" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">INTEGER · 1800..2100</text>
+<line x1="1408" y1="1718" x2="1832" y2="1718" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1734" font-size="11" font-weight="600" fill="#0F172A">capacity</text>
+<text x="1830" y="1734" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">INTEGER · o'quv/yotoq o'rin</text>
+<rect x="1401" y="1740" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1740" x2="1832" y2="1740" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1756" font-size="11" font-weight="600" fill="#0F172A">floor_count</text>
+<text x="1830" y="1756" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">INTEGER · 1..100</text>
+<line x1="1408" y1="1762" x2="1832" y2="1762" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1778" font-size="11" font-weight="600" fill="#0F172A">total_area, usable_area</text>
+<text x="1830" y="1778" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">NUMERIC(10,2) · m²</text>
+<rect x="1401" y="1784" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1784" x2="1832" y2="1784" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1410" y="1800" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="1428" y="1800" font-size="11" font-weight="600" fill="#0F172A">construction_material_code</text>
+<text x="1830" y="1800" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(20) · → h_construction_material</text>
+<line x1="1408" y1="1806" x2="1832" y2="1806" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1410" y="1822" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="1428" y="1822" font-size="11" font-weight="600" fill="#0F172A">roof_type_code</text>
+<text x="1830" y="1822" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(20) · → h_roof_type · SET NULL</text>
+<rect x="1401" y="1828" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1828" x2="1832" y2="1828" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1844" font-size="11" font-weight="600" fill="#0F172A">last_renovation_date</text>
+<text x="1830" y="1844" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">DATE</text>
+<line x1="1408" y1="1850" x2="1832" y2="1850" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1866" font-size="11" font-weight="600" fill="#0F172A">latitude, longitude</text>
+<text x="1830" y="1866" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">NUMERIC(10,7) · WGS84 (paired)</text>
+<rect x="1401" y="1872" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1872" x2="1832" y2="1872" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1888" font-size="11" font-weight="600" fill="#0F172A">map_url</text>
+<text x="1830" y="1888" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">TEXT</text>
+<line x1="1408" y1="1894" x2="1832" y2="1894" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1410" y="1910" font-size="11.5" font-weight="700" fill="#9A3412">🔗</text>
+<text x="1428" y="1910" font-size="11" font-weight="600" fill="#0F172A">cad_number</text>
+<text x="1830" y="1910" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(50) · → ucad · SET NULL (1:1 partial UK)</text>
+<rect x="1401" y="1916" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1916" x2="1832" y2="1916" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1932" font-size="11" font-weight="600" fill="#0F172A">note</text>
+<text x="1830" y="1932" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">TEXT</text>
+<line x1="1408" y1="1938" x2="1832" y2="1938" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1954" font-size="11" font-weight="600" fill="#0F172A">source</text>
+<text x="1830" y="1954" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(20) · univer_sync default</text>
+<rect x="1401" y="1960" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="1960" x2="1832" y2="1960" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1976" font-size="11" font-weight="600" fill="#0F172A">source_uid</text>
+<text x="1830" y="1976" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(255)</text>
+<line x1="1408" y1="1982" x2="1832" y2="1982" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="1998" font-size="11" font-weight="600" fill="#0F172A">synced_at</text>
+<text x="1830" y="1998" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">TIMESTAMP</text>
+<rect x="1401" y="2004" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="2004" x2="1832" y2="2004" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="2020" font-size="11" font-weight="600" fill="#0F172A">content_hash</text>
+<text x="1830" y="2020" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">VARCHAR(64) · SHA-256</text>
+<line x1="1408" y1="2026" x2="1832" y2="2026" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="2042" font-size="11" font-weight="600" fill="#0F172A">+ audit</text>
+<text x="1830" y="2042" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">7 cols · AuditableEntity</text>
+<rect x="1401" y="2048" width="438" height="22" fill="white" opacity="0.5"/>
+<line x1="1408" y1="2048" x2="1832" y2="2048" stroke="#FB923C" stroke-width="0.4" opacity="0.3"/>
+<text x="1412" y="2064" font-size="11" font-weight="600" fill="#0F172A">CHK ×9</text>
+<text x="1830" y="2064" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#9A3412" font-weight="500">year/floors/area/lat/lng · data quality</text>
+</g>
+<g id="t_BLIF" filter="url(#shadow)">
+<rect x="1900" y="1520" width="380" height="362" rx="10" ry="10" fill="white" stroke="#A78BFA" stroke-width="2"/>
+<rect x="1900" y="1520" width="380" height="64" rx="10" ry="10" fill="#5B21B6"/>
+<rect x="1900" y="1572" width="380" height="12" fill="#5B21B6"/>
+<rect x="1900" y="1584" width="380" height="298" rx="10" ry="10" fill="#F5F3FF" opacity="0.5"/>
+<rect x="1900" y="1584" width="380" height="14" fill="#F5F3FF" opacity="0.5"/>
+<text x="2090.0" y="1544" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">building_lifecycle</text>
+<text x="2090.0" y="1564" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V011 · 📜 IMMUTABLE · 7 events</text>
+<text x="1910" y="1602" font-size="11.5" font-weight="700" fill="#5B21B6">🔑</text>
+<text x="1928" y="1602" font-size="11" font-weight="600" fill="#0F172A">id</text>
+<text x="2270" y="1602" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">UUID</text>
+<rect x="1901" y="1608" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1908" y1="1608" x2="2272" y2="1608" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1910" y="1624" font-size="11.5" font-weight="700" fill="#5B21B6">🔗</text>
+<text x="1928" y="1624" font-size="11" font-weight="600" fill="#0F172A">building_id</text>
+<text x="2270" y="1624" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">UUID · → ubld · CASCADE</text>
+<line x1="1908" y1="1630" x2="2272" y2="1630" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1646" font-size="11" font-weight="600" fill="#0F172A">event_type</text>
+<text x="2270" y="1646" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(30) · CONSTRUCTED|RENOVATED|...</text>
+<rect x="1901" y="1652" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1908" y1="1652" x2="2272" y2="1652" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1668" font-size="11" font-weight="600" fill="#0F172A">event_date</text>
+<text x="2270" y="1668" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">DATE · &lt;=CURRENT_DATE</text>
+<line x1="1908" y1="1674" x2="2272" y2="1674" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1910" y="1690" font-size="11.5" font-weight="700" fill="#5B21B6">🔗</text>
+<text x="1928" y="1690" font-size="11" font-weight="600" fill="#0F172A">previous_category_code</text>
+<text x="2270" y="1690" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(20) · → h_building_category</text>
+<rect x="1901" y="1696" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1908" y1="1696" x2="2272" y2="1696" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1910" y="1712" font-size="11.5" font-weight="700" fill="#5B21B6">🔗</text>
+<text x="1928" y="1712" font-size="11" font-weight="600" fill="#0F172A">new_category_code</text>
+<text x="2270" y="1712" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(20) · → h_building_category</text>
+<line x1="1908" y1="1718" x2="2272" y2="1718" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1734" font-size="11" font-weight="600" fill="#0F172A">cost</text>
+<text x="2270" y="1734" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">NUMERIC(15,2) · &gt;=0</text>
+<rect x="1901" y="1740" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1908" y1="1740" x2="2272" y2="1740" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1756" font-size="11" font-weight="600" fill="#0F172A">decree_number</text>
+<text x="2270" y="1756" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(100)</text>
+<line x1="1908" y1="1762" x2="2272" y2="1762" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1778" font-size="11" font-weight="600" fill="#0F172A">decree_date</text>
+<text x="2270" y="1778" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">DATE · &lt;=event_date</text>
+<rect x="1901" y="1784" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1908" y1="1784" x2="2272" y2="1784" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1800" font-size="11" font-weight="600" fill="#0F172A">note</text>
+<text x="2270" y="1800" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">TEXT</text>
+<line x1="1908" y1="1806" x2="2272" y2="1806" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1822" font-size="11" font-weight="600" fill="#0F172A">created_at</text>
+<text x="2270" y="1822" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">TIMESTAMP · immutable</text>
+<rect x="1901" y="1828" width="378" height="22" fill="white" opacity="0.5"/>
+<line x1="1908" y1="1828" x2="2272" y2="1828" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1844" font-size="11" font-weight="600" fill="#0F172A">created_by</text>
+<text x="2270" y="1844" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">VARCHAR(50)</text>
+<line x1="1908" y1="1850" x2="2272" y2="1850" stroke="#A78BFA" stroke-width="0.4" opacity="0.3"/>
+<text x="1912" y="1866" font-size="11" font-weight="600" fill="#0F172A">CHK</text>
+<text x="2270" y="1866" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#5B21B6" font-weight="500">chk_bl_repurposed · category transition</text>
+</g>
+<g id="t_HBC" filter="url(#shadow)">
+<rect x="200" y="2320" width="320" height="230" rx="10" ry="10" fill="white" stroke="#34D399" stroke-width="2"/>
+<rect x="200" y="2320" width="320" height="64" rx="10" ry="10" fill="#065F46"/>
+<rect x="200" y="2372" width="320" height="12" fill="#065F46"/>
+<rect x="200" y="2384" width="320" height="166" rx="10" ry="10" fill="#ECFDF5" opacity="0.5"/>
+<rect x="200" y="2384" width="320" height="14" fill="#ECFDF5" opacity="0.5"/>
+<text x="360.0" y="2344" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">h_building_category</text>
+<text x="360.0" y="2364" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V011 · ADR-0006 · 6 seed</text>
+<text x="210" y="2402" font-size="11.5" font-weight="700" fill="#065F46">🔑</text>
+<text x="228" y="2402" font-size="11" font-weight="600" fill="#0F172A">code</text>
+<text x="510" y="2402" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(20) · ACADEMIC, DORMITORY, ...</text>
+<rect x="201" y="2408" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="208" y1="2408" x2="512" y2="2408" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="212" y="2424" font-size="11" font-weight="600" fill="#0F172A">name_uz</text>
+<text x="510" y="2424" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(255) · NOT NULL</text>
+<line x1="208" y1="2430" x2="512" y2="2430" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="212" y="2446" font-size="11" font-weight="600" fill="#0F172A">name_ru</text>
+<text x="510" y="2446" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(255)</text>
+<rect x="201" y="2452" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="208" y1="2452" x2="512" y2="2452" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="212" y="2468" font-size="11" font-weight="600" fill="#0F172A">name_en</text>
+<text x="510" y="2468" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(255)</text>
+<line x1="208" y1="2474" x2="512" y2="2474" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="212" y="2490" font-size="11" font-weight="600" fill="#0F172A">description</text>
+<text x="510" y="2490" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">TEXT</text>
+<rect x="201" y="2496" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="208" y1="2496" x2="512" y2="2496" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="212" y="2512" font-size="11" font-weight="600" fill="#0F172A">is_active</text>
+<text x="510" y="2512" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">BOOLEAN · true default</text>
+<line x1="208" y1="2518" x2="512" y2="2518" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="212" y="2534" font-size="11" font-weight="600" fill="#0F172A">sort_order</text>
+<text x="510" y="2534" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">INTEGER</text>
+</g>
+<g id="t_HCM" filter="url(#shadow)">
+<rect x="700" y="2320" width="320" height="164" rx="10" ry="10" fill="white" stroke="#34D399" stroke-width="2"/>
+<rect x="700" y="2320" width="320" height="64" rx="10" ry="10" fill="#065F46"/>
+<rect x="700" y="2372" width="320" height="12" fill="#065F46"/>
+<rect x="700" y="2384" width="320" height="100" rx="10" ry="10" fill="#ECFDF5" opacity="0.5"/>
+<rect x="700" y="2384" width="320" height="14" fill="#ECFDF5" opacity="0.5"/>
+<text x="860.0" y="2344" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">h_construction_material</text>
+<text x="860.0" y="2364" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V011 · ADR-0006 · 7 seed</text>
+<text x="710" y="2402" font-size="11.5" font-weight="700" fill="#065F46">🔑</text>
+<text x="728" y="2402" font-size="11" font-weight="600" fill="#0F172A">code</text>
+<text x="1010" y="2402" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(20) · BRICK, CONCRETE, ...</text>
+<rect x="701" y="2408" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="708" y1="2408" x2="1012" y2="2408" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="712" y="2424" font-size="11" font-weight="600" fill="#0F172A">name_uz, name_ru, name_en</text>
+<text x="1010" y="2424" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(255) · i18n</text>
+<line x1="708" y1="2430" x2="1012" y2="2430" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="712" y="2446" font-size="11" font-weight="600" fill="#0F172A">is_active</text>
+<text x="1010" y="2446" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">BOOLEAN</text>
+<rect x="701" y="2452" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="708" y1="2452" x2="1012" y2="2452" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="712" y="2468" font-size="11" font-weight="600" fill="#0F172A">sort_order</text>
+<text x="1010" y="2468" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">INTEGER</text>
+</g>
+<g id="t_HRT" filter="url(#shadow)">
+<rect x="1200" y="2320" width="320" height="164" rx="10" ry="10" fill="white" stroke="#34D399" stroke-width="2"/>
+<rect x="1200" y="2320" width="320" height="64" rx="10" ry="10" fill="#065F46"/>
+<rect x="1200" y="2372" width="320" height="12" fill="#065F46"/>
+<rect x="1200" y="2384" width="320" height="100" rx="10" ry="10" fill="#ECFDF5" opacity="0.5"/>
+<rect x="1200" y="2384" width="320" height="14" fill="#ECFDF5" opacity="0.5"/>
+<text x="1360.0" y="2344" text-anchor="middle" font-size="16" font-weight="700" fill="white" letter-spacing="0.3">h_roof_type</text>
+<text x="1360.0" y="2364" text-anchor="middle" font-size="10.5" font-weight="500" fill="rgba(255,255,255,0.93)">V011 · ADR-0006 · 6 seed</text>
+<text x="1210" y="2402" font-size="11.5" font-weight="700" fill="#065F46">🔑</text>
+<text x="1228" y="2402" font-size="11" font-weight="600" fill="#0F172A">code</text>
+<text x="1510" y="2402" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(20) · METAL_SHEET, TILE, ...</text>
+<rect x="1201" y="2408" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="1208" y1="2408" x2="1512" y2="2408" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="1212" y="2424" font-size="11" font-weight="600" fill="#0F172A">name_uz, name_ru, name_en</text>
+<text x="1510" y="2424" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">VARCHAR(255) · i18n</text>
+<line x1="1208" y1="2430" x2="1512" y2="2430" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="1212" y="2446" font-size="11" font-weight="600" fill="#0F172A">is_active</text>
+<text x="1510" y="2446" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">BOOLEAN</text>
+<rect x="1201" y="2452" width="318" height="22" fill="white" opacity="0.5"/>
+<line x1="1208" y1="2452" x2="1512" y2="2452" stroke="#34D399" stroke-width="0.4" opacity="0.3"/>
+<text x="1212" y="2468" font-size="11" font-weight="600" fill="#0F172A">sort_order</text>
+<text x="1510" y="2468" text-anchor="end" font-size="10" font-family="ui-monospace, SFMono-Regular, Consolas, monospace" fill="#065F46" font-weight="500">INTEGER</text>
+</g>
+</g>
+<rect x="60" y="2550" width="1100" height="115" rx="10" fill="white" stroke="#94A3B8" stroke-width="1"/>
+<text x="78" y="2572" font-size="13" font-weight="700" fill="#0F172A">📖 Notation Guide</text>
+<text x="78" y="2594" font-size="11" font-weight="700" fill="#1E40AF">🔑 PK</text>
+<text x="118" y="2594" font-size="11" fill="#475569">primary key</text>
+<text x="225" y="2594" font-size="11" font-weight="700" fill="#1E40AF">🔗 FK</text>
+<text x="265" y="2594" font-size="11" fill="#475569">foreign key (→ refs)</text>
+<text x="420" y="2594" font-size="11" font-weight="700" fill="#1E40AF">◆ UK</text>
+<text x="448" y="2594" font-size="11" fill="#475569">unique constraint</text>
+<text x="600" y="2594" font-size="11" font-weight="700" fill="#1E40AF">📜 IMMUTABLE</text>
+<text x="695" y="2594" font-size="11" fill="#475569">UPDATE/DELETE taqiqlangan</text>
+<text x="78" y="2618" font-size="11" font-weight="700" fill="#1F2937">Crow's foot:</text>
+<text x="165" y="2618" font-size="11" fill="#475569">|| = exactly one,  o| = zero/one,  }o = many,  o{ = zero/many</text>
+<text x="78" y="2640" font-size="11" font-weight="700" fill="#1F2937">FK actions:</text>
+<text x="157" y="2640" font-size="11" fill="#475569">CASCADE (parent o'chsa child ham), RESTRICT (block), SET NULL (nullify)</text>
+<text x="78" y="2658" font-size="10" fill="#64748B" font-style="italic">Real schema: V001-V011 changesets · Java entity: domain/entity · Audit: AuditableEntity (7 cols)</text>
+<rect x="1240" y="2550" width="900" height="115" rx="10" fill="white" stroke="#94A3B8" stroke-width="1"/>
+<text x="1258" y="2572" font-size="13" font-weight="700" fill="#0F172A">🎨 Layer / Color Coding</text>
+<rect x="1258" y="2588" width="20" height="14" rx="3" fill="#FFF1F2" stroke="#FB7185" stroke-width="1.5"/>
+<text x="1288" y="2600" font-size="11" font-weight="500" fill="#475569">CUBA Legacy (FROZEN)</text>
+<rect x="1258" y="2610" width="20" height="14" rx="3" fill="#EFF6FF" stroke="#60A5FA" stroke-width="1.5"/>
+<text x="1288" y="2622" font-size="11" font-weight="500" fill="#475569">1:1 Core (legal, profile)</text>
+<rect x="1258" y="2632" width="20" height="14" rx="3" fill="#FEFCE8" stroke="#FCD34D" stroke-width="1.5"/>
+<text x="1288" y="2644" font-size="11" font-weight="500" fill="#475569">Reference Master (org, employee)</text>
+<rect x="1680" y="2588" width="20" height="14" rx="3" fill="#FFF7ED" stroke="#FB923C" stroke-width="1.5"/>
+<text x="1710" y="2600" font-size="11" font-weight="500" fill="#475569">1:N Composite (founder, cad, building)</text>
+<rect x="1680" y="2610" width="20" height="14" rx="3" fill="#F5F3FF" stroke="#A78BFA" stroke-width="1.5"/>
+<text x="1710" y="2622" font-size="11" font-weight="500" fill="#475569">Immutable Event Log (lifecycle)</text>
+<rect x="1680" y="2632" width="20" height="14" rx="3" fill="#ECFDF5" stroke="#34D399" stroke-width="1.5"/>
+<text x="1710" y="2644" font-size="11" font-weight="500" fill="#475569">Classifier (h_* prefiks)</text>
+</svg>
