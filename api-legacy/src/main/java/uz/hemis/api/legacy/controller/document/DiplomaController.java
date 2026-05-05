@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.document;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +72,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas
      */
+    @Operation(summary = "Barcha diplomlar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getAllDiplomas(
@@ -93,6 +95,7 @@ public class DiplomaController {
      * @param id diploma ID (UUID)
      * @return diploma details
      */
+    @Operation(summary = "Diplomni ID bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> getDiplomaById(@PathVariable UUID id) {
@@ -112,6 +115,7 @@ public class DiplomaController {
      * @param diplomaNumber diploma registration number
      * @return diploma details
      */
+    @Operation(summary = "Diplomni unique nomer bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/number/{diplomaNumber}")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> getDiplomaByNumber(@PathVariable String diplomaNumber) {
@@ -133,6 +137,7 @@ public class DiplomaController {
      * @param diplomaHash SHA-256 hash of diploma data
      * @return diploma details
      */
+    @Operation(summary = "Diplomni hash bo'yicha tekshirish", description = "Public endpoint — citizen diploma verification (qaridosh tasdiqlash uchun).")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/hash/{diplomaHash}")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> getDiplomaByHash(@PathVariable String diplomaHash) {
@@ -152,6 +157,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas for the university
      */
+    @Operation(summary = "OTM bo'yicha diplomlar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getDiplomasByUniversity(
@@ -175,6 +181,7 @@ public class DiplomaController {
      * @param studentId student UUID
      * @return list of diplomas for the student
      */
+    @Operation(summary = "Talaba bo'yicha diplomlari (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<DiplomaDto>>> getDiplomasByStudent(
@@ -197,6 +204,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas
      */
+    @Operation(summary = "OTM + status bo'yicha diplomlar")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "status"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getDiplomasByUniversityAndStatus(
@@ -223,6 +231,7 @@ public class DiplomaController {
      * @param pageable pagination parameters
      * @return paginated list of diplomas
      */
+    @Operation(summary = "OTM + yil bo'yicha diplomlar")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = {"university", "year"})
     public ResponseEntity<ResponseWrapper<PageResponse<DiplomaDto>>> getDiplomasByUniversityAndYear(
@@ -253,6 +262,7 @@ public class DiplomaController {
      * @param diplomaDto diploma data
      * @return created diploma (HTTP 201 CREATED)
      */
+    @Operation(summary = "Yangi diplom yaratish")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> createDiploma(
@@ -278,6 +288,7 @@ public class DiplomaController {
      * @param diplomaDto diploma data
      * @return updated diploma
      */
+    @Operation(summary = "Diplomni yangilash")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> updateDiploma(

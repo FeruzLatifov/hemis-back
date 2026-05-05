@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.university;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -69,6 +70,7 @@ public class DepartmentController {
      * @param pageable pagination parameters
      * @return paginated list of departments
      */
+    @Operation(summary = "Barcha kafedralar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentDto>>> getAllDepartments(
@@ -91,6 +93,7 @@ public class DepartmentController {
      * @param id department ID (UUID)
      * @return department details
      */
+    @Operation(summary = "Kafedrani ID bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> getDepartmentById(@PathVariable UUID id) {
@@ -109,6 +112,7 @@ public class DepartmentController {
      * @param code department code
      * @return department details
      */
+    @Operation(summary = "Kafedrani unique code bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> getDepartmentByCode(@PathVariable String code) {
@@ -128,6 +132,7 @@ public class DepartmentController {
      * @param pageable pagination parameters
      * @return paginated list of departments for the university
      */
+    @Operation(summary = "OTM bo'yicha kafedralar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentDto>>> getDepartmentsByUniversity(
@@ -151,6 +156,7 @@ public class DepartmentController {
      * @param universityCode university code
      * @return list of active departments
      */
+    @Operation(summary = "OTM bo'yicha aktiv kafedralar (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "university")
     public ResponseEntity<ResponseWrapper<List<DepartmentDto>>> getActiveDepartmentsByUniversity(
@@ -172,6 +178,7 @@ public class DepartmentController {
      * @param pageable pagination parameters
      * @return paginated list of departments for the faculty
      */
+    @Operation(summary = "Fakultet bo'yicha kafedralar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "faculty")
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentDto>>> getDepartmentsByFaculty(
@@ -195,6 +202,7 @@ public class DepartmentController {
      * @param facultyId faculty UUID
      * @return list of active departments
      */
+    @Operation(summary = "Fakultet bo'yicha aktiv kafedralar (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "faculty")
     public ResponseEntity<ResponseWrapper<List<DepartmentDto>>> getActiveDepartmentsByFaculty(
@@ -215,6 +223,7 @@ public class DepartmentController {
      * @param headId teacher UUID
      * @return department details
      */
+    @Operation(summary = "Mudir (head) bo'yicha kafedrani topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/head/{headId}")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> getDepartmentByHead(@PathVariable UUID headId) {
@@ -239,6 +248,7 @@ public class DepartmentController {
      * @param departmentDto department data
      * @return created department (HTTP 201 CREATED)
      */
+    @Operation(summary = "Yangi kafedra yaratish")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> createDepartment(
@@ -264,6 +274,7 @@ public class DepartmentController {
      * @param departmentDto department data
      * @return updated department
      */
+    @Operation(summary = "Kafedrani yangilash")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> updateDepartment(

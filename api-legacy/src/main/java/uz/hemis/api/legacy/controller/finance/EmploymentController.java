@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.finance;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class EmploymentController {
 
     private final EmploymentService employmentService;
 
+    @Operation(summary = "Barcha bandlik yozuvlari (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<EmploymentDto>>> getAllEmployments(
@@ -39,6 +41,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(employments)));
     }
 
+    @Operation(summary = "Bandlikni ID bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> getEmploymentById(@PathVariable UUID id) {
@@ -46,6 +49,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(employment));
     }
 
+    @Operation(summary = "Bandlikni unique code bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> getEmploymentByCode(@PathVariable String code) {
@@ -53,6 +57,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(employment));
     }
 
+    @Operation(summary = "OTM bo'yicha bandlik yozuvlari (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<EmploymentDto>>> getEmploymentsByUniversity(
@@ -63,6 +68,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(employments)));
     }
 
+    @Operation(summary = "Talaba bo'yicha barcha bandlik yozuvlari (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "student")
     public ResponseEntity<ResponseWrapper<List<EmploymentDto>>> getEmploymentsByStudent(
@@ -72,6 +78,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(employments));
     }
 
+    @Operation(summary = "Talaba bo'yicha aktiv bandlik (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "student")
     public ResponseEntity<ResponseWrapper<List<EmploymentDto>>> getActiveEmploymentsByStudent(
@@ -81,6 +88,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(employments));
     }
 
+    @Operation(summary = "OTM bo'yicha aktiv bandlik yozuvlari (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(value = "/active", params = "university")
     public ResponseEntity<ResponseWrapper<List<EmploymentDto>>> getActiveEmploymentsByUniversity(
@@ -90,6 +98,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(employments));
     }
 
+    @Operation(summary = "Yangi bandlik yozuvi yaratish")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> createEmployment(@Valid @RequestBody EmploymentDto employmentDto) {
@@ -97,6 +106,7 @@ public class EmploymentController {
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
+    @Operation(summary = "Bandlik yozuvini yangilash")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> updateEmployment(

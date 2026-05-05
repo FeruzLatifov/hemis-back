@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.university;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class SpecialtyController {
 
     private final SpecialtyService specialtyService;
 
+    @Operation(summary = "Barcha mutaxassisliklar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getAllSpecialties(
@@ -39,6 +41,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
+    @Operation(summary = "Mutaxassislikni ID bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> getSpecialtyById(@PathVariable UUID id) {
@@ -46,6 +49,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(specialty));
     }
 
+    @Operation(summary = "Mutaxassislikni unique code bo'yicha topish")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/code/{code}")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> getSpecialtyByCode(@PathVariable String code) {
@@ -53,6 +57,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(specialty));
     }
 
+    @Operation(summary = "OTM bo'yicha mutaxassisliklar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "university")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getSpecialtiesByUniversity(
@@ -63,6 +68,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
+    @Operation(summary = "Fakultet bo'yicha mutaxassisliklar (paginatsiyasiz)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "faculty")
     public ResponseEntity<ResponseWrapper<List<SpecialtyDto>>> getSpecialtiesByFaculty(
@@ -72,6 +78,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(specialties));
     }
 
+    @Operation(summary = "Mutaxassislik nomi bo'yicha qidirish (partial match)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "search")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> searchSpecialtiesByName(
@@ -82,6 +89,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
+    @Operation(summary = "Aktiv mutaxassisliklar (paginated)")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "active")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getActiveSpecialties(
@@ -91,6 +99,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
+    @Operation(summary = "Ta'lim turi bo'yicha mutaxassisliklar", description = "Bakalavr, Magistratura, Doktorlik (PhD/DSc).")
     @PreAuthorize("isAuthenticated()")
     @GetMapping(params = "educationType")
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialtyDto>>> getSpecialtiesByEducationType(
@@ -101,6 +110,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(specialties)));
     }
 
+    @Operation(summary = "Yangi mutaxassislik yaratish")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> createSpecialty(@Valid @RequestBody SpecialtyDto specialtyDto) {
@@ -108,6 +118,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(created));
     }
 
+    @Operation(summary = "Mutaxassislikni yangilash")
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> updateSpecialty(
@@ -118,6 +129,7 @@ public class SpecialtyController {
         return ResponseEntity.ok(ResponseWrapper.success(updated));
     }
 
+    @Operation(summary = "Mutaxassislikni soft delete", description = "delete_ts qo'yiladi.")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResponseWrapper<Void>> deleteSpecialty(@PathVariable UUID id) {
