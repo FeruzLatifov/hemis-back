@@ -77,8 +77,11 @@ public class AdministrativeEmployee1EntityController {
     @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
     @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
-    public ResponseEntity<?> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
-        log.debug("GET hemishe_RIAdministrativeEmployee1 by id: {}", entityId);
+    public ResponseEntity<?> getById(@PathVariable UUID entityId,
+                                      @RequestParam(required = false) Boolean returnNulls,
+                                      @RequestParam(required = false) String view,
+                                      @RequestParam(required = false) Boolean dynamicAttributes) {
+        log.debug("GET hemishe_RIAdministrativeEmployee1 by id: {}, view: {}", entityId, view);
         Optional<AdministrativeEmployee1> entity = employeeService.findAdministrativeEmployee1ById(entityId);
         if (entity.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -86,7 +89,7 @@ public class AdministrativeEmployee1EntityController {
         if (!isAccessAllowed(entity.get())) {
             return ResponseEntity.status(403).body(forbiddenBody());
         }
-        return ResponseEntity.ok(employeeService.toAdministrativeEmployee1Map(entity.get(), returnNulls));
+        return ResponseEntity.ok(employeeService.toAdministrativeEmployee1Map(entity.get(), returnNulls, view));
     }
 
     @Operation(summary = "Yangilash (CUBA entity API)")

@@ -15,6 +15,7 @@ import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.academic.Department;
 import uz.hemis.domain.repository.DepartmentRepository;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.university.mapper.DepartmentMapper;
 
 import java.time.LocalDateTime;
@@ -51,6 +52,9 @@ class DepartmentServiceTest {
 
     @Mock
     private DepartmentMapper departmentMapper;
+
+    @Mock
+    private TenantGuard tenantGuard;
 
     @InjectMocks
     private DepartmentService departmentService;

@@ -13,6 +13,7 @@ import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.student.Grade;
 import uz.hemis.service.academic.mapper.GradeMapper;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.domain.repository.*;
 
 import java.time.LocalDateTime;
@@ -30,11 +31,16 @@ public class GradeService {
     private final GradeMapper gradeMapper;
     private final CourseRepository courseRepository;
     private final UniversityRepository universityRepository;
+    private final TenantGuard tenantGuard;
 
     @Audited(action = AuditAction.CREATE, entity = "Grade", entityClass = Grade.class)
     @Transactional
     public GradeDto create(GradeDto dto) {
         validateForCreate(dto);
+        // OWASP A01 — caller cannot create Grade for foreign OTM (mass-assignment).
+        if (dto.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(dto.getUniversity());
+        }
         Grade grade = gradeMapper.toEntity(dto);
         Grade saved = gradeRepository.save(grade);
         return gradeMapper.toDto(saved);
@@ -54,9 +60,13 @@ public class GradeService {
     }
 
     public GradeDto findById(UUID id) {
-        return gradeRepository.findById(id)
-                .map(gradeMapper::toDto)
+        Grade grade = gradeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Grade not found: " + id));
+        // OWASP A01 BOLA — caller must own the grade's university.
+        if (grade.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(grade.getUniversity());
+        }
+        return gradeMapper.toDto(grade);
     }
 
     public Page<GradeDto> findAll(Pageable pageable) {
@@ -84,10 +94,20 @@ public class GradeService {
     public GradeDto update(UUID id, GradeDto dto) {
         Grade existing = gradeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Grade not found: " + id));
+        // OWASP A01 BOLA — caller must own the grade's university.
+        if (existing.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
+        }
+        // Re-fetch with @Version to fail concurrent updates (optimistic lock).
+        // If another transaction finalized between read and update, save() will throw
+        // OptimisticLockException — caller retries with fresh state. Race window closed.
         if (Boolean.TRUE.equals(existing.getIsFinalized())) {
             throw new ValidationException("Cannot update finalized grade");
         }
+        // Mass-assignment defense — body cannot relocate grade to foreign OTM.
+        String originalUniversity = existing.getUniversity();
         gradeMapper.updateEntityFromDto(dto, existing);
+        existing.setUniversity(originalUniversity); // pin to original
         return gradeMapper.toDto(gradeRepository.save(existing));
     }
 
@@ -96,7 +116,14 @@ public class GradeService {
     public void softDelete(UUID id) {
         Grade grade = gradeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Grade not found: " + id));
+        // OWASP A01 BOLA — caller must own the grade's university.
+        if (grade.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(grade.getUniversity());
+        }
         grade.setDeleteTs(LocalDateTime.now());
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        grade.setDeletedBy(auth != null ? auth.getName() : "system");
         gradeRepository.save(grade);
     }
 

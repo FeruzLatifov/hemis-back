@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
+import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.domain.entity.academic.Course;
 import uz.hemis.service.legacy.academic.AcademicEntityLegacyService;
 
@@ -31,6 +32,23 @@ public class CourseEntityController {
 
     private final AcademicEntityLegacyService academicService;
     private final CubaFilterHelper filterHelper;
+    private final LegacySecurityHelper securityHelper;
+
+    /** OWASP A01 BOLA defense — caller must own the course's university. */
+    private boolean isAccessAllowed(Course entity) {
+        String callerCode = securityHelper.getUniversityCodeFromContext();
+        if (callerCode == null || callerCode.isEmpty()) {
+            return true; // admin/system scope
+        }
+        return callerCode.equals(entity.getUniversity());
+    }
+
+    private Map<String, Object> forbiddenBody() {
+        Map<String, Object> err = new LinkedHashMap<>();
+        err.put("error", "Forbidden");
+        err.put("details", "Resource belongs to another university");
+        return err;
+    }
 
     @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.view')")
@@ -39,6 +57,7 @@ public class CourseEntityController {
             @RequestParam(required = false) Boolean returnNulls) {
         Optional<Course> entity = academicService.findCourseById(entityId);
         if (entity.isEmpty()) return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_ECourse with id " + entityId + " not found"));
+        if (!isAccessAllowed(entity.get())) return ResponseEntity.status(403).body(forbiddenBody());
         return ResponseEntity.ok(academicService.toCourseMap(entity.get(), returnNulls));
     }
 
@@ -49,6 +68,10 @@ public class CourseEntityController {
             @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Course> existingOpt = academicService.findCourseById(entityId);
         if (existingOpt.isEmpty()) return ResponseEntity.status(404).body(LegacyResponseHelper.errorMap("Entity not found", "Entity hemishe_ECourse with id " + entityId + " not found"));
+        if (!isAccessAllowed(existingOpt.get())) return ResponseEntity.status(403).body(forbiddenBody());
+        // Mass-assignment defense — body cannot relocate to foreign OTM.
+        body.remove("_university");
+        body.remove("university");
         Course saved = academicService.saveCourse(existingOpt.get());
         return ResponseEntity.ok(academicService.toCourseMap(saved, returnNulls));
     }
@@ -56,9 +79,10 @@ public class CourseEntityController {
     @Operation(summary = "Soft delete (CUBA entity API)")
     @PreAuthorize("hasAuthority('students.delete')")
     @DeleteMapping("/{entityId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
+    public ResponseEntity<?> delete(@PathVariable UUID entityId) {
         Optional<Course> entity = academicService.findCourseById(entityId);
         if (entity.isEmpty()) return ResponseEntity.status(404).build();
+        if (!isAccessAllowed(entity.get())) return ResponseEntity.status(403).body(forbiddenBody());
         academicService.deleteCourse(entity.get());
         return ResponseEntity.ok().build();
     }

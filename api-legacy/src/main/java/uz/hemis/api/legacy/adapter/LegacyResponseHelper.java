@@ -59,4 +59,13 @@ public final class LegacyResponseHelper {
         m.put("message", message);
         return m;
     }
+
+    /**
+     * Standard 403 Forbidden body for cross-tenant BOLA defense.
+     *
+     * @return ordered map: {@code {"error": "Forbidden", "details": "Resource belongs to another university"}}
+     */
+    public static Map<String, Object> forbiddenMap() {
+        return errorMap("Forbidden", "Resource belongs to another university");
+    }
 }

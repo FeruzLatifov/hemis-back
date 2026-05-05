@@ -125,7 +125,7 @@ public class TranscriptServiceController {
             )
             @RequestParam String pinfl
     ) {
-        log.info("GET /services/transcript/get - pinfl: {}", pinfl);
+        log.info("GET /services/transcript/get - pinfl: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
 
         // Build response using LinkedHashMap for consistent field order
         // OLD-HEMIS format: {success, data, code}
@@ -139,7 +139,7 @@ public class TranscriptServiceController {
         response.put("data", data);
         response.put("code", 200);
 
-        log.info("Transcript data returned for PINFL: {}", pinfl);
+        log.info("Transcript data returned for PINFL: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(response);
     }
 }

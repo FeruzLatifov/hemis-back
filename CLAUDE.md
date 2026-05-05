@@ -144,6 +144,13 @@ PR review yoki code audit uchun maxsus agent'lar:
 | `@.claude/MANDATORY_REQUIREMENTS.md` | Swagger, test environment, kod misollari |
 | `@.claude/MENU_GUIDE.md` | Menu + i18n + xavfsizlik arxitekturasi |
 
+## ⚠️ Univer 224 OTM Klient Contract — `docs/UNIVER_CONTRACT.md`
+
+**MAJBURIY:** Har api-legacy o'zgarish uchun avval `@docs/UNIVER_CONTRACT.md` o'qing.
+- 18 ta frozen endpoint ro'yxati (Yii2 PHP klient ishlatadi)
+- Qaysi field/shape o'zgarmasligi kerak — JSON contract
+- Refactor workflow va smoke test buyruqlari
+
 `@` sintaksisi fayllarni on-demand import qiladi.
 
 ## Architecture Decision Records (ADR) — `docs/adr/`

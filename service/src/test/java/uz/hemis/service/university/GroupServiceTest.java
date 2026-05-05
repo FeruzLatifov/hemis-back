@@ -16,6 +16,7 @@ import uz.hemis.common.dto.university.GroupDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.student.Group;
 import uz.hemis.domain.repository.GroupRepository;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.university.mapper.GroupMapper;
 
 import java.util.List;
@@ -50,6 +51,9 @@ class GroupServiceTest {
 
     @Mock
     private GroupMapper groupMapper;
+
+    @Mock
+    private TenantGuard tenantGuard;
 
     @InjectMocks
     private GroupService groupService;
@@ -246,16 +250,19 @@ class GroupServiceTest {
     class Delete {
 
         @Test
-        @DisplayName("deletes existing group successfully")
+        @DisplayName("deletes existing group successfully (soft-disable via active=false)")
         void deletesExistingGroup() {
             // Given
             when(groupRepository.findById(groupId)).thenReturn(Optional.of(groupEntity));
+            when(groupRepository.save(groupEntity)).thenReturn(groupEntity);
 
             // When
             groupService.delete(groupId);
 
-            // Then
-            verify(groupRepository).delete(groupEntity);
+            // Then — Group entity has no soft-delete column; service soft-disables (active=false).
+            assertThat(groupEntity.getActive()).isFalse();
+            verify(groupRepository).save(groupEntity);
+            verify(groupRepository, never()).delete(any());
         }
 
         @Test
@@ -271,6 +278,7 @@ class GroupServiceTest {
                     .hasMessageContaining("Group not found");
 
             verify(groupRepository, never()).delete(any());
+            verify(groupRepository, never()).save(any());
         }
     }
 }

@@ -6,10 +6,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.academic.ExamDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.student.Exam;
 import uz.hemis.service.academic.mapper.ExamMapper;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.domain.repository.ExamRepository;
 
 import java.time.LocalDate;
@@ -26,17 +29,27 @@ public class ExamService {
 
     private final ExamRepository examRepository;
     private final ExamMapper examMapper;
+    private final TenantGuard tenantGuard;
 
+    @Audited(action = AuditAction.CREATE, entity = "Exam", entityClass = Exam.class)
     @Transactional
     public ExamDto create(ExamDto dto) {
+        // OWASP A01 — caller cannot create Exam for foreign OTM (mass-assignment).
+        if (dto.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(dto.getUniversity());
+        }
         Exam exam = examMapper.toEntity(dto);
         return examMapper.toDto(examRepository.save(exam));
     }
 
     public ExamDto findById(UUID id) {
-        return examRepository.findById(id)
-                .map(examMapper::toDto)
+        Exam exam = examRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found: " + id));
+        // OWASP A01 BOLA — caller must own the exam's university.
+        if (exam.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(exam.getUniversity());
+        }
+        return examMapper.toDto(exam);
     }
 
     public Page<ExamDto> findAll(Pageable pageable) {
@@ -68,19 +81,35 @@ public class ExamService {
         return examRepository.countByCourse(courseId);
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "Exam", entityClass = Exam.class, keyArg = "id")
     @Transactional
     public ExamDto update(UUID id, ExamDto dto) {
         Exam existing = examRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found: " + id));
+        // OWASP A01 BOLA — caller must own the exam's university.
+        if (existing.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
+        }
+        // Mass-assignment defense — body cannot relocate exam to foreign OTM.
+        String originalUniversity = existing.getUniversity();
         examMapper.updateEntityFromDto(dto, existing);
+        existing.setUniversity(originalUniversity); // pin to original
         return examMapper.toDto(examRepository.save(existing));
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "Exam", entityClass = Exam.class, keyArg = "id")
     @Transactional
     public void softDelete(UUID id) {
         Exam exam = examRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found: " + id));
+        // OWASP A01 BOLA — caller must own the exam's university.
+        if (exam.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(exam.getUniversity());
+        }
         exam.setDeleteTs(LocalDateTime.now());
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        exam.setDeletedBy(auth != null ? auth.getName() : "system");
         examRepository.save(exam);
     }
 }

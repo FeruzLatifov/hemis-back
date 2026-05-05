@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.domain.entity.academic.Faculty;
 import uz.hemis.service.legacy.university.UniversityRefLegacyService;
 
@@ -27,8 +28,28 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class FacultyServiceController {
 
     private final UniversityRefLegacyService universityService;
+    private final LegacySecurityHelper securityHelper;
 
     private static final String ENTITY_NAME = "hemishe_EUniversityDepartment";
+
+    /**
+     * OWASP A01 — caller must own the requested university scope.
+     * Returns false if caller has no JWT scope (admin/system) → allow.
+     */
+    private boolean isAccessAllowed(String requestedUniversity) {
+        String callerCode = securityHelper.getUniversityCodeFromContext();
+        if (callerCode == null || callerCode.isEmpty()) {
+            return true; // admin/system
+        }
+        return callerCode.equals(requestedUniversity);
+    }
+
+    private ResponseEntity<Map<String, Object>> forbidden() {
+        Map<String, Object> err = new LinkedHashMap<>();
+        err.put("error", "Forbidden");
+        err.put("details", "Cross-tenant faculty access denied");
+        return ResponseEntity.status(403).body(err);
+    }
 
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/get")
@@ -38,6 +59,8 @@ public class FacultyServiceController {
             @RequestParam String university) {
 
         log.info("[CUBA Service] faculty/get: university={}", university);
+
+        if (!isAccessAllowed(university)) return forbidden();
 
         List<Faculty> faculties = universityService.findAllFaculty().stream()
                 .filter(f -> university.equals(f.getUniversity()))
@@ -72,6 +95,8 @@ public class FacultyServiceController {
             @RequestParam String universityCode) {
 
         log.info("[CUBA Service] faculty/count: universityCode={}", universityCode);
+
+        if (!isAccessAllowed(universityCode)) return forbidden();
 
         long count = universityService.findAllFaculty().stream()
                 .filter(f -> universityCode.equals(f.getUniversity()))

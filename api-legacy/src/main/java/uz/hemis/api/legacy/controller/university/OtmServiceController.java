@@ -88,7 +88,7 @@ public class OtmServiceController {
         @Parameter(description = "PINFL", required = true, example = "31503776560016")
         @RequestParam String pinfl
     ) {
-        log.info("GET /services/otm/studentInfoByPinfl - pinfl: {}", pinfl);
+        log.info("GET /services/otm/studentInfoByPinfl - pinfl: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
         String universityCode = securityHelper.getUniversityCodeFromContext();
         Map<String, Object> data = otmIntegrationService.getStudentInfoByPinfl(pinfl, universityCode);
         if (data == null) {

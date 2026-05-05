@@ -212,10 +212,10 @@ public class UzAsboServiceController {
                     // Validate PINFL - must be exactly 14 digits
                     if (pinfl == null || !pinfl.matches(PINFL_PATTERN)) {
                         result.put("status", "INVALID_PINFL");
-                        log.debug("[UzASBO Service] Invalid PINFL: {}", pinfl);
+                        log.debug("[UzASBO Service] Invalid PINFL: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
                     } else {
                         result.put("status", "OK");
-                        log.debug("[UzASBO Service] Valid PINFL: {}", pinfl);
+                        log.debug("[UzASBO Service] Valid PINFL: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
                     }
 
                     results.add(result);

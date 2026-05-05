@@ -59,6 +59,26 @@ public class AcademicEntityLegacyService {
     private final RAcademicAttendanceRepository rAcademicAttendanceRepository;
     private final AcademicEducationalWorkRepository academicEducationalWorkRepository;
 
+    /**
+     * Soft-delete helper (CRITICAL audit P6.A2.C1).
+     *
+     * <p>Avvalgi versiyada {@code repository.delete(entity)} ishlatilardi — bu
+     * NDG (Non-Deletion Guarantee) qoidasini buzar va audit tarixi yo'qolardi.
+     * Domain CLAUDE.md: "Cascade DELETE hemishe_* jadvallarida har doim taqiqlangan
+     * — soft delete ishlatish".</p>
+     *
+     * <p>Endi: {@code delete_ts} + {@code deleted_by} set qilib, save chaqiriladi.
+     * {@code @SQLRestriction("delete_ts IS NULL")} entity'larda bu yozuvni
+     * keyingi query'lardan avtomatik yashiradi.</p>
+     */
+    private <T extends BaseEntity> void softDelete(T entity, org.springframework.data.jpa.repository.JpaRepository<T, java.util.UUID> repo) {
+        entity.setDeleteTs(LocalDateTime.now());
+        var auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        entity.setDeletedBy(auth != null ? auth.getName() : "system");
+        repo.save(entity);
+    }
+
     // ====================================================================
     //  Curriculum
     // ====================================================================
@@ -84,7 +104,7 @@ public class AcademicEntityLegacyService {
 
     @Transactional
     public void deleteCurriculum(Curriculum entity) {
-        curriculumRepository.delete(entity);
+        softDelete(entity, curriculumRepository);
     }
 
     public Map<String, Object> toCurriculumMap(Curriculum entity, Boolean returnNulls) {
@@ -136,7 +156,7 @@ public class AcademicEntityLegacyService {
 
     @Transactional
     public void deleteExam(Exam entity) {
-        examRepository.delete(entity);
+        softDelete(entity, examRepository);
     }
 
     public Map<String, Object> toExamMap(Exam entity, Boolean returnNulls) {
@@ -193,7 +213,7 @@ public class AcademicEntityLegacyService {
 
     @Transactional
     public void deleteSchedule(Schedule entity) {
-        scheduleRepository.delete(entity);
+        softDelete(entity, scheduleRepository);
     }
 
     public Map<String, Object> toScheduleMap(Schedule entity, Boolean returnNulls) {
@@ -250,7 +270,7 @@ public class AcademicEntityLegacyService {
 
     @Transactional
     public void deleteCourse(Course entity) {
-        courseRepository.delete(entity);
+        softDelete(entity, courseRepository);
     }
 
     public Map<String, Object> toCourseMap(Course entity, Boolean returnNulls) {
@@ -305,7 +325,7 @@ public class AcademicEntityLegacyService {
 
     @Transactional
     public void deleteEducationMaterials(EducationMaterials entity) {
-        educationMaterialsRepository.delete(entity);
+        softDelete(entity, educationMaterialsRepository);
     }
 
     public Map<String, Object> toEducationMaterialsMap(EducationMaterials entity, Boolean returnNulls) {
@@ -396,7 +416,7 @@ public class AcademicEntityLegacyService {
 
     @Transactional
     public void deleteAcademicMethodologicPublications(AcademicMethodologicPublications entity) {
-        academicMethodologicPublicationsRepository.delete(entity);
+        softDelete(entity, academicMethodologicPublicationsRepository);
     }
 
     public Map<String, Object> toAcademicMethodologicPublicationsMap(AcademicMethodologicPublications entity, Boolean returnNulls) {
@@ -701,7 +721,7 @@ public class AcademicEntityLegacyService {
 
     @Transactional
     public void deleteAcademicEducationalWork(AcademicEducationalWork entity) {
-        academicEducationalWorkRepository.delete(entity);
+        softDelete(entity, academicEducationalWorkRepository);
     }
 
     public Map<String, Object> toAcademicEducationalWorkMap(AcademicEducationalWork entity, Boolean returnNulls) {

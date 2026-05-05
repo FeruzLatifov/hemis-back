@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.log.LogSafe;
 import uz.hemis.service.shared.BimmService;
 
 /**
@@ -36,7 +37,7 @@ public class BimmServiceController {
     public ResponseEntity<?> disabilityCheck(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl,
             @Parameter(description = "Hujjat raqami", required = false) @RequestParam(required = false) String document) {
-        log.info("[CUBA Service] bimm/disabilityCheck: pinfl={}, document={}", pinfl, document);
+        log.info("[CUBA Service] bimm/disabilityCheck: pinfl={}, document={}", LogSafe.pinfl(pinfl), document);
         return ResponseEntity.ok(bimmService.disabilityCheck(pinfl, document));
     }
 
@@ -48,7 +49,7 @@ public class BimmServiceController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> provertyRegister(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
-        log.info("[CUBA Service] bimm/provertyRegister: pinfl={}", pinfl);
+        log.info("[CUBA Service] bimm/provertyRegister: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(bimmService.provertyRegister(pinfl));
     }
 
@@ -60,7 +61,7 @@ public class BimmServiceController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> certificate(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
-        log.info("[CUBA Service] bimm/certificate: pinfl={}", pinfl);
+        log.info("[CUBA Service] bimm/certificate: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(bimmService.certificate(pinfl));
     }
 
@@ -72,7 +73,7 @@ public class BimmServiceController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> academicDegree(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
-        log.info("[CUBA Service] bimm/academicDegree: pinfl={}", pinfl);
+        log.info("[CUBA Service] bimm/academicDegree: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(bimmService.academicDegree(pinfl));
     }
 
@@ -84,7 +85,7 @@ public class BimmServiceController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> teacherTraining(
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl) {
-        log.info("[CUBA Service] bimm/teacherTraining: pinfl={}", pinfl);
+        log.info("[CUBA Service] bimm/teacherTraining: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(bimmService.teacherTraining(pinfl));
     }
 }

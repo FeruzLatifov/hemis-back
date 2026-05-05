@@ -441,9 +441,8 @@ public class TeacherEntityController {
                     if (callerUniversity != null && !callerUniversity.equals(entity.getUniversity())) {
                         log.warn("SECURITY: cross-tenant UPSERT blocked — caller={}, entity.uni={}, id={}",
                                 callerUniversity, entity.getUniversity(), existingId);
-                        return ResponseEntity.status(403).body(java.util.Map.of(
-                                "error", "Forbidden",
-                                "details", "Resource belongs to another university"));
+                        return ResponseEntity.status(403).body(
+                                uz.hemis.api.legacy.adapter.LegacyResponseHelper.forbiddenMap());
                     }
                     log.info("POST with existing id={} — performing UPSERT (update)", existingId);
                     // Mass-assignment defense — body cannot relocate to another OTM.
@@ -471,9 +470,8 @@ public class TeacherEntityController {
                 if (callerUniversity != null && !callerUniversity.equals(entity.getUniversity())) {
                     log.warn("SECURITY: cross-tenant UPSERT-by-code blocked — caller={}, entity.uni={}, code={}",
                             callerUniversity, entity.getUniversity(), code);
-                    return ResponseEntity.status(403).body(java.util.Map.of(
-                            "error", "Forbidden",
-                            "details", "Resource belongs to another university"));
+                    return ResponseEntity.status(403).body(
+                            uz.hemis.api.legacy.adapter.LegacyResponseHelper.forbiddenMap());
                 }
                 log.info("POST with existing code={} — performing UPSERT (update)", code);
                 // Mass-assignment defense.

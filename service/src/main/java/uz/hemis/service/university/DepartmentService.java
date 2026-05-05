@@ -17,6 +17,7 @@ import uz.hemis.common.dto.university.DepartmentDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.exception.ValidationException;
 import uz.hemis.domain.entity.academic.Department;
+import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.university.mapper.DepartmentMapper;
 import uz.hemis.domain.repository.DepartmentRepository;
 
@@ -55,6 +56,7 @@ public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
+    private final TenantGuard tenantGuard;
 
     // =====================================================
     // Read Operations (Read-Only Transactions)
@@ -74,6 +76,10 @@ public class DepartmentService {
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", "id", id));
 
+        // OWASP A01 BOLA — caller must own the department's university (admin bypass).
+        if (department.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(department.getUniversity());
+        }
         return departmentMapper.toDto(department);
     }
 
@@ -91,6 +97,10 @@ public class DepartmentService {
         Department department = departmentRepository.findByDepartmentCode(departmentCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", "departmentCode", departmentCode));
 
+        // OWASP A01 BOLA — caller must own the department's university (admin bypass).
+        if (department.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(department.getUniversity());
+        }
         return departmentMapper.toDto(department);
     }
 
@@ -247,6 +257,11 @@ public class DepartmentService {
     public DepartmentDto create(DepartmentDto departmentDto) {
         log.info("Creating new department with code: {}", departmentDto.getDepartmentCode());
 
+        // OWASP A01 — caller cannot create Department for foreign OTM (mass-assignment).
+        if (departmentDto.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(departmentDto.getUniversity());
+        }
+
         // Validate department code uniqueness
         if (departmentDto.getDepartmentCode() != null &&
                 departmentRepository.existsByDepartmentCode(departmentDto.getDepartmentCode())) {
@@ -297,6 +312,11 @@ public class DepartmentService {
         Department existing = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", "id", id));
 
+        // OWASP A01 BOLA — caller must own the department's university (admin bypass).
+        if (existing.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
+        }
+
         // Validate department code uniqueness (if changed)
         if (departmentDto.getDepartmentCode() != null &&
                 !departmentDto.getDepartmentCode().equals(existing.getDepartmentCode()) &&
@@ -308,8 +328,11 @@ public class DepartmentService {
             );
         }
 
+        // Mass-assignment defense — body cannot relocate department to foreign OTM.
+        String originalUniversity = existing.getUniversity();
         // Update entity from DTO (ignores audit fields)
         departmentMapper.updateEntityFromDto(departmentDto, existing);
+        existing.setUniversity(originalUniversity); // pin to original
 
         // updateTs and updatedBy will be set by @PreUpdate
 
@@ -348,6 +371,11 @@ public class DepartmentService {
         // Find existing department
         Department department = departmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Department", "id", id));
+
+        // OWASP A01 BOLA — caller must own the department's university (admin bypass).
+        if (department.getUniversity() != null) {
+            tenantGuard.verifyOwnershipOrAdmin(department.getUniversity());
+        }
 
         // Check if already deleted
         if (department.isDeleted()) {

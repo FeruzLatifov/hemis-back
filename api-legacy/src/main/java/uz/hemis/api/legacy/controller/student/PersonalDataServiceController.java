@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.log.LogSafe;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -45,7 +46,7 @@ public class PersonalDataServiceController {
             @Parameter(description = "PINFL", required = true) @RequestParam String pinfl,
             @Parameter(description = "Passport seriya va raqami", required = true) @RequestParam String serial) {
 
-        log.info("[CUBA Service] personal-data/getData: pinfl={}, serial={}", pinfl, serial);
+        log.info("[CUBA Service] personal-data/getData: pinfl={}, serial={}", LogSafe.pinfl(pinfl), LogSafe.passport(serial));
 
         String requestUrl = EXTERNAL_URL + "?TOKEN=" + TOKEN + "&pinfl=" + pinfl + "&p_seriya=" + serial;
 

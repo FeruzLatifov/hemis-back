@@ -945,7 +945,9 @@ public class StudentServiceController {
     public ResponseEntity<?> checkScholarship(
             @Parameter(description = "INN (TIN)") @RequestParam String tin,
             @Parameter(description = "PINFL lar (JSON array)") @RequestParam String pinfls) {
-        log.info("[CUBA Service] student/checkScholarship: tin={}, pinfls={}", tin, pinfls);
+        // PINFL JSON array — log only count to avoid PII leak.
+        log.info("[CUBA Service] student/checkScholarship: tin={}, pinfls.length={}",
+                tin, pinfls != null ? pinfls.length() : 0);
         // OLD-HEMIS (CUBA): pinfls is a JSON array parameter like ["pinfl1","pinfl2"]
         String trimmed = pinfls.trim();
         if (!trimmed.startsWith("[")) {

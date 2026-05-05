@@ -36,7 +36,7 @@ public class ExternalIntegrationController {
     public ResponseEntity<Map<String, Object>> getTaxRent(
         @Parameter(description = "PINFL (14 xonali)", required = true, example = "51805035330018") @RequestParam String pinfl
     ) {
-        log.info("GET /services/tax/rent - pinfl: {}", pinfl);
+        log.info("GET /services/tax/rent - pinfl: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(externalIntegrationService.getTaxRent(pinfl));
     }
 

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.log.LogSafe;
 import uz.hemis.domain.entity.student.DoctoralStudent;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.service.legacy.ReferenceDataLegacyService;
@@ -249,7 +250,7 @@ public class DoctoralStudentServiceController {
             data.put("success", true);
             return data;
         } catch (Exception e) {
-            log.warn("Failed to fetch personal data for PINFL {}: {}", pinfl, e.getMessage());
+            log.warn("Failed to fetch personal data for PINFL {}: {}", LogSafe.pinfl(pinfl), e.getMessage());
             return null;
         }
     }
