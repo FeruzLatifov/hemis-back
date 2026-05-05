@@ -618,10 +618,12 @@ public class WebI18nController {
      * @return Cache statistics
      */
     @GetMapping("/cache/stats")
+    @PreAuthorize("hasAuthority('system.translation.view')")
     @Operation(
         summary = "Get cache statistics",
         description = "Returns Redis cache statistics for monitoring: " +
-                      "number of cached languages, cache keys, TTL, etc."
+                      "number of cached languages, cache keys, TTL, etc. " +
+                      "Requires 'system.translation.view' (admin only — service metadata leak prevention)."
     )
     @ApiResponses({
         @ApiResponse(
@@ -633,7 +635,8 @@ public class WebI18nController {
                     value = "{\"success\":true,\"data\":{\"cachedLanguages\":3,\"languages\":[\"uz-UZ\",\"ru-RU\",\"en-US\"],\"cacheTTL\":\"PT24H\"}}"
                 )
             )
-        )
+        ),
+        @ApiResponse(responseCode = "403", description = "Forbidden — admin permission required")
     })
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getCacheStats() {
         log.debug("GET /api/v1/web/i18n/cache/stats");
