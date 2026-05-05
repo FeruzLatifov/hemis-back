@@ -65,7 +65,8 @@ public class BimmService extends AbstractGovernmentApiService {
      * @return raw API response (array or object)
      */
     public Object disabilityCheck(String pinfl, String document) {
-        log.info("Checking disability status - PINFL: {}, Document: {}", pinfl, document);
+        log.info("Checking disability status - PINFL: {}, Document: {}",
+                uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl), document);
 
         String token = getTokenOrEmpty();
 
@@ -90,7 +91,7 @@ public class BimmService extends AbstractGovernmentApiService {
      * @return raw API response (array or object)
      */
     public Object provertyRegister(String pinfl) {
-        log.info("Checking poverty register - PINFL: {}", pinfl);
+        log.info("Checking poverty register - PINFL: {}", uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl));
 
         String token = getTokenOrEmpty();
 
@@ -113,7 +114,7 @@ public class BimmService extends AbstractGovernmentApiService {
      * @return raw API response (array or object)
      */
     public Object certificate(String pinfl) {
-        log.info("Fetching certificate info - PINFL: {}", pinfl);
+        log.info("Fetching certificate info - PINFL: {}", uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl));
 
         String token = getTokenOrEmpty();
         String url = apiBaseUrl + "/dtm/certificate-info?pinfl=" + pinfl;
@@ -132,7 +133,7 @@ public class BimmService extends AbstractGovernmentApiService {
      * @return raw API response (object or array)
      */
     public Object academicDegree(String pinfl) {
-        log.info("Fetching academic degree info - PINFL: {}", pinfl);
+        log.info("Fetching academic degree info - PINFL: {}", uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl));
 
         String token = getTokenOrEmpty();
 
@@ -156,7 +157,7 @@ public class BimmService extends AbstractGovernmentApiService {
      * @return raw API response (object or array)
      */
     public Object teacherTraining(String pinfl) {
-        log.info("Fetching teacher training info - PINFL: {}", pinfl);
+        log.info("Fetching teacher training info - PINFL: {}", uz.hemis.common.vo.Pinfl.maskOrEmpty(pinfl));
 
         String token = getTokenOrEmpty();
 

@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.CubaFilterHelper;
 import uz.hemis.api.legacy.util.CubaSearchBodyParser;
+import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.domain.entity.employee.AdministrativeEmployee3;
 import uz.hemis.service.legacy.employee.EmployeeRefLegacyService;
 
@@ -32,16 +33,42 @@ public class AdministrativeEmployee3EntityController {
 
     private final EmployeeRefLegacyService employeeService;
     private final CubaFilterHelper filterHelper;
+    private final LegacySecurityHelper securityHelper;
 
     private static final String ENTITY_NAME = "hemishe_RIAdministrativeEmployee3";
+
+    /** OWASP A01 BOLA defense — caller must own the entity's university. */
+    private boolean isAccessAllowed(AdministrativeEmployee3 entity) {
+        String callerCode = securityHelper.getUniversityCodeFromContext();
+        if (callerCode == null || callerCode.isEmpty()) {
+            return true; // admin/system scope
+        }
+        return callerCode.equals(entity.getUniversity());
+    }
+
+    private Map<String, Object> forbiddenBody() {
+        Map<String, Object> err = new LinkedHashMap<>();
+        err.put("error", "Forbidden");
+        err.put("details", "Resource belongs to another university");
+        return err;
+    }
 
     @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
     @PreAuthorize("hasAuthority('teachers.edit')")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
-        log.info("POST create hemishe_RIAdministrativeEmployee3: {}", body);
+        log.info("POST create hemishe_RIAdministrativeEmployee3");
+        // Mass-assignment defense — body cannot relocate to foreign OTM via _university.
+        String callerCode = securityHelper.getUniversityCodeFromContext();
+        if (callerCode != null && !callerCode.isEmpty()) {
+            body.remove("_university");
+            body.remove("university");
+        }
         AdministrativeEmployee3 entity = new AdministrativeEmployee3();
         employeeService.updateAdministrativeEmployee3FromMap(entity, body);
+        if (callerCode != null && !callerCode.isEmpty()) {
+            entity.setUniversity(callerCode);
+        }
         AdministrativeEmployee3 saved = employeeService.saveAdministrativeEmployee3(entity);
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee3Map(saved, returnNulls));
     }
@@ -53,6 +80,9 @@ public class AdministrativeEmployee3EntityController {
         log.debug("GET hemishe_RIAdministrativeEmployee3 by id: {}", entityId);
         Optional<AdministrativeEmployee3> entity = employeeService.findAdministrativeEmployee3ById(entityId);
         if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (!isAccessAllowed(entity.get())) {
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee3Map(entity.get(), returnNulls));
     }
 
@@ -64,6 +94,12 @@ public class AdministrativeEmployee3EntityController {
         Optional<AdministrativeEmployee3> existingOpt = employeeService.findAdministrativeEmployee3ById(entityId);
         if (existingOpt.isEmpty()) return ResponseEntity.notFound().build();
         AdministrativeEmployee3 entity = existingOpt.get();
+        if (!isAccessAllowed(entity)) {
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
+        // Mass-assignment defense — body cannot relocate entity to foreign OTM.
+        body.remove("_university");
+        body.remove("university");
         employeeService.updateAdministrativeEmployee3FromMap(entity, body);
         AdministrativeEmployee3 saved = employeeService.saveAdministrativeEmployee3(entity);
         return ResponseEntity.ok(employeeService.toAdministrativeEmployee3Map(saved, returnNulls));
@@ -72,10 +108,13 @@ public class AdministrativeEmployee3EntityController {
     @Operation(summary = "Soft delete (CUBA entity API)")
     @PreAuthorize("hasAuthority('teachers.delete')")
     @DeleteMapping("/{entityId}")
-    public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
+    public ResponseEntity<?> delete(@PathVariable UUID entityId) {
         log.info("DELETE hemishe_RIAdministrativeEmployee3 id: {}", entityId);
         Optional<AdministrativeEmployee3> entity = employeeService.findAdministrativeEmployee3ById(entityId);
         if (entity.isEmpty()) return ResponseEntity.notFound().build();
+        if (!isAccessAllowed(entity.get())) {
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
         employeeService.softDeleteAdministrativeEmployee3(entity.get());
         return ResponseEntity.ok().build();
     }

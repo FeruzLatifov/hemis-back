@@ -299,20 +299,29 @@ public class ApiMspdTokenService {
 
     /**
      * Refresh access token using refresh_token.
-     * POST /auth/refresh-token?refresh_token=XXX
+     *
+     * <p>OWASP A09 (audit P0.E1): refresh_token request URL'da YO'Q —
+     * webserver/proxy/CDN access log'larida, browser history'da, Referrer header'da
+     * tokendan oqib chiqishni oldini oladi. POST body (form-urlencoded) ichida yuboriladi.</p>
      */
     @SuppressWarnings("unchecked")
     private String refreshAccessToken(String refreshToken) {
-        String refreshUrl = baseUrl + "/auth/refresh-token?refresh_token=" +
-                URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
-        log.info("Refreshing API-MSPD token via refresh_token");
+        String refreshUrl = baseUrl + "/auth/refresh-token";
+        String formBody = "refresh_token=" + URLEncoder.encode(refreshToken, StandardCharsets.UTF_8);
+        log.info("Refreshing API-MSPD token via refresh_token (body, not URL)");
 
         try {
             HttpURLConnection conn = (HttpURLConnection) URI.create(refreshUrl).toURL().openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Accept", "application/json");
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
             conn.setConnectTimeout(10000);
             conn.setReadTimeout(10000);
+            conn.setDoOutput(true);
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(formBody.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+            }
 
             int statusCode = conn.getResponseCode();
             if (statusCode == 200) {

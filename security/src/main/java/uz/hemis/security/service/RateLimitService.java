@@ -221,4 +221,50 @@ public class RateLimitService {
         return String.format("Rate Limit: %d attempts per %d minutes (OWASP standard)",
             MAX_ATTEMPTS, WINDOW_DURATION_MINUTES);
     }
+
+    /**
+     * Generic rate limit check with custom key prefix and limits.
+     *
+     * <p>Use cases beyond login:
+     * <ul>
+     *   <li>OAuth token endpoint: prefix={@code "ratelimit:oauth:"}, max=60/15min/IP</li>
+     *   <li>Password reset: prefix={@code "ratelimit:pwreset:"}, max=3/30min</li>
+     *   <li>API webhook: prefix={@code "ratelimit:webhook:"}, max=100/1min</li>
+     * </ul>
+     *
+     * <p>Same fail-closed semantics as {@link #isAllowed(String)} — Redis errors
+     * REJECT the request (security &gt; availability).</p>
+     *
+     * @param keyPrefix Redis key prefix (must include trailing ":") e.g. {@code "ratelimit:oauth:"}
+     * @param identifier unique identifier (IP, client_id, …) — null/empty fails closed
+     * @param maxAttempts limit within window
+     * @param windowMinutes sliding window length
+     * @return true if request allowed, false if limit exceeded or Redis unavailable
+     */
+    public boolean isAllowed(String keyPrefix, String identifier, int maxAttempts, long windowMinutes) {
+        if (identifier == null || identifier.isEmpty() || keyPrefix == null || keyPrefix.isEmpty()) {
+            log.error("Rate limit check missing keyPrefix/identifier - REJECTED (fail closed)");
+            return false;
+        }
+        String key = keyPrefix + identifier;
+        try {
+            Long currentAttempts = redisTemplate.opsForValue().increment(key);
+            if (currentAttempts == null) {
+                log.error("Redis increment returned null for key={} - REJECTED (fail closed)", key);
+                return false;
+            }
+            if (currentAttempts == 1) {
+                redisTemplate.expire(key, windowMinutes, TimeUnit.MINUTES);
+            }
+            if (currentAttempts > maxAttempts) {
+                log.warn("Rate limit exceeded: key={} ({}/{} in {}min)",
+                        key, currentAttempts, maxAttempts, windowMinutes);
+                return false;
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Rate limit check FAILED for key={}: {} - REJECTED (fail closed)", key, e.getMessage());
+            return false;
+        }
+    }
 }

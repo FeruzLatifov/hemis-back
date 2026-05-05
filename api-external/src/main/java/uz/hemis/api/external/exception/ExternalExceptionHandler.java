@@ -45,4 +45,23 @@ public class ExternalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(ErrorResponse.of(502, "INTEGRATION_ERROR", "External service unavailable"));
     }
+
+    /**
+     * Generic fallback (audit P0.E4 — OWASP A05/A09).
+     *
+     * <p>Eski versiyada NullPointerException/IllegalStateException Spring default
+     * handler'ga tushib, exception class FQN va stack trace fragmenti response'ga
+     * oqib chiqishi mumkin edi (e.g., "PSQLException: ERROR: null value in column
+     * \"university_code\""). Bu klient uchun foydasiz, lekin internal struktura
+     * ma'lumotlarini external integratorga oshkor qiladi.</p>
+     *
+     * <p>Endi: server-side full detail log'da, klient generic 500 oladi.</p>
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
+        log.error("External API unexpected error: {} - {}",
+                ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ErrorResponse.of(500, "INTERNAL_ERROR", "Internal server error"));
+    }
 }

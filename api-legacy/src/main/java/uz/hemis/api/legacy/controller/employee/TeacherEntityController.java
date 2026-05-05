@@ -67,6 +67,22 @@ public class TeacherEntityController {
             "gender", "university", "passport"
     );
 
+    /** OWASP A01 BOLA defense — caller must own the teacher's university. */
+    private boolean isAccessAllowed(Teacher entity) {
+        String callerCode = securityHelper.getUniversityCodeFromContext();
+        if (callerCode == null || callerCode.isEmpty()) {
+            return true; // admin/system scope (no JWT university claim)
+        }
+        return callerCode.equals(entity.getUniversity());
+    }
+
+    private Map<String, Object> forbiddenBody() {
+        Map<String, Object> err = new LinkedHashMap<>();
+        err.put("error", "Forbidden");
+        err.put("details", "Resource belongs to another university");
+        return err;
+    }
+
     @PreAuthorize("hasAuthority('teachers.view')")
     @GetMapping("/{entityId}")
     @Operation(
@@ -87,6 +103,9 @@ public class TeacherEntityController {
             error.put("error", "Entity not found");
             error.put("details", "Entity hemishe_ETeacher with id " + entityId + " not found");
             return ResponseEntity.status(404).body(error);
+        }
+        if (!isAccessAllowed(entity.get())) {
+            return ResponseEntity.status(403).body(forbiddenBody());
         }
 
         Map<String, Object> result = teacherService.toTeacherMap(entity.get(), returnNulls, view);
@@ -120,6 +139,17 @@ public class TeacherEntityController {
         }
 
         Teacher entity = existingOpt.get();
+        if (!isAccessAllowed(entity)) {
+            return ResponseEntity.status(403).body(forbiddenBody());
+        }
+
+        // Mass-assignment defense (OWASP A01) — server-managed scope fields cannot be
+        // mutated via body (e.g. caller cannot relocate teacher to another OTM, override
+        // server-generated code, or set primary key). audit P3.T3.
+        body.remove("_university");
+        body.remove("university");
+        body.remove("code");
+        body.remove("id");
         teacherService.updateTeacherFromMap(entity, body);
 
         Teacher saved = teacherService.save(entity);
@@ -216,6 +246,9 @@ public class TeacherEntityController {
             error.put("error", "Entity not found");
             error.put("details", "Entity hemishe_ETeacher with id " + entityId + " not found");
             return ResponseEntity.status(404).body(error);
+        }
+        if (!isAccessAllowed(existing.get())) {
+            return ResponseEntity.status(403).body(forbiddenBody());
         }
         try {
             teacherService.softDelete(existing.get());
@@ -393,6 +426,9 @@ public class TeacherEntityController {
         log.info("POST /app/rest/v2/entities/hemishe_ETeacher - Create/Upsert teacher");
         log.debug("Request body keys: {}", body.keySet());
 
+        // OWASP A01 — caller universityCode (JWT scope) — UPSERT scope check.
+        String callerUniversity = securityHelper.getUniversityCodeFromContext();
+
         // CUBA UPSERT: if body contains 'id' and teacher exists, update instead of create
         Object idObj = body.get("id");
         if (idObj != null) {
@@ -400,8 +436,19 @@ public class TeacherEntityController {
                 UUID existingId = UUID.fromString(idObj.toString());
                 Optional<Teacher> existingOpt = teacherService.findById(existingId);
                 if (existingOpt.isPresent()) {
-                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
                     Teacher entity = existingOpt.get();
+                    // Cross-tenant UPSERT block (audit P3.T1).
+                    if (callerUniversity != null && !callerUniversity.equals(entity.getUniversity())) {
+                        log.warn("SECURITY: cross-tenant UPSERT blocked — caller={}, entity.uni={}, id={}",
+                                callerUniversity, entity.getUniversity(), existingId);
+                        return ResponseEntity.status(403).body(java.util.Map.of(
+                                "error", "Forbidden",
+                                "details", "Resource belongs to another university"));
+                    }
+                    log.info("POST with existing id={} — performing UPSERT (update)", existingId);
+                    // Mass-assignment defense — body cannot relocate to another OTM.
+                    body.remove("_university");
+                    body.remove("university");
                     teacherService.updateTeacherFromMap(entity, body);
                     Teacher saved = teacherService.save(entity);
                     return ResponseEntity.status(201).body(teacherService.minimalTeacherResponse(saved));
@@ -418,8 +465,20 @@ public class TeacherEntityController {
             String code = codeObj.toString();
             Optional<Teacher> existingOpt = teacherService.findByCode(code);
             if (existingOpt.isPresent()) {
-                log.info("POST with existing code={} — performing UPSERT (update)", code);
                 Teacher entity = existingOpt.get();
+                // OWASP A01 — code orqali UPSERT cross-uni collision yopildi:
+                // attacker boshqa OTM teacher.code'ni taxmin qilib UPSERT qilolmaydi.
+                if (callerUniversity != null && !callerUniversity.equals(entity.getUniversity())) {
+                    log.warn("SECURITY: cross-tenant UPSERT-by-code blocked — caller={}, entity.uni={}, code={}",
+                            callerUniversity, entity.getUniversity(), code);
+                    return ResponseEntity.status(403).body(java.util.Map.of(
+                            "error", "Forbidden",
+                            "details", "Resource belongs to another university"));
+                }
+                log.info("POST with existing code={} — performing UPSERT (update)", code);
+                // Mass-assignment defense.
+                body.remove("_university");
+                body.remove("university");
                 teacherService.updateTeacherFromMap(entity, body);
                 Teacher saved = teacherService.save(entity);
                 return ResponseEntity.status(201).body(teacherService.minimalTeacherResponse(saved));

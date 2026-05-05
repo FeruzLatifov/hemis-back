@@ -39,9 +39,15 @@ import java.util.Map;
 public class OAuthClientTokenIssuer {
 
     static final String GRANT_CLIENT_CREDENTIALS = "client_credentials";
+    /** Per-IP rate limit prefix — separate from login limit. */
+    private static final String OAUTH_RATE_LIMIT_PREFIX = "ratelimit:oauth:";
+    /** Per-IP token request limit (OWASP A07 brute-force protection). */
+    private static final int OAUTH_MAX_ATTEMPTS = 60;
+    private static final long OAUTH_WINDOW_MINUTES = 15;
 
     private final OAuthClientAuthenticationService authenticationService;
     private final TokenService tokenService;
+    private final RateLimitService rateLimitService;
 
     /**
      * Issue a machine token for the supplied request.
@@ -58,6 +64,17 @@ public class OAuthClientTokenIssuer {
                                    String grantType,
                                    String requestedScope,
                                    HttpServletRequest request) {
+        String remoteIp = HttpClientIpResolver.resolve(request);
+
+        // OWASP A07 (audit P0.E2) — per-IP rate limit BEFORE auth.
+        // Prevents brute-force of client_id/secret pairs by repeated requests.
+        if (!rateLimitService.isAllowed(
+                OAUTH_RATE_LIMIT_PREFIX, remoteIp, OAUTH_MAX_ATTEMPTS, OAUTH_WINDOW_MINUTES)) {
+            log.warn("OAuth token endpoint rate limit exceeded: ip={}", remoteIp);
+            return error(HttpStatus.TOO_MANY_REQUESTS, "rate_limited",
+                    "Too many token requests. Retry after the rate-limit window resets.");
+        }
+
         if (grantType == null || grantType.isBlank()) {
             return error(HttpStatus.BAD_REQUEST, "invalid_request", "grant_type is required");
         }
@@ -71,8 +88,6 @@ public class OAuthClientTokenIssuer {
             return error(HttpStatus.UNAUTHORIZED, "invalid_client",
                     "Basic authorization header required");
         }
-
-        String remoteIp = HttpClientIpResolver.resolve(request);
 
         try {
             OAuthClient client = authenticationService.authenticate(
