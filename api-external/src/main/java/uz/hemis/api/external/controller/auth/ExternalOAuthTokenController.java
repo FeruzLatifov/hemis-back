@@ -91,6 +91,34 @@ public class ExternalOAuthTokenController {
         return tokenIssuer.issue(authorization, grantType, scope, request);
     }
 
+    @Operation(
+        summary = "External token olish (JSON body — client_credentials)",
+        description = """
+            Form-encoded variant'ning JSON body bilan ekvivalenti.
+            Davlat sistemasi (MyGov, OneID, MSPD) JSON RPC stack ishlatsa
+            shu endpoint orqali token oladi.
+
+            **Body misol:**
+            ```json
+            {
+              "grant_type": "client_credentials",
+              "scope": "students.view"
+            }
+            ```
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token muvaffaqiyatli yaratildi",
+            content = @Content(
+                mediaType = "application/json",
+                schema = @Schema(implementation = TokenResponse.class)
+            )
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid grant_type"),
+        @ApiResponse(responseCode = "401", description = "Invalid client_id, secret yoki IP whitelist'dan tashqari")
+    })
     @PostMapping(value = "/oauth/token", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> tokenJson(
             @RequestHeader(value = "Authorization", required = false) String authorization,

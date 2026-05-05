@@ -122,6 +122,30 @@ public class UniversityOAuthTokenController {
      * JSON variant — legacy {@code univer.php} HTTP clients sometimes default to JSON
      * Content-Type. Mirrors the dual-format pattern in {@code LegacyOAuthTokenController}.
      */
+    @Operation(
+        summary = "Universitet token olish (JSON body — client_credentials)",
+        description = """
+            Form-encoded variant'ning JSON body bilan ekvivalenti.
+            Univer Yii2 frontend (PHP) ba'zi versiyalarida JSON RPC orqali token oladi.
+
+            **Body misol:**
+            ```json
+            {
+              "grant_type": "client_credentials",
+              "scope": "students.view"
+            }
+            ```
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token muvaffaqiyatli yaratildi",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = TokenResponse.class))
+        ),
+        @ApiResponse(responseCode = "400", description = "Invalid grant_type"),
+        @ApiResponse(responseCode = "401", description = "Invalid client_id, secret yoki IP whitelist'dan tashqari")
+    })
     @PostMapping(value = "/oauth/token", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> tokenJson(
             @RequestHeader(value = "Authorization", required = false) String authorization,
