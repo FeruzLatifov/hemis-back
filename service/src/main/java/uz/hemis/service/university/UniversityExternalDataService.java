@@ -443,7 +443,6 @@ public class UniversityExternalDataService {
             Organization org = new Organization();
             org.setTin(tin);
             org.setName(textOrNull(legalNode, "name"));
-            org.setSource("api_legal");
             log.info("Created organization from API: tin={}, name={}", tin, org.getName());
             return organizationRepository.save(org);
         });

@@ -1,27 +1,22 @@
 package uz.hemis.domain.entity.university;
 
-import uz.hemis.domain.entity.employee.Employee;
-
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.type.SqlTypes;
 import uz.hemis.domain.entity.base.AuditableEntity;
 
-import java.time.LocalDateTime;
-
 /**
- * Organization — legal entity registry (TIN UNIQUE).
+ * Organization — legal entity identity registry (TIN + name).
  *
- * <p>Analogous to {@link Employee} (PINFL UNIQUE) for individuals.
- * One organization = one record, referenced by university_founder and other tables.</p>
+ * <p>Populated from {@code /legalentity/legalentity-info/} response
+ * {@code founders[].founderLegal} (api-mspd). The legalentity API only
+ * returns {@code tin} and {@code name} populated for legal founders;
+ * other attributes are NULL there. For richer data, callers re-query the
+ * API by founder TIN on demand.</p>
  *
- * <p>World equivalents:
- * <ul>
- *   <li>SAP: Business Partner (type=ORG)</li>
- *   <li>PeopleSoft: VENDOR</li>
- * </ul></p>
+ * <p>Pattern: analogous to {@code employee} (PINFL UNIQUE) — minimal
+ * identity registry referenced by other tables (university_founder,
+ * oauth_client, ...).</p>
  *
  * @since 1.0.0
  */
@@ -33,7 +28,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"apiRawResponse"})
+@ToString
 public class Organization extends AuditableEntity {
 
     @Column(name = "tin", nullable = false, unique = true, length = 20)
@@ -41,29 +36,4 @@ public class Organization extends AuditableEntity {
 
     @Column(name = "name", nullable = false, length = 500)
     private String name;
-
-    @Column(name = "short_name", length = 255)
-    private String shortName;
-
-    @Column(name = "opf")
-    private Integer opf;
-
-    @Column(name = "address", columnDefinition = "TEXT")
-    private String address;
-
-    @Column(name = "phone", length = 50)
-    private String phone;
-
-    @Column(name = "email", length = 255)
-    private String email;
-
-    @Column(name = "source", length = 50)
-    private String source;
-
-    @Column(name = "api_raw_response", columnDefinition = "jsonb")
-    @JdbcTypeCode(SqlTypes.JSON)
-    private String apiRawResponse;
-
-    @Column(name = "synced_at")
-    private LocalDateTime syncedAt;
 }

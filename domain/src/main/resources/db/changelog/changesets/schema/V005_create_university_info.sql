@@ -14,27 +14,20 @@
 -- =====================================================
 
 -- =====================================================
--- TABLE 1: organization — yuridik shaxslar registri
+-- TABLE 1: organization — yuridik shaxslar registri (TIN + name)
 -- =====================================================
--- TIN UNIQUE = bitta tashkilot = bitta yozuv
--- university_founder (legal), shartnomalar, hamkorlar — hammasi shu jadvalga FK
--- Pattern: employee (PINFL UNIQUE) bilan analogik
--- World equivalent: SAP Business Partner (type=ORG), PeopleSoft VENDOR
+-- TIN UNIQUE = bitta tashkilot = bitta yozuv.
+-- Source: api-mspd /legalentity/legalentity-info/ → response.founders[].founderLegal.
+-- Only tin + name are populated by the API; other legal-entity attributes
+-- (opf, kfs, address, ...) are returned NULL inside founderLegal, so we don't
+-- store them. To get full info, callers re-query the API by founder TIN
+-- on demand (no caching needed).
+-- Pattern: employee (PINFL UNIQUE) bilan analogik (faqat identity registry).
 -- =====================================================
 CREATE TABLE IF NOT EXISTS organization (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tin VARCHAR(20) NOT NULL,  -- Partial UNIQUE pastda (soft-delete uyg'unligi)
     name VARCHAR(500) NOT NULL,
-    short_name VARCHAR(255),
-    opf INTEGER,                      -- tashkiliy-huquqiy shakli
-    address TEXT,
-    phone VARCHAR(50),
-    email VARCHAR(255),
-
-    -- Sync
-    source VARCHAR(50) DEFAULT 'api_legal',
-    api_raw_response JSONB,
-    synced_at TIMESTAMP,
 
     -- Audit (AuditableEntity: 7)
     version INTEGER DEFAULT 1,
@@ -43,23 +36,13 @@ CREATE TABLE IF NOT EXISTS organization (
     updated_at TIMESTAMP,
     updated_by VARCHAR(50),
     deleted_at TIMESTAMP,
-    deleted_by VARCHAR(50),
-
-    -- Data integrity
-    CONSTRAINT chk_organization_source CHECK (source IN ('api_legal', 'manual')),
-    CONSTRAINT chk_organization_email CHECK (email IS NULL OR email ~* '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$')
+    deleted_by VARCHAR(50)
 );
 
-COMMENT ON TABLE organization IS 'Legal entity registry — one record per TIN. Analogous to employee (PINFL UNIQUE) for individuals.';
+COMMENT ON TABLE organization IS 'Legal entity identity registry — TIN + name only. Populated from /legalentity/legalentity-info/ founders.founderLegal. Other attributes fetched on-demand.';
 COMMENT ON COLUMN organization.tin IS 'STIR — unique tax identification number (9 digits in UZ)';
-COMMENT ON COLUMN organization.opf IS 'Organizational-legal form code (OPF classifier)';
-COMMENT ON COLUMN organization.source IS 'Record origin: api_legal | manual';
-COMMENT ON COLUMN organization.api_raw_response IS 'Raw JSON snapshot from legalentity API (full response)';
 
-CREATE INDEX IF NOT EXISTS idx_organization_name      ON organization(name);
-CREATE INDEX IF NOT EXISTS idx_organization_synced_at ON organization(synced_at) WHERE synced_at IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_organization_source    ON organization(source) WHERE source IS NOT NULL;
--- NOTE: `idx_organization_deleted_at ON (deleted_at) WHERE deleted_at IS NULL` removed (always empty).
+CREATE INDEX IF NOT EXISTS idx_organization_name ON organization(name);
 
 -- TIN globally unique per LIVING legal entity.
 -- Partial UNIQUE: soft-deleted tashkilot TIN'ini qayta ishlatish mumkin (re-registration).
