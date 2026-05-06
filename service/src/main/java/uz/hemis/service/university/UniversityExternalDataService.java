@@ -1,7 +1,6 @@
 package uz.hemis.service.university;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,17 +16,16 @@ import uz.hemis.domain.entity.university.UniversityLegal;
 import uz.hemis.domain.repository.UniversityFounderRepository;
 import uz.hemis.domain.repository.UniversityLegalRepository;
 import uz.hemis.domain.repository.UniversityRepository;
-import uz.hemis.service.integration.ApiMspdTokenService;
+import uz.hemis.service.integration.ApiMspdClient;
+import uz.hemis.service.integration.model.GatewayResult;
 
 import java.math.BigDecimal;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * University External Data Service
@@ -45,13 +43,12 @@ import java.util.List;
 @Slf4j
 public class UniversityExternalDataService {
 
-    private final ApiMspdTokenService tokenService;
+    private final ApiMspdClient apiMspdClient;
     private final UniversityRepository universityRepository;
     private final UniversityLegalRepository legalRepository;
     private final UniversityFounderRepository founderRepository;
     private final uz.hemis.domain.repository.EmployeeRepository employeeRepository;
     private final uz.hemis.domain.repository.OrganizationRepository organizationRepository;
-    private final ObjectMapper objectMapper;
 
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
@@ -66,7 +63,7 @@ public class UniversityExternalDataService {
     public UniversityLegal syncLegalEntity(String universityCode, String tin) {
         log.info("Syncing legal entity for university={}, tin={}", universityCode, tin);
 
-        JsonNode response = callApi("/legalentity/legalentity-info/", "{\"tin\": \"" + tin + "\"}");
+        JsonNode response = callApi("/legalentity/legalentity-info/", Map.of("tin", tin));
         if (response == null) return null;
 
         String newResponseJson = response.toString();
@@ -305,40 +302,14 @@ public class UniversityExternalDataService {
     // HTTP HELPER
     // =====================================================
 
-    private JsonNode callApi(String path, String jsonBody) {
-        String token = tokenService.getAccessToken();
-        if (token == null) {
-            log.error("No API-MSPD token available — cannot call {}", path);
-            return null;
-        }
-
-        String url = tokenService.getBaseUrl() + path;
+    private JsonNode callApi(String path, Object body) {
         try {
-            HttpURLConnection conn = (HttpURLConnection) URI.create(url).toURL().openConnection();
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-            conn.setRequestProperty("Content-Type", "application/json");
-            conn.setRequestProperty("Accept", "application/json");
-            conn.setRequestProperty("Authorization", "Bearer " + token);
-            conn.setConnectTimeout(30000);
-            conn.setReadTimeout(30000);
-
-            try (var os = conn.getOutputStream()) {
-                os.write(jsonBody.getBytes(StandardCharsets.UTF_8));
+            GatewayResult result = apiMspdClient.post(path, body);
+            if (result.statusCode() == 200) {
+                return result.body();
             }
-
-            int status = conn.getResponseCode();
-            if (status == 200) {
-                String body = new String(conn.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-                conn.disconnect();
-                return objectMapper.readTree(body);
-            } else {
-                String err = "";
-                try { err = new String(conn.getErrorStream().readAllBytes(), StandardCharsets.UTF_8); } catch (Exception ignored) {}
-                conn.disconnect();
-                log.error("API call {} failed: status={}, body={}", path, status, err);
-                return null;
-            }
+            log.error("API call {} failed: status={}, body={}", path, result.statusCode(), result.body());
+            return null;
         } catch (Exception e) {
             log.error("API call {} error: {}", path, e.getMessage());
             return null;

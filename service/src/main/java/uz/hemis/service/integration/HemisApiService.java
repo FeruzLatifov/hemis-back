@@ -1,21 +1,15 @@
 package uz.hemis.service.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import uz.hemis.common.vo.Pinfl;
 import lombok.RequiredArgsConstructor;
-import uz.hemis.common.vo.Pinfl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import uz.hemis.common.vo.Pinfl;
 import uz.hemis.service.config.HemisApiProperties;
 
-import javax.net.ssl.*;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,7 +36,7 @@ import java.util.Map;
  *
  * <p><strong>Configuration (.env):</strong></p>
  * <pre>
- * HEMIS_API_BASE_URL=https://api.hemis.uz
+ * HEMIS_API_BASE_URL=<a href="https://api.hemis.uz">...</a>
  * HEMIS_API_USERNAME=hemis_integration
  * HEMIS_API_PASSWORD=your-secret-password
  * HEMIS_API_TIMEOUT=30
@@ -70,7 +64,7 @@ public class HemisApiService {
      * <p><strong>OLD-HEMIS Logic (StudentServiceBean.contractInfo):</strong></p>
      * <ol>
      *   <li>Get token via getApiHemisToken() (login with username/password)</li>
-     *   <li>Call https://api.hemis.uz/api/integration/hemis/studentAndContractInfo/{pinfl}</li>
+     *   <li>Call <a href="https://api.hemis.uz/api/integration/hemis/studentAndContractInfo/">...</a>{pinfl}</li>
      *   <li>Return response as Map</li>
      * </ol>
      *
@@ -154,7 +148,7 @@ public class HemisApiService {
             try {
                 // Parse the error body from api.hemis.uz and return it as-is
                 String errorBody = e.getResponseBodyAsString();
-                if (errorBody != null && !errorBody.isEmpty()) {
+                if (!errorBody.isEmpty()) {
                     @SuppressWarnings("unchecked")
                     Map<String, Object> errorMap = objectMapper.readValue(errorBody, LinkedHashMap.class);
                     // Remove "object" field if it's null (OLD-HEMIS compatible)
