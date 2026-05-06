@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import uz.hemis.common.dto.legacy.StudentLegacyDto;
 import uz.hemis.domain.entity.student.Student;
-import uz.hemis.service.cache.ClassifierReferenceLoader;
+import uz.hemis.service.cache.LegacyClassifierReferenceLoader;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -43,7 +43,7 @@ public class StudentLegacyMapper {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
-    private final ClassifierReferenceLoader classifierLoader;
+    private final LegacyClassifierReferenceLoader classifierLoader;
 
     /**
      * Convert Student entity to OLD-HEMIS CUBA format
@@ -193,7 +193,7 @@ public class StudentLegacyMapper {
     /**
      * Load simple classifier reference from CUBA tables.
      *
-     * <p>Delegates to {@link ClassifierReferenceLoader} so the result is cached
+     * <p>Delegates to {@link LegacyClassifierReferenceLoader} so the result is cached
      * per (tableName, entityName, code) for 24h. Previously each student mapping
      * issued ~20 JDBC reads here; with the cache warm, repeat lookups within a
      * batch (e.g. paginated student list) are served from Redis/Caffeine.</p>

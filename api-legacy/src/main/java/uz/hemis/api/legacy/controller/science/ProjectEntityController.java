@@ -59,7 +59,7 @@ public class ProjectEntityController {
     // GET /{entityId} - Bitta loyihani olish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta loyihani olish",
@@ -99,7 +99,7 @@ public class ProjectEntityController {
     // PUT /{entityId} - Loyihani yangilash
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Loyihani yangilash",
@@ -139,7 +139,7 @@ public class ProjectEntityController {
     // DELETE /{entityId} - Loyihani o'chirish (soft delete)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Loyihani o'chirish",
@@ -173,7 +173,7 @@ public class ProjectEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Loyihalarni qidirish (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -200,7 +200,7 @@ public class ProjectEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Loyihalarni qidirish (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -231,7 +231,7 @@ public class ProjectEntityController {
     // GET - Barcha loyihalar ro'yxati (paginated)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping({"", "/"})
     @Operation(summary = "Barcha loyihalar ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -290,7 +290,7 @@ public class ProjectEntityController {
     // POST - Yangi loyiha yaratish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Loyiha yaratish",

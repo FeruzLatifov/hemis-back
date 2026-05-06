@@ -22,7 +22,7 @@ public class LaborStatisticsController {
 
     @Operation(summary = "get employment statistics")
     @GetMapping("/employment")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getEmploymentStatistics(
             @RequestParam String university,
             @RequestParam(required = false) String academicYear
@@ -43,7 +43,7 @@ public class LaborStatisticsController {
 
     @Operation(summary = "get staff statistics")
     @GetMapping("/staff")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'HR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStaffStatistics(
             @RequestParam String university
     ) {
@@ -62,7 +62,7 @@ public class LaborStatisticsController {
 
     @Operation(summary = "get workload statistics")
     @GetMapping("/workload")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getWorkloadStatistics(
             @RequestParam String university,
             @RequestParam(required = false) String academicYear

@@ -56,7 +56,7 @@ public class StudentStatusTypeEntityController {
     // GET BY ID
     // =====================================================
 
-    @PreAuthorize("hasAuthority('classifiers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta talaba holatini olish",
@@ -100,7 +100,7 @@ public class StudentStatusTypeEntityController {
     // PUT - UPDATE ENTITY
     // =====================================================
 
-    @PreAuthorize("hasAuthority('classifiers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Talaba holatini yangilash",
@@ -179,7 +179,7 @@ public class StudentStatusTypeEntityController {
     // DELETE - SOFT DELETE ENTITY
     // =====================================================
 
-    @PreAuthorize("hasAuthority('classifiers.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Talaba holatini o'chirish",
@@ -230,7 +230,7 @@ public class StudentStatusTypeEntityController {
     // POST - CREATE NEW ENTITY
     // =====================================================
 
-    @PreAuthorize("hasAuthority('classifiers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Yangi talaba holatini yaratish",
@@ -351,7 +351,7 @@ public class StudentStatusTypeEntityController {
     // GET ALL - LIST ALL ENTITIES
     // =====================================================
 
-    @PreAuthorize("hasAuthority('classifiers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
         summary = "Barcha talaba holatlari",
@@ -409,7 +409,7 @@ public class StudentStatusTypeEntityController {
     // GET SEARCH - SEARCH WITH URL PARAMS
     // =====================================================
 
-    @PreAuthorize("hasAuthority('classifiers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
         summary = "Talaba holatlarini qidirish (GET)",
@@ -466,7 +466,7 @@ public class StudentStatusTypeEntityController {
     // POST SEARCH - SEARCH WITH JSON BODY
     // =====================================================
 
-    @PreAuthorize("hasAuthority('classifiers.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
         summary = "Talaba holatlarini qidirish (POST)",

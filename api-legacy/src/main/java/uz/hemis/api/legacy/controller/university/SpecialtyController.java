@@ -112,7 +112,7 @@ public class SpecialtyController {
 
     @Operation(summary = "Yangi mutaxassislik yaratish")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> createSpecialty(@Valid @RequestBody SpecialtyDto specialtyDto) {
         SpecialtyDto created = specialtyService.create(specialtyDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
@@ -120,7 +120,7 @@ public class SpecialtyController {
 
     @Operation(summary = "Mutaxassislikni yangilash")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<SpecialtyDto>> updateSpecialty(
             @PathVariable UUID id,
             @Valid @RequestBody SpecialtyDto specialtyDto
@@ -131,7 +131,7 @@ public class SpecialtyController {
 
     @Operation(summary = "Mutaxassislikni soft delete", description = "delete_ts qo'yiladi.")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Void>> deleteSpecialty(@PathVariable UUID id) {
         specialtyService.delete(id);
         return ResponseEntity.ok(ResponseWrapper.success(null));

@@ -266,8 +266,34 @@ PERFORM _seed_msg('label',   'By work experience',                              
 PERFORM _seed_msg('label',   'By departments',                                           'Kafedralar bo''yicha',            'Кафедралар бўйича',               'По кафедрам');
 PERFORM _seed_msg('label',   'By organizational form',                                   'Tashkiliy shakl bo''yicha',       'Ташкилий шакл бўйича',            'По организационной форме');
 PERFORM _seed_msg('label',   'By rating',                                                'Reyting bo''yicha',               'Рейтинг бўйича',                  'По рейтингу');
+-- Plural-aware count keys.
+--
+-- i18next picks the right variant by suffix at runtime: `_one`, `_few`,
+-- `_many`, `_other`. Russian uses all four (CLDR), Uzbek/English use the
+-- one/other split. Each variant is its own message_key in this catalog,
+-- so the gettext-style helper still applies.
 PERFORM _seed_msg('label',   '{{count}} parameters',                                     '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметров');
+PERFORM _seed_msg('label',   '{{count}} parameters_one',                                 '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметр');
+PERFORM _seed_msg('label',   '{{count}} parameters_few',                                 '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметра');
+PERFORM _seed_msg('label',   '{{count}} parameters_many',                                '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметров');
+PERFORM _seed_msg('label',   '{{count}} parameters_other',                               '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметров');
 PERFORM _seed_msg('label',   '{{count}} students found',                                 '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студентов');
+PERFORM _seed_msg('label',   '{{count}} students found_one',                             '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найден {{count}} студент');
+PERFORM _seed_msg('label',   '{{count}} students found_few',                             '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студента');
+PERFORM _seed_msg('label',   '{{count}} students found_many',                            '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студентов');
+PERFORM _seed_msg('label',   '{{count}} students found_other',                           '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студентов');
+PERFORM _seed_msg('label',   '{{count}} groups found_one',                               '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдена {{count}} группа');
+PERFORM _seed_msg('label',   '{{count}} groups found_few',                               '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдено {{count}} группы');
+PERFORM _seed_msg('label',   '{{count}} groups found_many',                              '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдено {{count}} групп');
+PERFORM _seed_msg('label',   '{{count}} groups found_other',                             '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдено {{count}} групп');
+PERFORM _seed_msg('label',   '{{count}} specialities found_one',                         '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направление');
+PERFORM _seed_msg('label',   '{{count}} specialities found_few',                         '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направления');
+PERFORM _seed_msg('label',   '{{count}} specialities found_many',                        '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направлений');
+PERFORM _seed_msg('label',   '{{count}} specialities found_other',                       '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направлений');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_one',             'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символа');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_few',             'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символов');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_many',            'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символов');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_other',           'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символов');
 PERFORM _seed_msg('label',   'Certificates',                                             'Sertifikatlar',                   'Сертификатлар',                   'Сертификаты');
 PERFORM _seed_msg('label',   'Scholarships',                                             'Stipendiyalar',                   'Стипендиялар',                    'Стипендии');
 PERFORM _seed_msg('label',   'Qualifications',                                           'Malakalar',                       'Малакалар',                       'Квалификации');

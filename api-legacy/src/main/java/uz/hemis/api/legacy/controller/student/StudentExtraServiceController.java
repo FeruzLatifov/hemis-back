@@ -13,7 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.service.finance.ContractStatisticsService;
+import uz.hemis.service.finance.LegacyContractStatisticsService;
 import uz.hemis.service.student.StudentService;
 
 import java.util.Map;
@@ -40,7 +40,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class StudentExtraServiceController {
 
     private final StudentService studentService;
-    private final ContractStatisticsService contractStatisticsService;
+    private final LegacyContractStatisticsService contractStatisticsService;
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/checkScholarship2")

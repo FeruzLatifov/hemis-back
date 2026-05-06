@@ -79,7 +79,7 @@ public class StudentGpaEntityController {
      * @param offset Boshlang'ich pozitsiya
      * @return GPA yozuvlari ro'yxati (CUBA format)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
             summary = "Talaba GPA ro'yxatini olish",
@@ -199,7 +199,7 @@ public class StudentGpaEntityController {
      * @param requestBody GPA ma'lumotlari (CUBA entity format)
      * @return Yaratilgan GPA yozuvi (CUBA format)
      */
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
             summary = "Yangi GPA yozuvini yaratish",
@@ -310,7 +310,7 @@ public class StudentGpaEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(summary = "GPA yozuvini ID bo'yicha olish")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
@@ -323,7 +323,7 @@ public class StudentGpaEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(summary = "GPA yozuvini yangilash")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
@@ -339,7 +339,7 @@ public class StudentGpaEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "GPA yozuvini o'chirish")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {

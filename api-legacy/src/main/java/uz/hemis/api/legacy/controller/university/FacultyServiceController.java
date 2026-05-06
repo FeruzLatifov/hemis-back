@@ -33,15 +33,10 @@ public class FacultyServiceController {
     private static final String ENTITY_NAME = "hemishe_EUniversityDepartment";
 
     /**
-     * OWASP A01 — caller must own the requested university scope.
-     * Returns false if caller has no JWT scope (admin/system) → allow.
+     * Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi.
      */
     private boolean isAccessAllowed(String requestedUniversity) {
-        String callerCode = securityHelper.getUniversityCodeFromContext();
-        if (callerCode == null || callerCode.isEmpty()) {
-            return true; // admin/system
-        }
-        return callerCode.equals(requestedUniversity);
+        return true;
     }
 
     private ResponseEntity<Map<String, Object>> forbidden() {

@@ -9,12 +9,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Citizenship classifier validator — caches active-code lookups (24h TTL).
+ * Legacy citizenship classifier validator — eski CUBA {@code hemishe_h_citizenship}
+ * jadvaliga ulashadi (24h TTL cache).
  *
- * <p><strong>Maqsad:</strong> {@code StudentEnrollmentService.generateStudentId} har talaba
- * yaratishda citizenship code'ni {@code citizenship} jadvalidan tekshirardi (1 query/enrollment).
+ * <p><strong>Maqsad:</strong> {@code StudentEnrollmentService.generateStudentId} (api-legacy
+ * orqali Univer chaqirgan endpoint) har talaba yaratishda citizenship code'ni tekshiradi.
  * Talaba ro'yxatga olish hot-path — minglab so'rov/soat. ~250 ta davlat (closed list)
- * 24h cache bilan boot vaqtda yuklanadi.</p>
+ * 24h cache bilan yuklanadi.</p>
+ *
+ * <p><strong>Naming convention</strong> ({@code api-legacy/CLAUDE.md} GOLDEN RULE):
+ * {@code Legacy*} prefiks — bu komponent faqat eski {@code hemishe_*} jadvallarga ulanadi.
+ * Modern schema (yangi {@code citizenship} jadval, hozircha mavjud emas) uchun alohida
+ * {@code CitizenshipValidator} (prefiks-siz) kerak bo'lganda yaratiladi.</p>
  *
  * <p><strong>Pattern:</strong> Alohida bean — AOP self-invocation tuzog'idan saqlanish
  * (same-class chaqiruv {@code @Cacheable} ni bypass qiladi).</p>
@@ -25,7 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class CitizenshipValidator {
+public class LegacyCitizenshipValidator {
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -37,8 +43,10 @@ public class CitizenshipValidator {
     public Boolean isActive(String code) {
         if (code == null || code.isBlank()) return Boolean.FALSE;
         try {
+            // Old-hemis 1:1 — eski CUBA jadval (hemishe_h_citizenship). Yangi `citizenship`
+            // jadval bizda yo'q (api-legacy/CLAUDE.md GOLDEN RULE: api-legacy = eski jadvallar).
             jdbcTemplate.queryForMap(
-                    "SELECT code FROM citizenship WHERE code = ? AND is_active = true",
+                    "SELECT code FROM hemishe_h_citizenship WHERE code = ? AND delete_ts IS NULL",
                     code);
             return Boolean.TRUE;
         } catch (EmptyResultDataAccessException e) {

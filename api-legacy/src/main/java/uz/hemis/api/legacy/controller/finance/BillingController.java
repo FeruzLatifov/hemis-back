@@ -40,7 +40,7 @@ public class BillingController {
 
     @Operation(summary = "get invoices (stub)")
     @GetMapping("/invoices")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getInvoices(
             @RequestParam(required = false) String university
     ) {
@@ -54,7 +54,7 @@ public class BillingController {
 
     @Operation(summary = "process payment — DISABLED (stub returned fake transaction)")
     @PostMapping("/payment")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> processPayment(
             @RequestBody Map<String, Object> payment) {
         // SECURITY (A04): eski stub har doim "processed" qaytarar edi → phishing.
@@ -68,7 +68,7 @@ public class BillingController {
     }
 
     @Operation(summary = "get student balance (stub)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/balance/{studentId}")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentBalance(@PathVariable UUID studentId) {
         Map<String, Object> balance = new LinkedHashMap<>();

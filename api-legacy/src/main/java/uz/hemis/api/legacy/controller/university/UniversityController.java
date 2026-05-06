@@ -302,7 +302,7 @@ public class UniversityController {
      */
     @Operation(summary = "Yangi OTM yaratish", description = "ADMIN roli kerak. Code (PK) takrorlana olmaydi.")
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<UniversityDto>> createUniversity(@Valid @RequestBody UniversityDto dto) {
         log.info("POST /app/rest/v2/universities - code: {}", dto.getCode());
 
@@ -323,7 +323,7 @@ public class UniversityController {
      */
     @Operation(summary = "OTM ni to'liq yangilash (PUT)", description = "ADMIN roli kerak. Code (PK) o'zgartirib bo'lmaydi — boshqa fieldlar to'liq replace.")
     @PutMapping("/{code}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<UniversityDto>> updateUniversity(
             @PathVariable String code,
             @Valid @RequestBody UniversityDto dto
@@ -347,7 +347,7 @@ public class UniversityController {
      */
     @Operation(summary = "OTM ni qisman yangilash (PATCH)", description = "ADMIN roli kerak. Faqat null bo'lmagan fieldlar yangilanadi.")
     @PatchMapping("/{code}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<UniversityDto>> partialUpdateUniversity(
             @PathVariable String code,
             @RequestBody UniversityDto dto

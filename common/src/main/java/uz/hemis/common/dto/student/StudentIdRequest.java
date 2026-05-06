@@ -87,6 +87,8 @@ public class StudentIdRequest {
      * @throws IllegalArgumentException agar parametrlar noto'g'ri bo'lsa
      */
     public boolean validate() throws IllegalArgumentException {
+        // Old-hemis 1:1 validation — faqat citizenship + identifier (pinfl/serial) majburiy.
+        // Year/educationType/educationForm optional (Univer ba'zan yubormaydi, eski hemis qabul qiladi).
         if (citizenship == null || citizenship.isEmpty()) {
             throw new IllegalArgumentException("Citizenship value incorrect");
         }
@@ -98,11 +100,15 @@ public class StudentIdRequest {
         if (serial == null || serial.isEmpty()) {
             throw new IllegalArgumentException("Passport serial value incorrect");
         }
+        // Old-hemis defaults: agar Univer yubormagan bo'lsa, sukut bo'yicha qiymat qo'yiladi.
         if (year == null || year.isEmpty()) {
-            throw new IllegalArgumentException("Education year value incorrect");
+            year = String.valueOf(java.time.Year.now().getValue());
         }
         if (educationType == null || educationType.isEmpty()) {
-            throw new IllegalArgumentException("Education type value incorrect");
+            educationType = "11"; // Default: Bakalavr
+        }
+        if (educationForm == null || educationForm.isEmpty()) {
+            educationForm = "11"; // Default: Kunduzgi
         }
 
         return true;

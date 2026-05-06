@@ -53,12 +53,12 @@ class StudentEnrollmentServiceTest {
     private JdbcTemplate jdbcTemplate;
 
     /**
-     * CitizenshipValidator mock — default no-op (returns null), tests
+     * LegacyCitizenshipValidator mock — default no-op (returns null), tests
      * mock specific scenarios via {@code when(...)}. Default `null` lekin
      * service'da `Boolean.TRUE.equals(...)` ishlatiladi → null safe.
      */
     @Mock
-    private CitizenshipValidator citizenshipValidator;
+    private LegacyCitizenshipValidator citizenshipValidator;
 
     @InjectMocks
     private StudentEnrollmentService studentEnrollmentService;
@@ -105,7 +105,7 @@ class StudentEnrollmentServiceTest {
             request.setEducationType("11");
             request.setEducationForm("11");
 
-            // Citizenship validation now goes through cached CitizenshipValidator bean.
+            // Citizenship validation now goes through cached LegacyCitizenshipValidator bean.
             when(citizenshipValidator.isActive("11")).thenReturn(Boolean.TRUE);
 
             // No active student found
@@ -155,7 +155,7 @@ class StudentEnrollmentServiceTest {
             request.setEducationType("23");
             request.setEducationForm("11");
 
-            // Citizenship validation now goes through cached CitizenshipValidator bean.
+            // Citizenship validation now goes through cached LegacyCitizenshipValidator bean.
             when(citizenshipValidator.isActive("11")).thenReturn(Boolean.TRUE);
 
             // No active student

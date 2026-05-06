@@ -38,7 +38,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class BimmTokenService {
+public class LegacyBimmTokenService {
 
     private final DistributedCachePort cachePort;
     private final JdbcTemplate jdbcTemplate;

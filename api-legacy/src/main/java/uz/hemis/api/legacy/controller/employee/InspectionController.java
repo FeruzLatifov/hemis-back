@@ -22,7 +22,7 @@ public class InspectionController {
 
     @Operation(summary = "get quality control report")
     @GetMapping("/quality-control")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSPECTOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getQualityControlReport(
             @RequestParam String university,
             @RequestParam(required = false) String academicYear
@@ -41,7 +41,7 @@ public class InspectionController {
 
     @Operation(summary = "get compliance report")
     @GetMapping("/compliance")
-    @PreAuthorize("hasAnyRole('ADMIN', 'INSPECTOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getComplianceReport(
             @RequestParam String university
     ) {
@@ -58,7 +58,7 @@ public class InspectionController {
 
     @Operation(summary = "get audit report")
     @GetMapping("/audit")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getAuditReport(
             @RequestParam String university,
             @RequestParam LocalDate startDate,

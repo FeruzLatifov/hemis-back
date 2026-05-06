@@ -23,7 +23,7 @@ public class StudentCertificateController {
 
     @Operation(summary = "generate certificate")
     @PostMapping("/generate/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> generateCertificate(
             @PathVariable UUID studentId,
             @RequestParam String certificateType

@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import uz.hemis.service.integration.OtmIntegrationService;
+import uz.hemis.service.integration.LegacyOtmIntegrationService;
 
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
 
@@ -39,7 +39,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 @SecurityRequirement(name = "bearerAuth")
 public class OtmServiceController {
 
-    private final OtmIntegrationService otmIntegrationService;
+    private final LegacyOtmIntegrationService otmIntegrationService;
     private final LegacySecurityHelper securityHelper;
 
     /**
@@ -65,7 +65,7 @@ public class OtmServiceController {
         log.info("GET /services/otm/studentInfoById - studentId: {}", studentId);
         Map<String, Object> data = otmIntegrationService.getStudentInfoById(studentId);
         if (data == null) {
-            return ResponseEntity.ok(wrapErrorResponse("Talaba topilmadi"));
+            return ResponseEntity.ok(wrapErrorResponse("Student not found!"));
         }
         return ResponseEntity.ok(wrapResponse(data));
     }
@@ -92,7 +92,7 @@ public class OtmServiceController {
         String universityCode = securityHelper.getUniversityCodeFromContext();
         Map<String, Object> data = otmIntegrationService.getStudentInfoByPinfl(pinfl, universityCode);
         if (data == null) {
-            return ResponseEntity.ok(wrapErrorResponse("Talaba topilmadi"));
+            return ResponseEntity.ok(wrapErrorResponse("Student not found!"));
         }
         return ResponseEntity.ok(wrapResponse(data));
     }
@@ -141,14 +141,14 @@ public class OtmServiceController {
     }
 
     /**
-     * Wraps error response in OLD-HEMIS format: {success: false, error, data: [], code: 404}
+     * Wraps error response in OLD-HEMIS format: {success: false, message, code: "404"}
+     * <p>Old-hemis 1:1 mosligi — field nomi {@code message} (error emas), code string ("404").</p>
      */
     private Map<String, Object> wrapErrorResponse(String errorMessage) {
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("success", false);
-        response.put("error", errorMessage);
-        response.put("data", List.of());
-        response.put("code", 404);
+        response.put("message", errorMessage);
+        response.put("code", "404");
         return response;
     }
 }

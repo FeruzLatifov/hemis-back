@@ -59,7 +59,7 @@ public class ResearchActivityEntityController {
     // GET /{entityId} - Bitta ilmiy faoliyatni olish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta ilmiy faoliyatni olish",
@@ -105,7 +105,7 @@ public class ResearchActivityEntityController {
     // PUT /{entityId} - Ilmiy faoliyatni yangilash
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy faoliyatni yangilash",
@@ -151,7 +151,7 @@ public class ResearchActivityEntityController {
     // DELETE /{entityId} - Ilmiy faoliyatni o'chirish (soft delete)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy faoliyatni o'chirish",
@@ -188,7 +188,7 @@ public class ResearchActivityEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
         summary = "Ilmiy faoliyatlarni qidirish (GET)",
@@ -218,7 +218,7 @@ public class ResearchActivityEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
         summary = "Ilmiy faoliyatlarni qidirish (POST)",
@@ -252,7 +252,7 @@ public class ResearchActivityEntityController {
     // GET - Barcha ilmiy faoliyatlar ro'yxati (paginated)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping({"", "/"})
     @Operation(
         summary = "Barcha ilmiy faoliyatlar ro'yxati",
@@ -315,7 +315,7 @@ public class ResearchActivityEntityController {
     // POST - Yangi ilmiy faoliyat yaratish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Ilmiy faoliyat yaratish",

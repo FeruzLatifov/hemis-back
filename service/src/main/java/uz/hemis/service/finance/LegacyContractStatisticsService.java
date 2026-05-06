@@ -30,7 +30,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class ContractStatisticsService {
+public class LegacyContractStatisticsService {
 
     private static final String ENTITY_NAME = "hemishe_RContractStatistics";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");

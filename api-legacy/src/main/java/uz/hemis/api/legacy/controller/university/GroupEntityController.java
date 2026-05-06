@@ -30,7 +30,7 @@ public class GroupEntityController {
 
     private final UniversityRefLegacyService universityRefService;
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get group by ID")
     public ResponseEntity<Map<String, Object>> getById(
@@ -44,7 +44,7 @@ public class GroupEntityController {
         return ResponseEntity.ok(universityRefService.toGroupMap(entity.get(), returnNulls));
     }
 
-    @PreAuthorize("hasAuthority('universities.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update group")
     public ResponseEntity<Map<String, Object>> update(
@@ -64,7 +64,7 @@ public class GroupEntityController {
         return ResponseEntity.ok(universityRefService.toGroupMap(saved, returnNulls));
     }
 
-    @PreAuthorize("hasAuthority('universities.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete group")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -76,7 +76,7 @@ public class GroupEntityController {
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Get all groups")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -98,7 +98,7 @@ public class GroupEntityController {
     /**
      * Create group(s) - OLD-HEMIS sends an ARRAY
      */
-    @PreAuthorize("hasAuthority('universities.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Create group(s)")
     public ResponseEntity<?> create(

@@ -61,7 +61,7 @@ public class GradeEntityController {
 
     private static final String ENTITY_NAME = "hemishe_RAcademicScore";
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvini ID bo'yicha olish",
@@ -88,7 +88,7 @@ public class GradeEntityController {
         }
     }
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvini yangilash",
@@ -117,7 +117,7 @@ public class GradeEntityController {
         }
     }
 
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvini o'chirish",
@@ -141,7 +141,7 @@ public class GradeEntityController {
         }
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvlarini qidirish (GET)",
@@ -166,7 +166,7 @@ public class GradeEntityController {
         return ResponseEntity.ok(cubaMaps);
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
         summary = "Akademik o'zlashtirish yozuvlarini qidirish (POST)",
@@ -213,7 +213,7 @@ public class GradeEntityController {
         return ResponseEntity.ok(cubaMaps);
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
         summary = "Barcha akademik o'zlashtirish yozuvlarini olish",
@@ -255,7 +255,7 @@ public class GradeEntityController {
         return ResponseEntity.ok(cubaMaps);
     }
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Yangi akademik o'zlashtirish yozuvi yaratish",

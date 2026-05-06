@@ -33,7 +33,7 @@ public class AcademicMethodologicPublicationsEntityController {
     private final AcademicEntityLegacyService academicService;
     private static final String ENTITY_NAME = "hemishe_RIAcademicMethodologicPublications";
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get by ID")
     public ResponseEntity<?> getById(@PathVariable UUID entityId,
@@ -47,7 +47,7 @@ public class AcademicMethodologicPublicationsEntityController {
         return ResponseEntity.ok(academicService.toAcademicMethodologicPublicationsMap(entity.get(), returnNulls, view));
     }
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update")
     public ResponseEntity<?> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body,
@@ -63,7 +63,7 @@ public class AcademicMethodologicPublicationsEntityController {
             academicService.saveAcademicMethodologicPublications(entity), returnNulls, view));
     }
 
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {
@@ -75,7 +75,7 @@ public class AcademicMethodologicPublicationsEntityController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Search GET")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -90,7 +90,7 @@ public class AcademicMethodologicPublicationsEntityController {
             .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls, view)).collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Search POST")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -107,7 +107,7 @@ public class AcademicMethodologicPublicationsEntityController {
             .map(e -> academicService.toAcademicMethodologicPublicationsMap(e, returnNulls, view)).collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Get all")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -130,7 +130,7 @@ public class AcademicMethodologicPublicationsEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Create")
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,

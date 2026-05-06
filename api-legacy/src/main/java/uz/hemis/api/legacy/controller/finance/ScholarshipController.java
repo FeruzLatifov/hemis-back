@@ -63,7 +63,7 @@ public class ScholarshipController {
 
     @Operation(summary = "create scholarship")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> createScholarship(
             @Valid @RequestBody ScholarshipDto scholarshipDto
     ) {
@@ -73,7 +73,7 @@ public class ScholarshipController {
 
     @Operation(summary = "update scholarship")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<ScholarshipDto>> updateScholarship(
             @PathVariable UUID id,
             @Valid @RequestBody ScholarshipDto scholarshipDto

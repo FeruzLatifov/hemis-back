@@ -80,7 +80,7 @@ public class ContractController {
 
     @Operation(summary = "Yangi shartnoma yaratish")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<ContractDto>> createContract(@Valid @RequestBody ContractDto contractDto) {
         ContractDto created = contractService.create(contractDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
@@ -88,7 +88,7 @@ public class ContractController {
 
     @Operation(summary = "Shartnomani yangilash")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<ContractDto>> updateContract(
             @PathVariable UUID id,
             @Valid @RequestBody ContractDto contractDto

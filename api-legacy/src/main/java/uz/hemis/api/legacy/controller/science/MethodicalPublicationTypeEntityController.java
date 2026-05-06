@@ -50,7 +50,7 @@ public class MethodicalPublicationTypeEntityController {
     /**
      * Barcha uslubiy nashr turlarini olish
      */
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Barcha uslubiy nashr turlarini olish", description = "Sahifalangan ro'yxatni qaytaradi")
     @ApiResponses(value = {
@@ -98,7 +98,7 @@ public class MethodicalPublicationTypeEntityController {
      * ID bo'yicha uslubiy nashr turini olish
      * Regex: "search" so'zini exclude qiladi, chunki /search alohida endpoint
      */
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId:(?!search$).*}")
     @Operation(summary = "Uslubiy nashr turini ID bo'yicha olish", description = "Code bo'yicha bitta uslubiy nashr turini qaytaradi")
     @ApiResponses(value = {
@@ -130,7 +130,7 @@ public class MethodicalPublicationTypeEntityController {
      * OLD-HEMIS request format: {"code": "99", "name": "Test", "active": true}
      * OLD-HEMIS response format: {"_entityName": "...", "_instanceName": "99 Test", "id": "99"}
      */
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Yangi uslubiy nashr turi yaratish", description = "Yangi uslubiy nashr turini yaratadi va saqlaydi")
     @ApiResponses(value = {
@@ -192,7 +192,7 @@ public class MethodicalPublicationTypeEntityController {
     /**
      * Uslubiy nashr turini yangilash
      */
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId:(?!search$).*}")
     @Operation(summary = "Uslubiy nashr turini yangilash", description = "Mavjud uslubiy nashr turini yangilaydi")
     @ApiResponses(value = {
@@ -224,7 +224,7 @@ public class MethodicalPublicationTypeEntityController {
     /**
      * Uslubiy nashr turini o'chirish (soft delete)
      */
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId:(?!search$).*}")
     @Operation(summary = "Uslubiy nashr turini o'chirish", description = "Uslubiy nashr turini soft delete qiladi")
     @ApiResponses(value = {
@@ -254,7 +254,7 @@ public class MethodicalPublicationTypeEntityController {
      * OLD-HEMIS: GET /entities/hemishe_HMethodicalPublicationType/search?filter={...}
      * Filter parametri MAJBURIY - bo'lmasa "Server error" qaytaradi
      */
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Filter bo'yicha qidirish (GET)", description = "Filter shartlari bo'yicha entitylarni topadi")
     @ApiResponses(value = {
@@ -290,7 +290,7 @@ public class MethodicalPublicationTypeEntityController {
      * OLD-HEMIS: POST /entities/hemishe_HMethodicalPublicationType/search
      * Body: {"filter": {"conditions": []}} formatida bo'lishi kerak
      */
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Filter bo'yicha qidirish (POST)", description = "Filter shartlari bo'yicha entitylarni topadi (body da filter)")
     @ApiResponses(value = {

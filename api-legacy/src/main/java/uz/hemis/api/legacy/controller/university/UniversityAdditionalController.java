@@ -21,7 +21,7 @@ public class UniversityAdditionalController {
 
     @Operation(summary = "get infrastructure")
     @GetMapping("/{universityCode}/infrastructure")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getInfrastructure(@PathVariable String universityCode) {
         Map<String, Object> infrastructure = new LinkedHashMap<>();
         infrastructure.put("universityCode", universityCode);

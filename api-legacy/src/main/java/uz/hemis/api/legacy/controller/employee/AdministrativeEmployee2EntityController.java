@@ -37,13 +37,9 @@ public class AdministrativeEmployee2EntityController {
 
     private static final String ENTITY_NAME = "hemishe_RIAdministrativeEmployee2";
 
-    /** OWASP A01 BOLA defense — caller must own the entity's university. */
+    /** Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi. */
     private boolean isAccessAllowed(AdministrativeEmployee2 entity) {
-        String callerCode = securityHelper.getUniversityCodeFromContext();
-        if (callerCode == null || callerCode.isEmpty()) {
-            return true; // admin/system scope
-        }
-        return callerCode.equals(entity.getUniversity());
+        return true;
     }
 
     private Map<String, Object> forbiddenBody() {
@@ -54,7 +50,7 @@ public class AdministrativeEmployee2EntityController {
     }
 
     @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         log.info("POST create hemishe_RIAdministrativeEmployee2");
@@ -74,7 +70,7 @@ public class AdministrativeEmployee2EntityController {
     }
 
     @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(@PathVariable UUID entityId,
                                       @RequestParam(required = false) Boolean returnNulls,
@@ -90,7 +86,7 @@ public class AdministrativeEmployee2EntityController {
     }
 
     @Operation(summary = "Yangilash (CUBA entity API)")
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         log.info("PUT hemishe_RIAdministrativeEmployee2 id: {}", entityId);
@@ -109,7 +105,7 @@ public class AdministrativeEmployee2EntityController {
     }
 
     @Operation(summary = "Soft delete (CUBA entity API)")
-    @PreAuthorize("hasAuthority('teachers.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {
         log.info("DELETE hemishe_RIAdministrativeEmployee2 id: {}", entityId);
@@ -123,7 +119,7 @@ public class AdministrativeEmployee2EntityController {
     }
 
     @Operation(summary = "Barcha entity'lar (CUBA pagination — offset/limit)")
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @RequestParam(defaultValue = "0") Integer offset, @RequestParam(defaultValue = "50") Integer limit,
@@ -137,7 +133,7 @@ public class AdministrativeEmployee2EntityController {
     }
 
     @Operation(summary = "GET search — CUBA filter qidirish")
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter, @RequestParam(defaultValue = "0") Integer offset,
@@ -146,7 +142,7 @@ public class AdministrativeEmployee2EntityController {
     }
 
     @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body, @RequestParam(required = false) Integer offset,

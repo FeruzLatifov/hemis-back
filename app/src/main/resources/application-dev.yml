@@ -27,12 +27,28 @@ spring:
       minimum-idle: 2
       connection-timeout: 30000
       idle-timeout: 600000
-      leak-detection-threshold: 60000
+      leak-detection-threshold: 600000
       pool-name: HikariPool-Dev
       data-source-properties:
         # Hung query protection — dev'da ham (slow query'larni vaqtida tutish uchun).
         # Prod'da 60s, dev'da uzoqroq qiymat (interactive debugging uchun) — 120s.
         options: "-c statement_timeout=120000"
+
+    # =====================================================
+    # DataSourceConfig.java spring.datasource.master.hikari.* dan o'qiydi
+    # (dev profilda ham master-replica split aktiv, ENV bir xil DB ko'rsatadi).
+    # Liquibase birinchi setup'da legacy CUBA jadvallarda ko'p indeks quradi
+    # (hemishe_e_student ~1.15M, hemishe_e_grade ~30M — trigram + partial UNIQUE)
+    # — bu 1-3 daqiqa olishi mumkin, shu sababli leak-detection o'chirilgan.
+    # Migration tugagandan keyin lokal kod connection 60s'dan uzoq ushlasa
+    # bu real leak — `migrate` profil tugagach prod tartib bilan tekshiring.
+    # =====================================================
+    master:
+      hikari:
+        leak-detection-threshold: 0  # disabled in dev (Liquibase long-running migrations)
+    replica:
+      hikari:
+        leak-detection-threshold: 0  # disabled in dev
 
   # =====================================================
   # Development JPA Configuration

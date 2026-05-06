@@ -7,7 +7,90 @@ Legacy CUBA platform bilan 100% backward compatibility saqlanadi.
 
 **Stack:** Spring Boot 4.0.6, PostgreSQL 18, Redis 7, Liquibase 4.31.1, MapStruct, Lombok
 **Auxiliary DB:** `hemis_audit` (alohida PostgreSQL — activity_log, error_log, login_log)
-**Universitetlar soni:** 224 ta hemis_NNN bazasi (224 OTM)
+**Univer (OTM klient) bazalari:** 224 ta hemis_NNN (har OTM uchun bittadan, Yii2 PHP backend tomonida)
+
+### 🔒 GOLDEN RULE — Bizning baza har doim `.env`'dan keladi
+
+**Hech qachon hard-code qilmang DB nomi/jadvalni.** Production'da bizning baza tiklanadi va nomi `.env`'da ko'rsatiladi (lokal: `test1_hemis`, prod: turli xil bo'lishi mumkin). Hech qachon "biz hemis_NNN ishlatamiz" deb taxmin qilmang — bu Univer (OTM Yii2 PHP) tomonidagi alohida ekosistem.
+
+| Soha | Bizning hemis-back | Univer (OTM, 224 ta) |
+|------|--------------------|----------------------|
+| **DB nomi** | `${DB_MASTER_NAME}` (`.env`) | `hemis_337`, `hemis_401`, …, `hemis_NNN` |
+| **Stack** | Java 25 + Spring + JPA | Yii2 PHP |
+| **Tegish usuli** | `@Entity`/`@Table` + Hibernate | REST API (`UniverApiService`) |
+| **Misol jadvallar bizda** | `hemishe_e_student`, `hemishe_e_teacher`, `hemishe_e_university`, `hemishe_e_student_diploma`, `hemishe_e_student_meta`, `hemishe_e_faculty`, `hemishe_e_publication_*` | — |
+| **Misol jadvallar Univer'da** (bizda **YO'Q**) | — | `hemishe_e_grade`, `hemishe_e_attendance`, `hemishe_e_course`, `hemishe_e_exam`, `hemishe_e_schedule`, `hemishe_e_contract`, `hemishe_e_curriculum`, `hemishe_e_employment`, `hemishe_e_enrollment`, `hemishe_e_department` |
+
+### Yangi `@Table(name = "hemishe_e_*")` qo'shganda — MAJBURIY tekshirish
+
+```bash
+# Code'dagi mapping'larni .env'dagi DB bilan solishtirish:
+./scripts/check_table_mappings.sh
+```
+
+Skript ikki xato turini topadi: (1) faraz qilingan jadvallar (DB'da yo'q), (2) api-legacy yangi schema entity'ni ishlatadi. **Pre-commit hook sifatida ishlating.**
+
+### ⚠️ ENG MUHIM QOIDA — api-legacy old-hemis bilan 1:1 (BUZILMASDAN)
+
+> **api-legacy modul `/home/adm1n/projects/startup/old-hemis` (eski CUBA loyihasi) bilan AYNI XULQ ko'rsatishi kerak.** Status code, body shape, validation, permission, error format — hammasi mos.
+
+**Tekshirish:**
+```bash
+# Ikkala server ishga tushadi (old:8082, new:8081)
+cd /home/adm1n/projects/startup/hemis-tools/docs/univer_tool
+node compare_endpoints.js
+# Maqsad: MATCH 175/175 (100%)
+```
+
+**Yangi qaror qabul qilishdan oldin** old-hemis kodiga qaramasdan turib o'zgarish kiritmang:
+```bash
+grep -rn "<endpoint>" /home/adm1n/projects/startup/old-hemis/modules/
+```
+
+Tafsilot: `api-legacy/CLAUDE.md` → "ENG MUHIM QOIDA" bo'limi.
+
+### 🔒 Modul ↔ Jadval mosligi qoidasi (BUZILMASDAN)
+
+> **Asosiy qoida:** api-legacy'ga **Univer'dan kelgan ma'lumotlar har doim ESKI jadvallarga yoziladi** (mantiq old-hemis bilan **1:1 bir xil**). Yangi jadvallar uchun **api-university** (yoki boshqa yangi modul) **yangi endpoint** chiqaramiz va kerak bo'lsa mapping/sync qilamiz.
+
+| Modul | Vazifa | Jadval prefiks | Misol |
+|-------|--------|----------------|-------|
+| **api-legacy** | Univer endpoint'larini xizmat qilish, **old-hemis 1:1** | **Faqat eski** — `hemishe_*`, `sec_*` | `Student` → `hemishe_e_student`, `SecUser` → `sec_user` |
+| **api-university** | Yangi 224 OTM B2B API (yangi schema) | **Faqat yangi** — `users`, `employee`, `employee_job`, `organization`, `h_*`, `university_building` | `User` → `users`, `Employee` → `employee` |
+| **api-web** | Modern web frontend | **Faqat yangi** | Bir xil yangi entity'lar |
+| **api-external** | S2S integratsiya (vazirlik, MyGov) | Vaziyatga qarab | (alohida) |
+
+**Sabab — split-brain xavfi:**
+```
+Univer Yii2 → POST /app/rest/v2/entities/hemishe_EEmployeeJobs (eski URL)
+   → api-legacy controller xato YANGI jadvalga yozsa: INSERT INTO employee_job
+   → Univer keyingi GET — eski hemishe_e_employee_jobs'dan o'qiydi (topa olmaydi)
+   → Univer user: "Yangi xodim qo'shganman, lekin ko'rinmaydi!"
+```
+
+To'g'ri yondashuv:
+```
+api-legacy:                INSERT INTO hemishe_e_employee_jobs    ← eski URL → eski jadval
+api-university (kelajak):  INSERT INTO employee_job               ← yangi endpoint → yangi jadval
+mapping/sync (alohida):    eski → yangi yoki yangi → eski (async, kerakli bo'lganda)
+```
+
+Tafsilot: `api-legacy/CLAUDE.md` → "GOLDEN RULE" bo'limi.
+
+Agar Univer tomonidagi ma'lumot kerak bo'lsa — REST integratsiya:
+```java
+// ❌ XATO — bizda hemishe_e_grade jadval YO'Q
+@Entity @Table(name = "hemishe_e_grade")
+public class Grade { ... }
+
+// ✅ TO'G'RI — Univer REST orqali
+@Service
+public class UniverGradeApiService {
+    public List<GradeDto> findByStudent(String universityCode, String pinfl) {
+        return univerClient.fetchGrades(universityCode, pinfl);
+    }
+}
+```
 
 ## Daily Commands
 

@@ -41,7 +41,7 @@ public class StudentEnrollmentService {
      * Citizenship code validator — cached (24h TTL) to avoid per-enrollment
      * DB lookup. Closed list (~250 countries).
      */
-    private final CitizenshipValidator citizenshipValidator;
+    private final LegacyCitizenshipValidator citizenshipValidator;
 
     /**
      * Update student information (university transfer)

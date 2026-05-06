@@ -61,7 +61,7 @@ public class REmploymentEntityController {
     // =============================
     // GET by ID
     // =============================
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
             summary = "Bandlik yozuvini ID bo'yicha olish",
@@ -94,7 +94,7 @@ public class REmploymentEntityController {
     // =============================
     // UPDATE (PUT)
     // =============================
-    @PreAuthorize("hasAuthority('reports.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
             summary = "Bandlik yozuvini yangilash",
@@ -133,7 +133,7 @@ public class REmploymentEntityController {
     // =============================
     // DELETE (hard delete - jadvalda soft delete yo'q)
     // =============================
-    @PreAuthorize("hasAuthority('reports.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
             summary = "Bandlik yozuvini o'chirish",
@@ -168,7 +168,7 @@ public class REmploymentEntityController {
     // =============================
     // SEARCH (GET)
     // =============================
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
             summary = "Bandlik yozuvlarini qidirish (GET)",
@@ -208,7 +208,7 @@ public class REmploymentEntityController {
     // =============================
     // SEARCH (POST)
     // =============================
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
             summary = "Bandlik yozuvlarini qidirish (POST)",
@@ -280,7 +280,7 @@ public class REmploymentEntityController {
     // =============================
     // LIST ALL (GET)
     // =============================
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
             summary = "Barcha bandlik yozuvlarini olish",
@@ -322,7 +322,7 @@ public class REmploymentEntityController {
     // =============================
     // CREATE (POST) - OLD-HEMIS massiv formatini qo'llab-quvvatlaydi
     // =============================
-    @PreAuthorize("hasAuthority('reports.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
             summary = "Yangi bandlik yozuvi yaratish",

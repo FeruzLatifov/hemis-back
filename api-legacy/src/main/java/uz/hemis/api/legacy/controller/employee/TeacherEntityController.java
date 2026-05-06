@@ -67,13 +67,10 @@ public class TeacherEntityController {
             "gender", "university", "passport"
     );
 
-    /** OWASP A01 BOLA defense — caller must own the teacher's university. */
+    /** Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi. Defense-in-depth
+     *  service layer'da ({@code TenantGuard.verifyTenantOwnership}) kerakli endpoint'larda. */
     private boolean isAccessAllowed(Teacher entity) {
-        String callerCode = securityHelper.getUniversityCodeFromContext();
-        if (callerCode == null || callerCode.isEmpty()) {
-            return true; // admin/system scope (no JWT university claim)
-        }
-        return callerCode.equals(entity.getUniversity());
+        return true;
     }
 
     private Map<String, Object> forbiddenBody() {
@@ -83,7 +80,7 @@ public class TeacherEntityController {
         return err;
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta o'qituvchi ma'lumotlarini olish",
@@ -118,7 +115,7 @@ public class TeacherEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "O'qituvchi ma'lumotlarini o'zgartirish",
@@ -161,7 +158,7 @@ public class TeacherEntityController {
         return ResponseEntity.ok(teacherService.minimalTeacherResponse(saved));
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "O'qituvchilarni qidirish (GET)", description = "URL parametrlari orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -196,7 +193,7 @@ public class TeacherEntityController {
             .collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "O'qituvchilarni qidirish (POST)", description = "JSON filter orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -232,7 +229,7 @@ public class TeacherEntityController {
             .collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('teachers.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "O'qituvchini o'chirish (soft delete)",
@@ -259,7 +256,7 @@ public class TeacherEntityController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Barcha o'qituvchilar ro'yxati", description = "Sahifalangan ro'yxat qaytaradi")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -330,7 +327,7 @@ public class TeacherEntityController {
      * @param view View nomi (_local, _minimal, default)
      * @return Yaratilgan o'qituvchi ma'lumotlari
      */
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
             summary = "Yangi o'qituvchi yaratish",

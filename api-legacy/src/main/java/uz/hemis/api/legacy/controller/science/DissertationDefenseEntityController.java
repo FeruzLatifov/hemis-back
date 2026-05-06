@@ -69,7 +69,7 @@ public class DissertationDefenseEntityController {
     // GET /{entityId} - Bitta dissertasiya himoyasini olish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta dissertasiya himoyasini olish",
@@ -116,7 +116,7 @@ public class DissertationDefenseEntityController {
     // PUT /{entityId} - Dissertasiya himoyasini yangilash
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Dissertasiya himoyasini yangilash",
@@ -167,7 +167,7 @@ public class DissertationDefenseEntityController {
     // DELETE /{entityId} - Dissertasiya himoyasini o'chirish (soft delete)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Dissertasiya himoyasini o'chirish",
@@ -204,7 +204,7 @@ public class DissertationDefenseEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
         summary = "Dissertasiya himoyalarini qidirish (GET)",
@@ -234,7 +234,7 @@ public class DissertationDefenseEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
         summary = "Dissertasiya himoyalarini qidirish (POST)",
@@ -268,7 +268,7 @@ public class DissertationDefenseEntityController {
     // GET - Barcha dissertasiya himoyalari ro'yxati (paginated)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping({"", "/"})
     @Operation(
         summary = "Barcha dissertasiya himoyalari ro'yxati",
@@ -331,7 +331,7 @@ public class DissertationDefenseEntityController {
     // POST - Yangi dissertasiya himoyasi yaratish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Dissertasiya himoyasi yaratish",

@@ -25,7 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional(readOnly = true)
-public class ClassifierReferenceLoader {
+public class LegacyClassifierReferenceLoader {
 
     private final JdbcTemplate jdbcTemplate;
 

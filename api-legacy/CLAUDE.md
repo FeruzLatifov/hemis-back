@@ -7,6 +7,237 @@
 
 ---
 
+## ⚠️ ENG MUHIM QOIDA — Old-hemis bilan 1:1 mos (BUZILMASDAN)
+
+> **api-legacy modul — `/home/adm1n/projects/startup/old-hemis` (eski CUBA loyihasi) bilan AYNI XULQ ko'rsatishi kerak.**
+
+### Solishtirish manbai
+
+| Element | Manba | Maqsad |
+|---------|-------|--------|
+| Old-hemis kod | `/home/adm1n/projects/startup/old-hemis` | Reference implementation (8082 portda ishga tushadi) |
+| Bizning api-legacy | `api-legacy/src/main/java/uz/hemis/api/legacy/...` | Yangi implementatsiya, 1:1 ayni xulq |
+| Integration test | `/home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints.js` | 175 ta test, ikkala server'ni solishtiradi |
+
+### 1:1 mosligi nimani anglatadi?
+
+✅ **Bir xil bo'lishi shart:**
+1. **HTTP status code** — old: 200 → biz: 200 (400 → 400)
+2. **Response body shape** — field nomlari, tartibi, type'lari
+3. **Validation behavior** — qaysi field'lar majburiy, qachon xato qaytaradi
+4. **Error format** — `{error: ..., details: ...}` (CUBA convention)
+5. **Permission model** — old-hemis cross-tenant ruxsat berardi → biz ham ruxsat berishimiz kerak
+6. **Field default qiymatlari** — old yetishmagan field'larga default qo'yardi → biz ham qo'yishimiz kerak
+
+❌ **O'zgartirib bo'lmaydi:**
+1. URL pattern (`/app/rest/v2/...`)
+2. JSON field nomlari va tartibi
+3. CUBA `_entityName`, `_instanceName` field'lari
+4. Datetime format
+5. FK serialization (nested object)
+6. Pagination (`offset`, `limit`, `data`, `totalCount`)
+
+### Tekshirish jarayoni
+
+Har bir o'zgarishdan keyin:
+```bash
+# 1. Old-hemis ishga tushadi (port 8082)
+cd /home/adm1n/projects/startup/old-hemis && ./gradlew bootRun &
+
+# 2. hemis-back ishga tushadi (port 8081)
+cd /home/adm1n/projects/startup/hemis-back && ./gradlew :app:bootRun &
+
+# 3. 175 ta integration test
+cd /home/adm1n/projects/startup/hemis-tools/docs/univer_tool
+node compare_endpoints.js
+
+# 4. Maqsad: MATCH 175/175 (100%)
+```
+
+### Old-hemis kodga murojaat qilish (kelajakdagi shubhalar)
+
+Agar yangi qaror qabul qilish kerak bo'lsa:
+```bash
+# Old-hemis'da qanday qilingan?
+grep -rn "<keyword>" /home/adm1n/projects/startup/old-hemis/modules/
+
+# Yoki:
+find /home/adm1n/projects/startup/old-hemis -name "*Controller*.java" \
+  -exec grep -l "<endpoint>" {} \;
+```
+
+**Qoida:** "Yangi yondashuv" o'rniga "old-hemis bilan ayni xulq" tanlanadi.
+
+### Eng tez-tez xato qilinadigan farqlar
+
+| Old-hemis xulqi | Bizning yangi xulq | Tuzatish |
+|-----------------|--------------------|---------| 
+| Cross-tenant ruxsat berardi | Strict tenant isolation | `isAccessAllowed` → `return true`, TenantGuard chaqirish'larni komment qilish |
+| Strict validation yo'q (default qo'yardi) | Strict validation (xato qaytaradi) | DTO `validate()` metodida default qo'yish |
+| Permission check yo'q | `@PreAuthorize("hasAuthority('...')")` | `@PreAuthorize("isAuthenticated()")` |
+| Yangi schema bilmasdan eski jadval'ga yozardi | Yangi schema'ga yozadi | Yangi `Legacy*` entity yaratish, eski jadvalga map |
+
+---
+
+## 🔒 GOLDEN RULE — Faqat eski jadvallar (`hemishe_*`, `sec_*`)
+
+**api-legacy controller'lar HECH QACHON yangi schema'ga (yangi jadvallar) yozmasligi kerak.**
+
+### Modul ↔ Jadval mosligi
+
+| Modul | Vazifa | Jadvallar | Misol entity |
+|-------|--------|-----------|--------------|
+| **api-legacy** | Univer (Yii2 PHP, 224 OTM) endpoint'larini xizmat qilish, **eski hemis behavior 1:1** | `hemishe_e_*`, `hemishe_h_*`, `hemishe_r_*`, `sec_user`, `sec_role`, `sec_permission` | `Student` (`hemishe_e_student`), `Teacher` (`hemishe_e_teacher`), `SecUser` (`sec_user`) |
+| **api-university** | Yangi 224 OTM B2B API — yangi schema bilan | Yangi `employee_job`, `users`, `university_building`, `h_*` | `User`, `Employee`, `EmployeeJob`, `UniversityBuilding` |
+| **api-web** | Modern web frontend | Yangi schema | Bir xil yangi entity'lar |
+| **api-external** | S2S integratsiya (vazirlik, MyGov) | Vaziyatga qarab | (alohida) |
+
+### 📌 Asosiy qoida (kechirim qilmasdan)
+
+> **api-legacy = eski jadvallar (mavjud xulq, mantiq o'zgarmasin).**
+> **Yangi jadvallar uchun api-university (yoki yangi modul) yangi endpoint chiqarib, mapping/sync bilan ko'chiramiz.**
+
+### Misol — to'g'ri yondashuv
+
+```
+1. Univer Yii2 chaqiradi:  POST /app/rest/v2/entities/hemishe_EEmployeeJobs
+   → api-legacy controller eski jadvalga yozadi:  INSERT INTO hemishe_e_employee_jobs
+   → ✅ TO'G'RI — Univer keyin shu jadvaldan o'qishi mumkin
+
+2. Modern web frontend chaqiradi:  POST /api/v1/web/employee-jobs
+   → api-web controller yangi jadvalga yozadi:  INSERT INTO employee_job
+   → ✅ TO'G'RI — yangi schema, modern auth
+
+3. Yangi 224 OTM B2B API:  POST /api/v1/university/{code}/employee-jobs
+   → api-university controller yangi jadvalga yozadi
+   → Optional sync: yangi jadvaldan eski jadvalga ko'chirish (alohida service, async)
+```
+
+### ❌ XATO yondashuv (mavjud bug)
+
+```
+Univer chaqiradi:  POST /app/rest/v2/entities/hemishe_EEmployeeJobs
+   → api-legacy controller YANGI jadvalga yozadi:  INSERT INTO employee_job
+   → ❌ Split-brain: Univer keyin hemishe_e_employee_jobs'dan o'qisa, yo'q (boshqa jadval)
+```
+
+### Entity nomlanish konventsiyasi (BUZILMASDAN)
+
+| Vaziyat | Eski jadval (api-legacy) | Yangi jadval (api-web/university) |
+|---------|-------------------------|----------------------------------|
+| **Konflikt yo'q** — bir jadval = bir entity | Prefiks-siz: `Student` (`hemishe_e_student`), `Teacher` (`hemishe_e_teacher`), `Faculty` (`hemishe_e_faculty`) | (yangi schema yo'q) |
+| **Konflikt bor** — ikkala schema kerak (eski Univer + yangi modern) | **`Legacy*` prefiksi**: `LegacyEmployeeJobs` (`hemishe_e_employee_jobs`), `SecUser` (`sec_user`) | **Prefiks-siz**: `EmployeeJobs` (`employee_job`), `User` (`users`) |
+| **Kelajak** — barcha eski entity'larni `Legacy*` ga rename | (refactor kerak) | (refactor kerak) |
+
+#### Qoidalar:
+
+1. **api-legacy controller'lar HECH QACHON yangi schema entity'ni import qilmasligi kerak** (auto-check)
+2. Yangi schema'da entity yaratish kerak bo'lsa, **avval konflikt tekshiruvi**:
+   - Eski jadval bormi (`hemishe_*`)? → eski uchun `Legacy*` entity yaratiladi
+   - Yangi jadval yaratiladi → modern nomli entity (prefiks-siz)
+3. **Tarixiy istisno (hozirgi loyiha):** 60+ eski entity prefiks-siz nom bilan (`Student`, `Teacher`). Bularni hozirda rename qilmaymiz, lekin yangi konflikt'larda `Legacy*` ishlatamiz.
+
+### Hozirgi xatolar (kelajakda alohida sprint'da tuzatish)
+
+`api-legacy` modul'da 3 ta entity yangi schema'ga noto'g'ri map qilingan:
+
+| Xato entity | Qaysi jadvalga map | api-legacy ishlatadigan controller | Kerak entity |
+|-------------|--------------------|-----------------------------------|--------------|
+| `User` | `users` (yangi) | `LegacyUserInfoController`, `UserController`, `EmployeeJobsEntityController`, `LegacySecurityHelper` | `SecUser` (`sec_user`) — mavjud, almashtirish kerak |
+| `Employee` | `employee` (yangi) | `EmployeeJobsEntityController` | `Teacher` (`hemishe_e_teacher`) yoki yangi `LegacyEmployee` |
+| `EmployeeJobs` | `employee_job` (yangi) | `EmployeeJobsEntityController` | **`LegacyEmployeeJobs` (`hemishe_e_employee_jobs`) — 2026-05-06'da yaratildi** |
+
+### Service-layer komponentlar — bir xil konventsiya
+
+Service, validator, loader, repository class'lar ham **eski jadvalga ulansa `Legacy*` prefiks bilan** bo'ladi.
+
+#### Konventsiya (BUZILMASDAN)
+
+| Komponent turi | Eski jadval (api-legacy uchun) | Yangi jadval (api-web uchun) |
+|----------------|-------------------------------|------------------------------|
+| **Entity** | `Legacy*` prefiks: `LegacyEmployeeJobs` (`hemishe_e_employee_jobs`) | Prefiks-siz: `EmployeeJobs` (`employee_job`) |
+| **Repository** | `Legacy*` prefiks: `LegacyEmployeeJobsRepository` | Prefiks-siz: `EmployeeJobsRepository` |
+| **Service** | `Legacy*` prefiks: `LegacyContractStatisticsService`, `LegacyOtmIntegrationService`, `LegacyBimmTokenService` | Prefiks-siz: `DashboardService` (api-web chaqirsa, eski ma'lumot o'qiydi — saqlanadi) |
+| **Validator** | `Legacy*` prefiks: `LegacyCitizenshipValidator` | Prefiks-siz: `CitizenshipValidator` (kelajakda yangi `citizenship` jadval bilan) |
+| **Loader** | `Legacy*` prefiks: `LegacyClassifierReferenceLoader` | Prefiks-siz |
+| **Adapter / Helper** | `Legacy*` prefiks: `LegacyEntityAdapter`, `LegacyResponseHelper`, `LegacySecurityHelper` | Prefiks-siz |
+| **Tarixiy istisno** | `SecUser`, `SecUserRepository` (CUBA `Sec*` konventsiyasi) | — |
+| **Suffix istisno** (eski paketda) | `*LegacyService`: `EmployeeJobsLegacyService`, `ClassifierLegacyService`, `DiplomaLegacyService` (`service/legacy/` paketda) | — |
+
+#### Qaror algoritmi (yangi class yaratayotganda)
+
+```
+1. Class qaysi jadval bilan ishlaydi?
+   ├─ Eski (hemishe_*, sec_*): "Legacy" prefiks/suffix kerak
+   │   ├─ Yangi class — `Legacy*` prefiks (LegacyXxx)
+   │   ├─ `service/legacy/` paketda — `*LegacyService` suffix (XxxLegacyService)
+   │   └─ Tarixiy `SecUser` — saqlanadi (rename xavfli)
+   └─ Yangi (users, employee, h_*, ...): prefiks-siz
+       └─ Misol: `User`, `Employee`, `EmployeeJobs`, `HBuildingCategory`
+
+2. Class qaysi modul tomonidan chaqiriladi?
+   ├─ Faqat api-legacy → `Legacy*` prefiks majburiy
+   ├─ Faqat api-web/university → prefiks-siz
+   └─ Ikkalasi → har ikki versiya kerak (LegacyXxx + Xxx)
+```
+
+#### Audit skripti
+
+```bash
+./scripts/check_table_mappings.sh
+```
+
+api-legacy yangi schema entity'ni ishlatishini avtomatik bloklar.
+
+Auto-check skripti har commit oldidan bu xatolarni topadi:
+```bash
+./scripts/check_table_mappings.sh
+```
+
+### Sabab — biznes mantiqi
+
+- **Univer (Yii2 PHP, 224 OTM)** eski CUBA endpoint'larni eski jadval shaklida o'qiydi va yozadi (`hemishe_EStudent`, `hemishe_EEmployeeJobs` URL'lari)
+- **Yangi web frontend** modular schemada ishlaydi (modern auth `users` + RBAC `role`/`permission`)
+- **Aralashtirib qo'yilsa** — masalan, `api-legacy.EmployeeJobsEntityController` yangi `employee_job` jadvalga yozsa, Univer eski `hemishe_e_employee_jobs`'ni o'qisa — **schema split-brain**:
+  - api-legacy POST → yangi jadvalga ma'lumot yozadi
+  - Univer keyingi GET — eski jadvaldan o'qiydi → ma'lumotni topa olmaydi
+  - Univer foydalanuvchi: "Yangi xodim qo'shganman, lekin ko'rinmaydi!"
+
+### Auto-check skripti
+
+```bash
+./scripts/check_table_mappings.sh
+```
+
+api-legacy controller yangi entity'ni ishlatsa skriptga **xato** beradi.
+
+### Yangi controller yaratayotganda — checklist
+
+- [ ] Entity `@Table(name = "hemishe_*")` yoki `@Table(name = "sec_*")` ga map qilinganmi?
+- [ ] Repository ham eski jadvalga yozadimi?
+- [ ] Service'da `tenantGuard.verifyOwnership*` chaqiruvi yo'qmi (Univer cross-tenant ruxsat berardi)?
+- [ ] `@PreAuthorize` faqat `isAuthenticated()` yoki `permitAll()`?
+
+### Forbidden — yangi entity'lar api-legacy'da
+
+```java
+// ❌ XATO — User entity yangi `users` jadvalga map qilingan
+import uz.hemis.domain.entity.security.User;
+
+// ✅ TO'G'RI — SecUser sec_user (eski) ga map qilingan
+import uz.hemis.domain.entity.security.SecUser;
+import uz.hemis.domain.repository.SecUserRepository;
+```
+
+### Migration plan (mavjud xatoliklar)
+
+Hozir api-legacy'da 3 ta entity yangi jadvalga map qilingan (XATO — kelajakda tuzatish kerak):
+- `User` → `LegacyUserInfoController`, `UserController`, `EmployeeJobsEntityController`, `LegacySecurityHelper` (kerak: `SecUser`)
+- `EmployeeJobs` → `EmployeeJobsEntityController` (kerak: yangi `LegacyEmployeeJobs` entity, `hemishe_e_employee_jobs` ga map)
+- `Employee` → `EmployeeJobsEntityController` (kerak: `Teacher` yoki yangi legacy entity)
+
+---
+
 ## Eng Kritik Qoidalar
 
 ### 1. Response — `LinkedHashMap` (HashMap **EMAS**)

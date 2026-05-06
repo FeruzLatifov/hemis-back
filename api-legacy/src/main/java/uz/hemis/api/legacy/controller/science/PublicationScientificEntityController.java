@@ -59,7 +59,7 @@ public class PublicationScientificEntityController {
     // GET /{entityId} - Bitta ilmiy nashrni olish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy nashrni olish",
@@ -100,7 +100,7 @@ public class PublicationScientificEntityController {
     // PUT /{entityId} - Ilmiy nashrni yangilash
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy nashrni yangilash",
@@ -135,7 +135,7 @@ public class PublicationScientificEntityController {
     // DELETE /{entityId} - Ilmiy nashrni o'chirish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Ilmiy nashrni o'chirish",
@@ -165,7 +165,7 @@ public class PublicationScientificEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Ilmiy nashrlar qidirish (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -192,7 +192,7 @@ public class PublicationScientificEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Ilmiy nashrlar qidirish (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -223,7 +223,7 @@ public class PublicationScientificEntityController {
     // GET - Barcha ilmiy nashrlar (paginated)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping({"", "/"})
     @Operation(summary = "Barcha ilmiy nashrlar ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -276,7 +276,7 @@ public class PublicationScientificEntityController {
     // POST - Yangi ilmiy nashr yaratish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Ilmiy nashr yaratish",

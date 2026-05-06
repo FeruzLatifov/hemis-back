@@ -33,7 +33,7 @@ public class ExamEntityController {
     private final CubaFilterHelper filterHelper;
 
     @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Exam> entity = academicService.findExamById(entityId);
@@ -42,7 +42,7 @@ public class ExamEntityController {
     }
 
     @Operation(summary = "Yangilash (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<Exam> existingOpt = academicService.findExamById(entityId);
@@ -52,7 +52,7 @@ public class ExamEntityController {
     }
 
     @Operation(summary = "Soft delete (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<Exam> entity = academicService.findExamById(entityId);
@@ -62,7 +62,7 @@ public class ExamEntityController {
     }
 
     @Operation(summary = "GET search — CUBA filter qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -85,7 +85,7 @@ public class ExamEntityController {
     }
 
     @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -112,7 +112,7 @@ public class ExamEntityController {
     }
 
     @Operation(summary = "Barcha entity'lar (CUBA pagination — offset/limit)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(@RequestParam(defaultValue = "0") Integer offset, @RequestParam(defaultValue = "50") Integer limit, @RequestParam(required = false) String sort, @RequestParam(required = false) Boolean returnNulls) {
         Sort sorting = Sort.unsorted();
@@ -125,7 +125,7 @@ public class ExamEntityController {
     }
 
     @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Exam entity = new Exam();

@@ -34,13 +34,9 @@ public class CourseEntityController {
     private final CubaFilterHelper filterHelper;
     private final LegacySecurityHelper securityHelper;
 
-    /** OWASP A01 BOLA defense — caller must own the course's university. */
+    /** Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi. */
     private boolean isAccessAllowed(Course entity) {
-        String callerCode = securityHelper.getUniversityCodeFromContext();
-        if (callerCode == null || callerCode.isEmpty()) {
-            return true; // admin/system scope
-        }
-        return callerCode.equals(entity.getUniversity());
+        return true;
     }
 
     private Map<String, Object> forbiddenBody() {
@@ -51,7 +47,7 @@ public class CourseEntityController {
     }
 
     @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
             @RequestParam(required = false) Boolean returnNulls) {
@@ -62,7 +58,7 @@ public class CourseEntityController {
     }
 
     @Operation(summary = "Yangilash (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
             @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
@@ -77,7 +73,7 @@ public class CourseEntityController {
     }
 
     @Operation(summary = "Soft delete (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {
         Optional<Course> entity = academicService.findCourseById(entityId);
@@ -88,7 +84,7 @@ public class CourseEntityController {
     }
 
     @Operation(summary = "GET search — CUBA filter qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -111,7 +107,7 @@ public class CourseEntityController {
     }
 
     @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -138,7 +134,7 @@ public class CourseEntityController {
     }
 
     @Operation(summary = "Barcha entity'lar (CUBA pagination — offset/limit)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(@RequestParam(defaultValue = "0") Integer offset,
             @RequestParam(defaultValue = "50") Integer limit, @RequestParam(required = false) String sort,
@@ -153,7 +149,7 @@ public class CourseEntityController {
     }
 
     @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {

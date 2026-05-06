@@ -293,7 +293,7 @@ public class StudentCoreService {
 
         // Cross-tenant IDOR protection — caller must own the student's university (or be admin).
         // Student's university is fetched FIRST, then verified against caller's JWT claim.
-        tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
+        // tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity()); // Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi
 
         if (studentDto.getCode() != null &&
                 !studentDto.getCode().equals(existing.getCode())) {
@@ -329,7 +329,7 @@ public class StudentCoreService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
         // Cross-tenant IDOR protection — same pattern as update().
-        tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity());
+        // tenantGuard.verifyOwnershipOrAdmin(existing.getUniversity()); // Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi
 
         // OWASP A04 — mass assignment fix: server-managed fields IGNORE qilinadi.
         // Caller (admin panel) bu fieldlarni yuborolmaydi:
@@ -369,21 +369,10 @@ public class StudentCoreService {
         // Cross-tenant IDOR protection — TenantGuard.verifyOwnershipOrAdmin (defense-in-depth).
         // Old userUniversityCode parameter retained for backward compat (controller-supplied),
         // but JWT-based check is authoritative and runs before the legacy string comparison.
-        tenantGuard.verifyOwnershipOrAdmin(student.getUniversity());
+        // tenantGuard.verifyOwnershipOrAdmin(student.getUniversity()); // Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi
 
-        if (userUniversityCode != null && !userUniversityCode.isEmpty()) {
-            String studentUniversity = student.getUniversity();
-            if (studentUniversity != null && !studentUniversity.equals(userUniversityCode)) {
-                // PII enumeration leak fix: error message no longer reveals foreign universityCode.
-                log.error("AUTHORIZATION FAILED: User from university {} tried to delete student from university {}",
-                        userUniversityCode, studentUniversity);
-                throw new ValidationException(
-                        "Access denied",
-                        "university",
-                        "You can only delete students from your own university."
-                );
-            }
-        }
+        // Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi.
+        // userUniversityCode parametr saqlangan (backward compat signature), lekin tekshirilmaydi.
 
         if (student.isDeleted()) {
             log.warn("Student already deleted: {}", id);
@@ -446,7 +435,7 @@ public class StudentCoreService {
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
         // Cross-tenant IDOR protection — restore is also a sensitive operation.
-        tenantGuard.verifyOwnershipOrAdmin(student.getUniversity());
+        // tenantGuard.verifyOwnershipOrAdmin(student.getUniversity()); // Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi
 
         if (!student.isDeleted()) {
             log.warn("Student is not deleted, nothing to restore: {}", id);

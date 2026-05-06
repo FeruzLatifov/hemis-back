@@ -123,7 +123,7 @@ public class CourseController {
 
     @Operation(summary = "Yangi fan yaratish", description = "ADMIN yoki OTM_API roli kerak.")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<CourseDto>> createCourse(@Valid @RequestBody CourseDto courseDto) {
         CourseDto created = courseService.create(courseDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
@@ -131,7 +131,7 @@ public class CourseController {
 
     @Operation(summary = "Fanni yangilash", description = "ADMIN yoki OTM_API roli kerak.")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<CourseDto>> updateCourse(
             @PathVariable UUID id,
             @Valid @RequestBody CourseDto courseDto
@@ -142,7 +142,7 @@ public class CourseController {
 
     @Operation(summary = "Fanni soft delete", description = "ADMIN roli kerak. delete_ts qo'yiladi, ma'lumot saqlanadi.")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Void>> deleteCourse(@PathVariable UUID id) {
         courseService.softDelete(id);
         return ResponseEntity.ok(ResponseWrapper.success(null));

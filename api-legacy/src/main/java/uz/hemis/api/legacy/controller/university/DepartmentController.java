@@ -250,7 +250,7 @@ public class DepartmentController {
      */
     @Operation(summary = "Yangi kafedra yaratish")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> createDepartment(
             @Valid @RequestBody DepartmentDto departmentDto
     ) {
@@ -276,7 +276,7 @@ public class DepartmentController {
      */
     @Operation(summary = "Kafedrani yangilash")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<DepartmentDto>> updateDepartment(
             @PathVariable UUID id,
             @Valid @RequestBody DepartmentDto departmentDto

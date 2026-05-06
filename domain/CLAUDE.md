@@ -605,6 +605,61 @@ VA universitet ekosistemi (224 OTM) bilan sync mantiqiy bo'lsa.
 
 ---
 
+## ⚠️ CRITICAL — Bizning baza vs OTM Univer baza
+
+> **Eng tez-tez xato qilinadigan narsa.** Yangi entity yaratganingizda
+> jadval nomi qaysi baza tomonida joylashganligini AVVAL aniqlashingiz kerak.
+
+### Ikki xil baza ekosistemi
+
+| Baza | Tomon | DB nomi | Misol jadvallar |
+|------|-------|---------|-----------------|
+| **Bizning** | hemis-back (Java/Spring) | `.env`'dan o'qiladi (lokal: `test1_hemis`) | `hemishe_e_student`, `hemishe_e_teacher`, `hemishe_e_university` |
+| **Univer (OTM)** | Yii2 PHP, har OTM uchun | `hemis_NNN` (337, 401, …) — 224 ta | `hemishe_e_grade`, `hemishe_e_attendance`, `hemishe_e_course`, `hemishe_e_exam`, `hemishe_e_schedule`, `hemishe_e_contract`, `hemishe_e_curriculum`, `hemishe_e_employment`, `hemishe_e_enrollment` |
+
+### MAJBURIY tekshirish — yangi `@Table(name = "hemishe_e_*")` qo'shganda
+
+```bash
+# Avtomatik tekshirish (CI/local pre-commit):
+./scripts/check_table_mappings.sh
+```
+
+Skript code'dagi barcha `@Table(name = "hemishe_*")` mapping'larni
+DB introspection bilan solishtiradi. **Mismatch chiqsa — entity Univer
+bazasiga tegishli, bizda map qilish XATO.**
+
+### Faraz qilish TAQIQ
+
+```java
+// ❌ XATO — auditga asoslangan, lekin DB'da hech qachon yo'q
+@Entity
+@Table(name = "hemishe_e_grade")  // bu Univer bazasida (hemis_NNN), bizda EMAS
+public class Grade { ... }
+// Result: GradeRepository.findAll() runtime'da "relation does not exist" qaytaradi.
+
+// ✅ TO'G'RI — avval DB introspect, keyin map
+// 1. ./scripts/check_table_mappings.sh — bizdagi jadvallarni ko'rish
+// 2. Faqat haqiqatda mavjud jadvalga map qilish
+// 3. Univer'dagi ma'lumot kerak bo'lsa — REST API orqali (Univer.findStudentGrades())
+```
+
+### Univer ma'lumotini olish — to'g'ri pattern
+
+Agar OTM tomonidagi Grade/Attendance/etc. kerak bo'lsa:
+- `service/integration/UniverApiService.java` orqali REST chaqiruvi
+- `@Cacheable` bilan cache (har OTM uchun alohida key)
+- **JPA entity yaratmang** — bu bizda map qilinmaydi
+
+### Audit checklist (yangi entity PR)
+
+- [ ] Jadval `.env`'dagi DB'da haqiqatan mavjudmi? (`./scripts/check_table_mappings.sh` ✅)
+- [ ] Mapping nomi DB'dagi to'liq nom bilan mos (typo yo'q — masalan `diplom_blank` vs `diploma_blank`)?
+- [ ] Univer'dagi jadval bo'lsa — JPA entity emas, REST integratsiya yarating
+- [ ] @SQLRestriction("delete_ts IS NULL") qo'shilgan (CUBA legacy uchun)
+- [ ] Repository test'i `@DataJpaTest` real DB'da o'tadimi (`SELECT * FROM ... LIMIT 1`)?
+
+---
+
 ## PR Checklist (entity yoki migration)
 
 - [ ] `@Data` ishlatilmagan, `@Getter @Setter` mavjud

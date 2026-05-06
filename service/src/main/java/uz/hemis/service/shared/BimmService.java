@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uz.hemis.service.base.AbstractGovernmentApiService;
-import uz.hemis.service.integration.BimmTokenService;
+import uz.hemis.service.integration.LegacyBimmTokenService;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,7 +35,7 @@ import java.util.Map;
 public class BimmService extends AbstractGovernmentApiService {
 
     @Autowired
-    private BimmTokenService bimmTokenService;
+    private LegacyBimmTokenService bimmTokenService;
 
     @Value("${hemis.integration.bimm.api.base-url:https://api-mspd.edu.uz}")
     private String apiBaseUrl;

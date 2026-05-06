@@ -11,7 +11,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OtmIntegrationService {
+public class LegacyOtmIntegrationService {
 
     private final JdbcTemplate jdbcTemplate;
 

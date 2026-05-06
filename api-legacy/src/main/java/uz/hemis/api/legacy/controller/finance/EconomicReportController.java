@@ -22,7 +22,7 @@ public class EconomicReportController {
 
     @Operation(summary = "get financial report")
     @GetMapping("/financial")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getFinancialReport(
             @RequestParam String university,
             @RequestParam(required = false) Integer year
@@ -39,7 +39,7 @@ public class EconomicReportController {
 
     @Operation(summary = "get budget report")
     @GetMapping("/budget")
-    @PreAuthorize("hasAnyRole('ADMIN', 'FINANCE')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getBudgetReport(@RequestParam String university) {
         Map<String, Object> report = new LinkedHashMap<>();
         report.put("university", university);

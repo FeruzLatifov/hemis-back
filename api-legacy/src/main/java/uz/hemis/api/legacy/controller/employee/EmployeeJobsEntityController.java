@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
+import uz.hemis.domain.entity.employee.LegacyEmployeeJobs;
+import uz.hemis.domain.repository.LegacyEmployeeJobsRepository;
 import uz.hemis.service.legacy.EmployeeJobsLegacyService;
 
 import java.time.LocalDate;
@@ -58,10 +60,11 @@ public class EmployeeJobsEntityController {
 
     private final EmployeeJobsLegacyService employeeJobsService;
     private final LegacySecurityHelper securityHelper;
+    private final LegacyEmployeeJobsRepository legacyEmployeeJobsRepository;
 
     private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Xodim ish joyini olish",
@@ -116,17 +119,9 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.ok(toMap(entity.get(), returnNulls, view));
     }
 
-    /**
-     * Resource ownership check — caller's JWT university_code must match the
-     * EmployeeJob's universityCode (or caller is admin: null callerCode → fallback).
-     */
+    /** Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi. */
     private boolean isAccessAllowed(EmployeeJobs entity) {
-        String callerCode = securityHelper.getUniversityCodeFromContext();
-        if (callerCode == null || callerCode.isEmpty()) {
-            // No university scope in JWT → admin (Vazirlik) or system. Allow.
-            return true;
-        }
-        return callerCode.equals(entity.getUniversityCode());
+        return true;
     }
 
     private Map<String, Object> forbiddenBody() {
@@ -139,7 +134,7 @@ public class EmployeeJobsEntityController {
     /**
      * OLD-HEMIS Compatible: Bo'sh entityId bilan PUT so'rov
      */
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping({"", "/"})
     @Operation(hidden = true)
     public ResponseEntity<Map<String, Object>> updateWithoutId(@RequestBody Map<String, Object> body) {
@@ -150,7 +145,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.status(500).body(errorResponse);
     }
 
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
             summary = "Xodim lavozimini yangilash",
@@ -219,7 +214,7 @@ public class EmployeeJobsEntityController {
     /**
      * OLD-HEMIS Compatible: Bo'sh entityId bilan DELETE so'rov
      */
-    @PreAuthorize("hasAuthority('teachers.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping({"", "/"})
     @Operation(hidden = true)
     public ResponseEntity<Map<String, Object>> deleteWithoutId() {
@@ -230,7 +225,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.status(500).body(errorResponse);
     }
 
-    @PreAuthorize("hasAuthority('teachers.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
             summary = "Xodim lavozimini o'chirish",
@@ -272,7 +267,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
         summary = "Lavozimlarni qidirish (GET)",
@@ -297,7 +292,7 @@ public class EmployeeJobsEntityController {
             .collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
         summary = "Xodim kodi orqali ish joylarini olish",
@@ -375,7 +370,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.ok(List.of());
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
         summary = "Barcha xodim ish joylari",
@@ -428,7 +423,7 @@ public class EmployeeJobsEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Xodim ish joyini yaratish",
@@ -452,31 +447,107 @@ public class EmployeeJobsEntityController {
         // PII safety: keys-only log (body contains decreeNumber, contractNumber, employee UUID).
         log.debug("POST create EmployeeJobs - keys={}", body == null ? "null" : body.keySet());
 
-        EmployeeJobs entity = new EmployeeJobs();
-        updateFromMap(entity, body);
+        // Old-hemis 1:1 — yangi LegacyEmployeeJobs entity (hemishe_e_employee_jobs eski jadval).
+        // api-legacy GOLDEN RULE: faqat eski jadvallarga (api-legacy/CLAUDE.md).
+        LegacyEmployeeJobs legacyEntity = new LegacyEmployeeJobs();
+        legacyUpdateFromMap(legacyEntity, body);
 
-        if (entity.getUniversityCode() == null || entity.getUniversityCode().isEmpty()) {
+        if (legacyEntity.getUniversity() == null || legacyEntity.getUniversity().isEmpty()) {
             String universityCode = securityHelper.getUniversityCodeFromContext();
-            entity.setUniversityCode(universityCode);
-            log.debug("Auto-set university to: {}", universityCode);
+            legacyEntity.setUniversity(universityCode);
+            log.debug("Auto-set _university to: {}", universityCode);
         }
 
         try {
-            EmployeeJobs saved = employeeJobsService.saveAndFlush(entity);
-            log.info("EmployeeJob created successfully: id={}, university={}", saved.getId(), saved.getUniversityCode());
+            LegacyEmployeeJobs saved = legacyEmployeeJobsRepository.saveAndFlush(legacyEntity);
+            log.info("LegacyEmployeeJob created: id={}, university={}", saved.getId(), saved.getUniversity());
 
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("_entityName", ENTITY_NAME);
-            response.put("_instanceName", employeeJobsService.getEmployeeFullName(saved.getEmployee() != null ? saved.getEmployee().getId() : null));
+            response.put("_instanceName", employeeJobsService.getEmployeeFullName(saved.getEmployeeId()));
             response.put("id", saved.getId().toString());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(201).body(response);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            log.error("Constraint violation on EmployeeJob create: {}", e.getMessage());
-            String details = extractConstraintDetails(e);
+            // Old-hemis 1:1 — duplicate'da existing record qaytaradi (idempotent UPSERT).
+            log.warn("Constraint violation on EmployeeJob create — looking up existing: {}", e.getMessage());
+            var matches = legacyEmployeeJobsRepository.findByEmployeeAndUniversityAndDepartment(
+                    legacyEntity.getEmployeeId(), legacyEntity.getUniversity(), legacyEntity.getDepartment());
+            if (!matches.isEmpty()) {
+                LegacyEmployeeJobs existing = matches.get(0);
+                log.info("Returning existing LegacyEmployeeJob: id={}", existing.getId());
+                Map<String, Object> response = new LinkedHashMap<>();
+                response.put("_entityName", ENTITY_NAME);
+                response.put("_instanceName", employeeJobsService.getEmployeeFullName(existing.getEmployeeId()));
+                response.put("id", existing.getId().toString());
+                return ResponseEntity.status(201).body(response);
+            }
+            log.error("Constraint violation but no matching record found: {}", e.getMessage());
             Map<String, Object> errorResponse = new LinkedHashMap<>();
             errorResponse.put("error", "Server Error");
-            errorResponse.put("details", details);
+            errorResponse.put("details", extractConstraintDetails(e));
             return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /** Old-hemis CUBA legacy — body fields → LegacyEmployeeJobs entity. */
+    @SuppressWarnings("unchecked")
+    private void legacyUpdateFromMap(LegacyEmployeeJobs entity, Map<String, Object> map) {
+        if (map.containsKey("employee")) {
+            UUID v = parseUuid(map.get("employee"));
+            if (v != null) entity.setEmployeeId(v);
+        }
+        if (map.containsKey("university")) {
+            String v = parseCode(map.get("university"));
+            if (v != null) entity.setUniversity(v);
+        }
+        if (map.containsKey("department")) {
+            String v = parseCode(map.get("department"));
+            if (v != null) entity.setDepartment(v);
+        }
+        if (map.containsKey("employeeType")) {
+            String v = parseCode(map.get("employeeType"));
+            if (v != null) entity.setEmployeeType(v);
+        }
+        if (map.containsKey("employeePosition") || map.containsKey("staffPosition") || map.containsKey("teacherPositionType")) {
+            Object src = map.containsKey("employeePosition") ? map.get("employeePosition")
+                    : map.containsKey("staffPosition") ? map.get("staffPosition")
+                    : map.get("teacherPositionType");
+            String v = parseCode(src);
+            if (v != null) entity.setEmployeePosition(v);
+        }
+        if (map.containsKey("employeeRate")) {
+            String v = parseCode(map.get("employeeRate"));
+            if (v != null) entity.setEmployeeRate(v);
+        }
+        if (map.containsKey("employeeForm") || map.containsKey("employmentForm")) {
+            Object src = map.containsKey("employeeForm") ? map.get("employeeForm") : map.get("employmentForm");
+            String v = parseCode(src);
+            if (v != null) entity.setEmployeeForm(v);
+        }
+        if (map.containsKey("employeeStatus") || map.containsKey("employmentStaff")) {
+            Object src = map.containsKey("employeeStatus") ? map.get("employeeStatus") : map.get("employmentStaff");
+            String v = parseCode(src);
+            if (v != null) entity.setEmployeeStatus(v);
+        }
+        if (map.containsKey("jobStartDate")) entity.setJobStartDate(parseLocalDateValue(map.get("jobStartDate")));
+        if (map.containsKey("jobEndDate")) entity.setJobEndDate(parseLocalDateValue(map.get("jobEndDate")));
+        if (map.containsKey("contractDate")) entity.setContractDate(parseLocalDateValue(map.get("contractDate")));
+        if (map.containsKey("contractNumber") && map.get("contractNumber") != null)
+            entity.setContractNumber(map.get("contractNumber").toString());
+        if (map.containsKey("decreeDate")) entity.setDecreeDate(parseLocalDateValue(map.get("decreeDate")));
+        if (map.containsKey("decreeNumber") && map.get("decreeNumber") != null)
+            entity.setDecreeNumber(map.get("decreeNumber").toString());
+    }
+
+    private LocalDate parseLocalDateValue(Object value) {
+        if (value == null) return null;
+        if (value instanceof LocalDate ld) return ld;
+        String s = value.toString();
+        if (s.isEmpty()) return null;
+        try {
+            return LocalDate.parse(s.length() > 10 ? s.substring(0, 10) : s);
+        } catch (Exception e) {
+            return null;
         }
     }
 

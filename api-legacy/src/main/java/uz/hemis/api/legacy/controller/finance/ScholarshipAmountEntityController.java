@@ -36,7 +36,7 @@ public class ScholarshipAmountEntityController {
     private static final String ENTITY_NAME = "hemishe_EStudentScholarshipAmount";
 
     @Operation(summary = "Stipendiya summasini ID bo'yicha topish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
@@ -49,7 +49,7 @@ public class ScholarshipAmountEntityController {
     }
 
     @Operation(summary = "Stipendiya summasini yangilash (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId,
             @RequestBody Map<String, Object> body,
@@ -64,7 +64,7 @@ public class ScholarshipAmountEntityController {
     }
 
     @Operation(summary = "Stipendiya summasini soft delete (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         log.debug("DELETE scholarshipAmount id: {}", entityId);
@@ -75,7 +75,7 @@ public class ScholarshipAmountEntityController {
     }
 
     @Operation(summary = "GET search — CUBA filter qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -98,7 +98,7 @@ public class ScholarshipAmountEntityController {
     }
 
     @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -125,7 +125,7 @@ public class ScholarshipAmountEntityController {
     }
 
     @Operation(summary = "Barcha stipendiya summalari (CUBA pagination — offset/limit)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @RequestParam(required = false) Boolean returnCount,
@@ -155,7 +155,7 @@ public class ScholarshipAmountEntityController {
     }
 
     @Operation(summary = "Yangi stipendiya summasi yaratish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {

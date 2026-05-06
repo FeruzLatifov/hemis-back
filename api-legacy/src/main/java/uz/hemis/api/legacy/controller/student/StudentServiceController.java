@@ -96,7 +96,7 @@ public class StudentServiceController {
      * @param pinfl Talaba PINFL raqami (14 xonali)
      * @return DTM verification ballari va ma'lumotlari
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/verify")
     @Operation(
             summary = "Talaba tasdiqlash (DTM verification)",
@@ -185,7 +185,7 @@ public class StudentServiceController {
      * @param pinfl Talaba PINFL raqami (14 xonali)
      * @return Shartnoma ma'lumotlari (api.hemis.uz dan)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/contractInfo")
     @Operation(
             summary = "Talaba shartnoma ma'lumotlari (Contract Info)",
@@ -307,7 +307,7 @@ public class StudentServiceController {
      * @param request {"data": StudentIdRequest}
      * @return Talaba ID va ma'lumotlari
      */
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/id")
     @Operation(
             summary = "Check - Talaba ID sini olish",
@@ -476,7 +476,7 @@ public class StudentServiceController {
      * @param request Student update request (OLD HEMIS nested format)
      * @return {id, code, verified, points} yoki transfer holatda bo'sh body
      */
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/update")
     @Operation(summary = "Talabani o'zgartirish", description = "Talaba ma'lumotlarini yangilash (transfer yoki data update). Transfer bo'lmasa {id, code, verified, points} qaytaradi.")
     public ResponseEntity<?> update(@RequestBody Map<String, Object> request) {
@@ -500,7 +500,7 @@ public class StudentServiceController {
      * @param data Validation data (PINFL or Passport serial number)
      * @return Student validation status
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/validate")
     @Operation(
             summary = "Talaba statusini tekshirish (Passport seriya)",
@@ -599,7 +599,7 @@ public class StudentServiceController {
      * @param request GPA ma'lumotlari (CUBA service format)
      * @return Saqlangan GPA yozuvi
      */
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/gpa")
     @Operation(
             summary = "Talaba GPA servis (UPSERT)",
@@ -709,7 +709,7 @@ public class StudentServiceController {
      * Get student by PINFL (flat service format)
      * OLD-HEMIS: StudentServiceBean.get(pinfl) — returns {success, data}
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/get")
     @Operation(summary = "Talaba ma'lumotlari (PINFL)", description = "PINFL bo'yicha talaba ma'lumotlarini olish (status: 11, 16)")
     public ResponseEntity<?> get(
@@ -734,7 +734,7 @@ public class StudentServiceController {
      * OLD-HEMIS: StudentServiceBean.getActive(pinfl) — returns {success, code, data}
      * Note: adds decreeInfoNumber IS NOT NULL check
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getActive")
     @Operation(summary = "Aktiv talaba (PINFL)", description = "PINFL bo'yicha aktiv talaba ma'lumotlarini olish")
     public ResponseEntity<?> getActive(
@@ -758,7 +758,7 @@ public class StudentServiceController {
      * Get student by code (ID)
      * OLD-HEMIS: StudentServiceBean.getById(id) — returns {success, code, data}
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getById")
     @Operation(summary = "Talaba (kod bo'yicha)", description = "Talaba kodi bo'yicha ma'lumotlarini olish (status: 11)")
     public ResponseEntity<?> getByIdCode(
@@ -782,7 +782,7 @@ public class StudentServiceController {
      * Get doctoral student by PINFL
      * OLD-HEMIS: StudentServiceBean.getDoctoral(pinfl) — returns {success, code, data}
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDoctoral")
     @Operation(summary = "Doktorant talaba (PINFL)", description = "PINFL bo'yicha doktorant talaba ma'lumotlarini olish")
     public ResponseEntity<?> getDoctoral(
@@ -806,7 +806,7 @@ public class StudentServiceController {
      * Get student with fallback status chain
      * OLD-HEMIS: StudentServiceBean.getWithStatus(pinfl) — returns {success, code, data}
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getWithStatus")
     @Operation(summary = "Talaba (status bilan)", description = "PINFL bo'yicha talaba - status '11' → oxirgi yozuv → seriya raqam")
     public ResponseEntity<?> getWithStatus(
@@ -830,7 +830,7 @@ public class StudentServiceController {
      * Test get - billing format
      * OLD-HEMIS: StudentServiceBean.testGet(pinfl)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/testGet")
     @Operation(summary = "Test talaba (billing format)", description = "Billing API formati uchun talaba ma'lumotlari")
     public ResponseEntity<?> testGet(
@@ -844,7 +844,7 @@ public class StudentServiceController {
      * Get students by university (paginated)
      * OLD-HEMIS: StudentServiceBean.students(university, limit, offset)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/students")
     @Operation(summary = "Talabalar ro'yxati (OTM bo'yicha)", description = "OTM kodi bo'yicha talabalar ro'yxati (max 1000)")
     public ResponseEntity<?> students(
@@ -881,7 +881,7 @@ public class StudentServiceController {
      * Get Tashkent students (paginated)
      * OLD-HEMIS: StudentServiceBean.tashkentStudents(limit, offset)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/tashkentStudents")
     @Operation(summary = "Toshkent talablari", description = "Toshkent shahridagi OTM talablari (max 1000)")
     public ResponseEntity<?> tashkentStudents(
@@ -902,7 +902,7 @@ public class StudentServiceController {
      * Check expelled students by PINFLs
      * OLD-HEMIS: StudentServiceBean.isExpel(pinfls)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/isExpel")
     @Operation(summary = "Chetlatilgan talabalar tekshirish", description = "PINFL lar bo'yicha chetlatilgan talabalarni tekshirish")
     public ResponseEntity<?> isExpel(
@@ -926,7 +926,7 @@ public class StudentServiceController {
      * Check students against MVD data
      * OLD-HEMIS: StudentServiceBean.check()
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/check")
     @Operation(summary = "Talabalar MVD tekshirish", description = "Barcha talabalarni MVD ma'lumotlari bilan solishtirish")
     public ResponseEntity<?> check() {
@@ -939,7 +939,7 @@ public class StudentServiceController {
      * Check scholarship eligibility
      * OLD-HEMIS: StudentServiceBean.checkScholarship(tin, pinfls)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/checkScholarship")
     @Operation(summary = "Stipendiya tekshirish", description = "PostgreSQL stipend_check() funktsiyasi orqali tekshirish")
     public ResponseEntity<?> checkScholarship(
@@ -979,7 +979,7 @@ public class StudentServiceController {
      * Tashkent statistics: by payment form
      * OLD-HEMIS: StudentServiceBean.byTashkentAndPaymentForm()
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/byTashkentAndPaymentForm")
     @Operation(summary = "Toshkent - to'lov shakli", description = "Toshkent shahri talablari statistikasi (to'lov shakli kesimida)")
     public ResponseEntity<?> byTashkentAndPaymentForm() {
@@ -991,7 +991,7 @@ public class StudentServiceController {
      * Tashkent statistics: by region/district
      * OLD-HEMIS: StudentServiceBean.byTashkentAndRegionDistrict()
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/byTashkentAndRegionDistrict")
     @Operation(summary = "Toshkent - viloyat/tuman", description = "Toshkent shahri talablari statistikasi (viloyat va tumanlar kesimida)")
     public ResponseEntity<?> byTashkentAndRegionDistrict() {
@@ -1003,7 +1003,7 @@ public class StudentServiceController {
      * Tashkent statistics: by region/district/education type
      * OLD-HEMIS: StudentServiceBean.byTashkentAndRegionDistrictAndEduType()
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/byTashkentAndRegionDistrictAndEduType")
     @Operation(summary = "Toshkent - viloyat/tuman/ta'lim turi", description = "Toshkent shahri talablari (viloyat, tuman va ta'lim turi kesimida)")
     public ResponseEntity<?> byTashkentAndRegionDistrictAndEduType() {
@@ -1015,7 +1015,7 @@ public class StudentServiceController {
      * Tashkent statistics: by faculty/course
      * OLD-HEMIS: StudentServiceBean.byTashkentAndFacultyAndCourse()
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/byTashkentAndFacultyAndCourse")
     @Operation(summary = "Toshkent - fakultet/kurs", description = "Toshkent shahri talablari (fakultet va kurslar kesimida)")
     public ResponseEntity<?> byTashkentAndFacultyAndCourse() {
@@ -1027,7 +1027,7 @@ public class StudentServiceController {
      * Tashkent statistics: by education form/type/gender
      * OLD-HEMIS: StudentServiceBean.byTashkentAndEduFormTypeAndGender()
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/byTashkentAndEduFormTypeAndGender")
     @Operation(summary = "Toshkent - shakl/turi/jins", description = "Toshkent shahri talablari (ta'lim shakli, turi va jinslar kesimida)")
     public ResponseEntity<?> byTashkentAndEduFormTypeAndGender() {

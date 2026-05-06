@@ -22,7 +22,7 @@ public class QrDiplomaController {
 
     @Operation(summary = "generate qr code")
     @PostMapping("/generate/{diplomaId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> generateQrCode(@PathVariable UUID diplomaId) {
         log.info("Generating QR code for diploma: {}", diplomaId);
 

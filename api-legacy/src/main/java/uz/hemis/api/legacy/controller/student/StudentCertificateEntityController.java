@@ -32,7 +32,7 @@ public class StudentCertificateEntityController {
 
     private final StudentEntityLegacyService studentService;
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     @Operation(summary = "Get student certificate by ID")
     public ResponseEntity<Map<String, Object>> getStudentCertificate(
@@ -46,7 +46,7 @@ public class StudentCertificateEntityController {
         return ResponseEntity.ok(studentService.toStudentCertificateMap(studentCertificateOpt.get(), returnNulls, view));
     }
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
     @Operation(summary = "Update student certificate")
     public ResponseEntity<Map<String, Object>> updateStudentCertificate(
@@ -65,7 +65,7 @@ public class StudentCertificateEntityController {
         return ResponseEntity.ok(studentService.toStudentCertificateMap(saved, false));
     }
 
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete student certificate")
     public ResponseEntity<Void> deleteStudentCertificate(
@@ -79,7 +79,7 @@ public class StudentCertificateEntityController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Search student certificates")
     public ResponseEntity<List<Map<String, Object>>> searchStudentCertificates(
@@ -107,7 +107,7 @@ public class StudentCertificateEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Search student certificates with filter")
     public ResponseEntity<Map<String, Object>> searchStudentCertificatesPost(
@@ -140,7 +140,7 @@ public class StudentCertificateEntityController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Get all student certificates")
     public ResponseEntity<List<Map<String, Object>>> getAllStudentCertificates(
@@ -158,7 +158,7 @@ public class StudentCertificateEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Create/upsert student certificate")
     public ResponseEntity<Map<String, Object>> createStudentCertificate(

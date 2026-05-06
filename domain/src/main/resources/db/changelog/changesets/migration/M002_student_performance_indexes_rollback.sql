@@ -1,4 +1,4 @@
--- Rollback M002: drop all index migrations on hemishe_e_* tables.
+-- Rollback M002: drop all hemishe_e_* index migrations.
 -- pg_trgm extension NOT dropped (other tooling may depend on it).
 
 -- StudentMeta race-fix
@@ -6,14 +6,6 @@ DROP INDEX IF EXISTS uq_student_meta_uid_university_active;
 
 -- StudentDiploma trigram
 DROP INDEX IF EXISTS idx_diploma_number_trgm;
-
--- Attendance
-DROP INDEX IF EXISTS idx_attendance_uni_date;
-DROP INDEX IF EXISTS idx_attendance_student_active;
-
--- Grade
-DROP INDEX IF EXISTS idx_grade_student_active;
-DROP INDEX IF EXISTS idx_grade_university_active;
 
 -- Student keyset paging + PINFL master uniqueness
 DROP INDEX IF EXISTS uq_student_pinfl_master;

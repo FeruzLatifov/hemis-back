@@ -112,7 +112,7 @@ public class StudentEntityController {
      * ✅ REFACTORED: Uses service layer
      * ✅ BACKWARD COMPATIBLE: Same response format (CUBA Map)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta talaba ma'lumotlarini olish",
@@ -450,7 +450,7 @@ public class StudentEntityController {
      * ✅ CUBA PATTERN: PUT = partial update (only fields in JSON body are changed)
      */
 
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Talaba ma'lumotlarini o'zgartirish",
@@ -551,7 +551,7 @@ public class StudentEntityController {
      * CRITICAL: This is a soft delete (sets delete_ts).
      * Physical DELETE is blocked at service and database level.
      */
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Talabani o'chirish",
@@ -601,7 +601,7 @@ public class StudentEntityController {
      * ✅ REFACTORED: Uses service layer with proper pagination
      * ✅ BACKWARD COMPATIBLE: Same response format and parameters
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
         summary = "Barcha talabalar ro'yxati",
@@ -704,7 +704,7 @@ public class StudentEntityController {
      * ✅ REFACTORED: Uses service layer with validation
      * ✅ BACKWARD COMPATIBLE: Accepts CUBA Map format
      */
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Talaba yaratish",

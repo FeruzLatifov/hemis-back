@@ -290,7 +290,7 @@ public class DiplomaBlankController {
      */
     @Operation(summary = "Yangi diplom blank yaratish", description = "ADMIN roli kerak.")
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> createDiplomaBlank(
             @Valid @RequestBody DiplomaBlankDto diplomaBlankDto
     ) {
@@ -316,7 +316,7 @@ public class DiplomaBlankController {
      */
     @Operation(summary = "Diplom blankni yangilash", description = "ADMIN roli kerak.")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> updateDiplomaBlank(
             @PathVariable UUID id,
             @Valid @RequestBody DiplomaBlankDto diplomaBlankDto
@@ -342,7 +342,7 @@ public class DiplomaBlankController {
      */
     @Operation(summary = "Blank statusini yangilash", description = "AVAILABLE → ISSUED, DAMAGED yoki CANCELLED. OTM_API ham yangilashi mumkin.")
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<DiplomaBlankDto>> updateDiplomaBlankStatus(
             @PathVariable UUID id,
             @RequestParam("status") String status

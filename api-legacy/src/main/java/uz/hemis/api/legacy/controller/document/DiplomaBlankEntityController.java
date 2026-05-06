@@ -37,7 +37,7 @@ public class DiplomaBlankEntityController {
     private final CubaFilterHelper filterHelper;
 
     @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.diplomas.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> getById(@PathVariable UUID entityId, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> entity = documentService.findDiplomaBlankById(entityId);
@@ -46,7 +46,7 @@ public class DiplomaBlankEntityController {
     }
 
     @Operation(summary = "Yangilash (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.diplomas.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<Map<String, Object>> update(@PathVariable UUID entityId, @RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         Optional<DiplomaBlank> existingOpt = documentService.findDiplomaBlankById(entityId);
@@ -58,7 +58,7 @@ public class DiplomaBlankEntityController {
     }
 
     @Operation(summary = "Soft delete (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.diplomas.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
         Optional<DiplomaBlank> entity = documentService.findDiplomaBlankById(entityId);
@@ -68,7 +68,7 @@ public class DiplomaBlankEntityController {
     }
 
     @Operation(summary = "GET search — CUBA filter qidirish")
-    @PreAuthorize("hasAuthority('students.diplomas.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam(required = false) String filter,
@@ -91,7 +91,7 @@ public class DiplomaBlankEntityController {
     }
 
     @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
-    @PreAuthorize("hasAuthority('students.diplomas.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
@@ -118,7 +118,7 @@ public class DiplomaBlankEntityController {
     }
 
     @Operation(summary = "Barcha entity'lar (CUBA pagination — offset/limit)")
-    @PreAuthorize("hasAuthority('students.diplomas.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @RequestParam(defaultValue = "0") Integer offset,
@@ -139,7 +139,7 @@ public class DiplomaBlankEntityController {
     }
 
     @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.diplomas.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<Map<String, Object>> create(@RequestBody Map<String, Object> body, @RequestParam(required = false) Boolean returnNulls) {
         DiplomaBlank entity = new DiplomaBlank();

@@ -36,7 +36,7 @@ public class FacultyEntityController {
     private final UniversityRefLegacyService universityRefService;
     private final CubaFilterHelper filterHelper;
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(summary = "Get faculty by ID")
     public ResponseEntity<Map<String, Object>> getById(
@@ -53,7 +53,7 @@ public class FacultyEntityController {
         return ResponseEntity.ok(universityRefService.toFacultyMap(entity.get(), returnNulls));
     }
 
-    @PreAuthorize("hasAuthority('universities.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(summary = "Update faculty")
     public ResponseEntity<Map<String, Object>> update(
@@ -73,7 +73,7 @@ public class FacultyEntityController {
         return ResponseEntity.ok(universityRefService.toFacultyMap(saved, returnNulls));
     }
 
-    @PreAuthorize("hasAuthority('universities.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Delete faculty")
     public ResponseEntity<Void> delete(@PathVariable UUID entityId) {
@@ -86,7 +86,7 @@ public class FacultyEntityController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Search faculties (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -109,7 +109,7 @@ public class FacultyEntityController {
             .collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Search faculties (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -136,7 +136,7 @@ public class FacultyEntityController {
             .collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Get all faculties")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -176,7 +176,7 @@ public class FacultyEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('universities.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Create faculty")
     public ResponseEntity<Map<String, Object>> create(

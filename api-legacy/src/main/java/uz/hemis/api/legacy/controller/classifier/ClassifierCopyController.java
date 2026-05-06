@@ -21,7 +21,7 @@ public class ClassifierCopyController {
 
     @PostMapping("/backup")
     @Operation(summary = "Klassifikatorlar zaxira nusxasi (old-hemis da yo'q)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> backupClassifiers() {
         log.info("Creating classifiers backup");
 
@@ -34,7 +34,7 @@ public class ClassifierCopyController {
 
     @PostMapping("/restore")
     @Operation(summary = "Klassifikatorlarni tiklash (old-hemis da yo'q)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> restoreClassifiers(@RequestBody Map<String, String> request) {
         String backupId = request.get("backupId");
         log.info("Restoring classifiers from backup: {}", backupId);

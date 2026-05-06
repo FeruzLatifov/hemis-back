@@ -43,7 +43,7 @@ public class AcademicSubjectsEntityController {
     private static final String ENTITY_NAME = "hemishe_RAcademicSubjects";
 
     @Operation(summary = "ID bo'yicha topish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(@PathVariable String entityId, @RequestParam(required = false) Boolean returnNulls) {
         log.info("GET hemishe_RAcademicSubjects: {}", entityId);
@@ -60,7 +60,7 @@ public class AcademicSubjectsEntityController {
     }
 
     @Operation(summary = "Yangilash (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(@PathVariable String entityId, @RequestBody Map<String, Object> entityData) {
         log.info("UPDATE hemishe_RAcademicSubjects: {}", entityId);
@@ -81,7 +81,7 @@ public class AcademicSubjectsEntityController {
     }
 
     @Operation(summary = "Soft delete (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(@PathVariable String entityId) {
         log.info("DELETE hemishe_RAcademicSubjects: {}", entityId);
@@ -99,7 +99,7 @@ public class AcademicSubjectsEntityController {
     }
 
     @Operation(summary = "GET search — CUBA filter qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @RequestParam String filter, @RequestParam(required = false) Boolean returnCount,
@@ -110,7 +110,7 @@ public class AcademicSubjectsEntityController {
     }
 
     @Operation(summary = "POST search — CUBA filter JSON body bilan qidirish")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filterBody,
@@ -128,7 +128,7 @@ public class AcademicSubjectsEntityController {
     }
 
     @Operation(summary = "Endpoint")
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping({"", "/"})
     public ResponseEntity<List<Map<String, Object>>> listAll(
             @RequestParam(required = false) Boolean returnCount, @RequestParam(required = false) Integer offset,
@@ -145,7 +145,7 @@ public class AcademicSubjectsEntityController {
     }
 
     @Operation(summary = "Yangi entity yaratish (CUBA entity API)")
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping({"", "/"})
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
         log.info("CREATE hemishe_RAcademicSubjects: {}", entityData);

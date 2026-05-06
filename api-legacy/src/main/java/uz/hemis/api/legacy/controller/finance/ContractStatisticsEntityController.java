@@ -61,7 +61,7 @@ public class ContractStatisticsEntityController {
     // GET - List all (paginated)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
         summary = "Shartnoma statistikasi ro'yxati",
@@ -133,7 +133,7 @@ public class ContractStatisticsEntityController {
     // GET - By ID
     // =====================================================
 
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta shartnoma statistikasini olish",
@@ -175,7 +175,7 @@ public class ContractStatisticsEntityController {
     // GET - Search
     // =====================================================
 
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
         summary = "Shartnoma statistikasini qidirish (GET)",
@@ -219,7 +219,7 @@ public class ContractStatisticsEntityController {
     // POST - Search
     // =====================================================
 
-    @PreAuthorize("hasAuthority('reports.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
         summary = "Shartnoma statistikasini qidirish (POST)",
@@ -266,7 +266,7 @@ public class ContractStatisticsEntityController {
     // POST - Create
     // =====================================================
 
-    @PreAuthorize("hasAuthority('reports.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Yangi shartnoma statistikasi yaratish",
@@ -302,7 +302,7 @@ public class ContractStatisticsEntityController {
     // PUT - Update
     // =====================================================
 
-    @PreAuthorize("hasAuthority('reports.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Shartnoma statistikasini yangilash",
@@ -345,7 +345,7 @@ public class ContractStatisticsEntityController {
     // DELETE - Soft delete
     // =====================================================
 
-    @PreAuthorize("hasAuthority('reports.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Shartnoma statistikasini o'chirish",

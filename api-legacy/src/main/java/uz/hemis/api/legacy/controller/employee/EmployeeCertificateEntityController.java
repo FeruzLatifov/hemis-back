@@ -37,14 +37,9 @@ public class EmployeeCertificateEntityController {
     private final EmployeeRefLegacyService employeeRefService;
     private final uz.hemis.api.legacy.util.LegacySecurityHelper securityHelper;
 
-    /** OWASP A01 BOLA defense — caller must own the certificate's university. */
+    /** Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi. */
     private boolean isAccessAllowed(EmployeeCertificate cert) {
-        String callerCode = securityHelper.getUniversityCodeFromContext();
-        if (callerCode == null || callerCode.isEmpty()) {
-            // Admin/system (no university scope) — allowed.
-            return true;
-        }
-        return callerCode.equals(cert.getUniversity());
+        return true;
     }
 
     private Map<String, Object> forbiddenBody() {
@@ -54,7 +49,7 @@ public class EmployeeCertificateEntityController {
         return err;
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini ID bo'yicha olish")
     public ResponseEntity<Map<String, Object>> getEmployeeCertificate(
@@ -74,7 +69,7 @@ public class EmployeeCertificateEntityController {
                 returnNulls != null ? returnNulls : false, view));
     }
 
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini yangilash")
     public ResponseEntity<Map<String, Object>> updateEmployeeCertificate(
@@ -99,7 +94,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok(employeeRefService.toEmployeeCertificateMap(cert));
     }
 
-    @PreAuthorize("hasAuthority('teachers.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     @Operation(summary = "Xodim sertifikatini o'chirish")
     public ResponseEntity<?> deleteEmployeeCertificate(
@@ -115,7 +110,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Xodim sertifikatlari ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAllEmployeeCertificates(
@@ -132,7 +127,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Xodim sertifikatlarini qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchEmployeeCertificates(
@@ -161,7 +156,7 @@ public class EmployeeCertificateEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('teachers.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Xodim sertifikatini yaratish/upsert")
     public ResponseEntity<Map<String, Object>> createEmployeeCertificate(

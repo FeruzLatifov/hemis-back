@@ -264,7 +264,7 @@ public class DiplomaController {
      */
     @Operation(summary = "Yangi diplom yaratish")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> createDiploma(
             @Valid @RequestBody DiplomaDto diplomaDto
     ) {
@@ -290,7 +290,7 @@ public class DiplomaController {
      */
     @Operation(summary = "Diplomni yangilash")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<DiplomaDto>> updateDiploma(
             @PathVariable UUID id,
             @Valid @RequestBody DiplomaDto diplomaDto

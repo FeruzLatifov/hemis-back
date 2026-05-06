@@ -59,7 +59,7 @@ public class ProjectMetaEntityController {
     // GET /{entityId} - Bitta loyiha meta ma'lumotini olish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Loyiha meta ma'lumotini olish",
@@ -100,7 +100,7 @@ public class ProjectMetaEntityController {
     // PUT /{entityId} - Loyiha meta ma'lumotini yangilash
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Loyiha meta ma'lumotini yangilash",
@@ -136,7 +136,7 @@ public class ProjectMetaEntityController {
     // DELETE /{entityId} - Loyiha meta ma'lumotini o'chirish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Loyiha meta ma'lumotini o'chirish",
@@ -165,7 +165,7 @@ public class ProjectMetaEntityController {
     // GET /search - Qidirish (URL params)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Loyiha meta qidirish (GET)")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -192,7 +192,7 @@ public class ProjectMetaEntityController {
     // POST /search - Qidirish (JSON filter)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Loyiha meta qidirish (POST)")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -223,7 +223,7 @@ public class ProjectMetaEntityController {
     // GET - Barcha loyiha meta ma'lumotlari (paginated)
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping({"", "/"})
     @Operation(summary = "Barcha loyiha meta ma'lumotlari ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -281,7 +281,7 @@ public class ProjectMetaEntityController {
     // POST - Yangi loyiha meta ma'lumoti yaratish
     // =====================================================
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Loyiha meta ma'lumoti yaratish",

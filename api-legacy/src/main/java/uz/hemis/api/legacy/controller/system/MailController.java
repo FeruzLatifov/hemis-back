@@ -24,7 +24,7 @@ public class MailController {
 
     @Operation(summary = "send email")
     @PostMapping("/send")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> sendEmail(
             @Valid @RequestBody Map<String, String> request
     ) {
@@ -62,7 +62,7 @@ public class MailController {
 
     @Operation(summary = "get email templates")
     @GetMapping("/templates")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getEmailTemplates() {
         Map<String, String> templates = new LinkedHashMap<>();
         templates.put("welcome", "Xush kelibsiz email shabloni");

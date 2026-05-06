@@ -77,7 +77,7 @@ public class DoctoralStudentStatusEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q. Foydalanuvchida bu ma'lumotni o'qish huquqi yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi. Berilgan ID bilan status mavjud emas.")
     })
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(
             @Parameter(description = "Status identifikatori (code)", required = true, example = "11")
@@ -121,7 +121,7 @@ public class DoctoralStudentStatusEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     public ResponseEntity<?> update(
             @Parameter(description = "Status identifikatori (code)", required = true)
@@ -184,7 +184,7 @@ public class DoctoralStudentStatusEntityController {
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q."),
         @ApiResponse(responseCode = "404", description = "Topilmadi.")
     })
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     public ResponseEntity<?> delete(
             @Parameter(description = "Status identifikatori (code)", required = true)
@@ -225,7 +225,7 @@ public class DoctoralStudentStatusEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @Parameter(description = "Filter sharti (JSON)", required = true)
@@ -269,7 +269,7 @@ public class DoctoralStudentStatusEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> filterBody,
@@ -323,7 +323,7 @@ public class DoctoralStudentStatusEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<Map<String, Object>>> listAll(
             @Parameter(description = "Jami sonni 'X-Total-Count' headerda qaytarish")
@@ -383,7 +383,7 @@ public class DoctoralStudentStatusEntityController {
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi."),
         @ApiResponse(responseCode = "403", description = "Ruxsat yo'q.")
     })
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<?> create(@RequestBody Map<String, Object> entityData) {
 

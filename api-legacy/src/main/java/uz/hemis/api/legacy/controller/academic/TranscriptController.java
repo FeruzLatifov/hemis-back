@@ -23,7 +23,7 @@ public class TranscriptController {
 
     @Operation(summary = "get student transcript")
     @GetMapping("/student/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN', 'STUDENT')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getStudentTranscript(
             @PathVariable UUID studentId,
             @RequestParam(required = false) String academicYear
@@ -42,7 +42,7 @@ public class TranscriptController {
 
     @Operation(summary = "generate transcript")
     @GetMapping("/generate/{studentId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API', 'DEAN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> generateTranscript(
             @PathVariable UUID studentId,
             @RequestParam(required = false, defaultValue = "pdf") String format

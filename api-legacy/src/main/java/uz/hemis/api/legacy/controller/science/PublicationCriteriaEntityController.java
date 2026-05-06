@@ -41,7 +41,7 @@ public class PublicationCriteriaEntityController {
     private final CubaFilterHelper filterHelper;
     private static final String ENTITY_NAME = "hemishe_EPublicationCriteria";
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(summary = "Baholash mezonini ID bo'yicha olish", description = "UUID bo'yicha bitta baholash mezonini qaytaradi")
     public ResponseEntity<Map<String, Object>> getById(
@@ -63,7 +63,7 @@ public class PublicationCriteriaEntityController {
         return ResponseEntity.ok(scienceService.toPublicationCriteriaMap(entity.get(), returnNulls));
     }
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(summary = "Baholash mezonini yangilash", description = "Mavjud baholash mezonini yangilaydi")
     public ResponseEntity<Map<String, Object>> update(
@@ -88,7 +88,7 @@ public class PublicationCriteriaEntityController {
         return ResponseEntity.ok(scienceService.toPublicationCriteriaMap(saved, returnNulls));
     }
 
-    @PreAuthorize("hasAuthority('science.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "Baholash mezonini o'chirish", description = "Baholash mezonini soft delete qiladi")
     public ResponseEntity<Map<String, Object>> delete(@PathVariable UUID entityId) {
@@ -106,7 +106,7 @@ public class PublicationCriteriaEntityController {
         return ResponseEntity.ok().build();
     }
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(summary = "Baholash mezonlarini qidirish (GET)", description = "URL parametrlari orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchGet(
@@ -129,7 +129,7 @@ public class PublicationCriteriaEntityController {
             .collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(summary = "Baholash mezonlarini qidirish (POST)", description = "JSON filter orqali qidirish")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
@@ -156,7 +156,7 @@ public class PublicationCriteriaEntityController {
             .collect(Collectors.toList()));
     }
 
-    @PreAuthorize("hasAuthority('science.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "Barcha baholash mezonlarini olish", description = "Sahifalangan ro'yxatni qaytaradi")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -196,7 +196,7 @@ public class PublicationCriteriaEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('science.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Yangi baholash mezoni yaratish", description = "Yangi baholash mezonini yaratadi")
     public ResponseEntity<Map<String, Object>> create(

@@ -89,7 +89,7 @@ public class StudentMetaEntityController {
     /**
      * Bitta talaba meta ma'lumotlarini olish
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta talaba meta ma'lumotlarini olish",
@@ -144,7 +144,7 @@ public class StudentMetaEntityController {
     /**
      * Barcha talaba meta ma'lumotlarini olish (pagination bilan)
      */
-    @PreAuthorize("hasAuthority('students.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
         summary = "Barcha talaba meta ma'lumotlarini olish",
@@ -214,7 +214,7 @@ public class StudentMetaEntityController {
     /**
      * Yangi talaba meta yaratish
      */
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(
         summary = "Yangi talaba meta yaratish",
@@ -264,7 +264,7 @@ public class StudentMetaEntityController {
     /**
      * Talaba meta ma'lumotlarini yangilash
      */
-    @PreAuthorize("hasAuthority('students.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(
         summary = "Talaba meta ma'lumotlarini yangilash",
@@ -322,7 +322,7 @@ public class StudentMetaEntityController {
      * OLD-HEMIS da hemishe_EStudentMeta entity uchun DELETE operatsiyasi
      * butunlay taqiqlangan va 403 Forbidden qaytaradi.
      */
-    @PreAuthorize("hasAuthority('students.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(
         summary = "Talaba meta ma'lumotlarini o'chirish (TAQIQLANGAN)",

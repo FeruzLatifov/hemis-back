@@ -58,7 +58,7 @@ public class UniversityEmployeeRateEntityController {
 
     private final EmployeeRefLegacyService employeeRefService;
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(
         summary = "Bitta stavkani olish",
@@ -95,7 +95,7 @@ public class UniversityEmployeeRateEntityController {
         return ResponseEntity.ok(employeeRefService.toEmployeeRateMap(entity.get(), returnNulls));
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(
         summary = "Barcha xodim mehnat stavkalari",
@@ -150,7 +150,7 @@ public class UniversityEmployeeRateEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/search")
     @Operation(
         summary = "Stavkalarni qidirish (GET)",
@@ -176,7 +176,7 @@ public class UniversityEmployeeRateEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('teachers.view')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping("/search")
     @Operation(
         summary = "Stavkalarni qidirish (POST)",

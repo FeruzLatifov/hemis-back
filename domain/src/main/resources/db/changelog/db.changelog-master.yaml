@@ -353,7 +353,7 @@ databaseChangeLog:
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
-      comment: "Index migrations on legacy hemishe_e_* (Student/Grade/Attendance/Diploma/StudentMeta) — pg_trgm + filter + composite + race-fix UNIQUEs"
+      comment: "Index migrations on legacy hemishe_e_student — pg_trgm + filter + composite + PINFL master race-fix UNIQUE (defensive guard for partial dev dumps and pre-existing PINFL duplicates)"
       changes:
         - sqlFile: { path: changesets/migration/M002_student_performance_indexes.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:

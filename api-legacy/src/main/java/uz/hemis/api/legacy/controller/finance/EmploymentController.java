@@ -100,7 +100,7 @@ public class EmploymentController {
 
     @Operation(summary = "Yangi bandlik yozuvi yaratish")
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> createEmployment(@Valid @RequestBody EmploymentDto employmentDto) {
         EmploymentDto created = employmentService.create(employmentDto);
         return ResponseEntity.ok(ResponseWrapper.success(created));
@@ -108,7 +108,7 @@ public class EmploymentController {
 
     @Operation(summary = "Bandlik yozuvini yangilash")
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<EmploymentDto>> updateEmployment(
             @PathVariable UUID id,
             @Valid @RequestBody EmploymentDto employmentDto

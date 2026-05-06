@@ -35,7 +35,7 @@ public class UniversityAttachedSpecialityEntityController {
 
     private static final String ENTITY_NAME = "hemishe_EUniversityAttachedSpeciality";
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     @Operation(summary = "OTM biriktirilgan mutaxassisliklar ro'yxati")
     public ResponseEntity<List<Map<String, Object>>> getAll(
@@ -55,7 +55,7 @@ public class UniversityAttachedSpecialityEntityController {
         return ResponseEntity.ok(result);
     }
 
-    @PreAuthorize("hasAuthority('universities.view')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     @Operation(summary = "ID bo'yicha olish")
     public ResponseEntity<Map<String, Object>> getById(
@@ -74,7 +74,7 @@ public class UniversityAttachedSpecialityEntityController {
                 });
     }
 
-    @PreAuthorize("hasAuthority('universities.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
     @Operation(summary = "Yangi yozuv yaratish")
     public ResponseEntity<Map<String, Object>> create(
@@ -95,7 +95,7 @@ public class UniversityAttachedSpecialityEntityController {
         return ResponseEntity.created(location).body(universityRefService.toUniversityAttachedSpecialityMinimalMap(saved));
     }
 
-    @PreAuthorize("hasAuthority('universities.edit')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{entityId}")
     @Operation(summary = "Yangilash")
     public ResponseEntity<Map<String, Object>> update(
@@ -119,7 +119,7 @@ public class UniversityAttachedSpecialityEntityController {
         return ResponseEntity.ok(universityRefService.toUniversityAttachedSpecialityMap(saved, returnNulls, view));
     }
 
-    @PreAuthorize("hasAuthority('universities.delete')")
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "O'chirish (taqiqlangan)")
     public ResponseEntity<?> delete(@PathVariable UUID entityId) {

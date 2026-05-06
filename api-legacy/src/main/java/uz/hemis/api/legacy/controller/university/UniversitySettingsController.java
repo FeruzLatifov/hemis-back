@@ -21,7 +21,7 @@ public class UniversitySettingsController {
 
     @Operation(summary = "Universitet sozlamalarini olish")
     @GetMapping("/{universityCode}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> getSettings(@PathVariable String universityCode) {
         Map<String, Object> settings = new LinkedHashMap<>();
         settings.put("universityCode", universityCode);
@@ -33,7 +33,7 @@ public class UniversitySettingsController {
 
     @Operation(summary = "update settings")
     @PutMapping("/{universityCode}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'OTM_API')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> updateSettings(
             @PathVariable String universityCode,
             @RequestBody Map<String, Object> settings

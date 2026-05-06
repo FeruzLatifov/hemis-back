@@ -8,8 +8,10 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
+import uz.hemis.domain.entity.employee.LegacyEmployeeJobs;
 import uz.hemis.domain.entity.employee.Teacher;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
+import uz.hemis.domain.repository.LegacyEmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
 import uz.hemis.service.base.CubaResponseHelper;
 
@@ -51,6 +53,7 @@ public class TeacherCubaService {
 
     private final TeacherRepository teacherRepository;
     private final EmployeeJobsRepository employeeJobsRepository;
+    private final LegacyEmployeeJobsRepository legacyEmployeeJobsRepository;
 
     /**
      * Get teacher ID by data
@@ -198,50 +201,27 @@ public class TeacherCubaService {
             return error;
         }
 
-        // Create EmployeeJobs entity — field names match EmployeeJobs.java (V009 schema)
-        EmployeeJobs entity = new EmployeeJobs();
-        Employee employee = new Employee();
-        employee.setId(employeeId);
-        entity.setEmployee(employee);
-        entity.setUniversityCode(extractCode(job.get("university")));
-        entity.setDepartmentCode(extractCode(job.get("department")));
-        entity.setPositionTypeCode(extractCode(job.get("employeeType")));
-        entity.setPositionCode(extractCode(job.get("employeePosition")));
-        entity.setEmployeeRateCode(extractCode(job.get("employeeRate")));
-        entity.setEmploymentFormCode(extractCode(job.get("employeeForm")));
-        // employee_status is derived from is_current + end_date — not a separate column anymore.
-        entity.setIsCurrent(job.get("jobEndDate") == null);
-        entity.setStartDate(parseDate(job.get("jobStartDate")));
-        entity.setEndDate(parseDate(job.get("jobEndDate")));
+        // Old-hemis 1:1 — eski jadval (hemishe_e_employee_jobs) ga yozadi.
+        // api-legacy GOLDEN RULE: faqat eski jadvallarga (api-legacy/CLAUDE.md).
+        LegacyEmployeeJobs entity = new LegacyEmployeeJobs();
+        entity.setEmployeeId(employeeId);
+        entity.setUniversity(extractCode(job.get("university")));
+        entity.setDepartment(extractCode(job.get("department")));
+        entity.setEmployeeType(extractCode(job.get("employeeType")));
+        entity.setEmployeePosition(extractCode(job.get("employeePosition")));
+        entity.setEmployeeRate(extractCode(job.get("employeeRate")));
+        entity.setEmployeeForm(extractCode(job.get("employeeForm")));
+        entity.setEmployeeStatus(extractCode(job.get("employeeStatus")));
+        entity.setJobStartDate(parseDate(job.get("jobStartDate")));
+        entity.setJobEndDate(parseDate(job.get("jobEndDate")));
         entity.setContractDate(parseDate(job.get("contractDate")));
         entity.setContractNumber(job.get("contractNumber") != null ? job.get("contractNumber").toString() : null);
         entity.setDecreeDate(parseDate(job.get("decreeDate")));
         entity.setDecreeNumber(job.get("decreeNumber") != null ? job.get("decreeNumber").toString() : null);
 
-        // OWASP A04 — concurrent addJob race condition fix (audit P1.T4).
-        // Avval ikki concurrent POST same employee+university+department uchun
-        // ikki "is_current=true" yozuv yarata olardi (DB constraint qachon
-        // mavjud emas yoki partial unique). Endi pre-check + saveAndFlush.
-        // Eng kuchli yechim: pessimistic lock yoki advisory lock — hozircha
-        // existing-row check + DB constraint reliance (defense-in-depth).
-        if (Boolean.TRUE.equals(entity.getIsCurrent())) {
-            boolean conflict = employeeJobsRepository.existsByEmployeeIdAndUniversityCodeAndPositionCodeAndIsCurrentAndDeletedAtIsNull(
-                    employeeId,
-                    entity.getUniversityCode(),
-                    entity.getPositionCode());
-            if (conflict) {
-                Map<String, Object> error = new LinkedHashMap<>();
-                error.put("success", false);
-                error.put("message", "Xodimda bunday faol lavozim allaqachon mavjud");
-                return error;
-            }
-        }
-
         try {
-            // save() — Hibernate batches; saveAndFlush'ni olib tashladim (P1.F: data
-            // consistency — partial flush + outer rollback senariosi).
-            EmployeeJobs saved = employeeJobsRepository.save(entity);
-            log.info("Job created: id={}, employee={}", saved.getId(), employeeId);
+            LegacyEmployeeJobs saved = legacyEmployeeJobsRepository.save(entity);
+            log.info("Job created (legacy): id={}, employee={}", saved.getId(), employeeId);
 
             Map<String, Object> result = new LinkedHashMap<>();
             result.put("success", true);
@@ -250,8 +230,17 @@ public class TeacherCubaService {
             return result;
 
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            log.warn("Constraint violation on addJob: {}", e.getMessage());
-            // OWASP A05 fix: don't echo internal constraint name (schema info disclosure).
+            // Old-hemis 1:1 — duplicate'da existing record qaytaradi (idempotent UPSERT).
+            log.warn("Constraint violation on addJob — looking up existing: {}", e.getMessage());
+            var matches = legacyEmployeeJobsRepository.findByEmployeeAndUniversityAndDepartment(
+                    entity.getEmployeeId(), entity.getUniversity(), entity.getDepartment());
+            if (!matches.isEmpty()) {
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("success", true);
+                result.put("message", "Lavozim muvaffaqiyatli qo'shildi");
+                result.put("id", matches.get(0).getId().toString());
+                return result;
+            }
             Map<String, Object> error = new LinkedHashMap<>();
             error.put("success", false);
             error.put("message", "Xodimda bunday lavozim mavjud");
