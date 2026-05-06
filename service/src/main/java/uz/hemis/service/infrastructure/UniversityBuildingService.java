@@ -2,6 +2,8 @@ package uz.hemis.service.infrastructure;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,10 +40,12 @@ import java.util.UUID;
 @Slf4j
 public class UniversityBuildingService {
 
+    private static final String DASHBOARD_CACHE = "universityDashboard";
+
     private final UniversityBuildingRepository repo;
     private final BuildingLifecycleRepository lifecycleRepo;
-    private final BuildingCadastreAutoFiller autoFiller;
     private final BuildingMapper mapper;
+    private final CacheManager cacheManager;
 
     @Transactional(readOnly = true)
     public BuildingDto findById(UUID id) {
@@ -60,9 +64,9 @@ public class UniversityBuildingService {
     public BuildingDto create(String universityCode, BuildingCreateUpdateDto dto) {
         UniversityBuilding building = mapper.toEntity(dto);
         building.setUniversityCode(universityCode);
-        autoFiller.autoFill(building);
         UniversityBuilding saved = repo.save(building);
         recordConstructionEvent(saved);
+        evictDashboard(universityCode);
         log.info("Building created: {} / {}", universityCode, saved.getId());
         return mapper.toDto(saved);
     }
@@ -75,6 +79,7 @@ public class UniversityBuildingService {
         LocalDate oldRenovationDate = existing.getLastRenovationDate();
         mapper.updateEntity(dto, existing);
         recordRenovationIfChanged(existing, oldRenovationDate);
+        evictDashboard(existing.getUniversityCode());
         log.info("Building updated: {}", id);
         return mapper.toDto(existing); // dirty-check saves
     }
@@ -85,7 +90,15 @@ public class UniversityBuildingService {
         UniversityBuilding building = repo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Building", "id", id));
         building.setDeletedAt(LocalDateTime.now());
+        evictDashboard(building.getUniversityCode());
         log.info("Building soft-deleted: {}", id);
+    }
+
+    /** Dashboard cache (universityDashboard) selective evict — building mutation tetiklaydi. */
+    private void evictDashboard(String universityCode) {
+        if (universityCode == null) return;
+        Cache cache = cacheManager.getCache(DASHBOARD_CACHE);
+        if (cache != null) cache.evict(universityCode);
     }
 
     // =====================================================

@@ -30,7 +30,6 @@ databaseChangeLog:
   # V007: user_role + role_permission               (RBAC junctions — references V001/V002/V006)
   # V008: university_founder                        (references V004 employee, V005 organization)
   # V009: university_lifecycle                      (immutable log)
-  # V010: university_cadastre                       (real estate from cadastre API)
   # V011: buildings (5 tables)                      (depends on hemishe_e_university)
   # V012: system_message + system_message_translation (i18n catalog)
   # V013: language + configuration                  (i18n + system settings)
@@ -151,19 +150,6 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V009_create_university_lifecycle.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/schema/V009_create_university_lifecycle_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
-
-  - changeSet:
-      id: V010_create_university_cadastre
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Real estate objects from cadastre API"
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: university_cadastre } }
-      changes:
-        - sqlFile: { path: changesets/schema/V010_create_university_cadastre.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V010_create_university_cadastre_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: V011_create_university_buildings

@@ -12,6 +12,10 @@
 -- Self-contained: only CREATE INDEX (no DDL alter to hemishe_* tables, FROZEN).
 -- Idempotent: IF NOT EXISTS + partial UNIQUE.
 --
+-- Defensive: each block guarded by table existence check — production CUBA dump
+-- contains all hemishe_e_* tables, but partial dev dumps may miss some. Index
+-- skipped silently when target table absent (no migration failure).
+--
 -- Depends on: legacy CUBA tables (FROZEN) — hemishe_e_student, hemishe_e_grade,
 --             hemishe_e_attendance.
 -- =====================================================
@@ -23,11 +27,18 @@
 -- Query pattern: `WHERE _university = ? AND delete_ts IS NULL` — full table scan
 -- on 1.15M qator + grade rows (5-30 grades per student → ~30M rows total).
 -- =====================================================
-CREATE INDEX IF NOT EXISTS idx_grade_university_active
-    ON hemishe_e_grade(_university)
-    WHERE delete_ts IS NULL;
-
-COMMENT ON INDEX idx_grade_university_active IS 'Multi-tenant filter for Grade — 224 OTM queries. Partial: active rows only.';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = 'hemishe_e_grade') THEN
+        CREATE INDEX IF NOT EXISTS idx_grade_university_active
+            ON hemishe_e_grade(_university)
+            WHERE delete_ts IS NULL;
+        COMMENT ON INDEX idx_grade_university_active IS 'Multi-tenant filter for Grade — 224 OTM queries. Partial: active rows only.';
+    ELSE
+        RAISE NOTICE 'V015: hemishe_e_grade not present, skipping idx_grade_university_active';
+    END IF;
+END $$;
 
 -- =====================================================
 -- INDEX 2: Grade by student — child collection lookup
@@ -35,11 +46,18 @@ COMMENT ON INDEX idx_grade_university_active IS 'Multi-tenant filter for Grade �
 -- Query pattern: `WHERE _student = ? AND delete_ts IS NULL ORDER BY ...`
 -- Used by GpaService, transcript generation, scholarship checks.
 -- =====================================================
-CREATE INDEX IF NOT EXISTS idx_grade_student_active
-    ON hemishe_e_grade(_student)
-    WHERE delete_ts IS NULL;
-
-COMMENT ON INDEX idx_grade_student_active IS 'Per-student grade lookup — GPA/transcript/scholarship.';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = 'hemishe_e_grade') THEN
+        CREATE INDEX IF NOT EXISTS idx_grade_student_active
+            ON hemishe_e_grade(_student)
+            WHERE delete_ts IS NULL;
+        COMMENT ON INDEX idx_grade_student_active IS 'Per-student grade lookup — GPA/transcript/scholarship.';
+    ELSE
+        RAISE NOTICE 'V015: hemishe_e_grade not present, skipping idx_grade_student_active';
+    END IF;
+END $$;
 
 -- =====================================================
 -- INDEX 3: Attendance by student — child collection lookup
@@ -47,20 +65,34 @@ COMMENT ON INDEX idx_grade_student_active IS 'Per-student grade lookup — GPA/t
 -- Audit finding HIGH-10: Attendance has `_student` UUID with NO index.
 -- Query pattern: "find attendance by student" = sequential scan.
 -- =====================================================
-CREATE INDEX IF NOT EXISTS idx_attendance_student_active
-    ON hemishe_e_attendance(_student)
-    WHERE delete_ts IS NULL;
-
-COMMENT ON INDEX idx_attendance_student_active IS 'Per-student attendance lookup.';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = 'hemishe_e_attendance') THEN
+        CREATE INDEX IF NOT EXISTS idx_attendance_student_active
+            ON hemishe_e_attendance(_student)
+            WHERE delete_ts IS NULL;
+        COMMENT ON INDEX idx_attendance_student_active IS 'Per-student attendance lookup.';
+    ELSE
+        RAISE NOTICE 'V015: hemishe_e_attendance not present, skipping idx_attendance_student_active';
+    END IF;
+END $$;
 
 -- =====================================================
 -- INDEX 4: Attendance by university+date — bulk reporting filter
 -- =====================================================
-CREATE INDEX IF NOT EXISTS idx_attendance_uni_date
-    ON hemishe_e_attendance(_university, attendance_date)
-    WHERE delete_ts IS NULL;
-
-COMMENT ON INDEX idx_attendance_uni_date IS 'University-wide attendance reports by date range.';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = 'hemishe_e_attendance') THEN
+        CREATE INDEX IF NOT EXISTS idx_attendance_uni_date
+            ON hemishe_e_attendance(_university, attendance_date)
+            WHERE delete_ts IS NULL;
+        COMMENT ON INDEX idx_attendance_uni_date IS 'University-wide attendance reports by date range.';
+    ELSE
+        RAISE NOTICE 'V015: hemishe_e_attendance not present, skipping idx_attendance_uni_date';
+    END IF;
+END $$;
 
 -- =====================================================
 -- INDEX 5: Student PINFL master uniqueness — race condition fix
@@ -73,11 +105,31 @@ COMMENT ON INDEX idx_attendance_uni_date IS 'University-wide attendance reports 
 -- Allows multiple is_duplicate=true rows if soft-deleted (delete_ts SET);
 -- enforces uniqueness only on active masters.
 -- =====================================================
-CREATE UNIQUE INDEX IF NOT EXISTS uq_student_pinfl_master
-    ON hemishe_e_student(pinfl)
-    WHERE is_duplicate = true AND delete_ts IS NULL;
+DO $$
+DECLARE
+    dup_count INTEGER;
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables
+                   WHERE table_schema = 'public' AND table_name = 'hemishe_e_student') THEN
+        RAISE NOTICE 'V015: hemishe_e_student not present, skipping uq_student_pinfl_master';
+        RETURN;
+    END IF;
 
-COMMENT ON INDEX uq_student_pinfl_master IS 'PINFL master record uniqueness — prevents duplicate master rows on concurrent enrollment.';
+    -- Pre-check: data must satisfy uniqueness before creating index
+    SELECT COUNT(*) INTO dup_count
+    FROM (SELECT pinfl FROM hemishe_e_student
+          WHERE is_duplicate = true AND delete_ts IS NULL
+          GROUP BY pinfl HAVING COUNT(*) > 1) dups;
+
+    IF dup_count > 0 THEN
+        RAISE WARNING 'V015: % PINFL(s) have multiple active master records — uq_student_pinfl_master skipped. Data cleanup required (UPDATE is_duplicate=false on stale duplicates).', dup_count;
+    ELSE
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_student_pinfl_master
+            ON hemishe_e_student(pinfl)
+            WHERE is_duplicate = true AND delete_ts IS NULL;
+        COMMENT ON INDEX uq_student_pinfl_master IS 'PINFL master record uniqueness — prevents duplicate master rows on concurrent enrollment.';
+    END IF;
+END $$;
 
 -- =====================================================
 -- INDEX 6: Student deep paging — keyset support
@@ -86,8 +138,15 @@ COMMENT ON INDEX uq_student_pinfl_master IS 'PINFL master record uniqueness — 
 -- deep pages (OFFSET 50000 = scans 50K rows first). Composite index supports
 -- keyset paging: `WHERE _university = ? AND _student_status IN (...) ORDER BY create_ts DESC`.
 -- =====================================================
-CREATE INDEX IF NOT EXISTS idx_student_university_status_createts
-    ON hemishe_e_student(_university, _student_status, create_ts DESC)
-    WHERE delete_ts IS NULL;
-
-COMMENT ON INDEX idx_student_university_status_createts IS 'Multi-tenant + status + ORDER BY create_ts — keyset paging support.';
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables
+               WHERE table_schema = 'public' AND table_name = 'hemishe_e_student') THEN
+        CREATE INDEX IF NOT EXISTS idx_student_university_status_createts
+            ON hemishe_e_student(_university, _student_status, create_ts DESC)
+            WHERE delete_ts IS NULL;
+        COMMENT ON INDEX idx_student_university_status_createts IS 'Multi-tenant + status + ORDER BY create_ts — keyset paging support.';
+    ELSE
+        RAISE NOTICE 'V015: hemishe_e_student not present, skipping idx_student_university_status_createts';
+    END IF;
+END $$;

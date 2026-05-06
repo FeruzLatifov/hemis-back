@@ -2,10 +2,11 @@ package uz.hemis.domain.entity.infrastructure;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 import uz.hemis.domain.entity.base.AuditableEntity;
 import uz.hemis.domain.entity.university.University;
-import uz.hemis.domain.entity.university.UniversityCadastre;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,10 +16,9 @@ import java.time.LocalDateTime;
  * Universitet binosi va inshooti — akademik/operatsional ko'rinish.
  * Excel template: docs/Бино ва иншоотлар жадвали.xlsx (14 ustun)
  *
- * <p><b>Kadastr bilan bog'lanish:</b> {@link #cadNumber} optional FK to
- * {@link UniversityCadastre}. Agar to'ldirilsa, service qatlami
- * {@code address}, {@code totalArea}, {@code usableArea}'ni
- * cadastre'dan avtomatik to'ldiradi (boshlang'ich saqlash paytida).</p>
+ * <p><b>Kadastr ma'lumotlari:</b> {@link #cadNumber} kadastr raqami (string).
+ * Cadastre tafsilotlari {@link #cadastre} JSONB ustunida snapshot sifatida saqlanadi
+ * (caller-provided JSON, integratsiyadan kelmaydi).</p>
  *
  * <p><b>Dual mapping:</b> Har bir FK uchun ikkita field:
  * <ul>
@@ -131,15 +131,15 @@ public class UniversityBuilding extends AuditableEntity {
     private String mapUrl;
 
     // =====================================================
-    // Excel col 13: Kadastr bog'lanish (opsional, UNIQUE)
+    // Excel col 13: Kadastr raqami (loose reference, FK yo'q)
     // =====================================================
     @Column(name = "cad_number", length = 50)
     private String cadNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cad_number", referencedColumnName = "cad_number",
-                insertable = false, updatable = false)
-    private UniversityCadastre cadastre;
+    /** Cadastre snapshot from kadastr API — JSONB stale-tolerant copy. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "cadastre", columnDefinition = "jsonb")
+    private String cadastre;
 
     // =====================================================
     // Excel col 14: Izoh

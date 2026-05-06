@@ -1,6 +1,7 @@
 package uz.hemis.common.dto.building;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -26,7 +27,7 @@ import java.time.LocalDate;
     "constructionMaterialCode", "roofTypeCode",
     "lastRenovationDate",
     "latitude", "longitude", "mapUrl",
-    "cadNumber", "note"
+    "cadNumber", "cadastre", "note"
 })
 @Schema(name = "BuildingCreateUpdate", description = "Bino yaratish/yangilash uchun ma'lumot")
 public class BuildingCreateUpdateDto implements Serializable {
@@ -77,6 +78,10 @@ public class BuildingCreateUpdateDto implements Serializable {
 
     @Size(max = 50)
     private String cadNumber;
+
+    /** Kadastr API javobining xom JSON snapshot (frontend tomondan yuboriladi). */
+    @Schema(description = "Kadastr ma'lumotining JSON nusxasi")
+    private JsonNode cadastre;
 
     private String note;
 

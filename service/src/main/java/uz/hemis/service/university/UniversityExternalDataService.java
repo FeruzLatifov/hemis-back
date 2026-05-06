@@ -9,13 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.vo.Pinfl;
-import uz.hemis.domain.entity.university.University;
-import uz.hemis.domain.entity.university.UniversityCadastre;
-import uz.hemis.domain.entity.university.UniversityFounder;
-import uz.hemis.domain.entity.university.UniversityLegal;
-import uz.hemis.domain.repository.UniversityCadastreRepository;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.university.Organization;
+import uz.hemis.domain.entity.university.University;
+import uz.hemis.domain.entity.university.UniversityFounder;
+import uz.hemis.domain.entity.university.UniversityLegal;
 import uz.hemis.domain.repository.UniversityFounderRepository;
 import uz.hemis.domain.repository.UniversityLegalRepository;
 import uz.hemis.domain.repository.UniversityRepository;
@@ -29,22 +27,17 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * University External Data Service
  *
- * <p>Fetches legal entity and cadastre data from external API (172.18.9.171)
- * and saves to university_legal, university_founder, university_cadastre tables.</p>
+ * <p>Fetches legal entity data from external API (172.18.9.171)
+ * and saves to university_legal, university_founder tables.</p>
  *
  * <p>API endpoints:</p>
  * <ul>
  *   <li>POST /legalentity/legalentity-info/ — company info, director, accountant, founders</li>
- *   <li>POST /kadastr/by-inn — list of cadastre numbers by TIN</li>
- *   <li>POST /kadastr/by-cadnum — detailed cadastre info by number</li>
  * </ul>
  */
 @Service
@@ -56,7 +49,6 @@ public class UniversityExternalDataService {
     private final UniversityRepository universityRepository;
     private final UniversityLegalRepository legalRepository;
     private final UniversityFounderRepository founderRepository;
-    private final UniversityCadastreRepository cadastreRepository;
     private final uz.hemis.domain.repository.EmployeeRepository employeeRepository;
     private final uz.hemis.domain.repository.OrganizationRepository organizationRepository;
     private final ObjectMapper objectMapper;
@@ -267,155 +259,11 @@ public class UniversityExternalDataService {
     }
 
     // =====================================================
-    // CADASTRE
-    // =====================================================
-
-    /**
-     * Fetch cadastre data from API and save to university_cadastre
-     */
-    @Transactional
-    public List<UniversityCadastre> syncCadastre(String universityCode, String tin) {
-        log.info("Syncing cadastre for university={}, tin={}", universityCode, tin);
-
-        // Step 1: Get cadastre numbers by TIN
-        JsonNode innResponse = callApi("/kadastr/by-inn", "{\"tin\": \"" + tin + "\"}");
-        if (innResponse == null) return List.of();
-
-        int code = innResponse.path("code").asInt(0);
-        if (code != 1) {
-            log.info("No cadastre data for tin={}: {}", tin, innResponse.path("message").asText());
-            return List.of();
-        }
-
-        JsonNode cadastrList = innResponse.path("cadastr_list");
-        if (!cadastrList.isArray() || cadastrList.isEmpty()) {
-            log.info("Empty cadastre list for tin={}", tin);
-            return List.of();
-        }
-
-        // Step 2: Pre-fetch existing rows in a single IN query (50→1 DB query, mapper N+1 fix).
-        // External /kadastr/by-cadnum HTTP calls qoladi (har cadastre uchun majburiy alohida resp);
-        // lekin DB roundtrip drastik kamayadi.
-        List<String> cadNumbers = new ArrayList<>();
-        for (JsonNode cn : cadastrList) {
-            String num = cn.asText();
-            if (num != null && !num.isBlank()) cadNumbers.add(num);
-        }
-        Map<String, UniversityCadastre> existingByCad = new HashMap<>();
-        if (!cadNumbers.isEmpty()) {
-            for (UniversityCadastre row : cadastreRepository.findByCadNumberIn(cadNumbers)) {
-                existingByCad.put(row.getCadNumber(), row);
-            }
-        }
-
-        // Step 3: Build/update entities; collect for batch save.
-        List<UniversityCadastre> toSave = new ArrayList<>();
-        for (String cadNumber : cadNumbers) {
-            try {
-                UniversityCadastre updated = syncSingleCadastre(
-                        universityCode, cadNumber,
-                        Optional.ofNullable(existingByCad.get(cadNumber))
-                                .orElseGet(UniversityCadastre::new));
-                if (updated != null) toSave.add(updated);
-            } catch (Exception e) {
-                log.error("Failed to sync cadastre {}: {}", cadNumber, e.getMessage());
-            }
-        }
-
-        // Step 4: Batch save (1 query for many INSERT/UPDATE).
-        List<UniversityCadastre> result = toSave.isEmpty()
-                ? List.of()
-                : cadastreRepository.saveAll(toSave);
-
-        log.info("Synced {} cadastre objects for university={}", result.size(), universityCode);
-        return result;
-    }
-
-    /**
-     * Builds/updates a single cadastre entity from API response. The {@code entity}
-     * parameter must be either a fresh new instance or one pre-fetched from DB —
-     * caller is responsible for batch lookup (see {@link #syncCadastre}).
-     */
-    private UniversityCadastre syncSingleCadastre(String universityCode, String cadNumber,
-                                                   UniversityCadastre c) {
-        JsonNode resp = callApi("/kadastr/by-cadnum", "{\"cad_num\": \"" + cadNumber + "\"}");
-        if (resp == null || resp.path("code").asInt(0) != 1) return null;
-
-        c.setUniversityCode(universityCode);
-        c.setCadNumber(cadNumber);
-        c.setCadNumberOld(textOrNull(resp, "cad_number_old"));
-
-        // Location
-        c.setRegionId(intOrNull(resp, "region_id"));
-        c.setRegion(textOrNull(resp, "region"));
-        c.setDistrictId(intOrNull(resp, "district_id"));
-        c.setDistrict(textOrNull(resp, "district"));
-        c.setAddress(textOrNull(resp, "address"));
-        c.setShortAddress(textOrNull(resp, "short_address"));
-        c.setStreet(textOrNull(resp, "street"));
-        c.setStreetCode(textOrNull(resp, "street_code"));
-        c.setDomNum(textOrNull(resp, "dom_num"));
-        c.setNeighborhood(textOrNull(resp, "neighborhood"));
-        c.setNeighborhoodId(textOrNull(resp, "neighborhood_id"));
-
-        // Classification — kadastr API raw field names (tip/vid) mapped to type/kind
-        c.setTypeCode(textOrNull(resp, "tip"));
-        c.setTypeName(textOrNull(resp, "tipText"));
-        c.setKindCode(textOrNull(resp, "vid"));
-        c.setKindName(textOrNull(resp, "vidText"));
-
-        // Land area
-        c.setLandArea(decimalOrNull(resp, "land_area"));
-        c.setLandAreaI(decimalOrNull(resp, "land_area_i"));
-        c.setLandAreaB(decimalOrNull(resp, "land_area_b"));
-        c.setLandAreaF(decimalOrNull(resp, "land_area_f"));
-        c.setLandAreaZ(decimalOrNull(resp, "land_area_z"));
-        c.setLandAreaD(decimalOrNull(resp, "land_area_d"));
-        c.setLandAreaU(decimalOrNull(resp, "land_area_u"));
-
-        // Object area
-        c.setObjectArea(decimalOrNull(resp, "object_area"));
-        c.setObjectAreaL(decimalOrNull(resp, "object_area_l"));
-        c.setObjectAreaU(decimalOrNull(resp, "object_area_u"));
-
-        // Value
-        c.setCost(longOrNull(resp, "cost"));
-
-        // Legal
-        c.setEcoZone(textOrNull(resp, "eco_zone"));
-        c.setBanIs("1".equals(textOrNull(resp, "ban_is")));
-        c.setLandFundType(textOrNull(resp, "land_fund_type"));
-        c.setLandUseType(textOrNull(resp, "land_use_type"));
-        c.setLandFundCategory(textOrNull(resp, "land_fund_category"));
-
-        // JSONB
-        JsonNode subjects = resp.path("subjects");
-        if (subjects.isArray()) c.setSubjects(subjects.toString());
-        JsonNode docs = resp.path("documents");
-        if (docs.isArray()) c.setDocuments(docs.toString());
-        JsonNode docsL = resp.path("documents_l");
-        if (docsL.isArray()) c.setDocumentsL(docsL.toString());
-        JsonNode bans = resp.path("bans");
-        if (bans.isArray()) c.setBans(bans.toString());
-
-        // Meta
-        // chk_ucadastre_data_source allows only 'api_kadastr' | 'manual'.
-        // The API ships an upstream identifier ("1C", "Lite", ...) which is
-        // preserved inside api_raw_response but not used as data_source.
-        c.setDataSource("api_kadastr");
-        c.setApiRawResponse(resp.toString());
-        c.setSyncedAt(LocalDateTime.now());
-
-        // NOTE: caller (syncCadastre) batch'li saveAll(toSave) chaqiradi — alohida save() emas.
-        return c;
-    }
-
-    // =====================================================
     // SYNC ALL for a university
     // =====================================================
 
     /**
-     * Sync all external data (legal + cadastre) for a university.
+     * Sync all external data (legal entity) for a university.
      * Resolves TIN from university record automatically.
      */
     @Audited(action = AuditAction.UPDATE, entity = "University",
@@ -427,13 +275,12 @@ public class UniversityExternalDataService {
     }
 
     /**
-     * Sync all external data (legal + cadastre) for a university
+     * Sync all external data (legal entity) for a university
      */
     @Transactional
     public void syncAll(String universityCode, String tin) {
         log.info("Full external data sync for university={}, tin={}", universityCode, tin);
         syncLegalEntity(universityCode, tin);
-        syncCadastre(universityCode, tin);
         log.info("Full sync completed for university={}", universityCode);
     }
 
