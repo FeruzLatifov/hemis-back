@@ -171,6 +171,7 @@ Muhim qarorlar yozma tarixi. Yangi feature yoki refactoring oldidan o'qish tavsi
 | [0004](docs/adr/0004-api-university-module.md) | api-university yangi modul (224 OTM B2B) | API endpoint ish |
 | [0005](docs/adr/0005-oauth-client-credentials.md) | OAuth client_credentials migration plan | Auth/security ish |
 | [0006](docs/adr/0006-classifier-h-prefix.md) | Klassifikatorlar `h_*` prefiks konventsiyasi | Yangi klassifikator yaratish |
+| [0007](docs/adr/0007-sync-architecture-evolution.md) | Sync Architecture — Kafka-first Approach (Greenfield) | Kafka/Outbox/event-driven sync ish |
 
 Yangi qaror qabul qilinganda — `docs/adr/template.md` orqali yangi ADR yarating.
 

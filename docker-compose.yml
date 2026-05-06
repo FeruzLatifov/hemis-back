@@ -78,6 +78,83 @@ services:
       retries: 5
 
   # =====================================================
+  # Kafka (KRaft mode — no Zookeeper, single broker for dev)
+  # =====================================================
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: hemis-kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # =====================================================
+  # Apicurio Schema Registry (in-memory — dev only)
+  # =====================================================
+  apicurio:
+    image: apicurio/apicurio-registry-mem:2.5.0.Final
+    container_name: hemis-apicurio
+    restart: unless-stopped
+    environment:
+      QUARKUS_PROFILE: prod
+    ports:
+      - "${APICURIO_PORT:-8888}:8080"
+    networks:
+      - backend-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # =====================================================
+  # Kafka-UI (browser admin UI — dev only)
+  # =====================================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: hemis-kafka-ui
+    restart: unless-stopped
+    environment:
+      KAFKA_CLUSTERS_0_NAME: hemis-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://apicurio:8080/apis/registry/v2
+      DYNAMIC_CONFIG_ENABLED: "true"
+    ports:
+      - "${KAFKA_UI_PORT:-8889}:8080"
+    networks:
+      - backend-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # =====================================================
   # Backend (Spring Boot)
   # =====================================================
   backend:
@@ -140,5 +217,7 @@ volumes:
     name: hemis-audit-postgres-data
   redis-data:
     name: hemis-backend-redis-data
+  kafka-data:
+    name: hemis-kafka-data
   backend-logs:
     name: hemis-backend-logs

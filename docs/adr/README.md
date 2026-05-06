@@ -31,6 +31,8 @@ docs/adr/NNNN-short-title.md
 | [0003](0003-audit-db-isolation.md) | Audit DB alohida hemis_audit bazasi | Accepted | 2026-05-04 |
 | [0004](0004-api-university-module.md) | api-university yangi modul | Accepted | 2026-05-04 |
 | [0005](0005-oauth-client-credentials.md) | OAuth client_credentials grant 224 OTM uchun | Proposed | 2026-05-04 |
+| [0006](0006-classifier-h-prefix.md) | Klassifikator jadvallariga `h_*` prefiks konventsiyasi | Accepted | 2026-05-04 |
+| [0007](0007-sync-architecture-evolution.md) | Sync Architecture — Kafka-first Approach (Greenfield) | Proposed | 2026-05-06 |
 
 ## Status qiymatlari
 
