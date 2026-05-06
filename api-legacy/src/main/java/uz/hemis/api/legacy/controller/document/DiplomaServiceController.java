@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.log.LogSafe;
 import uz.hemis.service.document.DiplomaService;
 import uz.hemis.service.legacy.DiplomaLegacyService;
 
@@ -44,7 +45,7 @@ public class DiplomaServiceController {
             @Parameter(description = "Talabaning PINFL raqami")
             @RequestParam String pinfl
     ) {
-        log.info("GET /services/diploma/info - pinfl: {}****", pinfl.length() > 4 ? pinfl.substring(0, 4) : pinfl);
+        log.info("GET /services/diploma/info - pinfl: {}", LogSafe.pinfl(pinfl));
 
         Map<String, Object> response = diplomaLegacyService.getDiplomaInfoByPinfl(pinfl);
 

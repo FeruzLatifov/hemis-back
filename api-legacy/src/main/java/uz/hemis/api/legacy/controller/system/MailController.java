@@ -5,11 +5,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
+import uz.hemis.common.log.LogSafe;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -32,7 +32,7 @@ public class MailController {
         String subject = request.get("subject");
         String body = request.get("body");
 
-        log.info("Sending email to: {} with subject: {}", to, subject);
+        log.info("Sending email to: {} with subject: {}", LogSafe.email(to), subject);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", "sent");

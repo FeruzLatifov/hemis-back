@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.hemis.common.log.LogSafe;
 
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
@@ -55,7 +56,7 @@ public class SendServiceController {
             @Parameter(description = "Email manzil") @RequestParam String email,
             @Parameter(description = "Tasdiqlash kodi") @RequestParam String verify_code) {
 
-        log.info("[CUBA Service] send/sendEmailNative: id={}, email={}", id, email);
+        log.info("[CUBA Service] send/sendEmailNative: id={}, email={}", id, LogSafe.email(email));
 
         try {
             Properties prop = new Properties();
@@ -93,9 +94,9 @@ public class SendServiceController {
             message.setContent(multipart);
             Transport.send(message);
 
-            log.info("Verification email sent to: {}", email);
+            log.info("Verification email sent to: {}", LogSafe.email(email));
         } catch (MessagingException e) {
-            log.error("Error sending email to: {}", email, e);
+            log.error("Error sending email to: {}", LogSafe.email(email), e);
         }
 
         // Old-hemis always returns {"result": "OK"} even on failure

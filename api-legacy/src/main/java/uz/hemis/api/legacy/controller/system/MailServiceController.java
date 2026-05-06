@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import uz.hemis.common.log.LogSafe;
 import uz.hemis.service.shared.BimmService;
 
 import java.util.LinkedHashMap;
@@ -236,7 +237,7 @@ public class MailServiceController {
         String verifyCode = request.get("verify_code") != null ? request.get("verify_code").toString() : "";
         String hash = request.get("hash") != null ? request.get("hash").toString() : "";
 
-        log.info("POST /services/send/verifyCode - email: {}, phone: {}, id: {}", email, phone, id);
+        log.info("POST /services/send/verifyCode - email: {}, phone: {}, id: {}", LogSafe.email(email), LogSafe.phone(phone), id);
 
         // Old-hemis: SendServiceBean.verifyCode(id, phone, email, verify_code, hash)
         Map<String, Object> response = new LinkedHashMap<>();

@@ -9,13 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
-import uz.hemis.domain.entity.university.UniversityCadastre;
 import uz.hemis.domain.entity.university.UniversityFounder;
 import uz.hemis.domain.entity.university.UniversityLifecycle;
-import uz.hemis.service.university.dto.UniversityCadastreDto;
+import uz.hemis.service.infrastructure.mapper.BuildingMapper;
 import uz.hemis.service.university.dto.UniversityFounderDto;
 import uz.hemis.service.university.dto.UniversityLifecycleDto;
-import uz.hemis.domain.repository.UniversityCadastreRepository;
+import uz.hemis.domain.repository.UniversityBuildingRepository;
 import uz.hemis.domain.repository.UniversityFounderRepository;
 import uz.hemis.domain.repository.UniversityLifecycleRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -34,7 +33,6 @@ import java.util.Map;
  * <ul>
  *   <li>Founder queries (current and historical)</li>
  *   <li>Lifecycle event tracking</li>
- *   <li>Cadastre record management</li>
  *   <li>Rector lookup (employee_job position '20')</li>
  *   <li>Dashboard aggregation for a single university</li>
  * </ul>
@@ -49,7 +47,8 @@ public class UniversityInfoService {
 
     private final UniversityFounderRepository founderRepository;
     private final UniversityLifecycleRepository lifecycleRepository;
-    private final UniversityCadastreRepository cadastreRepository;
+    private final UniversityBuildingRepository buildingRepository;
+    private final BuildingMapper buildingMapper;
     private final JdbcTemplate jdbcTemplate;
     private final ClassifierLookupService classifiers;
 
@@ -82,35 +81,17 @@ public class UniversityInfoService {
     }
 
     // =====================================================
-    // Cadastre
-    // =====================================================
-
-    @Cacheable(value = "universityCadastreList", key = "#universityCode")
-    public List<UniversityCadastre> getCadastre(String universityCode) {
-        return cadastreRepository.findByUniversityCode(universityCode);
-    }
-
-    @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = "universityDashboard", key = "#cadastre.universityCode"),
-        @CacheEvict(value = "universityCadastreList", key = "#cadastre.universityCode")
-    })
-    public UniversityCadastre saveCadastre(UniversityCadastre cadastre) {
-        return cadastreRepository.save(cadastre);
-    }
-
-    // =====================================================
     // Dashboard — all info for one university
     // =====================================================
 
     /**
-     * Full university dashboard — founders + lifecycle + cadastre + rector.
+     * Full university dashboard — founders + lifecycle + buildings + rector.
      *
      * <p><strong>Cache:</strong> {@code universityDashboard} — key = universityCode. TTL 1h.</p>
      *
      * <p>4-5 separate queries aggregated. Caching saves significant DB load for admin panel.</p>
      *
-     * <p>Invalidated when founder/lifecycle/cadastre changes (see respective save methods).</p>
+     * <p>Invalidated when founder/lifecycle/building changes (see respective save methods).</p>
      */
     @Cacheable(value = "universityDashboard", key = "#universityCode", unless = "#result == null")
     public UniversityDashboardDto getUniversityDashboard(String universityCode) {
@@ -120,7 +101,8 @@ public class UniversityInfoService {
         return UniversityDashboardDto.builder()
                 .founders(founderEntities.stream().map(UniversityFounderDto::from).toList())
                 .lifecycle(getLifecycle(universityCode).stream().map(UniversityLifecycleDto::from).toList())
-                .cadastre(getCadastre(universityCode).stream().map(UniversityCadastreDto::from).toList())
+                .buildings(buildingRepository.findByUniversityCodeOrderByNameAsc(universityCode)
+                        .stream().map(buildingMapper::toDto).toList())
                 .rector(getRector(universityCode))
                 .build();
     }

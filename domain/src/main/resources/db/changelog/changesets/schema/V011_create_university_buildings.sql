@@ -7,7 +7,7 @@
 -- Purpose: Physical building data for university infrastructure
 -- Architecture: Senior Enterprise (A'' strategy)
 --   1. Normalized schema: 3 classifiers + main + immutable lifecycle log
---   2. Cadastre integration: FK to university_cadastre via cad_number (optional + auto-fill)
+--   2. Cadastre data: cad_number (string) + cadastre JSONB snapshot (caller-provided)
 --   3. Data irreversibility: building_lifecycle preserves renovation history
 --   4. Source tracking: univer_sync / manual / excel_import / kadastr_sync
 --   5. Idempotent sync: (university_code, source_uid) UNIQUE + content_hash
@@ -98,7 +98,7 @@ ON CONFLICT (code) DO NOTHING;
 -- 4. university_building — asosiy jadval
 -- =====================================================
 -- Pattern: AuditableEntity (7 audit ustun: version, created_at/by, updated_at/by, deleted_at/by)
--- Linkage: university_cadastre via cad_number (optional, 1:1)
+-- Linkage: cadastre snapshot (JSONB) — caller API tomonidan to'ldiriladi (integratsiya yo'q).
 -- Excel mapping: docs/Бино ва иншоотлар жадвали.xlsx dagi 14 ustunga to'liq mos
 -- =====================================================
 CREATE TABLE IF NOT EXISTS university_building (
@@ -143,9 +143,11 @@ CREATE TABLE IF NOT EXISTS university_building (
     longitude NUMERIC(10,7),
     map_url TEXT,                              -- Google/Yandex Maps link
 
-    -- Excel col 13: Kadastr bog'lanish (1:1 — partial UNIQUE pastda, soft-delete uyg'unligi)
-    cad_number VARCHAR(50)
-        REFERENCES university_cadastre(cad_number) ON DELETE SET NULL,
+    -- Excel col 13: Kadastr raqami (string, snapshot JSONB cadastre ustunda)
+    cad_number VARCHAR(50),
+
+    -- Cadastre snapshot (caller-provided JSON, kadastr ma'lumotlari)
+    cadastre JSONB,
 
     -- Excel col 14: Izoh
     note TEXT,
@@ -186,15 +188,16 @@ CREATE TABLE IF NOT EXISTS university_building (
 
 COMMENT ON TABLE university_building IS
     'Physical buildings at universities (academic/operational view).
-     Complements university_cadastre (legal view) via cad_number FK.
+     Cadastre data stored as JSONB snapshot (caller-provided).
      Source: Excel template "Бино ва иншоотлар жадвали"';
 COMMENT ON COLUMN university_building.content_hash IS
     'SHA-256 of sync-relevant fields for idempotent change detection';
 COMMENT ON COLUMN university_building.source IS
     'Data origin: univer_sync (OTM push) | manual (ministry) | excel_import (bulk) | kadastr_sync';
 COMMENT ON COLUMN university_building.cad_number IS
-    'Kadastr raqami — university_cadastre.cad_number ga FK.
-     Agar to''ldirilsa, address/total_area/usable_area avtomatik olinadi (boshlang''ich saqlash paytida)';
+    'Kadastr raqami (string). Cadastre tafsiloti `cadastre` JSONB ustunida saqlanadi.';
+COMMENT ON COLUMN university_building.cadastre IS
+    'Cadastre snapshot (JSONB). Caller API tomonidan to''ldiriladi.';
 
 -- Indexes (query pattern bo'yicha)
 CREATE INDEX IF NOT EXISTS idx_ub_university ON university_building(university_code);

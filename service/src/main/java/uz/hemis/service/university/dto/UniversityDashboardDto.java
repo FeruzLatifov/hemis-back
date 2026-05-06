@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.hemis.common.dto.building.BuildingDto;
 
 import java.util.List;
 
@@ -19,6 +20,6 @@ import java.util.List;
 public class UniversityDashboardDto {
     private List<UniversityFounderDto> founders;
     private List<UniversityLifecycleDto> lifecycle;
-    private List<UniversityCadastreDto> cadastre;
+    private List<BuildingDto> buildings;
     private RectorDto rector;
 }

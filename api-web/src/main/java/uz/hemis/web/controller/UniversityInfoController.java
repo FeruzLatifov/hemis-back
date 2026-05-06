@@ -18,7 +18,6 @@ import uz.hemis.service.university.UniversityExternalDataService;
 import uz.hemis.service.university.UniversityInfoService;
 import uz.hemis.service.university.UniversityOfficialService;
 import uz.hemis.service.university.UniversityProfileService;
-import uz.hemis.service.university.dto.UniversityCadastreDto;
 import uz.hemis.service.university.dto.UniversityFounderDto;
 import uz.hemis.service.university.dto.UniversityLifecycleDto;
 import uz.hemis.service.university.dto.UniversityLifecycleRequest;
@@ -35,7 +34,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/web/university")
-@Tag(name = "University Info", description = "University legal, founders, lifecycle, cadastre")
+@Tag(name = "University Info", description = "University legal, founders, lifecycle, buildings")
 @SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
@@ -48,7 +47,7 @@ public class UniversityInfoController {
 
     @GetMapping("/{code}/dashboard")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get university dashboard", description = "Returns all info (legal, founders, lifecycle, cadastre) for one university")
+    @Operation(summary = "Get university dashboard", description = "Returns all info (legal, founders, lifecycle, buildings) for one university")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Dashboard data retrieved"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
@@ -98,31 +97,13 @@ public class UniversityInfoController {
         return ResponseEntity.ok(ResponseWrapper.success(dtos));
     }
 
-    @GetMapping("/{code}/cadastre")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get cadastre objects", description = "Returns cadastre objects list for a university")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Cadastre objects retrieved"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")
-    })
-    public ResponseEntity<ResponseWrapper<List<UniversityCadastreDto>>> getCadastre(
-            @Parameter(description = "University code")
-            @PathVariable String code
-    ) {
-        log.info("Getting cadastre objects for university code: {}", code);
-        var cadastre = universityInfoService.getCadastre(code);
-        if (cadastre == null) cadastre = Collections.emptyList();
-        List<UniversityCadastreDto> dtos = cadastre.stream().map(UniversityCadastreDto::from).toList();
-        return ResponseEntity.ok(ResponseWrapper.success(dtos));
-    }
-
     // =====================================================
     // SYNC ENDPOINTS (trigger external API fetch)
     // =====================================================
 
     @PostMapping("/{code}/sync")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Sync all external data", description = "Fetch legal entity + cadastre from external API and save. TIN is resolved automatically from university code.")
+    @Operation(summary = "Sync all external data", description = "Fetch legal entity from external API and save. TIN is resolved automatically from university code.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Sync completed"),
             @ApiResponse(responseCode = "400", description = "University not found or TIN is empty"),

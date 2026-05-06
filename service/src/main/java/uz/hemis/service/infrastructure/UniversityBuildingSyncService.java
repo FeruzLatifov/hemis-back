@@ -2,6 +2,8 @@ package uz.hemis.service.infrastructure;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.dto.building.BuildingSyncDto;
@@ -29,11 +31,13 @@ import java.util.Optional;
 @Slf4j
 public class UniversityBuildingSyncService {
 
+    private static final String DASHBOARD_CACHE = "universityDashboard";
+
     private final UniversityBuildingRepository repo;
-    private final BuildingCadastreAutoFiller autoFiller;
     private final BuildingMapper mapper;
     private final BuildingMetrics metrics;
     private final TenantGuard tenantGuard;
+    private final CacheManager cacheManager;
 
     @Transactional
     @io.micrometer.core.annotation.Timed(value = "buildings.sync.duration",
@@ -55,6 +59,11 @@ public class UniversityBuildingSyncService {
                 result.recordFailure(item.getSourceUid(), e.getMessage());
                 metrics.recordSyncOutcome(universityCode, "failure");
             }
+        }
+        // Dashboard cache evict — har sync (hatto unchanged bo'lsa ham, idempotent)
+        if (result.getSuccessCount() > 0) {
+            Cache cache = cacheManager.getCache(DASHBOARD_CACHE);
+            if (cache != null) cache.evict(universityCode);
         }
         log.info("Univer sync done: university={}, total={}, success={}, failed={}",
                 universityCode, result.getTotalProcessed(),
@@ -82,7 +91,6 @@ public class UniversityBuildingSyncService {
             b.setSourceUid(dto.getSourceUid());
             b.setContentHash(incomingHash);
             b.setSyncedAt(LocalDateTime.now());
-            autoFiller.autoFill(b);
             repo.save(b);
         }
     }
@@ -108,6 +116,7 @@ public class UniversityBuildingSyncService {
                 str(d.getLongitude()),
                 str(d.getMapUrl()),
                 str(d.getCadNumber()),
+                str(d.getCadastre()),
                 str(d.getNote())
         );
         return sha256Hex(content);

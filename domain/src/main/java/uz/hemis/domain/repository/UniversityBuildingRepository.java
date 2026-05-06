@@ -27,6 +27,10 @@ public interface UniversityBuildingRepository
     @EntityGraph(attributePaths = {"category"})
     Page<UniversityBuilding> findByUniversityCode(String universityCode, Pageable pageable);
 
+    /** Dashboard aggregate — barcha binolar bitta OTM uchun (paginate'siz). */
+    @EntityGraph(attributePaths = {"category"})
+    List<UniversityBuilding> findByUniversityCodeOrderByNameAsc(String universityCode);
+
     /** UniversityBuildingSyncService upsert uchun. */
     Optional<UniversityBuilding> findByUniversityCodeAndSourceUid(
             String universityCode, String sourceUid);
