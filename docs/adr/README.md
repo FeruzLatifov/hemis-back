@@ -44,6 +44,7 @@ docs/adr/NNNN-short-title.md
 | [0006](0006-classifier-h-prefix.md) | Klassifikator jadvallariga `h_*` prefiks konventsiyasi | Accepted | 2026-05-04 |
 | [0007](0007-sync-architecture-evolution.md) | Sync Architecture — Kafka-first Approach (Greenfield) | Proposed | 2026-05-06 |
 | [0008](0008-api-legacy-entity-rebinding.md) | api-legacy uchta entity'ni eski jadvallarga qaytarish (Legacy* prefiks) | Accepted (Stage 1) / Pending (Stages 2-5) | 2026-05-07 |
+| [0009](0009-jwt-ttl-and-refresh-rotation.md) | JWT TTL qisqartirish (12h→1h) + Refresh rotation + jti/kid | Proposed | 2026-05-07 |
 
 ## Status qiymatlari
 

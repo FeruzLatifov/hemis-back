@@ -130,5 +130,6 @@ Modul-darajadagi `CLAUDE.md` (api-legacy, service, domain, security, …) Claude
 | [0006](docs/adr/0006-classifier-h-prefix.md) | Klassifikatorlar `h_*` prefiks |
 | [0007](docs/adr/0007-sync-architecture-evolution.md) | Kafka-first sync architecture |
 | [0008](docs/adr/0008-api-legacy-entity-rebinding.md) | api-legacy: User/Employee/EmployeeJobs → eski jadvallar |
+| [0009](docs/adr/0009-jwt-ttl-and-refresh-rotation.md) | JWT TTL 12h→1h + Refresh rotation + jti/kid (Proposed) |
 
 Yangi qaror — `docs/adr/template.md` orqali. Tarix: `CHANGELOG.md`.

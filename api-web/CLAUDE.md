@@ -300,87 +300,28 @@ public static String maskPinfl(String pinfl) {
 
 ---
 
-## Controller Anatomy
+## Controller + Exception Handler
 
-```java
-@RestController
-@RequestMapping("/api/v1/web/students")
-@RequiredArgsConstructor
-@Slf4j
-@Tag(name = "Students", description = "Student management")
-public class StudentController {
+> Batafsil misollar: [`MANDATORY_REQUIREMENTS.md`](../.claude/MANDATORY_REQUIREMENTS.md) "Complete Feature Example" bo'limi.
 
-    private final StudentService service;
+**Controller pattern:**
+- `@RestController` + `@RequestMapping("/api/v1/web/<resource>")`
+- `@PreAuthorize("hasAuthority('<resource>.<action>')")` har endpoint
+- Custom SpEL scope check: `@PreAuthorize("... and @<entity>Security.canEdit(#id, authentication)")`
+- `@Valid @RequestBody` + `@PageableDefault(size=20, sort="...")`
+- `Idempotency-Key` header optional (POST/PUT)
+- Return `ResponseEntity<ResponseWrapper<T>>` har doim
 
-    @Operation(summary = "List students with filters and pagination")
-    @ApiResponses({...})
-    @GetMapping
-    @PreAuthorize("hasAuthority('students.view')")
-    public ResponseEntity<ResponseWrapper<Page<StudentDto>>> list(
-        @Parameter(description = "Faculty filter") @RequestParam(required = false) Long facultyId,
-        @Parameter(description = "Name search") @RequestParam(required = false) String search,
-        @PageableDefault(size = 20, sort = "lastName") Pageable pageable
-    ) {
-        Page<StudentDto> page = service.search(facultyId, search, pageable);
-        return ResponseEntity.ok(ResponseWrapper.success(page));
-    }
+**Global Exception Handler** (`@RestControllerAdvice(basePackages = "uz.hemis.api.web")`):
 
-    @Operation(summary = "Create new student")
-    @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Created"),
-        @ApiResponse(responseCode = "400", description = "Validation"),
-        @ApiResponse(responseCode = "409", description = "Duplicate PINFL")
-    })
-    @PostMapping
-    @PreAuthorize("hasAuthority('students.create')")
-    public ResponseEntity<ResponseWrapper<StudentDto>> create(
-        @Valid @RequestBody StudentCreateDto dto,
-        @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey
-    ) {
-        StudentDto created = service.createIdempotent(dto, idempotencyKey);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
-    }
-}
-```
-
----
-
-## Global Exception Handler
-
-```java
-@RestControllerAdvice(basePackages = "uz.hemis.api.web")
-@Slf4j
-public class WebExceptionHandler {
-
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleNotFound(ResourceNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(ResponseWrapper.error("RESOURCE_NOT_FOUND", ex.getMessage()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleValidation(MethodArgumentNotValidException ex) {
-        List<FieldError> details = ex.getBindingResult().getFieldErrors().stream()
-            .map(fe -> new FieldError(fe.getField(), fe.getCode(), fe.getDefaultMessage()))
-            .toList();
-        return ResponseEntity.badRequest()
-            .body(ResponseWrapper.error("VALIDATION_ERROR", "Validation failed", details));
-    }
-
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleConflict(ConflictException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(ResponseWrapper.error("CONFLICT", ex.getMessage()));
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleGeneric(Exception ex) {
-        log.error("Unhandled exception", ex);
-        return ResponseEntity.internalServerError()
-            .body(ResponseWrapper.error("INTERNAL_ERROR", "An unexpected error occurred"));
-    }
-}
-```
+| Exception | HTTP | ResponseWrapper code |
+|-----------|------|----------------------|
+| `ResourceNotFoundException` | 404 | `RESOURCE_NOT_FOUND` |
+| `MethodArgumentNotValidException` | 400 | `VALIDATION_ERROR` + field details |
+| `ConflictException` | 409 | `CONFLICT` |
+| `BusinessRuleException` | 422 | `BUSINESS_RULE_VIOLATION` |
+| `AccessDeniedException` | 403 | `FORBIDDEN` |
+| `Exception` (fallback) | 500 | `INTERNAL_ERROR` (log.error + Sentry) |
 
 ---
 

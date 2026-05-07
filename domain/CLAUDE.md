@@ -234,99 +234,18 @@ CREATE TABLE university_building (
 
 ---
 
-## PostgreSQL-Specific (Senior tips)
+## PostgreSQL + Repository Patterns
 
-### JSONB — variable shape data
+> **Batafsil misollar:** [`domain/PATTERNS.md`](PATTERNS.md) (JSONB, Partitioning, Specification, Repository @Query)
 
-```sql
--- Misol: talaba qo'shimcha attribut'lar (markaziy DB, public schema)
-ALTER TABLE student_profile ADD COLUMN extra JSONB;
-
--- GIN index for JSONB
-CREATE INDEX idx_extra_gin ON student_profile USING GIN (extra);
-
--- Query
-SELECT * FROM student_profile WHERE extra @> '{"hobby": "chess"}';
-```
-
-### Partitioning (>100M qator)
-
-```sql
--- Hisobot jadvali — yil bo'yicha partition (markaziy DB, public schema)
-CREATE TABLE report_data (
-    id UUID,
-    created_at TIMESTAMP,
-    ...
-) PARTITION BY RANGE (created_at);
-
-CREATE TABLE report_data_2026 PARTITION OF report_data
-    FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
-```
-
-### VACUUM/ANALYZE
-
-PostgreSQL avtomatik (autovacuum), lekin yirik DELETE keyin manual:
-```sql
-VACUUM ANALYZE hemishe_e_student;
-```
-
-### Connection pool sizing
-
-> Pool sizing aniq tafsiloti: `../.claude/architecture.md` (Master 10 + Replica 20 per-instance).
-
-**Formula:** `connections = (cores × 2) + effective_spindles`
-**Diqqat:** Production cluster (3 instance) → 30 master + 60 replica DB-side capacity zarur.
-
----
-
-## Repository Patterns
-
-### `@Query` vs Method Naming
-
-```java
-// ✓ Oddiy queries — method naming
-List<Student> findByFacultyIdAndDeletedAtIsNull(Long facultyId);
-
-// ✓ Murakkab — @Query + JPQL
-@Query("""
-    SELECT s FROM Student s
-      LEFT JOIN FETCH s.faculty f
-    WHERE f.id = :facultyId
-      AND s.deletedAt IS NULL
-    ORDER BY s.lastName, s.firstName
-""")
-Page<Student> findByFacultyWithDetails(@Param("facultyId") Long facultyId, Pageable pageable);
-
-// ⚠ Native query — faqat JPQL imkonsiz bo'lsa (window function, recursive CTE)
-@Query(nativeQuery = true, value = """
-    SELECT * FROM hemishe_e_student
-    WHERE delete_ts IS NULL
-      AND faculty_id = :facultyId
-""")
-List<Student> findByFacultyNative(@Param("facultyId") Long facultyId);
-```
-
-### Specification (dynamic filter)
-
-```java
-public interface StudentSpecs {
-    static Specification<Student> hasFaculty(Long facultyId) {
-        return (root, query, cb) -> facultyId == null
-            ? cb.conjunction()
-            : cb.equal(root.get("faculty").get("id"), facultyId);
-    }
-
-    static Specification<Student> notDeleted() {
-        return (root, query, cb) -> cb.isNull(root.get("deletedAt"));
-    }
-}
-
-// Foydalanish
-Page<Student> result = repository.findAll(
-    where(hasFaculty(facultyId)).and(notDeleted()),
-    pageable
-);
-```
+| Pattern | Qisqa qoida |
+|---------|-------------|
+| **JSONB** | `ALTER TABLE student_profile ADD COLUMN extra JSONB` + `GIN` index. Query: `extra @> '{"key":"val"}'` |
+| **Partitioning (>100M)** | `PARTITION BY RANGE (created_at)` + yillik partition (`report_data_2026`) |
+| **VACUUM/ANALYZE** | Autovacuum default. Yirik DELETE'dan keyin manual: `VACUUM ANALYZE <table>` |
+| **Pool sizing** | `(cores × 2) + spindles`. Cluster: 30 master + 60 replica DB capacity. Tafsilot: `../.claude/architecture.md` |
+| **`@Query` vs naming** | Oddiy → method naming (`findByFacultyIdAndDeletedAtIsNull`). Murakkab → `@Query` JPQL `LEFT JOIN FETCH`. Native faqat window/recursive CTE |
+| **Specification** | Dynamic filter: `where(hasFaculty(...)).and(notDeleted())`. Conjunction `null` filterda |
 
 ---
 

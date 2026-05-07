@@ -27,49 +27,20 @@
 
 HEMIS **modular monolith + bounded context** asosida quriladi.
 
-### Real holat (V001-V014, 2026-05-07)
+**Real holat (V001-V014, 2026-05-07):** Barcha yangi jadvallar `public` schema'da. Domain bo'linish faqat JPA package strukturasida (`uz.hemis.domain.entity.security`, `.employee`, `.infrastructure`).
 
-Hozir **barcha yangi jadvallar `public` schema'da** yaratilgan (PostgreSQL default). Quyidagi domain bo'linish faqat **logical** — JPA package strukturasida (`uz.hemis.domain.entity.security`, `.employee`, `.infrastructure`, …), lekin DB darajasida fizik schema separation YO'Q.
+**DB:** `${DB_MASTER_NAME}` (lokal: `test1_hemis`, prod: turli).
 
-```
-PostgreSQL: ${DB_MASTER_NAME}    (lokal: test1_hemis, prod: turli)
-│
-└── public schema (HOZIRGI HAQIQIY HOLAT):
-    │
-    ├── Eski CUBA (TEGILMAYDI — Univer 224 OTM bilan moslik):
-    │   ├── hemishe_e_*   — eski CUBA operational jadvallar
-    │   ├── hemishe_h_*   — eski CUBA classifier (102 ta — yagona manba)
-    │   ├── hemishe_r_*   — eski CUBA junction
-    │   └── sec_user, sec_role, sec_permission — eski auth
-    │
-    ├── Yangi auth (V001, V002, V006, V007):
-    │   ├── role, permission, user_role, role_permission
-    │   ├── users (PLURAL — PostgreSQL reserved word)
-    │   ├── password_history, password_reset_token
-    │   └── oauth_client, oauth_client_role
-    │
-    ├── Yangi HR (V003, V004):
-    │   ├── employee, employee_job
-    │   ├── employee_academic_credential
-    │   └── h_position_type, h_position (h_* — ADR-0006 klassifikator)
-    │
-    ├── Yangi university (V005, V008, V009, V011):
-    │   ├── organization, university_profile
-    │   ├── university_founder, university_lifecycle
-    │   ├── university_building, building_lifecycle
-    │   └── h_building_category, h_construction_material, h_roof_type (ADR-0006)
-    │
-    ├── Yangi UI (V014):
-    │   └── menu, user_favorite
-    │
-    └── Yangi i18n (V012, V013):
-        ├── language, configuration
-        └── system_message, system_message_translation
-```
+| Domen | Changesetlar | Asosiy jadvallar |
+|-------|--------------|------------------|
+| Eski CUBA (FROZEN) | — (legacy dump) | `hemishe_e_*`, `hemishe_h_*` (102 ta), `hemishe_r_*`, `sec_user`, `sec_role` |
+| Auth | V001, V002, V006, V007 | `role`, `permission`, `users` (PLURAL — reserved), `oauth_client`, `password_history` |
+| HR | V003, V004 | `employee`, `employee_job`, `h_position`, `h_position_type` (ADR-0006) |
+| University | V005, V008, V009, V011 | `organization`, `university_profile`, `university_building`, `university_lifecycle`, `h_building_category` |
+| UI | V014 | `menu`, `user_favorite` |
+| i18n | V012, V013 | `system_message`, `system_message_translation`, `language`, `configuration` |
 
-### Maqsadli holat (kelajakdagi migration — Plan only)
-
-Kelajakda alohida fizik schema separation tavsiya etiladi: `auth.*`, `hr.*`, `univ.*`, `ui.*`, `i18n.*`. Buning uchun alohida ADR yoziladi. Hozircha bunga tayyorgarlik yo'q — barcha entity `@Table(name = "...")` schema-siz yoziladi (default `public`).
+**Kelajak:** Fizik schema separation (`auth.*`, `hr.*`, `univ.*`) — alohida ADR talab qiladi. Hozir hammasi `public`.
 
 ---
 
@@ -299,103 +270,42 @@ import org.springframework.modulith.ApplicationModule;
 
 **Test:** `app/src/test/java/uz/hemis/app/modulith/ModularityTests.java` — har CI run'da bajariladi.
 
-### `common` — DTOs, exceptions, utilities
-- Use Lombok (`@Value`, `@Builder`, `@Data`) and Jackson (`@JsonProperty`) for legacy field names
-- NO Spring dependencies, NO business logic, NO entity classes
+### Modul boundaries (qisqa)
 
-### `domain` — Entities, repositories, migrations
-- Entity'lar schema bo'yicha tashkil qilinadi: `entity/auth/`, `entity/hr/`, `entity/univ/`, `entity/legacy/`
-- Repositories `extends JpaRepository<Entity, ID>`
-- Soft-delete instead of hard-delete
+| Modul | Asosiy qoida | Tafsilot |
+|-------|--------------|----------|
+| `common` | Pure Java + Lombok + Jackson, ZERO Spring | [`common/CLAUDE.md`](../common/CLAUDE.md) |
+| `domain` | JPA + Liquibase + soft-delete | [`domain/CLAUDE.md`](../domain/CLAUDE.md) |
+| `security` | JWT + BCrypt-12 + RBAC + audit | [`security/CLAUDE.md`](../security/CLAUDE.md) |
+| `service` | `@Service` + `@Transactional` + custom exception | [`service/CLAUDE.md`](../service/CLAUDE.md) |
+| `api-legacy` | CUBA format (`toMap()` + `_entityName`) — 175/175 | [`api-legacy/CLAUDE.md`](../api-legacy/CLAUDE.md) |
+| `api-web` | Modern REST + ResponseWrapper + UUID | [`api-web/CLAUDE.md`](../api-web/CLAUDE.md) |
+| `api-university` | OAuth client_credentials (224 Univer) | [`api-university/CLAUDE.md`](../api-university/CLAUDE.md) |
+| `api-external` | Davlat S2S (MyGov/MSPD/BIMM/Tax/GUVD) | [`api-external/CLAUDE.md`](../api-external/CLAUDE.md) |
+| `app` | Bootstrap + config + filter chain | [`app/CLAUDE.md`](../app/CLAUDE.md) |
 
-### `security` — Authentication & authorisation
-- `@PreAuthorize` on service methods for permissions
-- Cache user authorities in Redis. **BCrypt strength factor 12 minimum** (OWASP 2025); consider Argon2id for new services
-- Never store plain text passwords; never log JWT tokens, PINFL, passwords, or other PII
-- Security config stays in this module — don't duplicate in controllers
-- Rate limiting per role: VIEWER 60 req/min, UNIVERSITY_ADMIN 300, MINISTRY_ADMIN 600, SUPER_ADMIN 1000
-- Audit log for every CRUD action (7 yil retention — Vazirlik talabi)
+### Technical Standards (qisqa)
 
-### `service` — Business logic
-- `@Service` + `@Transactional`. Use `readOnly=true` for queries
-- `@Valid` for input validation. MapStruct for entity ↔ DTO mapping
-- Throw custom exceptions (`ResourceNotFoundException`, `ValidationException`) — don't return nulls
-- NO business logic in controllers or repositories
-- **api-legacy va api-web bir xil service'lardan foydalanadi** — hech qanday business logic dublikat yo'q
-
-### `api-web`, `api-legacy`, `api-external` — Presentation layer
-- `@RestController` + `@RequestMapping`. Return `ResponseWrapper<T>` with proper HTTP status codes
-- Swagger annotations on EVERY endpoint: `@Tag`, `@Operation`, `@ApiResponses`, `@Parameter`
-- `@Valid` on request bodies. Integration test for each endpoint (success + error scenarios)
-- **api-legacy** faqat response formatini CUBA ga (`_entityName`, `_instanceName`) o'tkazadi — business logic emas
-
----
-
-## Technical Standards
-
-### Exception Handling
-- Custom exception hierarchy (`ResourceNotFoundException`, `ValidationException`, etc.)
-- `@RestControllerAdvice` + `@ExceptionHandler` for structured error responses
-- Include error code, message, timestamp in payloads
-
-### Validation
-- Jakarta Bean Validation: `@NotBlank`, `@Email`, `@Positive`, `@Past` on DTO fields
-- Custom constraints (e.g. `@UniqueEmail`) for business rules
-- Validate at service boundary, not controllers
-
-### Transactions
-- `@Transactional` on write methods. `readOnly=true` routes to read replica
-- Avoid `REQUIRES_NEW` unless absolutely necessary
-- Let Spring handle rollbacks via exception throwing
-
-### Logging
-- SLF4J + Logback with `@Slf4j`. Levels: DEBUG (dev), INFO (business events), WARN (recoverable), ERROR (errors)
-- Audit create/update/delete at INFO level. Structured key-value pairs when possible
-- NEVER log passwords, tokens, personal data. No `System.out.println`
-
-### MapStruct Mapping
-- `@Mapper(componentModel = "spring")`. Methods for single + collection conversion
-- Ignore ID and audit fields on create/update: `@Mapping(target="id", ignore=true)`
-- `@BeanMapping(nullValuePropertyMappingStrategy = IGNORE)` for partial updates
-
-### Code Style
-- **PascalCase** classes, **camelCase** methods/variables, **lowercase** packages
-- 4 spaces indentation; max 120 chars per line
-- Import order: JDK → third-party → Spring → project
-- `@RequiredArgsConstructor` for constructor injection
-- DTO: prefer Java 25 `record` over class (immutability default)
-- `switch`: prefer pattern matching (Java 25 feature)
-- **Configuration:** prefer `@ConfigurationProperties` over `@Value` (type-safe + validation)
-
-### `@ConfigurationProperties` over `@Value`
+- **Exception:** Custom hierarchy (`ResourceNotFoundException`, `ValidationException`, …) + `@RestControllerAdvice`. Tafsilot: `service/CLAUDE.md`
+- **Validation:** Jakarta `@NotBlank`/`@Email`/`@Pattern` boundary'da. Tafsilot: `service/PATTERNS.md`
+- **Transaction:** `@Transactional(readOnly=true)` class-level + write override
+- **Logging:** SLF4J + `@Slf4j`. PII MASK majburiy (`security/CLAUDE.md` PII Logging)
+- **MapStruct:** `@Mapper(componentModel="spring")` (api-web/service); api-legacy `toMap()` + LinkedHashMap
+- **Code style:** PascalCase classes, camelCase methods, 4 spaces, 120 cols. Java 25 record DTO afzal
+- **Config:** `@ConfigurationProperties` + `@Validated` (type-safe). `@Value` migrated har sprint
 
 ```java
-// ✗ Eski — type-unsafe, validation yo'q, scattered
-@Value("${hemis.jwt.secret}") private String jwtSecret;
-@Value("${hemis.jwt.access-token-validity:43200}") private long accessTokenValidity;
-@Value("${hemis.jwt.refresh-token-validity:604800}") private long refreshTokenValidity;
-
-// ✓ Modern — type-safe, validated, grouped
+// @ConfigurationProperties misol
 @ConfigurationProperties(prefix = "hemis.jwt")
 @Validated
 public record JwtProperties(
     @NotBlank @Size(min = 32) String secret,
     @Positive long accessTokenValiditySeconds,
-    @Positive long refreshTokenValiditySeconds,
-    String jwkSetUri  // optional — production'da JWK Set URI uchun
+    @Positive long refreshTokenValiditySeconds
 ) {}
-
-// Foydalanish
-@Service
-@RequiredArgsConstructor
-public class TokenService {
-    private final JwtProperties jwt;
-    // jwt.secret(), jwt.accessTokenValiditySeconds() — type-safe
-}
 ```
 
-**Migration plan:** har sprintda 5-10 ta `@Value` ni `@ConfigurationProperties` ga ko'chirish. Yangi config — har doim `@ConfigurationProperties`.
-
+To'liq misol: [`MODERNIZATION.md`](MODERNIZATION.md).
 
 ---
 
