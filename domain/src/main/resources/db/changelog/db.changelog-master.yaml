@@ -291,11 +291,11 @@ databaseChangeLog:
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
-      comment: "14 position_type + 227 position — seeds V008 positions classifier"
+      comment: "14 h_position_type + 227 h_position — seeds V003 positions classifier"
       changes:
-        - sqlFile: { path: changesets/seed/S008_seed_activity_statuses.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/seed/S008_seed_positions.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/seed/S008_seed_activity_statuses_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/seed/S008_seed_positions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: S009_seed_universities_translations

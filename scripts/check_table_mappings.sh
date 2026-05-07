@@ -93,23 +93,47 @@ else
 fi
 
 # 5. api-legacy GOLDEN RULE — faqat eski (hemishe_*, sec_*) jadvallar
+#
+# DOCUMENTED EXCEPTIONS (foydalanuvchi qarori, ADR-0008 + 2026-05-07):
+#   - User → users (yangi) — auth/profile read-only endpoints (LegacyUserInfoController,
+#     UserController, LegacySecurityHelper). M001+M004 sec_user → users sync taminlanadi.
 echo
 echo "════════════════════════════════════════════════════════════════"
-echo "api-legacy → faqat eski jadvallar (hemishe_*, sec_*)"
+echo "api-legacy → faqat eski jadvallar (hemishe_*, sec_*) + documented exceptions"
 echo "════════════════════════════════════════════════════════════════"
+
+# Documented exception list — entity nomlari (ADR-0008 + foydalanuvchi qaror).
+# Bu entity'lar yangi schema'ga bog'langan, lekin api-legacy'da ishlatilishi ruxsat.
+# Yangi exception qo'shish: ADR ochib, batafsil sabab yozish kerak.
+ALLOWED_NEW_SCHEMA_IN_LEGACY=("User")
+
+is_documented_exception() {
+    local entity="$1"
+    for allowed in "${ALLOWED_NEW_SCHEMA_IN_LEGACY[@]}"; do
+        if [[ "$entity" == "$allowed" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 LEGACY_VIOLATIONS=$(
     grep -rh "import uz\.hemis\.domain\.entity\." \
         --include="*.java" \
-        api-legacy/src/main/java/uz/hemis/api/legacy/controller 2>/dev/null \
-        | sed 's/import uz\.hemis\.domain\.entity\.[a-z]*\.\([A-Za-z]*\);.*/\1/' \
+        api-legacy/src/main/java/uz/hemis/api/legacy 2>/dev/null \
+        | sed 's/import uz\.hemis\.domain\.entity\.[a-z.]*\.\([A-Za-z]*\);.*/\1/' \
         | sort -u \
         | while read entity; do
+            # Documented exception (User) — skip
+            if is_documented_exception "$entity"; then
+                continue
+            fi
             ENTITY_FILE=$(find domain/src/main/java -name "${entity}.java" -not -path "*/build/*" 2>/dev/null | head -1)
             [ -z "$ENTITY_FILE" ] && continue
             TABLE=$(grep '@Table' "$ENTITY_FILE" 2>/dev/null | sed 's/.*name = "\([^"]*\)".*/\1/' | head -1)
             if [ -n "$TABLE" ] && [[ ! "$TABLE" =~ ^(hemishe_|sec_) ]]; then
-                # Qaysi controller ishlatadi
-                CALLERS=$(grep -rln "import uz\.hemis\.domain\.entity\.[a-z]*\.${entity};" api-legacy/src/main/java 2>/dev/null | head -3 | xargs -n1 basename 2>/dev/null | tr '\n' ',' | sed 's/,$//')
+                # Qaysi controller/util ishlatadi
+                CALLERS=$(grep -rln "import uz\.hemis\.domain\.entity\.[a-z.]*\.${entity};" api-legacy/src/main/java 2>/dev/null | head -3 | xargs -n1 basename 2>/dev/null | tr '\n' ',' | sed 's/,$//')
                 echo "  $entity → $TABLE  ($CALLERS)"
             fi
         done
@@ -122,11 +146,40 @@ if [[ -n "$LEGACY_VIOLATIONS" ]]; then
     echo "$LEGACY_VIOLATIONS"
     echo
     echo "GOLDEN RULE: api-legacy faqat hemishe_*, sec_* jadvallar bilan ishlashi kerak."
-    echo "api-web/api-university/api-external — yangi jadvallar uchun."
+    echo "Yangi jadvalga yozish kerak bo'lsa — Legacy* prefiksli entity yarating yoki"
+    echo "domain/entity/legacy/ paketga ko'chiring."
+    echo "Documented exceptions: ${ALLOWED_NEW_SCHEMA_IN_LEGACY[*]} (ADR-0008)."
     echo "Tafsilot: api-legacy/CLAUDE.md → 'GOLDEN RULE' bo'limi."
     EXIT_CODE=1
 else
-    echo "✅ api-legacy faqat eski jadvallar bilan ishlaydi."
+    echo "✅ api-legacy faqat eski jadvallar bilan ishlaydi (+ ${#ALLOWED_NEW_SCHEMA_IN_LEGACY[@]} documented exception)."
+fi
+
+# 6. domain/entity/legacy/ subpaket konventsiyasi (ADR-0008, 2026-05-07)
+#    Yangi *Legacy / Legacy* entity'lar shu paketga joylashtirilishi kerak.
+echo
+echo "════════════════════════════════════════════════════════════════"
+echo "domain/entity/legacy/ subpaket konventsiyasi"
+echo "════════════════════════════════════════════════════════════════"
+LEGACY_OUT_OF_PLACE=$(
+    {
+        grep -rln "^public class Legacy[A-Z]" domain/src/main/java/uz/hemis/domain/entity 2>/dev/null \
+            | grep -v "/legacy/" \
+            | grep -v build
+    } || true
+)
+
+if [[ -n "$LEGACY_OUT_OF_PLACE" ]]; then
+    echo
+    echo "⚠️  Legacy* entity'lar domain/entity/legacy/ paketdan tashqarida:"
+    echo "─────────────────────────────────────────────────────"
+    echo "$LEGACY_OUT_OF_PLACE" | sed 's|.*/uz/hemis/domain/entity/|  |' | sed 's|\.java$||'
+    echo
+    echo "Tavsiya: domain/entity/legacy/<sub-domain>/ ga ko'chirish."
+    # Warning only — not blocking yet. To block: uncomment below.
+    # EXIT_CODE=1
+else
+    echo "✅ Barcha Legacy* entity'lar to'g'ri paketda (domain/entity/legacy/...)."
 fi
 
 # 4. DB'da bor, code'da yo'q (informational)

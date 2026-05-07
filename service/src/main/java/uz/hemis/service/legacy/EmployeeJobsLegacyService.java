@@ -8,8 +8,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import uz.hemis.domain.entity.employee.EmployeeJobs;
-import uz.hemis.domain.repository.EmployeeJobsRepository;
+import uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs;
+import uz.hemis.domain.repository.LegacyEmployeeJobsRepository;
 
 import uz.hemis.common.JsonNull;
 
@@ -32,47 +32,47 @@ public class EmployeeJobsLegacyService {
 
     private final JdbcTemplate jdbcTemplate;
     private final CubaNestedObjectLoader nestedObjectLoader;
-    private final EmployeeJobsRepository employeeJobsRepository;
+    private final LegacyEmployeeJobsRepository legacyEmployeeJobsRepository;
 
     private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
-    // ==================== CRUD Operations ====================
+    // ==================== CRUD Operations (api-legacy: hemishe_e_employee_jobs) ====================
 
-    public Optional<EmployeeJobs> findById(UUID id) {
-        return employeeJobsRepository.findById(id);
+    public Optional<LegacyEmployeeJobs> findById(UUID id) {
+        return legacyEmployeeJobsRepository.findById(id);
     }
 
-    public List<EmployeeJobs> findByUniversity(String universityCode) {
-        return employeeJobsRepository.findByUniversityCode(universityCode);
+    public List<LegacyEmployeeJobs> findByUniversity(String universityCode) {
+        return legacyEmployeeJobsRepository.findByUniversity(universityCode);
     }
 
-    public List<EmployeeJobs> findByEmployeePinfl(String pinfl) {
-        return employeeJobsRepository.findByEmployeePinfl(pinfl);
+    public List<LegacyEmployeeJobs> findByEmployeePinfl(String pinfl) {
+        return legacyEmployeeJobsRepository.findByEmployeePinfl(pinfl);
     }
 
-    public List<EmployeeJobs> findByEmployeeId(UUID employeeId) {
-        return employeeJobsRepository.findByEmployeeId(employeeId);
+    public List<LegacyEmployeeJobs> findByEmployeeId(UUID employeeId) {
+        return legacyEmployeeJobsRepository.findByEmployeeId(employeeId);
     }
 
-    public Page<EmployeeJobs> findAllByUniversity(String universityCode, PageRequest pageRequest) {
-        return employeeJobsRepository.findByUniversityCode(universityCode, pageRequest);
-    }
-
-    @Transactional
-    public EmployeeJobs save(EmployeeJobs entity) {
-        return employeeJobsRepository.save(entity);
+    public Page<LegacyEmployeeJobs> findAllByUniversity(String universityCode, PageRequest pageRequest) {
+        return legacyEmployeeJobsRepository.findByUniversity(universityCode, pageRequest);
     }
 
     @Transactional
-    public EmployeeJobs saveAndFlush(EmployeeJobs entity) {
-        return employeeJobsRepository.saveAndFlush(entity);
+    public LegacyEmployeeJobs save(LegacyEmployeeJobs entity) {
+        return legacyEmployeeJobsRepository.save(entity);
     }
 
     @Transactional
-    public void delete(EmployeeJobs entity) {
-        // Soft delete — AuditableEntity pattern (deleted_at, @SQLRestriction)
-        entity.softDelete();
-        employeeJobsRepository.save(entity);
+    public LegacyEmployeeJobs saveAndFlush(LegacyEmployeeJobs entity) {
+        return legacyEmployeeJobsRepository.saveAndFlush(entity);
+    }
+
+    @Transactional
+    public void delete(LegacyEmployeeJobs entity) {
+        // CUBA soft delete — BaseEntity pattern: delete_ts/deleted_by + @SQLRestriction.
+        entity.setDeleteTs(java.time.LocalDateTime.now());
+        legacyEmployeeJobsRepository.save(entity);
     }
 
     /**

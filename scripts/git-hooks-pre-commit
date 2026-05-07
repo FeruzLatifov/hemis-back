@@ -31,11 +31,18 @@ STAGED_SQL=$(git diff --cached --name-only --diff-filter=ACM | grep -E 'changese
 
 # ─────────────────────────────────────────────────────────────────
 # CHECK 1: api-legacy bilan yangi schema entity import (ADR-0008)
+#
+# DOCUMENTED EXCEPTIONS (foydalanuvchi qarori, 2026-05-07):
+#   - User → users (yangi) — auth/profile read-only endpoints (LegacyUserInfoController,
+#     UserController, LegacySecurityHelper). M001+M004 sec_user → users sync
+#     taminlanadi. Yangi exception qo'shish — alohida ADR talab qilinadi.
 # ─────────────────────────────────────────────────────────────────
 if [ -n "$STAGED_JAVA" ]; then
+    # Forbidden imports — User EXCLUDED (documented exception).
+    # Employee/EmployeeJobs strict ban (split-brain xavfi).
     LEGACY_VIOLATIONS=$(echo "$STAGED_JAVA" | grep '^api-legacy/' | while read -r f; do
         # Check imports in staged content (not on-disk — git show :file gives staged version)
-        git show ":$f" 2>/dev/null | grep -E '^import uz\.hemis\.domain\.entity\.(security\.User|employee\.Employee|employee\.EmployeeJobs);?$' | while read -r import_line; do
+        git show ":$f" 2>/dev/null | grep -E '^import uz\.hemis\.domain\.entity\.employee\.(Employee|EmployeeJobs);?$' | while read -r import_line; do
             echo "  $f → $import_line"
         done
     done)
@@ -44,12 +51,45 @@ if [ -n "$STAGED_JAVA" ]; then
         echo -e "${RED}🔴 BLOCKER — api-legacy MUST NOT import new schema entities (ADR-0008):${NC}"
         echo "$LEGACY_VIOLATIONS"
         echo ""
-        echo -e "${YEL}  Fix: Use Legacy variants:${NC}"
-        echo "    User           → SecUser           (sec_user)"
-        echo "    Employee       → Teacher           (hemishe_e_teacher)"
-        echo "    EmployeeJobs   → LegacyEmployeeJobs (hemishe_e_employee_jobs)"
+        echo -e "${YEL}  Fix:${NC}"
+        echo "    Employee       → uz.hemis.domain.entity.employee.Teacher (hemishe_e_teacher)"
+        echo "    EmployeeJobs   → uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs (hemishe_e_employee_jobs)"
         echo ""
+        echo "  Documented exceptions: User → users (M001+M004 sync)"
         echo "  Reference: docs/adr/0008-api-legacy-entity-rebinding.md"
+        EXIT_CODE=1
+    fi
+
+    # Package-level guard: any other domain.entity.* import in api-legacy
+    # bo'lmasligi kerak (faqat Legacy* prefiksli + User exception).
+    OTHER_VIOLATIONS=$(echo "$STAGED_JAVA" | grep '^api-legacy/' | while read -r f; do
+        git show ":$f" 2>/dev/null | grep -oE '^import uz\.hemis\.domain\.entity\.[a-z.]+\.[A-Z][A-Za-z0-9]*;' | while read -r imp; do
+            ENTITY=$(echo "$imp" | sed -E 's/.*\.([A-Za-z0-9]+);/\1/')
+            # Skip documented exceptions
+            case "$ENTITY" in
+                User) continue ;;
+            esac
+            # Skip if already in legacy/ subpackage or has Legacy/Sec prefix
+            if echo "$imp" | grep -q '\.legacy\.'; then continue; fi
+            case "$ENTITY" in
+                Legacy*|Sec*) continue ;;
+            esac
+            # Locate the entity to read @Table — only flag yangi schema (non-hemishe_/sec_)
+            ENTITY_FILE=$(find domain/src/main/java -name "${ENTITY}.java" -not -path "*/build/*" 2>/dev/null | head -1)
+            [ -z "$ENTITY_FILE" ] && continue
+            TABLE=$(grep '@Table' "$ENTITY_FILE" 2>/dev/null | sed 's/.*name = "\([^"]*\)".*/\1/' | head -1)
+            if [ -n "$TABLE" ] && ! echo "$TABLE" | grep -qE '^(hemishe_|sec_)'; then
+                echo "  $f → $imp  (table: $TABLE — yangi schema)"
+            fi
+        done
+    done)
+
+    if [ -n "$OTHER_VIOLATIONS" ]; then
+        echo -e "${RED}🔴 BLOCKER — api-legacy yangi schema entity import qilyapti:${NC}"
+        echo "$OTHER_VIOLATIONS"
+        echo ""
+        echo "  GOLDEN RULE: api-legacy faqat eski jadvallar (hemishe_*, sec_*) bilan ishlashi kerak."
+        echo "  Yangi entity yarating: domain/entity/legacy/<sub>/Legacy<Name>.java"
         EXIT_CODE=1
     fi
 fi

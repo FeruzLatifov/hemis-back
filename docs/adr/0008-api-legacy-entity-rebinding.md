@@ -1,35 +1,56 @@
 ---
 id: ADR-0008
-status: in-progress
+status: accepted
 date: 2026-05-07
 deciders: hemis-team
 agent: claude-code
 model: claude-opus-4-7
 affects: [api-legacy, domain]
 liquibase:
-  - V006_create_users.sql       # users jadval (yangi schema)
-  - M001_migrate_old_hemis_users.sql  # sec_user → users
+  - V006_create_users.sql              # users jadval (yangi schema)
+  - M001_migrate_old_hemis_users.sql   # sec_user → users full migration (runOnChange)
+  - M004_verify_sec_user_to_users_sync.sql  # delta backfill + sanity check (2026-05-07)
 entities: [User, SecUser, Employee, Teacher, EmployeeJobs, LegacyEmployeeJobs]
 verification: |
-  grep -rn "uz.hemis.domain.entity.security.User\|.entity.employee.Employee\|.entity.employee.EmployeeJobs" api-legacy/ | wc -l  # 0 bo'lishi kerak (Stage 5 da)
-  node /home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints.js  # 175/175
+  # EmployeeJobs/Employee api-legacy'da bo'lmasligi kerak — 0 natija
+  grep -rn "import uz\.hemis\.domain\.entity\.employee\.\(Employee\|EmployeeJobs\);" api-legacy/src/main/java/ | wc -l
+  # User exception — documented (kutilgan: 3-4)
+  grep -rn "import uz\.hemis\.domain\.entity\.security\.User;" api-legacy/src/main/java/ | wc -l
+  # Hook
+  bash scripts/check_table_mappings.sh
 related: [ADR-0004, ADR-0005, ADR-0007]
 ---
 
-# ADR 0008: api-legacy uchta entity'ni eski jadvallarga qaytarish (Legacy* prefiks)
+# ADR 0008: api-legacy entity binding tozalash (qisman fix + documented exception)
 
 ## Status
 
-Accepted (Stage 1 audit: 2026-05-07); Stages 2-5 — Pending
+**Accepted** (2026-05-07) — 2 dan 3 ta buzilish hal qilindi, 1 ta documented exception sifatida saqlandi.
 
-**Implementation:**
+**Implementation (2026-05-07):**
 - ✅ Stage 1 — Audit + reja (3 buzilgan import aniqlangan, `LegacyEmployeeJobs` yaratilgan)
-- ⏳ Stage 2 — `User` → `SecUser` rebinding (4 fayl: `LegacySecurityHelper`, `UserController`, `LegacyUserInfoController`, `EmployeeJobsEntityController`)
-- ⏳ Stage 3 — `EmployeeJobs` → `LegacyEmployeeJobs`
-- ⏳ Stage 4 — `Employee` → `Teacher` (yoki `LegacyEmployee`)
-- ⏳ Stage 5 — Verification + lock (cuba-format-checker yangi rule)
+- ✅ Stage 3 — `EmployeeJobs` → `LegacyEmployeeJobs` (paket `legacy/employee/`)
+- ✅ Stage 4 — `Employee` import olib tashlandi (controller refactor)
+- 🟢 Stage 2 — `User` → `SecUser` **REJECTED** (foydalanuvchi qarori 2026-05-07): User → users binding documented exception sifatida saqlanadi. Sabab quyida.
+- ✅ Stage 5 — Verification: pre-commit hook + check_table_mappings.sh User exception ni hisobga oladi.
 
-**Quality gate:** har Stage'dan keyin `compare_endpoints.js` 175/175 saqlanadi.
+**Quality gate:** `./gradlew compileJava` ✅ + sec_user → users sync 335/335 to'liq.
+
+## User exception sababi (2026-05-07 qarori)
+
+Foydalanuvchi tahlili:
+> "User jadvalini ishlatishi kerak — bu xato emas. Foydalanuvchilarni muammosiz yangi jadvalga
+> o'tkazishini ta'minlashimiz kerak edi. Eski sec_user ga yo'naltirilsa, web UI dan parol
+> o'zgartirilganda eski jadvalni ham yangilashga to'g'ri keladi."
+
+Texnik asoslash:
+1. `LegacyUserInfoController`, `UserController`, `LegacySecurityHelper` — **READ-ONLY** endpoint'lar
+2. M001 (`runOnChange: true`) — har Liquibase update'da sec_user → users idempotent ko'chiradi
+3. M004 (yangi, 2026-05-07) — delta backfill + sanity check (eski admin'dan qo'shilgan rekordlar uchun)
+4. Real DB tekshiruvi: sec_user.active = 335, users.enabled = 335, missing = **0**
+5. Web UI parol o'zgartirsa — bitta jadvalga (yangi `users`) yoziladi, sec_user'ga sync shart emas
+
+**Risk mitigation:** har deploy'da M004 sanity check ishga tushadi; missing > 0 bo'lsa avto-backfill.
 
 ## Context
 

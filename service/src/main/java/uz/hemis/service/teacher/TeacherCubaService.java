@@ -8,7 +8,7 @@ import uz.hemis.common.audit.Audited;
 import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
-import uz.hemis.domain.entity.employee.LegacyEmployeeJobs;
+import uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs;
 import uz.hemis.domain.entity.employee.Teacher;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.LegacyEmployeeJobsRepository;

@@ -2,11 +2,9 @@
 -- S008: Position classifiers seed (14 h_position_type + 227 h_position)
 -- Source: /docs/lavozim_klassifikatorlar_2026.xlsx
 -- =====================================================
--- Note (legacy file nomi): tarixan "activity_statuses" deb nomlangan, lekin aslida
--- h_position_type + h_position jadvallariga seed qiladi. Fayl nomi Liquibase changeset
--- id integrity uchun saqlangan (database_change_log tarixida). Kontent esa to'g'ri.
+-- Seeds V003 (h_position_type + h_position) — h_* prefiks ADR-0006.
 --
--- University activity statuses (science_branch, university_activity_status) NOT here.
+-- University activity statuses (science_branch, university_activity_status) bu yerda EMAS.
 -- Ular V009_create_classifiers.sql ichida `INSERT ... SELECT FROM hemishe_h_*`
 -- orqali hemishe_h_science_branch, hemishe_h_university_activity_status dan copy qilinadi.
 

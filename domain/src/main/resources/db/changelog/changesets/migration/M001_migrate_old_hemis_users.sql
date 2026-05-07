@@ -237,3 +237,60 @@ BEGIN
     RAISE NOTICE 'M001 Phase 2: % oauth_client rows (% UNIVERSITY_BACKEND)',
         total_clients, otm_clients;
 END $$;
+
+-- =====================================================
+-- SANITY CHECK — sec_user vs users sinxron holatini log'da ko'rsatish
+-- =====================================================
+-- Background (ADR-0008, foydalanuvchi qarori 2026-05-07):
+--   api-legacy `User` entity'i `users` (yangi) jadvalga bog'liq. Eski CUBA admin
+--   web-dan qo'shilgan har bir sec_user rekordi bu yerga ko'chirilishi shart,
+--   aks holda /app/rest/user/info 404 qaytaradi.
+--
+-- Yuqoridagi INSERT ON CONFLICT DO UPDATE allaqachon delta sync qiladi (idempotent).
+-- Bu blok faqat **diagnostika** — har deploy'da Liquibase log'ida sec_user vs users
+-- mosligini ko'rsatadi. Missing > 0 bo'lsa — alarm signali (lekin INSERT yuqorida
+-- bajarilgan, demak missing 0 bo'lishi kerak).
+-- =====================================================
+DO $$
+DECLARE
+    sec_user_active INTEGER := 0;
+    users_active INTEGER := 0;
+    missing_in_users INTEGER := 0;
+    sec_table_exists BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name = 'sec_user'
+    ) INTO sec_table_exists;
+
+    IF NOT sec_table_exists THEN
+        RAISE NOTICE 'M001 sanity-check: sec_user table not found — skipping';
+        RETURN;
+    END IF;
+
+    SELECT COUNT(*) INTO sec_user_active
+        FROM sec_user
+        WHERE delete_ts IS NULL AND active = TRUE;
+
+    SELECT COUNT(*) INTO users_active
+        FROM users
+        WHERE deleted_at IS NULL AND enabled = TRUE;
+
+    SELECT COUNT(*) INTO missing_in_users
+        FROM sec_user old
+        WHERE old.delete_ts IS NULL
+          AND old.active = TRUE
+          AND NOT EXISTS (
+              SELECT 1 FROM users new
+              WHERE LOWER(new.username) = old.login_lc
+                AND new.deleted_at IS NULL
+          );
+
+    RAISE NOTICE 'M001 sanity-check: sec_user.active=%, users.enabled=%, missing_in_users=%',
+        sec_user_active, users_active, missing_in_users;
+
+    IF missing_in_users > 0 THEN
+        RAISE WARNING 'M001 SYNC GAP: % active sec_user rows not present in users — INSERT logic may have skipped them. Investigate.',
+            missing_in_users;
+    END IF;
+END $$;

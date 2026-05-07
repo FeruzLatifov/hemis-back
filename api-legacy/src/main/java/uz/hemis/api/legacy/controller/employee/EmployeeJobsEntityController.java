@@ -16,9 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
-import uz.hemis.domain.entity.employee.Employee;
-import uz.hemis.domain.entity.employee.EmployeeJobs;
-import uz.hemis.domain.entity.employee.LegacyEmployeeJobs;
+import uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs;
 import uz.hemis.domain.repository.LegacyEmployeeJobsRepository;
 import uz.hemis.service.legacy.EmployeeJobsLegacyService;
 
@@ -99,7 +97,7 @@ public class EmployeeJobsEntityController {
 
         log.debug("GET EmployeeJobs by id: {}, view: {}", entityId, view);
 
-        Optional<EmployeeJobs> entity = employeeJobsService.findById(entityId);
+        Optional<LegacyEmployeeJobs> entity = employeeJobsService.findById(entityId);
         if (entity.isEmpty()) {
             log.warn("EmployeeJob not found: id={}", entityId);
             Map<String, Object> errorResponse = new LinkedHashMap<>();
@@ -112,7 +110,7 @@ public class EmployeeJobsEntityController {
         // university the EmployeeJob belongs to (or be admin via JWT claim).
         if (!isAccessAllowed(entity.get())) {
             log.warn("SECURITY: cross-tenant EmployeeJob access blocked: id={}, owner_university={}",
-                    entityId, entity.get().getUniversityCode());
+                    entityId, entity.get().getUniversity());
             return ResponseEntity.status(403).body(forbiddenBody());
         }
 
@@ -120,7 +118,7 @@ public class EmployeeJobsEntityController {
     }
 
     /** Old-hemis 1:1 compat — Univer cross-tenant ruxsat berardi. */
-    private boolean isAccessAllowed(EmployeeJobs entity) {
+    private boolean isAccessAllowed(LegacyEmployeeJobs entity) {
         return true;
     }
 
@@ -189,13 +187,13 @@ public class EmployeeJobsEntityController {
 
         log.info("PUT /app/rest/v2/entities/hemishe_EEmployeeJob/{}", entityId);
 
-        Optional<EmployeeJobs> existingOpt = employeeJobsService.findById(entityId);
+        Optional<LegacyEmployeeJobs> existingOpt = employeeJobsService.findById(entityId);
         if (existingOpt.isEmpty()) {
             log.warn("EmployeeJob not found: id={}", entityId);
             return ResponseEntity.notFound().build();
         }
 
-        EmployeeJobs entity = existingOpt.get();
+        LegacyEmployeeJobs entity = existingOpt.get();
         // OWASP A01 BOLA — tenant scope check.
         if (!isAccessAllowed(entity)) {
             log.warn("SECURITY: cross-tenant EmployeeJob update blocked: id={}", entityId);
@@ -204,9 +202,9 @@ public class EmployeeJobsEntityController {
         // Mass-assignment defense — body cannot relocate the job to another OTM.
         body.remove("universityCode");
         body.remove("_university");
-        updateFromMap(entity, body);
+        legacyUpdateFromMap(entity, body);
 
-        EmployeeJobs saved = employeeJobsService.save(entity);
+        LegacyEmployeeJobs saved = employeeJobsService.save(entity);
         log.info("EmployeeJob updated successfully: {}", entityId);
         return ResponseEntity.ok(toMap(saved, returnNulls, view));
     }
@@ -247,7 +245,7 @@ public class EmployeeJobsEntityController {
 
         log.info("DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{}", entityId);
 
-        Optional<EmployeeJobs> entity = employeeJobsService.findById(entityId);
+        Optional<LegacyEmployeeJobs> entity = employeeJobsService.findById(entityId);
         if (entity.isEmpty()) {
             log.warn("EmployeeJob not found for deletion: id={}", entityId);
             Map<String, Object> errorResponse = new LinkedHashMap<>();
@@ -286,7 +284,7 @@ public class EmployeeJobsEntityController {
         String universityCode = securityHelper.getUniversityCodeFromContext();
         log.debug("GET search EmployeeJobs - university: {}, filter: {}, view: {}", universityCode, filter, view);
 
-        List<EmployeeJobs> entities = employeeJobsService.findByUniversity(universityCode);
+        List<LegacyEmployeeJobs> entities = employeeJobsService.findByUniversity(universityCode);
         return ResponseEntity.ok(entities.stream()
             .map(e -> toMap(e, returnNulls, view))
             .collect(Collectors.toList()));
@@ -351,7 +349,7 @@ public class EmployeeJobsEntityController {
         if (employeeCode != null) {
             log.debug("Searching by employee.pinfl: {}",
                     uz.hemis.common.vo.Pinfl.maskOrEmpty(employeeCode));
-            List<EmployeeJobs> entities = employeeJobsService.findByEmployeePinfl(employeeCode);
+            List<LegacyEmployeeJobs> entities = employeeJobsService.findByEmployeePinfl(employeeCode);
             return ResponseEntity.ok(entities.stream()
                 .map(e -> toMap(e, returnNulls, view))
                 .collect(Collectors.toList()));
@@ -360,7 +358,7 @@ public class EmployeeJobsEntityController {
         UUID employeeId = extractEmployeeIdFromFilter(body);
         if (employeeId != null) {
             log.debug("Searching by employee UUID: {}", employeeId);
-            List<EmployeeJobs> entities = employeeJobsService.findByEmployeeId(employeeId);
+            List<LegacyEmployeeJobs> entities = employeeJobsService.findByEmployeeId(employeeId);
             return ResponseEntity.ok(entities.stream()
                 .map(e -> toMap(e, returnNulls, view))
                 .collect(Collectors.toList()));
@@ -409,7 +407,7 @@ public class EmployeeJobsEntityController {
         int safeLimit = Math.max(limit, 1);
         int page = offset / safeLimit;
         PageRequest pageRequest = PageRequest.of(page, safeLimit, sorting);
-        Page<EmployeeJobs> entityPage = employeeJobsService.findAllByUniversity(universityCode, pageRequest);
+        Page<LegacyEmployeeJobs> entityPage = employeeJobsService.findAllByUniversity(universityCode, pageRequest);
 
         List<Map<String, Object>> result = entityPage.getContent().stream()
             .map(e -> toMap(e, returnNulls, view))
@@ -555,16 +553,16 @@ public class EmployeeJobsEntityController {
     // Private helpers
     // =====================================================
 
-    private Map<String, Object> toMap(EmployeeJobs entity, Boolean returnNulls, String view) {
+    private Map<String, Object> toMap(LegacyEmployeeJobs entity, Boolean returnNulls, String view) {
         return employeeJobsService.toMap(
                 entity.getId(),
-                entity.getEmployee() != null ? entity.getEmployee().getId() : null,
-                entity.getUniversityCode(), entity.getDepartmentCode(),
-                entity.getPositionTypeCode(), entity.getPositionCode(), entity.getEmployeeRateCode(),
-                entity.getEmploymentFormCode(), null, // employee_status removed — derived from is_current+end_date
-                entity.getVersion(), null,
+                entity.getEmployeeId(),
+                entity.getUniversity(), entity.getDepartment(),
+                entity.getEmployeeType(), entity.getEmployeePosition(), entity.getEmployeeRate(),
+                entity.getEmployeeForm(), entity.getEmployeeStatus(),
+                entity.getVersion(), entity.getTag(),
                 entity.getContractDate(), entity.getContractNumber(),
-                entity.getStartDate(), entity.getEndDate(),
+                entity.getJobStartDate(), entity.getJobEndDate(),
                 entity.getDecreeDate(), entity.getDecreeNumber(),
                 returnNulls, view);
     }
@@ -668,62 +666,6 @@ public class EmployeeJobsEntityController {
         return null;
     }
 
-    private void updateFromMap(EmployeeJobs entity, Map<String, Object> map) {
-        if (map.containsKey("employee")) {
-            UUID value = parseUuid(map.get("employee"));
-            if (value != null) {
-                Employee emp = new Employee();
-                emp.setId(value);
-                entity.setEmployee(emp);
-            }
-        }
-        if (map.containsKey("university")) {
-            String value = parseCode(map.get("university"));
-            if (value != null) entity.setUniversityCode(value);
-        }
-        if (map.containsKey("department")) {
-            String value = parseCode(map.get("department"));
-            if (value != null) entity.setDepartmentCode(value);
-        }
-        if (map.containsKey("employeeType")) {
-            String value = parseCode(map.get("employeeType"));
-            if (value != null) entity.setPositionTypeCode(value);
-        }
-        if (map.containsKey("employeePosition")) {
-            String value = parseCode(map.get("employeePosition"));
-            if (value != null) entity.setPositionCode(value);
-        }
-        if (map.containsKey("teacherPositionType")) {
-            String value = parseCode(map.get("teacherPositionType"));
-            if (value != null) entity.setPositionCode(value);
-        }
-        if (map.containsKey("employeeRate")) {
-            String value = parseCode(map.get("employeeRate"));
-            if (value != null) entity.setEmployeeRateCode(value);
-        }
-        if (map.containsKey("employeeForm")) {
-            String value = parseCode(map.get("employeeForm"));
-            if (value != null) entity.setEmploymentFormCode(value);
-        }
-        if (map.containsKey("employmentForm")) {
-            String value = parseCode(map.get("employmentForm"));
-            if (value != null) entity.setEmploymentFormCode(value);
-        }
-        // employee_status / employmentStaff columns were removed from the schema —
-        // legacy API still accepts these fields but they're ignored (active flag is
-        // derived from is_current + end_date).
-        if (map.containsKey("staffPosition") && !map.containsKey("employeePosition") && !map.containsKey("teacherPositionType")) {
-            String value = parseCode(map.get("staffPosition"));
-            if (value != null) entity.setPositionCode(value);
-        }
-        if (map.containsKey("jobStartDate")) entity.setStartDate(parseLocalDate(map.get("jobStartDate")));
-        if (map.containsKey("jobEndDate")) entity.setEndDate(parseLocalDate(map.get("jobEndDate")));
-        if (map.containsKey("contractDate")) entity.setContractDate(parseLocalDate(map.get("contractDate")));
-        if (map.containsKey("decreeDate")) entity.setDecreeDate(parseLocalDate(map.get("decreeDate")));
-        if (map.containsKey("contractNumber")) entity.setContractNumber(parseString(map.get("contractNumber")));
-        if (map.containsKey("decreeNumber")) entity.setDecreeNumber(parseString(map.get("decreeNumber")));
-    }
-
     @SuppressWarnings("unchecked")
     private UUID parseUuid(Object value) {
         if (value == null) return null;
@@ -760,14 +702,4 @@ public class EmployeeJobsEntityController {
         return str.isEmpty() ? null : str;
     }
 
-    private String parseString(Object value) {
-        return value == null ? null : value.toString();
-    }
-
-    private LocalDate parseLocalDate(Object value) {
-        if (value == null) return null;
-        if (value instanceof LocalDate ld) return ld;
-        String str = value.toString();
-        return str.isEmpty() ? null : LocalDate.parse(str);
-    }
 }

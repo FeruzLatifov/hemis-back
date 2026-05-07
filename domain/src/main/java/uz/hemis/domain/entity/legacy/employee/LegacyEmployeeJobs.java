@@ -1,4 +1,4 @@
-package uz.hemis.domain.entity.employee;
+package uz.hemis.domain.entity.legacy.employee;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,8 +13,12 @@ import java.util.UUID;
  *
  * <p>api-legacy modul'da Univer (Yii2 PHP) tomonidan chaqiriladigan
  * {@code POST /entities/hemishe_EEmployeeJobs} endpoint'i shu entity'ga yozadi.
- * Yangi {@link EmployeeJobs} (table: {@code employee_job}) modular schema uchun
- * — ikki entity bir-biriga aralashmaydi (api-legacy/CLAUDE.md "GOLDEN RULE").</p>
+ * Yangi {@code uz.hemis.domain.entity.employee.EmployeeJobs} (table: {@code employee_job})
+ * modular schema uchun — ikki entity bir-biriga aralashmaydi (api-legacy/CLAUDE.md "GOLDEN RULE").</p>
+ *
+ * <p><strong>Optimistic locking:</strong> {@link BaseEntity#getVersion()} (CUBA {@code version}
+ * INTEGER NOT NULL ustun) avtomatik ishlaydi — concurrent PUT'da
+ * {@code ObjectOptimisticLockingFailureException} 409 ga aylantiriladi.</p>
  *
  * <p><strong>FK conventions (CUBA legacy):</strong></p>
  * <ul>
@@ -39,25 +43,25 @@ public class LegacyEmployeeJobs extends BaseEntity {
     @Column(name = "_employee")
     private UUID employeeId;
 
-    @Column(name = "_university", length = 50)
+    @Column(name = "_university", length = 255)
     private String university;
 
-    @Column(name = "_department", length = 50)
+    @Column(name = "_department", length = 255)
     private String department;
 
-    @Column(name = "_employee_type", length = 10)
+    @Column(name = "_employee_type", length = 32)
     private String employeeType;
 
-    @Column(name = "_employee_position", length = 10)
+    @Column(name = "_employee_position", length = 32)
     private String employeePosition;
 
-    @Column(name = "_employee_rate", length = 10)
+    @Column(name = "_employee_rate", length = 32)
     private String employeeRate;
 
-    @Column(name = "_employee_form", length = 10)
+    @Column(name = "_employee_form", length = 32)
     private String employeeForm;
 
-    @Column(name = "_employee_status", length = 10)
+    @Column(name = "_employee_status", length = 32)
     private String employeeStatus;
 
     @Column(name = "job_start_date")
@@ -66,18 +70,18 @@ public class LegacyEmployeeJobs extends BaseEntity {
     @Column(name = "job_end_date")
     private LocalDate jobEndDate;
 
-    @Column(name = "tag", length = 100)
+    @Column(name = "tag", length = 255)
     private String tag;
 
     @Column(name = "contract_date")
     private LocalDate contractDate;
 
-    @Column(name = "contract_number", length = 100)
+    @Column(name = "contract_number", length = 255)
     private String contractNumber;
 
     @Column(name = "decree_date")
     private LocalDate decreeDate;
 
-    @Column(name = "decree_number", length = 100)
+    @Column(name = "decree_number", length = 255)
     private String decreeNumber;
 }

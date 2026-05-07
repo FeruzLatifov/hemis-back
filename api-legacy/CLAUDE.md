@@ -139,16 +139,27 @@ Univer (per-OTM Yii2 PHP) → POST /app/rest/v2/entities/hemishe_EEmployeeJobs
    - Yangi jadval yaratiladi → modern nomli entity (prefiks-siz)
 3. **Tarixiy istisno (hozirgi loyiha):** 60+ eski entity prefiks-siz nom bilan (`Student`, `Teacher`). Bularni hozirda rename qilmaymiz, lekin yangi konflikt'larda `Legacy*` ishlatamiz.
 
-### Hozirgi xatolar (rejalashtirilgan refactor — [ADR-0008](../docs/adr/0008-api-legacy-entity-rebinding.md))
+### Holat (2026-05-07 tuzatishdan keyin) — [ADR-0008](../docs/adr/0008-api-legacy-entity-rebinding.md)
 
-`api-legacy` modul'da 3 ta entity yangi schema'ga noto'g'ri map qilingan. Tuzatish reja va sprint
-bosqichlari uchun **ADR-0008** o'qing.
+| Entity | Jadval | api-legacy holati | Asos |
+|--------|--------|-------------------|------|
+| `EmployeeJobs` | `employee_job` (yangi) | ❌ **TAQIQ** — `EmployeeJobsEntityController` `LegacyEmployeeJobs`'ga ko'chirildi (2026-05-07) | Split-brain xavfi |
+| `Employee` | `employee` (yangi) | ❌ **TAQIQ** — controller'larda olib tashlandi | Split-brain xavfi |
+| `LegacyEmployeeJobs` | `hemishe_e_employee_jobs` | ✅ Mavjud — `domain/entity/legacy/employee/` paketda | CUBA legacy mapping |
+| `User` | `users` (yangi) | ✅ **DOCUMENTED EXCEPTION** | Auth/profile read-only, M001+M004 sec_user→users sync |
 
-| Xato entity | Qaysi jadvalga map | api-legacy ishlatadigan controller | Kerak entity |
-|-------------|--------------------|-----------------------------------|--------------|
-| `User` | `users` (yangi) | `LegacyUserInfoController`, `UserController`, `EmployeeJobsEntityController`, `LegacySecurityHelper` | `SecUser` (`sec_user`) — mavjud, almashtirish kerak |
-| `Employee` | `employee` (yangi) | `EmployeeJobsEntityController` | `Teacher` (`hemishe_e_teacher`) yoki yangi `LegacyEmployee` |
-| `EmployeeJobs` | `employee_job` (yangi) | `EmployeeJobsEntityController` | **`LegacyEmployeeJobs` (`hemishe_e_employee_jobs`) — 2026-05-06'da yaratildi** |
+**`User` exception sababi (foydalanuvchi qarori 2026-05-07):**
+- `LegacyUserInfoController`, `UserController`, `LegacySecurityHelper` — read-only endpoint'lar (`/me`, `/info`, `/validate`).
+- M001 (`runOnChange: true`) eski CUBA `sec_user` rekordlarini har deploy'da `users`'ga ko'chiradi.
+- M004 — qo'shimcha delta backfill + sanity check.
+- Web UI parol o'zgartirsa — bitta jadvalga (yangi `users`) yoziladi, sync overhead yo'q.
+
+**Yangi schema ga import ruxsat ro'yxati** (`scripts/check_table_mappings.sh` + `git-hooks-pre-commit`):
+```
+ALLOWED_NEW_SCHEMA_IN_LEGACY=("User")
+```
+
+Yangi exception qo'shish uchun: alohida ADR yozish + dual hook update.
 
 ### Service-layer komponentlar — bir xil konventsiya
 
@@ -210,17 +221,18 @@ To'liq tushuntirish: [`.claude/UNIVER_INTEGRATION.md`](../.claude/UNIVER_INTEGRA
 
 ```java
 // ❌ ADR-0008 violation — pre-commit hook reject qiladi
-import uz.hemis.domain.entity.security.User;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
 
-// ✅ Legacy variant
-import uz.hemis.domain.entity.security.SecUser;       // sec_user
-import uz.hemis.domain.entity.legacy.LegacyEmployeeJobs;  // hemishe_e_employee_jobs
-// Employee o'rniga: Teacher (hemishe_e_teacher)
+// ✅ Documented exception (foydalanuvchi qarori 2026-05-07)
+import uz.hemis.domain.entity.security.User;          // users — auth/profile read-only
+
+// ✅ Legacy variant (yangi entity yaratish kerak bo'lsa)
+import uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs;  // hemishe_e_employee_jobs
+// Employee o'rniga: Teacher (hemishe_e_teacher) — domain/entity/employee/ paketda
 ```
 
-**Mavjud 3 buzilgan import** (ADR-0008): `LegacySecurityHelper`, `UserController`, `LegacyUserInfoController`, `EmployeeJobsEntityController`. Tuzatish: ADR-0008 Stages 2-5.
+**Holat (2026-05-07):** Employee/EmployeeJobs api-legacy'dan butunlay olib tashlandi (controller `LegacyEmployeeJobs`'ga ko'chirildi). User entity'i documented exception sifatida qoladi.
 
 ---
 
