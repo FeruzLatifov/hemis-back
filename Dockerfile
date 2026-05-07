@@ -80,7 +80,15 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
     CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # JVM optimization flags
-ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+# --add-opens flags: Lombok 1.18.46 + Java 25 sun.misc.Unsafe.objectFieldOffset
+# deprecation WARNING'ni o'chiradi. Module boundary'ni explicit ochib JVM warning
+# logikasini chetlab o'tadi. Lombok upstream MethodHandles.Lookup'ga
+# o'tmaguncha vaqtinchalik flag.
+ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 \
+    --add-opens=java.base/java.lang=ALL-UNNAMED \
+    --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
+    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+    --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
 
 # Run application with environment variables support
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

@@ -127,10 +127,20 @@ tasks.bootRun {
     systemProperty("spring.profiles.active", findProperty("profile") ?: "dev")
 
     // JVM arguments for development
+    //
+    // --add-opens flags: Lombok 1.18.46 sun.misc.Unsafe.objectFieldOffset orqali
+    // private field'larga reflective kiradi (lombok.permit.Permit). Java 25'da
+    // bu terminally-deprecated, "WARNING" stderr'ga yoziladi. --add-opens flag'lari
+    // module boundary'ni explicit ochib, JVM'ning warning chiqarish mantig'ini
+    // chetlab o'tadi. Lombok upstream MethodHandles.Lookup'ga o'tmaguncha vaqtinchalik.
     jvmArgs = listOf(
         "-Xms512m",
         "-Xmx1024m",
-        "-XX:+UseG1GC"
+        "-XX:+UseG1GC",
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+        "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+        "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
     )
     
     // Load environment variables from .env file

@@ -170,6 +170,16 @@ subprojects {
     tasks.withType<Test> {
         useJUnitPlatform()
 
+        // Lombok 1.18.46 + Java 25 sun.misc.Unsafe deprecation — WARNING'ni o'chirish.
+        // --add-opens module boundary'ni explicit ochib, JVM warning logikasini chetlab o'tadi.
+        // Lombok upstream MethodHandles.Lookup'ga o'tmaguncha vaqtinchalik flaglar.
+        jvmArgs(
+            "--add-opens=java.base/java.lang=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang.invoke=ALL-UNNAMED",
+            "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED",
+            "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"
+        )
+
         // Load .env vars for tests and gate by TESTS_ENABLED
         val envFile = rootProject.file(".env")
         val envMap = mutableMapOf<String, String>()
