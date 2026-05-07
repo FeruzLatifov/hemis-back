@@ -1,3 +1,22 @@
+---
+id: ADR-0006
+status: implemented
+date: 2026-05-04
+deciders: hemis-team
+agent: claude-code
+model: claude-opus-4-7
+affects: [domain, service]
+liquibase:
+  - V003_create_positions.sql
+  - V004_create_employee.sql
+  - V011_create_university_buildings.sql
+  - S008_seed_activity_statuses.sql
+entities: [HPositionType, HPosition, HBuildingCategory, HConstructionMaterial, HRoofType]
+verification: |
+  grep -rn "@Table(name = \"h_" domain/src/main/java/uz/hemis/domain/entity/ | wc -l  # 5+ bo'lishi kerak
+related: [ADR-0001]
+---
+
 # ADR 0006: Klassifikator jadvallariga `h_*` prefiks konventsiyasi
 
 ## Status
@@ -43,8 +62,33 @@ bevosita yangilash xavfsiz.
 2. **Ekosistem sync mantiqiy** — universitet bazasi (hemis_NNN) bilan
    sync ma'noli (klassifikator hayot kechirgich biz tomonimizdan boshqariladi,
    lekin universitetlar shu qiymatlarni biladi)
+3. **Refdata semantikasi** — code-based PK (`code VARCHAR`), kam o'zgaradigan
+   stable enumeration (e.g., gender, nationality, position_type)
 
-Ikkala mezon **AND** mantiqida — har ikkalasi bajarilishi shart.
+Uchchala mezon **AND** mantiqida — barchasi bajarilishi shart.
+
+### Mezon BAJARILMAGAN holatlar (`h_` prefiks YO'Q)
+
+Shu mezonni bajarmaydigan jadvallar prefiks-siz yoziladi:
+
+| Jadval | Sabab |
+|--------|-------|
+| `role` (V001) | RBAC biznes domeni — Univer ekosistemi bilan sync emas (har stack o'zining roli) |
+| `permission` (V002) | RBAC biznes domeni — server-spetsifik, kod-da hardcoded ham bo'ladi |
+| `users` (V006) | HUMAN actor jadvali — refdata emas, oqim ma'lumoti |
+| `language` (V013) | i18n config — texnik, refdata semantikasi yo'q |
+| `menu` (V014) | UI struktura — refdata emas, hierarchical config |
+| `oauth_client` (V006) | Auth principal — server-spetsifik machine identity |
+| `university_lifecycle` (V009) | Event log — append-only operational jadval |
+
+### Tezkor qaror chizig'i
+
+Yangi jadval qachon `h_*` oladi?
+1. ❓ Boshqa entity FK target sifatida ko'rsatadimi? Yo'q → `h_` YO'Q
+2. ❓ 224 OTM Univer bazasida shu nomli jadval bor (`hemishe_h_*`)mi yoki sync mantiqiymi? Yo'q → `h_` YO'Q
+3. ❓ Code-based PK (`code VARCHAR`) bilan stable enumeration'mi? Yo'q → `h_` YO'Q
+
+Uchovi **HA** — `h_` qo'sh. Birortasi **YO'Q** — prefiks-siz.
 
 ## Alternatives Considered
 

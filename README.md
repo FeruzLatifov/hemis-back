@@ -2,12 +2,12 @@
 
 > **H**igher **E**ducation **M**anagement **I**nformation **S**ystem - Backend API
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-21%20LTS-orange.svg)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.6-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Java](https://img.shields.io/badge/Java-25%20LTS-orange.svg)](https://openjdk.org/)
 [![Gradle](https://img.shields.io/badge/Gradle-9.3.0-blue.svg)](https://gradle.org/)
 [![Liquibase](https://img.shields.io/badge/Liquibase-4.31.1-red.svg)](https://www.liquibase.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-blue.svg)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-6+-red.svg)](https://redis.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-blue.svg)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
 
 ---
 
@@ -81,24 +81,63 @@ app (entry point)
 
 ## Database Schema
 
-### Yangi Jadvallar (Liquibase bilan yaratilgan)
+### Yangi Jadvallar (Liquibase V001-V014 bilan yaratilgan)
 
-| Jadval | Tavsif |
-|--------|--------|
-| `users` | Yangi foydalanuvchilar (BCrypt hash) |
-| `roles` | Rollar (5 ta) |
-| `permissions` | Huquqlar (90+ ta) |
-| `user_roles` | User-Role mapping |
-| `role_permissions` | Role-Permission mapping |
-| `system_messages` | i18n xabar kalitlari |
-| `system_message_translations` | Tarjimalar |
-| `menus` | Dinamik menu tuzilmasi |
-| `languages` | Qo'llab-quvvatlanadigan tillar |
-| `language_translations` | Til nomlari tarjimasi |
+| Changeset | Jadvallar |
+|-----------|-----------|
+| `V001` | `role` |
+| `V002` | `permission` |
+| `V003` | `h_position_type`, `h_position` (ADR-0006) |
+| `V004` | `employee`, `employee_job`, `employee_academic_credential` |
+| `V005` | `organization`, `university_profile` |
+| `V006` | `users` (PLURAL — PostgreSQL reserved), `password_history`, `password_reset_token`, `oauth_client`, `oauth_client_role` |
+| `V007` | `user_role`, `role_permission` |
+| `V008` | `university_founder` |
+| `V009` | `university_lifecycle` (immutable log) |
+| `V011` | `university_building`, `building_lifecycle`, `h_building_category`, `h_construction_material`, `h_roof_type` (ADR-0001, ADR-0006) |
+| `V012` | `system_message`, `system_message_translation` (i18n) |
+| `V013` | `language`, `configuration` |
+| `V014` | `menu`, `user_favorite` (UI) |
+| `M001` | `sec_user → users` migratsiyasi |
+| `M002` | `hemishe_e_student` performance indexes |
+| `M003` | Student duplicates MV |
+| `S001-S010` | Seed data (roles, permissions, languages, translations) |
 
-### Legacy Jadvallar (ministry.sql)
+> **Naming exception:** `users` PLURAL (PostgreSQL `user` reserved word). Boshqa hammasi SINGULAR. Tafsilot: `.claude/rules.md` "Cross-Cutting Database Rules".
 
-Mavjud `ministry.sql` schemasi bilan to'liq moslik. Legacy jadvallar o'zgartirilmaydi.
+### DB Bootstrap — Source of Truth
+
+Loyihada ikki tipdagi jadvallar mavjud:
+
+1. **Bizning Liquibase changesets** (yuqorida) — V001-V014, M001-M003, S001-S010. Bizning ownership.
+
+2. **Legacy `hemishe_*` va `sec_*` jadvallar** — `CREATE TABLE` bizda YO'Q. Manbai:
+   - **old-hemis CUBA Platform** (`/home/adm1n/projects/startup/old-hemis`) ishlatadi shu schema'ni
+   - `test1_hemis` lokal DB old-hemis'dan `pg_dump` orqali olingan baseline (initial dump)
+   - Ushbu jadvallarni **HECH QACHON ALTER/DROP/RENAME qilmang** — Univer 224 OTM (`hemis_NNN`) ekosistemi bilan moslik (replication, sync). Tafsilot: `.claude/rules.md` Golden Rules.
+
+**Lokal setup uchun:**
+```bash
+# 1. PostgreSQL 18 + Redis 7 ishlatib turing (docker-compose.yml)
+docker-compose up -d postgres redis
+
+# 2. .env faylida DB nomi (lokal): DB_MASTER_NAME=test1_hemis
+
+# 3. Legacy baseline yuklang (faqat birinchi marta — old-hemis dump'idan)
+psql -U postgres -d test1_hemis < /path/to/old-hemis-baseline.sql
+
+# 4. Liquibase migration'larni qo'llang
+./gradlew :domain:liquibaseUpdate
+
+# 5. Mapping moslikni tekshiring (ADR-0008)
+./scripts/check_table_mappings.sh
+
+# 6. Git pre-commit hook o'rnating (Golden Rule #1 + #3 enforcement)
+cp scripts/git-hooks-pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+> **DIQQAT:** Production DB nomi `.env` orqali kelishadi (`DB_MASTER_NAME`). Hech qachon hard-code qilmang. CLAUDE.md "Golden Rule #1".
 
 ---
 
@@ -179,9 +218,9 @@ domain/src/main/resources/db/changelog/
 
 ### Requirements
 
-- Java 21 LTS
-- PostgreSQL 16+
-- Redis 6+
+- Java 25 LTS (Temurin tavsiya etiladi; Gradle toolchain auto-download mavjud)
+- PostgreSQL 18 (master/replica)
+- Redis 7 (cache + token store)
 - Gradle 9.3.0 (wrapper bilan birga keladi)
 
 ### Database Setup
@@ -485,8 +524,9 @@ chore: texnik o'zgarishlar
 
 | Resource | Path |
 |----------|------|
-| Frontend | `/home/adm1n/startup/hemis-front` |
-| Old Backend | `/home/adm1n/startup/old-hemis` |
+| Frontend | `/home/adm1n/projects/startup/hemis-front` |
+| Old Backend (CUBA) | `/home/adm1n/projects/startup/old-hemis` |
+| Integration tools | `/home/adm1n/projects/startup/hemis-tools` |
 | Documentation | `.claude/` folder |
 
 ---

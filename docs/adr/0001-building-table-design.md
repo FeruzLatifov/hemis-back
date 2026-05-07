@@ -1,9 +1,36 @@
-# ADR-001: University Buildings — Alohida jadval (Cadastre'ni kengaytirish emas)
+---
+id: ADR-0001
+status: implemented
+date: 2026-04-21
+deciders: hemis-team
+agent: human
+affects: [domain, api-web, api-university]
+liquibase:
+  - V011_create_university_buildings.sql
+entities: [UniversityBuilding, BuildingLifecycle, HBuildingCategory, HConstructionMaterial, HRoofType]
+verification: ./gradlew :domain:liquibaseStatus
+related: [ADR-0006]
+---
 
-**Sana:** 2026-04-21
-**Status:** ✅ Accepted
+# ADR 0001: University Buildings — Alohida jadval + Lifecycle log + Coordinates NULLABLE
+
+## Status
+
+Accepted (2026-04-21)
+
 **Deciders:** hemis-team
 **Kontekst:** OTM bino va inshootlari ma'lumotlarini saqlash talabi
+
+> **Eslatma:** Bu ADR uchta o'zaro bog'liq sub-qarorni o'z ichiga oladi:
+> - 1A: Alohida `university_building` jadval (Cadastre'ni kengaytirish emas) — quyida
+> - 1B: `building_lifecycle` immutable event log — quyida
+> - 1C: `latitude`/`longitude` NULLABLE pair-CHECK bilan — quyida
+>
+> Sub-qarorlar bitta domen (university buildings) ichida — kelajakda alohida bo'lishlari mumkin (ADR-0001a, ADR-0001b, ADR-0001c).
+
+---
+
+## 1A. Alohida `university_building` jadval (Cadastre'ni kengaytirish emas)
 
 ---
 
@@ -84,24 +111,23 @@ Bu **pragmatic trade-off** — soddaroq query + aniq ownership vs purest normali
 2. **Cadastre bilan JOIN (building'da no overlap)** — REDDI (har doim kadastr bor deb bo'lmaydi)
 3. **Inheritance (`cadastre` superclass)** — REDDI (CUBA legacy bilan nomos)
 
-## Tegishli qarorlar
+## Tegishli sub-qarorlar
 
-- **ADR-002**: Lifecycle event tracking (data irreversibility)
-- **ADR-003**: Coordinates NULLABLE (sync flexibility)
+- **1B** (quyida): Lifecycle event tracking — data irreversibility
+- **1C** (quyida): Coordinates NULLABLE — sync flexibility
 
 ## Havolalar
 
 - Excel template: `docs/Бино ва иншоотлар жадвали.xlsx`
-- Schema: `domain/src/main/resources/db/changelog/changesets/schema/V014_create_university_buildings.sql`
+- Schema: `domain/src/main/resources/db/changelog/changesets/schema/V011_create_university_buildings.sql`
 - Entity: `domain/src/main/java/uz/hemis/domain/entity/infrastructure/UniversityBuilding.java`
 - Domain-Driven Design (Eric Evans) — Bounded Contexts bobi
 
 ---
 
-## ADR-002: Lifecycle event tracking — data irreversibility
+## 1B. Lifecycle event tracking — data irreversibility
 
-**Sana:** 2026-04-21
-**Status:** ✅ Accepted
+**Status:** Accepted (2026-04-21)
 
 ### Kontekst
 
@@ -140,10 +166,9 @@ Bu pattern kelajakda boshqa triggerlarga kengayadi (CLOSED, DEMOLISHED).
 
 ---
 
-## ADR-003: Coordinates NULLABLE — sync flexibility
+## 1C. Coordinates NULLABLE — sync flexibility
 
-**Sana:** 2026-04-21
-**Status:** ✅ Accepted
+**Status:** Accepted (2026-04-21)
 
 ### Kontekst
 

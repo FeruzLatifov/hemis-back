@@ -243,16 +243,11 @@ hemis:
     allowed-headers: [Authorization, Content-Type, Idempotency-Key]
     max-age: 3600
 
-  rate-limit:
-    per-role:
-      VIEWER: 60          # req/min
-      UNIVERSITY_ADMIN: 300
-      MINISTRY_ADMIN: 600
-      SUPER_ADMIN: 1000
-    per-ip: 100           # anonymous
+  # Rate limit konfiguratsiyasi — canonical: security/CLAUDE.md "Rate Limiting" bo'limi
+  # Bu yerda faqat istalsa override misoli (per-module override emas, hozir global config).
 ```
 
-**Filter:** `RateLimitFilter` (allaqachon mavjud `app/security/`).
+**Filter:** `RateLimitFilter` (`app/security/`). To'liq misol va 429 response shape: `@security/CLAUDE.md`.
 
 ---
 
@@ -405,6 +400,6 @@ public class WebExceptionHandler {
 ---
 
 ## See Also
-- `@../service/CLAUDE.md` — Business logic patterns
-- `@../.claude/MANDATORY_REQUIREMENTS.md` — Test misollari
-- `@../security/CLAUDE.md` — Auth patterns
+- `../service/CLAUDE.md` — Business logic patterns
+- `../.claude/MANDATORY_REQUIREMENTS.md` — Test misollari
+- `../security/CLAUDE.md` — Auth patterns

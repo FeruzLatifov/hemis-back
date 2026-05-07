@@ -23,48 +23,53 @@
 
 ---
 
-## Database Schema Architecture (v2.0)
+## Database Schema Architecture (v3.0)
 
-HEMIS **modular monolith + bounded context schema separation** asosida quriladi.
+HEMIS **modular monolith + bounded context** asosida quriladi.
 
-### Schema struktura
+### Real holat (V001-V014, 2026-05-07)
+
+Hozir **barcha yangi jadvallar `public` schema'da** yaratilgan (PostgreSQL default). Quyidagi domain bo'linish faqat **logical** — JPA package strukturasida (`uz.hemis.domain.entity.security`, `.employee`, `.infrastructure`, …), lekin DB darajasida fizik schema separation YO'Q.
 
 ```
-PostgreSQL: hemis_db
+PostgreSQL: ${DB_MASTER_NAME}    (lokal: test1_hemis, prod: turli)
 │
-├── public schema (eski CUBA — TEGILMAYDI):
-│   ├── hemishe_e_*   — eski CUBA operational jadvallar
-│   ├── hemishe_h_*   — eski CUBA classifier (102 ta — yagona manba)
-│   └── sec_user      — eski auth (M001 migratsiya keyin users ga)
-│
-├── auth schema (yangi):
-│   ├── users, role, permission
-│   ├── user_role, role_permission
-│   └── password_history, password_reset_token
-│
-├── hr schema (yangi):
-│   ├── employee, employee_job
-│   └── position, position_type
-│
-├── univ schema (yangi):
-│   ├── organization, university_legal, university_profile
-│   ├── university_founder, university_lifecycle, university_cadastre
-│   └── university_building, building_lifecycle, building_category,
-│       construction_material, roof_type
-│
-├── ui schema (yangi):
-│   └── menu, user_favorite
-│
-├── i18n schema (yangi):
-│   ├── language, configuration
-│   └── system_message, system_message_translation
-│
-├── ref_ext schema (kelgusi):
-│   └── classifier extension jadvallar (eski jadvalga qo'shimcha ustun uchun)
-│
-└── analytics schema (kelgusi):
-    └── report/denormalized jadvallar
+└── public schema (HOZIRGI HAQIQIY HOLAT):
+    │
+    ├── Eski CUBA (TEGILMAYDI — Univer 224 OTM bilan moslik):
+    │   ├── hemishe_e_*   — eski CUBA operational jadvallar
+    │   ├── hemishe_h_*   — eski CUBA classifier (102 ta — yagona manba)
+    │   ├── hemishe_r_*   — eski CUBA junction
+    │   └── sec_user, sec_role, sec_permission — eski auth
+    │
+    ├── Yangi auth (V001, V002, V006, V007):
+    │   ├── role, permission, user_role, role_permission
+    │   ├── users (PLURAL — PostgreSQL reserved word)
+    │   ├── password_history, password_reset_token
+    │   └── oauth_client, oauth_client_role
+    │
+    ├── Yangi HR (V003, V004):
+    │   ├── employee, employee_job
+    │   ├── employee_academic_credential
+    │   └── h_position_type, h_position (h_* — ADR-0006 klassifikator)
+    │
+    ├── Yangi university (V005, V008, V009, V011):
+    │   ├── organization, university_profile
+    │   ├── university_founder, university_lifecycle
+    │   ├── university_building, building_lifecycle
+    │   └── h_building_category, h_construction_material, h_roof_type (ADR-0006)
+    │
+    ├── Yangi UI (V014):
+    │   └── menu, user_favorite
+    │
+    └── Yangi i18n (V012, V013):
+        ├── language, configuration
+        └── system_message, system_message_translation
 ```
+
+### Maqsadli holat (kelajakdagi migration — Plan only)
+
+Kelajakda alohida fizik schema separation tavsiya etiladi: `auth.*`, `hr.*`, `univ.*`, `ui.*`, `i18n.*`. Buning uchun alohida ADR yoziladi. Hozircha bunga tayyorgarlik yo'q — barcha entity `@Table(name = "...")` schema-siz yoziladi (default `public`).
 
 ---
 
@@ -92,10 +97,11 @@ Faqat **yangi business concept** uchun, ya'ni `hemishe_*` da mavjud bo'lmagan na
 
 ### ✅ YANGI JADVAL YARATILSA — schema va naming qoidalari
 
-- **Schema:** mos domain schema'da (`auth`, `hr`, `univ`, `ui`, `i18n`, `edu`, `analytics`)
+- **Schema (hozir):** `public` (default — V001-V014 hammasi shu yerda). Domen schema separation kelajakdagi reja, ADR talab qiladi.
 - **Jadval nomi:** singular, lowercase, underscore separator (`employee_job`, `building_lifecycle`)
-- **Prefix YO'Q:** yangi jadvalda prefix ishlatilmaydi (`e_`, `h_`, `r_` kabi)
-- **PK:** `id UUID PRIMARY KEY DEFAULT gen_random_uuid()`
+- **Naming istisno (PostgreSQL reserved words):** `users`, `orders`, `groups` — PLURAL ishlatiladi (`user` keyword bilan to'qnashishni oldini olish). Boshqa hech qaysi jadval PLURAL emas.
+- **Prefix:** `h_` faqat ADR-0006 mezoni bo'yicha (klassifikator + FK target + sync). Boshqa jadvallar prefiks-siz.
+- **PK:** `id UUID PRIMARY KEY DEFAULT gen_random_uuid()` (yangi jadvallar). Klassifikator (`h_*`) — `code VARCHAR(20) PRIMARY KEY`.
 - **Audit (modern pattern):**
 
 | Jadval turi | Ustunlar | Base class |
@@ -790,3 +796,95 @@ Bu qoidalar **vaqtinchalik** — 2027 yoki undan keyin:
 5. Modern naming (`is_active`, `created_at`) butun sistemada
 
 Bu — **Strangler Fig Pattern'ning to'liq yakuni**. Hozir faqat eski tizim bilan parallel ishlash.
+
+---
+
+## Cross-Cutting Database Rules (2026-05-07 — kengaytirma)
+
+Quyidagi qoidalar `V001-V014` audit (2026-05-07) natijasida aniqlangan. Avval implicit edi, hozir explicit:
+
+### 1. Naming Exceptions — PostgreSQL Reserved Words
+
+| Jadval | Forma | Sabab |
+|--------|-------|-------|
+| `users` | PLURAL | `user` PostgreSQL reserved word — `SELECT * FROM user` xato |
+| `orders` (kelajakda) | PLURAL | `order` reserved (ORDER BY) |
+| `groups` (kelajakda) | PLURAL | `group` reserved (GROUP BY) |
+| Qolgan barcha jadvallar | SINGULAR | `employee`, `role`, `permission`, `system_message` |
+
+**Qoida:** Yangi jadval nomi PostgreSQL reserved word'ga to'g'ri kelsa — PLURAL. Aks holda — SINGULAR. Tasdiqlash: `psql -c "SELECT word FROM pg_get_keywords() WHERE word = 'X' AND catcode = 'R'"` reserved bo'lsa NULLda emas qaytaradi.
+
+### 2. Soft-Delete UNIQUE — har doim PARTIAL
+
+Soft-delete (`deleted_at`) bilan jadvalda har UNIQUE constraint **majburiy `WHERE deleted_at IS NULL`** partial index'i bilan:
+
+```sql
+-- ❌ NOTO'G'RI (oddiy UNIQUE):
+email VARCHAR(255) NOT NULL UNIQUE,
+
+-- ✅ TO'G'RI (Partial UNIQUE):
+email VARCHAR(255) NOT NULL,
+...
+CREATE UNIQUE INDEX uq_users_email ON users(email) WHERE deleted_at IS NULL;
+```
+
+**Sabab:** Soft-deleted yozuvni qayta yaratish kerak bo'lsa — oddiy UNIQUE bloklaydi. Partial UNIQUE soft-deleted'ni e'tiborsiz qoldiradi.
+
+**Hozirgi xato:** `oauth_client.client_id` (V006:154) — oddiy UNIQUE. Kelajak migration (M005) Partial UNIQUE'ga ko'chiradi.
+
+### 3. FK Index Mandate — har FK ga partial index
+
+PostgreSQL **avtomatik FK index qo'ymaydi**. Har FK uchun majburiy:
+
+```sql
+-- FK declaration:
+gender_code VARCHAR(20) REFERENCES public.hemishe_h_gender(code),
+...
+
+-- Index (majburiy):
+CREATE INDEX idx_employee_gender_code ON employee(gender_code) WHERE deleted_at IS NULL;
+```
+
+Index'siz: `DELETE FROM hemishe_h_gender` o'nlab daqiqa, JOIN'da sequential scan. Audit: `M004_classifier_fk_indexes` changeset rejada (V004 classifier FK'lari uchun).
+
+### 4. Module ↔ Entity Ownership — Pre-commit Reject
+
+`api-legacy/**/*.java` ichida YANGI schema entity import topilsa — pre-commit hook reject qiladi:
+
+```
+api-legacy/**/import.*entity\.(security\.User|employee\.Employee|employee\.EmployeeJobs)\b → REJECT
+```
+
+Manba: ADR-0008. Implementation: `.claude/hooks/post-edit.sh` (pending — Stage 5).
+
+### 5. ADR Status Drift Detection — har sprint
+
+ADR `Accepted` qarorni anglatadi, **implementatsiyani EMAS**. Har ADR'da `## Implementation` bo'limi bo'lishi shart:
+
+```markdown
+## Implementation
+- ✅ Stage 1 — Audit
+- ⏳ Stage 2 — Code refactor
+- ❌ Stage 3 — Blocked (sabab: …)
+```
+
+Sprint check: `grep -L "## Implementation" docs/adr/*.md` → bo'sh bo'lishi shart.
+
+### 6. Bootstrap Source of Truth
+
+Har jadval uchun **manba** dokumentlangan:
+- **Bizning Liquibase changeset** (V001-V014, M001-M003, S001-S010) — bizning ownership
+- **Legacy dump (old-hemis)** — `hemishe_*`, `sec_*` — manbai dump-NNNN.sql + commit-hash (`README.md` "DB Bootstrap" bo'limida)
+
+Yangi jadval qo'shilganda: `domain/CLAUDE.md` "Real holat" jadvaliga qator qo'shish (ADR-0006/0008 patterni).
+
+### 7. ADR-0006 Mezoni — `h_*` faqat refdata
+
+`h_` prefiks majburiy mezonlari (UCHCHALA bajarilishi shart):
+1. FK target (boshqa entity'lar tomonidan ko'rsatiladi)
+2. Univer ekosistemi sync mantiqiy (`hemishe_h_*` ga teng)
+3. Refdata semantikasi (code-based PK, stable enumeration)
+
+Birortasi bajarilmasa — prefiks YO'Q. RBAC (`role`, `permission`), Auth (`users`, `oauth_client`), Operational log (`*_lifecycle`) — prefiks-siz.
+
+Tafsilot: `docs/adr/0006-classifier-h-prefix.md`.

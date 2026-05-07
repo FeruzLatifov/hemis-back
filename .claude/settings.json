@@ -9,6 +9,11 @@
       "Bash(git show:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(wc:*)",
+      "Bash(./scripts/check_table_mappings.sh)",
+      "Task",
       "WebSearch",
       "WebFetch(domain:mvnrepository.com)",
       "WebFetch(domain:docs.spring.io)",
@@ -16,7 +21,9 @@
       "WebFetch(domain:hibernate.org)",
       "WebFetch(domain:resilience4j.readme.io)",
       "WebFetch(domain:openjdk.org)",
-      "WebFetch(domain:postgresql.org)"
+      "WebFetch(domain:postgresql.org)",
+      "WebFetch(domain:code.claude.com)",
+      "WebFetch(domain:docs.claude.com)"
     ],
     "deny": [
       "Read(**/.env)",
@@ -56,20 +63,29 @@
   "env": {
     "TESTS_ENABLED": "true"
   },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit.sh"
+          }
+        ]
+      }
+    ]
+  },
   "companyAnnouncements": [
-    "SCALE: 230 universities, ~1.15M students — every change affects national infrastructure.",
-    "BACKWARD COMPATIBILITY MANDATORY: api-legacy CUBA format must not break.",
-    "All endpoints MUST have: Swagger annotations + integration test + unit test (70% coverage).",
-    "Database changes ONLY via Liquibase migrations with mandatory rollback file.",
-    "NEVER modify hemishe_* legacy tables structure (ALTER/DROP/RENAME forbidden).",
-    "JPA entities: use @Getter @Setter (NOT @Data) — equals/hashCode triggers N+1.",
-    "@Cacheable on private methods does NOT work (Spring AOP self-invocation).",
-    "External integrations: Resilience4j (timeout/retry/CB) tavsiya — hozir AbstractGovernmentApiService RestTemplate'siz protection. Yangi integratsiyada qo'shish.",
-    "Tests: prefer real shared dev DB (5-year CUBA data) + @Transactional rollback isolation. Testcontainers only for app-level integration tests.",
-    "Modern Spring 6.x: @MockitoBean (not @MockBean), RestClient (not RestTemplate), JdbcClient (not JdbcTemplate) for new code.",
-    "Spring Modulith 1.4.0 in use — ModularityTests verifies module boundaries. Don't break dependency graph.",
-    "JWT: TokenBlacklistService + Redis already implemented. Future enhancement: jti claim + kid header + refresh rotation (see security/CLAUDE.md 2.2).",
-    "BCrypt strength factor: 12 minimum (OWASP 2025); consider Argon2id for new services.",
-    "Java 25 features: prefer records for DTOs, pattern matching for switch."
-  ]
+    "SCALE: 230 OTM (224 — Univer Yii2 ekosistemi), ~1.15M students — every change affects national infrastructure.",
+    "BACKWARD COMPATIBILITY MANDATORY: api-legacy must match old-hemis 1:1 (175/175 integration tests). Run hemis-tools/.../compare_endpoints.js before merging api-legacy changes.",
+    "Database changes ONLY via Liquibase migrations (V###/M###/S### naming) with mandatory rollback file. NEVER ALTER/DROP/RENAME hemishe_* legacy tables.",
+    "JPA entities: @Getter @Setter (NOT @Data — equals/hashCode triggers N+1). @ManyToOne defaults to EAGER — always specify fetch=FetchType.LAZY.",
+    "@Cacheable / @Transactional / @Async on private methods does NOT work (Spring AOP self-invocation). Make method public or move to a separate @Service bean.",
+    "BCrypt strength 12 minimum (OWASP 2025). Never log PII (pinfl, password, jwt) — mask first 8 chars + '****'.",
+    "Module boundary: api-legacy → hemishe_*/sec_* tables only; api-university/api-web → new schema (employee_job, users, h_*). Mixing causes split-brain bugs (ADR-0008).",
+    "Naming exceptions: PostgreSQL reserved words (`users`, `orders`, `groups`) — PLURAL. Otherwise — SINGULAR. Soft-delete tables — Partial UNIQUE (WHERE deleted_at IS NULL).",
+    "Status semantics: ADR `Accepted` = decision made (not necessarily implemented). Check `## Implementation` section for actual progress (✅ done / ⏳ pending)."
+  ],
+  "autoMemoryEnabled": true
 }

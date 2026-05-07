@@ -1,7 +1,7 @@
 ---
 description: Run a comprehensive PR review using all specialized subagents in parallel
 argument-hint: [PR_number_or_branch]  (optional)
-allowed-tools: Bash, Read, Grep, Glob, Agent
+allowed-tools: Bash, Read, Grep, Glob, Task
 ---
 
 Multi-agent PR review for: ${ARGUMENTS:-current branch}
@@ -44,50 +44,53 @@ Lines: +AAAA / -BBB
 
 ### 3. Launch agents in parallel
 
-Use the `Agent` tool to dispatch specialized reviews. **Run all simultaneously** in one message.
+Use the `Task` tool to dispatch specialized subagent reviews. **Run all in a single message
+with multiple Task calls** so they execute concurrently — sequential calls double review time.
 
-#### a) N+1 Detector (if Java source changed in service/, domain/, mapper/)
+Trigger each agent only when relevant files changed (skip otherwise — empty input wastes context):
+
+#### a) N+1 Detector — if `service/**`, `domain/**/repository/**`, or `**/*Mapper.java` changed
 ```
-Agent({
+Task({
   subagent_type: "n-plus-one-detector",
   description: "N+1 query detection",
-  prompt: "Review these changed files for N+1 patterns: <list>. Focus on JPA fetch type, JOIN FETCH usage, Lombok @Data on entities."
+  prompt: "Review these changed files for N+1 patterns: <comma-separated paths>. Focus on JPA fetch type, JOIN FETCH usage, @EntityGraph, Lombok @Data on entities, accessor calls inside iteration."
 })
 ```
 
-#### b) Liquibase Reviewer (if migrations changed)
+#### b) Liquibase Reviewer — if `domain/src/main/resources/db/changelog/**` changed
 ```
-Agent({
+Task({
   subagent_type: "liquibase-reviewer",
   description: "Migration safety review",
-  prompt: "Review these migration changesets: <list>. Verify rollback files, idempotency, no hemishe_* ALTER, master.yaml registration."
+  prompt: "Review these migration changesets: <list>. Verify rollback file presence, idempotency (IF NOT EXISTS), no ALTER on hemishe_* tables, master.yaml registration, lock-free DDL."
 })
 ```
 
-#### c) Cache Strategist (if @Cacheable / @CacheEvict in diff)
+#### c) Cache Strategist — if `@Cacheable` / `@CacheEvict` / `@CachePut` in diff
 ```
-Agent({
+Task({
   subagent_type: "cache-strategist",
   description: "Cache annotation review",
-  prompt: "Review cache annotations added/changed: <list>. Verify TTL config, AOP safety, evict pair completeness."
+  prompt: "Review cache annotations added/changed: <list>. Verify TTL config in CacheConfig, AOP self-invocation safety, missing @CacheEvict pair on writes, mutable list caching, SpEL key safety."
 })
 ```
 
-#### d) CUBA Format Checker (if api-legacy/ changed)
+#### d) CUBA Format Checker — if `api-legacy/**` changed
 ```
-Agent({
+Task({
   subagent_type: "cuba-format-checker",
   description: "CUBA backward compat check",
-  prompt: "Validate api-legacy changes preserve CUBA format: <list>."
+  prompt: "Validate api-legacy changes preserve CUBA format: <list>. Check: LinkedHashMap (not HashMap), @JsonPropertyOrder, _entityName/_instanceName fields, FK as nested object, datetime format, error envelope shape."
 })
 ```
 
-#### e) Security Auditor (if security/, controllers, or auth-related changed)
+#### e) Security Auditor — if `security/**`, `**/controller/**`, or auth-related changed
 ```
-Agent({
+Task({
   subagent_type: "security-auditor",
   description: "OWASP 2025 audit",
-  prompt: "Audit for OWASP Top 10:2025 violations: <list>. Pay special attention to @PreAuthorize, SQL injection, PII logging, hardcoded secrets."
+  prompt: "Audit for OWASP Top 10:2025 violations: <list>. Pay special attention to: missing @PreAuthorize on controller methods, SQL injection (string concat in queries), PII logging (pinfl/password/token), hardcoded secrets, weak crypto, SSRF, unsafe deserialization."
 })
 ```
 
@@ -162,7 +165,7 @@ If 0 P0 + 0 P1 → `✅ APPROVE`. Otherwise → `❌ REQUEST CHANGES`.
 
 ## Constraints
 
-- Always run agents in PARALLEL (single message with multiple Agent calls), not sequential
+- Always run agents in PARALLEL (single message with multiple Task calls), not sequential
 - If a subagent doesn't apply (e.g., no migration files) → skip, don't run with empty input
 - Don't approve PR with P0 findings, regardless of urgency
 - Don't suggest disabling agents to "speed up review"

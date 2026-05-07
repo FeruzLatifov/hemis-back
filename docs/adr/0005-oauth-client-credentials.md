@@ -1,8 +1,28 @@
-# ADR 0004: OAuth `client_credentials` grant 224 OTM B2B uchun
+---
+id: ADR-0005
+status: in-progress
+date: 2026-05-04
+deciders: hemis-team
+agent: human
+affects: [api-university, security, api-legacy]
+liquibase:
+  - V006_create_users.sql  # oauth_client jadval
+entities: [OAuthClient, OAuthClientRole]
+verification: ./scripts/check_table_mappings.sh
+related: [ADR-0004]
+---
+
+# ADR 0005: OAuth `client_credentials` grant 224 OTM B2B uchun
 
 ## Status
 
-Proposed (2026-05-04)
+Accepted (server-side: 2026-05-04); 224 OTM rollout — In Progress
+
+**Implementation:**
+- ✅ Server tomon (`OAuthClient`, `OAuthClientAuthenticationService`, `UniversityOAuthTokenController`) — to'liq
+- ⏳ 224 OTM PHP feature flag — bosqich 2 boshlanmagan
+- ⏳ Canary deploy — bosqich 3
+- ⏳ Decommission (12 oy) — bosqich 5
 
 ## Context
 

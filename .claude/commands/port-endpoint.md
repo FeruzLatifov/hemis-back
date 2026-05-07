@@ -6,229 +6,123 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 Port the legacy endpoint specified in arguments: $ARGUMENTS
 
-## Workflow
+> **Canonical workflow:** `.claude/ENDPOINT_PORTING_GUIDE.md` (8 qadam, to'liq spec).
+> Bu slash command — qisqa avtomatlashtirilgan boshqaruv. Tafsilot uchun `@.claude/ENDPOINT_PORTING_GUIDE.md` o'qing.
 
-Execute these steps in order. Stop and report if any blocker is found.
+## Quick Workflow (8 qadam)
 
-### 1. Parse the trigger
+| # | Qadam | Vosita | Output |
+|---|-------|--------|--------|
+| 1 | Trigger parse | `$ARGUMENTS` → method + path | — |
+| 2 | Duplicate check | `grep -rn "<path>" api-legacy/` | STOP if topildi |
+| 3 | Old-hemis live response | `curl -H "Authorization: Bearer $TOKEN" :8082<path>` | `legacy-fixtures/<name>.json` |
+| 4 | Metadata extract | `old_hemis.md` (tag/desc) + `rest-services.xml` (params) | tag, summary |
+| 5 | Controller generation | `toMap()` + `LinkedHashMap` pattern (NOT MapStruct) | `<Service>EntityController.java` |
+| 6 | Test va solishtirish | `diff old.json new.json` → 100% MATCH | green |
+| 7 | endpoint_tester.html | `endpoints/XX-*.js` ga test button | UI |
+| 8 | Univer kontrakt verify | `node compare_endpoints.js` → 175/175 | green |
 
-Extract HTTP method and path from `$ARGUMENTS`. Examples:
-- `GET /services/tax/rent` → method=GET, path=/services/tax/rent
-- `POST /entities/hemishe$Student` → method=POST, path=/entities/hemishe$Student
+## Critical Patterns (api-legacy)
 
-### 2. Check duplicate
+**Real implementation:** 261 ta controller `toMap()` + `LinkedHashMap` ishlatadi. **MapStruct ishlatilmaydi** api-legacy'da.
 
-Search if this endpoint is already implemented:
-```bash
-grep -rn "$path" --include="*Controller.java" /home/adm1n/projects/startup/hemis-back/api-legacy
+```java
+// ✅ TO'G'RI — LinkedHashMap (CUBA field order saqlanadi)
+private Map<String, Object> toMap(Entity entity) {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("_entityName", "hemishe$Student");          // hash, dollar — CUBA convention
+    map.put("_instanceName", buildInstanceName(entity));
+    map.put("id", entity.getId().toString());
+    // Old-hemis qaytargan tartibda, faqat o'sha maydonlar
+    map.put("createTs", formatDateTime(entity.getCreatedAt()));  // yyyy-MM-dd'T'HH:mm:ss.SSS
+    map.put("_employee", nestedRef(entity.getEmployee()));        // {"id": "uuid"}
+    return map;
+}
+
+// ❌ NOTO'G'RI — HashMap field order'ni yo'qotadi
+Map<String, Object> map = new HashMap<>();
+
+// ❌ NOTO'G'RI — MapStruct CUBA dynamic field'larni boshqara olmaydi
+@Mapper(componentModel = "spring")
+public interface StudentLegacyMapper { ... }
 ```
 
-If found → STOP and report: "Already implemented at: <file>". Don't duplicate.
-
-### 3. Read old-hemis metadata
-
-```bash
-# Endpoint metadata from old API spec
-jq '.paths."<path>"."<method>"' /home/adm1n/startup/old_hemis.json
+**FK = nested object majburiy:**
+```json
+// ✅ {"_employee": {"id": "uuid-string"}}
+// ✅ {"_university": {"code": "401"}}
+// ❌ {"_employee": "uuid-string"}     ← flat string QABUL QILINMAYDI
 ```
 
-Extract: parameters, request body schema, response schema, security requirements.
+**Datetime format:** `yyyy-MM-dd'T'HH:mm:ss.SSS` (3 raqam millisecond, T separator).
 
-### 4. Capture live response (if old-hemis is running)
+## Controller Pattern
 
-```bash
-# Old-hemis runs on :8082, user otm351
-TOKEN=$(curl -s -X POST http://localhost:8082/app/rest/v2/oauth/token \
-    -u "myclient:myclient" \
-    -d "grant_type=password&username=otm351&password=<from .env>" | jq -r .access_token)
-
-curl -s -H "Authorization: Bearer $TOKEN" "http://localhost:8082<path>" \
-  > /home/adm1n/projects/startup/hemis-back/api-legacy/src/test/resources/legacy-fixtures/<endpoint-name>.json
-```
-
-If old-hemis not running, skip but warn: fixture-based test won't be possible.
-
-### 5. Generate Controller
-
-Create or update controller in `api-legacy/src/main/java/uz/hemis/api/legacy/controller/`.
-
-**Pattern:**
 ```java
 @RestController
 @RequestMapping("/app/rest/v2")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "<Service> Legacy", description = "CUBA-compatible <description>")
-public class <Service>LegacyController {
+@Tag(name = "06.Talaba", description = "<from old_hemis.md>")
+public class StudentEntityController {
 
-    private final <Service>Service modernService;  // SHARED with api-web
-    private final <Service>LegacyMapper legacyMapper;
+    private final StudentService modernService;     // SHARED with api-web
+    private final UniversityFilterHelper univHelper;
 
-    @Operation(summary = "<from old_hemis.json>")
-    @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Success",
-            content = @Content(schema = @Schema(implementation = <Dto>.class))),
-        @ApiResponse(responseCode = "401", description = "Unauthorized"),
-        @ApiResponse(responseCode = "404", description = "Not found")
-    })
-    @<Method>Mapping("<path>")
-    @PreAuthorize("hasAuthority('<resource>.<action>')")
-    public ResponseEntity<<Dto>LegacyDto> <method>(...) {
-        // 1. Map legacy params → modern DTO
-        // 2. Call shared service
-        // 3. Map modern result → legacy DTO (CUBA format)
-        return ResponseEntity.ok(legacyMapper.toLegacy(result));
+    @GetMapping("/entities/hemishe_EStudent")
+    @PreAuthorize("hasAuthority('student.view')")
+    @Transactional(readOnly = true)
+    @Operation(summary = "Talaba ro'yxati (CUBA format)")
+    public ResponseEntity<List<Map<String, Object>>> getAll(...) {
+        String universityCode = univHelper.currentUniversityCode();
+        Page<Student> page = repository.findByUniversityCode(universityCode, pageable);
+        return ResponseEntity.ok(toMapList(page.getContent()));
+    }
+
+    private Map<String, Object> toMap(Student e) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("_entityName", "hemishe$Student");
+        // ... old-hemis tartibida
+        return m;
     }
 }
 ```
 
-### 6. Generate DTO with CUBA format
+## Verification
 
-```java
-@Data
-@JsonPropertyOrder({
-    "_entityName",
-    "_instanceName",
-    "id",
-    // ... fields in OLD response order
-})
-public class <Service>LegacyDto {
-
-    @JsonProperty("_entityName")
-    private String entityName = "<hemishe$Entity>";
-
-    @JsonProperty("_instanceName")
-    private String instanceName;
-
-    private String id;
-
-    // Datetime fields:
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
-    private LocalDateTime createTs;
-
-    // FK as nested object:
-    private FacultyReference faculty;
-
-    public static class FacultyReference {
-        @JsonProperty("_entityName")
-        private String entityName = "hemishe$Faculty";
-        private String id;
-        @JsonProperty("_instanceName")
-        private String instanceName;
-    }
-}
-```
-
-### 7. Generate MapStruct mapper
-
-```java
-@Mapper(componentModel = "spring")
-public interface <Service>LegacyMapper {
-
-    @Mapping(target = "entityName", constant = "hemishe$<Entity>")
-    @Mapping(target = "instanceName", expression = "java(buildInstanceName(entity))")
-    <Service>LegacyDto toLegacy(<Service>Dto entity);
-
-    default String buildInstanceName(<Service>Dto e) {
-        return e.<lastName>() + " " + e.<firstName>();
-    }
-}
-```
-
-### 8. Generate integration test
-
-```java
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-class <Service>LegacyControllerTest {
-
-    @Autowired private MockMvc mvc;
-
-    @Test
-    @WithMockUser(authorities = {"<resource>.<action>"})
-    void <method>_shouldMatchLegacyFormat() throws Exception {
-        String expected = Files.readString(
-            Path.of("src/test/resources/legacy-fixtures/<endpoint-name>.json")
-        );
-        String actual = mvc.perform(<method>("<path>"))
-            .andExpect(status().isOk())
-            .andReturn().getResponse().getContentAsString();
-
-        // STRICT_ORDER — field order must match CUBA exactly
-        JSONAssert.assertEquals(expected, actual, JSONCompareMode.STRICT_ORDER);
-    }
-
-    @Test
-    void <method>_unauthorized() throws Exception {
-        mvc.perform(<method>("<path>")).andExpect(status().isUnauthorized());
-    }
-}
-```
-
-### 9. Add test button to endpoint_tester.html
-
-```html
-<!-- Insert in correct section -->
-<div class="endpoint">
-    <h4><method> <path></h4>
-    <button onclick="testEndpoint('<method>', '<path>')">Test</button>
-</div>
-```
-
-File: `/home/adm1n/projects/startup/hemis-back/docs/endpoint_tester.html`
-
-### 10. Verify backward compatibility
-
-Run:
 ```bash
-./gradlew :api-legacy:test --tests "*<Service>LegacyControllerTest*"
-```
+# 1. Live diff vs old-hemis
+TOKEN=$(curl -s -X POST http://localhost:8082/app/rest/v2/oauth/token \
+    -u "myclient:myclient" \
+    -d "grant_type=password&username=otm351&password=${OTM_PASSWORD}" | jq -r .access_token)
 
-Then live diff:
-```bash
+curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8082<path> > /tmp/old.json
+curl -s -H "Authorization: Bearer ${NEW_TOKEN}" http://localhost:8081<path> > /tmp/new.json
 diff <(jq -S . /tmp/old.json) <(jq -S . /tmp/new.json)
-```
+# Should be empty (100% match)
 
-**Should produce: NO output** (perfect match).
+# 2. Univer kontrakt 175/175
+node /home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints.js
 
-If diff exists → fix mapper before approving.
-
-### 11. Report
-
-```
-=== Endpoint Ported ===
-Method: <method>
-Path: <path>
-Files created/modified:
-  - api-legacy/.../<Service>LegacyController.java
-  - common/.../dto/<Service>LegacyDto.java
-  - api-legacy/.../mapper/<Service>LegacyMapper.java
-  - api-legacy/src/test/.../<Service>LegacyControllerTest.java
-  - api-legacy/src/test/resources/legacy-fixtures/<endpoint-name>.json
-  - docs/endpoint_tester.html
-
-CUBA format compliance:
-  - LinkedHashMap: ✓
-  - @JsonPropertyOrder: ✓
-  - _entityName/_instanceName: ✓
-  - FK nested object: ✓
-  - Datetime format: ✓
-
-Test status: <PASS|FAIL>
-Live diff vs old-hemis: <CLEAN|<count> mismatches>
-
-Next: ./gradlew :api-legacy:test
+# 3. Lokal test
+./gradlew :api-legacy:test --tests "*<Service>EntityControllerTest*"
 ```
 
 ## Constraints
 
 - DO NOT add business logic in controller (delegate to existing `service` module)
 - DO NOT use HashMap (always LinkedHashMap)
+- DO NOT use MapStruct in api-legacy (`toMap()` patterni canonical — 261 controller ishlatadi)
 - DO NOT skip `_entityName` / `_instanceName`
 - DO NOT change `api-web` service signatures (api-legacy uses them as-is)
+- DO NOT import `domain.entity.security.User`, `domain.entity.employee.Employee`, `domain.entity.employee.EmployeeJobs` — ADR-0008 violation, pre-commit reject.
+  Legacy variant: `SecUser`, `Teacher`, `LegacyEmployeeJobs`.
 - IF service for this entity doesn't exist in `service` module → STOP and ask user
 
 ## See also
-- `@ENDPOINT_PORTING_GUIDE.md` — full porting workflow
-- `@api-legacy/CLAUDE.md` — CUBA format rules
+
+- `@.claude/ENDPOINT_PORTING_GUIDE.md` — to'liq workflow (8 qadam) + URL→Tag mapping + FK helpers
+- `@api-legacy/CLAUDE.md` — module-level CUBA format rules
+- `@docs/UNIVER_CONTRACT.md` — 67 frozen endpoint contract
+- `@docs/adr/0008-api-legacy-entity-rebinding.md` — entity ownership
+- Test tool: `/home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints.js`

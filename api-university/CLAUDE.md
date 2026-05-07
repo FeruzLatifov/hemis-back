@@ -191,5 +191,5 @@ Aks holda: Universitet A admin Universitet B cache'idagi ma'lumotni ko'radi (dat
 ---
 
 ## See Also
-- `@../security/CLAUDE.md` — `@PreAuthorize` patterns, custom SpEL
-- `@../api-web/CLAUDE.md` — Modern REST patterns
+- `../security/CLAUDE.md` — `@PreAuthorize` patterns, custom SpEL
+- `../api-web/CLAUDE.md` — Modern REST patterns

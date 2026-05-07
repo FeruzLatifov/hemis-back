@@ -158,13 +158,30 @@ public record ErrorPayload(String code, String message, List<FieldError> details
 public record FieldError(String field, String code, String message) {}
 
 public record PageInfo(int number, int size, long totalElements, int totalPages) {
-    public static PageInfo from(org.springframework.data.domain.Page<?> p) {  // ← VIOLATION!
-        // common'da Spring import — TAQIQ
+
+    // ✓ Compact factory — primitive args only, ZERO Spring dependency
+    public static PageInfo of(int number, int size, long totalElements) {
+        int pages = size > 0 ? (int) Math.ceil((double) totalElements / size) : 0;
+        return new PageInfo(number, size, totalElements, pages);
     }
 }
 ```
 
-**Diqqat:** `PageInfo.from(...)` Spring Page'dan converter — common'da bo'lishi mumkin emas (Spring import). Converter `service` modulda bo'lishi shart.
+**Diqqat:** `PageInfo` faqat primitive konstruktor + factory bilan ishlaydi (`of(...)`).
+Spring `Page` ↔ `PageInfo` converter — `service` modulda (`PageMapper`):
+
+```java
+// service/.../mapper/PageMapper.java — Spring import shu yerda mumkin
+@Component
+public class PageMapper {
+    public <T> PageInfo from(org.springframework.data.domain.Page<T> p) {
+        return PageInfo.of(p.getNumber(), p.getSize(), p.getTotalElements());
+    }
+}
+```
+
+**Sabab:** common = pure-Java library. Spring bog'liqligi bo'lsa, `common`'ni boshqa
+kontekstda (masalan SDK / shartnoma loyihasida) ishlatish imkonsiz bo'ladi.
 
 ---
 
@@ -297,5 +314,5 @@ public final class DateUtils {
 ---
 
 ## See Also
-- `@../service/CLAUDE.md` — How services use common DTOs
-- `@../.claude/rules.md` — DTO + record conventions
+- `../service/CLAUDE.md` — How services use common DTOs
+- `../.claude/rules.md` — DTO + record conventions

@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+# ════════════════════════════════════════════════════════════════════
+# pre-commit — HEMIS Backend Golden Rule enforcement
+#
+# Bu hook har commit oldidan ishlatiladi.
+# Maqsad: Univer 224 OTM split-brain bug-larni production'ga qadar bloklash.
+#
+# Tekshiruvlar:
+#   1. Yangi @Table(name="hemishe_*") qo'shilganda → check_table_mappings.sh
+#   2. api-legacy module'da yangi schema entity import → REJECT (ADR-0008)
+#   3. Forbidden DDL on hemishe_* legacy tables (CLAUDE.md Golden Rule #1)
+#
+# Bypass uchun: git commit --no-verify (faqat hot-fix uchun, izoh bilan)
+# ════════════════════════════════════════════════════════════════════
+
+set -u
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+EXIT_CODE=0
+RED='\033[0;31m'
+YEL='\033[0;33m'
+GRN='\033[0;32m'
+NC='\033[0m'  # No Color
+
+# Staged Java files
+STAGED_JAVA=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.java$' || true)
+# Staged SQL changesets
+STAGED_SQL=$(git diff --cached --name-only --diff-filter=ACM | grep -E 'changesets/.*\.sql$' || true)
+
+# ─────────────────────────────────────────────────────────────────
+# CHECK 1: api-legacy bilan yangi schema entity import (ADR-0008)
+# ─────────────────────────────────────────────────────────────────
+if [ -n "$STAGED_JAVA" ]; then
+    LEGACY_VIOLATIONS=$(echo "$STAGED_JAVA" | grep '^api-legacy/' | while read -r f; do
+        # Check imports in staged content (not on-disk — git show :file gives staged version)
+        git show ":$f" 2>/dev/null | grep -E '^import uz\.hemis\.domain\.entity\.(security\.User|employee\.Employee|employee\.EmployeeJobs);?$' | while read -r import_line; do
+            echo "  $f → $import_line"
+        done
+    done)
+
+    if [ -n "$LEGACY_VIOLATIONS" ]; then
+        echo -e "${RED}🔴 BLOCKER — api-legacy MUST NOT import new schema entities (ADR-0008):${NC}"
+        echo "$LEGACY_VIOLATIONS"
+        echo ""
+        echo -e "${YEL}  Fix: Use Legacy variants:${NC}"
+        echo "    User           → SecUser           (sec_user)"
+        echo "    Employee       → Teacher           (hemishe_e_teacher)"
+        echo "    EmployeeJobs   → LegacyEmployeeJobs (hemishe_e_employee_jobs)"
+        echo ""
+        echo "  Reference: docs/adr/0008-api-legacy-entity-rebinding.md"
+        EXIT_CODE=1
+    fi
+fi
+
+# ─────────────────────────────────────────────────────────────────
+# CHECK 2: Yangi @Table(name="hemishe_*") qo'shilganmi?
+# Agar HA — check_table_mappings.sh ishga tushadi
+# ─────────────────────────────────────────────────────────────────
+if [ -n "$STAGED_JAVA" ]; then
+    NEW_HEMISHE_TABLE=$(echo "$STAGED_JAVA" | while read -r f; do
+        # Yangi qo'shilgan qatorlardan @Table(hemishe_*) qidiramiz
+        git diff --cached "$f" | grep -E '^\+.*@Table\(name[[:space:]]*=[[:space:]]*"hemishe_' | head -3
+    done)
+
+    if [ -n "$NEW_HEMISHE_TABLE" ]; then
+        echo -e "${YEL}ℹ️  INFO — Yangi @Table(hemishe_*) qo'shildi:${NC}"
+        echo "$NEW_HEMISHE_TABLE" | head -5
+        echo ""
+
+        if [ -x "./scripts/check_table_mappings.sh" ]; then
+            if [ -f ".env" ]; then
+                echo "  Running ./scripts/check_table_mappings.sh ..."
+                if ! ./scripts/check_table_mappings.sh > /tmp/hemis-check.log 2>&1; then
+                    echo -e "${RED}🔴 BLOCKER — check_table_mappings.sh failed:${NC}"
+                    tail -20 /tmp/hemis-check.log
+                    echo ""
+                    echo "  Tafsilot: /tmp/hemis-check.log"
+                    EXIT_CODE=1
+                else
+                    echo -e "${GRN}  ✓ check_table_mappings.sh passed${NC}"
+                fi
+            else
+                echo -e "${YEL}  ⚠ .env yo'q — check_table_mappings.sh skipped (manual run kerak)${NC}"
+            fi
+        fi
+    fi
+fi
+
+# ─────────────────────────────────────────────────────────────────
+# CHECK 3: Forbidden DDL on hemishe_* legacy tables
+# ─────────────────────────────────────────────────────────────────
+if [ -n "$STAGED_SQL" ]; then
+    DDL_VIOLATIONS=$(echo "$STAGED_SQL" | while read -r f; do
+        git show ":$f" 2>/dev/null | grep -iE 'ALTER[[:space:]]+TABLE[[:space:]]+(public\.)?hemishe_[eh]_|DROP[[:space:]]+TABLE[[:space:]]+(public\.)?hemishe_[eh]_|RENAME[[:space:]]+(TABLE[[:space:]]+)?(public\.)?hemishe_[eh]_' | while read -r line; do
+            echo "  $f: $line"
+        done
+    done)
+
+    if [ -n "$DDL_VIOLATIONS" ]; then
+        echo -e "${RED}🔴 BLOCKER — Forbidden DDL on hemishe_* legacy table:${NC}"
+        echo "$DDL_VIOLATIONS"
+        echo ""
+        echo "  Univer 224 OTM ekosistemi bilan moslik buziladi (CLAUDE.md Golden Rule #1)"
+        echo "  Allowed: INSERT/UPDATE/DELETE/CREATE INDEX/ADD COLUMN IF NOT EXISTS (last resort)"
+        EXIT_CODE=1
+    fi
+fi
+
+# ─────────────────────────────────────────────────────────────────
+# CHECK 4: Liquibase changeset rollback fayl mavjudmi
+# ─────────────────────────────────────────────────────────────────
+if [ -n "$STAGED_SQL" ]; then
+    MISSING_ROLLBACK=$(echo "$STAGED_SQL" | grep -v '_rollback\.sql$' | while read -r f; do
+        BASE="${f%.sql}"
+        ROLLBACK="${BASE}_rollback.sql"
+        if [ ! -f "$ROLLBACK" ]; then
+            echo "  $f → missing: $ROLLBACK"
+        fi
+    done)
+
+    if [ -n "$MISSING_ROLLBACK" ]; then
+        echo -e "${RED}🔴 BLOCKER — Rollback fayl yo'q:${NC}"
+        echo "$MISSING_ROLLBACK"
+        echo ""
+        echo "  Liquibase changeset uchun rollback majburiy (.claude/LIQUIBASE_GUIDE.md)"
+        EXIT_CODE=1
+    fi
+fi
+
+if [ $EXIT_CODE -eq 0 ]; then
+    echo -e "${GRN}✓ Pre-commit hook passed${NC}"
+fi
+
+exit $EXIT_CODE

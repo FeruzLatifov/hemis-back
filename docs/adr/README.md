@@ -26,20 +26,25 @@ docs/adr/NNNN-short-title.md
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| [0001](0001-building-table-design.md) | University Buildings — Alohida jadval (Cadastre'ni kengaytirish emas) | Accepted | 2026-04-21 |
+| [0001](0001-building-table-design.md) | University Buildings — Alohida jadval + Lifecycle log + Coordinates NULLABLE | Accepted | 2026-04-21 |
 | [0002](0002-java-25-upgrade.md) | Java 21 → 25 LTS migration | Accepted | 2026-05-04 |
 | [0003](0003-audit-db-isolation.md) | Audit DB alohida hemis_audit bazasi | Accepted | 2026-05-04 |
 | [0004](0004-api-university-module.md) | api-university yangi modul | Accepted | 2026-05-04 |
-| [0005](0005-oauth-client-credentials.md) | OAuth client_credentials grant 224 OTM uchun | Proposed | 2026-05-04 |
+| [0005](0005-oauth-client-credentials.md) | OAuth client_credentials grant 224 OTM uchun | Accepted (server) / In Progress (rollout) | 2026-05-04 |
 | [0006](0006-classifier-h-prefix.md) | Klassifikator jadvallariga `h_*` prefiks konventsiyasi | Accepted | 2026-05-04 |
 | [0007](0007-sync-architecture-evolution.md) | Sync Architecture — Kafka-first Approach (Greenfield) | Proposed | 2026-05-06 |
+| [0008](0008-api-legacy-entity-rebinding.md) | api-legacy uchta entity'ni eski jadvallarga qaytarish (Legacy* prefiks) | Accepted (Stage 1) / Pending (Stages 2-5) | 2026-05-07 |
 
 ## Status qiymatlari
 
-- **Proposed** — taklif, hali muhokama jarayonida
-- **Accepted** — qabul qilingan, ishga tushirilgan
+- **Proposed** — taklif, hali muhokama jarayonida (kod yo'q)
+- **Accepted** — qaror qabul qilingan, implementatsiya boshlandi yoki rejada
+- **In Progress** — qaror amalga oshirilmoqda (Stage X / N)
+- **Implemented** — to'liq amalga oshirilgan, kod va kuzatuv mavjud
 - **Deprecated** — eskirgan, lekin hali ham qoidaviy kuchda
 - **Superseded by ADR-NNNN** — boshqa ADR bilan almashtirilgan
+
+> **Eslatma:** "Accepted" status faqat qarorni anglatadi, implementatsiyani EMAS. Implementatsiya holati alohida `**Implementation:**` bo'limida ko'rsatilishi shart (✅ done / ⏳ pending / ❌ blocked).
 
 ## Yangi ADR qachon yoziladi?
 

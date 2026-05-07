@@ -245,24 +245,9 @@ public Page<StudentDto> findByFacultyId(Long facultyId, Pageable pageable) {
 
 ### 9. External Integration — Timeout aniq belgilanishi
 
-Hozir `AbstractGovernmentApiService` RestTemplate ishlatadi, global timeout aniq belgilanmagan. Yangi external client'da timeout sozlash:
+External RestClient/RestTemplate uchun connect+read timeout MAJBURIY. To'liq misol va Resilience4j strategiya: **canonical `@api-external/CLAUDE.md`** "Outbound RestClient" bo'limida.
 
-```java
-// RestClient.Builder() bilan
-@Bean
-public RestClient ministryClient() {
-    SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
-    f.setConnectTimeout(10_000);  // 10s connect
-    f.setReadTimeout(30_000);     // 30s read
-
-    return RestClient.builder()
-        .baseUrl("https://student.hemis.uz")
-        .requestFactory(f)
-        .build();
-}
-```
-
-External integration kelajakda Resilience4j (yoki o'xshash kutubxona) bilan kuchaytirish kerak — qoidalar bu yerda yozilmaydi (kutubxona qo'shilganda hujjatdan foydalanish).
+Qisqa qoida: `SimpleClientHttpRequestFactory` bilan `setConnectTimeout(10_000)` + `setReadTimeout(30_000)`. Service modul'da yangi external client kerak bo'lsa — `api-external/.../config/` ga qo'yiladi (modul boundary).
 
 ---
 
@@ -501,5 +486,5 @@ log.info("User: {}", user);  // toString() PII chiqarishi mumkin
 ---
 
 ## See Also
-- `@../.claude/MANDATORY_REQUIREMENTS.md` — Service test misollari
-- `@../.claude/architecture.md` — Cache + auth architecture
+- `../.claude/MANDATORY_REQUIREMENTS.md` — Service test misollari
+- `../.claude/architecture.md` — Cache + auth architecture

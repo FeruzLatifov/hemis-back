@@ -1,4 +1,8 @@
-# Mandatory Requirements & Code Examples
+# Code Examples — Swagger, Tests, Patterns
+
+> **Maqsad:** Yangi feature yaratganda kod misollar to'plami. **Qoidalar uchun** `.claude/rules.md` (canonical) o'qing. Bu fayl — faqat misollar.
+>
+> **Prioritet:** `rules.md` → MAJBURIY qoidalar; `MANDATORY_REQUIREMENTS.md` (bu fayl) → REFERENCE misollar; ziddiyat bo'lsa `rules.md` ustun.
 
 Every new feature MUST include: Swagger documentation, integration tests, unit tests.
 
@@ -10,10 +14,11 @@ Tests are gated by `TESTS_ENABLED=true` in `.env`. Without it, `./gradlew test` 
 
 | Module | Database | Notes |
 |--------|----------|-------|
-| `app` | H2 in-memory | `application-test.yml`, schema auto-created, no Flyway |
-| `service`, `security` | PostgreSQL (from `.env` `DB_MASTER_*`) | Runs against existing schema, never production DB |
+| `app` | Real PostgreSQL (from `.env` `DB_MASTER_*`) | Shared local DB; H2 ishlatilmaydi (CUBA legacy schema-ga moslashmaydi) |
+| `service`, `security` | Real PostgreSQL (from `.env` `DB_MASTER_*`) | Runs against existing schema, never production DB |
+| `domain` | Real PostgreSQL | Tafsilot: `domain/CLAUDE.md` "Testing Strategy" |
 
-Redis and other services use `.env` variables. Provide mock or local services for isolation.
+Redis va boshqa servislar `.env` orqali. Test izolyatsiyasi uchun lokal Redis (Docker compose).
 
 ---
 
@@ -63,10 +68,11 @@ public class StudentController {
                     {
                       "success": true,
                       "data": {
-                        "id": 1, "firstName": "John", "lastName": "Doe",
+                        "id": "00000000-0000-0000-0000-000000000001",
+                        "firstName": "John", "lastName": "Doe",
                         "email": "john.doe@university.uz", "facultyName": "Computer Science"
                       },
-                      "timestamp": "2025-11-15T08:30:00Z"
+                      "timestamp": "2026-05-07T08:30:00Z"
                     }
                     """)
             )
@@ -79,9 +85,10 @@ public class StudentController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('students.view')")
     public ResponseEntity<ResponseWrapper<StudentDto>> findById(
-        @Parameter(description = "Student ID", required = true, example = "1",
-            schema = @Schema(type = "integer", format = "int64", minimum = "1"))
-        @PathVariable Long id
+        @Parameter(description = "Student ID", required = true,
+            example = "00000000-0000-0000-0000-000000000001",
+            schema = @Schema(type = "string", format = "uuid"))
+        @PathVariable UUID id
     ) {
         StudentDto student = studentService.findById(id);
         return ResponseEntity.ok(ResponseWrapper.success(student));
@@ -128,7 +135,7 @@ public class StudentController {
     @PreAuthorize("hasAuthority('students.view')")
     public ResponseEntity<ResponseWrapper<Page<StudentDto>>> getByFaculty(
         @Parameter(description = "Faculty ID", required = true, example = "1")
-        @PathVariable Long facultyId,
+        @PathVariable UUID facultyId,
         @PageableDefault(size = 20) Pageable pageable
     ) {
         Page<StudentDto> students = studentService.findByFacultyId(facultyId, pageable);
@@ -153,7 +160,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @ReadOnly
     @Cacheable(value = "students", key = "#id")
-    public StudentDto findById(Long id) {
+    public StudentDto findById(UUID id) {
         Student student = studentRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Student not found with id: " + id));
         return studentMapper.toDto(student);
@@ -178,7 +185,7 @@ public class StudentServiceImpl implements StudentService {
     @Override
     @ReadOnly
     @Cacheable(value = "studentsByFaculty", key = "#facultyId + '_' + #pageable.pageNumber")
-    public Page<StudentDto> findByFacultyId(Long facultyId, Pageable pageable) {
+    public Page<StudentDto> findByFacultyId(UUID facultyId, Pageable pageable) {
         if (!facultyRepository.existsById(facultyId)) {
             throw new ResourceNotFoundException("Faculty not found: " + facultyId);
         }

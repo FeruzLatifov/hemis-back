@@ -484,5 +484,5 @@ public class AuditLog extends ImmutableEntity {
 ---
 
 ## See Also
-- `@../.claude/architecture.md` — Auth flow + RBAC
-- `@../service/CLAUDE.md` — `@PreAuthorize` patterns
+- `../.claude/architecture.md` — Auth flow + RBAC
+- `../service/CLAUDE.md` — `@PreAuthorize` patterns

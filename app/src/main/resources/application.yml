@@ -148,9 +148,13 @@ spring:
 
         # Batch processing
         jdbc:
-          batch_size: 20
+          batch_size: 20            # INSERT/UPDATE batch
         order_inserts: true
         order_updates: true
+
+        # Lazy-load batch fetching — drops N+1 SELECT loops to ceil(N/20) IN-clause queries.
+        # Match jdbc.batch_size; required for default Hibernate behavior on @ManyToOne(LAZY) graphs.
+        default_batch_fetch_size: 20
 
   # =====================================================
   # Jackson Configuration

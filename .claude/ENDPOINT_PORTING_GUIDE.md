@@ -22,8 +22,10 @@
 | Yangi Hemis (Spring Boot) | `http://localhost:8081` | 8081 | `otm401` | 401 |
 
 **Muhim fayllar:**
-- `/home/adm1n/startup/old_hemis.json` — Old API Swagger hujjati
-- `/home/adm1n/startup/hemis-back/docs/endpoint_tester.html` — Test UI
+- `/home/adm1n/projects/startup/hemis-tools/docs/old_hemis.md` — Old API endpoint katalogi (workflow + tag mapping)
+- `/home/adm1n/projects/startup/old-hemis/modules/portal/web/rest-services.xml` — CUBA service params
+- `/home/adm1n/projects/startup/hemis-tools/docs/endpoint_tool/endpoint_tester.html` — Test UI (3 tugma: Yangi/Eski/Ikkalasi)
+- `/home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints.js` — 175 ta side-by-side integration test
 
 ---
 
@@ -65,7 +67,7 @@ GET /services/bimm/academicDegree
         │
         ▼
 4. METADATA EXTRACTION
-   - old_hemis.json: tag, nom, description
+   - old_hemis.md: tag, nom, description, URL→tag mapping
    - rest-services.xml: parametrlar, method
         │
         ▼
@@ -92,7 +94,7 @@ GET /services/bimm/academicDegree
 
 ### Metadata Topish Holatlari
 
-| Holat | old_hemis.json | rest-services.xml | Harakat |
+| Holat | old_hemis.md | rest-services.xml | Harakat |
 |-------|----------------|-------------------|---------|
 | Normal | Bor | Bor | Avtomatik tag topiladi |
 | Hujjatsiz | Yo'q | Bor | User TAG bersa ishlatiladi, aks holda URL dan taxmin |

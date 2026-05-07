@@ -1,8 +1,39 @@
+---
+id: ADR-0007
+status: proposed
+date: 2026-05-06
+deciders: hemis-team
+agent: claude-code
+model: claude-opus-4-7
+affects: [service, api-external, infrastructure]
+liquibase: []
+entities: []
+verification: |
+  # Stage 0 — docker-compose Kafka image mavjudligi
+  grep -A2 "kafka:" docker-compose.yml
+  # Stage 1+ — outbox jadval yaratilgan
+  grep -rn "outbox_event" domain/src/main/resources/db/changelog/ | wc -l
+related: [ADR-0008]
+---
+
 # ADR 0007: Sync Architecture — Kafka-first Approach (Greenfield)
 
 ## Status
 
 Proposed (2026-05-05, qayta ko'rib chiqilgan: 2026-05-06 — pilot va REST hardening bosqichlari olib tashlandi)
+
+> **Implementation status (2026-05-07 audit):**
+> - ✅ Stage 0 — `docker-compose.yml` da `apache/kafka:3.7.0` image mavjud (infrastructure ready)
+> - ❌ Stage 1 — `outbox_event` jadvali YO'Q (`grep "outbox_event" domain/src/main/resources/db/changelog/` → 0)
+> - ❌ Stage 1 — `OutboxPublisher`, `OutboxEvent` Java sinflari YO'Q
+> - ❌ Stage 1 — `service/build.gradle.kts` da `spring-kafka` dependency YO'Q
+> - ❌ Stage 1 — `application.yml` da `kafka:` config YO'Q
+>
+> Bu ADR — **22KB strategic plan, 0 bayt kod**. Hozirda:
+> - Univer ↔ Hemis-back sync — REST orqali (`api-legacy` + `UniverApiService`)
+> - Kafka — faqat docker-compose'da (test qilish uchun)
+>
+> **Keyingi qadam:** Stage 1 (outbox jadvalı + V015 changeset + service skeleton) — alohida sprint, Univer 175/175 kontraktni saqlab qolish sharti bilan.
 
 ## Context
 

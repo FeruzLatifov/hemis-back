@@ -31,12 +31,12 @@ public class HemisApplication {
 
 ```
 application.yml             — Common (har profilda)
-application-dev.yml         — Local development (H2 + minimal config)
+application-dev.yml         — Local development (real PostgreSQL via DB_MASTER_*, minimal config)
 application-prod.yml        — Production (real DB, full security, no debug)
 application-replica.yml     — Replica DB connection
 application-redis.yml       — Redis connection (split for clarity)
 application-migrate.yml     — Liquibase only profile (CI/CD migration job)
-application-test.yml        — Tests (H2 yoki testcontainers)
+application-test.yml        — Tests (real shared PostgreSQL — see domain/CLAUDE.md Testing Strategy)
 ```
 
 **Activation:**
@@ -213,10 +213,10 @@ http.authorizeHttpRequests(auth -> auth
 
 `Dockerfile`:
 ```dockerfile
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 COPY app.jar app.jar
-ENV JAVA_TOOL_OPTIONS="-Xmx4g -Xms2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 \
+ENV JAVA_TOOL_OPTIONS="-Xmx4g -Xms2g -XX:+UseZGC -XX:+ZGenerational \
                        -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/hemis/ \
                        -XX:+ExitOnOutOfMemoryError -Dfile.encoding=UTF-8 \
                        -Dspring.profiles.active=prod"
@@ -227,7 +227,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 **Notes:**
 - `-XX:+ExitOnOutOfMemoryError` — Pod restart on OOM (Kubernetes)
 - `-XX:+HeapDumpOnOutOfMemoryError` — Post-mortem analysis
-- G1GC default since Java 9 — explicit flag for clarity
+- ZGC + Generational ZGC (Java 25 LTS default tavsiya) — pause times <1ms (G1GC: ~10ms)
+- Java 25 LTS — ADR-0002 (support 2033'gacha)
 
 ### 9. Liquibase Auto-Update Strategy
 
@@ -299,6 +300,6 @@ Production'da `HEMIS_JWT_SECRET` ENV majburiy. Default bo'lsa, log'ga warning.
 ---
 
 ## See Also
-- `@../.claude/architecture.md` — Module dependency graph
-- `@../security/CLAUDE.md` — Security filter chain
-- `@../.claude/rules.md` — Reliability + cache patterns
+- `../.claude/architecture.md` — Module dependency graph
+- `../security/CLAUDE.md` — Security filter chain
+- `../.claude/rules.md` — Reliability + cache patterns

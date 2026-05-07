@@ -10,13 +10,16 @@
 **Core Functions:** Student management, academic programs, staff, university structure, finance (payments/scholarships), ministry reports, government integrations (HEMIS, OneID, MyGov).
 
 **Scale (Vazirlik miqyosi):**
-- **230 universitet** (Oliy ta'lim vazirligi tasarrufida)
+- **230 ta oliy ta'lim muassasasi** (Oliy ta'lim vazirligi tasarrufida — umumiy)
+  - Shundan **224 ta OTM** Univer Yii2 PHP backend ishlatadi (`hemis_NNN` bazalari — alohida ekosistem). 6 ta — boshqa stack yoki vazirlik bevosita boshqaruvi.
+  - **HEMIS-back uchun foydalanuvchi miqyosi:** 230 (umumiy)
+  - **api-legacy / api-university uchun integratsiya hajmi:** 224 (Univer ekosistemi)
 - **~5,000 admin foydalanuvchi** (universitet o'rtacha 20-30 admin × 230)
 - **~1.15M talaba** (universitet o'rtacha 5,000 × 230)
 - **~50,000 o'qituvchi** (universitet o'rtacha 200 × 230)
 - **5 ta asosiy rol** (SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER, REPORT_VIEWER)
 - **Peak concurrent:** ~500-1000 (sessiya boshlanishida, hisobotlar davrida 2x)
-- **Migrated baseline:** 340+ legacy CUBA users (productionga chiqishda asos)
+- **Migrated baseline (M001):** sec_user → users — `hemis_337` ga to'liq migratsiya yakunlanganda taxminan 340 yozuv (informational, snapshot vaqti V3.0 release)
 
 ---
 
@@ -24,7 +27,7 @@
 
 | Component | Version |
 |-----------|---------|
-| Spring Boot | 4.0.2 |
+| Spring Boot | 4.0.6 |
 | Java | 25 LTS (Temurin, toolchain) |
 | Gradle | 9.3.0 (Kotlin DSL) |
 | PostgreSQL | 18 (master/replica) |

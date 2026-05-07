@@ -7,7 +7,19 @@
 > - `/home/adm1n/projects/startup/univer/common/models/report/EGenericStat.php` — entity stats
 > - `/home/adm1n/projects/startup/univer/api/config/main.php` — route aliases
 >
-> **Detal audit:** `@docs/UNIVER_ENDPOINT_AUDIT.md`
+> **Detal audit:** `docs/UNIVER_ENDPOINT_AUDIT.md`
+
+## Endpoint Soni — Glossariy (chalkashishni oldini olish uchun)
+
+`api-legacy` doirasida 3 xil son uchraydi — har biri boshqa narsani sanaydi:
+
+| Son | Manba | Nimani sanaydi |
+|-----|-------|----------------|
+| **67** | Ushbu hujjat | Univer Yii2 (224 OTM) **haqiqatan chaqiradigan unique endpoint URL'lar** — frozen contract |
+| **175** | `hemis-tools/.../compare_endpoints.js` | Side-by-side **integration test variantlari** (har endpoint uchun success/edge-case kombinatsiyalar) |
+| **~659** | `grep -rn '@*Mapping' api-legacy/src/main/java/` | Modulda mavjud **Java method** `@*Mapping` bilan (admin/audit/eksperimental aralash) |
+
+Munosabat: `67 ⊆ 659` (Univer ishlatmaydigan ko'p endpointlar bor) va `175` har 67'ni o'rtacha 2.6 marta sinaydi (success + auth fail + validation + boundary).
 
 ## Univer Auth Modeli
 

@@ -1,4 +1,17 @@
-# ADR 0003: `api-university` yangi modul yaratish
+---
+id: ADR-0004
+status: implemented
+date: 2026-05-04
+deciders: hemis-team
+agent: human
+affects: [api-university, security, settings.gradle.kts]
+liquibase: []
+entities: [OAuthClient, OAuthClientRole]
+verification: curl -X POST http://localhost:8081/api/v1/university/oauth/token
+related: [ADR-0005]
+---
+
+# ADR 0004: `api-university` yangi modul yaratish
 
 ## Status
 

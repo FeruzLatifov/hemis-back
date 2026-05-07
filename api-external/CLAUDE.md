@@ -241,5 +241,5 @@ Audit log'da: target system, action, IDs (ma'lumot emas), result (success/fail/r
 ---
 
 ## See Also
-- `@../service/CLAUDE.md` — Service patterns
-- `@../.claude/rules.md` — Reliability section (timeout config)
+- `../service/CLAUDE.md` — Service patterns
+- `../.claude/rules.md` — Reliability section (timeout config)

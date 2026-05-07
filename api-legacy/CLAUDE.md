@@ -137,9 +137,10 @@ Univer chaqiradi:  POST /app/rest/v2/entities/hemishe_EEmployeeJobs
    - Yangi jadval yaratiladi → modern nomli entity (prefiks-siz)
 3. **Tarixiy istisno (hozirgi loyiha):** 60+ eski entity prefiks-siz nom bilan (`Student`, `Teacher`). Bularni hozirda rename qilmaymiz, lekin yangi konflikt'larda `Legacy*` ishlatamiz.
 
-### Hozirgi xatolar (kelajakda alohida sprint'da tuzatish)
+### Hozirgi xatolar (rejalashtirilgan refactor — [ADR-0008](../docs/adr/0008-api-legacy-entity-rebinding.md))
 
-`api-legacy` modul'da 3 ta entity yangi schema'ga noto'g'ri map qilingan:
+`api-legacy` modul'da 3 ta entity yangi schema'ga noto'g'ri map qilingan. Tuzatish reja va sprint
+bosqichlari uchun **ADR-0008** o'qing.
 
 | Xato entity | Qaysi jadvalga map | api-legacy ishlatadigan controller | Kerak entity |
 |-------------|--------------------|-----------------------------------|--------------|
@@ -183,16 +184,12 @@ Service, validator, loader, repository class'lar ham **eski jadvalga ulansa `Leg
 
 #### Audit skripti
 
-```bash
-./scripts/check_table_mappings.sh
-```
+`./scripts/check_table_mappings.sh` har commit oldidan ishlatiladi (`.git/hooks/pre-commit`):
+- Yangi schema entity import topsa — REJECT
+- `@Table(name="hemishe_*")` qo'shilsa — JPA mapping vs DB introspection
+- Mavjud xatolarni hisobotda ko'rsatadi
 
-api-legacy yangi schema entity'ni ishlatishini avtomatik bloklar.
-
-Auto-check skripti har commit oldidan bu xatolarni topadi:
-```bash
-./scripts/check_table_mappings.sh
-```
+Tafsilot: `scripts/check_table_mappings.sh` va `scripts/git-hooks-pre-commit`.
 
 ### Sabab — biznes mantiqi
 
@@ -528,18 +525,18 @@ PORT: GET /services/tax/rent
 PORT: POST /entities/hemishe$Student
 ```
 
-### Avtomatik qadamlar
+### Avtomatik qadamlar (qisqa ko'rinish — to'liq spec: `@.claude/ENDPOINT_PORTING_GUIDE.md`)
 
-1. `/home/adm1n/startup/old_hemis.json` dan endpoint metadata
-2. `rest-services.xml` dan parametrlar
-3. Mavjud Spring Boot duplikatini tekshirish
-4. Old-hemis live response'i save (test fixture)
-5. Controller + DTO + Mapper + Service yaratish
-6. Swagger annotations to'liq
-7. Integration test (success + error)
-8. `endpoint_tester.html` ga test button
+1. **Trigger parse** — `PORT: <METHOD> <PATH>` dan ajratish
+2. **Duplicate check** — `grep -rn` mavjud controller'larni tekshirish
+3. **Old-hemis live response** — :8082 dan curl + `legacy-fixtures/<name>.json` saqlash
+4. **Metadata** — `old_hemis.md` (tag/desc) + `rest-services.xml` (params)
+5. **Controller + DTO** — `toMap()` + `LinkedHashMap` patterni (MapStruct ishlatilmaydi). Service api-web bilan SHARED.
+6. **Test va diff** — `JSONAssert.STRICT_ORDER` + live `diff old.json new.json` 100% MATCH bo'lishi shart
+7. **`endpoint_tester.html`** — `endpoints/XX-*.js` ga test button (faqat test green bo'lsa)
+8. **Univer kontrakt** — `node compare_endpoints.js` 175/175 (regress yo'qligini tasdiqlash)
 
-**Batafsil:** `@../.claude/ENDPOINT_PORTING_GUIDE.md`
+**Canonical workflow:** `@.claude/ENDPOINT_PORTING_GUIDE.md` (ushbu fayldagi qadamlar uning qisqartmasi).
 
 ---
 
@@ -608,6 +605,6 @@ throw new ApiException(ErrorCode.NOT_FOUND, "...");
 ---
 
 ## See Also
-- `@../.claude/ENDPOINT_PORTING_GUIDE.md` — Porting workflow
-- `@../.claude/context.md` — CUBA legacy schema
-- `@../service/CLAUDE.md` — Shared business logic
+- `../.claude/ENDPOINT_PORTING_GUIDE.md` — Porting workflow
+- `../.claude/context.md` — CUBA legacy schema
+- `../service/CLAUDE.md` — Shared business logic

@@ -1,4 +1,20 @@
-# ADR 0002: Audit DB alohida `hemis_audit` bazasi
+---
+id: ADR-0003
+status: implemented
+date: 2026-05-04
+deciders: hemis-team
+agent: human
+affects: [app, service]
+liquibase:
+  - app/src/main/resources/db/audit/V001_create_activity_log.sql
+  - app/src/main/resources/db/audit/V002_create_error_log.sql
+  - app/src/main/resources/db/audit/V003_create_login_log.sql
+entities: [ActivityLog, ErrorLog, LoginLog]
+verification: psql -h localhost -d $DB_AUDIT_NAME -c "\dt"
+related: []
+---
+
+# ADR 0003: Audit DB alohida `hemis_audit` bazasi
 
 ## Status
 

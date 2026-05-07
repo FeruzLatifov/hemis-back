@@ -1,4 +1,17 @@
-# ADR 0001: Java 21 → 25 LTS migration
+---
+id: ADR-0002
+status: implemented
+date: 2026-05-04
+deciders: hemis-team
+agent: human
+affects: [build.gradle.kts, app, all-modules]
+liquibase: []
+entities: []
+verification: java -version  # bo'sh agar JAVA_HOME 25 emas
+related: []
+---
+
+# ADR 0002: Java 21 → 25 LTS migration
 
 ## Status
 

@@ -230,13 +230,16 @@ Default qoidalar:
 ### Batch Fetching (N+1 hal qilish strategiyasi)
 
 ```yaml
-# application.yml
+# application.yml — bizda mavjud
 spring.jpa.properties.hibernate:
-  default_batch_fetch_size: 20  # bizda allaqachon
-  jdbc.batch_size: 20
+  default_batch_fetch_size: 20   # lazy SELECT IN-clause batch
+  jdbc.batch_size: 20             # INSERT/UPDATE batch
+order_inserts: true
+order_updates: true
 ```
 
-JOIN FETCH yozish unutilsa — Hibernate avtomatik 20 ta IN clause bilan birlashtiradi.
+JOIN FETCH yozish unutilsa — Hibernate avtomatik 20 ta IN clause bilan birlashtiradi
+(N+1 SELECT loop'larni ceil(N/20) IN-clause query'ga aylantiradi).
 
 ### Composite Key
 
@@ -524,7 +527,7 @@ VACUUM ANALYZE hemishe_e_student;
 
 ### Connection pool sizing
 
-> Pool sizing aniq tafsiloti: `@../.claude/architecture.md` (Master 10 + Replica 20 per-instance).
+> Pool sizing aniq tafsiloti: `../.claude/architecture.md` (Master 10 + Replica 20 per-instance).
 
 **Formula:** `connections = (cores × 2) + effective_spindles`
 **Diqqat:** Production cluster (3 instance) → 30 master + 60 replica DB-side capacity zarur.
@@ -729,6 +732,6 @@ void shouldFindByCustomFilter() { ... }
 ---
 
 ## See Also
-- `@../.claude/architecture.md` — DB master/replica routing
-- `@../.claude/LIQUIBASE_GUIDE.md` — Migration workflow
-- `@../.claude/rules.md` — Entity qoidalari (general)
+- `../.claude/architecture.md` — DB master/replica routing
+- `../.claude/LIQUIBASE_GUIDE.md` — Migration workflow
+- `../.claude/rules.md` — Entity qoidalari (general)
