@@ -75,6 +75,13 @@ public class EmployeeJobsLegacyService {
         legacyEmployeeJobsRepository.save(entity);
     }
 
+    /** Idempotent UPSERT uchun existing yozuvni 3 ta kalit field bo'yicha topish. */
+    public List<LegacyEmployeeJobs> findByEmployeeAndUniversityAndDepartment(
+            UUID employeeId, String university, String department) {
+        return legacyEmployeeJobsRepository.findByEmployeeAndUniversityAndDepartment(
+                employeeId, university, department);
+    }
+
     /**
      * Convert EmployeeJobs row data to CUBA-compatible Map with nested objects.
      *

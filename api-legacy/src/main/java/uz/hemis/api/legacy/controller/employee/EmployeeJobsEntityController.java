@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.api.legacy.util.LegacySecurityHelper;
 import uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs;
-import uz.hemis.domain.repository.LegacyEmployeeJobsRepository;
 import uz.hemis.service.legacy.EmployeeJobsLegacyService;
 
 import java.time.LocalDate;
@@ -58,7 +57,6 @@ public class EmployeeJobsEntityController {
 
     private final EmployeeJobsLegacyService employeeJobsService;
     private final LegacySecurityHelper securityHelper;
-    private final LegacyEmployeeJobsRepository legacyEmployeeJobsRepository;
 
     private static final String ENTITY_NAME = "hemishe_EEmployeeJobs";
 
@@ -457,7 +455,7 @@ public class EmployeeJobsEntityController {
         }
 
         try {
-            LegacyEmployeeJobs saved = legacyEmployeeJobsRepository.saveAndFlush(legacyEntity);
+            LegacyEmployeeJobs saved = employeeJobsService.saveAndFlush(legacyEntity);
             log.info("LegacyEmployeeJob created: id={}, university={}", saved.getId(), saved.getUniversity());
 
             Map<String, Object> response = new LinkedHashMap<>();
@@ -468,7 +466,7 @@ public class EmployeeJobsEntityController {
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             // Old-hemis 1:1 — duplicate'da existing record qaytaradi (idempotent UPSERT).
             log.warn("Constraint violation on EmployeeJob create — looking up existing: {}", e.getMessage());
-            var matches = legacyEmployeeJobsRepository.findByEmployeeAndUniversityAndDepartment(
+            var matches = employeeJobsService.findByEmployeeAndUniversityAndDepartment(
                     legacyEntity.getEmployeeId(), legacyEntity.getUniversity(), legacyEntity.getDepartment());
             if (!matches.isEmpty()) {
                 LegacyEmployeeJobs existing = matches.get(0);

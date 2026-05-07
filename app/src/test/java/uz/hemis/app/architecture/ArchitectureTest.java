@@ -136,4 +136,57 @@ class ArchitectureTest {
         // lekin kelajakda buni toza domain core'ga ajratish maqsadi. Hozircha log only:
         // rule.check(classes); // UNCOMMENT to enforce later
     }
+
+    // =====================================================
+    // ADR-0008 GOLDEN RULE — api-legacy split-brain himoyasi
+    // =====================================================
+    // Univer (Yii2 PHP, 224 OTM) eski hemishe_* jadvallarni kutadi.
+    // api-legacy yangi schema'ga (employee_job, employee) yozsa →
+    // ma'lumot Univer'da ko'rinmaydi (silent data loss).
+    //
+    // Documented exception (foydalanuvchi qarori 2026-05-07):
+    //   User → users (yangi) — auth/profile read-only, M001+M004 sync taminlanadi.
+
+    @Test
+    @DisplayName("ADR-0008: api-legacy `Employee` (yangi schema) ni import qilmaydi")
+    void apiLegacyMustNotImportNewSchemaEmployee() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("uz.hemis.api.legacy..")
+                .should().dependOnClassesThat().haveFullyQualifiedName(
+                        "uz.hemis.domain.entity.employee.Employee")
+                .because("ADR-0008 GOLDEN RULE: api-legacy `Employee` (employee jadval, yangi schema) "
+                        + "ni import qilmasligi kerak. Univer 224 OTM Yii2 PHP `hemishe_e_teacher` "
+                        + "jadvalni kutadi → `Teacher` entity ishlating.");
+        rule.check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0008: api-legacy `EmployeeJobs` (yangi schema) ni import qilmaydi")
+    void apiLegacyMustNotImportNewSchemaEmployeeJobs() {
+        ArchRule rule = noClasses()
+                .that().resideInAPackage("uz.hemis.api.legacy..")
+                .should().dependOnClassesThat().haveFullyQualifiedName(
+                        "uz.hemis.domain.entity.employee.EmployeeJobs")
+                .because("ADR-0008 GOLDEN RULE: api-legacy `EmployeeJobs` (employee_job jadval, "
+                        + "yangi schema) ni import qilmasligi kerak. Univer 224 OTM "
+                        + "`hemishe_e_employee_jobs` jadvalni kutadi → "
+                        + "`uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs` ishlating.");
+        rule.check(classes);
+    }
+
+    @Test
+    @DisplayName("Legacy* entity'lar `domain.entity.legacy.*` paketda joylashishi shart")
+    void legacyEntitiesMustResideInLegacyPackage() {
+        // Diqqat: faqat real entity'lar (`@Entity` annotation bilan) tekshiriladi.
+        // Base class (`@MappedSuperclass` LegacyClassifierEntity) `entity/base/` da bo'lishi mumkin —
+        // bu base class, real entity emas.
+        ArchRule rule = classes()
+                .that().haveSimpleNameStartingWith("Legacy")
+                .and().resideInAPackage("uz.hemis.domain.entity..")
+                .and().areAnnotatedWith(jakarta.persistence.Entity.class)
+                .should().resideInAPackage("uz.hemis.domain.entity.legacy..")
+                .because("Legacy* prefiksli entity'lar paket konventsiyasi (ADR-0008): "
+                        + "domain/entity/legacy/<sub-domain>/ — modular ajratish + future-proof guard.");
+        rule.check(classes);
+    }
 }
