@@ -1,6 +1,6 @@
 # Univer 224 OTM — API Contract (FROZEN)
 
-> **CRITICAL:** Univer (224 universitetlarda deploy qilingan Yii2 PHP frontend) **67 ta endpoint** ishlatadi. Har bir o'zgarish 224 OTM uchun ta'sir qilishi mumkin.
+> **CRITICAL:** Univer (224 universitetlarda deploy qilingan Yii2 PHP backend (per-OTM)) **67 ta endpoint** ishlatadi. Har bir o'zgarish 224 OTM uchun ta'sir qilishi mumkin.
 >
 > **Manbalar:**
 > - `/home/adm1n/projects/startup/univer/common/components/hemis/` — sync klasslar + HemisApi

@@ -651,6 +651,6 @@ APICURIO_URL=http://apicurio:8080/apis/registry/v2
 
 ### Related ADRs
 - ADR-0003 (Audit DB isolation) — Kafka consumer entry point
-- ADR-0004 (api-university module) — multi-tenant boundary, topic partition by university_code
+- ADR-0004 (api-university module) — per-OTM scope boundary (rows-level), topic partition by university_code
 - ADR-0005 (OAuth client_credentials) — OTM auth (independent track)
 - ADR-0006 (h_* classifier prefix) — classifier event topic source

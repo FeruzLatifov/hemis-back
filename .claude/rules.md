@@ -606,7 +606,7 @@ Index'siz: `DELETE FROM hemishe_h_gender` o'nlab daqiqa, JOIN'da sequential scan
 api-legacy/**/import.*entity\.(security\.User|employee\.Employee|employee\.EmployeeJobs)\b → REJECT
 ```
 
-Manba: ADR-0008. Implementation: `.claude/hooks/post-edit.sh` (pending — Stage 5).
+Manba: ADR-0008. Implementation: `.claude/hooks/post-edit.sh` (✅ active, `.claude/settings.json` PostToolUse'da ro'yxatda) + `.git/hooks/pre-commit` (4 check).
 
 ### 5. ADR Status Drift Detection — har sprint
 

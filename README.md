@@ -336,7 +336,7 @@ TESTS_ENABLED=false
 | Web Frontend | `/api/v1/web/**` | React/Vue frontend uchun |
 | Legacy CUBA | `/app/rest/v2/**` | Eski tizim bilan moslik |
 | University | `/api/v1/university/**` | Universitet API |
-| External | `/services/**` | Tashqi integratsiyalar |
+| External | `/api/v1/external/**` | Davlat integratsiya (MyGov, MSPD, BIMM, Tax, GUVD) |
 
 ### Asosiy Endpoints
 

@@ -37,7 +37,7 @@ GOLDEN RULE (CLAUDE.md, api-legacy/CLAUDE.md):
 > *api-legacy controller'lari faqat eski jadvallarga (`hemishe_*`, `sec_*`) yozadi.
 > Yangi schema (`employee_job`, `users`, `employee`) — `api-university`/`api-web` modullari uchun.*
 
-Bu qoida buzilishi 224 ta Univer (Yii2 PHP frontend) uchun **split-brain** bug'ga olib keladi:
+Bu qoida buzilishi 224 ta Univer (Yii2 PHP backend, per-OTM) uchun **split-brain** bug'ga olib keladi:
 Univer eski URL bilan POST qiladi → api-legacy yangi jadvalga yozadi → keyingi GET eski jadvaldan
 o'qiydi → ma'lumot topilmaydi → "Yangi xodim qo'shildi, lekin ko'rinmaydi".
 

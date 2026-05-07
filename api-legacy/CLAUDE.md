@@ -89,7 +89,7 @@ find /home/adm1n/projects/startup/old-hemis -name "*Controller*.java" \
 | Modul | Vazifa | Jadvallar | Misol entity |
 |-------|--------|-----------|--------------|
 | **api-legacy** | Univer (Yii2 PHP, 224 OTM) endpoint'larini xizmat qilish, **eski hemis behavior 1:1** | `hemishe_e_*`, `hemishe_h_*`, `hemishe_r_*`, `sec_user`, `sec_role`, `sec_permission` | `Student` (`hemishe_e_student`), `Teacher` (`hemishe_e_teacher`), `SecUser` (`sec_user`) |
-| **api-university** | Vazirlik markaz ↔ 224 OTM Univer integratsiya kanali (yangi format) — yangi schema | Yangi `employee_job`, `users`, `university_building`, `h_*` | `User`, `Employee`, `EmployeeJob`, `UniversityBuilding` |
+| **api-university** | Vazirlik markaz ↔ 224 OTM Univer integratsiya kanali (yangi format) — yangi schema | Yangi `employee_job`, `users`, `university_building`, `h_*` | `User`, `Employee`, `EmployeeJobs`, `UniversityBuilding` |
 | **api-web** | Modern web frontend | Yangi schema | Bir xil yangi entity'lar |
 | **api-external** | S2S integratsiya (vazirlik, MyGov) | Vaziyatga qarab | (alohida) |
 

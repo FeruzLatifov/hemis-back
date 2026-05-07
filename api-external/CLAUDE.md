@@ -158,7 +158,7 @@ public RestClient mspdRestClient(@Value("${hemis.external.mspd.cert-path}") Stri
 }
 
 // ✗ TAQIQ — JVM-wide
-System.setProperty("javax.net.ssl.trustStore", ...);  // butun JVM ta'siriga uchraydi
+System.setProperty("javax.net.ssl.trustStore", ...);  // JVM standart property (Jakarta'ga tegishli emas), butun JVM ta'siriga uchraydi
 ```
 
 ### 6. Token Refresh — Proactive

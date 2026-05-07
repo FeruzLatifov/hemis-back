@@ -148,7 +148,7 @@ String describe(Object obj) {
     else return "Unknown";
 }
 
-// ✓ Modern (Java 21+)
+// ✓ Modern (Java 21+ syntax, loyiha Java 25 LTS)
 String describe(Object obj) {
     return switch (obj) {
         case Integer i -> "Integer: " + i;

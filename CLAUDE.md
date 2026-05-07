@@ -3,7 +3,7 @@
 > **HEMIS-back kim:** Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** server (bitta deploy/cluster). `/home/adm1n/projects/startup/old-hemis` (**CUBA Platform 7.3 — Java + Groovy**, Haulmont) ning **Spring Boot 4 + Java 25** ga **qayta yozilishi va optimizatsiyasi** (Java → Java modernizatsiya).
 >
 > **Maqsadlari:**
-> 1. **230 OTM dan ma'lumot AGGREGATION** (markaziy yig'ish va muvofiqlashtirish)
+> 1. **230 OTM dan ma'lumot AGGREGATION** (224 — Univer orqali, 6 — markaziy admin web orqali)
 > 2. **Klassifikatorlarni UMUMIY saqlash** (har OTM bir xil qiymatlardan foydalanadi)
 > 3. **Qoidalarni JORIY qilish** (talaba kiritish cheklash, baho o'zgartirish cheklash, vaqt cheklov)
 > 4. **Davlat tashkilotlari INTEGRATSIYA** (MyGov, MSPD, BIMM, Tax/Soliq, GUVD, OneID)
@@ -21,7 +21,7 @@ Java 25 LTS + Spring Boot 4.0.6 modular monolith. PostgreSQL 18 master/replica +
 
 Hech qachon hard-code qilmang DB nomi/jadvalni. **Markaziy HEMIS-back DB:** lokal dev `test1_hemis`, prod turli (env: `DB_MASTER_NAME`).
 
-**`hemis_NNN`** (337, 401, …) — bu **bizning DB EMAS**. Bu 224 ta OTM tomonidagi Univer Yii2 PHP ekosistemining lokal bazalari nomi (har OTM o'zinikida deploy qilingan). Bizdan hech qanday code'da `hemis_NNN` deb yozish — XATO.
+**`hemis_NNN`** (337, 401, …) — bu **bizning DB EMAS**. Bu 224 ta OTM tomonidagi Univer Yii2 PHP ekosistemining lokal bazalari nomi (har OTM o'zinikida deploy qilingan). Code'da DB nomi sifatida hard-code qilish — XATO. Test fixture/demo data ichida `university_code='337'` qiymat sifatida ruxsat (bu OTM identifikator, DB nomi emas).
 
 | Soha | Markaziy HEMIS-back (vazirlik) | Univer (per-OTM, 224 ta) |
 |------|--------------------|----------------------|
@@ -87,8 +87,8 @@ URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'ch
 
 `.claude/commands/`: `/port-endpoint`, `/check-coverage`, `/audit-cache`, `/review-pr`.
 
-`.claude/skills/` (Anthropic 2026 — on-demand yuklash):
-- `adr-create/SKILL.md` — yangi ADR yaratish workflow (AgDR 2026 standart)
+`.claude/skills/` (Anthropic 2026 — `Skill` tool yoki `/<skill-name>` slash bilan invoke):
+- `adr-create/SKILL.md` — yangi ADR yaratish workflow (AgDR YAML frontmatter)
 - `adr-verify/SKILL.md` — ADR status drift detection (frontmatter vs kod holati)
 
 ---
