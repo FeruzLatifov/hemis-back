@@ -56,7 +56,19 @@ public class UniversityInfoService {
     // Founders
     // =====================================================
 
-    @Cacheable(value = "universityFounders", key = "#universityCode")
+    /**
+     * Get founders by university code (no cache).
+     *
+     * <p>Avval {@code @Cacheable("universityFounders")} bor edi, ammo:</p>
+     * <ul>
+     *   <li>{@link #getUniversityDashboard(String)} ichidan {@code this.getFounders(...)}
+     *       chaqiriladi → Spring AOP self-invocation trap → cache bypass.
+     *       Demak alohida cache faqat {@code /founders} endpoint orqali ishlardi
+     *       (frontend asosan dashboard'dan oladi).</li>
+     *   <li>Query: 1 ta jadvaldan select by indexed FK — ~5ms.
+     *       {@code universityDashboard} cache allaqachon shu natijani saqlaydi.</li>
+     * </ul>
+     */
     public List<UniversityFounder> getFounders(String universityCode) {
         return founderRepository.findByUniversityCode(universityCode);
     }

@@ -173,19 +173,21 @@ public class DashboardCacheConfig implements CachingConfigurer {
         redisCacheConfigurations.put("universityDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
 
         // University domain caches — 230 OTM, rarely change (24 hour TTL)
-        // Hot: findByCode (PK lookup), findAllList (230 row list), findActive (dashboard)
-        redisCacheConfigurations.put("university", defaultConfig.entryTtl(Duration.ofHours(24)));
+        // findAllList (230 row list, dropdown'larda), findActive (dashboard widget)
+        // NB: PK lookup ({@code findByCode}) cache QILMAYDI — Redis L2 ~50ms,
+        //     PostgreSQL primary index ~1ms. Cache DB'dan sekinroq, anti-pattern.
         redisCacheConfigurations.put("universityList", defaultConfig.entryTtl(Duration.ofHours(24)));
         redisCacheConfigurations.put("universityActive", defaultConfig.entryTtl(Duration.ofHours(6)));
         redisCacheConfigurations.put("universityChildren", defaultConfig.entryTtl(Duration.ofHours(24)));
 
         // University detail caches — 1 hour (profile manual-edited)
+        // universityDashboard — 4 LEFT JOIN aggregate, tab switching paytida foyda
+        // NB: universityFounders alohida cache QILMAYDI — getUniversityDashboard ichidan
+        //     this.getFounders(...) self-invocation chaqiriladi (AOP bypass), demak
+        //     duplicate cache. universityDashboard nested natijasi yetarli.
         redisCacheConfigurations.put("universityDashboard", defaultConfig.entryTtl(Duration.ofHours(1)));
         redisCacheConfigurations.put("universityProfile", defaultConfig.entryTtl(Duration.ofHours(1)));
-        // M2-M4 — UniversityInfoService individual endpoints. Admin panel tab-by-tab loading
-        // (rector, founders, lifecycle, cadastre) avval har request DB urar edi; endi cached.
         redisCacheConfigurations.put("universityRector", defaultConfig.entryTtl(Duration.ofHours(1)));
-        redisCacheConfigurations.put("universityFounders", defaultConfig.entryTtl(Duration.ofHours(1)));
         redisCacheConfigurations.put("universityLifecycle", defaultConfig.entryTtl(Duration.ofHours(1)));
         redisCacheConfigurations.put("universityCadastreList", defaultConfig.entryTtl(Duration.ofHours(1)));
 

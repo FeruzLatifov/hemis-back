@@ -77,9 +77,16 @@ public class UniversityService {
      * @return university DTO
      * @throws ResourceNotFoundException if not found
      */
-    @Cacheable(value = "university", key = "#code", unless = "#result == null")
+    /**
+     * Find university by code (no cache).
+     *
+     * <p>Avval {@code @Cacheable("university")} bor edi — ammo PK lookup
+     * ({@code SELECT * FROM hemishe_e_university WHERE code = ?}) PostgreSQL
+     * primary index orqali ~1ms. Redis L2 hit ~50ms (network latency)
+     * — cache <strong>DB'dan sekinroq</strong>, anti-pattern.</p>
+     */
     public UniversityDto findByCode(String code) {
-        log.debug("Finding university by code: {} (cache MISS)", code);
+        log.debug("Finding university by code: {}", code);
 
         University university = universityRepository.findById(code)
                 .orElseThrow(() -> new ResourceNotFoundException("University", "code", code));
@@ -303,8 +310,6 @@ public class UniversityService {
     @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = "university", key = "#code"),
-        @CacheEvict(value = "universityNullable", key = "#code"),
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
@@ -372,8 +377,6 @@ public class UniversityService {
     @Audited(action = AuditAction.UPDATE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = "university", key = "#code"),
-        @CacheEvict(value = "universityNullable", key = "#code"),
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
@@ -423,7 +426,6 @@ public class UniversityService {
     @Audited(action = AuditAction.DELETE, entity = "University", entityClass = University.class, keyArg = "code")
     @Transactional
     @Caching(evict = {
-        @CacheEvict(value = "university", key = "#code"),
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
@@ -513,14 +515,9 @@ public class UniversityService {
     /**
      * Get university by code (CUBA compatible — null on not found, no exception).
      *
-     * <p><strong>Cache:</strong> alohida cache namespace ("universityNullable") chunki
-     * same-class chaqiriqi {@code findByCode} AOP self-invocation trap (cache bypass).
-     * Bu metod o'zi Spring proxy orqali chaqirilganda cache hit qiladi.</p>
-     *
      * @param code university code
      * @return university DTO or null
      */
-    @Cacheable(value = "universityNullable", key = "#code")
     public Object getByCode(String code) {
         log.debug("CUBA API: get university by code: {}", code);
         try {
