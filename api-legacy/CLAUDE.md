@@ -27,7 +27,7 @@
 2. **Response body shape** — field nomlari, tartibi, type'lari
 3. **Validation behavior** — qaysi field'lar majburiy, qachon xato qaytaradi
 4. **Error format** — `{error: ..., details: ...}` (CUBA convention)
-5. **Permission model** — old-hemis cross-tenant ruxsat berardi → biz ham ruxsat berishimiz kerak
+5. **Permission model** — old-hemis (CUBA Java) OTM scope cheklov yo'q edi — markaziy server, har OTM admin barcha ma'lumotni ko'ra olardi → biz ham shu xulq saqlashimiz kerak (api-legacy faqat)
 6. **Field default qiymatlari** — old yetishmagan field'larga default qo'yardi → biz ham qo'yishimiz kerak
 
 ❌ **O'zgartirib bo'lmaydi:**
@@ -73,7 +73,7 @@ find /home/adm1n/projects/startup/old-hemis -name "*Controller*.java" \
 
 | Old-hemis xulqi | Bizning yangi xulq | Tuzatish |
 |-----------------|--------------------|---------| 
-| Cross-tenant ruxsat berardi | Strict tenant isolation | `isAccessAllowed` → `return true`, TenantGuard chaqirish'larni komment qilish |
+| OTM scope cheklov yo'q (cross-OTM ruxsat) | Strict OTM scope isolation | `isAccessAllowed` → `return true`, TenantGuard chaqirish'larni komment qilish |
 | Strict validation yo'q (default qo'yardi) | Strict validation (xato qaytaradi) | DTO `validate()` metodida default qo'yish |
 | Permission check yo'q | `@PreAuthorize("hasAuthority('...')")` | `@PreAuthorize("isAuthenticated()")` |
 | Yangi schema bilmasdan eski jadval'ga yozardi | Yangi schema'ga yozadi | Yangi `Legacy*` entity yaratish, eski jadvalga map |
@@ -89,7 +89,7 @@ find /home/adm1n/projects/startup/old-hemis -name "*Controller*.java" \
 | Modul | Vazifa | Jadvallar | Misol entity |
 |-------|--------|-----------|--------------|
 | **api-legacy** | Univer (Yii2 PHP, 224 OTM) endpoint'larini xizmat qilish, **eski hemis behavior 1:1** | `hemishe_e_*`, `hemishe_h_*`, `hemishe_r_*`, `sec_user`, `sec_role`, `sec_permission` | `Student` (`hemishe_e_student`), `Teacher` (`hemishe_e_teacher`), `SecUser` (`sec_user`) |
-| **api-university** | Yangi 224 OTM B2B API — yangi schema bilan | Yangi `employee_job`, `users`, `university_building`, `h_*` | `User`, `Employee`, `EmployeeJob`, `UniversityBuilding` |
+| **api-university** | Vazirlik markaz ↔ 224 OTM Univer integratsiya kanali (yangi format) — yangi schema | Yangi `employee_job`, `users`, `university_building`, `h_*` | `User`, `Employee`, `EmployeeJob`, `UniversityBuilding` |
 | **api-web** | Modern web frontend | Yangi schema | Bir xil yangi entity'lar |
 | **api-external** | S2S integratsiya (vazirlik, MyGov) | Vaziyatga qarab | (alohida) |
 
@@ -101,15 +101,15 @@ find /home/adm1n/projects/startup/old-hemis -name "*Controller*.java" \
 ### Misol — to'g'ri yondashuv
 
 ```
-1. Univer Yii2 chaqiradi:  POST /app/rest/v2/entities/hemishe_EEmployeeJobs
-   → api-legacy controller eski jadvalga yozadi:  INSERT INTO hemishe_e_employee_jobs
-   → ✅ TO'G'RI — Univer keyin shu jadvaldan o'qishi mumkin
+1. Univer Yii2 (per-OTM, lokal hemis_337/hemis_401/... PHP DB) → markaziy hemis-back ga POST /app/rest/v2/entities/hemishe_EEmployeeJobs
+   → api-legacy controller markaziy DB eski jadvalga yozadi:  INSERT INTO hemishe_e_employee_jobs
+   → ✅ TO'G'RI — Univer keyingi GET shu jadvaldan o'qiydi (175/175 contract MATCH)
 
-2. Modern web frontend chaqiradi:  POST /api/v1/web/employee-jobs
+2. Modern web frontend (vazirlik admin) → POST /api/v1/web/employee-jobs
    → api-web controller yangi jadvalga yozadi:  INSERT INTO employee_job
    → ✅ TO'G'RI — yangi schema, modern auth
 
-3. Yangi 224 OTM B2B API:  POST /api/v1/university/{code}/employee-jobs
+3. Yangi 224 OTM Univer (yangi format, OAuth client_credentials) → POST /api/v1/university/{code}/employee-jobs
    → api-university controller yangi jadvalga yozadi
    → Optional sync: yangi jadvaldan eski jadvalga ko'chirish (alohida service, async)
 ```
@@ -117,9 +117,10 @@ find /home/adm1n/projects/startup/old-hemis -name "*Controller*.java" \
 ### ❌ XATO yondashuv (mavjud bug)
 
 ```
-Univer chaqiradi:  POST /app/rest/v2/entities/hemishe_EEmployeeJobs
-   → api-legacy controller YANGI jadvalga yozadi:  INSERT INTO employee_job
-   → ❌ Split-brain: Univer keyin hemishe_e_employee_jobs'dan o'qisa, yo'q (boshqa jadval)
+Univer (per-OTM Yii2 PHP) → POST /app/rest/v2/entities/hemishe_EEmployeeJobs
+   → api-legacy markaziy DB YANGI jadvalga yozadi:  INSERT INTO employee_job
+   → ❌ Split-brain: Univer keyingi GET hemishe_e_employee_jobs'dan o'qisa — bo'sh
+   → "Yangi xodim qo'shildi, lekin Univer UI'da ko'rinmaydi"
 ```
 
 ### Entity nomlanish konventsiyasi (BUZILMASDAN)
@@ -194,7 +195,7 @@ Tafsilot: `scripts/check_table_mappings.sh` va `scripts/git-hooks-pre-commit`.
 
 ### Split-brain biznes sababi
 
-Univer (Yii2 PHP, 224 OTM) eski CUBA endpoint'larni eski jadval shaklida o'qiydi/yozadi. **Aralashtirilsa:** api-legacy POST yangi jadvalga yozadi → Univer GET eski jadvaldan o'qiydi → topmaydi → "Yangi xodim qo'shildi, lekin ko'rinmaydi" bug.
+224 ta Univer Yii2 PHP client (per-OTM, lokal `hemis_NNN` DB bilan) eski hemis-back CUBA Java endpoint kontraktini ishlatadi — `hemishe_e_*` shape kutadi. **Aralashtirilsa:** api-legacy POST markaziy DB'ning yangi jadvaliga yozadi → Univer GET eski jadvaldan o'qiydi → topmaydi → "Yangi xodim qo'shildi, lekin ko'rinmaydi" bug.
 
 To'liq tushuntirish: [`.claude/UNIVER_INTEGRATION.md`](../.claude/UNIVER_INTEGRATION.md)
 
@@ -202,7 +203,7 @@ To'liq tushuntirish: [`.claude/UNIVER_INTEGRATION.md`](../.claude/UNIVER_INTEGRA
 
 - [ ] Entity `@Table(name = "hemishe_*"|"sec_*")` ga map qilingan
 - [ ] Repository eski jadvalga yozadi
-- [ ] Service'da `tenantGuard.verifyOwnership*` yo'q (Univer cross-tenant)
+- [ ] Service'da `tenantGuard.verifyOwnership*` yo'q (Univer cross-OTM scope)
 - [ ] `@PreAuthorize` faqat `isAuthenticated()` yoki `permitAll()`
 
 ### Forbidden imports (pre-commit hook reject)

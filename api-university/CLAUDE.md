@@ -1,14 +1,18 @@
 # api-university module — University-Scoped Endpoints
 
-> **Markaziy HEMIS-back** ichida **224 ta Univer Yii2 PHP backend** uchun B2B integratsiya kanali (vazirlik ↔ OTM).
+> **Markaziy HEMIS-back** ichida **224 ta Univer Yii2 PHP backend** uchun integratsiya kanali (vazirlik markaz ↔ OTM yo'nalishi).
 >
-> **Auth:** OAuth 2.1 `client_credentials` (per-OTM client_id + secret + IP whitelist) — ADR-0005.
+> **3 maqsad (loyiha 4 maqsadidan):**
+> 1. **Aggregation:** 224 ta Univer (per-OTM Yii2) ma'lumotini markaziy DB'ga yig'ish
+> 2. **Klassifikator distribution:** `h_*` jadvallari (gender, soato, position_type) — markazdan Univer'larga sync (ADR-0006)
+> 3. **Qoidalar joriy qilish:** vazirlik biznes konstraint (talaba kiritish vaqt cheklov, baho lock) — Univer'lar markazdan oladi
 >
-> **Multi-tenant:** bitta markaziy DB ichida 230 OTM ma'lumoti. UNIVERSITY_ADMIN role + `university_code` filter — har OTM faqat o'z rows'ini ko'radi (rows level isolation).
+> **Auth:** OAuth 2.1 `client_credentials` (per-OTM `client_id` + secret + IP whitelist) — ADR-0005.
 >
-> **Mijozlari:**
-> - 224 ta Univer Yii2 PHP (per-OTM, OAuth client_credentials orqali)
-> - Kelajakda davlat sistemalari (MyGov, MSPD) ham `oauth_client.client_type='GOVERNMENT'` orqali
+> **Markaziy DB + scope filter:** bitta markaziy DB ichida 230 OTM rows — har Univer client (224 ta) o'z `university_code` filter orqali rows'ini ko'radi (rows-level isolation, klassik multi-tenant deploy emas).
+>
+> **Mijozlari:** faqat **224 ta Univer Yii2 PHP** (per-OTM client_credentials).
+> Davlat sistemalari (MyGov, MSPD, BIMM, Tax, GUVD) — alohida `api-external` modul (S2S API Key + IP whitelist).
 
 ---
 
@@ -124,11 +128,13 @@ List<Object[]> countByUniversityNative();
 
 ---
 
-## Multi-Tenant Best Practices
+## Markaziy DB + OTM Scope Best Practices
 
-### Database — Single Schema, Tenant Column
+> **Eslatma:** klassik "multi-tenant deploy" EMAS — markaziy server, bitta DB, rows-level isolation `university_code`/`university_id` filter orqali.
 
-Bizdagi pattern: bitta schema, har entity'da `university_id` column. Avzallik: cross-tenant report oson.
+### Database — Single Schema, Scope Column
+
+Bizdagi pattern: bitta markaziy DB, har entity'da `university_id` column. Avzallik: vazirlik aggregation reportlari oson (224 OTM bo'yicha statistika bir SQL).
 
 ```java
 @Entity

@@ -49,33 +49,33 @@ public class ExternalController {
 `AbstractGovernmentApiService` RestTemplate ishlatadi, global timeout aniq belgilanmagan. Yangi client'da timeout sozlash:
 
 ```java
+// Misol: MyGov yagona kirish federation client
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class HemisMinistryClient {
+public class MyGovClient {
 
-    private final RestClient ministryClient;  // configured with timeouts
+    private final RestClient myGovClient;  // configured with timeouts
 
-    public MinistryResponse sendStudentReport(StudentReportDto dto) {
+    public MyGovTokenResponse exchangeAuthCode(String authCode) {
         try {
-            return ministryClient.post()
-                .uri("/api/v1/reports")
+            return myGovClient.post()
+                .uri("/oauth/token")
                 .header("Authorization", "Bearer " + tokenService.get())
-                .body(dto)
+                .body(Map.of("code", authCode))
                 .retrieve()
-                .body(MinistryResponse.class);
+                .body(MyGovTokenResponse.class);
         } catch (RestClientException ex) {
-            log.error("Ministry send failed: studentId={}, reason={}",
-                      dto.studentId(), ex.getMessage());
-            retryQueue.enqueue(dto);  // Persistent queue
-            return MinistryResponse.queued();
+            log.error("MyGov auth failed: reason={}", ex.getMessage());
+            retryQueue.enqueue(authCode);
+            return MyGovTokenResponse.queued();
         }
     }
 }
 
-// Bean config — timeout
+// Bean config — har davlat sistemasi (MyGov, MSPD, BIMM, Tax, GUVD) uchun alohida
 @Bean
-public RestClient ministryClient(@Value("${hemis.ministry.base-url}") String baseUrl) {
+public RestClient myGovClient(@Value("${hemis.external.mygov.base-url}") String baseUrl) {
     SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
     f.setConnectTimeout(10_000);
     f.setReadTimeout(30_000);
@@ -141,12 +141,12 @@ public void processWebhook(WebhookEvent event) { ... }
 
 ### 5. SSL/TLS — Self-Signed Cert per-Connection
 
-Ministry, MyGov self-signed certificate ishlatadi. JVM-wide trust store o'zgartirmaslik:
+MSPD, MyGov, BIMM ba'zilari self-signed certificate ishlatadi. JVM-wide trust store o'zgartirmaslik:
 
 ```java
-// ✓ TO'G'RI — per-connection trust manager
-@Bean("ministryRestClient")
-public RestClient ministryRestClient(@Value("${hemis.ministry.cert-path}") String certPath) throws Exception {
+// ✓ TO'G'RI — per-connection trust manager (har davlat sistemasi uchun alohida)
+@Bean("mspdRestClient")
+public RestClient mspdRestClient(@Value("${hemis.external.mspd.cert-path}") String certPath) throws Exception {
     SSLContext sslContext = SSLContextBuilder.create()
         .loadTrustMaterial(new File(certPath), null, (chain, authType) -> true)
         .build();
@@ -218,14 +218,18 @@ Audit log'da: target system, action, IDs (ma'lumot emas), result (success/fail/r
 
 ## External System Catalog
 
+> **Eslatma:** "HEMIS Ministry" eski entry olib tashlandi — **biz o'zimiz vazirlik markaziy server**. Tashqi davlat sistemalari quyida (S2S):
+
 | System | URL | Purpose | Auth |
 |--------|-----|---------|------|
-| HEMIS Ministry | `https://student.hemis.uz` | University data sync | OAuth2 |
-| OneID SSO | `https://sso.egov.uz` | SSO login | OAuth2 + signed JWT |
-| MyGov Portal | `https://my.gov.uz` | Citizen verification | API Key |
-| MSPD | `http://172.18.9.171` | Internal data exchange | Username/Password (`ApiMspdTokenService`) |
-| PayMe | — | Payment processing | API Key + HMAC |
-| Click | — | Payment processing | API Key + HMAC |
+| OneID SSO | `https://sso.egov.uz` | Yagona davlat kirish | OAuth2 + signed JWT |
+| MyGov Portal | `https://my.gov.uz` | Fuqaro verifikatsiyasi | API Key |
+| MSPD | `http://172.18.9.171` | Sotsiologik tekshiruv | Username/Password (`ApiMspdTokenService`) |
+| BIMM | — | Sertifikatlar | API Key + IP whitelist |
+| Tax/Soliq | — | Sub'ekt PINFL check | API Key |
+| GUVD | — | Passport ma'lumoti | API Key + IP whitelist |
+| PayMe | — | To'lov | API Key + HMAC |
+| Click | — | To'lov | API Key + HMAC |
 
 ---
 

@@ -32,7 +32,7 @@ public static function getUniversity() {
 
 - Har Univer instance o'z OTM `university_code`'i bilan ishlaydi
 - JWT token Bearer auth (HemisApi.php:711)
-- Cross-tenant access **qilmaydi** (har OTM faqat o'z resourcesini chaqiradi)
+- Cross-OTM scope access **qilmaydi** (har OTM Univer faqat o'z resourcesini chaqiradi)
 
 ## Real Inventory (deep search natijasi)
 
@@ -147,7 +147,7 @@ public static function getUniversity() {
 2. **Cache strategy** — TTL, evict pattern, distributed lock
 3. **Logging** — backend log'lar (PII mask majburiy)
 4. **Audit** — `@Audited` annotation
-5. **Cross-tenant 403** — Univer cross-tenant qilmaydi → ta'sir 0%
+5. **Cross-OTM scope 403** — Univer cross-OTM so'rov yubormaydi → ta'sir 0%
 6. **Mass-assignment defense** — `body.remove("_university")` (Univer body'da yubormaydi)
 7. **Soft delete** — `delete_ts` SET (Univer DELETE qilmaydi yoki `@SQLRestriction` filter qiladi)
 

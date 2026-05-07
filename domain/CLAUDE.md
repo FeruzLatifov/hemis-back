@@ -413,9 +413,9 @@ CREATE TABLE university_building (
 ```
 
 **Sabab — nega ikki convention?**
-- `hemishe_*` jadvallari — old-hemis CUBA Platform tomonidan boshqariladi (FROZEN). Ustun nomlarini o'zgartirib bo'lmaydi (replication, 224 OTM bazasi).
+- `hemishe_*` jadvallari — markaziy HEMIS-back DB'da, **eski CUBA Platform 7.3 (Java + Groovy, Haulmont)** strukturasini saqlaydi. FROZEN, chunki 224 ta Univer Yii2 PHP client `hemishe_e_*` shape kutadi (api-legacy 175/175 contract).
 - Yangi jadvallar — modern Spring Data JPA + `@CreatedDate`/`@LastModifiedDate` annotation default `created_at`/`updated_at` bilan ishlaydi.
-- Hibrid yondashuv: backward compat + modern semantic.
+- Hibrid yondashuv: backward compat (Univer client kontrakt) + modern semantic.
 
 ---
 
@@ -424,11 +424,11 @@ CREATE TABLE university_building (
 ### JSONB — variable shape data
 
 ```sql
--- Misol: talaba qo'shimcha attribut'lar
-ALTER TABLE univ.student_profile ADD COLUMN extra JSONB;
+-- Misol: talaba qo'shimcha attribut'lar (markaziy DB, public schema)
+ALTER TABLE student_profile ADD COLUMN extra JSONB;
 
 -- GIN index for JSONB
-CREATE INDEX idx_extra_gin ON univ.student_profile USING GIN (extra);
+CREATE INDEX idx_extra_gin ON student_profile USING GIN (extra);
 
 -- Query
 SELECT * FROM student_profile WHERE extra @> '{"hobby": "chess"}';
@@ -437,15 +437,15 @@ SELECT * FROM student_profile WHERE extra @> '{"hobby": "chess"}';
 ### Partitioning (>100M qator)
 
 ```sql
--- Hisobot jadvali — yil bo'yicha partition
-CREATE TABLE analytics.report_data (
+-- Hisobot jadvali — yil bo'yicha partition (markaziy DB, public schema)
+CREATE TABLE report_data (
     id UUID,
     created_at TIMESTAMP,
     ...
 ) PARTITION BY RANGE (created_at);
 
-CREATE TABLE analytics.report_data_2025 PARTITION OF analytics.report_data
-    FOR VALUES FROM ('2025-01-01') TO ('2026-01-01');
+CREATE TABLE report_data_2026 PARTITION OF report_data
+    FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
 ```
 
 ### VACUUM/ANALYZE

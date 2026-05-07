@@ -336,7 +336,7 @@ public class StudentServiceImpl implements StudentService {
 
 ## Cache Stampede Prevention (single-flight)
 
-> **Real xavf:** 230 instance × hot cache miss = 230 ta DB query bir vaqtda → DB CPU spike, lock contention, connection pool exhaust.
+> **Real xavf:** Markaziy 3-instance Kubernetes cluster + 224 ta Univer client traffic — hot cache miss 3 ta DB query parallel + Univer'lardan kelayotgan yuk → DB CPU spike, lock contention, connection pool exhaust. (Per-OTM deploy YO'Q — markaziy server.)
 
 ### Muammo
 

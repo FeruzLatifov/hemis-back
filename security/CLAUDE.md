@@ -396,8 +396,10 @@ public record StudentDto(String firstName, ...) {}
 Har CRUD action audit'ga yoziladi:
 
 ```java
+// AuditLog ALOHIDA `hemis_audit` DB'da (ADR-0003 Audit DB Isolation).
+// Markaziy DB'da emas — hemis_audit datasource orqali (AuditDataSourceConfig.java).
 @Entity
-@Table(name = "audit_log", schema = "auth")
+@Table(name = "activity_log")  // hemis_audit DB, default schema
 public class AuditLog extends ImmutableEntity {
     @Column(nullable = false)
     private UUID userId;

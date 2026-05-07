@@ -147,14 +147,19 @@ GET    /api/v1/web/i18n/messages?lang=uz-UZ
 
 ---
 
-## External Integrations
+## External Integrations (api-external — davlat tashkilotlari S2S)
+
+> **Eslatma:** HEMIS-back **o'zi vazirlik markaziy server**. Quyidagilar — TASHQI davlat sistemalari:
 
 | Service | URL | Purpose |
 |---------|-----|---------|
-| HEMIS Ministry | `https://student.hemis.uz` | University data sync |
-| OneID SSO | `https://sso.egov.uz` | Single Sign-On |
-| MyGov Portal | `https://my.gov.uz` | Student verification |
-| PayMe/Click | — | Payment processing |
+| OneID SSO | `https://sso.egov.uz` | Yagona davlat kirish (federation) |
+| MyGov Portal | `https://my.gov.uz` | Fuqaro verifikatsiyasi |
+| MSPD | `http://172.18.9.171` | Sotsiologik tekshiruv |
+| BIMM | — | Sertifikatlar |
+| Tax/Soliq | — | Sub'ekt PINFL check |
+| GUVD | — | Passport ma'lumoti |
+| PayMe/Click | — | To'lov |
 
 **Note:** Government APIs use self-signed certificates — SSL bypass per-connection, NOT global JVM.
 
