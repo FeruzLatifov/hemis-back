@@ -125,7 +125,7 @@ Markaziy server davlat tashkilotlari bilan S2S integratsiya (api-external modul)
 Har OTM Univer Yii2'ning `users` jadvalida `username` (masalan `tatu_otm`) saqlanadi. Univer login form orqali user kiradi.
 
 ```php
-// /home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php:728
+// /home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php:724 (apiLogin function)
 $response = $this->_client->post('v2/oauth/token', [
     'grant_type' => 'password',
     'username'   => $otm_username,
@@ -294,7 +294,7 @@ public ResponseEntity<List<Map<String, Object>>> getAll(...) {
 
 | ADR/hujjat | Mavzu |
 |------------|-------|
-| [ADR-0004](../docs/adr/0004-api-university-module.md) | api-university yangi modul (224 OTM B2B) |
+| [ADR-0004](../docs/adr/0004-api-university-module.md) | api-university yangi modul (vazirlik ↔ 224 OTM Univer integratsiya) |
 | [ADR-0005](../docs/adr/0005-oauth-client-credentials.md) | OAuth client_credentials migration (12 oy plan) |
 | [ADR-0007](../docs/adr/0007-sync-architecture-evolution.md) | Kafka markaziy aggregation backbone |
 | [ADR-0008](../docs/adr/0008-api-legacy-entity-rebinding.md) | api-legacy entity ownership (split-brain fix) |

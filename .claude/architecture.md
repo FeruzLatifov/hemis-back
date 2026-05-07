@@ -29,7 +29,7 @@
 │                      Presentation Layer                          │
 │  ┌────────────┬──────────┬─────────────────┬─────────────────┐  │
 │  │ api-legacy │ api-web  │ api-university  │  api-external   │  │
-│  │ (CUBA API) │(Modern)  │ (B2B 224 OTM)   │  (MyGov/OneID)  │  │
+│  │ (CUBA API) │(Modern)  │ (224 Univer)    │  (MyGov/MSPD)   │  │
 │  └──────┬─────┴────┬─────┴────────┬────────┴─────┬───────────┘  │
 ├──────────────────────────────────────────────────┤
 │                Application Layer                  │
@@ -133,17 +133,18 @@ Base Path: /app/rest/v2/*
 Dependencies: common, domain, service
 ```
 
-### `api-university` — University B2B sync
+### `api-university` — Vazirlik markaz ↔ 224 OTM Univer integratsiya
 ```
 api-university/src/main/java/uz/hemis/api/university/
 ├── controller/       # OAuth2 token + building/student sync endpoints
 │   └── auth/UniversityOAuthTokenController  # client_credentials grant
 └── ...
 Base Path: /api/v1/university/*
-Security: OAuth 2.0 client_credentials (oauth_client jadval)
+Security: OAuth 2.1 client_credentials (oauth_client jadval, per-OTM client_id)
 Dependencies: common, domain, service
-Maqsad: 224 ta OTM PHP backend bilan B2B sync. Hozirgi /app/rest/v2/oauth/token
-        password grant'dan TDB'ga muqobil — secret rotation, IP whitelist, per-client rate limit.
+Maqsad: 224 ta Univer Yii2 PHP (per-OTM) markaziy HEMIS-back'ga ulanish kanali.
+        Hozirgi /app/rest/v2/oauth/token password grant'dan TDB'ga muqobil —
+        secret rotation, IP whitelist, per-OTM rate limit.
 ```
 
 ### `api-external` — Server-to-Server

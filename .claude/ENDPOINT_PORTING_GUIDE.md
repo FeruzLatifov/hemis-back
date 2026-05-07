@@ -315,8 +315,10 @@ public ResponseEntity<?> create(...) { }
 
 ## Endpoint Tester — Modular Fayl Strukturasi
 
+> **Joylashuv:** `/home/adm1n/projects/startup/hemis-tools/docs/endpoint_tool/` (sibling repo)
+
 ```
-docs/
+hemis-tools/docs/endpoint_tool/
 ├── endpoint_tester.html          # Asosiy UI
 └── endpoints/
     ├── 01-token.js               # Kategoriya fayllari
@@ -351,12 +353,12 @@ if (typeof module !== 'undefined' && module.exports) {
 
 ### Mavjud Kategoriyaga Qo'shish
 
-1. `docs/endpoints/XX-kategoriya.js` faylida `endpoints_XX` arrayga yangi endpoint qo'shish
+1. `hemis-tools/docs/endpoint_tool/endpoints/XX-kategoriya.js` faylida `endpoints_XX` arrayga yangi endpoint qo'shish
 2. `_index.js` ni yangilash shart emas — u avtomatik `...endpoints_XX` ishlatadi
 
 ### Yangi Kategoriya Yaratish
 
-1. `docs/endpoints/39-yangi-kategoriya.js` yaratish
+1. `hemis-tools/docs/endpoint_tool/endpoints/39-yangi-kategoriya.js` yaratish
 2. `_index.js` ga `...endpoints_39` qo'shish
 3. `endpoint_tester.html` ga `<script src="endpoints/39-yangi-kategoriya.js">` qo'shish
 

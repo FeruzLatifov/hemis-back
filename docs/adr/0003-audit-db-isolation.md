@@ -4,6 +4,7 @@ status: implemented
 date: 2026-05-04
 deciders: hemis-team
 agent: human
+model: n/a
 affects: [app, service]
 liquibase:
   - app/src/main/resources/db/audit/V001_create_activity_log.sql

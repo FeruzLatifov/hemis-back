@@ -109,7 +109,7 @@ chiqsa, sprint to'xtaydi va sabab tekshiriladi.
 - **Afzalligi:** api-legacy toza qoladi, sync alohida Kafka topic (ADR-0007) orqali.
 - **Kamchiligi:** Hozirgi 3 ta xato uchun overkill — sync qatlami 6+ oy ish, bizga zudlik bilan
   chora kerak.
-- **Rad etish sababi:** Kelajakda 224 OTM B2B (`api-university`) uchun dolzarb, lekin hozirgi 3
+- **Rad etish sababi:** Kelajakda 224 OTM Univer integratsiyasi (`api-university`) uchun dolzarb, lekin hozirgi 3
   ta entity uchun kichik direct-fix arzonroq.
 
 ## Consequences

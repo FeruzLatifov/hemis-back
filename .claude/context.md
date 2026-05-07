@@ -25,9 +25,9 @@ HEMIS-back **per-OTM EMAS** — bu vazirlik darajasidagi yagona markaziy backend
   - Shundan **224 ta** Univer Yii2 PHP ishlatadi (api-legacy mijozlari — har OTM o'z lokal `hemis_NNN` DB bilan)
   - 6 ta — boshqa stack (Univer'siz)
   - **Univer ↔ HEMIS-back** = network REST API (lokalhost EMAS)
-- **~5,000 admin foydalanuvchi** (markaziy DB da, 230 OTM bo'ylab)
-- **~1.15M talaba metadata** (markaziy aggregation — har OTM o'rtacha 5K × 230)
-- **~50,000 o'qituvchi metadata** (markaziy aggregation)
+- **~5,000 admin foydalanuvchi** (markaziy DB da, 230 OTM bo'ylab — taxminiy 20-30 admin/OTM)
+- **~1.15M talaba metadata** (markaziy aggregation taxminiy: 230 OTM × ~5K talaba/OTM o'rtacha; real son `hemishe_e_student.count(*)` orqali olinadi)
+- **~50,000 o'qituvchi metadata** (markaziy aggregation taxminiy: 230 × ~200/OTM)
 - **5 ta asosiy rol** (SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER, REPORT_VIEWER)
 - **Peak concurrent:** ~500-1000 markaziy server'da (sessiya boshlanishi, hisobotlar davrida 2x)
 - **224 Univer client** parallel — har OTM Yii2 PHP backend api-legacy/api-university orqali

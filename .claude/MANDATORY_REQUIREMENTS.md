@@ -114,7 +114,7 @@ public class StudentController {
                     {
                       "firstName": "Jane", "lastName": "Smith",
                       "email": "jane.smith@university.uz", "phone": "+998901234567",
-                      "facultyId": 1, "curriculumId": 10
+                      "facultyId": "00000000-0000-0000-0000-000000000010", "curriculumId": "00000000-0000-0000-0000-000000000020"
                     }
                     """)))
         @Valid @RequestBody StudentCreateDto dto

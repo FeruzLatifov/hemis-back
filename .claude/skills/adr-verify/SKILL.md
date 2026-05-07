@@ -18,8 +18,12 @@ Trigger phrases:
 ### 1. Read ADR file
 
 ```
-Read: docs/adr/NNNN-*.md
+Read: /home/adm1n/projects/startup/hemis-back/docs/adr/NNNN-*.md
+# Yoki: cd $(git rev-parse --show-toplevel) avval
 ```
+
+> **Diqqat:** Skill subagent cwd har xil bo'lishi mumkin — absolute path tavsiya etiladi.
+> **Tools dependency:** `yq` o'rnatilishi shart (`apt install yq` yoki `brew install yq`). Yo'q bo'lsa frontmatter'ni `head -20` + manual parse.
 
 YAML frontmatter'dan ajratib oling:
 - `status` (proposed/accepted/in-progress/implemented)
@@ -75,7 +79,7 @@ grep -rn "import uz.hemis.domain.entity.<new_path>" <module>/src/main/java
 
 ```bash
 # Misol: ADR-0008 — api-legacy yangi schema entity
-grep -rln "import uz.hemis.domain.entity.security.User\|.entity.employee.Employee\|.entity.employee.EmployeeJobs" \
+grep -rlnE "import uz\.hemis\.domain\.entity\.(security\.User|employee\.Employee|employee\.EmployeeJobs);" \
     api-legacy/src/main/java/ | grep -v "Legacy"
 # Bu zero bo'lishi shart — agar yo'q bo'lsa Stage 2-5 hali bajarilmagan
 ```

@@ -4,6 +4,7 @@ status: implemented
 date: 2026-05-04
 deciders: hemis-team
 agent: human
+model: n/a
 affects: [api-university, security, settings.gradle.kts]
 liquibase: []
 entities: [OAuthClient, OAuthClientRole]

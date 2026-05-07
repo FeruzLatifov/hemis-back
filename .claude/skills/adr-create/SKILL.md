@@ -34,7 +34,9 @@ Quyidagilarni so'rang:
 ### 2. Find next ADR number
 
 ```bash
-ls docs/adr/[0-9]*.md | sort | tail -1
+# Absolute path — Skill subagent cwd har xil bo'lishi mumkin
+ls /home/adm1n/projects/startup/hemis-back/docs/adr/[0-9]*.md | sort | tail -1
+# Yoki: cd $(git rev-parse --show-toplevel) && ls docs/adr/[0-9]*.md
 # Misol: 0008-* → keyingisi 0009
 ```
 

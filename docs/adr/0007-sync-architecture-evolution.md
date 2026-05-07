@@ -126,8 +126,11 @@ $this->_client->post('/v2/entities/hemishe_ETeacher', $data)->send();
 #### 5. Observability
 - Markaziy event log yo'q, debug uchun 224 OTM SSH access talab qiladi
 
-#### 6. Back-channel YO'Q
-- Hemis classifier yangilanish OTM'larga 1—24 soat lag bilan yetib boradi (cron-based pull)
+#### 6. Back-channel YO'Q (KRITIK — markaziy maqsadning #2)
+- HEMIS-back markaziy klassifikator distribution maqsadi (ADR-0006) — yagona manba sifatida saqlash va Univer'larga yetkazish
+- **Hozir:** Univer cron orqali har 1—24 soatda HEMIS-back'dan klassifikatorni pull qiladi (passive lag)
+- **Maqsad (ADR-0006 push):** markaz event chiqaradi → Univer'lar darhol oladi (Kafka outbound topic)
+- **Hozirgi pull → kelajak push** o'tish ushbu ADR-0007 ning asosiy konstruktsiyasi
 
 #### 7. Schema drift
 - Univer JSON yangi field silently dropped, contract test yo'q

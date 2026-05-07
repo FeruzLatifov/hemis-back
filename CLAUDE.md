@@ -125,7 +125,7 @@ Modul-darajadagi `CLAUDE.md` (api-legacy, service, domain, security, …) Claude
 | [0001](docs/adr/0001-building-table-design.md) | university_building alohida jadval |
 | [0002](docs/adr/0002-java-25-upgrade.md) | Java 25 LTS + Spring Boot 4.0.6 |
 | [0003](docs/adr/0003-audit-db-isolation.md) | Audit DB alohida `hemis_audit` |
-| [0004](docs/adr/0004-api-university-module.md) | api-university yangi modul (224 OTM B2B) |
+| [0004](docs/adr/0004-api-university-module.md) | api-university yangi modul (vazirlik ↔ 224 OTM Univer integratsiya) |
 | [0005](docs/adr/0005-oauth-client-credentials.md) | OAuth client_credentials migration |
 | [0006](docs/adr/0006-classifier-h-prefix.md) | Klassifikatorlar `h_*` prefiks |
 | [0007](docs/adr/0007-sync-architecture-evolution.md) | Kafka-first sync architecture |

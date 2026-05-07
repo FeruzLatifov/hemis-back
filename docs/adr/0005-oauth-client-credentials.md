@@ -4,6 +4,7 @@ status: in-progress
 date: 2026-05-04
 deciders: hemis-team
 agent: human
+model: n/a
 affects: [api-university, security, api-legacy]
 liquibase:
   - V006_create_users.sql  # oauth_client jadval
@@ -12,7 +13,7 @@ verification: ./scripts/check_table_mappings.sh
 related: [ADR-0004]
 ---
 
-# ADR 0005: OAuth `client_credentials` grant 224 OTM B2B uchun
+# ADR 0005: OAuth `client_credentials` grant 224 OTM Univer integratsiyasi uchun
 
 ## Status
 
@@ -185,7 +186,9 @@ public function apiLogin($username, $password)
 }
 ```
 
-### Bosqich 3: Canary deploy (1 oy)
+### Bosqich 3: Canary deploy 224 OTM bo'ylab (1 oy)
+
+> **ADR-0007 bilan farq:** ADR-0007 (Kafka) `production'da user yo'q` deydi — bu hemis-back-ning Kafka stage'i kontekstida. Bu ADR-0005 esa **224 ta MAVJUD Univer client** (real user) progressiv migration uchun canary qiladi — boshqacha kontekst (existing client cohort).
 
 | Hafta | OTM soni | Monitoring |
 |-------|----------|------------|
@@ -234,7 +237,7 @@ hemis.security.oauth.client.refresh-token-ttl-seconds: 2592000  # 30 days
 - Code: `oauth_client` table — `domain/.../V006_create_users.sql`
 - Code: `OAuthClientAuthenticationService` (security module)
 - Code: `UniversityOAuthTokenController` (api-university module)
-- PHP integration: `/home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php:728`
+- PHP integration: `/home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php:724 (apiLogin function)`
 - RFC 6749 §4.4: client_credentials grant
 - RFC 8594: Sunset HTTP Header Field
 - OAuth 2.1 BCP: https://oauth.net/2.1/

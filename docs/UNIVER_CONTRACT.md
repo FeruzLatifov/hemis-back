@@ -124,7 +124,7 @@ public static function getUniversity() {
 
 ### C. OAuth (2 ta)
 
-- `v2/oauth/token` — login (HemisApi.php:727)
+- `v2/oauth/token` — login (HemisApi.php:724 apiLogin function)
 - `v2/oauth/exchange` — token exchange route alias (api/config/main.php:110)
 
 ## Frozen Properties
@@ -158,7 +158,7 @@ public static function getUniversity() {
 - **175 ta integration test** (14 kategoriya: 00-auth → 13-entity-stats)
 - `compare_endpoints.js` — old-hemis (:8082) vs hemis-back (:8081) side-by-side
 - `integration-proxy.py` — DB bootstrap from `hemis_401`
-- So'nggi run: 81 MATCH, 0 MISMATCH (hujjatlangan)
+- So'nggi run (`compare_endpoints.js`): **175/175 MATCH** (commit `ac409cf`, 2026-05). Avvalgi audit: 81 MATCH (V3.0 baseline) — 175 ta test scenarioga kengaytirilgan.
 
 ### Test ishga tushirish
 ```bash

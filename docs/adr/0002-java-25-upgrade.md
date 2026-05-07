@@ -4,6 +4,7 @@ status: implemented
 date: 2026-05-04
 deciders: hemis-team
 agent: human
+model: n/a
 affects: [build.gradle.kts, app, all-modules]
 liquibase: []
 entities: []

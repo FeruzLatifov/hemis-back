@@ -4,6 +4,7 @@ status: implemented
 date: 2026-04-21
 deciders: hemis-team
 agent: human
+model: n/a            # human-decided, no AI agent involvement
 affects: [domain, api-web, api-university]
 liquibase:
   - V011_create_university_buildings.sql
@@ -59,8 +60,8 @@ Loyihada allaqachon `university_cadastre` jadvali (V012) mavjud — Kadastr API 
 | **Ma'no** | Huquqiy/mulkiy ko'rinish | Akademik/operatsional ko'rinish |
 | **Manba** | Kadastr davlat API (`172.18.9.171/kadastr/`) | Univer admin (OTM tomondan) |
 | **O'zgarish chastotasi** | Kadastr sinxronizatsiyasi (har kun) | OTM tomondan kamdan-kam (rekonstruksiya paytida) |
-| **Sohibi** | Davlat kadastr sistemasi | Universitet ma'muriyati |
-| **Auditi** | Kadastr API javobi snapshot | JPA auditing (OTM admin) |
+| **Sohibi** | Davlat kadastr sistemasi | OTM ma'muriyati (markaziy HEMIS-back web frontend orqali, UNIVERSITY_ADMIN role) |
+| **Auditi** | Kadastr API javobi snapshot | JPA auditing (markaziy DB activity_log, ADR-0003) |
 
 Bu **Bounded Contexts** (DDD) — ikki manba, ikki hayot aylanishi, ikki business domain.
 
