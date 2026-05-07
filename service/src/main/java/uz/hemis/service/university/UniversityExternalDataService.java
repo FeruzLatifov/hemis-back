@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
+import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.vo.Pinfl;
 import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.entity.university.Organization;
@@ -60,18 +61,26 @@ public class UniversityExternalDataService {
     /**
      * Fetch founders from legal-entity API and persist them.
      * Idempotent: rewrites the founders for {@code universityCode} every call.
+     *
+     * <p>API javobining shakli kutilgan: root'da {@code "founders"} array.
+     * Agar gateway response'ni wrap qilib qaytarsa ({@code data.founders}), bu yerda
+     * {@code BadRequestException} otiladi — silent skip emas.</p>
      */
     @Transactional
     public void syncFoundersFromApi(String universityCode, String tin) {
         log.info("Syncing founders for university={}, tin={}", universityCode, tin);
         JsonNode response = callApi("/legalentity/legalentity-info/", Map.of("tin", tin));
-        if (response == null) return;
-        syncFounders(universityCode, response.path("founders"));
+        JsonNode foundersNode = response.path("founders");
+        if (foundersNode.isMissingNode()) {
+            log.error("API javobida 'founders' yo'q. Response shakli: {}",
+                    response.isObject() ? response.fieldNames() : response.getNodeType());
+            throw new BadRequestException(
+                    "Tashqi API javobida 'founders' ma'lumoti yo'q (response shape o'zgargan bo'lishi mumkin)");
+        }
+        syncFounders(universityCode, foundersNode);
     }
 
     private void syncFounders(String universityCode, JsonNode foundersNode) {
-        if (!foundersNode.isArray()) return;
-
         // Delete ALL existing founders for this university (idempotent sync).
         // deleteAllInBatch + flush forces the DELETE to hit the DB before the
         // subsequent INSERT, otherwise Hibernate's action queue runs INSERTs
@@ -83,8 +92,16 @@ public class UniversityExternalDataService {
             log.info("Deleted {} old founders for university={}", existing.size(), universityCode);
         }
 
+        if (!foundersNode.isArray()) {
+            // Tashqi API'da founders yo'q — bu yangi universitet uchun normal hol
+            // (asoschilar hali rasmiylanmagan). Mavjudlari tozalandi, yangisi yo'q.
+            log.warn("Founders array bo'sh yoki noto'g'ri shaklda university={} — mavjudlari tozalandi", universityCode);
+            return;
+        }
+
         // Create fresh from API
         List<UniversityFounder> newFounders = new ArrayList<>();
+        int skipped = 0;
         for (JsonNode founderNode : foundersNode) {
             UniversityFounder founder = new UniversityFounder();
             founder.setUniversityCode(universityCode);
@@ -92,35 +109,44 @@ public class UniversityExternalDataService {
             JsonNode individual = founderNode.path("founderIndividual");
             JsonNode legal = founderNode.path("founderLegal");
 
-            if (!individual.isMissingNode() && !individual.isNull()) {
-                founder.setFounderType(uz.hemis.domain.entity.enums.FounderType.INDIVIDUAL);
-                String founderPinfl = textOrNull(individual, "pinfl");
-                if (founderPinfl != null && !founderPinfl.isBlank()) {
-                    Employee emp = findOrCreateEmployee(founderPinfl, individual, null, universityCode);
-                    founder.setEmployee(emp);
+            try {
+                if (!individual.isMissingNode() && !individual.isNull()) {
+                    founder.setFounderType(uz.hemis.domain.entity.enums.FounderType.INDIVIDUAL);
+                    String founderPinfl = textOrNull(individual, "pinfl");
+                    if (founderPinfl != null && !founderPinfl.isBlank()) {
+                        Employee emp = findOrCreateEmployee(founderPinfl, individual, null, universityCode);
+                        founder.setEmployee(emp);
+                    }
+                    BigDecimal percent = decimalOrNull(individual, "founderSharePercent");
+                    founder.setSharePercent(percent);
+                    founder.setShareSum(longOrNull(individual, "founderShareSum"));
+                } else if (!legal.isMissingNode() && !legal.isNull()) {
+                    founder.setFounderType(uz.hemis.domain.entity.enums.FounderType.LEGAL);
+                    String legalTin = textOrNull(legal, "tin");
+                    if (legalTin != null && !legalTin.isBlank()) {
+                        Organization org = findOrCreateOrganization(legalTin, legal);
+                        founder.setOrganization(org);
+                    }
+                    BigDecimal percent = decimalOrNull(legal, "founderSharePercent");
+                    founder.setSharePercent(percent);
+                    founder.setShareSum(longOrNull(legal, "founderShareSum"));
+                } else {
+                    // Founder ichida na individual, na legal — record buzilgan
+                    skipped++;
+                    continue;
                 }
-                BigDecimal percent = decimalOrNull(individual, "founderSharePercent");
-                founder.setSharePercent(percent);
-                founder.setShareSum(longOrNull(individual, "founderShareSum"));
-            } else if (!legal.isMissingNode() && !legal.isNull()) {
-                founder.setFounderType(uz.hemis.domain.entity.enums.FounderType.LEGAL);
-                String legalTin = textOrNull(legal, "tin");
-                if (legalTin != null && !legalTin.isBlank()) {
-                    Organization org = findOrCreateOrganization(legalTin, legal);
-                    founder.setOrganization(org);
-                }
-                BigDecimal percent = decimalOrNull(legal, "founderSharePercent");
-                founder.setSharePercent(percent);
-                founder.setShareSum(longOrNull(legal, "founderShareSum"));
-            } else {
-                continue;
-            }
 
-            newFounders.add(founder);
+                newFounders.add(founder);
+            } catch (IllegalArgumentException e) {
+                // Pinfl/Tin VO validation (14 raqam emas, format buzuq) — alohida record skip qilinadi,
+                // butun batch fail bo'lmasin. Validation loyiha doirasidan tashqarida (tashqi API ma'lumoti).
+                log.warn("Founder skip qilindi (validation): {}", e.getMessage());
+                skipped++;
+            }
         }
 
         founderRepository.saveAll(newFounders);
-        log.info("Saved {} founders for university={}", newFounders.size(), universityCode);
+        log.info("Saved {} founders for university={} (skipped={})", newFounders.size(), universityCode, skipped);
     }
 
     // =====================================================
@@ -157,12 +183,12 @@ public class UniversityExternalDataService {
                 .map(u -> {
                     String tin = u.getTin();
                     if (tin == null || tin.isBlank()) {
-                        throw new uz.hemis.common.exception.BadRequestException(
+                        throw new BadRequestException(
                                 "University TIN is empty for code: " + universityCode);
                     }
                     return tin;
                 })
-                .orElseThrow(() -> new uz.hemis.common.exception.BadRequestException(
+                .orElseThrow(() -> new BadRequestException(
                         "University not found: " + universityCode));
     }
 
@@ -170,18 +196,34 @@ public class UniversityExternalDataService {
     // HTTP HELPER
     // =====================================================
 
+    /**
+     * api-mspd gateway'ga so'rov yuboradi. 200 bo'lmasa — exception otiladi
+     * (silent fail YO'Q, foydalanuvchi xatolikni ko'radi).
+     *
+     * @return JSON response body (200 OK)
+     * @throws BadRequestException tashqi API xatolik qaytardi yoki tarmoq xatosi
+     */
     private JsonNode callApi(String path, Object body) {
+        GatewayResult result;
         try {
-            GatewayResult result = apiMspdClient.post(path, body);
-            if (result.statusCode() == 200) {
-                return result.body();
-            }
-            log.error("API call {} failed: status={}, body={}", path, result.statusCode(), result.body());
-            return null;
+            result = apiMspdClient.post(path, body);
+        } catch (BadRequestException e) {
+            // ApiMspdClient.post token yo'q yoki tarmoq xatosida BadRequestException tashlaydi —
+            // o'zgartirmasdan ko'taramiz, GlobalExceptionHandler 400 javob qaytaradi.
+            log.error("Tashqi API ga ulanib bo'lmadi: path={}, sabab={}", path, e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("API call {} error: {}", path, e.getMessage());
-            return null;
+            log.error("Tashqi API chaqiruvi xatosi: path={}, sabab={}", path, e.getMessage(), e);
+            throw new BadRequestException("Tashqi API chaqiruvi xatosi: " + e.getMessage(), e);
         }
+
+        if (result.statusCode() != 200) {
+            log.error("Tashqi API muvaffaqiyatsiz status: path={}, status={}, body={}",
+                    path, result.statusCode(), result.body());
+            throw new BadRequestException(
+                    "Tashqi API xatolik bilan javob qaytardi: status=" + result.statusCode());
+        }
+        return result.body();
     }
 
     // =====================================================
