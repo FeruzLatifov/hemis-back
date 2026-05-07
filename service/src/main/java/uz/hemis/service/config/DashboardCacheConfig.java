@@ -64,6 +64,40 @@ public class DashboardCacheConfig implements CachingConfigurer {
     private static final Duration DEFAULT_TTL = Duration.ofMinutes(30);  // Unified 30 min for menu, i18n, permissions
 
     /**
+     * Cache key prefix version — deploy-time format migration.
+     *
+     * <p><strong>Qachon bumplash kerak:</strong></p>
+     * <ul>
+     *   <li>Jackson ObjectMapper konfiguratsiyasi o'zgarganda
+     *       (masalan {@code activateDefaultTyping}, mixin, ignored fields)</li>
+     *   <li>Cache'da saqlanayotgan DTO/record shape o'zgarganda
+     *       (yangi maydon emas — type/structure o'zgarishi)</li>
+     *   <li>Redis serializer o'zgarganda (Jackson → Kryo, va h.k.)</li>
+     * </ul>
+     *
+     * <p><strong>Qachon bumplash KERAK EMAS:</strong></p>
+     * <ul>
+     *   <li>Oddiy controller/service/SQL fix</li>
+     *   <li>Yangi cache nomi qo'shish</li>
+     *   <li>TTL o'zgarishi</li>
+     *   <li>Yangi DTO maydoni (Jackson backward-compatible)</li>
+     * </ul>
+     *
+     * <p>Bumplaganingizdan keyin: yangi pod yangi prefix bilan ishlaydi
+     * ({@code cache:v3:*}), eski {@code cache:v2:*} qiymatlari TTL bilan
+     * tabiiy o'chadi (max 24 soat). Manual {@code redis-cli FLUSHDB} kerak emas.</p>
+     *
+     * <p><strong>Tarix:</strong></p>
+     * <ul>
+     *   <li>v1 — initial (Jackson default typing yo'q edi)</li>
+     *   <li>v2 — {@code activateDefaultTyping(NON_FINAL, AS.PROPERTY)} qo'shildi
+     *           ({@code @class} property majburiy)</li>
+     * </ul>
+     */
+    private static final String CACHE_VERSION = "v2";
+    private static final String CACHE_PREFIX = "cache:" + CACHE_VERSION + ":";
+
+    /**
      * ENTERPRISE 2-Level Cache Manager
      *
      * <p><strong>L1 + L2 Configuration:</strong></p>
@@ -110,7 +144,7 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Default Redis L2 configuration (60 minutes)
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(DEFAULT_TTL)                                            // 1 hour TTL
-                .prefixCacheNameWith("cache:")                                    // Universal prefix
+                .prefixCacheNameWith(CACHE_PREFIX)                                // Versioned prefix (cache:v2:)
                 .serializeKeysWith(RedisSerializationContext.SerializationPair    // String keys
                         .fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair  // JSON values
@@ -222,7 +256,7 @@ public class DashboardCacheConfig implements CachingConfigurer {
         log.info("✅ ENTERPRISE 2-Level Cache configured:");
         log.info("   L1 (Caffeine): per-cache size, 30 min TTL, per-pod");
         log.info("   L2 (Redis): 30 min TTL (unified), distributed");
-        log.info("   Prefix: cache:");
+        log.info("   Prefix: {} (CACHE_VERSION={})", CACHE_PREFIX, CACHE_VERSION);
         log.info("   Serialization: JSON");
 
         return cacheManager;
