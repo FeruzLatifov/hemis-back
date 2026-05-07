@@ -189,4 +189,40 @@ class ArchitectureTest {
                         + "domain/entity/legacy/<sub-domain>/ — modular ajratish + future-proof guard.");
         rule.check(classes);
     }
+
+    // =====================================================
+    // Schema discipline — entity va repository qoidalari
+    // =====================================================
+
+    @Test
+    @DisplayName("Har @Entity uchun @Table annotation aniq belgilanishi shart")
+    void allEntitiesMustHaveExplicitTableAnnotation() {
+        // @Table bo'lmasa Hibernate auto-naming qiladi:
+        //   class Student → SQL `STUDENT` jadval qidiradi
+        // Lekin bizda `hemishe_e_student` (CUBA convention) — bug:
+        //   "table not found" ishga tushganda yoki noto'g'ri jadvalga yozish.
+        ArchRule rule = classes()
+                .that().areAnnotatedWith(jakarta.persistence.Entity.class)
+                .should().beAnnotatedWith(jakarta.persistence.Table.class)
+                .because("@Entity Hibernate auto-naming (uppercase class nomi) ishlatishi xavfli — "
+                        + "har entity'da @Table(name = \"...\") aniq belgilash kerak.");
+        rule.check(classes);
+    }
+
+    @Test
+    @DisplayName("Spring Data JPA repository interface'lari `domain.repository` paketda joylashishi shart")
+    void springDataJpaRepositoriesMustResideInDomainRepositoryPackage() {
+        // Faqat Spring Data interface'lari (extends Repository hierarchy).
+        // Plain @Repository class'lar (masalan AuditRepository — JdbcTemplate'li,
+        // alohida hemis_audit DB uchun) bu qoidaga kirmaydi.
+        ArchRule rule = classes()
+                .that().areAssignableTo(org.springframework.data.repository.Repository.class)
+                .and().areInterfaces()
+                .should().resideInAPackage("uz.hemis.domain.repository..")
+                .because("Spring Data JPA repository'lar markaziy joyda — domain/repository/. "
+                        + "Tarqalgan repository'lar 'secret data access path' yaratadi va modullar "
+                        + "boundary'sini buzadi. Plain @Repository class'lar (JdbcTemplate'li) "
+                        + "alohida — masalan AuditRepository hemis_audit DB uchun (ADR-0003).");
+        rule.check(classes);
+    }
 }
