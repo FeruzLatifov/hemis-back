@@ -47,7 +47,7 @@ flowchart TB
 
     subgraph L6["🔗 Cross-Cutting (Auth · HR)"]
         USR["users.university_id<br/><i>V006 — odam akkaunt</i>"]
-        OAC["oauth_client.university_code<br/><i>V006 — B2B machine</i>"]
+        OAC["oauth_client.university_code<br/><i>V006 — Univer machine (per-OTM)</i>"]
         EJB["employee_job.university_code<br/><i>V004 — HR assignment</i>"]
     end
 
@@ -405,7 +405,7 @@ flowchart LR
 | FK | Kim ishlatadi | ON DELETE | Maqsad |
 |----|---------------|-----------|--------|
 | `users.university_id` | Web/Mobile auth | SET NULL | Inson akkauntning OTM scope (rektor, dekan, ...) |
-| `oauth_client.university_code` | 224 OTM B2B sync | RESTRICT | Machine akkaunt (univer_101, mygov_sync) |
+| `oauth_client.university_code` | 224 OTM Univer integratsiya | RESTRICT | Machine akkaunt (univer_101, mygov_sync) |
 | `employee_job.university_code` | HR transactional | RESTRICT | Xodim qaysi OTMda ishlaydi |
 | `employee_job.department_code` | HR | SET NULL | Bo'lim/kafedra (CUBA legacy FK) |
 
