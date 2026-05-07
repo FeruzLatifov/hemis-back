@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.exception.BadRequestException;
@@ -156,9 +158,19 @@ public class UniversityExternalDataService {
     /**
      * Sync all external data (founders) for a university.
      * Resolves TIN from university record automatically.
+     *
+     * <p><strong>Cache evict:</strong> {@code universityDashboard} va
+     * {@code universityFounders} — sync DB'ga yozadi, lekin
+     * {@code UniversityInfoService.getUniversityDashboard}/{@code getFounders}
+     * {@code @Cacheable} bo'lgani uchun evict qilinmasa, controller darhol
+     * eski cached qiymatni qaytaradi (foydalanuvchi "saqlanmadi" deb ko'radi).</p>
      */
     @Audited(action = AuditAction.UPDATE, entity = "University",
             entityClass = University.class, keyArg = "universityCode")
+    @Caching(evict = {
+            @CacheEvict(value = "universityDashboard", key = "#universityCode"),
+            @CacheEvict(value = "universityFounders", key = "#universityCode")
+    })
     @Transactional
     public void syncAll(String universityCode) {
         String tin = resolveTin(universityCode);
