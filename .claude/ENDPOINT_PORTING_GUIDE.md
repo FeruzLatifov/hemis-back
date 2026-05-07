@@ -299,7 +299,7 @@ public ResponseEntity<?> create(...) { }
     description = """
         PINFL va passport seria-raqam orqali GUVD bazasidan ma'lumot olish.
         **OLD-HEMIS Compatible** - 100% backward compatibility
-        **Endpoint:** GET /services/passport-data/getData
+        **Endpoint:** GET /services/passport-data/getDataBySN (yoki /getDataByPinflBirthdate, /getAddress)
         **Auth:** Bearer token (required)
         """,
     security = @SecurityRequirement(name = "bearerAuth")
@@ -448,7 +448,7 @@ fi
 ### Bajarilgan
 
 - **01.Token** — 3 endpoint (password grant, refresh grant, user info)
-- **02.Passport ma'lumotlari** — 7 endpoint (getData, getDataBySN, getAddress, etc.)
+- **02.Passport ma'lumotlari** — 3 endpoint (`getDataBySN`, `getDataByPinflBirthdate`, `getAddress`)
 - **endpoint_tester.html** — Dual config, side-by-side response, auto-comparison
 
 ### Har Bir Yangi Port Uchun

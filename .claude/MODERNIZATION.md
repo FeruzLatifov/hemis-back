@@ -178,20 +178,23 @@ String render(ApiResult<StudentDto> result) {
 }
 ```
 
-### Virtual Threads (audit kerak)
+### Virtual Threads — YOQILGAN (ADR-0002)
 
 ```yaml
-# application.yml — yoqishdan oldin audit
+# application.yml — ALLAQACHON YOQILGAN (ADR-0002 commit 356ecdc)
 spring:
   threads:
     virtual:
-      enabled: true   # Java 25 stable, lekin pinning audit qiling
+      enabled: true   # Java 25 stable, JEP 491 (Java 24+) synchronized pinning olib tashladi
 ```
 
-**Audit checklist:**
-- [ ] `synchronized` bloklar — JEP 491 (Java 24+) yo'q qildi, lekin tekshir
-- [ ] JDBC operations — Hibernate 7 `ReentrantLock` ishlatadi (pinning yo'q)
-- [ ] ThreadLocal usage — virtual thread'da OK, lekin context propagation tekshir
+**Status:** ✅ Production'da yoqilgan. Hibernate 7 `ReentrantLock` ishlatadi (pinning yo'q).
+
+**Audit checklist (yangi service yozayotganda):**
+- [ ] `synchronized` bloklar zarur bo'lsa → `ReentrantLock` afzal
+- [ ] CPU-bound operations (Excel report) → alohida platform thread executor
+- [ ] ThreadLocal usage → context propagation tekshir (MDC, SecurityContext)
+- [ ] Yangi external integration → audit `grep "synchronized" service/`
 
 ---
 

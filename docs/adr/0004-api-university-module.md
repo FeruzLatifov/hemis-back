@@ -33,7 +33,7 @@ Loyiha 3 ta API moduldan boshlangan:
 
 ## Decision
 
-Yangi `api-university` modul yaratildi. Maqsad: **224 OTM PHP backend bilan B2B integratsiya**.
+Yangi `api-university` modul yaratildi. Maqsad: **224 OTM Univer Yii2 PHP backend uchun vazirlik (markaz) ↔ OTM integratsiya kanali**.
 
 URL prefix: `/api/v1/university/*`
 Auth: OAuth 2.0 `client_credentials` grant (`oauth_client` jadval)

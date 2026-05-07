@@ -255,7 +255,7 @@ class StudentControllerIntegrationTest {
     void create_success() throws Exception {
         var dto = StudentCreateDto.builder()
             .firstName("John").lastName("Doe")
-            .email("john.test@university.uz").facultyId(1L).build();
+            .email("john.test@university.uz").facultyId(UUID.fromString("00000000-0000-0000-0000-000000000001")).build();
 
         mockMvc.perform(post("/api/v1/web/students")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -284,7 +284,7 @@ class StudentControllerIntegrationTest {
     void create_conflict() throws Exception {
         var dto = StudentCreateDto.builder()
             .firstName("Jane").lastName("Smith")
-            .email("duplicate@university.uz").facultyId(1L).build();
+            .email("duplicate@university.uz").facultyId(UUID.fromString("00000000-0000-0000-0000-000000000001")).build();
 
         // Create first, then attempt duplicate
         mockMvc.perform(post("/api/v1/web/students")
@@ -391,18 +391,18 @@ class StudentServiceImplTest {
     @BeforeEach
     void setup() {
         testFaculty = new Faculty();
-        testFaculty.setId(1L);
+        testFaculty.setId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testFaculty.setName("Computer Science");
 
         testStudent = new Student();
-        testStudent.setId(1L);
+        testStudent.setId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testStudent.setFirstName("John");
         testStudent.setLastName("Doe");
         testStudent.setEmail("john@university.uz");
         testStudent.setFaculty(testFaculty);
 
         testStudentDto = new StudentDto();
-        testStudentDto.setId(1L);
+        testStudentDto.setId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testStudentDto.setFirstName("John");
         testStudentDto.setLastName("Doe");
     }
@@ -412,14 +412,14 @@ class StudentServiceImplTest {
     @Test
     @DisplayName("findById - success")
     void findById_success() {
-        when(studentRepository.findById(1L)).thenReturn(Optional.of(testStudent));
+        when(studentRepository.findById(UUID.fromString("00000000-0000-0000-0000-000000000001"))).thenReturn(Optional.of(testStudent));
         when(studentMapper.toDto(testStudent)).thenReturn(testStudentDto);
 
-        StudentDto result = studentService.findById(1L);
+        StudentDto result = studentService.findById(UUID.fromString("00000000-0000-0000-0000-000000000001"));
 
         assertNotNull(result);
-        assertEquals(1L, result.getId());
-        verify(studentRepository).findById(1L);
+        assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000001"), result.getId());
+        verify(studentRepository).findById(UUID.fromString("00000000-0000-0000-0000-000000000001"));
     }
 
     @Test
@@ -438,10 +438,10 @@ class StudentServiceImplTest {
     void create_success() {
         var dto = StudentCreateDto.builder()
             .firstName("Jane").lastName("Smith")
-            .email("jane@university.uz").facultyId(1L).build();
+            .email("jane@university.uz").facultyId(UUID.fromString("00000000-0000-0000-0000-000000000001")).build();
 
         when(studentRepository.existsByEmail(dto.getEmail())).thenReturn(false);
-        when(facultyRepository.findById(1L)).thenReturn(Optional.of(testFaculty));
+        when(facultyRepository.findById(UUID.fromString("00000000-0000-0000-0000-000000000001"))).thenReturn(Optional.of(testFaculty));
         when(studentMapper.toEntity(dto)).thenReturn(testStudent);
         when(studentRepository.save(testStudent)).thenReturn(testStudent);
         when(studentMapper.toDto(testStudent)).thenReturn(testStudentDto);
@@ -480,14 +480,14 @@ class StudentServiceImplTest {
     void findByFacultyId_success() {
         Pageable pageable = PageRequest.of(0, 20);
         Page<Student> page = new PageImpl<>(List.of(testStudent), pageable, 1);
-        when(facultyRepository.existsById(1L)).thenReturn(true);
-        when(studentRepository.findByFacultyId(1L, pageable)).thenReturn(page);
+        when(facultyRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000001"))).thenReturn(true);
+        when(studentRepository.findByFacultyId(UUID.fromString("00000000-0000-0000-0000-000000000001"), pageable)).thenReturn(page);
         when(studentMapper.toDto(any())).thenReturn(testStudentDto);
 
-        Page<StudentDto> result = studentService.findByFacultyId(1L, pageable);
+        Page<StudentDto> result = studentService.findByFacultyId(UUID.fromString("00000000-0000-0000-0000-000000000001"), pageable);
 
         assertEquals(1, result.getTotalElements());
-        verify(studentRepository).findByFacultyId(1L, pageable);
+        verify(studentRepository).findByFacultyId(UUID.fromString("00000000-0000-0000-0000-000000000001"), pageable);
     }
 
     @Test
