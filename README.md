@@ -13,7 +13,7 @@
 
 ## Umumiy Ma'lumot
 
-HEMIS Backend — Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** Spring Boot server. `/home/adm1n/projects/startup/old-hemis` (CUBA Platform 7.3 PHP) ning Java 25 + Spring Boot 4.0.6 ga qayta yozilishi.
+HEMIS Backend — Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** Spring Boot server. `/home/adm1n/projects/startup/old-hemis` (**CUBA Platform 7.3 — Java + Groovy**, Haulmont) ning **Java 25 + Spring Boot 4.0.6** ga qayta yozilishi va optimizatsiyasi (Java → Java modernizatsiya, monolit → modular monolith).
 
 ### Loyiha maqsadi (per-OTM EMAS — vazirlik markaziy)
 

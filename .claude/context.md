@@ -1,7 +1,7 @@
 # HEMIS Backend - Project Context
 
 > **H**igher **E**ducation **M**anagement **I**nformation **S**ystem
-> Vazirlik darajasidagi **MARKAZIY agregator** (1 deploy/cluster) — `/home/adm1n/projects/startup/old-hemis` (CUBA Platform 7.3 PHP) ning Spring Boot 4 + Java 25 ga qayta yozilishi.
+> Vazirlik darajasidagi **MARKAZIY agregator** (1 deploy/cluster) — `/home/adm1n/projects/startup/old-hemis` (**CUBA Platform 7.3 — Java + Groovy**, Haulmont) ning Spring Boot 4 + Java 25 ga **qayta yozilishi va optimizatsiyasi** (Java → Java modernizatsiya).
 
 ---
 

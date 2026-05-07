@@ -2,7 +2,7 @@
 
 Bu katalog HEMIS-back loyihasidagi muhim arxitektura qarorlarini saqlaydi.
 
-> **HEMIS-back qisqacha:** O'zbekiston Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** Java/Spring Boot server (vazirlik darajasidagi 1 deploy/cluster). `/home/adm1n/projects/startup/old-hemis` (CUBA Platform 7.3 PHP) ning qayta yozilishi.
+> **HEMIS-back qisqacha:** O'zbekiston Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** Java/Spring Boot server (vazirlik darajasidagi 1 deploy/cluster). `/home/adm1n/projects/startup/old-hemis` (**CUBA Platform 7.3 — Java + Groovy**, Haulmont) ning **Spring Boot 4 + Java 25** ga qayta yozilishi va optimizatsiyasi.
 >
 > **4 ta asosiy maqsad:**
 > 1. **230 OTM dan aggregation** (markaziy ma'lumot ombori)

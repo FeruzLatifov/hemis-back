@@ -20,7 +20,7 @@ Accepted (2026-05-04)
 ## Context
 
 Loyiha 3 ta API moduldan boshlangan:
-- `api-legacy` — old-hemis CUBA bilan birxil URL pattern (`/app/rest/v2/*`), 224 OTM PHP kodi shu yerga keladi
+- `api-legacy` — old-hemis (CUBA Platform 7.3, Java) bilan birxil URL pattern (`/app/rest/v2/*`), 224 ta Univer Yii2 PHP backend shu yerga keladi
 - `api-web` — vazirlik admin paneli (`/api/v1/web/*`), browser session, RBAC
 - `api-external` — tashqi tashkilotlar (`/api/v1/external/*`), API Key + IP whitelist
 
