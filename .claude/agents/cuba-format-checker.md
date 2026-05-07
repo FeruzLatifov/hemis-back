@@ -17,11 +17,11 @@ Before reviewing api-legacy code, Read these documents:
 
 ## Context
 
-- Module: `api-legacy` (`/home/adm1n/projects/startup/hemis-back/api-legacy`)
+- Module: `api-legacy` (`/home/adm1n/projects/startup/hemis-back/api-legacy`) — **markaziy HEMIS-back** ning CUBA mosligi qatlami
 - Base URL: `/app/rest/v2/*`
 - 56 controllers maintain CUBA REST API format
-- Clients: Univer Yii2 PHP (224 OTM), Ministry integrations, mobile apps
-- **Format break = client crash in production**
+- Clients: **224 ta Univer Yii2 PHP** (per-OTM, har biri o'z lokal `hemis_NNN` DB bilan, network REST orqali markaziy serverga ulanadi)
+- **Format break = 224 OTM mijoz crash in production (nationwide)**
 - **Univer contract:** 175/175 tests must pass after every change
   ```bash
   node /home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints.js

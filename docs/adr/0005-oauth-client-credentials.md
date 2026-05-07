@@ -26,7 +26,7 @@ Accepted (server-side: 2026-05-04); 224 OTM rollout — In Progress
 
 ## Context
 
-**Hozirgi holat:** 224 ta universitet PHP backend (`/home/adm1n/projects/startup/univer/`) HEMIS-back'ga shu pattern bilan ulanadi:
+**Hozirgi holat:** 224 ta per-OTM Univer Yii2 PHP backend (`/home/adm1n/projects/startup/univer/` — har OTM da alohida deploy) **MARKAZIY** (vazirlik darajasidagi) HEMIS-back'ga shu pattern bilan ulanadi:
 
 ```php
 // HemisApi.php:724-735

@@ -1,6 +1,7 @@
 # domain module — Entity, Repository, Liquibase
 
-> **Eng kritik modul.** Bu yerdagi xato 1.15M talaba va 224 universitetga ta'sir qiladi.
+> **Eng kritik modul.** Bu **markaziy DB** (vazirlik) — 230 OTM dan ~1.15M talaba metadata aggregation. Bu yerdagi xato butun tizimga (224 Univer client + davlat integratsiya + vazirlik admin) ta'sir qiladi.
+>
 > JPA entity, Spring Data repository, Liquibase migration — hammasi shu yerda.
 >
 > **Avval bu hujjatni o'qing, keyin kod yozing.**

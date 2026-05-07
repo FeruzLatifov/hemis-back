@@ -22,17 +22,21 @@ Accepted (2026-05-04)
 
 ## Context
 
-Compliance va xavfsizlik talablari (SOC2 / ISO 27001):
+**Markaziy HEMIS-back** = vazirlik darajasidagi yagona server. Davlat audit talablari (UZ qonunchilik + SOC2 / ISO 27001):
 - Har CRUD operatsiya audit log'da yozilishi kerak
 - Login attempts (success/failure) saqlanishi kerak
 - 5xx xatolar to'liq stack trace bilan
 - Audit log immutable bo'lishi kerak (no UPDATE, no DELETE)
 - 5+ yil saqlash (compliance)
 
-**Production hisob:**
-- 224 OTM × ~10K kunlik operatsiya = 2.24M audit log/kun
-- Yiliga ~800M yozuv
-- 5 yil = 4 milliard yozuv
+**Production hisob (markaziy aggregation kontekstida):**
+- 224 ta Univer client REST traffic + vazirlik admin web + davlat S2S = ~10K operatsiya/kun har OTM ekvivalentida
+- 230 OTM × ~10K kunlik aggregation = ~2.3M audit log/kun
+- Davlat sistemalari S2S log (MyGov, MSPD, BIMM, Tax, GUVD): ~10K log/kun
+- Yiliga ~800M+ yozuv (markaziy)
+- 5 yil = 4+ milliard yozuv
+
+> **Eslatma:** Bu **markaziy** audit DB. Per-OTM Univer Yii2 stack'lar o'z lokal auditiga ega — bizdan alohida.
 
 Agar bu asosiy `hemis` DB ga yozilsa:
 - ❌ asosiy DB hajmi 10x ko'payadi

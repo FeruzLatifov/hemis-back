@@ -24,7 +24,7 @@ Loyiha 3 ta API moduldan boshlangan:
 - `api-web` — vazirlik admin paneli (`/api/v1/web/*`), browser session, RBAC
 - `api-external` — tashqi tashkilotlar (`/api/v1/external/*`), API Key + IP whitelist
 
-**Yangi talab:** 224 OTM PHP backend uchun B2B sync — secret rotation, IP whitelist, per-client rate limit, OAuth 2.0 client_credentials.
+**Yangi talab:** Per-OTM Univer Yii2 PHP backend (224 ta)ni **markaziy HEMIS-back**'ga ulash kanali — secret rotation, IP whitelist, per-OTM rate limit, OAuth 2.1 `client_credentials`. Bu vazirlik (markaz) ↔ OTM (subordinate) integratsiya yo'nalishi (mikroservis B2B emas).
 
 **Muammo:**
 - `api-legacy` da yangi yo'l qilish — eski moduldan yangi feature chiqishi anti-pattern

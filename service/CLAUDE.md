@@ -1,5 +1,7 @@
 # service module — Business Logic
 
+> **Markaziy HEMIS-back** business logic qatlami. 230 OTM aggregation + qoidalar joriy qilish (talaba kiritish lock, baho lock) + davlat integratsiya orchestration shu yerda.
+>
 > Spring `@Service` katlamı. **Hech qanday business logic controller yoki repository'da bo'lmaydi.**
 > Bu yerda transaction boundary, cache, validation, exception orchestration.
 

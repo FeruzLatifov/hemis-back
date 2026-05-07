@@ -2,6 +2,16 @@
 
 Bu katalog HEMIS-back loyihasidagi muhim arxitektura qarorlarini saqlaydi.
 
+> **HEMIS-back qisqacha:** O'zbekiston Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** Java/Spring Boot server (vazirlik darajasidagi 1 deploy/cluster). `/home/adm1n/projects/startup/old-hemis` (CUBA Platform 7.3 PHP) ning qayta yozilishi.
+>
+> **4 ta asosiy maqsad:**
+> 1. **230 OTM dan aggregation** (markaziy ma'lumot ombori)
+> 2. **Klassifikator distribution** (markaz → OTM push, yagona manba)
+> 3. **Qoidalar joriy qilish** (talaba kiritish, baho lock, vaqt cheklov)
+> 4. **Davlat integratsiya** (MyGov, MSPD, BIMM, Tax, GUVD)
+>
+> **Mijozlari:** Vazirlik admin (web), 224 ta Univer Yii2 PHP (per-OTM, REST), davlat sistemalari (S2S).
+
 ## ADR nima?
 
 **ADR (Architecture Decision Record)** — bir arxitektura qarorining yozma izohi. Bitta ADR = bitta qaror.

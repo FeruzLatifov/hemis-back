@@ -1,7 +1,14 @@
 # api-university module — University-Scoped Endpoints
 
-> Universitet darajasidagi adminlar uchun (UNIVERSITY_ADMIN role).
-> Multi-tenant pattern — har universitet faqat **o'z** ma'lumotlarini ko'radi.
+> **Markaziy HEMIS-back** ichida **224 ta Univer Yii2 PHP backend** uchun B2B integratsiya kanali (vazirlik ↔ OTM).
+>
+> **Auth:** OAuth 2.1 `client_credentials` (per-OTM client_id + secret + IP whitelist) — ADR-0005.
+>
+> **Multi-tenant:** bitta markaziy DB ichida 230 OTM ma'lumoti. UNIVERSITY_ADMIN role + `university_code` filter — har OTM faqat o'z rows'ini ko'radi (rows level isolation).
+>
+> **Mijozlari:**
+> - 224 ta Univer Yii2 PHP (per-OTM, OAuth client_credentials orqali)
+> - Kelajakda davlat sistemalari (MyGov, MSPD) ham `oauth_client.client_type='GOVERNMENT'` orqali
 
 ---
 

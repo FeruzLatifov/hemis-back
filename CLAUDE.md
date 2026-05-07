@@ -1,5 +1,15 @@
 # HEMIS Backend – Project Memory
 
+> **HEMIS-back kim:** Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** server (bitta deploy/cluster). `/home/adm1n/projects/startup/old-hemis` (CUBA Platform 7.3 PHP) ning Spring Boot 4 + Java 25 ga **qayta yozilishi**.
+>
+> **Maqsadlari:**
+> 1. **230 OTM dan ma'lumot AGGREGATION** (markaziy yig'ish va muvofiqlashtirish)
+> 2. **Klassifikatorlarni UMUMIY saqlash** (har OTM bir xil qiymatlardan foydalanadi)
+> 3. **Qoidalarni JORIY qilish** (talaba kiritish cheklash, baho o'zgartirish cheklash, vaqt cheklov)
+> 4. **Davlat tashkilotlari INTEGRATSIYA** (MyGov, MSPD, BIMM, Tax/Soliq, GUVD, OneID)
+>
+> **Univer (`/home/adm1n/projects/startup/univer`)** — Yii2 PHP, har 230 OTM da **alohida deploy** (`hemis_337`, `hemis_401`, …, `hemis_NNN` — 224 ta Univer ishlatuvchi). Univer'lar **network REST API** orqali markaziy HEMIS-back ga ulanadi.
+
 Java 25 LTS + Spring Boot 4.0.6 modular monolith. PostgreSQL 18 master/replica + Redis 7.
 **Stack:** Spring Boot 4.0.6 · Liquibase 4.31.1 · MapStruct · Lombok · Auxiliary `hemis_audit` DB.
 
@@ -9,9 +19,11 @@ Java 25 LTS + Spring Boot 4.0.6 modular monolith. PostgreSQL 18 master/replica +
 
 ### 1. DB nomi har doim `.env`'dan keladi
 
-Hech qachon hard-code qilmang DB nomi/jadvalni. Lokal: `test1_hemis`, prod: turli. **Hech qachon "biz `hemis_NNN`'ni ishlatamiz" deb taxmin qilmang** — bu Univer (OTM Yii2 PHP, 224 ta) tomonidagi alohida ekosistem.
+Hech qachon hard-code qilmang DB nomi/jadvalni. **Markaziy HEMIS-back DB:** lokal dev `test1_hemis`, prod turli (env: `DB_MASTER_NAME`).
 
-| Soha | Bizning hemis-back | Univer (OTM, 224 ta) |
+**`hemis_NNN`** (337, 401, …) — bu **bizning DB EMAS**. Bu 224 ta OTM tomonidagi Univer Yii2 PHP ekosistemining lokal bazalari nomi (har OTM o'zinikida deploy qilingan). Bizdan hech qanday code'da `hemis_NNN` deb yozish — XATO.
+
+| Soha | Markaziy HEMIS-back (vazirlik) | Univer (per-OTM, 224 ta) |
 |------|--------------------|----------------------|
 | **DB nomi** | `${DB_MASTER_NAME}` (`.env`) | `hemis_337`, `hemis_401`, …, `hemis_NNN` |
 | **Stack** | Java 25 + Spring + JPA | Yii2 PHP |

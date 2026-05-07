@@ -1,8 +1,13 @@
 # api-external module — Server-to-Server Integration
 
-> External system'lar (Ministry HEMIS, OneID, MSPD, MyGov, PayMe/Click) bilan integratsiya.
-> URL: `/api/v1/external/*`
-> Security: API Key + IP Whitelist (JWT EMAS)
+> **Markaziy HEMIS-back** ↔ davlat tashkilotlari S2S integratsiya qatlami. **Outbound** (HEMIS → tashqi) va **inbound** (tashqi → HEMIS) ikkalasi ham.
+>
+> **Tashqi davlat sistemalari (outbound):** MyGov (yagona kirish), MSPD (sotsiologik), BIMM (sertifikatlar), Tax/Soliq (sub'ekt tekshirish), GUVD (passport ma'lumoti), OneID (auth federation).
+>
+> **URL:** `/api/v1/external/*`
+> **Security:** API Key + IP Whitelist (JWT EMAS — machine-to-machine)
+>
+> **Eslatma:** "Ministry HEMIS" eski terminologiyasi ishlatilmaydi — **biz o'zimiz vazirlik markaziy server**.
 
 ---
 

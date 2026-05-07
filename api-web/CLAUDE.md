@@ -1,7 +1,10 @@
 # api-web module — Modern REST API
 
-> Yangi React frontend uchun. **Sof REST + JSON, Swagger to'liq, ResponseWrapper.**
-> URL: `/api/v1/web/*`
+> **Markaziy vazirlik web frontend** (yagona React app) uchun. **Mijozlari:** MINISTRY_ADMIN va UNIVERSITY_ADMIN roles — markaziy HEMIS-back orqali ishlaydi.
+>
+> Per-OTM frontend deploy YO'Q — bitta vazirlik web app, OTM admin'lar `university_code` filter bilan o'z scope'ini ko'radi.
+>
+> **Sof REST + JSON, Swagger to'liq, ResponseWrapper.** URL: `/api/v1/web/*`
 
 ---
 

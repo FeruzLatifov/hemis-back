@@ -18,9 +18,9 @@ Before reviewing changesets, Read these documents:
 
 ## Context
 
-- Database: PostgreSQL 18, master + replica
-- DB name: `${DB_MASTER_NAME}` (`.env` orqali — lokal `test1_hemis`, prod turli; HARD-CODE QILMANG)
-- Scale: 1.15M students, 5,000+ admin users, 230 OTM (224 — Univer ekosistemi)
+- Database: PostgreSQL 18, master + replica (**markaziy** HEMIS-back DB)
+- DB name: `${DB_MASTER_NAME}` (`.env` orqali — lokal `test1_hemis`, prod turli; HARD-CODE QILMANG). `hemis_NNN` — Univer'larniki, biz emas.
+- Scale: markaziy aggregation — 1.15M student metadata, 5,000+ admin, 230 OTM (224 ta Univer Yii2 client)
 - Schema (real holat): hammasi `public` (V001-V014). Domain schema separation faqat reja (rules.md).
 - Tables: `public.hemishe_*` (FROZEN — Univer 224 OTM), yangi schema (`role`, `permission`, `users`, `employee`, `h_*`, va h.k.)
 - Migration path: `domain/src/main/resources/db/changelog/changesets/{schema,seed,migration}/`

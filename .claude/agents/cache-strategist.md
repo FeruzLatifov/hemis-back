@@ -20,7 +20,7 @@ HEMIS uses 2-level cache:
 - **L2: Redis** (shared across 3+ instances)
 - **Manager:** `DashboardCacheConfig.TwoLevelCacheManager`
 
-Scale: 230 OTM (224 — Univer Yii2) × ~5K admins × ~1.15M students. Cache hit ratio target: **85%+**.
+Scale: **Markaziy server** — 230 OTM aggregat, ~5K admin (jami), ~1.15M student metadata. Cache markaziy Redis cluster (per-OTM emas). Cache hit ratio target: **85%+**.
 
 Real cache bugs already found:
 - `HokimiyatClassifierService` — 180 queries/request without cache

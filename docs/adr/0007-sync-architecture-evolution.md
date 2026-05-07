@@ -39,18 +39,29 @@ Proposed (2026-05-05, qayta ko'rib chiqilgan: 2026-05-06 — pilot va REST harde
 
 ### Hozirgi sync arxitekturasi
 
-```
-[224 ta OTM]                          [Hemis-back]
-hemis_337 (Yii2 PHP)  ──HTTPS──▶  /app/rest/v2/entities/hemishe_*
-hemis_401 (Yii2 PHP)  ──HTTPS──▶  /app/rest/v2/services/*
-hemis_NNN (Yii2 PHP)  ──HTTPS──▶  central PostgreSQL
+HEMIS-back **markaziy aggregation point** sifatida 3 ta yo'nalishli traffic'ga bardosh berishi kerak:
 
-Hemis-back ───────────❌──────────▶  Univer (back-channel YO'Q)
+```
+INBOUND (Univer → markaz):
+  [224 ta per-OTM Univer (Yii2 PHP)]   ──HTTPS REST──▶  [Markaziy HEMIS-back]
+   hemis_337, hemis_401, ..., hemis_NNN                  ↳ /app/rest/v2/entities/hemishe_*
+                                                         ↳ /app/rest/v2/services/*
+                                                         ↳ /api/v1/university/*
+OUTBOUND #1 (markaz → Univer) — HOZIRDA YO'Q:
+  [Markaziy HEMIS-back]   ❌──no back-channel──▶   [224 Univer]
+   ↳ klassifikator update (h_*) hozir cron-based pull
+   ↳ qoidalar push (talaba kiritish lock, baho lock) yo'q
+
+OUTBOUND #2 (markaz ↔ davlat sistemalari):
+  [Markaziy HEMIS-back]  ◀──S2S──▶  [MyGov, MSPD, BIMM, Tax/Soliq, GUVD, OneID]
+   ↳ aggregated reports (vazirlik darajasidagi statistika)
+   ↳ PINFL verifikatsiya (passport, Tax sub'ekt)
+   ↳ OneID auth federation
 ```
 
 - **67 ta unique endpoint** (33 entity + 32 service + 2 OAuth — `@docs/UNIVER_CONTRACT.md`)
 - **35 ta caller class** (Univer tomon)
-- **1-yo'nalishli sync** (Univer → Hemis-back)
+- **Hozir 1-yo'nalishli sync** (Univer → Hemis-back) — back-channel yo'qligi bois klassifikator/qoida push imkonsiz
 - **REST + JWT** (ADR-0005 client_credentials migration plan'da)
 - **Schema** 100% FROZEN `hemishe_*` CUBA legacy
 
@@ -63,13 +74,33 @@ Hemis-back ───────────❌──────────▶
 
 ### Sync hajmi (taxminiy production'ga ulanganda)
 
+**INBOUND (Univer → markaz):**
+
 | Metrika | Qiymat |
 |---------|--------|
 | 224 OTM × ~100 student/day update | ≈ 22,000 POST/day |
 | 224 OTM × ~10 teacher update/day | ≈ 2,200 POST/day |
 | 224 OTM × ~5 publication/project upsert | ≈ 1,100 POST/day |
-| **Jami sync hajmi** | **≈ 25,000+ POST/day** |
+| **Jami inbound** | **≈ 25,000+ POST/day** |
 | Peak time concurrent OTM (semestr boshi) | ≈ 50 OTM simultaneously |
+
+**OUTBOUND #1 (markaz → Univer):**
+
+| Metrika | Qiymat |
+|---------|--------|
+| 230 OTM × ~50 klassifikator update sync | ≈ 11,500 events/day |
+| Qoidalar push (talaba lock, baho lock) | ≈ 100 events/day (event-driven) |
+| Notification (admin xabarnomasi) | ≈ 500 events/day |
+
+**OUTBOUND #2 (markaz ↔ davlat sistemalari):**
+
+| Metrika | Qiymat |
+|---------|--------|
+| MyGov auth federation | ≈ 5,000 calls/day |
+| MSPD social welfare verify | ≈ 1,000 calls/day |
+| Tax sub'ekt PINFL check | ≈ 2,000 calls/day |
+| Vazirlik aggregated reports | ≈ 10 daily, ≈ 50 monthly |
+| **Jami outbound government** | **≈ 8,000+ calls/day** |
 
 ### Pain points (event-driven yechadigan muammolar)
 

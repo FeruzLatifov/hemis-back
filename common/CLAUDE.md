@@ -1,5 +1,7 @@
 # common module — Shared DTOs, Exceptions, Utilities
 
+> Markaziy HEMIS-back uchun shared DTOs/exceptions/utilities. Texnik jihatdan kontekst-neutral — barcha modullarda ishlatiladigan yagona tip kutubxonasi.
+>
 > **ZERO Spring dependency.** Pure Java + Lombok + Jackson.
 > Boshqa modullar bog'lanadi, lekin common boshqasiga bog'lanmaydi.
 

@@ -1,6 +1,8 @@
 # security module — Authentication & Authorization
 
-> JWT, BCrypt, RBAC. **Eng yuqori standartlar — bu yerda xato = ma'lumot tarqalishi.**
+> **Markaziy ministry server** (1 deploy) → 230 OTM × ~5K admin × ~1.15M talaba metadata. **Vazirlik darajasidagi xavfsizlik**: bu yerda xato = milliy darajadagi ma'lumot leak.
+>
+> JWT (vazirlik admin + UNIVERSITY_ADMIN), BCrypt (CUBA legacy + modern), OAuth client_credentials (224 Univer client_id), RBAC (90+ permission, OTM scope filter).
 
 ---
 

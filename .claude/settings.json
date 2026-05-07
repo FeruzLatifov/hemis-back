@@ -77,7 +77,10 @@
     ]
   },
   "companyAnnouncements": [
-    "SCALE: 230 OTM (224 — Univer Yii2 ekosistemi), ~1.15M students — every change affects national infrastructure.",
+    "PURPOSE: HEMIS-back = MARKAZIY ministry server (vazirlik 1 deploy). old-hemis (CUBA Platform 7.3 PHP) ning Spring Boot 4 + Java 25 ga qayta yozilishi. Per-OTM deploy YO'Q.",
+    "MISSION: 230 OTM aggregation + klassifikator markaziy distribution + qoidalar joriy qilish (talaba kiritish/baho lock) + davlat integratsiya (MyGov, MSPD, BIMM, Tax, GUVD).",
+    "CLIENTS: vazirlik admin (web), 224 ta Univer Yii2 PHP per-OTM (api-legacy/api-university REST), davlat sistemalari (api-external S2S). hemis_NNN — Univer'larniki, BIZGA TEGISHLI EMAS.",
+    "SCALE: 230 OTM aggregation, ~1.15M students metadata, ~5K admin (markaziy). Har commit milliy infratuzilmaga ta'sir qiladi.",
     "BACKWARD COMPATIBILITY MANDATORY: api-legacy must match old-hemis 1:1 (175/175 integration tests). Run hemis-tools/.../compare_endpoints.js before merging api-legacy changes.",
     "Database changes ONLY via Liquibase migrations (V###/M###/S### naming) with mandatory rollback file. NEVER ALTER/DROP/RENAME hemishe_* legacy tables.",
     "JPA entities: @Getter @Setter (NOT @Data — equals/hashCode triggers N+1). @ManyToOne defaults to EAGER — always specify fetch=FetchType.LAZY.",

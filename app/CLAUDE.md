@@ -1,5 +1,7 @@
 # app module — Main Spring Boot Application
 
+> **Markaziy ministry server entry point.** Vazirlik markazida 3+ instance Kubernetes cluster sifatida ishlaydi (per-OTM deploy YO'Q).
+>
 > Bootstrap, configuration, global exception handling, filter chain.
 > Hech qanday business logic — faqat orchestration.
 

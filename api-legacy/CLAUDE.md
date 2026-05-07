@@ -1,9 +1,10 @@
 # api-legacy module — CUBA Platform Compatibility
 
-> **CUBA Platform 7.3 bilan 100% backward compatibility.** Format buzilishi = production'da xato.
-> Eski Univer Yii2 PHP frontend + 3rd-party clientlar bu API'ni ishlatadi.
+> **MARKAZIY HEMIS-back ning CUBA Platform 7.3 mosligi qatlami.** Format buzilishi = production'da xato.
 >
-> **Qoida:** Format conversion only. Business logic NOL.
+> **Mijozlari:** **224 ta OTM Univer Yii2 PHP backend** (per-OTM, har biri o'z `hemis_NNN` lokal DB'siga ega) — markaziy HEMIS-back'ga **network REST API** orqali ulanadi.
+>
+> **Qoida:** Format conversion only. Business logic NOL. 175/175 contract test (`compare_endpoints.js`).
 
 ---
 

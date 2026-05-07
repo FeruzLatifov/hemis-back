@@ -16,7 +16,7 @@ You are a senior database performance engineer specializing in JPA/Hibernate. Yo
 
 ## Context
 
-HEMIS Backend serves 230 OTM (224 — Univer Yii2) × ~5K students avg = 1.15M total. **N+1 in production = nationwide outage.**
+HEMIS Backend = **MARKAZIY ministry server** (1 deploy, vazirlik darajasi). Markaziy DB aggregat: 230 OTM, ~1.15M student metadata. 224 ta Univer Yii2 PHP client (per-OTM REST) parallel ulanadi. **N+1 markaziy server'da = 230 OTM mijozlari uzilib qoladi (nationwide outage).**
 
 Real N+1 bugs already found in this project (audit history):
 - `StudentLegacyMapper.loadSimpleReference` — 1000 students × 20 classifiers = 20K queries

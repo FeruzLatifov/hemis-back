@@ -25,16 +25,16 @@ Accepted (Sana: 2026-05-04)
 
 ## Context
 
-HEMIS-back loyihasi 224 ta universitet ekosistemi (`hemis_NNN` bazalari) bilan
-ishlaydi. Eski CUBA ekosistemida klassifikator jadvallar `h_*` prefiks bilan
+**Markaziy HEMIS-back** klassifikatorlarni 230 ta OTM uchun **yagona manba** sifatida saqlaydi va distribute qiladi (markaz → OTM push). Per-OTM Univer Yii2 PHP stack'lar (224 ta) bu klassifikatorlardan markazdan sync qiladi — har OTM bir xil qiymatlarni biladi (gender, soato, position_type, va h.k.).
+
+Eski CUBA ekosistemida klassifikator jadvallar `h_*` prefiks bilan
 nomlangan: `hemishe_h_gender`, `hemishe_h_soato`, `hemishe_h_academic_degree` va
 shu kabi. Bu konventsiya:
 
-- **Sync skripti uchun yagona standart** — universitetlar bazalari o'rtasida
-  klassifikator sinxronizatsiya qiluvchi vositalar prefiks orqali entity'ni
-  klassifikatordan ajratadi.
+- **Sync skripti uchun yagona standart** — markazdan OTM ga klassifikator sync qiluvchi vositalar prefiks orqali entity'ni klassifikatordan ajratadi (push direction: markaz → 230 OTM).
 - **Entity discovery uchun ravshanlik** — yangi developer schema ko'rganda
   `h_*` jadvallarini darhol klassifikator deb taniydi.
+- **Markaziy boshqaruv:** vazirlik adminlari markaziy `h_*` jadvallarini yangilaydi → Univer'lar (per-OTM) keyingi sync'da yangi qiymatni oladi.
 
 Yangi 5 ta klassifikator (`position_type`, `position`, `building_category`,
 `construction_material`, `roof_type`) hozircha prefisksiz yaratilgan edi.

@@ -1,6 +1,15 @@
 # HEMIS Backend - Architecture
 
 > **Pattern:** Modular Monolith + Clean Architecture
+>
+> **Deploy modeli:** **MARKAZIY** (vazirlik darajasi, bitta cluster ~3 instance). Per-OTM deploy YO'Q.
+>
+> **Mijozlar:**
+> - Vazirlik admin (web frontend → api-web)
+> - 224 ta Univer Yii2 PHP backend (per-OTM, network REST → api-legacy)
+> - Davlat tashkilotlari S2S (MyGov, MSPD, BIMM, Tax, GUVD → api-external)
+>
+> **HEMIS-back = `/home/adm1n/projects/startup/old-hemis` ning Spring Boot ga qayta yozilishi.**
 
 ---
 
@@ -323,20 +332,22 @@ EXPOSE 8081
 ENTRYPOINT ["java", "--enable-preview", "-jar", "app.jar"]
 ```
 
-### Resource Requirements (224 universitet, ~1.15M talaba)
+### Resource Requirements (markaziy ministry server: 230 OTM aggregat, ~1.15M talaba metadata)
 
-**Production cluster (minimum 3 instances behind LB):**
+**Production cluster (vazirlik markazida, minimum 3 instances behind LB):**
 
 | Environment | CPU | RAM | JVM Heap | Disk | Notes |
 |-------------|-----|-----|----------|------|-------|
-| Production (per app instance) | 8 cores | 8 GB | `-Xmx4g -Xms2g` | 50 GB | 3+ instances, stateless |
-| PostgreSQL Master | 16 cores | 32 GB | — | 500 GB SSD | shared_buffers=8GB, work_mem=64MB |
+| Production (per app instance) | 8 cores | 8 GB | `-Xmx4g -Xms2g` | 50 GB | 3+ instances, stateless, vazirlik markazida |
+| PostgreSQL Master (markaziy) | 16 cores | 32 GB | — | 500 GB SSD | shared_buffers=8GB, work_mem=64MB |
 | PostgreSQL Replica | 16 cores | 32 GB | — | 500 GB SSD | streaming replication |
-| Redis cluster | 4 cores | 16 GB | — | 50 GB SSD | 3 nodes (cache + token + session) |
-| Development (per dev) | 2 cores | 4 GB | `-Xmx2g` | 20 GB | H2 in-memory uchun yetadi |
+| Redis cluster | 4 cores | 16 GB | — | 50 GB SSD | 3 nodes (markaziy cache + token + session) |
+| Development (per dev) | 2 cores | 4 GB | `-Xmx2g` | 20 GB | real PostgreSQL (H2 ishlatilmaydi) |
 
-**Capacity planning:**
-- Peak: ~1000 concurrent users → 3 instance × 250-350 users each
+**Capacity planning (markaziy server agregati):**
+- Peak: ~1000 concurrent admin users (5K admin × 230 OTM bo'ylab) → 3 instance × 250-350 users each
+- 224 ta Univer Yii2 PHP backend client REST orqali parallel ulanadi (api-legacy/api-university)
+- Davlat sistemalari S2S (MyGov, MSPD, BIMM, Tax, GUVD) — alohida traffic (api-external)
 - DB connections: 30 master pool + 60 replica pool (per cluster, not per instance)
 - Redis ops: ~5K req/s peak (cache hit ratio target 85%+)
 - Excel report generation: separate executor, max 5 concurrent

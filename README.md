@@ -13,19 +13,38 @@
 
 ## Umumiy Ma'lumot
 
-HEMIS Backend - bu oliy ta'lim muassasalarini boshqarish uchun zamonaviy RESTful API. Clean Architecture prinsiplariga asoslangan, modular monolith arxitekturasida qurilgan.
+HEMIS Backend — Oliy ta'lim vazirligi tasarrufidagi **MARKAZIY** Spring Boot server. `/home/adm1n/projects/startup/old-hemis` (CUBA Platform 7.3 PHP) ning Java 25 + Spring Boot 4.0.6 ga qayta yozilishi.
+
+### Loyiha maqsadi (per-OTM EMAS — vazirlik markaziy)
+
+1. **Aggregation:** 230 OTM dan o'quv ma'lumotini markaziy yig'ish (talaba, baho, o'qituvchi, hisobot)
+2. **Klassifikator distribution:** `h_*` jadvallari yagona markaziy manba — Univer (per-OTM Yii2 PHP, 224 ta) markazdan sync qiladi
+3. **Qoidalar joriy qilish:** talaba kiritish vaqt cheklovi, baho o'zgartirish lock, va boshqa biznes konstraint markaziy darajada
+4. **Davlat integratsiya:** MyGov, MSPD, BIMM, Tax/Soliq, GUVD, OneID — S2S markaziy aloqa
+
+### Univer (per-OTM Yii2 PHP) ↔ HEMIS-back
+
+```
+[230 OTM Univer (Yii2 PHP)]  ──REST API──▶  [HEMIS-back MARKAZIY]
+   • Per-OTM lokal DB                           • Yagona markaziy DB
+   • hemis_337, hemis_401, …                     • env: DB_MASTER_NAME
+   • 224 ta Univer ishlatuvchi                  • 230 OTM aggregation
+                                                 • Davlat integratsiya
+```
 
 ### Asosiy Xususiyatlar
 
-- **Clean Architecture** - domain, use case, interface layers
-- **Modular Monolith** - 9 ta mustaqil modul
-- **Liquibase 4.x** - professional database migration
-- **Hybrid Authentication** - legacy (CUBA Platform PBKDF2) + BCrypt
-- **RBAC** - role-based access control (90+ permission)
-- **Redis Cache** - L1 (Caffeine) + L2 (Redis) hybrid caching
-- **Swagger/OpenAPI 3.0** - multi-group API documentation
-- **i18n** - 4 til (uz-UZ, oz-UZ, ru-RU, en-US)
-- **Master/Replica** - read/write database separation
+- **Clean Architecture** — domain, use case, interface layers
+- **Modular Monolith** — 9 ta mustaqil modul
+- **Liquibase 4.x** — professional database migration (V###/M###/S### naming)
+- **Hybrid Authentication** — legacy CUBA PBKDF2 + BCrypt (api-legacy backward-compat)
+- **OAuth 2.1** — `client_credentials` grant 224 OTM Univer client'lari uchun (api-university)
+- **RBAC** — role-based access control (90+ permission, OTM scope filter)
+- **Redis Cache** — L1 (Caffeine) + L2 (Redis) hybrid caching
+- **Swagger/OpenAPI 3.0** — multi-group API documentation
+- **i18n** — 4 til (uz-UZ, oz-UZ, ru-RU, en-US) — markaziy `system_message` jadvalida
+- **Master/Replica** — read/write database separation
+- **Davlat integratsiya** — MyGov, MSPD, BIMM, Tax, GUVD (api-external)
 
 ---
 
@@ -107,14 +126,18 @@ app (entry point)
 
 ### DB Bootstrap — Source of Truth
 
+**Markaziy HEMIS-back DB:** bitta deploy uchun bitta DB (`DB_MASTER_NAME` env'dan). Lokal `test1_hemis`, prod turli (`hemis`, `hemis_prod`).
+
+> **Eslatma:** `hemis_337`, `hemis_401`, …, `hemis_NNN` — bu **bizning DB EMAS**. Bu **224 ta OTM tomonidagi Univer Yii2 PHP** ekosistemining lokal bazalari nomi (per-OTM deploy).
+
 Loyihada ikki tipdagi jadvallar mavjud:
 
-1. **Bizning Liquibase changesets** (yuqorida) — V001-V014, M001-M003, S001-S010. Bizning ownership.
+1. **Bizning Liquibase changesets** (yuqorida) — V001-V014, M001-M003, S001-S010. Markaziy HEMIS-back DB'siga tegishli.
 
 2. **Legacy `hemishe_*` va `sec_*` jadvallar** — `CREATE TABLE` bizda YO'Q. Manbai:
    - **old-hemis CUBA Platform** (`/home/adm1n/projects/startup/old-hemis`) ishlatadi shu schema'ni
    - `test1_hemis` lokal DB old-hemis'dan `pg_dump` orqali olingan baseline (initial dump)
-   - Ushbu jadvallarni **HECH QACHON ALTER/DROP/RENAME qilmang** — Univer 224 OTM (`hemis_NNN`) ekosistemi bilan moslik (replication, sync). Tafsilot: `.claude/rules.md` Golden Rules.
+   - Ushbu jadvallarni **HECH QACHON ALTER/DROP/RENAME qilmang** — Univer 224 OTM (Yii2 PHP, per-OTM `hemis_NNN`) api-legacy orqali eski format kutadi. Tafsilot: `.claude/rules.md` Golden Rules.
 
 **Lokal setup uchun:**
 ```bash

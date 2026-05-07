@@ -1,25 +1,37 @@
 # HEMIS Backend - Project Context
 
 > **H**igher **E**ducation **M**anagement **I**nformation **S**ystem
-> O'zbekiston oliy ta'lim muassasalari uchun kompleks boshqaruv tizimi
+> Vazirlik darajasidagi **MARKAZIY agregator** (1 deploy/cluster) — `/home/adm1n/projects/startup/old-hemis` (CUBA Platform 7.3 PHP) ning Spring Boot 4 + Java 25 ga qayta yozilishi.
 
 ---
 
+## Loyiha maqsadi
+
+HEMIS-back **per-OTM EMAS** — bu vazirlik darajasidagi yagona markaziy backend.
+
+**4 ta asosiy maqsad:**
+
+1. **Aggregation (markaziy yig'ish):** 230 ta OTM dan o'quv ma'lumotini yagona markaziy DB ga yig'ish (talabalar, baholar, o'qituvchilar, hisobotlar)
+2. **Klassifikator distribution:** `h_*` jadvallari (gender, soato, position_type, va h.k.) — markaziy server **yagona manba**, Univer (per-OTM) markazdan sync qiladi
+3. **Qoidalar joriy qilish:** vaqt cheklovi (talaba kiritish, baho o'zgartirish), biznes konstraint — markaziy daraja
+4. **Davlat integratsiya:** MyGov, MSPD, BIMM, Tax/Soliq, GUVD, OneID — S2S aloqa markaziy server orqali
+
 ## Business Domain
 
-**Core Functions:** Student management, academic programs, staff, university structure, finance (payments/scholarships), ministry reports, government integrations (HEMIS, OneID, MyGov).
+**Core Functions:** Markaziy aggregation (230 OTM), klassifikator markaziy taqsimot, biznes qoidalar joriy qilish, davlat integratsiya (MyGov, OneID, MSPD, BIMM, Tax, GUVD), reports.
 
-**Scale (Vazirlik miqyosi):**
-- **230 ta oliy ta'lim muassasasi** (Oliy ta'lim vazirligi tasarrufida — umumiy)
-  - Shundan **224 ta OTM** Univer Yii2 PHP backend ishlatadi (`hemis_NNN` bazalari — alohida ekosistem). 6 ta — boshqa stack yoki vazirlik bevosita boshqaruvi.
-  - **HEMIS-back uchun foydalanuvchi miqyosi:** 230 (umumiy)
-  - **api-legacy / api-university uchun integratsiya hajmi:** 224 (Univer ekosistemi)
-- **~5,000 admin foydalanuvchi** (universitet o'rtacha 20-30 admin × 230)
-- **~1.15M talaba** (universitet o'rtacha 5,000 × 230)
-- **~50,000 o'qituvchi** (universitet o'rtacha 200 × 230)
+**Scale (markaziy server agregati):**
+- **230 ta OTM** (vazirlik tasarrufida — umumiy)
+  - Shundan **224 ta** Univer Yii2 PHP ishlatadi (api-legacy mijozlari — har OTM o'z lokal `hemis_NNN` DB bilan)
+  - 6 ta — boshqa stack (Univer'siz)
+  - **Univer ↔ HEMIS-back** = network REST API (lokalhost EMAS)
+- **~5,000 admin foydalanuvchi** (markaziy DB da, 230 OTM bo'ylab)
+- **~1.15M talaba metadata** (markaziy aggregation — har OTM o'rtacha 5K × 230)
+- **~50,000 o'qituvchi metadata** (markaziy aggregation)
 - **5 ta asosiy rol** (SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER, REPORT_VIEWER)
-- **Peak concurrent:** ~500-1000 (sessiya boshlanishida, hisobotlar davrida 2x)
-- **Migrated baseline (M001):** sec_user → users — `hemis_337` ga to'liq migratsiya yakunlanganda taxminan 340 yozuv (informational, snapshot vaqti V3.0 release)
+- **Peak concurrent:** ~500-1000 markaziy server'da (sessiya boshlanishi, hisobotlar davrida 2x)
+- **224 Univer client** parallel — har OTM Yii2 PHP backend api-legacy/api-university orqali
+- **Migrated baseline (M001):** sec_user → users (~340 legacy CUBA users, V3.0 snapshot)
 
 ---
 
