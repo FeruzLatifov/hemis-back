@@ -258,88 +258,17 @@ public class StudentCourse {
 
 ---
 
-## Liquibase Migration — DB Architect Level
+## Liquibase Migration
 
-### Naming + struktura
+**Canonical workflow:** [`.claude/LIQUIBASE_GUIDE.md`](../.claude/LIQUIBASE_GUIDE.md)
 
-```
-domain/src/main/resources/db/changelog/changesets/
-├── schema/      V001..V0XX   # DDL: CREATE TABLE/INDEX/CONSTRAINT
-├── seed/        S001..S0XX   # DML: reference data INSERT
-└── migration/   M001..M0XX   # Data: legacy → new transform
-```
-
-**Naming:** `V015_add_student_email_index.sql` + `V015_add_student_email_index_rollback.sql`.
-
-### Idempotency — MAJBURIY
-
-```sql
--- ✓ TO'G'RI
-CREATE TABLE IF NOT EXISTS univ.organization (...);
-CREATE INDEX IF NOT EXISTS idx_org_name ON univ.organization(name);
-ALTER TABLE univ.organization ADD COLUMN IF NOT EXISTS phone VARCHAR(20);
-INSERT INTO hr.position (code, name) VALUES ('DEAN', 'Dekan')
-    ON CONFLICT (code) DO NOTHING;
-
--- ✗ XATO
-CREATE TABLE univ.organization (...);  -- 2-marta ishga tushsa: error
-INSERT INTO hr.position VALUES (...);    -- duplikat: error
-```
-
-### Rollback Fayli — MAJBURIY
-
-```sql
--- V015_add_student_email_index_rollback.sql
-DROP INDEX IF EXISTS idx_student_email;
-```
-
-**Test rollback'ni staging'da qiling, productionga chiqarishdan oldin.**
-
-### Long-running migration
-
-```sql
--- ✗ XATO — production'da jadval lock
-ALTER TABLE hemishe_e_student ADD COLUMN status VARCHAR(20) DEFAULT 'ACTIVE';
-
--- ✓ TO'G'RI — multi-step
--- Step 1: NULLable column
-ALTER TABLE hemishe_e_student ADD COLUMN IF NOT EXISTS status VARCHAR(20);
-
--- Step 2: Backfill batched (alohida changeset)
-UPDATE hemishe_e_student SET status = 'ACTIVE' WHERE id IN (
-    SELECT id FROM hemishe_e_student WHERE status IS NULL LIMIT 10000
-);
--- ... loop until 0 rows
-
--- Step 3: NOT NULL constraint (alohida changeset)
-ALTER TABLE hemishe_e_student ALTER COLUMN status SET NOT NULL;
-```
-
-### `CREATE INDEX CONCURRENTLY`
-
-```sql
--- Production'da katta jadval uchun — table lock yo'q
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_student_email
-    ON hemishe_e_student(email);
-```
-
-**Liquibase config:** `runInTransaction: false` (`CREATE INDEX CONCURRENTLY` transaction'da ishlamaydi).
-
-### `hemishe_*` jadvallar — TAQIQLANGAN harakatlar
-
-```sql
--- ✗ HECH QACHON (schema FROZEN)
-ALTER TABLE hemishe_e_student DROP COLUMN xxx;
-ALTER TABLE hemishe_e_student RENAME COLUMN xxx TO yyy;
-DROP TABLE hemishe_e_student;
-
--- ✓ Faqat:
-INSERT INTO hemishe_e_student ...
-UPDATE hemishe_e_student SET ... WHERE ...
-CREATE INDEX ON hemishe_e_student(...);  -- indeks qo'shish OK
-```
-
-Yangi ustun kerak bo'lsa: **extension table** (`ref_ext` schema).
+Eng muhim qoidalar (qisqacha):
+- **Naming:** `V###/M###/S###` (schema/migration/seed) + `_rollback.sql` MAJBURIY
+- **Idempotent:** `IF NOT EXISTS`, `ON CONFLICT DO NOTHING`
+- **Long-running:** multi-step (NULLable add → backfill batched → NOT NULL constraint)
+- **`CREATE INDEX CONCURRENTLY`** + `runInTransaction: false`
+- **`hemishe_*` schema FROZEN:** ALTER/DROP/RENAME TAQIQ. Yangi ustun → `ref_ext` extension table
+- **Pre-commit hook** rollback fayl yo'qligini bloklaydi
 
 ---
 
@@ -609,58 +538,25 @@ VA universitet ekosistemi (224 OTM) bilan sync mantiqiy bo'lsa.
 
 ---
 
-## ⚠️ CRITICAL — Bizning baza vs OTM Univer baza
+## ⚠️ CRITICAL — Bizning baza vs Univer baza
 
-> **Eng tez-tez xato qilinadigan narsa.** Yangi entity yaratganingizda
-> jadval nomi qaysi baza tomonida joylashganligini AVVAL aniqlashingiz kerak.
+**To'liq tushuntirish:** [`.claude/UNIVER_INTEGRATION.md`](../.claude/UNIVER_INTEGRATION.md)
 
-### Ikki xil baza ekosistemi
+Eng muhim:
+- **Markaziy DB** (`.env` `DB_MASTER_NAME` — lokal `test1_hemis`): bizning HEMIS-back jadvallari, masalan `hemishe_e_student`, `hemishe_e_teacher`, `hemishe_e_university`
+- **Univer DB** (`hemis_337`, `hemis_401`, ..., 224 ta): per-OTM Yii2 PHP — bizda EMAS. Masalan `hemishe_e_grade`, `hemishe_e_attendance`, `hemishe_e_curriculum`, `hemishe_e_schedule`, `hemishe_e_exam`, `hemishe_e_enrollment`, `hemishe_e_course`, `hemishe_e_contract`, `hemishe_e_employment`
 
-| Baza | Tomon | DB nomi | Misol jadvallar |
-|------|-------|---------|-----------------|
-| **Bizning** | hemis-back (Java/Spring) | `.env`'dan o'qiladi (lokal: `test1_hemis`) | `hemishe_e_student`, `hemishe_e_teacher`, `hemishe_e_university` |
-| **Univer (OTM)** | Yii2 PHP, har OTM uchun | `hemis_NNN` (337, 401, …) — 224 ta | `hemishe_e_grade`, `hemishe_e_attendance`, `hemishe_e_course`, `hemishe_e_exam`, `hemishe_e_schedule`, `hemishe_e_contract`, `hemishe_e_curriculum`, `hemishe_e_employment`, `hemishe_e_enrollment` |
+**Yangi `@Table(name="hemishe_e_*")` qo'shganda:**
+1. **`./scripts/check_table_mappings.sh`** majburiy (pre-commit hook avtomatik chaqiradi)
+2. Mismatch → entity Univer'da, bizda EMAS → JPA entity yaratmang
+3. Univer'dagi ma'lumot kerak bo'lsa → `service/integration/UniverApiService` (REST + `@Cacheable` per-OTM key)
 
-### MAJBURIY tekshirish — yangi `@Table(name = "hemishe_e_*")` qo'shganda
-
-```bash
-# Avtomatik tekshirish (CI/local pre-commit):
-./scripts/check_table_mappings.sh
-```
-
-Skript code'dagi barcha `@Table(name = "hemishe_*")` mapping'larni
-DB introspection bilan solishtiradi. **Mismatch chiqsa — entity Univer
-bazasiga tegishli, bizda map qilish XATO.**
-
-### Faraz qilish TAQIQ
-
-```java
-// ❌ XATO — auditga asoslangan, lekin DB'da hech qachon yo'q
-@Entity
-@Table(name = "hemishe_e_grade")  // bu Univer bazasida (hemis_NNN), bizda EMAS
-public class Grade { ... }
-// Result: GradeRepository.findAll() runtime'da "relation does not exist" qaytaradi.
-
-// ✅ TO'G'RI — avval DB introspect, keyin map
-// 1. ./scripts/check_table_mappings.sh — bizdagi jadvallarni ko'rish
-// 2. Faqat haqiqatda mavjud jadvalga map qilish
-// 3. Univer'dagi ma'lumot kerak bo'lsa — REST API orqali (Univer.findStudentGrades())
-```
-
-### Univer ma'lumotini olish — to'g'ri pattern
-
-Agar OTM tomonidagi Grade/Attendance/etc. kerak bo'lsa:
-- `service/integration/UniverApiService.java` orqali REST chaqiruvi
-- `@Cacheable` bilan cache (har OTM uchun alohida key)
-- **JPA entity yaratmang** — bu bizda map qilinmaydi
-
-### Audit checklist (yangi entity PR)
-
-- [ ] Jadval `.env`'dagi DB'da haqiqatan mavjudmi? (`./scripts/check_table_mappings.sh` ✅)
-- [ ] Mapping nomi DB'dagi to'liq nom bilan mos (typo yo'q — masalan `diplom_blank` vs `diploma_blank`)?
-- [ ] Univer'dagi jadval bo'lsa — JPA entity emas, REST integratsiya yarating
-- [ ] @SQLRestriction("delete_ts IS NULL") qo'shilgan (CUBA legacy uchun)
-- [ ] Repository test'i `@DataJpaTest` real DB'da o'tadimi (`SELECT * FROM ... LIMIT 1`)?
+**Audit checklist (yangi entity PR):**
+- [ ] Jadval `.env`'dagi DB'da mavjudmi? (`check_table_mappings.sh` ✅)
+- [ ] Mapping nomi to'g'ri (typo yo'q)?
+- [ ] Univer'da bo'lsa — REST integratsiya yarating, JPA emas
+- [ ] `@SQLRestriction("delete_ts IS NULL")` qo'shilgan (CUBA legacy)
+- [ ] Repository test real DB'da o'tadi
 
 ---
 

@@ -480,292 +480,43 @@ public class StudentLoader {
 
 ---
 
-## Reliability — Hozirgi Loyiha Holati
+## Reliability
 
-**Hozir:** Loyihada Resilience4j dependency yo'q. `AbstractGovernmentApiService` RestTemplate'ni to'g'ridan-to'g'ri ishlatadi.
+**Hozir:** Resilience4j yo'q. `AbstractGovernmentApiService` RestTemplate'ni ishlatadi.
 
-**Bugun amaliy qoidalar (hozir ishlatish mumkin):**
-
-### Timeout — RestTemplate/RestClient'da
-
-```java
-// Yangi external integration qilsangiz — timeout aniq belgilang
-@Bean
-public RestClient ministryClient() {
-    return RestClient.builder()
-        .baseUrl("https://student.hemis.uz")
-        .requestFactory(clientHttpRequestFactory())
-        .build();
-}
-
-private ClientHttpRequestFactory clientHttpRequestFactory() {
-    SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
-    f.setConnectTimeout(10_000);  // 10s connect
-    f.setReadTimeout(30_000);     // 30s read
-    return f;
-}
-```
-
-### Graceful Shutdown — bugun config bilan yoqiladi
-
-```yaml
-spring:
-  lifecycle:
-    timeout-per-shutdown-phase: 30s
-server:
-  shutdown: graceful
-```
-
-**Effect:** SIGTERM keladi → in-flight request'lar yakunlanmaguncha process tugamaydi (max 30s).
-
-### Kelajak — Resilience4j
-
-Kelajakda yangi external integration qo'shilsa (yoki mavjudini yaxshilash kerak bo'lsa), Resilience4j (yoki o'xshash kutubxona) qo'shish kerak. Detallar — rasmiy hujjatlar. **Qoidalar bugun ishlatilmaydigan kutubxona uchun yozilmaydi.**
+**Majburiy qoidalar (yangi external integratsiya):**
+- **Timeout:** `SimpleClientHttpRequestFactory` bilan `setConnectTimeout(10_000)` + `setReadTimeout(30_000)`. Misol: [`api-external/CLAUDE.md`](../api-external/CLAUDE.md) "Outbound RestClient".
+- **Graceful Shutdown:** `server.shutdown: graceful` + `spring.lifecycle.timeout-per-shutdown-phase: 30s`. SIGTERM in-flight requestlarni 30s da yakunlaydi.
+- **Resilience4j:** yangi external bo'lsa qo'shish kerak — qoida bugun ishlatilmaydigan kutubxona uchun yozilmaydi.
 
 ---
 
-## Spring Boot 4.0 / Spring 6.x Modernization — Tavsiya
+## Modernization (Spring 4 / Spring 6 / Java 25)
 
-> Loyiha Spring Boot 4.0 ga ko'chgan, lekin ba'zi joylarda eski Spring 5/6.0 API'lari hali ishlatiladi. Yangi kod yozilganda **modern API afzal**.
+Yangi kod yozilganda **modern API afzal**:
 
-### `@MockBean` → `@MockitoBean` (Spring Boot 4.x)
+- **`@MockBean` → `@MockitoBean`** (Spring Boot 4.x)
+- **`RestTemplate` → `RestClient`** (Spring 6.1+, fluent + type-safe)
+- **`JdbcTemplate` → `JdbcClient`** (Spring 6.1+)
+- **`@Value` → `@ConfigurationProperties`** (63 ta `@Value` migration kandidat)
+- **HikariCP `leak-detection-threshold: 60000`** master pool'da MAJBURIY
+- **PostgreSQL `statement_timeout`** har profilda (`30s` dev, `60s` prod)
 
-`@MockBean` Spring Boot 3.4 da deprecated, 4.x da to'liq olib tashlanishi mumkin.
+**Java 25 majburiy:** Records (DTO), Pattern Matching for switch, Sealed Classes (closed hierarchies). Virtual threads — audit keyin (synchronized + ThreadLocal tekshir).
 
-```java
-// ✗ Eski (deprecated)
-import org.springframework.boot.test.mock.mockito.MockBean;
-
-@SpringBootTest
-class ControllerTest {
-    @MockBean private StudentService service;
-}
-
-// ✓ Modern (Spring 6.2+)
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
-@SpringBootTest
-class ControllerTest {
-    @MockitoBean private StudentService service;
-}
-```
-
-**Migration:** Testlar yozilayotganda yangisini ishlatish. Eski testlarni sprint'larda asta-sekin almashtirish.
-
-### `RestTemplate` → `RestClient` (Spring 6.1+)
-
-`AbstractGovernmentApiService`, `RestTemplateConfig` — RestTemplate (eski). Modern API:
-
-```java
-// ✗ Eski — RestTemplate
-ResponseEntity<Map> response = restTemplate.exchange(
-    url, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
-
-// ✓ Modern — RestClient (fluent, type-safe)
-@Bean
-public RestClient governmentApiClient() {
-    return RestClient.builder()
-        .baseUrl("https://student.hemis.uz")
-        .defaultHeader("Authorization", "Bearer " + token)
-        .build();
-}
-
-// Foydalanish
-PersonalDataDto data = client.get()
-    .uri("/api/persons/{pinfl}", pinfl)
-    .retrieve()
-    .body(PersonalDataDto.class);
-```
-
-**Foyda:** Type-safe, fluent, testable, Spring 6.1+ standart. WebClient (reactive) ham mavjud agar reactive stack kerak bo'lsa.
-
-### `JdbcTemplate` → `JdbcClient` (Spring 6.1+)
-
-```java
-// ✗ Eski
-List<Student> students = jdbcTemplate.query(
-    "SELECT * FROM hemishe_e_student WHERE faculty_id = ?",
-    new Object[]{facultyId}, studentRowMapper);
-
-// ✓ Modern — JdbcClient (fluent, type-safe)
-List<Student> students = jdbcClient.sql("""
-        SELECT * FROM hemishe_e_student
-        WHERE faculty_id = :facultyId
-          AND delete_ts IS NULL
-        """)
-    .param("facultyId", facultyId)
-    .query(Student.class)
-    .list();
-```
-
-**Migration:** Yangi JDBC code → JdbcClient. Eski `ClassifierReferenceLoader` kelajakda migration kandidat.
-
-### HikariCP Leak Detection — Master Pool'da Yo'q
-
-**Real holat:**
-- `application-replica.yml:38` — `leak-detection-threshold: 60000` ✓
-- `application.yml` (master) — config yo'q ❌
-
-**Tuzatish:**
-```yaml
-# application.yml master pool
-spring:
-  datasource:
-    hikari:
-      leak-detection-threshold: 60000  # 60s — connection 60s+ ushlansa log + stack trace
-      maximum-pool-size: 30
-      minimum-idle: 10
-      connection-timeout: 5000          # 5s connect timeout
-      max-lifetime: 1800000              # 30 min
-      idle-timeout: 600000               # 10 min
-      validation-timeout: 5000
-```
-
-**Foyda:** Connection leak (close()'siz qoldirilgan tx) bot 60s da loglanadi → root cause topish oson.
-
-### PostgreSQL `statement_timeout` — Dev Profile'da Yo'q
-
-**Real holat:**
-- `application-prod.yml:35` — `statement_timeout=60000` ✓
-- `application-dev.yml`, `application.yml` — yo'q ❌
-
-**Effect:** Developer hung query yozadi → dev'da topilmaydi → prod'da chiqadi (kech).
-
-**Tuzatish:**
-```yaml
-# application.yml (har profilda)
-spring:
-  datasource:
-    hikari:
-      data-source-properties:
-        options: "-c statement_timeout=30000"  # 30s dev, 60s prod
-```
-
-Yoki per-role:
-```sql
--- migration
-ALTER ROLE hemis_dev SET statement_timeout = '30s';
-ALTER ROLE hemis_app SET statement_timeout = '60s';
-```
-
-### `@ConfigurationProperties` Migration (mavjud aytildi)
-
-Loyiha 63 ta `@Value` ishlatadi. Yangi config — har doim `@ConfigurationProperties`. Eski'lar sprint'larda almashtiriladi.
-
----
-
-## Java 25 Modern Features — MAJBURIY
-
-### Records for DTO
-
-```java
-// ✓ TO'G'RI — immutable, concise, no boilerplate
-public record StudentDto(
-    Long id,
-    String firstName,
-    String lastName,
-    String maskedPinfl,
-    Long facultyId
-) {}
-
-// ✗ ESKI — class with @Data + boilerplate
-@Data
-public class StudentDto {
-    private Long id;
-    private String firstName;
-    // ...
-}
-```
-
-### Pattern Matching for Switch
-
-```java
-// ✓ TO'G'RI
-public String describe(Object obj) {
-    return switch (obj) {
-        case Integer i when i > 0 -> "positive: " + i;
-        case Integer i -> "non-positive: " + i;
-        case String s -> "string: " + s;
-        case null -> "null";
-        default -> "other";
-    };
-}
-
-// ✗ ESKI — instanceof chain
-if (obj instanceof Integer) { ... }
-else if (obj instanceof String) { ... }
-```
-
-### Sealed Classes for Closed Hierarchies
-
-```java
-// Permission types — closed set
-public sealed interface Permission
-    permits ResourcePermission, AdminPermission, SystemPermission {}
-
-public record ResourcePermission(String resource, String action) implements Permission {}
-public record AdminPermission(String scope) implements Permission {}
-public record SystemPermission(String name) implements Permission {}
-```
-
-### Virtual Threads (TAVSIYA — avval audit)
-
-```yaml
-# Faqat synchronized audit + JFR profiling keyin yoqish
-spring.threads.virtual.enabled: true
-```
-
-**Audit qadamlari:**
-1. `grep -rn "synchronized" service/ api-*/` — pinning xavfi
-2. ThreadLocal usage check (custom ThreadLocal'lar)
-3. Excel/CPU-bound operations → alohida platform thread executor
-4. Dev'da load test, JFR profiling
-5. Prod'da staged rollout
-
-**Java 24+ JEP 491:** synchronized pinning yo'qoladi. Hozircha audit majburiy.
+> **Batafsil misollar:** [`.claude/MODERNIZATION.md`](MODERNIZATION.md)
 
 ---
 
 ## Architecture Decision Records (ADR)
 
-Har "muhim arxitektura qaror" uchun ADR yozilishi shart. ADR papka: `/home/adm1n/projects/startup/hemis-back/docs/adr/`
+Har "muhim arxitektura qaror" uchun ADR majburiy. **Triggerlar:** yangi jadval, external integratsiya, cache pattern, schema separation, library tanlash, async/sync.
 
-**ADR yozish trigger'lari:**
-- Yangi jadval yaratilsa (mavjud jadval kengaytirilishi alternative emas, sabab yozish kerak)
-- Yangi external integration (Resilience4j config, fallback strategy sabab)
-- Cache pattern qaror (TTL, evict strategy)
-- Schema separation (yangi schema yaratish sababi)
-- Library tanlash (BCrypt vs Argon2id, MapStruct vs ModelMapper)
-- Async vs Sync qaror (long-running endpoint)
+**Canonical workflow:** [`.claude/skills/adr-create/SKILL.md`](skills/adr-create/SKILL.md)
+**Template:** [`docs/adr/template.md`](../docs/adr/template.md) (AgDR 2026 YAML frontmatter)
+**Index:** [`docs/adr/README.md`](../docs/adr/README.md)
 
-**ADR template (`ADR-NNN-<short-title>.md`):**
-```markdown
-# ADR-NNN: <Title>
-
-**Sana:** YYYY-MM-DD
-**Status:** Proposed | Accepted | Deprecated | Superseded by ADR-XXX
-**Deciders:** <names/team>
-**Kontekst:** <one-line summary>
-
-## Kontekst
-<Background, current state, problem to solve>
-
-## Qaror
-<What we decided, with the chosen alternative>
-
-## Mulohaza (Considered alternatives)
-<Other options considered, and why rejected>
-
-## Oqibatlar (Consequences)
-<Trade-offs accepted, monitoring needed, follow-ups>
-
-## Misol kod / sxema
-<Code snippets, table designs, diagrams>
-```
-
-**Misol:** `docs/adr/ADR-001-building-table-design.md` — yangi `university_building` jadvali sababi (cadastre kengaytirish emas).
-
-**Tavsiya:** Qaror qilingach ADR keyinroq emas, **qaror jarayonida** yozilishi (PR description'da link bo'lishi).
+**Tavsiya:** Qaror jarayonida (keyinroq emas) yozish — PR description'da ADR link.
 
 ---
 

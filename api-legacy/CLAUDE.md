@@ -192,47 +192,34 @@ Service, validator, loader, repository class'lar ham **eski jadvalga ulansa `Leg
 
 Tafsilot: `scripts/check_table_mappings.sh` va `scripts/git-hooks-pre-commit`.
 
-### Sabab — biznes mantiqi
+### Split-brain biznes sababi
 
-- **Univer (Yii2 PHP, 224 OTM)** eski CUBA endpoint'larni eski jadval shaklida o'qiydi va yozadi (`hemishe_EStudent`, `hemishe_EEmployeeJobs` URL'lari)
-- **Yangi web frontend** modular schemada ishlaydi (modern auth `users` + RBAC `role`/`permission`)
-- **Aralashtirib qo'yilsa** — masalan, `api-legacy.EmployeeJobsEntityController` yangi `employee_job` jadvalga yozsa, Univer eski `hemishe_e_employee_jobs`'ni o'qisa — **schema split-brain**:
-  - api-legacy POST → yangi jadvalga ma'lumot yozadi
-  - Univer keyingi GET — eski jadvaldan o'qiydi → ma'lumotni topa olmaydi
-  - Univer foydalanuvchi: "Yangi xodim qo'shganman, lekin ko'rinmaydi!"
+Univer (Yii2 PHP, 224 OTM) eski CUBA endpoint'larni eski jadval shaklida o'qiydi/yozadi. **Aralashtirilsa:** api-legacy POST yangi jadvalga yozadi → Univer GET eski jadvaldan o'qiydi → topmaydi → "Yangi xodim qo'shildi, lekin ko'rinmaydi" bug.
 
-### Auto-check skripti
+To'liq tushuntirish: [`.claude/UNIVER_INTEGRATION.md`](../.claude/UNIVER_INTEGRATION.md)
 
-```bash
-./scripts/check_table_mappings.sh
-```
+### Yangi controller checklist
 
-api-legacy controller yangi entity'ni ishlatsa skriptga **xato** beradi.
+- [ ] Entity `@Table(name = "hemishe_*"|"sec_*")` ga map qilingan
+- [ ] Repository eski jadvalga yozadi
+- [ ] Service'da `tenantGuard.verifyOwnership*` yo'q (Univer cross-tenant)
+- [ ] `@PreAuthorize` faqat `isAuthenticated()` yoki `permitAll()`
 
-### Yangi controller yaratayotganda — checklist
-
-- [ ] Entity `@Table(name = "hemishe_*")` yoki `@Table(name = "sec_*")` ga map qilinganmi?
-- [ ] Repository ham eski jadvalga yozadimi?
-- [ ] Service'da `tenantGuard.verifyOwnership*` chaqiruvi yo'qmi (Univer cross-tenant ruxsat berardi)?
-- [ ] `@PreAuthorize` faqat `isAuthenticated()` yoki `permitAll()`?
-
-### Forbidden — yangi entity'lar api-legacy'da
+### Forbidden imports (pre-commit hook reject)
 
 ```java
-// ❌ XATO — User entity yangi `users` jadvalga map qilingan
+// ❌ ADR-0008 violation — pre-commit hook reject qiladi
 import uz.hemis.domain.entity.security.User;
+import uz.hemis.domain.entity.employee.Employee;
+import uz.hemis.domain.entity.employee.EmployeeJobs;
 
-// ✅ TO'G'RI — SecUser sec_user (eski) ga map qilingan
-import uz.hemis.domain.entity.security.SecUser;
-import uz.hemis.domain.repository.SecUserRepository;
+// ✅ Legacy variant
+import uz.hemis.domain.entity.security.SecUser;       // sec_user
+import uz.hemis.domain.entity.legacy.LegacyEmployeeJobs;  // hemishe_e_employee_jobs
+// Employee o'rniga: Teacher (hemishe_e_teacher)
 ```
 
-### Migration plan (mavjud xatoliklar)
-
-Hozir api-legacy'da 3 ta entity yangi jadvalga map qilingan (XATO — kelajakda tuzatish kerak):
-- `User` → `LegacyUserInfoController`, `UserController`, `EmployeeJobsEntityController`, `LegacySecurityHelper` (kerak: `SecUser`)
-- `EmployeeJobs` → `EmployeeJobsEntityController` (kerak: yangi `LegacyEmployeeJobs` entity, `hemishe_e_employee_jobs` ga map)
-- `Employee` → `EmployeeJobsEntityController` (kerak: `Teacher` yoki yangi legacy entity)
+**Mavjud 3 buzilgan import** (ADR-0008): `LegacySecurityHelper`, `UserController`, `LegacyUserInfoController`, `EmployeeJobsEntityController`. Tuzatish: ADR-0008 Stages 2-5.
 
 ---
 
@@ -541,27 +528,13 @@ PORT: POST /entities/hemishe$Student
 
 ---
 
-## CUBA Format Validation — Test Fixture
+## CUBA Format Validation
 
-Har endpoint uchun:
-1. Old-hemis dan response oli (real data)
-2. `src/test/resources/legacy-fixtures/student_response.json` saqla
-3. Integration test'da diff:
+**Pattern:** old-hemis dan real response → `legacy-fixtures/<endpoint>.json` saqla → `JSONAssert.assertEquals(expected, actual, JSONCompareMode.STRICT_ORDER)`.
 
-```java
-@Test
-void getStudent_shouldMatchLegacyFormat() throws Exception {
-    String expected = Files.readString(
-        Paths.get("src/test/resources/legacy-fixtures/student_response.json")
-    );
-    String actual = mockMvc.perform(get("/app/rest/v2/entities/hemishe$Student/1"))
-        .andReturn().getResponse().getContentAsString();
+**STRICT_ORDER** — field tartib MAJBURIY.
 
-    JSONAssert.assertEquals(expected, actual, JSONCompareMode.STRICT_ORDER);
-}
-```
-
-**`STRICT_ORDER` — field tartib ham tekshiriladi.**
+To'liq misol va workflow: [`.claude/ENDPOINT_PORTING_GUIDE.md`](../.claude/ENDPOINT_PORTING_GUIDE.md).
 
 ---
 

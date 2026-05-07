@@ -106,6 +106,7 @@ Modul-darajadagi `CLAUDE.md` (api-legacy, service, domain, security, …) Claude
 | Fayl | Qachon | Prioritet |
 |------|--------|-----------|
 | `.claude/rules.md` | **MAJBURIY qoidalar** (Java 25, OWASP 2025, DB schema, cache invariant) | **1 — canonical** |
+| `.claude/UNIVER_INTEGRATION.md` | **Univer ↔ HEMIS-back oqim** (per-OTM, REST, auth, schema) | **1 — canonical** |
 | `.claude/MANDATORY_REQUIREMENTS.md` | Swagger + test KOD MISOLLARI (rules.md ni to'ldiradi) | 2 — reference |
 | `.claude/architecture.md` | Modul diagram, DB routing, cache, deploy | 3 — context |
 | `.claude/ENDPOINT_PORTING_GUIDE.md` | Endpoint porting **canonical workflow** (8 qadam) | 1 — canonical |
