@@ -15,6 +15,7 @@ import uz.hemis.domain.entity.academic.AcademicRank;
 import uz.hemis.domain.entity.base.AuditableEntity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "employee")
@@ -123,6 +124,10 @@ public class Employee extends AuditableEntity {
     @Column(name = "tin", length = 20)
     @Convert(converter = TinConverter.class)
     private Tin tin;
+
+    /** V015 sync marker — Univer'dan oxirgi sync vaqti (NULL = sync qilinmagan). */
+    @Column(name = "synced_at")
+    private LocalDateTime syncedAt;
 
     // NOTE: academic credentials are managed via EmployeeAcademicCredentialRepository
     // directly (idempotent upsert by diploma_number_key). The previous @OneToMany

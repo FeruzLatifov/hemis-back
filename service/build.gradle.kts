@@ -42,6 +42,10 @@ dependencies {
     // Apache HttpClient5 (for SSL-bypassing RestTemplate in government API calls)
     implementation("org.apache.httpcomponents.client5:httpclient5")
 
+    // Spring Kafka — Transactional Outbox + webhook fanout (ADR-0007, ADR-0012)
+    // Retry: manual exponential backoff in WebhookDispatcher (no external dep)
+    implementation("org.springframework.kafka:spring-kafka")
+
     // Swagger/OpenAPI annotations for DTOs
     compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:3.0.3")
 

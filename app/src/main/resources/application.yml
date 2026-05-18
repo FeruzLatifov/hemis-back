@@ -169,6 +169,45 @@ spring:
       fail-on-unknown-properties: false
     time-zone: Asia/Tashkent
 
+  # =====================================================
+  # Kafka Configuration (ADR-0007, ADR-0012)
+  # =====================================================
+  # Transactional Outbox + webhook fanout uchun.
+  # Dev: docker-compose KRaft single broker (localhost:9092).
+  # Prod: K8s + Strimzi 3-broker cluster (TLS + SASL).
+  # =====================================================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    client-id: ${spring.application.name:hemis-back}
+
+    producer:
+      # Idempotent producer (exactly-once semantics)
+      acks: all
+      retries: 3
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        compression.type: snappy
+        linger.ms: 5  # Batch window
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:hemis-back-default}
+      auto-offset-reset: earliest
+      enable-auto-commit: false  # Manual ack (idempotency tomonda boshqarish)
+      properties:
+        isolation.level: read_committed  # Faqat committed message'larni o'qish
+        max.poll.records: 100
+        session.timeout.ms: 30000
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 3  # 3 ta concurrent consumer (default)
+      missing-topics-fatal: false  # Topic hali yo'q bo'lsa app to'xtatmasin
+
 # =====================================================
 # SpringDoc OpenAPI (Swagger) Configuration
 # =====================================================

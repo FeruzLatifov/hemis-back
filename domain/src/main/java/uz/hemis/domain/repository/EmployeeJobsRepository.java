@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Repository
 @Transactional(readOnly = true)
-public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID> {
+public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID>, EmployeeJobUpsertRepository {
 
     @EntityGraph(attributePaths = {"employee"})
     List<EmployeeJobs> findByUniversityCodeAndIsCurrentAndPositionTypeCode(String universityCode, boolean isCurrent, String positionTypeCode);
@@ -63,4 +63,16 @@ public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID
         return existsByEmployeeIdAndUniversityCodeAndPositionCodeAndIsCurrentAndDeletedAtIsNull(
                 employeeId, universityCode, positionCode, true);
     }
+
+    /**
+     * Univer sync upsert key — (university_code, source_uid) (V015 unique partial index).
+     * source_uid Univer'ning ichki ID, idempotent lookup uchun.
+     */
+    @Query(value = "SELECT * FROM employee_job " +
+                   "WHERE university_code = :universityCode AND source_uid = :sourceUid " +
+                   "AND deleted_at IS NULL LIMIT 1",
+           nativeQuery = true)
+    java.util.Optional<EmployeeJobs> findByUniversityCodeAndSourceUid(
+            @Param("universityCode") String universityCode,
+            @Param("sourceUid") String sourceUid);
 }

@@ -185,6 +185,10 @@ hemis:
   database:
     enforce-no-delete: true  # Still enforce in dev
 
+  webhook:
+    dev-seed:
+      enabled: true  # DevWebhookBootstrap startupda webhook_target + vault yaratadi
+
 # =====================================================
 # SpringDoc OpenAPI (Swagger) Configuration
 # =====================================================

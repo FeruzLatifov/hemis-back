@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Repository
 @Transactional(readOnly = true)
-public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
+public interface EmployeeRepository extends JpaRepository<Employee, UUID>, EmployeeUpsertRepository {
     Optional<Employee> findByPinfl(Pinfl pinfl);
     boolean existsByPinfl(Pinfl pinfl);
 }

@@ -203,11 +203,37 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V014_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: V015_create_employee_sync_infrastructure
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Employee sync infra: ALTER employee/employee_job (sync metadata) + outbox_event + employee_sync_log (ADR-0010, ADR-0007 Stage 1)"
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: outbox_event } }
+      changes:
+        - sqlFile: { path: changesets/schema/V015_create_employee_sync_infrastructure.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V015_create_employee_sync_infrastructure_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-schema-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}
       changes:
         - tagDatabase: { tag: schema-v1.0 }
+
+  - changeSet:
+      id: V016_create_webhook_infrastructure
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Webhook outbound infra: webhook_target (224 OTM URL+secret) + webhook_delivery_log (audit). Outbox (V015) → Kafka → REST callback. ADR-0012."
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { tableExists: { tableName: webhook_target } }
+      changes:
+        - sqlFile: { path: changesets/schema/V016_create_webhook_infrastructure.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V016_create_webhook_infrastructure_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # PHASE 2: SEED — 9 files
@@ -368,3 +394,14 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M003_student_duplicates.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/migration/M003_student_duplicates_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M004_webhook_permissions
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Webhook RBAC: 5 ta permission (view/create/update/delete/manage) + SUPER_ADMIN/MINISTRY_ADMIN grant (ADR-0012)"
+      runOnChange: true
+      changes:
+        - sqlFile: { path: changesets/migration/M004_webhook_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/migration/M004_webhook_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
