@@ -1,0 +1,1452 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>HEMIS ↔ Univer Integration Patterns</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-2: #818cf8;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #c084fc;
+    --pink: #f472b6;
+    --gold: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 32px 16px;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  /* ===== Header ===== */
+  header { text-align: center; margin-bottom: 48px; }
+  h1 {
+    font-size: 2.6rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2), var(--purple));
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 8s ease infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.15rem;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .meta-pills {
+    display: flex; justify-content: center; gap: 12px;
+    margin-top: 20px; flex-wrap: wrap;
+  }
+  .meta-pill {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .meta-pill strong { color: var(--accent); }
+
+  h2 {
+    font-size: 1.7rem;
+    color: var(--accent);
+    margin: 64px 0 24px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    position: relative;
+  }
+  h2::before {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0;
+    width: 80px; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  }
+  h3 {
+    font-size: 1.2rem;
+    color: var(--text);
+    margin: 24px 0 12px;
+  }
+
+  /* ============================================
+     SECTION 1 — Konteksti diagrammasi
+     ============================================ */
+  .context-diagram {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .topology {
+    display: grid;
+    grid-template-columns: 1fr 200px 1fr;
+    gap: 32px;
+    align-items: center;
+    margin: 32px 0;
+  }
+  @media (max-width: 900px) {
+    .topology { grid-template-columns: 1fr; }
+  }
+  .central-server {
+    background: linear-gradient(135deg, #1e293b, #1e3a5f);
+    border: 2px solid var(--accent);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+    animation: pulseBox 3s ease-in-out infinite;
+  }
+  @keyframes pulseBox {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(56, 189, 248, 0); }
+  }
+  .central-server .icon { font-size: 3rem; margin-bottom: 8px; }
+  .central-server .name { font-weight: 700; color: var(--accent); font-size: 1.2rem; }
+  .central-server .desc { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+
+  /* Animated data flow */
+  .flow-pipe {
+    height: 4px;
+    background: var(--bg);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+  .flow-pipe::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -30%;
+    width: 30%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: flowRight 2.5s linear infinite;
+  }
+  .flow-pipe.reverse::before {
+    animation: flowLeft 2.5s linear infinite;
+  }
+  @keyframes flowRight {
+    from { left: -30%; } to { left: 100%; }
+  }
+  @keyframes flowLeft {
+    from { left: 100%; } to { left: -30%; }
+  }
+  .flow-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 16px;
+  }
+  .flow-label {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  .flow-label strong { display: block; color: var(--text); margin-bottom: 4px; }
+
+  .otm-grid {
+    background: linear-gradient(135deg, #1e293b, #2d1e3e);
+    border: 2px solid var(--purple);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+  .otm-grid .icon { font-size: 2.4rem; margin-bottom: 8px; }
+  .otm-grid .count {
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--purple), var(--pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .otm-grid .name { color: var(--purple); font-weight: 600; }
+  .otm-grid .stack { color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; }
+  .otm-bubbles {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-top: 16px;
+  }
+  .otm-bubbles .bubble {
+    aspect-ratio: 1;
+    background: rgba(192, 132, 252, 0.2);
+    border-radius: 4px;
+    animation: bubbleBlink 4s ease-in-out infinite;
+  }
+  .otm-bubbles .bubble:nth-child(2n) { animation-delay: 0.5s; }
+  .otm-bubbles .bubble:nth-child(3n) { animation-delay: 1s; }
+  .otm-bubbles .bubble:nth-child(5n) { animation-delay: 1.5s; }
+  @keyframes bubbleBlink {
+    0%, 100% { background: rgba(192, 132, 252, 0.2); }
+    50% { background: rgba(192, 132, 252, 0.6); }
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .stat-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-box .num {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .stat-box .label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 4px;
+  }
+
+  /* ============================================
+     SECTION 2 — Integration patterns cards
+     ============================================ */
+  .patterns-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 20px;
+  }
+  .pattern-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .pattern-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 32px rgba(56, 189, 248, 0.15);
+  }
+  .pattern-card.current { border-left: 4px solid var(--purple); }
+  .pattern-card.recommended {
+    border-left: 4px solid var(--green);
+    box-shadow: 0 0 0 1px var(--green);
+    animation: glowPulse 3s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%, 100% { box-shadow: 0 0 0 1px var(--green), 0 8px 24px rgba(74, 222, 128, 0.15); }
+    50% { box-shadow: 0 0 0 1px var(--green), 0 8px 36px rgba(74, 222, 128, 0.4); }
+  }
+  .pattern-card.warning { border-left: 4px solid var(--yellow); }
+  .pattern-card.danger { border-left: 4px solid var(--red); }
+  .pattern-card.neutral { border-left: 4px solid var(--accent); }
+
+  .pattern-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .pattern-title { font-size: 1.1rem; font-weight: 600; }
+  .pattern-icon { font-size: 1.8rem; }
+  .pattern-badge {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .badge-current { background: rgba(192, 132, 252, 0.15); color: var(--purple); border: 1px solid var(--purple); }
+  .badge-recommended { background: rgba(74, 222, 128, 0.15); color: var(--green); border: 1px solid var(--green); }
+  .badge-warning { background: rgba(250, 204, 21, 0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-danger { background: rgba(248, 113, 113, 0.15); color: var(--red); border: 1px solid var(--red); }
+  .badge-neutral { background: rgba(56, 189, 248, 0.15); color: var(--accent); border: 1px solid var(--accent); }
+
+  .pattern-mini-diagram {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 12px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .pattern-mini-diagram .arrow { color: var(--accent); }
+  .pattern-mini-diagram .actor { color: var(--purple); font-weight: 600; }
+  .pattern-mini-diagram .server { color: var(--green); font-weight: 600; }
+  .pattern-mini-diagram .note { color: var(--text-muted); font-style: italic; }
+
+  .pattern-pros-cons {
+    margin: 12px 0;
+  }
+  .pattern-pros-cons ul {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0;
+  }
+  .pattern-pros-cons li {
+    padding: 3px 0;
+    padding-left: 22px;
+    position: relative;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .pattern-pros-cons li::before {
+    position: absolute;
+    left: 0;
+    top: 3px;
+    font-weight: bold;
+  }
+  .pattern-pros-cons .pros li::before { content: '✓'; color: var(--green); }
+  .pattern-pros-cons .cons li::before { content: '✗'; color: var(--red); }
+  .pattern-section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-top: 12px;
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+
+  .pattern-verdict {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+  .verdict-label {
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 6px;
+  }
+
+  /* ============================================
+     SECTION 3 — Comparison matrix
+     ============================================ */
+  .matrix-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    overflow-x: auto;
+  }
+  table.matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  table.matrix th, table.matrix td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  table.matrix th {
+    background: rgba(56, 189, 248, 0.08);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  table.matrix tr:hover td { background: rgba(255, 255, 255, 0.02); }
+  table.matrix .check { color: var(--green); font-weight: bold; }
+  table.matrix .cross { color: var(--red); font-weight: bold; }
+  table.matrix .partial { color: var(--yellow); font-weight: bold; }
+  table.matrix .recommended-row { background: rgba(74, 222, 128, 0.06); }
+  table.matrix .recommended-row td:first-child::before {
+    content: '⭐';
+    margin-right: 6px;
+  }
+
+  /* ============================================
+     SECTION 4 — Kafka Deep Dive
+     ============================================ */
+  .kafka-deep {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(129, 140, 248, 0.05));
+    border: 1px solid var(--accent);
+    border-radius: 20px;
+    padding: 40px;
+    margin: 32px 0;
+  }
+  .kafka-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+  .kafka-tab-btn {
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .kafka-tab-btn:hover { color: var(--text); border-color: var(--accent); }
+  .kafka-tab-btn.active {
+    background: var(--accent);
+    color: var(--bg);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .kafka-tab-panel { display: none; }
+  .kafka-tab-panel.active { display: block; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .benefit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .benefit-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid var(--green);
+    transition: transform 0.2s;
+  }
+  .benefit-card.con { border-left-color: var(--red); }
+  .benefit-card:hover { transform: translateX(4px); }
+  .benefit-card h4 {
+    font-size: 1rem;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .benefit-card p {
+    color: var(--text-muted);
+    font-size: 0.88rem;
+    margin-bottom: 8px;
+  }
+  .benefit-card .example {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ============================================
+     SECTION 5 — Sequence diagrams (animated)
+     ============================================ */
+  .sequence-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 16px 0;
+  }
+  .sequence-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .sequence-actors {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .sequence-actor {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .sequence-actor.univer { border-top: 3px solid var(--purple); color: var(--purple); }
+  .sequence-actor.hemis { border-top: 3px solid var(--accent); color: var(--accent); }
+  .sequence-actor.kafka { border-top: 3px solid var(--pink); color: var(--pink); }
+  .sequence-actor.consumer { border-top: 3px solid var(--green); color: var(--green); }
+  .sequence-actor.db { border-top: 3px solid var(--orange); color: var(--orange); }
+
+  .sequence-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .seq-step {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    align-items: center;
+    opacity: 0;
+    animation: fadeInStep 0.6s ease forwards;
+  }
+  .seq-step:nth-child(1) { animation-delay: 0.2s; }
+  .seq-step:nth-child(2) { animation-delay: 0.6s; }
+  .seq-step:nth-child(3) { animation-delay: 1s; }
+  .seq-step:nth-child(4) { animation-delay: 1.4s; }
+  .seq-step:nth-child(5) { animation-delay: 1.8s; }
+  .seq-step:nth-child(6) { animation-delay: 2.2s; }
+  .seq-step:nth-child(7) { animation-delay: 2.6s; }
+  @keyframes fadeInStep {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .seq-cell {
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    text-align: center;
+    background: rgba(56, 189, 248, 0.08);
+    color: var(--text-muted);
+    min-height: 36px;
+  }
+  .seq-cell.active {
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--text);
+    font-weight: 500;
+  }
+  .seq-cell.arrow-right::after {
+    content: '→';
+    margin-left: 6px;
+    color: var(--accent);
+  }
+  .seq-cell.arrow-left::before {
+    content: '←';
+    margin-right: 6px;
+    color: var(--green);
+  }
+
+  /* ============================================
+     SECTION 6 — Recommendation banner
+     ============================================ */
+  .recommendation-banner {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.1), rgba(56, 189, 248, 0.1));
+    border: 2px solid var(--green);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    margin: 40px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .recommendation-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(74, 222, 128, 0.05) 0%, transparent 70%);
+    animation: rotateBg 20s linear infinite;
+  }
+  @keyframes rotateBg {
+    from { transform: rotate(0deg); } to { transform: rotate(360deg); }
+  }
+  .recommendation-banner > * { position: relative; z-index: 1; }
+  .recommendation-banner .big-icon { font-size: 4rem; margin-bottom: 16px; }
+  .recommendation-banner h3 {
+    color: var(--green);
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+  }
+  .recommendation-banner p {
+    color: var(--text);
+    font-size: 1rem;
+    max-width: 760px;
+    margin: 0 auto 16px;
+  }
+  .hybrid-arch {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 24px auto;
+    max-width: 760px;
+  }
+  @media (max-width: 700px) {
+    .hybrid-arch { grid-template-columns: 1fr; }
+  }
+  .hybrid-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--green);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 0.88rem;
+  }
+  .hybrid-box .title { color: var(--green); font-weight: 600; margin-bottom: 6px; }
+  .hybrid-box .desc { color: var(--text-muted); font-size: 0.82rem; }
+
+  /* ============================================
+     Scroll progress
+     ============================================ */
+  .scroll-progress {
+    position: fixed; top: 0; left: 0;
+    height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--purple), var(--green));
+    z-index: 100;
+    transition: width 0.1s ease;
+  }
+
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<div class="container">
+
+  <header>
+    <h1>🔄 HEMIS ↔ Univer Ma'lumot Almashish</h1>
+    <p class="subtitle">
+      Markaziy vazirlik server (HEMIS-back) va 224 ta OTM Univer (Yii2 PHP) o'rtasida ma'lumot
+      almashishning 8 ta strategiyasi. Har birining afzalligi, kamchiligi va HEMIS uchun mosligi.
+    </p>
+    <div class="meta-pills">
+      <span class="meta-pill">📅 <strong>2026-05-13</strong></span>
+      <span class="meta-pill">🏛️ <strong>1</strong> markaziy server</span>
+      <span class="meta-pill">🏫 <strong>224</strong> OTM Univer</span>
+      <span class="meta-pill">📊 <strong>25K+</strong> event/day</span>
+    </div>
+  </header>
+
+  <!-- ========================= 1. Konteksti ========================= -->
+  <h2>1. Tizimlar konteksti — kim kim bilan gaplashadi?</h2>
+
+  <div class="context-diagram">
+    <p style="color: var(--text-muted); margin-bottom: 16px; text-align: center;">
+      Ma'lumot 2 yo'nalishda harakat qiladi. <strong>Inbound</strong> — Univer markazga yuboradi
+      (talaba, o'qituvchi, nashr). <strong>Outbound</strong> — markaz Univer'ga yuboradi
+      (klassifikator, qoidalar, hisobotlar).
+    </p>
+
+    <div class="topology">
+      <!-- Univer (left) -->
+      <div class="otm-grid">
+        <div class="icon">🏫</div>
+        <div class="count">224</div>
+        <div class="name">Univer (OTM)</div>
+        <div class="stack">Yii2 + PHP 7.4<br>hemis_337, hemis_401, …</div>
+        <div class="otm-bubbles">
+          <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+          <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+          <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+          <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+          <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+          <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+        </div>
+      </div>
+
+      <!-- Flow pipes (middle) -->
+      <div class="flow-labels">
+        <div class="flow-label">
+          <strong>📤 Inbound</strong>
+          <div class="flow-pipe"></div>
+          <span>~25K POST/day</span>
+        </div>
+        <div class="flow-label">
+          <strong>📥 Outbound</strong>
+          <div class="flow-pipe reverse"></div>
+          <span>~12K event/day</span>
+        </div>
+      </div>
+
+      <!-- HEMIS (right) -->
+      <div class="central-server">
+        <div class="icon">🏛️</div>
+        <div class="name">HEMIS-back</div>
+        <div class="desc">Spring Boot 4 + Java 25<br>1 markaziy cluster</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="num">230</div>
+        <div class="label">OTM jami</div>
+      </div>
+      <div class="stat-box">
+        <div class="num">224</div>
+        <div class="label">Univer ekosistemasi</div>
+      </div>
+      <div class="stat-box">
+        <div class="num">~50</div>
+        <div class="label">Peak concurrent (semestr boshi)</div>
+      </div>
+      <div class="stat-box">
+        <div class="num">~1.15M</div>
+        <div class="label">Talaba metadata</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px; padding: 16px; background: rgba(248, 113, 113, 0.08); border-left: 4px solid var(--red); border-radius: 8px;">
+      <strong style="color: var(--red);">⚠️ Muhim cheklov:</strong>
+      <span style="color: var(--text-muted); font-size: 0.92rem;">
+        Univer = <strong>PHP Yii2</strong>. Java/Spring ekosistemasidagi bemalol ishlatadigan
+        ba'zi vositalar (Kafka native client, gRPC streaming) PHP'da rasmiy emas yoki
+        cheklangan. Bu integration pattern tanlovga katta ta'sir qiladi.
+      </span>
+    </div>
+  </div>
+
+  <!-- ========================= 2. 8 ta pattern ========================= -->
+  <h2>2. Ma'lumot almashishning 8 ta strategiyasi</h2>
+
+  <div class="patterns-grid">
+
+    <!-- 1. Sync REST (current) -->
+    <div class="pattern-card current">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">🔁</span> <span class="pattern-title">Synchronous REST</span></div>
+        <span class="pattern-badge badge-current">Hozir</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="actor">Univer</span> ──HTTP POST──<span class="arrow">▶</span> <span class="server">HEMIS</span><br>
+        <span class="actor">Univer</span> <span class="arrow">◀</span>──200 OK + JSON── <span class="server">HEMIS</span><br>
+        <span class="note"># Bloklayotgan, har request o'z javobini kutadi</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>Univer (PHP) uchun standart — har dasturchi biladi</li>
+        <li>Hozir 175/175 contract test ishlaydi</li>
+        <li>Debug oson — HTTP log, Postman</li>
+        <li>Yangi infrastruktura kerak emas</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li><strong>Bloklayotgan</strong> — HEMIS sekin bo'lsa Univer kutadi</li>
+        <li>Peak time 50 OTM bir vaqtda → connection pool tugaydi</li>
+        <li><strong>Back-channel yo'q</strong> — markaz Univer'ga push qila olmaydi</li>
+        <li>Replay yo'q — request yo'qolsa, qayta yuborish manual</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        <span style="color: var(--purple);">Inbound (Univer → markaz) uchun saqlanadi.</span>
+      </div>
+    </div>
+
+    <!-- 2. Webhook (callback) -->
+    <div class="pattern-card neutral">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">🪝</span> <span class="pattern-title">Webhook (Callback)</span></div>
+        <span class="pattern-badge badge-neutral">Outbound</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="server">HEMIS</span> ──POST callback──<span class="arrow">▶</span> <span class="actor">Univer</span><br>
+        <span class="server">HEMIS</span> <span class="arrow">◀</span>──200 OK── <span class="actor">Univer</span><br>
+        <span class="note"># Markaz event sodir bo'lsa Univer'ga POST qiladi</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>Markaz → Univer push imkoniyati (klassifikator update)</li>
+        <li>Univer PHP'da oddiy controller (kerakli)</li>
+        <li>Real-time delivery (1-2 sekund)</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li>Univer endpoint public bo'lishi kerak (auth + IP whitelist)</li>
+        <li>Univer o'lsa → callback yo'qoladi (retry mexanizm kerak)</li>
+        <li>224 endpoint URL boshqarish (URL change → markazda yangilash)</li>
+        <li>Network glitch → duplicate delivery (idempotency kerak)</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        Outbound delivery uchun OK, lekin retry/DLQ kerak.
+      </div>
+    </div>
+
+    <!-- 3. Polling -->
+    <div class="pattern-card warning">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">⏰</span> <span class="pattern-title">Polling (Pull)</span></div>
+        <span class="pattern-badge badge-warning">Oddiy</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="actor">Univer cron</span> ──GET /updates?since=T──<span class="arrow">▶</span> <span class="server">HEMIS</span><br>
+        <span class="actor">Univer cron</span> <span class="arrow">◀</span>──[events…]── <span class="server">HEMIS</span><br>
+        <span class="note"># Univer har N daqiqa markazdan tortib oladi</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>Univer'da public endpoint kerak emas (firewall ichida)</li>
+        <li>Reliability — yo'qotish yo'q (Univer o'lsa, keyingi pull olib keladi)</li>
+        <li>Implement oddiy — cron + REST</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li><strong>Latency yuqori</strong> — poll interval (5-15 min)</li>
+        <li>Markazga 224 × N pull/min yuk (bo'sh javob ham resurs oladi)</li>
+        <li>Markazda <code>since</code> cursor saqlash kerak</li>
+        <li>Real-time emas — qoida lock 15 min kech kelishi mumkin</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        Past prioritet ma'lumotlar uchun (klassifikator).
+      </div>
+    </div>
+
+    <!-- 4. WebSocket / SSE -->
+    <div class="pattern-card danger">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">📡</span> <span class="pattern-title">WebSocket / SSE</span></div>
+        <span class="pattern-badge badge-danger">Murakkab</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="actor">Univer</span> ──ws://...── <span class="server">HEMIS</span> <span class="note">[persistent]</span><br>
+        <span class="server">HEMIS</span> ──push event──<span class="arrow">▶</span> <span class="actor">Univer</span><br>
+        <span class="note"># Doimiy connection, real-time bidirectional</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>Real-time (millisekund latency)</li>
+        <li>Bidirectional — har ikki tomon push</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li><strong>224 ta persistent connection</strong> — markazda yuk</li>
+        <li>Univer PHP — WebSocket server zaif (Ratchet, Swoole — Yii2 standart emas)</li>
+        <li>Network nestabil → reconnect logic murakkab</li>
+        <li>Load balancer sticky session</li>
+        <li>Real-time ko'pchilik HEMIS use-case'ga ortiqcha</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        <span style="color: var(--red);">HEMIS use-case'ga mos kelmaydi.</span>
+      </div>
+    </div>
+
+    <!-- 5. gRPC streaming -->
+    <div class="pattern-card danger">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">⚡</span> <span class="pattern-title">gRPC Streaming</span></div>
+        <span class="pattern-badge badge-danger">PHP zaif</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="actor">Univer</span> ──HTTP/2 stream── <span class="server">HEMIS</span><br>
+        <span class="note"># Bidirectional streaming, Protobuf</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>Tezroq JSON'dan (binary Protobuf)</li>
+        <li>Strong typing (.proto schema)</li>
+        <li>Bidirectional streaming</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li><strong>PHP gRPC ekstension</strong> — install murakkab, hosting cheklangan</li>
+        <li>Yii2'da rasmiy support yo'q (community)</li>
+        <li>Debug qiyin — HTTP'dan farqli, log standart emas</li>
+        <li>224 OTM dasturchilarini qayta o'rgatish kerak</li>
+        <li>JSON over HTTP — 99% use case yetarli</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        <span style="color: var(--red);">PHP ekosistema mos kelmaydi.</span>
+      </div>
+    </div>
+
+    <!-- 6. Message Queue (RabbitMQ) -->
+    <div class="pattern-card warning">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">🐰</span> <span class="pattern-title">RabbitMQ (AMQP)</span></div>
+        <span class="pattern-badge badge-warning">Alternativ</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="actor">Univer</span> ──publish──<span class="arrow">▶</span> <span style="color: var(--pink);">RabbitMQ</span> <span class="arrow">◀</span>──subscribe── <span class="server">HEMIS</span><br>
+        <span class="note"># Broker queue — async, persistent</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>PHP'da yetuk client (`php-amqplib`, Yii2 ext)</li>
+        <li>Asinxron — Univer fire-and-forget</li>
+        <li>Retry + DLQ built-in</li>
+        <li>Routing flexibility (exchange types)</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li>Replay cheklangan — bir o'qildi → o'chadi (ack model)</li>
+        <li>Throughput Kafka'dan past (10-50K msg/s vs Kafka 1M+)</li>
+        <li>Multi-consumer murakkab (fanout exchange)</li>
+        <li>Geo-replication zaif (federation plugin)</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        Kafka'ga alternativ — kichik volume uchun OK.
+      </div>
+    </div>
+
+    <!-- 7. Kafka (direct from Univer) -->
+    <div class="pattern-card warning">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">📨</span> <span class="pattern-title">Kafka (to'g'ridan)</span></div>
+        <span class="pattern-badge badge-warning">PHP cheklov</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="actor">Univer (PHP)</span> ──rdkafka──<span class="arrow">▶</span> <span style="color: var(--pink);">Kafka topic</span> <span class="arrow">◀</span>── <span class="server">HEMIS (Spring)</span><br>
+        <span class="note"># Univer to'g'ridan Kafka'ga producer/consumer</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>1M+ msg/s throughput</li>
+        <li>Replay, retention, partitioning</li>
+        <li>Multi-consumer (analytics, audit, notification)</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li><strong>PHP rdkafka</strong> — C extension install qiyin shared hosting'da</li>
+        <li>224 ta Univer Kafka credential boshqarish</li>
+        <li>Univer dasturchilari Kafka client kodga moslashishi</li>
+        <li>Network — har OTM markaz Kafka'ga TCP 9092 ochishi kerak</li>
+        <li>Davlat tarmoq policy'lari odatda HTTPS only</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        <span style="color: var(--yellow);">Univer-side cheklov, real bo'lmagan.</span>
+      </div>
+    </div>
+
+    <!-- 8. Hybrid REST + Kafka (RECOMMENDED) -->
+    <div class="pattern-card recommended">
+      <div class="pattern-header">
+        <div><span class="pattern-icon">⭐</span> <span class="pattern-title">Hybrid: REST + Internal Kafka</span></div>
+        <span class="pattern-badge badge-recommended">Tavsiya</span>
+      </div>
+      <div class="pattern-mini-diagram">
+        <span class="actor">Univer</span> ──HTTP POST──<span class="arrow">▶</span> <span class="server">HEMIS</span> ──outbox──<span class="arrow">▶</span> <span style="color: var(--pink);">Kafka</span><br>
+        <span style="color: var(--pink);">Kafka</span> ──<span class="arrow">▶</span> <span style="color: var(--green);">Consumer 1 (DB)</span>, <span style="color: var(--green);">Consumer 2 (Univer push)</span>, <span style="color: var(--green);">Consumer 3 (analytics)</span><br>
+        <span class="note"># Univer ↔ markaz = REST. Markaz ichida = Kafka.</span>
+      </div>
+      <div class="pattern-section-title">✓ Afzalligi</div>
+      <ul class="pros">
+        <li>Univer kod o'zgarmaydi (REST davom etadi)</li>
+        <li>Markaz ichida event-driven (multi-consumer, replay)</li>
+        <li>Outbound push — Kafka consumer Univer'ga REST callback yuboradi</li>
+        <li>Decoupling: yangi consumer qo'shish Univer'ga ta'sir qilmaydi</li>
+        <li>Davlat firewall talabiga mos (faqat HTTPS Univer ↔ markaz)</li>
+      </ul>
+      <div class="pattern-section-title">✗ Kamchiligi</div>
+      <ul class="cons">
+        <li>Markaz ichida 2 ta texnologiya boshqarish (REST + Kafka)</li>
+        <li>Outbox pattern — DB poller latency (~1s)</li>
+        <li>K8s + Strimzi expertise kerak (production)</li>
+      </ul>
+      <div class="pattern-verdict">
+        <span class="verdict-label">VERDICT:</span>
+        <span style="color: var(--green);"><strong>Eng yaxshi tanlov</strong></span> — Univer kontrakti saqlanadi, markaz scaling beradi.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================= 3. Comparison matrix ========================= -->
+  <h2>3. Yon-yon taqqoslash matritsasi</h2>
+
+  <div class="matrix-wrap">
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Pattern</th>
+          <th>Latency</th>
+          <th>PHP/Yii2 mos</th>
+          <th>Bidirectional</th>
+          <th>Replay</th>
+          <th>Multi-consumer</th>
+          <th>Operatsion murakkablik</th>
+          <th>HEMIS Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sync REST</strong> (hozir)</td>
+          <td>~50ms</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td>Past</td>
+          <td>★★★☆☆</td>
+        </tr>
+        <tr>
+          <td><strong>Webhook</strong></td>
+          <td>~100ms</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td>O'rta</td>
+          <td>★★★☆☆</td>
+        </tr>
+        <tr>
+          <td><strong>Polling</strong></td>
+          <td>5-15 min</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td>Past</td>
+          <td>★★☆☆☆</td>
+        </tr>
+        <tr>
+          <td><strong>WebSocket/SSE</strong></td>
+          <td>&lt;10ms</td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td>Yuqori</td>
+          <td>★★☆☆☆</td>
+        </tr>
+        <tr>
+          <td><strong>gRPC streaming</strong></td>
+          <td>~20ms</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td>Yuqori</td>
+          <td>★☆☆☆☆</td>
+        </tr>
+        <tr>
+          <td><strong>RabbitMQ</strong></td>
+          <td>~50ms</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="partial">~</span></td>
+          <td>O'rta</td>
+          <td>★★★☆☆</td>
+        </tr>
+        <tr>
+          <td><strong>Kafka direct</strong></td>
+          <td>~10ms</td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td>Yuqori</td>
+          <td>★★☆☆☆</td>
+        </tr>
+        <tr class="recommended-row">
+          <td><strong>Hybrid REST + Kafka</strong></td>
+          <td>~100ms</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td>O'rta</td>
+          <td>★★★★★</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========================= 4. Kafka deep dive ========================= -->
+  <h2>4. Kafka chuqur tahlil — nima foyda va kamchilik?</h2>
+
+  <div class="kafka-deep">
+    <p style="color: var(--text-muted); margin-bottom: 24px;">
+      Yuqorida ko'rdik: Kafka <em>to'g'ridan Univer bilan</em> mos kelmaydi (PHP cheklov). Lekin
+      <strong>markaz ichida</strong> ishlatsa katta foydalar beradi. Quyida konkret afzalliklari
+      va xavflari — HEMIS use-case'da.
+    </p>
+
+    <div class="kafka-tabs">
+      <button class="kafka-tab-btn active" data-tab="benefits">✅ Afzalliklari</button>
+      <button class="kafka-tab-btn" data-tab="drawbacks">⚠️ Kamchiliklari</button>
+      <button class="kafka-tab-btn" data-tab="when">🎯 Qachon kerak</button>
+      <button class="kafka-tab-btn" data-tab="when-not">🚫 Qachon kerak emas</button>
+    </div>
+
+    <div class="kafka-tab-panel active" id="ktab-benefits">
+      <div class="benefit-grid">
+        <div class="benefit-card">
+          <h4>🔓 Decoupling (Univer'lar bir-biriga ta'sir qilmaydi)</h4>
+          <p>1 OTM "sekin" bo'lsa, qolgan 223 ta yuk olmaydi. Har consumer alohida tempda ishlaydi.</p>
+          <div class="example">Univer #337 sekin → Kafka topic'ga yozildi → Consumer #337 ish boshqarib, qolganlar normal davom etadi.</div>
+        </div>
+
+        <div class="benefit-card">
+          <h4>⏪ Replay — event'larni qayta o'qish</h4>
+          <p>Bug topilsa, 3 oy oldingi event'larni qayta consume qilib jadval'ni qayta quryapsiz.</p>
+          <div class="example">Talaba GPA hisoblash bug → fix → consumer group reset → 100K event qayta hisoblanadi.</div>
+        </div>
+
+        <div class="benefit-card">
+          <h4>👥 Multi-consumer (bir event → ko'p ish)</h4>
+          <p>Bitta employee event'ga bir nechta tinglovchi: DB yozish, audit log, notification, analytics.</p>
+          <div class="example">EmployeeAdded → Consumer 1: write DB, Consumer 2: SMS HR'ga, Consumer 3: BIMM sync, Consumer 4: stats.</div>
+        </div>
+
+        <div class="benefit-card">
+          <h4>💾 Persistence (event source of truth)</h4>
+          <p>Event'lar 30+ kun saqlanadi. Yangi consumer qo'shilsa, eski event'larni ham o'qiy oladi.</p>
+          <div class="example">Yangi analytics service ish boshlasa, 30 kunlik tarix'ni o'qib trendlarni quryapdi.</div>
+        </div>
+
+        <div class="benefit-card">
+          <h4>🌊 Backpressure absorbsiya</h4>
+          <p>Consumer sekinroq bo'lsa, queue ortadi (yo'qotmasdan). Consumer tezlasa, catch up qiladi.</p>
+          <div class="example">Semestr boshi 50K event/min → Kafka buffer'da saqlandi → Consumer 1 soat ichida hammasi ish boshqaradi.</div>
+        </div>
+
+        <div class="benefit-card">
+          <h4>📊 Order kafolat (per partition)</h4>
+          <p>Bir OTM event'lari aynan tartibda qayta ishlanadi (key = university_code).</p>
+          <div class="example">Talaba: ADD → UPDATE → DELETE. Univer #401 uchun bu tartib hech qachon buzilmaydi.</div>
+        </div>
+
+        <div class="benefit-card">
+          <h4>🌍 Geo-replication (DR)</h4>
+          <p>Mirror Maker 2 — Toshkent → Samarqand DC. Primary o'lsa, DR cluster qayta ishga tushadi.</p>
+          <div class="example">Toshkent DC yong'in → DNS switch 30 min → Samarqand DC ish boshqaradi (RPO &lt;5 min).</div>
+        </div>
+
+        <div class="benefit-card">
+          <h4>🔄 Outbox pattern — transactional safety</h4>
+          <p>DB write + Kafka publish bir transaction'da. Crash bo'lsa ham event yo'qolmaydi.</p>
+          <div class="example">INSERT student + INSERT outbox_event = atomic. Poller keyin Kafka'ga jo'natadi (at-least-once).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kafka-tab-panel" id="ktab-drawbacks">
+      <div class="benefit-grid">
+        <div class="benefit-card con">
+          <h4>🔧 Operatsion murakkablik</h4>
+          <p>3-broker cluster, ZooKeeper/KRaft, JVM tuning, partition rebalance, disk monitoring.</p>
+          <div class="example">SRE jamoa kerak — har broker upgrade, disk ko'paytirish, broker o'limini qayta ishlash.</div>
+        </div>
+
+        <div class="benefit-card con">
+          <h4>📜 Schema evolution</h4>
+          <p>Producer schema o'zgartirsa, eski consumer break bo'lishi mumkin. Schema Registry kerak.</p>
+          <div class="example">Yangi field qo'shildi → eski consumer Avro deserialize xato → BACKWARD compatible bo'lishi kerak.</div>
+        </div>
+
+        <div class="benefit-card con">
+          <h4>⏱️ Eventual consistency</h4>
+          <p>Outbox poller + Kafka publish — sub-second emas. Real-time muhim bo'lsa, REST.</p>
+          <div class="example">Student qo'shildi → 1-3 sekund keyin Kafka'da → 1-3 sekund keyin consumer ishladi. Total: 2-6s.</div>
+        </div>
+
+        <div class="benefit-card con">
+          <h4>🐘 Yangi tech — learning curve</h4>
+          <p>Jamoa Spring + JPA biladi, Kafka esa yangi. 1-2 oy o'rganish vaqti.</p>
+          <div class="example">Producer config, consumer group, offset commit, idempotent producer, exactly-once — har birini o'rganish kerak.</div>
+        </div>
+
+        <div class="benefit-card con">
+          <h4>🔁 Idempotency consumer'da</h4>
+          <p>At-least-once delivery → consumer duplicate event'larni hal qilishi kerak.</p>
+          <div class="example">EmployeeAdded 2 marta keldi → consumer event_id tekshirib, ikkinchi marta skip qilishi kerak.</div>
+        </div>
+
+        <div class="benefit-card con">
+          <h4>💸 Infrastruktura xarajati</h4>
+          <p>3-broker × 16GB RAM × SSD 500GB + monitoring stack — bo'sh emas.</p>
+          <div class="example">VM xarajati ~$200-500/oy (on-premise yoki cloud). Kichik volume uchun overkill.</div>
+        </div>
+
+        <div class="benefit-card con">
+          <h4>🐛 Debugging qiyin</h4>
+          <p>Event distributed — qaysi consumer xato qildi, qaysi offset, qaysi partition?</p>
+          <div class="example">Talaba sync ishlamadi → log Kafka, consumer, DB'da alohida → trace ID + Sentry kerak.</div>
+        </div>
+
+        <div class="benefit-card con">
+          <h4>🚧 Univer side'da ishlatib bo'lmaydi</h4>
+          <p>Asosiy use-case (Univer ↔ markaz) uchun Kafka direct emas — PHP cheklov.</p>
+          <div class="example">Univer hali ham REST orqali yozadi. Kafka faqat markaz ichki = qiymat cheklangan, lekin real.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kafka-tab-panel" id="ktab-when">
+      <div class="benefit-grid">
+        <div class="benefit-card">
+          <h4>📈 Volume yuqori</h4>
+          <p>Mingdan ortiq event/sec, peak time burst. HEMIS: 25K/day peak ~50/sec — chegarada.</p>
+        </div>
+        <div class="benefit-card">
+          <h4>🔀 Multi-consumer</h4>
+          <p>Bir event uchun 3+ tinglovchi. HEMIS: DB + Univer push + analytics + audit. <strong>Ha, kerak.</strong></p>
+        </div>
+        <div class="benefit-card">
+          <h4>⏪ Tarix saqlash</h4>
+          <p>Event'lar 30+ kun saqlanishi, replay imkoniyati. HEMIS: audit/compliance uchun foydali.</p>
+        </div>
+        <div class="benefit-card">
+          <h4>🌊 Asinxron kerakli</h4>
+          <p>Producer kutmaydigan natija. HEMIS: outbound push (markaz → Univer) async OK.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="kafka-tab-panel" id="ktab-when-not">
+      <div class="benefit-grid">
+        <div class="benefit-card con">
+          <h4>📉 Volume past</h4>
+          <p>&lt;100 event/sec — Kafka overkill. RabbitMQ yoki to'g'ridan DB INSERT yetadi.</p>
+        </div>
+        <div class="benefit-card con">
+          <h4>🎯 Single consumer</h4>
+          <p>Faqat 1 tinglovchi — Kafka mantig'i ortiqcha. Database queue (table) yoki Redis Streams yetadi.</p>
+        </div>
+        <div class="benefit-card con">
+          <h4>⚡ Strict real-time (&lt;100ms)</h4>
+          <p>Trading, gaming. HEMIS: 1-5s ham OK, demak Kafka mos.</p>
+        </div>
+        <div class="benefit-card con">
+          <h4>🤝 Synchronous request-response</h4>
+          <p>Klient javob kutadi (API call). Kafka — pub/sub fire-and-forget. REST kerak.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================= 5. Sequence diagrams ========================= -->
+  <h2>5. Sequence diagrammalar — flow qanday ishlaydi?</h2>
+
+  <!-- Diagram 1: Sync REST (current) -->
+  <div class="sequence-container">
+    <div class="sequence-title">🔁 Variant A — Hozirgi Sync REST (faqat inbound)</div>
+    <div class="sequence-actors">
+      <div class="sequence-actor univer">🏫 Univer (PHP)</div>
+      <div class="sequence-actor hemis">🏛️ HEMIS-back</div>
+      <div class="sequence-actor db">🗄️ PostgreSQL</div>
+    </div>
+    <div class="sequence-steps">
+      <div class="seq-step">
+        <div class="seq-cell active arrow-right">POST /entities/Student</div>
+        <div class="seq-cell">⏳ kutadi…</div>
+        <div class="seq-cell"></div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell">⏳ kutadi…</div>
+        <div class="seq-cell active arrow-right">INSERT student</div>
+        <div class="seq-cell">💾 yozildi</div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell">📨 200 OK</div>
+        <div class="seq-cell active arrow-left">RETURN student</div>
+        <div class="seq-cell"></div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell"><span style="color: var(--green);">✅ Davom etadi</span></div>
+        <div class="seq-cell"></div>
+        <div class="seq-cell"></div>
+      </div>
+    </div>
+    <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.88rem;">
+      <strong>Muammo:</strong> Univer HEMIS javobini kutadi. HEMIS sekin bo'lsa, Univer ham sekinlashadi.
+      Markaz Univer'ga push qila olmaydi.
+    </p>
+  </div>
+
+  <!-- Diagram 2: Hybrid (Recommended) -->
+  <div class="sequence-container">
+    <div class="sequence-title">⭐ Variant B — Hybrid REST + Internal Kafka (TAVSIYA)</div>
+    <div class="sequence-actors">
+      <div class="sequence-actor univer">🏫 Univer</div>
+      <div class="sequence-actor hemis">🏛️ HEMIS-back</div>
+      <div class="sequence-actor kafka">📨 Kafka</div>
+    </div>
+    <div class="sequence-steps">
+      <div class="seq-step">
+        <div class="seq-cell active arrow-right">POST /entities/Student</div>
+        <div class="seq-cell">⏳ kutadi…</div>
+        <div class="seq-cell"></div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell">⏳</div>
+        <div class="seq-cell active">INSERT student + INSERT outbox_event<br><span style="font-size: 0.78rem; opacity: 0.7;">(atomic transaction)</span></div>
+        <div class="seq-cell"></div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell active">📨 200 OK <span style="color: var(--green);">(tez)</span></div>
+        <div class="seq-cell active arrow-left">RETURN student</div>
+        <div class="seq-cell"></div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell"><span style="color: var(--green);">✅ Univer davom etadi</span></div>
+        <div class="seq-cell active arrow-right">Outbox poller (1s)<br>→ publish event</div>
+        <div class="seq-cell active">📡 StudentAdded</div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell"></div>
+        <div class="seq-cell"></div>
+        <div class="seq-cell active">→ Consumer 1: BIMM<br>→ Consumer 2: Analytics<br>→ Consumer 3: Notification</div>
+      </div>
+    </div>
+    <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.88rem;">
+      <strong>Foyda:</strong> Univer REST API o'zgarmaydi (tez javob), markaz ichida event tarqalishi
+      asinxron — multi-consumer scaling.
+    </p>
+  </div>
+
+  <!-- Diagram 3: Outbound push -->
+  <div class="sequence-container">
+    <div class="sequence-title">📥 Variant C — Outbound push (markaz → Univer) via Kafka + REST callback</div>
+    <div class="sequence-actors">
+      <div class="sequence-actor hemis">🏛️ HEMIS Admin</div>
+      <div class="sequence-actor kafka">📨 Kafka topic</div>
+      <div class="sequence-actor univer">🏫 Univer</div>
+    </div>
+    <div class="sequence-steps">
+      <div class="seq-step">
+        <div class="seq-cell active">Admin: yangi klassifikator qo'shdi</div>
+        <div class="seq-cell"></div>
+        <div class="seq-cell"></div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell active arrow-right">Publish ClassifierUpdated</div>
+        <div class="seq-cell active">📡 hemis.classifier.update</div>
+        <div class="seq-cell"></div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell"></div>
+        <div class="seq-cell active">Consumer (224 partition fanout)</div>
+        <div class="seq-cell">⏳</div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell"></div>
+        <div class="seq-cell active arrow-right">POST /univer-callback/<br>classifier-updated</div>
+        <div class="seq-cell active">✅ Univer #337<br>✅ Univer #401<br>✅ … (224 ta)</div>
+      </div>
+      <div class="seq-step">
+        <div class="seq-cell"><span style="color: var(--green);">✅ Markaz davom etadi</span></div>
+        <div class="seq-cell"><span style="color: var(--text-muted); font-size: 0.82rem;">Univer o'lsa → retry queue → DLQ</span></div>
+        <div class="seq-cell"></div>
+      </div>
+    </div>
+    <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.88rem;">
+      <strong>Foyda:</strong> Hozir markaz Univer'ga push qila olmaydi. Kafka consumer 224 ta Univer'ga
+      parallel REST callback yuboradi (ish yo'qotmagan, retry).
+    </p>
+  </div>
+
+  <!-- ========================= 6. Final recommendation ========================= -->
+  <h2>6. Yakuniy tavsiya</h2>
+
+  <div class="recommendation-banner">
+    <div class="big-icon">⭐</div>
+    <h3>Hybrid: REST (Univer ↔ markaz) + Internal Kafka (markaz ichida)</h3>
+    <p>
+      Univer kod o'zgarmaydi (REST HTTP/JSON saqlanadi — 175/175 contract). Markaz ichida
+      <strong>Transactional Outbox + Kafka</strong> qatlam — event-driven scaling, multi-consumer,
+      replay, persistence. Outbound push esa <strong>Kafka consumer → REST callback</strong> orqali
+      Univer'larga jo'natiladi.
+    </p>
+
+    <div class="hybrid-arch">
+      <div class="hybrid-box">
+        <div class="title">📤 Inbound (Univer → markaz)</div>
+        <div class="desc">
+          REST POST <code>/app/rest/v2/...</code><br>
+          Univer kod o'zgarmaydi.<br>
+          175/175 contract test.
+        </div>
+      </div>
+      <div class="hybrid-box">
+        <div class="title">⚙️ Markaz ichki</div>
+        <div class="desc">
+          Outbox table → Kafka topic.<br>
+          Multi-consumer: DB, analytics, push.<br>
+          Replay, retention, DR.
+        </div>
+      </div>
+      <div class="hybrid-box">
+        <div class="title">📥 Outbound (markaz → Univer)</div>
+        <div class="desc">
+          Kafka consumer → REST callback.<br>
+          224 Univer fanout.<br>
+          Retry + DLQ.
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 24px; font-size: 0.92rem; color: var(--text-muted);">
+      <strong>Keyingi qadam:</strong> ADR-0007 Stage 1 — outbox table (V015 migration) +
+      <code>spring-kafka</code> dependency + <code>OutboxPublisher</code>. Univer side hech narsa o'zgarmaydi.
+    </p>
+  </div>
+
+  <footer>
+    📄 Tegishli hujjatlar:
+    <a href="./employee-sync-flow.html">employee-sync-flow.html</a> ·
+    <a href="./kafka-deployment-strategy.html">kafka-deployment-strategy.html</a> ·
+    <a href="../adr/0007-sync-architecture-evolution.md">ADR-0007</a>
+    <br>
+    <span style="opacity: 0.6;">© 2026 HEMIS-back — Integration Patterns v1.0</span>
+  </footer>
+
+</div>
+
+<script>
+  // Scroll progress bar
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.body.scrollHeight - window.innerHeight;
+    document.getElementById('scrollProgress').style.width = ((scrollTop / docHeight) * 100) + '%';
+  });
+
+  // Kafka tab switching
+  document.querySelectorAll('.kafka-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.kafka-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.kafka-tab-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('ktab-' + tab).classList.add('active');
+    });
+  });
+
+  // Pattern card click animation
+  document.querySelectorAll('.pattern-card').forEach(card => {
+    card.addEventListener('click', () => {
+      card.style.transform = 'scale(1.02) translateY(-4px)';
+      setTimeout(() => card.style.transform = '', 200);
+    });
+  });
+</script>
+
+</body>
+</html>

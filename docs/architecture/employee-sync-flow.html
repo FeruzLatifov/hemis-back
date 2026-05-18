@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Employee Sync — Transactional Outbox Architecture</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg-card: #1e293b;
+    --bg-card-hover: #334155;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-2: #818cf8;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #c084fc;
+    --pink: #f472b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 32px 16px;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+
+  h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+  }
+  h2 {
+    font-size: 1.6rem;
+    color: var(--accent);
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+  }
+  h3 {
+    font-size: 1.2rem;
+    color: var(--text);
+    margin: 24px 0 12px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  /* === Bird's-eye view === */
+  .birdseye {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    gap: 16px;
+    align-items: center;
+    margin: 24px 0;
+  }
+  @media (max-width: 900px) {
+    .birdseye { grid-template-columns: 1fr; }
+    .arrow-h { display: none; }
+  }
+  .node {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .node:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .node-univer { border-color: var(--orange); background: linear-gradient(135deg, #1e293b, #2d1f1f); }
+  .node-hemis { border-color: var(--accent); background: linear-gradient(135deg, #1e293b, #1e2e3e); }
+  .node-kafka { border-color: var(--purple); background: linear-gradient(135deg, #1e293b, #2d1e3e); }
+  .node-consumer { border-color: var(--green); background: linear-gradient(135deg, #1e293b, #1e2e1f); }
+
+  .node-title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+  .node-sub { font-size: 0.85rem; color: var(--text-muted); }
+  .node-tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-top: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+  }
+  .node-tag.green { color: var(--green); border-color: var(--green); }
+  .node-tag.yellow { color: var(--yellow); border-color: var(--yellow); }
+  .node-tag.red { color: var(--red); border-color: var(--red); }
+
+  .arrow-h {
+    text-align: center;
+    color: var(--accent);
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+  .arrow-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* === Sequence diagram === */
+  .sequence {
+    background: #0a1322;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow-x: auto;
+    font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+    font-size: 0.85rem;
+  }
+  .seq-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px dashed rgba(148,163,184,0.1);
+  }
+  .seq-row:hover { background: rgba(56, 189, 248, 0.05); }
+  .seq-time { color: var(--accent); font-weight: 700; }
+  .seq-actor { color: var(--text-muted); font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; text-align: center; background: rgba(255,255,255,0.03); }
+  .seq-actor.active {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    border-left: 3px solid var(--accent);
+  }
+  .seq-action { background: rgba(56, 189, 248, 0.1); color: var(--accent); padding: 4px 10px; border-radius: 4px; }
+  .seq-action.write { background: rgba(74, 222, 128, 0.1); color: var(--green); }
+  .seq-action.async { background: rgba(192, 132, 252, 0.1); color: var(--purple); }
+  .seq-action.kafka { background: rgba(244, 114, 182, 0.1); color: var(--pink); }
+  .seq-header {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 8px 0;
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    font-weight: 700;
+  }
+  .seq-header > div { text-align: center; }
+
+  /* === Layered architecture === */
+  .layer {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .layer-name {
+    position: absolute;
+    top: -12px;
+    left: 16px;
+    background: var(--bg);
+    padding: 0 12px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .layer-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+  }
+  .pill {
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+  .pill.green { background: rgba(74, 222, 128, 0.1); border-color: var(--green); color: var(--green); }
+  .pill.yellow { background: rgba(250, 204, 21, 0.1); border-color: var(--yellow); color: var(--yellow); }
+  .pill.purple { background: rgba(192, 132, 252, 0.1); border-color: var(--purple); color: var(--purple); }
+  .pill.pink { background: rgba(244, 114, 182, 0.1); border-color: var(--pink); color: var(--pink); }
+  .pill.muted { background: rgba(148, 163, 184, 0.05); border-color: var(--text-muted); color: var(--text-muted); }
+
+  /* === Code block === */
+  pre {
+    background: #0a1322;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #e2e8f0;
+  }
+  code { font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; }
+  pre .kw { color: var(--purple); }
+  pre .str { color: var(--green); }
+  pre .num { color: var(--yellow); }
+  pre .com { color: var(--text-muted); font-style: italic; }
+  pre .fn { color: var(--accent); }
+  pre .var { color: var(--orange); }
+
+  /* === Comparison table === */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+  }
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: rgba(56, 189, 248, 0.05);
+    color: var(--accent);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  tr:hover { background: rgba(255,255,255,0.02); }
+  td.check { color: var(--green); font-weight: 700; }
+  td.cross { color: var(--red); font-weight: 700; }
+  td.warn { color: var(--yellow); font-weight: 700; }
+
+  /* === Highlight boxes === */
+  .alert {
+    border-left: 4px solid;
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 16px 0;
+  }
+  .alert-info { background: rgba(56, 189, 248, 0.07); border-color: var(--accent); }
+  .alert-warn { background: rgba(250, 204, 21, 0.07); border-color: var(--yellow); }
+  .alert-success { background: rgba(74, 222, 128, 0.07); border-color: var(--green); }
+  .alert-danger { background: rgba(248, 113, 113, 0.07); border-color: var(--red); }
+  .alert-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+  }
+
+  /* === Animation === */
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+  }
+  .pulse { animation: pulse 2s ease-in-out infinite; }
+
+  /* === Flow steps === */
+  .flow-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .step {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .step::before {
+    content: attr(data-step);
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: var(--accent);
+    color: var(--bg);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    opacity: 0.15;
+  }
+  .step-title { font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .step-detail { font-size: 0.9rem; color: var(--text); }
+  .step-tx { color: var(--green); font-size: 0.75rem; margin-top: 8px; font-family: monospace; }
+
+  /* === Load explanation === */
+  .load-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 768px) { .load-grid { grid-template-columns: 1fr; } }
+
+  .metric {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .metric-label { font-size: 0.85rem; color: var(--text-muted); }
+  .metric-value { font-size: 1.6rem; font-weight: 700; color: var(--accent); margin: 4px 0; }
+  .metric-detail { font-size: 0.8rem; color: var(--text-muted); }
+
+  /* === Module tag === */
+  .module-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    margin-right: 4px;
+  }
+  .mod-legacy { background: rgba(148,163,184,0.15); color: var(--text-muted); }
+  .mod-univ { background: rgba(56,189,248,0.15); color: var(--accent); }
+  .mod-domain { background: rgba(74,222,128,0.15); color: var(--green); }
+  .mod-service { background: rgba(192,132,252,0.15); color: var(--purple); }
+  .mod-univer { background: rgba(251,146,60,0.15); color: var(--orange); }
+
+  ul, ol { padding-left: 24px; margin: 8px 0; }
+  li { margin: 4px 0; }
+  strong { color: var(--text); }
+  em { color: var(--accent); font-style: normal; font-weight: 600; }
+
+  hr { border: 0; height: 1px; background: var(--border); margin: 32px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Employee Sync — Transactional Outbox Architecture</h1>
+<p class="subtitle">224 ta Univer (per-OTM) ↔ Markaziy HEMIS-back · ADR-0010 · 2026-05-08</p>
+
+<div class="alert alert-success">
+  <div class="alert-title">⚡ Asosiy printsip</div>
+  <strong>Univer kodi o'zgarmaydi · Sinxron REST yozish · Background Kafka tarqatish · Yuk yo'q</strong>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>1. Tizim umumiy ko'rinishi (Bird's-eye view)</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="birdseye">
+  <div class="node node-univer">
+    <div class="node-title">🏛️ Univer (224 OTM)</div>
+    <div class="node-sub">Yii2 PHP 7.4<br>per-OTM deploy</div>
+    <div class="node-tag green">o'zgarmaydi</div>
+  </div>
+  <div class="arrow-h">→<span class="arrow-label">REST POST<br>Yii queue</span></div>
+  <div class="node node-hemis">
+    <div class="node-title">🎯 HEMIS-back</div>
+    <div class="node-sub">Spring Boot 4 + Java 25<br>markaziy server</div>
+    <div class="node-tag green">api-university</div>
+  </div>
+  <div class="arrow-h">→<span class="arrow-label">async<br>publish</span></div>
+  <div class="node node-kafka">
+    <div class="node-title">📡 Kafka topic</div>
+    <div class="node-sub">hemis.employee.events.v1</div>
+    <div class="node-tag yellow">internal</div>
+  </div>
+</div>
+
+<div class="card-grid" style="margin-top: 16px;">
+  <div class="node node-consumer">
+    <div class="node-title">🔄 Cache Invalidator</div>
+    <div class="node-sub">Redis L2 evict</div>
+    <div class="node-tag green">consumer</div>
+  </div>
+  <div class="node node-consumer">
+    <div class="node-title">📋 Audit Logger</div>
+    <div class="node-sub">hemis_audit DB</div>
+    <div class="node-tag green">consumer</div>
+  </div>
+  <div class="node node-consumer">
+    <div class="node-title">🔍 Search Indexer</div>
+    <div class="node-sub">Elasticsearch (kelajakda)</div>
+    <div class="node-tag yellow">future</div>
+  </div>
+  <div class="node node-consumer">
+    <div class="node-title">📨 Notification</div>
+    <div class="node-sub">Slack/Email (kelajakda)</div>
+    <div class="node-tag yellow">future</div>
+  </div>
+</div>
+
+<div class="alert alert-info">
+  <div class="alert-title">💡 Kafka Univer'ga ko'rinmaydi</div>
+  Univer perspektivasida: oddiy <code>POST → 200 OK</code>. Kafka, Outbox, Consumer'lar — bularning hammasi
+  HEMIS-back <strong>ICHIDA</strong> sodir bo'ladi (private implementation detail).
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>2. Layered Architecture (modul ↔ vazifa)</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="alert alert-danger">
+  <div class="alert-title">🚫 api-legacy TEGINMAS</div>
+  <code>api-legacy</code> moduli — eski CUBA <code>/v2/services/...</code> URL'larini saqlaydi (175/175 contract).
+  <strong>Yangi sync flow ushbu modulda EMAS</strong> — alohida <code>api-university</code> modulida quriladi.
+</div>
+
+<div class="layer">
+  <div class="layer-name">📥 Univer side (PHP — o'zgarmaydi)</div>
+  <div class="layer-row">
+    <span class="pill muted">EEmployee model</span>
+    <span class="pill muted">HemisApi.php</span>
+    <span class="pill muted">Yii::$app->queue (Redis)</span>
+    <span class="pill muted">SyncJob</span>
+    <span class="pill muted">e_system_sync_log</span>
+  </div>
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+    Univer save trigger → queue push → REST POST → retry on 5xx
+  </p>
+</div>
+
+<div class="layer">
+  <div class="layer-name">🌐 HEMIS-back: HTTP layer (api-university — YANGI)</div>
+  <div class="layer-row">
+    <span class="pill">UniversityEmployeeSyncController</span>
+    <span class="pill">EmployeeSyncDto (Univer payload)</span>
+    <span class="pill">@Valid Bean Validation</span>
+    <span class="pill">@PreAuthorize</span>
+  </div>
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+    POST <code>/api/v1/university/{code}/employees/sync</code> · validation · auth check
+  </p>
+</div>
+
+<div class="layer">
+  <div class="layer-name">🛡️ Security layer</div>
+  <div class="layer-row">
+    <span class="pill green">JWT verify</span>
+    <span class="pill green">TenantGuard.verifyOwnership(code)</span>
+    <span class="pill green">JWT.university_code === path.code</span>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-name">⚙️ Service layer (service modul)</div>
+  <div class="layer-row">
+    <span class="pill purple">EmployeeSyncService.upsert()</span>
+    <span class="pill purple">OutboxAppender (same-tx helper)</span>
+    <span class="pill purple">EmployeeJobsCascadeUpsert</span>
+    <span class="pill purple">SHA-256 content hash</span>
+  </div>
+  <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">
+    @Transactional · idempotent upsert · BuildingSyncService pattern
+  </p>
+</div>
+
+<div class="layer">
+  <div class="layer-name">🗄️ Data layer (domain modul)</div>
+  <div class="layer-row">
+    <span class="pill green">employee (PINFL UNIQUE)</span>
+    <span class="pill green">employee_job (univ_code, source_uid UNIQUE)</span>
+    <span class="pill yellow">outbox_event (same-tx INSERT)</span>
+    <span class="pill yellow">employee_sync_log (audit)</span>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-name">🔄 Background (service modul)</div>
+  <div class="layer-row">
+    <span class="pill pink">OutboxPublisher @Scheduled(1s)</span>
+    <span class="pill pink">SELECT FOR UPDATE SKIP LOCKED</span>
+    <span class="pill pink">KafkaTemplate.send()</span>
+    <span class="pill pink">DLQ (5+ retry)</span>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-name">📡 Event distribution (Kafka)</div>
+  <div class="layer-row">
+    <span class="pill purple">Topic: hemis.employee.events.v1</span>
+    <span class="pill purple">Partition key: university_code</span>
+    <span class="pill purple">Retention: 7 day</span>
+    <span class="pill purple">Schema: JSONB + version</span>
+  </div>
+</div>
+
+<div class="layer">
+  <div class="layer-name">👂 Consumers (har biri mustaqil service)</div>
+  <div class="layer-row">
+    <span class="pill green">EmployeeCacheInvalidator</span>
+    <span class="pill green">EmployeeAuditLogger → hemis_audit</span>
+    <span class="pill yellow">EmployeeSearchIndexer (future)</span>
+    <span class="pill yellow">NotificationService (future)</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>3. Sequence diagram — bir xodim email yangilanadi</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="alert alert-info">
+  <strong>Senariy:</strong> OTM #337 admin Karimov Aziz email'ini <code>old@otm337.uz</code> →
+  <code>new@otm337.uz</code> ga o'zgartirdi.
+</div>
+
+<div class="sequence">
+  <div class="seq-header">
+    <div>Vaqt</div>
+    <div>OTM Admin</div>
+    <div>Univer (Yii2)</div>
+    <div>HEMIS-back</div>
+    <div>DB</div>
+    <div>Kafka + Consumer</div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+0ms</div>
+    <div class="seq-actor active">UPDATE form</div>
+    <div class="seq-actor">→</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+10ms</div>
+    <div class="seq-actor">→</div>
+    <div class="seq-actor active"><span class="seq-action write">Yii model save</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+15ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action async">queue->push(SyncJob)</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+100ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action">POST /sync</span></div>
+    <div class="seq-actor">→</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+105ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action">JWT + tenant check</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+110ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action write">@Transactional START</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+115ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action">SELECT employee BY pinfl</span></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+120ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action">SHA-256 hash compare</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+125ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action write">UPDATE employee SET email=...</span></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+130ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action write">INSERT employee_sync_log</span></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+135ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action write">INSERT outbox_event</span></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+140ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action write">@Transactional COMMIT ✓</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row">
+    <div class="seq-time">T+145ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action">200 OK</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row" style="background: rgba(74, 222, 128, 0.05);">
+    <div class="seq-time">T+150ms</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action write">_sync=true, _qid=null</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row" style="background: rgba(192, 132, 252, 0.05);">
+    <div class="seq-time">T+1.0s</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action async">OutboxPublisher poll</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row" style="background: rgba(192, 132, 252, 0.05);">
+    <div class="seq-time">T+1.05s</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action">SELECT FOR UPDATE SKIP LOCKED</span></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row" style="background: rgba(244, 114, 182, 0.05);">
+    <div class="seq-time">T+1.1s</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action kafka">kafkaTemplate.send()</span></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active">→</div>
+  </div>
+
+  <div class="seq-row" style="background: rgba(244, 114, 182, 0.05);">
+    <div class="seq-time">T+1.15s</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action write">UPDATE outbox_event SET published_at=now()</span></div>
+    <div class="seq-actor"></div>
+  </div>
+
+  <div class="seq-row" style="background: rgba(74, 222, 128, 0.05);">
+    <div class="seq-time">T+1.2s</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action async">CacheInvalidator: Redis EVICT</span></div>
+  </div>
+
+  <div class="seq-row" style="background: rgba(74, 222, 128, 0.05);">
+    <div class="seq-time">T+1.3s</div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor"></div>
+    <div class="seq-actor active"><span class="seq-action async">AuditLogger: hemis_audit INSERT</span></div>
+  </div>
+</div>
+
+<div class="alert alert-success">
+  <div class="alert-title">✅ Asosiy kuzatuv</div>
+  <strong>T+150ms — Univer 200 OK qabul qildi.</strong> Aynan shu paytda DB'da yangi qiymat bor.
+  Univer keyingi GET qilsa — fresh data oladi. Cache invalidate, audit log — bular T+1.2s gacha
+  bo'ladi, lekin <strong>foydalanuvchining ko'rinmaydi</strong>.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>4. Yuksizlik tahlili — qaerda yuk yo'q</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="alert alert-info">
+  <div class="alert-title">🎯 Foydalanuvchi xohlash: "applicationga ham nagruzka tushmaydigan"</div>
+  Outbox Pattern aynan shu maqsadda yaratilgan. Quyida nima uchun yuk yo'q.
+</div>
+
+<div class="card-grid">
+  <div class="metric">
+    <div class="metric-label">Univer kutadigan vaqt</div>
+    <div class="metric-value">~150ms</div>
+    <div class="metric-detail">REST yozish + DB INSERT + outbox INSERT</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Kafka publish vaqt</div>
+    <div class="metric-value">0ms</div>
+    <div class="metric-detail">Background — request yo'lida emas</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Cache evict vaqt</div>
+    <div class="metric-value">0ms</div>
+    <div class="metric-detail">Background consumer — alohida thread</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">Audit log vaqt</div>
+    <div class="metric-value">0ms</div>
+    <div class="metric-detail">Background consumer — hemis_audit DB ga</div>
+  </div>
+</div>
+
+<h3>Yuk taqsimoti — qaysi qadam qaerda</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Qadam</th>
+      <th>Qaerda bajariladi</th>
+      <th>Univer kutadi?</th>
+      <th>Application yuki</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>JWT verify + tenant check</td>
+      <td>Request thread</td>
+      <td class="warn">⏱ ~5ms</td>
+      <td>Engil (in-memory)</td>
+    </tr>
+    <tr>
+      <td>DTO validation</td>
+      <td>Request thread</td>
+      <td class="warn">⏱ ~2ms</td>
+      <td>Engil (Bean Validation)</td>
+    </tr>
+    <tr>
+      <td>SELECT employee BY pinfl</td>
+      <td>Request thread → DB</td>
+      <td class="warn">⏱ ~5ms</td>
+      <td>Indexed query, juda tez</td>
+    </tr>
+    <tr>
+      <td>UPSERT employee + employee_job</td>
+      <td>Request thread → DB</td>
+      <td class="warn">⏱ ~10-20ms</td>
+      <td>Engil INSERT/UPDATE</td>
+    </tr>
+    <tr>
+      <td>INSERT outbox_event</td>
+      <td>Request thread → DB</td>
+      <td class="warn">⏱ ~2ms</td>
+      <td>Faqat 1 ta INSERT (same tx)</td>
+    </tr>
+    <tr>
+      <td>INSERT employee_sync_log</td>
+      <td>Request thread → DB</td>
+      <td class="warn">⏱ ~2ms</td>
+      <td>Faqat 1 ta INSERT (same tx)</td>
+    </tr>
+    <tr style="background: rgba(74, 222, 128, 0.05);">
+      <td><strong>Kafka publish</strong></td>
+      <td><strong>Background poller</strong></td>
+      <td class="check">✓ Yo'q</td>
+      <td><strong>Univer'ga ko'rinmaydi</strong></td>
+    </tr>
+    <tr style="background: rgba(74, 222, 128, 0.05);">
+      <td><strong>Cache invalidate</strong></td>
+      <td><strong>Kafka consumer</strong></td>
+      <td class="check">✓ Yo'q</td>
+      <td><strong>Alohida thread pool</strong></td>
+    </tr>
+    <tr style="background: rgba(74, 222, 128, 0.05);">
+      <td><strong>Audit log to hemis_audit</strong></td>
+      <td><strong>Kafka consumer</strong></td>
+      <td class="check">✓ Yo'q</td>
+      <td><strong>Alohida DB connection</strong></td>
+    </tr>
+    <tr style="background: rgba(74, 222, 128, 0.05);">
+      <td><strong>Search index update</strong></td>
+      <td><strong>Kafka consumer</strong></td>
+      <td class="check">✓ Yo'q</td>
+      <td><strong>Kelajakda — alohida service</strong></td>
+    </tr>
+    <tr style="background: rgba(74, 222, 128, 0.05);">
+      <td><strong>Notification (Slack/Email)</strong></td>
+      <td><strong>Kafka consumer</strong></td>
+      <td class="check">✓ Yo'q</td>
+      <td><strong>Kelajakda — alohida service</strong></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Concurrency — peak time (semestr boshi)</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Stsenariy</th>
+      <th>Yuk</th>
+      <th>Outbox Pattern javobi</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>50 OTM bir vaqtda sync qiladi</td>
+      <td>50 ta concurrent POST</td>
+      <td class="check">✓ HikariCP pool (40 connection) + queue. p99 &lt; 500ms.</td>
+    </tr>
+    <tr>
+      <td>Bulk import: 1 OTM × 5000 employee</td>
+      <td>5000 ta sequential POST (Univer queue)</td>
+      <td class="check">✓ Univer queue 1 sec interval. ~1.5h to'liq sync. Sinxron OK.</td>
+    </tr>
+    <tr>
+      <td>Kafka cluster downtime</td>
+      <td>Hech narsa publish bo'lmaydi</td>
+      <td class="check">✓ outbox_event queue ortadi. Kafka qaytsa, OutboxPublisher catch up qiladi.</td>
+    </tr>
+    <tr>
+      <td>HEMIS-back deploy uzilishi</td>
+      <td>5xx qaytariladi</td>
+      <td class="check">✓ Univer Yii queue retry qiladi (15s, exponential).</td>
+    </tr>
+    <tr>
+      <td>Multi-instance OutboxPublisher (3 pod)</td>
+      <td>Race condition risk</td>
+      <td class="check">✓ <code>SELECT FOR UPDATE SKIP LOCKED</code> — har pod o'z chunkini oladi.</td>
+    </tr>
+    <tr>
+      <td>Cache invalidator slow (Redis hiccup)</td>
+      <td>Consumer lag</td>
+      <td class="check">✓ Boshqa request'larga ta'sirsiz — alohida consumer thread pool.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>5. api-legacy vs api-university — qaerda nima?</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<table>
+  <thead>
+    <tr>
+      <th>Modul</th>
+      <th>Maqsad</th>
+      <th>URL pattern</th>
+      <th>Holat</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="module-tag mod-legacy">api-legacy</span></td>
+      <td>CUBA legacy 175/175 contract — <strong>TEGINMAYDI</strong></td>
+      <td><code>/v2/services/...</code><br><code>/v2/entities/...</code></td>
+      <td class="warn">Frozen — ishlab turaveradi</td>
+    </tr>
+    <tr style="background: rgba(56, 189, 248, 0.05);">
+      <td><span class="module-tag mod-univ">api-university</span></td>
+      <td>Univer ↔ HEMIS yangi sync flow (ADR-0004)</td>
+      <td><code>/api/v1/university/{code}/employees/sync</code><br><code>/api/v1/university/{code}/employees/sync-bulk</code></td>
+      <td class="check">YANGI — bu yerda quriladi</td>
+    </tr>
+    <tr>
+      <td><span class="module-tag mod-univ">api-web</span></td>
+      <td>Markaziy admin UI (vazirlik, 6 OTM)</td>
+      <td><code>/api/v1/employees</code> (CRUD)</td>
+      <td class="warn">Kelajakda — ministry staff</td>
+    </tr>
+    <tr>
+      <td><span class="module-tag mod-domain">domain</span></td>
+      <td>JPA entity + Liquibase</td>
+      <td>—</td>
+      <td>Employee, EmployeeJobs allaqachon, OutboxEvent + EmployeeSyncLog yangi</td>
+    </tr>
+    <tr>
+      <td><span class="module-tag mod-service">service</span></td>
+      <td>Business logic + Outbox publisher + Kafka consumers</td>
+      <td>—</td>
+      <td>EmployeeSyncService, OutboxPublisher, consumer'lar</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="alert alert-warn">
+  <div class="alert-title">⚠️ Univer kodi qachon o'zgaradi?</div>
+  Univer hozir <code>POST /v2/services/employee/sync</code> (api-legacy) ga POST qiladi (eski URL).
+  Yangi <code>api-university</code> moduliga o'tish uchun Univer kodida 1 satr o'zgarish kerak:<br>
+  <code style="display: block; margin-top: 8px; padding: 8px; background: var(--bg);">
+    HemisApi.php: ~$baseUrl = '/api/v1/university/' . $universityCode~ <span style="color: var(--green);">// yangi</span><br>
+    HemisApi.php: ~$baseUrl = '/v2/services'~ <span style="color: var(--red);">// eski (saqlanadi parallel)</span>
+  </code>
+  <strong>Strangler Fig pattern:</strong> Eski va yangi URL'lar 12+ oy parallel ishlaydi. Univer per-OTM
+  feature flag bilan o'z tezligida o'tadi.
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>6. Initial bulk sync vs steady state</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="card-grid">
+  <div class="card">
+    <h3 style="color: var(--orange);">🏗️ Initial Bulk Sync (one-time)</h3>
+    <p><strong>Maqsad:</strong> 224 OTM × ~100 employee = 22K row markazga ko'chirish.</p>
+    <ul>
+      <li><strong>URL:</strong> <code>POST /api/v1/university/{code}/employees/sync-bulk</code></li>
+      <li><strong>Chunk size:</strong> 500 employee/batch</li>
+      <li><strong>Resume:</strong> <code>synced_at</code> cursor — yarim yo'lda fail bo'lsa, davom etadi</li>
+      <li><strong>Kafka publish:</strong> <span class="cross">YO'Q</span> — past data, audit log etarli</li>
+      <li><strong>Cache evict:</strong> <span class="cross">YO'Q</span> — initial sync paytida cache kerak emas</li>
+      <li><strong>Davomiyligi:</strong> ~5-10 min/OTM (224 OTM × 10 min = qatla deploy)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 style="color: var(--green);">🔄 Steady State Sync (continuous)</h3>
+    <p><strong>Maqsad:</strong> Univer'da har xodim yangilanganda real-time sync.</p>
+    <ul>
+      <li><strong>URL:</strong> <code>POST /api/v1/university/{code}/employees/sync</code></li>
+      <li><strong>Trigger:</strong> Yii afterSave hook → queue push → REST POST</li>
+      <li><strong>Volume:</strong> ~224 update/day (avg)</li>
+      <li><strong>Kafka publish:</strong> <span class="check">HA</span> — cache invalidation, audit, search</li>
+      <li><strong>Idempotent:</strong> SHA-256 hash compare — agar o'zgarmasa, SKIP</li>
+      <li><strong>Latency:</strong> ~150ms (Univer perspektiva)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>7. Ma'lumot yo'qotmaslik kafolatlari</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="alert alert-info">
+  <div class="alert-title">🛡️ Foydalanuvchi xohlash: "ma'lumotlarni yo'qotmaydigan qilib"</div>
+  Quyidagi 5 ta failure scenarios — har birida ma'lumot saqlanadi.
+</div>
+
+<div class="flow-steps">
+  <div class="step" data-step="1">
+    <div class="step-title">HEMIS-back uzilgan</div>
+    <div class="step-detail">REST 5xx qaytadi.</div>
+    <div class="step-tx">→ Univer Yii queue retry (15s exp)<br>→ HEMIS qaytgach: 200 OK<br>→ Hech narsa yo'qolmaydi</div>
+  </div>
+  <div class="step" data-step="2">
+    <div class="step-title">Kafka uzilgan</div>
+    <div class="step-detail">REST 200 OK qaytadi (DB+outbox commit ✓).</div>
+    <div class="step-tx">→ outbox_event queue ortadi<br>→ Kafka qaytgach: poller catch up<br>→ 0 event loss</div>
+  </div>
+  <div class="step" data-step="3">
+    <div class="step-title">Network timeout</div>
+    <div class="step-detail">Univer 30s kutib timeout.</div>
+    <div class="step-tx">→ Univer queue retry<br>→ HEMIS idempotent (PINFL hash)<br>→ Duplicate yo'q</div>
+  </div>
+  <div class="step" data-step="4">
+    <div class="step-title">Outbox publisher fail</div>
+    <div class="step-detail">Kafka publish 5+ marta fail.</div>
+    <div class="step-tx">→ DLQ topic (hemis.dlq.v1)<br>→ Manual investigation<br>→ Replay imkoni</div>
+  </div>
+  <div class="step" data-step="5">
+    <div class="step-title">Consumer fail</div>
+    <div class="step-detail">Cache invalidator/audit logger crash.</div>
+    <div class="step-tx">→ Kafka offset commit yo'q<br>→ Replay 7 day retention<br>→ At-least-once</div>
+  </div>
+  <div class="step" data-step="6">
+    <div class="step-title">PINFL conflict (2 OTM)</div>
+    <div class="step-detail">2 ta OTM bir xil PINFL push qiladi.</div>
+    <div class="step-tx">→ Last-write-wins by synced_at<br>→ employee_sync_log: CONFLICT_OVERWRITE<br>→ Ministry alert</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2>8. Eng muhim — 3 ta kafolat</h2>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="card-grid">
+  <div class="card" style="border-left: 4px solid var(--green);">
+    <h3 style="color: var(--green);">✅ 1. Atomicity</h3>
+    <p>DB write + outbox INSERT <strong>bitta transactionda</strong>. Hech qachon ajralmaydi.</p>
+    <pre><code><span class="kw">@Transactional</span>
+<span class="kw">public void</span> <span class="fn">upsert</span>(...) {
+  <span class="var">employeeRepo</span>.<span class="fn">save</span>(employee);    <span class="com">// 1</span>
+  <span class="var">syncLogRepo</span>.<span class="fn">save</span>(log);        <span class="com">// 2</span>
+  <span class="var">outboxAppender</span>.<span class="fn">append</span>(...);  <span class="com">// 3</span>
+}  <span class="com">// COMMIT — uchchalasi birga yoki hech qaysi</span>
+</code></pre>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--accent);">
+    <h3 style="color: var(--accent);">✅ 2. Idempotency</h3>
+    <p>Bir xil POST 100 marta kelsa ham — DB'da bitta row.</p>
+    <pre><code><span class="com">// Univer queue retry → bir xil payload yuboradi</span>
+<span class="kw">var</span> existing = repo.<span class="fn">findByPinfl</span>(pinfl);
+<span class="kw">if</span> (existing.<span class="fn">isPresent</span>()
+    &amp;&amp; existing.<span class="fn">get</span>().<span class="fn">contentHash</span>().<span class="fn">equals</span>(hash)) {
+  <span class="kw">return</span>;  <span class="com">// SKIP — no-op</span>
+}
+</code></pre>
+  </div>
+
+  <div class="card" style="border-left: 4px solid var(--purple);">
+    <h3 style="color: var(--purple);">✅ 3. Decoupling</h3>
+    <p>Sync request <strong>backendning ichidan</strong> Kafka'ga ulanmaydi. Outbox table = buffer.</p>
+    <pre><code><span class="com">// Request thread:</span>
+<span class="fn">save</span>(employee) + <span class="fn">save</span>(outbox)  <span class="com">// 5ms</span>
+<span class="kw">return</span> <span class="num">200</span> OK;
+
+<span class="com">// Background (alohida thread):</span>
+<span class="kw">@Scheduled</span>
+<span class="fn">poll</span>() { kafka.<span class="fn">send</span>(...); }
+</code></pre>
+  </div>
+</div>
+
+<hr>
+
+<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 32px 0;">
+  <p>HEMIS-back · ADR-0010 · Transactional Outbox Pattern (Chris Richardson)</p>
+  <p>Univer 224 OTM ↔ Markaziy ministry server · 2026-05-08</p>
+</div>
+
+</div>
+</body>
+</html>

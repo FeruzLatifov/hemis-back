@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HEMIS-back — Hozirgi Implementatsiya Umumiy Ko'rinishi</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f9fb;
+    --bg-card: #ffffff;
+    --bg-code: #1e1e2e;
+    --text: #1a1a2e;
+    --text-muted: #6b7280;
+    --primary: #4f46e5;
+    --primary-dark: #3730a3;
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-orange: #f59e0b;
+    --accent-purple: #8b5cf6;
+    --accent-red: #ef4444;
+    --accent-teal: #14b8a6;
+    --border: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+    color: white;
+    padding: 48px 0;
+    box-shadow: var(--shadow-lg);
+  }
+  header h1 { font-size: 38px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+  header p { font-size: 17px; opacity: 0.95; max-width: 800px; }
+  .header-stats {
+    display: flex; gap: 32px; margin-top: 28px; flex-wrap: wrap;
+  }
+  .stat { background: rgba(255,255,255,0.15); padding: 12px 20px; border-radius: 10px; backdrop-filter: blur(10px); }
+  .stat .num { font-size: 24px; font-weight: 700; display: block; }
+  .stat .label { font-size: 12px; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* TAB NAV */
+  nav.tabs {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  nav.tabs .container { display: flex; gap: 4px; overflow-x: auto; }
+  .tab-btn {
+    background: transparent; border: none; padding: 16px 20px;
+    font-size: 14px; font-weight: 500; color: var(--text-muted);
+    cursor: pointer; border-bottom: 3px solid transparent;
+    transition: all 0.2s; white-space: nowrap; font-family: inherit;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--bg); }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* SECTIONS */
+  section.panel { padding: 48px 0; display: none; animation: fadeIn 0.3s ease; }
+  section.panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  h3 { font-size: 20px; font-weight: 600; margin: 28px 0 12px; color: var(--text); }
+  h4 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; color: var(--text); }
+  p { margin-bottom: 12px; color: #374151; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .card-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin: 20px 0;
+  }
+  .card-tinted { border-left: 4px solid var(--primary); }
+  .card-tinted.blue { border-left-color: var(--accent-blue); }
+  .card-tinted.green { border-left-color: var(--accent-green); }
+  .card-tinted.orange { border-left-color: var(--accent-orange); }
+  .card-tinted.purple { border-left-color: var(--accent-purple); }
+  .card-tinted.red { border-left-color: var(--accent-red); }
+  .card-tinted.teal { border-left-color: var(--accent-teal); }
+
+  /* CODE */
+  pre, code {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px;
+  }
+  pre {
+    background: var(--bg-code);
+    color: #e0e0e0;
+    padding: 16px 20px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 12px 0;
+    line-height: 1.5;
+  }
+  code:not(pre code) {
+    background: #eef2ff;
+    color: #4338ca;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+  .code-comment { color: #6b7280; font-style: italic; }
+  .code-keyword { color: #c084fc; }
+  .code-string { color: #86efac; }
+  .code-number { color: #fbbf24; }
+  .code-class { color: #60a5fa; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; background: white; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow); }
+  th { background: #f3f4f6; padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--text); border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover { background: #fafafa; }
+
+  /* BADGES */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 12px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  .badge-new { background: #d1fae5; color: #065f46; }
+  .badge-changed { background: #fef3c7; color: #92400e; }
+  .badge-deleted { background: #fee2e2; color: #991b1b; }
+  .badge-info { background: #dbeafe; color: #1e40af; }
+  .badge-warning { background: #fed7aa; color: #9a3412; }
+  .badge-success { background: #d1fae5; color: #065f46; }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex; align-items: center; gap: 12px;
+    flex-wrap: wrap; padding: 20px; background: #f9fafb;
+    border-radius: 12px; margin: 16px 0; border: 1px dashed var(--border);
+  }
+  .flow-node {
+    background: white; padding: 14px 18px; border-radius: 10px;
+    border: 2px solid var(--border); font-size: 13px; font-weight: 600;
+    min-width: 140px; text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .flow-node.markaz { border-color: var(--accent-blue); background: #eff6ff; }
+  .flow-node.univer { border-color: var(--accent-green); background: #f0fdf4; }
+  .flow-node.kafka { border-color: var(--accent-orange); background: #fffbeb; }
+  .flow-node.db { border-color: var(--accent-purple); background: #f5f3ff; }
+  .flow-node.error { border-color: var(--accent-red); background: #fef2f2; }
+  .flow-arrow { font-size: 22px; color: var(--text-muted); font-weight: 300; }
+
+  /* TIMELINE */
+  .timeline { border-left: 3px solid var(--border); padding-left: 24px; margin: 24px 0; }
+  .timeline-item { position: relative; margin-bottom: 28px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -32px; top: 6px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--primary); border: 3px solid white;
+    box-shadow: 0 0 0 3px var(--primary);
+  }
+  .timeline-item.done::before { background: var(--accent-green); box-shadow: 0 0 0 3px var(--accent-green); }
+  .timeline-item.pending::before { background: var(--accent-orange); box-shadow: 0 0 0 3px var(--accent-orange); }
+  .timeline-item.future::before { background: var(--text-muted); box-shadow: 0 0 0 3px var(--text-muted); }
+
+  /* FILE TREE */
+  .filetree {
+    background: #1e1e2e; color: #cdd6f4; padding: 20px;
+    border-radius: 10px; font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; line-height: 1.8; overflow-x: auto;
+  }
+  .filetree .dir { color: #89b4fa; font-weight: 600; }
+  .filetree .new { color: #a6e3a1; }
+  .filetree .changed { color: #f9e2af; }
+  .filetree .deleted { color: #f38ba8; text-decoration: line-through; }
+  .filetree .comment { color: #6c7086; }
+
+  /* CALLOUT */
+  .callout {
+    border-left: 4px solid var(--accent-blue);
+    background: #eff6ff;
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+  }
+  .callout.warning { border-color: var(--accent-orange); background: #fffbeb; }
+  .callout.success { border-color: var(--accent-green); background: #f0fdf4; }
+  .callout.danger { border-color: var(--accent-red); background: #fef2f2; }
+  .callout strong { font-weight: 600; }
+
+  /* FOOTER */
+  footer { background: #1f2937; color: #9ca3af; padding: 32px 0; margin-top: 64px; text-align: center; font-size: 13px; }
+  footer a { color: #93c5fd; text-decoration: none; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    header h1 { font-size: 28px; }
+    .header-stats { gap: 12px; }
+    .flow { flex-direction: column; align-items: stretch; }
+    .flow-arrow { transform: rotate(90deg); align-self: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>HEMIS-back — Hozirgi Holat</h1>
+    <p>Markaziy ministry server (Java 25 + Spring Boot 4.0.6) ↔ 224 Univer (PHP Yii2 7.4) o'rtasidagi sync va webhook infrastruktura: nima qilingan, qaerda joylashgan, qanday ishlaydi.</p>
+    <div class="header-stats">
+      <div class="stat"><span class="num">230</span><span class="label">OTM (224 + 6)</span></div>
+      <div class="stat"><span class="num">2</span><span class="label">Sync API endpoint</span></div>
+      <div class="stat"><span class="num">12</span><span class="label">Kafka partition</span></div>
+      <div class="stat"><span class="num">3</span><span class="label">ADR (10, 11, 12)</span></div>
+      <div class="stat"><span class="num">8</span><span class="label">Skill (yangi)</span></div>
+      <div class="stat"><span class="num">5</span><span class="label">Univer fayl (yangi)</span></div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs">
+  <div class="container">
+    <button class="tab-btn active" data-tab="overview">Umumiy ko'rinish</button>
+    <button class="tab-btn" data-tab="modules">Modullar</button>
+    <button class="tab-btn" data-tab="sync-in">Sync IN (Univer → Markaz)</button>
+    <button class="tab-btn" data-tab="webhook-out">Webhook OUT (Markaz → Univer)</button>
+    <button class="tab-btn" data-tab="auth">Auth strategiya</button>
+    <button class="tab-btn" data-tab="decisions">Texnik qarorlar</button>
+    <button class="tab-btn" data-tab="files">Fayllar xaritasi</button>
+    <button class="tab-btn" data-tab="univer-side">Univer tarafi</button>
+    <button class="tab-btn" data-tab="next">Keyingi qadamlar</button>
+  </div>
+</nav>
+
+<!-- TAB 1: OVERVIEW -->
+<section class="panel active" id="overview">
+  <div class="container">
+    <h2>Tizim umumiy ko'rinishi</h2>
+    <p><strong>HEMIS-back</strong> — Oliy ta'lim vazirligi tasarrufidagi <strong>markaziy server</strong> (bitta deploy). U <strong>old-hemis</strong> (CUBA Platform 7.3, Java + Groovy, Haulmont)'ni <strong>Spring Boot 4 + Java 25</strong> ga qayta yozish va modernizatsiya qilishdir.</p>
+
+    <div class="flow">
+      <div class="flow-node univer">224 Univer<br/><small>PHP Yii2 7.4<br/>per-OTM deploy</small></div>
+      <div class="flow-arrow">⇄</div>
+      <div class="flow-node markaz">Markaz HEMIS-back<br/><small>Java 25<br/>Spring Boot 4.0.6</small></div>
+      <div class="flow-arrow">⇄</div>
+      <div class="flow-node db">6 Markaziy admin OTM<br/><small>to'g'ridan-to'g'ri<br/>web UI</small></div>
+    </div>
+
+    <h3>4 ta asosiy maqsad</h3>
+    <div class="card-grid">
+      <div class="card card-tinted blue">
+        <h4>1. Ma'lumot aggregation</h4>
+        <p>230 OTM ma'lumotini bitta markazda yig'ish (224 ta — Univer orqali, 6 ta — web orqali).</p>
+      </div>
+      <div class="card card-tinted green">
+        <h4>2. Klassifikator distribution</h4>
+        <p>Univer-yagona reference jadvallar (h_country, h_currency, h_education_form...) — har OTM bir xil qiymatlardan foydalanadi.</p>
+      </div>
+      <div class="card card-tinted orange">
+        <h4>3. Qoidalar joriy qilish</h4>
+        <p>Talaba kiritish cheklash, baho o'zgartirish cheklov, vaqt cheklov — markaz nazorat qiladi.</p>
+      </div>
+      <div class="card card-tinted purple">
+        <h4>4. Davlat integratsiya</h4>
+        <p>MyGov, MSPD, BIMM, Soliq, GUVD, OneID — markaziy gateway orqali.</p>
+      </div>
+    </div>
+
+    <h3>2 ta asosiy oqim</h3>
+
+    <div class="card card-tinted teal">
+      <h4>OQIM 1: Sync IN (Univer → Markaz)</h4>
+      <p>Univer (per-OTM) ma'lumotni markaz'ga yuboradi: binolar, xodimlar, talabalar, kelajakda yana ko'p.</p>
+      <ul style="margin: 8px 0 0 20px; color: #374151;">
+        <li><code>POST /api/v1/university/buildings/sync</code> — synchronous, content-hash idempotent</li>
+        <li><code>POST /api/v1/university/employees/sync</code> — asinxron, Kafka orqali</li>
+      </ul>
+    </div>
+
+    <div class="card card-tinted purple">
+      <h4>OQIM 2: Webhook OUT (Markaz → Univer)</h4>
+      <p>Markaz event'ini 224 Univer'ga REST callback orqali yuboradi: klassifikator yangilanishi, qoida o'zgarishi, broadcast xabar.</p>
+      <ul style="margin: 8px 0 0 20px; color: #374151;">
+        <li>Outbox jadval → Kafka topic → Fan-out consumer → 224 Univer endpoint'iga POST</li>
+        <li>HMAC SHA-256 signature, exponential backoff retry, DLQ</li>
+      </ul>
+    </div>
+
+    <div class="callout">
+      <strong>Asosiy texnik tanlovlar:</strong> Spring Boot 4.0.6 (KafkaAutoConfig'siz — manual config) · Java 25 LTS · Liquibase 4.31.1 · PostgreSQL 18 master/replica · Redis 7 (cache + rate limit) · Kafka 3.9.0 (KRaft mode, single-node dev) · Hibernate 7
+    </div>
+  </div>
+</section>
+
+<!-- TAB 2: MODULES -->
+<section class="panel" id="modules">
+  <div class="container">
+    <h2>Modul tuzilishi (Gradle multi-module monolith)</h2>
+    <p>Bitta Spring Boot app (`app:bootRun`), modullar bo'yicha bo'lingan: har modul o'z mas'uliyatiga ega, bir-birini import qiladi.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Modul</th>
+          <th>Mas'uliyat</th>
+          <th>URL prefix</th>
+          <th>Mijozlar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>api-legacy</strong> <span class="badge badge-info">CUBA 1:1</span></td>
+          <td>old-hemis 1:1 contract (175/175 endpoint MATCH)</td>
+          <td><code>/app/rest/v2/**</code>, <code>/services/**</code></td>
+          <td>224 Univer (eski URL'lar)</td>
+        </tr>
+        <tr>
+          <td><strong>api-university</strong> <span class="badge badge-new">Yangi</span></td>
+          <td>Univer sync API (yangi pattern, OAuth 2.1)</td>
+          <td><code>/api/v1/university/**</code></td>
+          <td>224 Univer (yangi endpoint'lar)</td>
+        </tr>
+        <tr>
+          <td><strong>api-web</strong></td>
+          <td>Vazirlik admin React frontend</td>
+          <td><code>/api/v1/web/**</code></td>
+          <td>MINISTRY_ADMIN, UNIVERSITY_ADMIN</td>
+        </tr>
+        <tr>
+          <td><strong>api-external</strong></td>
+          <td>Davlat tashkilotlari integratsiya</td>
+          <td><code>/api/v1/external/**</code></td>
+          <td>MyGov, MSPD, Soliq, GUVD, OneID</td>
+        </tr>
+        <tr>
+          <td><strong>service</strong></td>
+          <td>Business logic (transactional)</td>
+          <td>—</td>
+          <td>api-* modullar</td>
+        </tr>
+        <tr>
+          <td><strong>domain</strong></td>
+          <td>@Entity, Repository, JPA</td>
+          <td>—</td>
+          <td>service</td>
+        </tr>
+        <tr>
+          <td><strong>security</strong></td>
+          <td>JWT, OAuth, RBAC, BCrypt, PreAuth</td>
+          <td>—</td>
+          <td>app (SecurityConfig)</td>
+        </tr>
+        <tr>
+          <td><strong>common</strong></td>
+          <td>DTO, ResponseWrapper, helpers</td>
+          <td>—</td>
+          <td>hammasi</td>
+        </tr>
+        <tr>
+          <td><strong>app</strong></td>
+          <td>Main app, config, profile</td>
+          <td>—</td>
+          <td>entry point</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Modul bog'liqligi (dependency graph)</h3>
+    <div class="flow">
+      <div class="flow-node">api-* (4 ta)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">service</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">domain</div>
+    </div>
+    <p style="text-align: center; color: var(--text-muted); font-size: 13px; margin-top: -8px;">common + security har joyga import qilinadi</p>
+
+    <h3>Swagger 4 group strategiyasi (ADR-0011)</h3>
+    <div class="card-grid">
+      <div class="card card-tinted blue">
+        <h4><code>web</code></h4>
+        <p>Web Frontend API · <code>/api/v1/web/**</code> · Admin React UI uchun</p>
+      </div>
+      <div class="card card-tinted orange">
+        <h4><code>legacy</code></h4>
+        <p>Univer Legacy API (CUBA 7.3) · <code>/app/rest/v2/**</code> · 175 endpoint</p>
+      </div>
+      <div class="card card-tinted green">
+        <h4><code>university</code></h4>
+        <p>Univer API v1 (OAuth 2.1) · <code>/api/v1/university/**</code> · sync endpoint'lar</p>
+      </div>
+      <div class="card card-tinted purple">
+        <h4><code>external</code></h4>
+        <p>Davlat tashkilotlari API · <code>/api/v1/external/**</code> · OAuth token endpoint</p>
+      </div>
+    </div>
+    <p style="margin-top: 12px;"><strong>Production'da:</strong> <code>springdoc.api-docs.enabled: false</code> — Swagger butunlay o'chirilgan (xavfsizlik).</p>
+  </div>
+</section>
+
+<!-- TAB 3: SYNC IN -->
+<section class="panel" id="sync-in">
+  <div class="container">
+    <h2>Sync IN — Univer → Markaz</h2>
+    <p>Univer ma'lumotni markaz'ga POST qiladi. URL'da <code>{universityCode}</code> path param YO'Q — JWT'dagi <code>university_code</code> claim'idan resolve qilinadi (dev'da <code>X-University-Code</code> header fallback).</p>
+
+    <h3>Endpoint 1: Buildings sync (sinxron)</h3>
+    <div class="card card-tinted teal">
+      <h4><code>POST /api/v1/university/buildings/sync</code></h4>
+      <table style="margin: 12px 0;">
+        <tr><th style="width: 200px;">Pattern</th><td>Sinxron (request → response)</td></tr>
+        <tr><th>Idempotency</th><td>SHA-256 content hash — o'zgarmagan yozuvlar skip</td></tr>
+        <tr><th>Upsert key</th><td><code>(university_code, source_uid)</code></td></tr>
+        <tr><th>Controller</th><td><code>api-university/.../BuildingSyncController.java</code></td></tr>
+        <tr><th>Service</th><td><code>service/.../UniversityBuildingSyncService.java</code></td></tr>
+      </table>
+    </div>
+
+    <div class="flow">
+      <div class="flow-node univer">Univer PHP</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node markaz">Controller</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Service<br/>(upsert + hash)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node db">university_building</div>
+    </div>
+
+    <h4>Content hash mantiq (skip optimization)</h4>
+    <pre>private String computeHash(BuildingSyncDto d) {
+    String content = String.join("|",
+        str(d.getName()), str(d.getCategoryCode()), str(d.getAddress()),
+        str(d.getYearBuilt()), str(d.getFloorCount()), ... 17 ta maydon
+    );
+    return sha256Hex(content);
+}
+
+<span class="code-comment">// Service:</span>
+Optional&lt;UniversityBuilding&gt; existing = repo.findByUniversityCodeAndSourceUid(...);
+if (existing.isPresent() && incomingHash.equals(b.getContentHash())) {
+    return;  <span class="code-comment">// no change — skip</span>
+}</pre>
+
+    <h3>Endpoint 2: Employees sync (asinxron Kafka)</h3>
+    <div class="card card-tinted orange">
+      <h4><code>POST /api/v1/university/employees/sync</code></h4>
+      <table style="margin: 12px 0;">
+        <tr><th style="width: 200px;">Pattern</th><td>Asinxron — 202 Accepted, Kafka orqali</td></tr>
+        <tr><th>Idempotency</th><td>PostgreSQL <code>INSERT ON CONFLICT (pinfl)</code></td></tr>
+        <tr><th>Partition</th><td>12 ta, kalit = PINFL → per-row serial</td></tr>
+        <tr><th>Reason</th><td>Hibernate <code>@Version</code> collision (70% xato) ni hal qilish</td></tr>
+      </table>
+    </div>
+
+    <div class="flow" style="flex-wrap: wrap;">
+      <div class="flow-node univer">Univer</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node markaz">Controller<br/><small>per-row publish</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node kafka">Kafka topic<br/><small>12 partition<br/>key=PINFL</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Consumer<br/><small>concurrency=12</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Processor<br/><small>upsert</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node db">employee +<br/>employee_jobs</div>
+    </div>
+
+    <h4>Komponentlar (service/employee/)</h4>
+    <table>
+      <tr><th>Fayl</th><th>Vazifa</th></tr>
+      <tr><td><code>EmployeeSyncProducer.java</code></td><td>KafkaTemplate wrapper — DTO'ni topic'ga publish qiladi</td></tr>
+      <tr><td><code>EmployeeSyncConsumer.java</code></td><td>@KafkaListener — message qabul qiladi, processor chaqiradi</td></tr>
+      <tr><td><code>EmployeeSyncProcessor.java</code></td><td>@Transactional — bitta xodim uchun upsert (employee + jobs)</td></tr>
+    </table>
+
+    <h4>INSERT ON CONFLICT (Hibernate @Version o'rniga)</h4>
+    <pre><span class="code-keyword">INSERT INTO</span> employee (id, pinfl, person_type, first_name, ..., version)
+<span class="code-keyword">VALUES</span> (gen_random_uuid(), :pinfl, <span class="code-string">'UNIVERSITY_STAFF'</span>, :firstName, ..., <span class="code-number">1</span>)
+<span class="code-keyword">ON CONFLICT</span> (pinfl) <span class="code-keyword">WHERE</span> deleted_at <span class="code-keyword">IS NULL</span>
+<span class="code-keyword">DO UPDATE SET</span>
+    first_name = EXCLUDED.first_name,
+    ...
+    version = employee.version + <span class="code-number">1</span>
+<span class="code-keyword">RETURNING</span> id</pre>
+
+    <div class="callout success">
+      <strong>Test natijasi:</strong> 10 parallel request × bir xil PINFL'lar → 10/10 → 202, 0% xato, 0 DLQ message, 51 message 5 sekundda drain. Avval (Hibernate @Version) — 70% collision xato edi.
+    </div>
+  </div>
+</section>
+
+<!-- TAB 4: WEBHOOK OUT -->
+<section class="panel" id="webhook-out">
+  <div class="container">
+    <h2>Webhook OUT — Markaz → 224 Univer (ADR-0012)</h2>
+    <p>Markaz'da event sodir bo'lganda (klassifikator yangilandi, qoida o'zgardi) — 224 Univer'ga REST callback yuborish.</p>
+
+    <h3>Asosiy oqim (Outbox + Kafka + REST)</h3>
+    <div class="flow" style="flex-wrap: wrap;">
+      <div class="flow-node db">Outbox jadval<br/><small>BUSINESS_TX'da</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Outbox Publisher<br/><small>scheduled poll</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node kafka">Kafka topic<br/><small>webhook.events</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Fanout Consumer<br/><small>1 event → N target</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">HTTP Dispatcher<br/><small>HMAC sign</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node univer">224 Univer<br/>endpoint</div>
+    </div>
+
+    <h3>Komponentlar (service/webhook/)</h3>
+    <table>
+      <tr><th>Fayl</th><th>Vazifa</th></tr>
+      <tr><td><code>WebhookFanoutConsumer.java</code></td><td>Kafka'dan event olib, har Univer target uchun delivery yozadi</td></tr>
+      <tr><td><code>WebhookDispatcher.java</code></td><td>HTTP POST yuboradi, HMAC sign, retry/backoff</td></tr>
+      <tr><td><code>WebhookRetryScheduler.java</code></td><td>Failed delivery'larni qayta urinish (exponential backoff)</td></tr>
+      <tr><td><code>HmacSigner.java</code></td><td>SHA-256 HMAC signature: <code>X-HMAC-Signature</code> header</td></tr>
+      <tr><td><code>WebhookSecretService.java</code></td><td>Secret generate + BCrypt hash storage</td></tr>
+      <tr><td><code>WebhookSecretVault.java</code></td><td>Plain secret view-once cache (Redis, 5 min TTL)</td></tr>
+      <tr><td><code>WebhookTargetService.java</code></td><td>CRUD: Univer target'larni boshqarish</td></tr>
+      <tr><td><code>WebhookEventEnvelope.java</code></td><td>Kafka payload schema</td></tr>
+      <tr><td><code>WebhookMetrics.java</code></td><td>Micrometer counter — yuborilgan/failed</td></tr>
+      <tr><td><code>DevWebhookBootstrap.java</code></td><td>Dev profile'da 1 ta test target avtomatik qo'shadi</td></tr>
+    </table>
+
+    <h3>Admin UI — Target boshqaruv</h3>
+    <div class="card card-tinted purple">
+      <h4><code>WebhookTargetController.java</code> (api-web)</h4>
+      <p>URL: <code>/api/v1/web/admin/webhooks</code> — MINISTRY_ADMIN uchun. Permission: <code>webhook.view</code>, <code>webhook.create</code>, <code>webhook.update</code>, <code>webhook.delete</code>, <code>webhook.manage</code>.</p>
+      <table style="margin-top: 12px;">
+        <tr><th>Endpoint</th><th>Vazifa</th></tr>
+        <tr><td><code>GET /</code></td><td>Barcha target ro'yxat</td></tr>
+        <tr><td><code>GET /by-university/{code}</code></td><td>OTM bo'yicha</td></tr>
+        <tr><td><code>POST /</code></td><td>Yangi target + secret 1 marta qaytariladi</td></tr>
+        <tr><td><code>POST /{id}/regenerate-secret</code></td><td>Secret rotation</td></tr>
+        <tr><td><code>PUT /{id}</code></td><td>Partial update</td></tr>
+        <tr><td><code>DELETE /{id}</code></td><td>Soft delete</td></tr>
+        <tr><td><code>GET /{id}/deliveries</code></td><td>Delivery tarix (paginated)</td></tr>
+        <tr><td><code>GET /events/{eventId}/deliveries</code></td><td>1 event uchun barcha urinishlar</td></tr>
+        <tr><td><code>GET /dlq</code></td><td>Dead Letter Queue — manual review</td></tr>
+        <tr><td><code>POST /{id}/test</code></td><td>Sandbox — synthetic event yuborish</td></tr>
+      </table>
+    </div>
+
+    <h3>HMAC signature (har request)</h3>
+    <pre><span class="code-keyword">// Markaz tomonida:</span>
+String body = objectMapper.writeValueAsString(payload);
+String signature = HmacSigner.sign(body, targetSecret);
+<span class="code-comment">// HTTP header:</span>
+<span class="code-comment">// X-HMAC-Signature: sha256=&lt;hex&gt;</span>
+<span class="code-comment">// X-Webhook-Event-Id: &lt;uuid&gt;</span>
+<span class="code-comment">// X-Webhook-Timestamp: 2026-05-14T10:30:00Z</span>
+
+<span class="code-keyword">// Univer tomonida (PHP):</span>
+$expected = hash_hmac('sha256', $rawBody, $secretFromEnv);
+$actual = str_replace('sha256=', '', $request->getHeader('X-HMAC-Signature'));
+if (!hash_equals($expected, $actual)) abort(401);</pre>
+
+    <h3>Retry strategy</h3>
+    <table>
+      <tr><th>Attempt</th><th>Delay</th><th>Action</th></tr>
+      <tr><td>1</td><td>0 (darhol)</td><td>Initial POST</td></tr>
+      <tr><td>2</td><td>30 sekund</td><td>Retry on 5xx, timeout</td></tr>
+      <tr><td>3</td><td>5 daqiqa</td><td>Retry</td></tr>
+      <tr><td>4</td><td>30 daqiqa</td><td>Retry</td></tr>
+      <tr><td>5</td><td>2 soat</td><td>Final attempt</td></tr>
+      <tr><td>—</td><td>—</td><td>DLQ + admin notify</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 5: AUTH -->
+<section class="panel" id="auth">
+  <div class="container">
+    <h2>Authentication strategiya</h2>
+    <p>Har modul o'z auth mexanizmiga ega — bir vaqtning o'zida bir nechta auth ishlatish (Strangler Fig pattern).</p>
+
+    <table>
+      <thead>
+        <tr><th>Modul</th><th>Auth turi</th><th>Token endpoint</th><th>Reason</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>api-legacy</strong></td>
+          <td>OAuth 2.0 (eski)</td>
+          <td><code>/app/rest/v2/oauth/token</code></td>
+          <td>old-hemis 1:1 contract (175/175) — buzilmasligi shart</td>
+        </tr>
+        <tr>
+          <td><strong>api-university</strong></td>
+          <td>OAuth 2.1 client_credentials <span class="badge badge-warning">Hozir: permitAll</span></td>
+          <td><code>/api/v1/university/oauth/token</code> (kelajak)</td>
+          <td>Yangi pattern, per-Univer client_id</td>
+        </tr>
+        <tr>
+          <td><strong>api-web</strong></td>
+          <td>JWT (password grant)</td>
+          <td><code>/api/v1/web/auth/login</code></td>
+          <td>Admin React UI</td>
+        </tr>
+        <tr>
+          <td><strong>api-external</strong></td>
+          <td>OAuth 2.1 client_credentials</td>
+          <td><code>/api/v1/external/oauth/token</code></td>
+          <td>Davlat tashkilotlari</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Hozir (dev) — api-university sync</h3>
+    <pre><span class="code-comment">// SecurityConfig.java (DEV ONLY hack):</span>
+.requestMatchers(<span class="code-string">"/api/v1/university/buildings/sync"</span>).permitAll()
+.requestMatchers(<span class="code-string">"/api/v1/university/employees/sync"</span>).permitAll()
+
+<span class="code-comment">// Controller:</span>
+<span class="code-keyword">private</span> String resolveUniversityCode(HttpServletRequest request) {
+    <span class="code-comment">// 1. JWT claim (kelajak)</span>
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    <span class="code-keyword">if</span> (auth != <span class="code-keyword">null</span> && auth.getPrincipal() <span class="code-keyword">instanceof</span> Jwt jwt) {
+        String fromToken = jwt.getClaimAsString(<span class="code-string">"university_code"</span>);
+        <span class="code-keyword">if</span> (fromToken != <span class="code-keyword">null</span>) <span class="code-keyword">return</span> fromToken;
+    }
+    <span class="code-comment">// 2. DEV fallback — X-University-Code header</span>
+    String fromHeader = request.getHeader(<span class="code-string">"X-University-Code"</span>);
+    <span class="code-keyword">if</span> (fromHeader != <span class="code-keyword">null</span>) <span class="code-keyword">return</span> fromHeader;
+    <span class="code-keyword">throw new</span> ResponseStatusException(HttpStatus.UNAUTHORIZED, ...);
+}</pre>
+
+    <h3>Kelajak (prod) — OAuth 2.1 client_credentials</h3>
+    <div class="flow" style="flex-wrap: wrap;">
+      <div class="flow-node univer">Univer<br/><small>client_id + secret</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node markaz">Token endpoint<br/><small>POST /oauth/token</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">JWT issuer<br/><small>+ university_code claim</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node univer">Bearer JWT<br/><small>1 soat TTL</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node markaz">Sync endpoint<br/><small>JWT validate</small></div>
+    </div>
+
+    <h4>JWT claim'lar</h4>
+    <pre>{
+  <span class="code-string">"iss"</span>: <span class="code-string">"hemis-back"</span>,
+  <span class="code-string">"sub"</span>: <span class="code-string">"univer-337-abc123"</span>,
+  <span class="code-string">"client_id"</span>: <span class="code-string">"univer-337-abc123"</span>,
+  <span class="code-string">"university_code"</span>: <span class="code-string">"337"</span>,         <span class="code-comment">// ← controller shu claim'ni o'qiydi</span>
+  <span class="code-string">"scope"</span>: <span class="code-string">"buildings.sync employees.sync"</span>,
+  <span class="code-string">"exp"</span>: <span class="code-number">1730000000</span>,
+  <span class="code-string">"jti"</span>: <span class="code-string">"uuid"</span>
+}</pre>
+
+    <h3>OAuth client registry (kelajak DB jadval)</h3>
+    <pre><span class="code-keyword">CREATE TABLE</span> oauth_university_client (
+    id UUID <span class="code-keyword">PRIMARY KEY</span>,
+    university_code VARCHAR(10) <span class="code-keyword">NOT NULL UNIQUE</span>,    <span class="code-comment">-- 337, 401, ...</span>
+    client_id VARCHAR(64) <span class="code-keyword">NOT NULL UNIQUE</span>,          <span class="code-comment">-- "univer-337-abc123"</span>
+    client_secret_hash VARCHAR(255) <span class="code-keyword">NOT NULL</span>,       <span class="code-comment">-- BCrypt-12</span>
+    allowed_ip_ranges JSONB,                          <span class="code-comment">-- whitelist (optional)</span>
+    scopes JSONB <span class="code-keyword">NOT NULL</span>,                            <span class="code-comment">-- ["buildings.sync", ...]</span>
+    enabled BOOLEAN <span class="code-keyword">DEFAULT</span> <span class="code-keyword">true</span>,
+    created_at, created_by, updated_at, updated_by, deleted_at
+);</pre>
+
+    <div class="callout warning">
+      <strong>Dev → Prod migratsiya:</strong> Controller kodi o'zgartirilmaydi. <code>resolveUniversityCode()</code> avval JWT'ni qidiradi — token tayyor bo'lganda avtomatik ishlay boshlaydi. SecurityConfig'dan <code>permitAll</code> olib tashlanadi, dev backdoor yopiladi.
+    </div>
+  </div>
+</section>
+
+<!-- TAB 6: DECISIONS -->
+<section class="panel" id="decisions">
+  <div class="container">
+    <h2>Asosiy texnik qarorlar (so'nggi sessiyalardan)</h2>
+
+    <h3>Qaror 1: Hibernate @Version dan INSERT ON CONFLICT'ga</h3>
+    <div class="card card-tinted red">
+      <h4>Muammo</h4>
+      <p>10 parallel POST request bir xil PINFL'lar bilan → 70% <code>ObjectOptimisticLockingFailureException</code>. JPA flow: <code>SELECT employee → UPDATE WITH WHERE version=X</code> — agar version bu vaqtda o'zgargan bo'lsa, exception.</p>
+    </div>
+    <div class="card card-tinted green">
+      <h4>Yechim</h4>
+      <p>JPA <code>save()</code> o'rniga PostgreSQL native <code>INSERT ... ON CONFLICT (pinfl) DO UPDATE</code>. Bir SQL operatsiya, version increment SQL ichida. Custom repository pattern (<code>EmployeeUpsertRepository</code> + <code>EmployeeUpsertRepositoryImpl</code>).</p>
+    </div>
+    <p><strong>Natija:</strong> 0% collision, idempotent, partial unique index <code>WHERE deleted_at IS NULL</code>.</p>
+
+    <h3>Qaror 2: Sinxron'dan Kafka asinxron'ga</h3>
+    <div class="card card-tinted orange">
+      <h4>Sabab</h4>
+      <p>Employee sync ko'p row + concurrent. Sinxron => bir HTTP request 30+ sekund => timeout xavfi. Kafka => 202 Accepted darhol, consumer ortda ishlaydi.</p>
+    </div>
+    <h4>Kafka konfig</h4>
+    <table>
+      <tr><th>Parametr</th><th>Qiymat</th><th>Sabab</th></tr>
+      <tr><td>Partition</td><td>12</td><td>Per-PINFL serial — bir xodim ketma-ket, turli xodimlar parallel</td></tr>
+      <tr><td>Replication</td><td>1 (dev)</td><td>Single-node dev, prod'da 3</td></tr>
+      <tr><td>Consumer concurrency</td><td>12</td><td>Partition'lar bilan teng</td></tr>
+      <tr><td>Ack mode</td><td>MANUAL_IMMEDIATE</td><td>Faqat processor success'dan keyin commit</td></tr>
+      <tr><td>Retry</td><td>3 attempt, 1s backoff</td><td>Transient error uchun (DB timeout, ...)</td></tr>
+      <tr><td>DLQ</td><td>employee.sync.inbound.dlq</td><td>3 retry'dan keyin failed → DLQ</td></tr>
+    </table>
+
+    <h3>Qaror 3: URL path'dan JWT claim'ga (universityCode)</h3>
+    <div class="card card-tinted blue">
+      <p><strong>Eski:</strong> <code>POST /api/v1/university/{universityCode}/buildings/sync</code></p>
+      <p><strong>Yangi:</strong> <code>POST /api/v1/university/buildings/sync</code> + JWT yoki header</p>
+    </div>
+    <h4>Sabab</h4>
+    <ul style="margin: 0 0 16px 20px; color: #374151;">
+      <li><strong>Spoofing himoyasi:</strong> Univer 337 token bilan <code>/401/buildings/sync</code> urishi mumkin emas</li>
+      <li><strong>URL toza:</strong> Token = identity printsipiga mos</li>
+      <li><strong>TenantGuard kerak emas:</strong> JWT'ning o'zi auth boundary</li>
+    </ul>
+
+    <h3>Qaror 4: Versioning labellardan voz kechish</h3>
+    <p>Dev'da hali ekanmiz — <code>.v1</code>, <code>.v2</code>, "eski"/"yangi" labellar olib tashlandi. Topic nomi: <code>hemis.employee.sync.inbound</code> (suffix yo'q). Faqat production ga chiqishdan oldin agar API contract o'zgarsa <code>.v2</code> qo'shamiz.</p>
+
+    <h3>Qaror 5: GlobalExceptionHandler — ResponseStatusException</h3>
+    <div class="card card-tinted red">
+      <h4>Bug</h4>
+      <p><code>ResponseStatusException(401)</code> tashlanganda GlobalExceptionHandler unga @ExceptionHandler ega emas edi — generic <code>Exception</code> handler 500 qaytarayotgan edi.</p>
+    </div>
+    <div class="card card-tinted green">
+      <h4>Tuzatish</h4>
+      <pre style="margin: 8px 0;">@ExceptionHandler(ResponseStatusException.class)
+public ResponseEntity&lt;?&gt; handleResponseStatus(
+        ResponseStatusException ex, HttpServletRequest request) {
+    HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+    if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
+    String reason = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+    return ResponseEntity.status(status).body(new ErrorResponse(...));
+}</pre>
+    </div>
+
+    <h3>Qaror 6: Spring Boot 4.0 split KafkaAutoConfiguration</h3>
+    <p>SB 4.0'da <code>KafkaAutoConfiguration</code> avtomatik load qilinmaydi. <strong>Yechim:</strong> Manual <code>@Configuration</code> + <code>@EnableKafka</code> + explicit <code>KafkaAdmin</code> bean (NewTopic auto-create uchun).</p>
+    <pre>@Configuration
+@EnableKafka
+public class KafkaConfig {
+    @Bean
+    public KafkaAdmin kafkaAdmin(...) { ... }
+
+    @Bean
+    public NewTopic employeeSyncInboundTopic() {
+        return new NewTopic(<span class="code-string">"hemis.employee.sync.inbound"</span>, <span class="code-number">12</span>, (short) <span class="code-number">1</span>);
+    }
+
+    @Bean
+    public NewTopic employeeSyncDlqTopic() { ... }
+
+    @Bean
+    public DefaultErrorHandler employeeSyncErrorHandler(...) {
+        return new DefaultErrorHandler(
+            new DeadLetterPublishingRecoverer(...),
+            new FixedBackOff(<span class="code-number">1000</span>L, <span class="code-number">2</span>)  <span class="code-comment">// 3 attempt total</span>
+        );
+    }
+}</pre>
+  </div>
+</section>
+
+<!-- TAB 7: FILES -->
+<section class="panel" id="files">
+  <div class="container">
+    <h2>Fayllar xaritasi</h2>
+    <p>So'nggi sessiyalarda o'zgartirilgan yoki yangi qo'shilgan fayllar. Rang kodlari: <span class="badge badge-new">YANGI</span> <span class="badge badge-changed">O'ZGARDI</span> <span class="badge badge-deleted">O'CHIRILDI</span>.</p>
+
+    <h3>api-university — yangi controllers</h3>
+    <div class="filetree">
+<span class="dir">api-university/src/main/java/uz/hemis/api/university/controller/</span>
+├── <span class="new">EmployeeSyncController.java</span>            <span class="comment"># YANGI — async via Kafka</span>
+├── <span class="changed">BuildingSyncController.java</span>            <span class="comment"># O'ZGARDI — URL path'dan JWT'ga</span>
+└── <span class="dir">auth/</span>                                <span class="comment"># OAuth token endpoint (kelajak)</span>
+    </div>
+
+    <h3>service/employee/ — yangi paket</h3>
+    <div class="filetree">
+<span class="dir">service/src/main/java/uz/hemis/service/employee/</span>
+├── <span class="new">EmployeeSyncProducer.java</span>              <span class="comment"># Kafka publish</span>
+├── <span class="new">EmployeeSyncConsumer.java</span>              <span class="comment"># @KafkaListener</span>
+├── <span class="new">EmployeeSyncProcessor.java</span>             <span class="comment"># @Transactional upsert</span>
+└── <span class="deleted">EmployeeSyncService.java</span>              <span class="comment"># O'CHIRILDI (orphan)</span>
+    </div>
+
+    <h3>service/webhook/ — ADR-0012 to'liq paket</h3>
+    <div class="filetree">
+<span class="dir">service/src/main/java/uz/hemis/service/webhook/</span>
+├── <span class="new">DevWebhookBootstrap.java</span>               <span class="comment"># dev profile auto-seed</span>
+├── <span class="new">HmacSigner.java</span>                        <span class="comment"># SHA-256 HMAC</span>
+├── <span class="new">WebhookDispatcher.java</span>                 <span class="comment"># HTTP POST + retry</span>
+├── <span class="new">WebhookEventEnvelope.java</span>              <span class="comment"># Kafka payload</span>
+├── <span class="new">WebhookFanoutConsumer.java</span>             <span class="comment"># 1 event → N target</span>
+├── <span class="new">WebhookMetrics.java</span>                    <span class="comment"># Micrometer</span>
+├── <span class="new">WebhookRetryScheduler.java</span>             <span class="comment"># exponential backoff</span>
+├── <span class="new">WebhookSecretService.java</span>              <span class="comment"># generate + BCrypt</span>
+├── <span class="new">WebhookSecretVault.java</span>                <span class="comment"># view-once cache</span>
+└── <span class="new">WebhookTargetService.java</span>              <span class="comment"># CRUD</span>
+    </div>
+
+    <h3>api-web — admin UI controller</h3>
+    <div class="filetree">
+<span class="dir">api-web/src/main/java/uz/hemis/web/controller/</span>
+└── <span class="new">WebhookTargetController.java</span>           <span class="comment"># /api/v1/web/admin/webhooks</span>
+    </div>
+
+    <h3>domain — entity va repository</h3>
+    <div class="filetree">
+<span class="dir">domain/src/main/java/uz/hemis/domain/entity/</span>
+├── <span class="dir">outbox/</span>                              <span class="comment"># Outbox entity (yangi)</span>
+└── <span class="dir">webhook/</span>                             <span class="comment"># WebhookTarget, WebhookDeliveryLog</span>
+
+<span class="dir">domain/src/main/java/uz/hemis/domain/repository/</span>
+├── <span class="new">EmployeeUpsertRepository.java</span> + Impl    <span class="comment"># INSERT ON CONFLICT</span>
+├── <span class="new">EmployeeJobUpsertRepository.java</span> + Impl <span class="comment"># INSERT ON CONFLICT</span>
+├── <span class="dir">outbox/</span>                              <span class="comment"># OutboxRepository</span>
+└── <span class="dir">webhook/</span>                             <span class="comment"># WebhookTargetRepository, DeliveryLogRepository</span>
+    </div>
+
+    <h3>common — DTO va exception</h3>
+    <div class="filetree">
+<span class="dir">common/src/main/java/uz/hemis/common/</span>
+├── <span class="dir">dto/employee/</span>
+│   ├── <span class="new">EmployeeSyncEvent.java</span>            <span class="comment"># Kafka payload</span>
+│   ├── <span class="new">EmployeeSyncAcceptedResponse.java</span> <span class="comment"># HTTP 202 javob</span>
+│   └── <span class="deleted">EmployeeSyncResult.java</span>       <span class="comment"># O'CHIRILDI (orphan)</span>
+├── <span class="dir">dto/webhook/</span>                         <span class="comment"># WebhookTargetDto, ...</span>
+└── <span class="dir">exception/</span>
+    └── <span class="new">ConflictException.java</span>            <span class="comment"># 409 mapping</span>
+    </div>
+
+    <h3>app — config va exception handler</h3>
+    <div class="filetree">
+<span class="dir">app/src/main/</span>
+├── <span class="dir">java/uz/hemis/app/</span>
+│   ├── <span class="changed">config/OpenApiConfig.java</span>         <span class="comment"># 4 group strategy</span>
+│   └── <span class="changed">exception/GlobalExceptionHandler.java</span> <span class="comment"># +ResponseStatusException</span>
+└── <span class="dir">resources/</span>
+    ├── <span class="changed">application.yml</span>                  <span class="comment"># hemis.employee-sync.*, Kafka config</span>
+    ├── <span class="changed">application-dev.yml</span>              <span class="comment"># Swagger group config</span>
+    └── <span class="changed">application-prod.yml</span>             <span class="comment"># Swagger off</span>
+    </div>
+
+    <h3>security — config</h3>
+    <div class="filetree">
+<span class="dir">security/src/main/java/uz/hemis/security/config/</span>
+└── <span class="changed">SecurityConfig.java</span>                  <span class="comment"># dev permitAll sync endpoints</span>
+    </div>
+
+    <h3>service — Kafka config</h3>
+    <div class="filetree">
+<span class="dir">service/src/main/java/uz/hemis/service/</span>
+└── <span class="dir">config/</span>
+    └── <span class="changed">KafkaConfig.java</span>                  <span class="comment"># NewTopic beans, error handler, listener factory</span>
+    </div>
+
+    <h3>docs/adr/ — yangi ADR'lar</h3>
+    <div class="filetree">
+<span class="dir">docs/adr/</span>
+├── <span class="new">0010-employee-sync-outbox-implementation.md</span>
+├── <span class="new">0011-swagger-multi-group-strategy.md</span>
+└── <span class="new">0012-webhook-outbound-infrastructure.md</span>
+    </div>
+
+    <h3>.claude/skills/ — yangi 8 ta skill</h3>
+    <div class="filetree">
+<span class="dir">.claude/skills/</span>
+├── <span class="new">adr-create/</span>           <span class="comment"># ADR frontmatter generator</span>
+├── <span class="new">adr-verify/</span>           <span class="comment"># ADR drift detection</span>
+├── <span class="new">cache-add/</span>            <span class="comment"># @Cacheable + TTL + evict</span>
+├── <span class="new">classifier-add/</span>      <span class="comment"># h_* reference table 5-layer pattern</span>
+├── <span class="new">endpoint-port/</span>       <span class="comment"># CUBA 1:1 port (PORT: trigger)</span>
+├── <span class="new">kafka-outbox-topic/</span>  <span class="comment"># Outbox + producer + consumer + DLQ</span>
+├── <span class="new">liquibase-changeset/</span> <span class="comment"># V/M/S### + rollback</span>
+├── <span class="new">menu-permission-add/</span> <span class="comment"># sys_menu + permission + i18n</span>
+├── <span class="new">runbook-create/</span>      <span class="comment"># Incident playbook</span>
+└── <span class="new">univer-contract-verify/</span> <span class="comment"># 175/175 MATCH check</span>
+    </div>
+  </div>
+</section>
+
+<!-- TAB UNIVER-SIDE -->
+<section class="panel" id="univer-side">
+  <div class="container">
+    <h2>Univer tarafda (PHP Yii2) bajarilgan ishlar</h2>
+    <p>Univer joylashuvi: <code>/home/adm1n/projects/startup/univer/</code>. Test/integratsiya uchun <strong>337-OTM</strong> Univer'iga kerakli komponentlar qo'shildi — webhook qabul qiluvchi va sync yuboruvchi. Hozircha 1 ta OTM'da test qilinmoqda, keyin 224 OTM'ga tarqatiladi.</p>
+
+    <div class="callout warning">
+      <strong>Eslatma:</strong> Bu fayllar git'da hali commit qilinmagan (untracked / modified). Univer team ko'rib chiqib, master'ga merge qiladi. Kelajakda 224 OTM'ga deploy qilish strategiyasi alohida sprint.
+    </div>
+
+    <h3>2 ta asosiy oqim Univer tarafdan</h3>
+
+    <div class="card-grid">
+      <div class="card card-tinted purple">
+        <h4>INBOUND: Markaz → Univer</h4>
+        <p>Markaz event yuborganda Univer qabul qiladi (klassifikator update, qoida push, OTM block).</p>
+        <p><strong>Komponentlar:</strong> HemisCallbackController + ApplyHemisEventJob + HemisCallbackLog + migration</p>
+      </div>
+      <div class="card card-tinted teal">
+        <h4>OUTBOUND: Univer → Markaz</h4>
+        <p>Univer ma'lumot (xodimlar) markaz'ga yuboradi.</p>
+        <p><strong>Komponent:</strong> SyncEmployeesToHemisController (console command, cron orqali ishlatiladi)</p>
+      </div>
+    </div>
+
+    <h3>1️⃣ HemisCallbackController — webhook receiver</h3>
+    <p><strong>Fayl:</strong> <code>api/controllers/v1/HemisCallbackController.php</code></p>
+
+    <div class="flow" style="flex-wrap: wrap;">
+      <div class="flow-node markaz">Markaz<br/><small>WebhookDispatcher</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node univer">POST /v1/hemis-callback/event<br/><small>+ X-Hemis-Signature</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">verify HMAC<br/>timestamp window</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">idempotency<br/>check</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node db">HemisCallbackLog<br/>(audit)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node kafka">yii2-queue<br/><small>Redis backend</small></div>
+    </div>
+
+    <h4>Verifikatsiya bosqichlari</h4>
+    <table>
+      <tr><th>#</th><th>Bosqich</th><th>Reject qaerda</th></tr>
+      <tr><td>1</td><td>X-Hemis-Signature va X-Hemis-Timestamp header'lar mavjud</td><td>403 — header yo'q</td></tr>
+      <tr><td>2</td><td>Timestamp 5 min ichida (replay protection)</td><td>403 — stale timestamp</td></tr>
+      <tr><td>3</td><td>HMAC SHA-256: <code>hash_hmac('sha256', timestamp + '.' + body, secret)</code></td><td>403 — invalid signature</td></tr>
+      <tr><td>4</td><td>event_id va event_type body'da</td><td>400 — bad request</td></tr>
+      <tr><td>5</td><td>event_id allaqachon ishlanganmi (idempotency)</td><td>200 — duplicate skip</td></tr>
+      <tr><td>6</td><td>HemisCallbackLog'ga insert</td><td>500 — markaz retry qiladi</td></tr>
+      <tr><td>7</td><td>yii2-queue'ga push (async)</td><td>—</td></tr>
+      <tr><td>8</td><td>202 Accepted darhol qaytarish</td><td>—</td></tr>
+    </table>
+
+    <h4>HMAC tekshirish kodi</h4>
+    <pre><span class="code-keyword">private function</span> verifyHemisSignature() {
+    $signature = Yii::$app-&gt;request-&gt;headers-&gt;get(<span class="code-string">'X-Hemis-Signature'</span>);
+    $timestamp = Yii::$app-&gt;request-&gt;headers-&gt;get(<span class="code-string">'X-Hemis-Timestamp'</span>);
+    $body = Yii::$app-&gt;request-&gt;getRawBody();
+
+    <span class="code-comment">// Replay window — 5 daqiqa</span>
+    <span class="code-keyword">if</span> (abs(time() - intval($timestamp)) &gt; <span class="code-number">300</span>) {
+        <span class="code-keyword">throw new</span> ForbiddenHttpException(<span class="code-string">'Stale timestamp'</span>);
+    }
+
+    $secret = Yii::$app-&gt;params[<span class="code-string">'hemisWebhookSecret'</span>];  <span class="code-comment">// .env'dan</span>
+    $expected = hash_hmac(<span class="code-string">'sha256'</span>, $timestamp . <span class="code-string">'.'</span> . $body, $secret);
+
+    <span class="code-keyword">if</span> (!hash_equals($expected, $signature)) {           <span class="code-comment">// timing-safe</span>
+        <span class="code-keyword">throw new</span> ForbiddenHttpException(<span class="code-string">'Invalid signature'</span>);
+    }
+}</pre>
+
+    <h3>2️⃣ ApplyHemisEventJob — async event handler</h3>
+    <p><strong>Fayl:</strong> <code>common/components/hemis/jobs/ApplyHemisEventJob.php</code></p>
+    <p>Yii2-queue Redis backend orqali. Controller darhol 202 qaytarganidan keyin bu job ortda ishlaydi.</p>
+
+    <table>
+      <tr><th>event_type</th><th>Handler</th><th>Effekt</th></tr>
+      <tr><td><code>classifier.updated</code></td><td>applyClassifier()</td><td><code>hemishe_h_*</code> jadval upsert + cache invalidate</td></tr>
+      <tr><td><code>rule.push</code></td><td>applyRule()</td><td><code>hemishe_r_rule</code> jadval upsert</td></tr>
+      <tr><td><code>otm.blocked</code></td><td>applyOtmBlock()</td><td><code>e_system_config</code> flag — Univer login bekitiladi</td></tr>
+      <tr><td><code>webhook.test</code></td><td>—</td><td>Log only (sandbox)</td></tr>
+    </table>
+
+    <h4>Job xususiyatlari</h4>
+    <ul style="margin: 0 0 16px 20px; color: #374151;">
+      <li><strong>TTR:</strong> 60 sekund (max bajarish vaqti)</li>
+      <li><strong>Retry:</strong> 3 marta (canRetry: $attempt &lt; 3)</li>
+      <li><strong>Status tracking:</strong> queued → applied / failed / duplicate</li>
+      <li><strong>Error message:</strong> 1000 belgigacha truncate, log'ga saqlash</li>
+    </ul>
+
+    <h3>3️⃣ HemisCallbackLog — audit + idempotency jadval</h3>
+    <p><strong>Model:</strong> <code>common/models/hemis/HemisCallbackLog.php</code></p>
+    <p><strong>Migration:</strong> <code>console/migrations/m260513_120000_create_hemis_callback_log.php</code></p>
+
+    <pre>CREATE TABLE hemis_callback_log (
+    event_id      VARCHAR(64)  NOT NULL PRIMARY KEY,   <span class="code-comment">-- idempotency anchor</span>
+    event_type    VARCHAR(50)  NOT NULL,
+    aggregate_type VARCHAR(50),
+    aggregate_id  VARCHAR(100),
+    payload       JSONB,                                <span class="code-comment">-- PostgreSQL; MySQL: JSON</span>
+    received_at   INTEGER      NOT NULL,
+    applied_at    INTEGER,
+    status        VARCHAR(20)  NOT NULL DEFAULT 'queued'
+                  CHECK (status IN ('queued','applied','failed','duplicate')),
+    attempt_count INTEGER      NOT NULL DEFAULT 0,
+    error_message TEXT
+);
+CREATE INDEX idx_callback_status ON hemis_callback_log(status);
+CREATE INDEX idx_callback_received ON hemis_callback_log(received_at);
+CREATE INDEX idx_callback_event_type ON hemis_callback_log(event_type, received_at);</pre>
+
+    <div class="callout">
+      <strong>Cross-DB qo'llab-quvvatlash:</strong> Migration MySQL ham PostgreSQL ham aniqlaydi (<code>$this->db->driverName</code>). PostgreSQL'da CHECK constraint, MySQL'da ENUM. PostgreSQL JSONB, MySQL JSON.
+    </div>
+
+    <h3>4️⃣ SyncEmployeesToHemisController — outbound sync command</h3>
+    <p><strong>Fayl:</strong> <code>console/controllers/SyncEmployeesToHemisController.php</code></p>
+    <p>Cron'dan ishlatilishi mo'ljallangan. Univer'dagi <code>e_employee</code> jadvalidan markazga bulk POST.</p>
+
+    <h4>Ishlatish</h4>
+    <pre><span class="code-comment"># Barchasini sync qilish</span>
+php yii sync-employees-to-hemis/run
+
+<span class="code-comment"># 50 ta xodim, dry-run (POST yubormaydi)</span>
+php yii sync-employees-to-hemis/run --limit=<span class="code-number">50</span> --dryRun=<span class="code-number">1</span>
+
+<span class="code-comment"># Custom markaz URL va university code</span>
+php yii sync-employees-to-hemis/run \
+    --hemisBackUrl=https://hemis.uz \
+    --universityCode=<span class="code-number">337</span> \
+    --batchSize=<span class="code-number">200</span></pre>
+
+    <h4>Konfiguratsiya (.env)</h4>
+    <pre>HEMIS_BACK_URL=http://localhost:8081     <span class="code-comment"># dev</span>
+HEMIS_UNIVERSITY_CODE=337                 <span class="code-comment"># OTM identifier</span>
+HEMIS_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxx  <span class="code-comment"># markaz admin paneldan</span></pre>
+
+    <h4>Oqim</h4>
+    <div class="flow" style="flex-wrap: wrap;">
+      <div class="flow-node db">e_employee<br/>(Yii2 DB)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Filter:<br/>PINFL 14 raqam</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">Batch 200<br/>mapRow()</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node univer">curl POST<br/><small>X-University-Code</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node markaz">Markaz<br/><small>/api/v1/university/employees/sync</small></div>
+    </div>
+
+    <h4>Field mapping (Yii2 e_employee → markaz DTO)</h4>
+    <table>
+      <tr><th>Univer (Yii2)</th><th>Markaz (DTO)</th></tr>
+      <tr><td><code>passport_pin</code></td><td><code>pinfl</code></td></tr>
+      <tr><td><code>first_name</code></td><td><code>firstName</code></td></tr>
+      <tr><td><code>second_name</code></td><td><code>lastName</code></td></tr>
+      <tr><td><code>third_name</code></td><td><code>middleName</code></td></tr>
+      <tr><td><code>_gender</code>, <code>_citizenship</code>, <code>_nationality</code></td><td><code>genderCode</code>, <code>citizenshipCode</code>, <code>nationalityCode</code></td></tr>
+      <tr><td><code>_academic_degree</code>, <code>_academic_rank</code></td><td><code>academicDegreeCode</code>, <code>academicRankCode</code></td></tr>
+      <tr><td>id (integer)</td><td><code>sourceUid</code> = <code>"univer-337-e_employee-{id}"</code></td></tr>
+      <tr><td>active (bool)</td><td><code>isCurrent</code></td></tr>
+    </table>
+
+    <h3>5️⃣ Konfiguratsiya o'zgarishlari</h3>
+
+    <h4><code>api/config/main.php</code> — 2 ta route qo'shildi</h4>
+    <pre>'POST v1/hemis-callback/event'  =&gt; 'v1/hemis-callback/event',
+'GET  v1/hemis-callback/health' =&gt; 'v1/hemis-callback/health',</pre>
+
+    <h4><code>common/config/params.php</code> — webhook secret param</h4>
+    <pre><span class="code-comment">// HEMIS Webhook (ADR-0012)</span>
+<span class="code-string">'hemisWebhookSecret'</span> =&gt; getenv(<span class="code-string">'HEMIS_WEBHOOK_SECRET'</span>) ?: <span class="code-keyword">null</span>,</pre>
+
+    <h3>Fayllar ro'yxati (Univer tarafda)</h3>
+    <div class="filetree">
+<span class="dir">/home/adm1n/projects/startup/univer/</span>
+├── <span class="dir">api/</span>
+│   ├── <span class="changed">config/main.php</span>                                           <span class="comment"># O'ZGARDI — 2 route</span>
+│   └── <span class="dir">controllers/v1/</span>
+│       └── <span class="new">HemisCallbackController.php</span>                          <span class="comment"># YANGI — webhook receiver</span>
+├── <span class="dir">common/</span>
+│   ├── <span class="changed">config/params.php</span>                                         <span class="comment"># O'ZGARDI — hemisWebhookSecret</span>
+│   ├── <span class="dir">components/hemis/jobs/</span>
+│   │   └── <span class="new">ApplyHemisEventJob.php</span>                                <span class="comment"># YANGI — async handler</span>
+│   └── <span class="dir">models/hemis/</span>
+│       └── <span class="new">HemisCallbackLog.php</span>                                  <span class="comment"># YANGI — audit model</span>
+└── <span class="dir">console/</span>
+    ├── <span class="dir">controllers/</span>
+    │   └── <span class="new">SyncEmployeesToHemisController.php</span>                  <span class="comment"># YANGI — outbound bulk sync</span>
+    └── <span class="dir">migrations/</span>
+        └── <span class="new">m260513_120000_create_hemis_callback_log.php</span>        <span class="comment"># YANGI — Yii2 migration</span>
+    </div>
+
+    <h3>Hozir → Kelajak: 224 OTM rollout</h3>
+    <div class="timeline">
+      <div class="timeline-item done">
+        <h4>✓ 337-OTM Univer'da test (hozir)</h4>
+        <p>1 ta Univer instance'da kod yuklab ko'rildi. Localhost dev environment.</p>
+      </div>
+      <div class="timeline-item pending">
+        <h4>⚠ Univer team review + commit</h4>
+        <p>O'zgarishlar git'da untracked — Univer jamoasi ko'rib chiqib master'ga merge qiladi.</p>
+      </div>
+      <div class="timeline-item future">
+        <h4>○ Univer release (Version 1.9.8?)</h4>
+        <p>Yangi versiya bilan migration ham yuboriladi (<code>m260513_120000_*</code>).</p>
+      </div>
+      <div class="timeline-item future">
+        <h4>○ 224 OTM deploy</h4>
+        <p>Har Univer admin: <code>php yii migrate</code> + <code>HEMIS_WEBHOOK_SECRET</code> .env'ga + cron sozlash.</p>
+      </div>
+      <div class="timeline-item future">
+        <h4>○ Cron schedule (har OTM)</h4>
+        <p><code>*/30 * * * * php yii sync-employees-to-hemis/run --limit=1000</code> — har 30 daq, 1000 employee/batch.</p>
+      </div>
+    </div>
+
+    <h3>Hozircha YO'Q qilinmagan (Univer side TODO)</h3>
+    <table>
+      <tr><th>Funksiya</th><th>Status</th><th>Kim</th></tr>
+      <tr><td>SyncBuildingsToHemisController (binolarni yuborish)</td><td>YO'Q</td><td>Univer team</td></tr>
+      <tr><td>SyncStudentsToHemisController (1.15M talaba)</td><td>YO'Q</td><td>Univer team</td></tr>
+      <tr><td>OAuth client integration (Bearer token)</td><td>YO'Q (hozir X-University-Code header)</td><td>Univer team</td></tr>
+      <tr><td>Token cache (1 soat) + 401 → refresh</td><td>YO'Q</td><td>Univer team</td></tr>
+      <tr><td>Real handler implementatsiya (classifier upsert)</td><td>Skeleton bor — Univer business logic'ga moslash kerak</td><td>Univer team</td></tr>
+      <tr><td>Webhook delivery test endpoint</td><td>Bor — /v1/hemis-callback/health</td><td>—</td></tr>
+    </table>
+
+    <div class="callout success">
+      <strong>Asosiy maqsad bajarildi:</strong> Univer ↔ Markaz ikki yo'nalishli ma'lumot oqimi <strong>337-OTM</strong>'da prototip darajasida ishlamoqda. Endi Univer team kodlarni ko'rib chiqib, real 224 OTM rollout uchun tayyorlaydi.
+    </div>
+  </div>
+</section>
+
+<!-- TAB 8: NEXT -->
+<section class="panel" id="next">
+  <div class="container">
+    <h2>Hozirgi holat va keyingi qadamlar</h2>
+
+    <div class="timeline">
+      <div class="timeline-item done">
+        <h3>✓ Bajarildi (dev'da ishlab turibdi)</h3>
+        <ul style="margin: 8px 0 0 20px;">
+          <li>Building sync — synchronous, content-hash idempotent (test 4/4 ✓)</li>
+          <li>Employee sync — Kafka async, INSERT ON CONFLICT (10/10 parallel ✓)</li>
+          <li>Webhook OUT infrastructure (ADR-0012) — Outbox + Kafka + HMAC + retry + DLQ</li>
+          <li>Webhook admin UI — /api/v1/web/admin/webhooks (CRUD + delivery logs + DLQ + sandbox)</li>
+          <li>4 group Swagger strategy (web, legacy, university, external)</li>
+          <li>Production Swagger off</li>
+          <li>GlobalExceptionHandler ResponseStatusException fix</li>
+          <li>3 ADR (0010, 0011, 0012)</li>
+          <li>8 ta yangi skill (adr-create, cache-add, kafka-outbox-topic, ...)</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item pending">
+        <h3>⚠ Pending (dev → prod migrate uchun shart)</h3>
+        <ul style="margin: 8px 0 0 20px;">
+          <li><strong>OAuth 2.1 client_credentials token endpoint</strong> — /api/v1/university/oauth/token</li>
+          <li><strong>oauth_university_client DB jadval</strong> + Liquibase migration</li>
+          <li><strong>Admin UI: OAuth client CRUD</strong> (WebhookTarget pattern bilan o'xshash)</li>
+          <li><strong>JWT issuer + validator</strong> — <code>university_code</code> claim ishlab chiqaradigan va o'qiydigan</li>
+          <li><strong>SecurityConfig prod profile</strong> — sync endpoints'dan <code>permitAll</code> olib tashlash</li>
+          <li><strong>Per-client rate limit</strong> — Redis sliding window (security/CLAUDE.md UNIVER_CLIENT 600/min)</li>
+          <li><strong>Per-client audit log</strong> — hemis_audit'ga har sync</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item future">
+        <h3>○ Univer tarafi (PHP Yii2 jamoasi ishi)</h3>
+        <ul style="margin: 8px 0 0 20px;">
+          <li>OAuth client integration — guzzle/league SDK</li>
+          <li>Token cache (1 soat) + 401 → refresh</li>
+          <li>Webhook IN receiver — HMAC signature validate</li>
+          <li>Sync trigger logic — qachon va qaysi entity sync qilish</li>
+          <li>Retry queue — markaz down bo'lganda qaytadan urinish</li>
+        </ul>
+      </div>
+
+      <div class="timeline-item future">
+        <h3>○ Kelajakdagi sprint'lar</h3>
+        <ul style="margin: 8px 0 0 20px;">
+          <li>Talaba sync (Student) — eng katta jadval (1.15M row)</li>
+          <li>Klassifikator distribution — markaz → Univer push</li>
+          <li>Davlat integratsiya (MyGov, MSPD, BIMM, Soliq, GUVD, OneID)</li>
+          <li>JWT modernization — jti + kid + refresh rotation (ADR-0009)</li>
+          <li>HTTP/3 + gRPC consideration (high-throughput)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Test komandalar (dev environment)</h3>
+    <pre><span class="code-comment"># Build + run</span>
+./gradlew clean build
+./gradlew :app:bootRun        <span class="code-comment"># port 8081</span>
+
+<span class="code-comment"># Migration apply</span>
+./gradlew :domain:liquibaseUpdate
+./gradlew :domain:liquibaseStatus
+
+<span class="code-comment"># Test (TESTS_ENABLED=true)</span>
+./gradlew test
+
+<span class="code-comment"># Univer contract regression (CRITICAL)</span>
+cd /home/adm1n/projects/startup/hemis-tools/docs/univer_tool
+node compare_endpoints.js
+<span class="code-comment"># Maqsad: MATCH 175/175</span>
+
+<span class="code-comment"># Buildings sync test</span>
+curl -X POST http://localhost:8081/api/v1/university/buildings/sync \
+    -H "X-University-Code: 337" \
+    -H "Content-Type: application/json" \
+    -d '[{"sourceUid": "B-001", "name": "Asosiy bino", ...}]'
+
+<span class="code-comment"># Employees sync test</span>
+curl -X POST http://localhost:8081/api/v1/university/employees/sync \
+    -H "X-University-Code: 337" \
+    -H "Content-Type: application/json" \
+    -d '[{"pinfl": "12345678901234", ...}]'
+<span class="code-comment"># Response: 202 Accepted (Kafka'ga publish qilingan)</span></pre>
+
+    <div class="callout success">
+      <strong>Asosiy yutuq:</strong> Hibernate <code>@Version</code> collision 70%'dan 0%'ga tushdi. Kafka + INSERT ON CONFLICT pattern endi shablon — kelajakda boshqa sync (student, course, schedule) shu pattern bilan tushadi.
+    </div>
+
+    <div class="callout warning">
+      <strong>Kritik eslatma:</strong> Dev'da <code>SecurityConfig</code>'da sync endpoint'lar <code>permitAll</code> — bu PROD'GA chiqishidan oldin yopilishi shart. Aks holda authentication bypass.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>HEMIS-back · O'zbekiston Oliy ta'lim vazirligi · Java 25 + Spring Boot 4.0.6 · 2026</p>
+    <p style="margin-top: 8px;">Batafsil: <code>CLAUDE.md</code> · <code>docs/adr/</code> · <code>docs/architecture/</code></p>
+  </div>
+</footer>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('section.panel').forEach(s => s.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(target).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // Deep linking via hash
+  if (window.location.hash) {
+    const tab = window.location.hash.slice(1);
+    const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+    if (btn) btn.click();
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      history.replaceState(null, '', '#' + btn.dataset.tab);
+    });
+  });
+</script>
+
+</body>
+</html>
