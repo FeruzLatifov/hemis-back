@@ -1,4 +1,4 @@
-package uz.hemis.app.security;
+package uz.hemis.security.filter;
 
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;
@@ -11,7 +11,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
-import uz.hemis.app.config.SecurityProperties;
+import uz.hemis.security.config.SecurityProperties;
 
 import java.time.Instant;
 import java.util.List;

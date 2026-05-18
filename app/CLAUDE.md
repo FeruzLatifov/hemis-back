@@ -129,8 +129,11 @@ public class FilterChainConfig {
         return reg;
     }
 
-    @Bean public FilterRegistrationBean<RateLimitFilter> rateLimit() {
-        FilterRegistrationBean<RateLimitFilter> reg = new FilterRegistrationBean<>(new RateLimitFilter());
+    // RateLimitFilter — security/filter/ modulida @Component, auto-registratsiya
+    // (default order). Agar explicit order kerak bo'lsa, FilterRegistrationBean
+    // bilan inject qilib o'rab oling va auto-registratsiyani o'chiring:
+    @Bean public FilterRegistrationBean<RateLimitFilter> rateLimitRegistration(RateLimitFilter filter) {
+        FilterRegistrationBean<RateLimitFilter> reg = new FilterRegistrationBean<>(filter);
         reg.setOrder(Ordered.HIGHEST_PRECEDENCE + 2);  // Before auth — fail fast
         return reg;
     }

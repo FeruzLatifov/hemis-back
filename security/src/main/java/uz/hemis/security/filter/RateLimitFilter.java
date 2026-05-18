@@ -1,4 +1,4 @@
-package uz.hemis.app.security;
+package uz.hemis.security.filter;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,7 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import uz.hemis.app.config.SecurityProperties;
+import uz.hemis.security.config.SecurityProperties;
 
 import java.io.IOException;
 import java.util.Map;
