@@ -11,7 +11,6 @@ import uz.hemis.common.dto.building.BuildingSyncResult;
 import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
 import uz.hemis.domain.repository.UniversityBuildingRepository;
 import uz.hemis.service.infrastructure.mapper.BuildingMapper;
-import uz.hemis.service.security.TenantGuard;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -36,17 +35,14 @@ public class UniversityBuildingSyncService {
     private final UniversityBuildingRepository repo;
     private final BuildingMapper mapper;
     private final BuildingMetrics metrics;
-    private final TenantGuard tenantGuard;
     private final CacheManager cacheManager;
 
     @Transactional
     @io.micrometer.core.annotation.Timed(value = "buildings.sync.duration",
             description = "Univer bulk sync duration")
     public BuildingSyncResult syncFromUniver(String universityCode, List<BuildingSyncDto> items) {
-        // Defense-in-depth: even if controller @PreAuthorize is bypassed (test, refactor),
-        // verify caller's JWT university_code claim matches the path variable.
-        // STRICT — no admin bypass: building sync is owned by each OTM, ministry should not push.
-        tenantGuard.verifyOwnership(universityCode);
+        // universityCode controller tomonidan JWT 'university_code' claim'idan (yoki dev'da
+        // X-University-Code header'idan) resolve qilinadi — auth boundary controller'da.
         BuildingSyncResult result = BuildingSyncResult.builder().build();
         for (BuildingSyncDto item : items) {
             try {
