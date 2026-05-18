@@ -85,11 +85,27 @@ URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'ch
 
 `.claude/agents/`: 5 ta domen-spetsifik audit agent — `cuba-format-checker`, `liquibase-reviewer`, `n-plus-one-detector` (`model: sonnet`); `security-auditor`, `cache-strategist` (`model: opus`). PR review yoki audit ishida `Task` tool orqali parallel chaqiriladi.
 
-`.claude/commands/`: `/port-endpoint`, `/check-coverage`, `/audit-cache`, `/review-pr`.
+`.claude/commands/`: `/check-coverage`, `/audit-cache` (cache-strategist agent wrapper), `/review-pr` (5 agent parallel orkestrator).
 
-`.claude/skills/` (Anthropic 2026 — `Skill` tool yoki `/<skill-name>` slash bilan invoke):
-- `adr-create/SKILL.md` — yangi ADR yaratish workflow (AgDR YAML frontmatter)
-- `adr-verify/SKILL.md` — ADR status drift detection (frontmatter vs kod holati)
+`.claude/skills/` (Anthropic 2026 — `Skill` tool yoki `/<skill-name>` slash bilan invoke, ba'zilari trigger pattern bilan auto):
+
+**ADR & docs:**
+- `adr-create/` — yangi ADR yaratish (AgDR 2026 frontmatter)
+- `adr-verify/` — ADR status drift detection (frontmatter vs kod)
+- `runbook-create/` — incident playbook yozish (`docs/runbooks/`)
+
+**Schema & data:**
+- `liquibase-changeset/` — V/M/S### migration + rollback + master.yaml
+- `classifier-add/` — h_* reference table to'liq pattern (5 layer)
+
+**Backend pattern:**
+- `cache-add/` — @Cacheable + TTL + evict pair + AOP safety
+- `kafka-outbox-topic/` — outbox + producer + consumer + DLQ (ADR-0007)
+- `menu-permission-add/` — sys_menu + sys_permission + i18n (3 til)
+
+**api-legacy specific:**
+- `endpoint-port/` — CUBA endpoint 1:1 port (`PORT:` trigger pattern)
+- `univer-contract-verify/` — 175/175 MATCH tekshiruvi
 
 ---
 
@@ -131,5 +147,8 @@ Modul-darajadagi `CLAUDE.md` (api-legacy, service, domain, security, …) Claude
 | [0007](docs/adr/0007-sync-architecture-evolution.md) | Kafka-first sync architecture |
 | [0008](docs/adr/0008-api-legacy-entity-rebinding.md) | api-legacy: User/Employee/EmployeeJobs → eski jadvallar |
 | [0009](docs/adr/0009-jwt-ttl-and-refresh-rotation.md) | JWT TTL 12h→1h + Refresh rotation + jti/kid (Proposed) |
+| [0010](docs/adr/0010-employee-sync-outbox-implementation.md) | Employee sync outbox implementation |
+| [0011](docs/adr/0011-swagger-multi-group-strategy.md) | Swagger 4-group strategiyasi (web/legacy/university/external) + production swagger off |
+| [0012](docs/adr/0012-webhook-outbound-infrastructure.md) | Webhook outbound infrastructure (markaz → 224 Univer): Outbox + Kafka + REST callback + HMAC |
 
 Yangi qaror — `docs/adr/template.md` orqali. Tarix: `CHANGELOG.md`.

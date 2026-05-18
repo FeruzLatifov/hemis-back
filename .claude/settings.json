@@ -37,9 +37,7 @@
       "Read(**/truststore*)",
       "Read(**/id_rsa*)",
       "Read(**/id_ed25519*)",
-      "Read(**/private*.key)",
-      "Read(./application-prod.yml)",
-      "Read(./app/src/main/resources/application-prod.yml)"
+      "Read(**/private*.key)"
     ],
     "ask": [
       "Bash(rm:*)",

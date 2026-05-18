@@ -1,124 +1,66 @@
 ---
 name: adr-create
-description: Create a new Architecture Decision Record (ADR) following the AgDR 2026 standard. Use when user wants to document a significant technical decision (new module, schema change, third-party library, security pattern, migration strategy). Don't use for: minor bugfixes, code style preferences, temporary workarounds.
+description: Yangi ADR yaratish (AgDR 2026 standart). Trigger - "ADR yoz", "decision record", "arxitektura qaror". Skip - bugfix, code style, vaqtinchalik workaround.
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # Create ADR
 
-## When to invoke
+## Skip qachon
 
-Trigger phrases (foydalanuvchi):
-- "yangi ADR yarat", "ADR yoz", "decision record"
-- "qaysi yo'l tanlash kerak — A yoki B?" (qaror so'ralganda)
-- "<modul/feature> uchun arxitektura qaror kerak"
-
-**Skip cases** (ADR yozish KERAK EMAS):
-- Kichik bugfix yoki refactoring
-- Code style preferences (linter qoidalari)
-- Vaqtinchalik workaround
-- Mavjud ADR'ni kichik tuzatish
+Bugfix · code style · vaqtinchalik workaround · mavjud ADR'ni kichik tuzatish → ADR EMAS.
 
 ## Workflow
 
-### 1. Collect inputs from user
+### 1. Kerakli ma'lumot
 
-Quyidagilarni so'rang:
-- **Title** (qisqa, masalan: "Klassifikator jadvallariga h_ prefiks")
-- **Context** — qanday vaziyat? Qaysi muammo? Qaysi tarixiy kontekst, texnik cheklov, biznes talab?
-- **Alternatives** — qaysi yo'llar ko'rib chiqildi? Nimaga rad etildi?
-- **Decision** — qaysi yo'l tanlandi va NEGA?
-- **Affects** — qaysi modullar/papkalar/jadvallar ta'sirlanadi?
-- **Implementation** — bosqichlar (Stage 1, 2, 3, …)
-- **Verification** — qaror bajarilganligini tekshirish komandasi
+Foydalanuvchidan: **title** · **context** (muammo+cheklov) · **alternatives** (rad sabab) · **decision** (sabab) · **affects** (modullar) · **stages** · **verification cmd**.
 
-### 2. Find next ADR number
+### 2. Keyingi ID
 
 ```bash
-# Absolute path — Skill subagent cwd har xil bo'lishi mumkin
-ls /home/adm1n/projects/startup/hemis-back/docs/adr/[0-9]*.md | sort | tail -1
-# Yoki: cd $(git rev-parse --show-toplevel) && ls docs/adr/[0-9]*.md
-# Misol: 0008-* → keyingisi 0009
+REPO=$(git rev-parse --show-toplevel)
+ls "$REPO"/docs/adr/[0-9]*.md | tail -1   # → keyingisi +1
 ```
 
-### 3. Generate ADR file
+### 3. Fayl yaratish
 
-`docs/adr/template.md` ni asos qilib, yangi fayl yarating:
-- Path: `docs/adr/NNNN-short-title-kebab-case.md`
-- AgDR YAML frontmatter (id, status, date, agent, model, affects, liquibase, entities, verification, related)
-- Y-Statement (1 qator)
-- Michael Nygard format: Status, Context, Decision, Alternatives, Consequences, Implementation, Verification, References
+`docs/adr/NNNN-kebab-title.md` — `docs/adr/template.md` ni asos qiling. Frontmatter (id, status=proposed, date, agent, model, affects, liquibase, entities, verification, related) + Y-Statement + Michael Nygard sections (Status, Context, Decision, Alternatives, Consequences, Implementation, Verification).
 
-### 4. Update README.md index
+**Y-Statement:** `Quyidagi savol uchun: <X>, biz <yo'l>'ni tanladik (<muqobil> o'rniga), chunki <sabab>; oqibatda <natija>.`
 
-`docs/adr/README.md` ichidagi `## Index` jadvaliga yangi qator qo'shing:
+### 4. Index yangilash
 
-```markdown
-| [NNNN](NNNN-short-title.md) | Full Title | Proposed | YYYY-MM-DD |
+`docs/adr/README.md` ichidagi index jadvaliga qator qo'shish:
+```
+| [NNNN](NNNN-title.md) | Full Title | Proposed | YYYY-MM-DD |
 ```
 
-### 5. Update CLAUDE.md (root)
+### 5. CLAUDE.md (kuchli ta'sir bo'lsa)
 
-Agar ADR loyiha bo'yicha kuchli ta'sirga ega bo'lsa (modul boundary, schema, security):
-- Root `CLAUDE.md` "Architecture Decision Records" jadvaliga qator qo'sh
-- Tegishli modul `CLAUDE.md` (api-legacy, domain, …) ichida ADR'ga reference
+Modul boundary / schema / security qaror → root `CLAUDE.md` "Architecture Decision Records" jadvaliga qator. Modul-darajadagi `CLAUDE.md`'ga reference.
 
-### 6. Update CHANGELOG.md
+### 6. CHANGELOG
 
-`[Unreleased]` bo'limida `### Documented` (data unchanged) ostida:
-
-```markdown
+`[Unreleased]` ostida `### Documented`:
+```
 - ADR-NNNN: <title>
 ```
 
-## Status convention (AgDR 2026)
+## Status semantikasi (AgDR 2026)
 
-| Status | Anglatadi | Kod holati |
-|--------|-----------|------------|
-| `proposed` | Taklif, hali muhokama | 0% |
-| `accepted` | Qabul qilingan, implementatsiya boshlanmagan/qisman | 0-50% |
-| `in-progress` | Stage'lar bajarilmoqda | 50-95% |
-| `implemented` | To'liq amalga oshirilgan | 100% |
-| `deprecated` | Eskirgan, yangi ADR ga superseded | — |
+| Status | Ma'no | Kod % |
+|--------|-------|-------|
+| proposed | Taklif | 0 |
+| accepted | Qabul, hali boshlanmagan/qisman | 0-50 |
+| in-progress | Stage'lar bajarilmoqda | 50-95 |
+| implemented | Tugagan | 100 |
+| deprecated | Eskirgan/superseded | — |
 
-> **MUHIM:** "Accepted" qarorni anglatadi — implementatsiyani **EMAS**. Implementation status alohida `## Implementation` bo'limida ko'rsatilishi shart (✅ done / ⏳ pending / ❌ blocked).
-
-## Y-Statement format
-
-```
-Quyidagi savol uchun: <savol/muammo>,
-biz <yo'l>'ni tanladik (boshqa <muqobil> o'rniga),
-chunki <sabab>;
-oqibatda <natija>.
-```
-
-Misol (ADR-0008):
-> Quyidagi savol uchun: api-legacy ichida yangi schema entity ishlatilishi,
-> biz Legacy* prefiks rebinding'ni tanladik (status quo o'rniga),
-> chunki Univer 224 OTM split-brain bug riski mavjud;
-> oqibatda 4 ta controller refactor + 175/175 test saqlanadi.
-
-## Verification block (har ADR oxirida)
-
-```markdown
-## Verification
-
-\`\`\`bash
-# Bajarilganligini tekshirish
-./scripts/check_table_mappings.sh
-grep -rn "<pattern>" <path>
-node /home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints.js
-\`\`\`
-
-**Acceptance criteria:**
-- [ ] DDL applied (V###)
-- [ ] Entity layer matches DDL
-- [ ] Controllers using correct imports
-- [ ] Integration test passing
-```
+> "Accepted" = qaror, **implementatsiya emas**. Implementation status `## Implementation` bo'limida ✅/⏳/❌.
 
 ## See also
 
-- `docs/adr/template.md` — to'liq AgDR template
-- `docs/adr/README.md` — index va status qiymatlari
-- `docs/adr/0008-*.md` — yaxshi misol (frontmatter + Verification + Implementation stages)
-- `.claude/rules.md` "ADR Status Drift Detection" — status semantikasi
+- `docs/adr/template.md` · `docs/adr/README.md` · `docs/adr/0008-*.md` (yaxshi misol)
+- `.claude/rules.md` "ADR Status Drift Detection"
+- `.claude/skills/adr-verify/SKILL.md` — bajarilganlikni tekshirish
