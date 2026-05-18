@@ -204,7 +204,8 @@ springdoc:
     display-request-duration: true
     default-models-expand-depth: 3
     filter: true
-    urlsPrimaryName: all
+    # Default tanlangan group — OpenApiConfig'da "web", "legacy", "university", "external" mavjud
+    urlsPrimaryName: web
 
   # Show only public methods
   show-actuator: false

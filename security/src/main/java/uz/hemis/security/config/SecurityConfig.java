@@ -93,6 +93,10 @@ public class SecurityConfig {
     @Value("${CORS_ALLOWED_ORIGINS:}")
     private String corsAllowedOrigins;
 
+    // Swagger/OpenAPI enabled flag — production'da false bo'lsa, swagger path'lari ochiq qolmaydi
+    @Value("${springdoc.swagger-ui.enabled:true}")
+    private boolean swaggerEnabled;
+
     /**
      * Security Filter Chain Configuration
      *
@@ -147,6 +151,8 @@ public class SecurityConfig {
                                 "/app/rest/v2/oauth/token",    // Legacy OAuth endpoint
                                 "/api/v1/university/oauth/token",  // OTM B2B client_credentials
                                 "/api/v1/external/oauth/token",    // External systems client_credentials
+                                "/api/v1/university/employees/sync", // DEV-ONLY: Univer e2e employee sync test (X-University-Code header)
+                                "/api/v1/university/buildings/sync", // DEV-ONLY: Univer e2e building sync test (X-University-Code header)
                                 "/app/rest/v2/services/captcha/**", // Captcha endpoints (public)
                                 "/app/rest/v2/services/classifiers/info",     // Classifier info (PHP kod auth headersiz yuboradi)
                                 "/app/rest/v2/services/classifiers/allItems", // Classifier allItems (PHP kod auth headersiz yuboradi)
@@ -164,22 +170,33 @@ public class SecurityConfig {
                 )
 
                 // Authorization rules
-                .authorizeHttpRequests(authz -> authz
-                        // Public endpoints (health checks)
-                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers("/api/v1/university/health").permitAll()
-                        
-                        // Protected actuator endpoints (admin only)
-                        .requestMatchers("/actuator/**").hasRole("ADMIN")
+                .authorizeHttpRequests(authz -> {
+                        authz
+                            // Public endpoints (health checks)
+                            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                            .requestMatchers("/api/v1/university/health").permitAll()
+                            // DEV-ONLY: Univer e2e employee sync test (X-University-Code header; production'da OAuth client_credentials)
+                            .requestMatchers("/api/v1/university/employees/sync").permitAll()
+                            // DEV-ONLY: Univer e2e building sync test (X-University-Code header; production'da OAuth client_credentials)
+                            .requestMatchers("/api/v1/university/buildings/sync").permitAll()
 
-                        // Swagger/OpenAPI endpoints (PUBLIC - for API documentation)
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/v3/api-docs/**", "/swagger-resources/**").permitAll()
-                        .requestMatchers("/webjars/**").permitAll()
-                        .requestMatchers("/docs/**").permitAll() // Alohida Swagger URLs
-                        .requestMatchers("/openapi/**").permitAll() // Static OpenAPI specs
-                        .requestMatchers("/swagger-ui-dark.css").permitAll() // Dark theme CSS
+                            // Protected actuator endpoints (admin only)
+                            .requestMatchers("/actuator/**").hasRole("ADMIN");
 
+                        // Swagger/OpenAPI endpoints — faqat swagger yoqilgan paytda permitAll
+                        // Production'da springdoc.swagger-ui.enabled=false bo'lsa, bu path'lar
+                        // anyRequest().authenticated() qoidasiga tushadi va 401 qaytaradi
+                        if (swaggerEnabled) {
+                            authz
+                                .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
+                                .requestMatchers("/v3/api-docs/**", "/swagger-resources/**").permitAll()
+                                .requestMatchers("/webjars/**").permitAll()
+                                .requestMatchers("/docs/**").permitAll()
+                                .requestMatchers("/openapi/**").permitAll()
+                                .requestMatchers("/swagger-ui-dark.css").permitAll();
+                        }
+
+                        authz
                         // OAuth2 Token endpoint (PUBLIC - for login)
                         // CRITICAL: Must be public for universities to get tokens
                         .requestMatchers("/app/rest/v2/oauth/token").permitAll()
@@ -225,8 +242,8 @@ public class SecurityConfig {
                         .requestMatchers("/app/rest/v2/**").authenticated()
 
                         // All other requests require authentication
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated();
+                })
 
                 // OAuth2 Resource Server (JWT validation)
                 .oauth2ResourceServer(oauth2 -> oauth2

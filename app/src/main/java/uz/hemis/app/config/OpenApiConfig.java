@@ -5,10 +5,12 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.tags.Tag;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +18,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * =====================================================
@@ -49,8 +52,14 @@ public class OpenApiConfig {
     @Value("${spring.application.name:HEMIS}")
     private String applicationName;
 
-    @Value("${spring.application.version:3.0.0}")
-    private String applicationVersion;
+    /**
+     * Application version — Spring Boot Gradle plugin'i tomonidan jar MANIFEST'ga yoziladi
+     * (Implementation-Version). Build vaqtida `gradle.properties` versiyasi avtomatik kiradi.
+     * Dev (IDE'dan run) uchun fallback "dev".
+     */
+    private final String applicationVersion = Optional.ofNullable(
+            OpenApiConfig.class.getPackage().getImplementationVersion()
+    ).orElse("dev");
 
     @Value("${hemis.swagger.server-url:http://localhost:8082}")
     private String swaggerServerUrl;
@@ -61,12 +70,18 @@ public class OpenApiConfig {
 
     @Bean
     public OpenAPI hemisOpenAPI() {
+        // DIQQAT: `.tags(apiTags())` chaqirig'i olib tashlandi.
+        // Sabab: 70 ta numbered tag faqat api-legacy uchun. Global Bean'ga
+        // o'rnatilsa, web/university/external group'lariga ham meros qoladi
+        // (foydalanuvchi UI'da bo'sh "01.Token" — "70.Qo'shimcha" tag'larini ko'radi).
+        // Endi har group o'z customizer'ida o'ziga mos tag'larni o'rnatadi:
+        //   - legacyApi → setTags(apiTags()) — 70 ta numbered
+        //   - web/university/external → controller @Tag annotatsiyasidan avto-discover
         return new OpenAPI()
             .info(apiInfo())
             .servers(apiServers())
             .components(apiComponents())
-            .security(apiSecurity())
-            .tags(apiTags());
+            .security(apiSecurity());
     }
 
     /**
@@ -74,123 +89,96 @@ public class OpenApiConfig {
      */
     private Info apiInfo() {
         return new Info()
-            .title("HEMIS Backend API Documentation")
+            .title(applicationName + " Backend API Documentation")
             .version(applicationVersion)
             .description("""
-                # 🎓 HEMIS - Higher Education Management Information System
+                # HEMIS - Higher Education Management Information System
 
-                ## 📖 Overview
+                ## Overview
 
-                HEMIS tizimi API hujjatlari - Spring Boot 3.5.7, Java 21 LTS
+                Markaziy vazirlik server (Oliy ta'lim vazirligi).
 
-                - **200+ Universities** using this API
-                - **20,000+ Concurrent Users** supported
-                - **170+ REST Endpoints** available
-                - **100% Backward Compatible** with old-hemis
+                - **Stack:** Spring Boot 4.0.6, Java 25 LTS, PostgreSQL 18, Redis 7
+                - **Mijozlar:** 230 OTM (224 Univer + 6 markaziy admin) + davlat sistemalari
+                - **Endpoints:** 780+ REST endpoint
+                - **Backward compatibility:** api-legacy 175/175 contract test (old-hemis CUBA 7.3)
 
                 ---
 
-                ## 🔐 Authentication
+                ## API Groups
 
-                ### Step 1: Get Access Token
+                | Group | URL | Mijoz |
+                |-------|-----|-------|
+                | **web** | `/api/v1/web/**` | Markaziy React UI (vazirlik admin + UNIVERSITY_ADMIN) |
+                | **legacy** | `/app/rest/v2/**` | 224 ta OTM Univer (Yii2 PHP, CUBA legacy) |
+                | **university** | `/api/v1/university/**` | 224 ta OTM Univer (yangi OAuth 2.1) |
+                | **external** | `/api/v1/external/**` | Davlat sistemalari (MyGov, MSPD, GUVD, BIMM, Tax) |
+
+                Group tanlash uchun yuqoridagi dropdown'dan foydalaning.
+
+                ---
+
+                ## Authentication
+
+                ### Web Frontend (cookie + JWT)
+
+                ```bash
+                POST /api/v1/web/auth/login
+                Content-Type: application/json
+
+                {"username": "user", "password": "pass"}
+                ```
+
+                Javob HTTPOnly cookie'da access/refresh token o'rnatadi.
+
+                ### Univer Legacy (CUBA Basic + Bearer)
 
                 ```bash
                 POST /app/rest/v2/oauth/token
+                Authorization: Basic Y2xpZW50OnNlY3JldA==
                 Content-Type: application/x-www-form-urlencoded
 
-                grant_type=password&username=your_username&password=your_password
+                grant_type=password&username=USER&password=PASS
                 ```
 
-                **Response:**
-                ```json
-                {
-                  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                  "token_type": "Bearer",
-                  "expires_in": 28800,
-                  "refresh_token": "..."
-                }
-                ```
-
-                ### Step 2: Use Token in Requests
+                ### Univer/External (OAuth 2.1 client_credentials)
 
                 ```bash
-                GET /app/rest/v2/students?pinfl=12345678901234
-                Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                POST /api/v1/university/oauth/token
+                Content-Type: application/x-www-form-urlencoded
+
+                grant_type=client_credentials&client_id=CID&client_secret=SECRET
                 ```
 
-                **Test Token (Demo):**
-                Click "Authorize" button above and paste your token.
+                **Token TTL:** Access — 12 soat, Refresh — 7 kun.
+                ADR-0009 (Proposed): 1 soat access TTL + refresh rotation migration kutilmoqda.
+
+                Olingan token'ni "Authorize" tugmasiga kiriting (yoki `Authorization: Bearer ...` header).
 
                 ---
 
-                ## 📚 API Groups
-
-                Use the dropdown above to filter APIs:
-
-                | Group | Description | For |
-                |-------|-------------|-----|
-                | **🎯 All APIs** | Complete documentation | All developers |
-                | **⚛️ Frontend APIs** | Modern REST endpoints | React/Vue developers |
-                | **📦 Legacy APIs** | Old-HEMIS compatible | Univer (Yii2) |
-                | **🔗 External APIs** | S2S integrations | Government systems |
-
-                ---
-
-                ## 🏷️ API Tags (70 kategoriya)
-
-                APIs are organized by **numbered categories** (01-70):
-
-                **01-15:** Token, Captcha, Passport, Talaba, O'qituvchi, Xodim, OTM, Klassifikatorlar
-                **16-30:** Ilmiy doktorantlar, Dissertatsiya, Loyihalar, Nashrlar, Mualliflar
-                **31-44:** Akademik hisobotlar, Inspeksiya, Statistika
-                **48-57:** Mehnat, Fakultetlar, Guruhlar, Mail, DTM, OAK
-                **58-70:** UzASBO, Soliq, Ijtimoiy himoya, Stipendiya, Billing, BIMM, Sertifikat
-
-                Barcha kategoriyalar **endpoint_tester.html** bilan sinxronlashtirilgan.
-
-                ---
-
-                ## ⚠️ Error Handling
-
-                All errors return standard format:
+                ## Error Format
 
                 ```json
                 {
-                  "status": 400,
-                  "error": "VALIDATION_ERROR",
-                  "message": "Invalid PINFL format: must be 14 digits",
-                  "timestamp": "2025-11-06T10:30:00Z"
+                  "success": false,
+                  "error": {
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid PINFL format: must be 14 digits",
+                    "details": [{"field": "pinfl", "code": "Pattern", "message": "..."}]
+                  }
                 }
                 ```
 
-                **Common Error Codes:**
-                - `400` - Bad Request (validation error)
-                - `401` - Unauthorized (token invalid/expired)
-                - `403` - Forbidden (insufficient permissions)
-                - `404` - Not Found
-                - `500` - Internal Server Error
-
-                [Full Error Code Documentation →](/docs/error-codes)
+                **HTTP status'lar:** 400 (validation), 401 (token), 403 (permission), 404 (not found),
+                409 (conflict), 422 (business rule), 429 (rate limit), 500 (server error).
 
                 ---
 
-                ## 📖 Additional Resources
+                ## API Tags
 
-                - [Migration Guide](https://docs.hemis.uz/migration)
-                - [Authentication Tutorial](https://docs.hemis.uz/auth)
-                - [Code Examples (Java, PHP, Python)](https://docs.hemis.uz/examples)
-                - [Postman Collection](https://docs.hemis.uz/postman)
-                - [GitHub Repository](https://github.com/hemis-uz)
-
-                ---
-
-                ## 📞 Support
-
-                - **Email:** support@hemis.uz
-                - **Telegram:** @hemis_support
-                - **Phone:** +998 71 123 4567
-                - **Working Hours:** Mon-Fri, 9:00-18:00 (UTC+5)
-
+                api-legacy raqamlangan kategoriyalar (01-70) — `endpoint_tester.html` bilan sinxron.
+                Yangi modullar (web, university, external) — semantik tag nomlari.
                 """)
             .contact(new Contact()
                 .name("HEMIS Development Team")
@@ -223,35 +211,28 @@ public class OpenApiConfig {
                     .scheme("bearer")
                     .bearerFormat("JWT")
                     .description("""
-                        JWT Bearer Token Authentication
+                        JWT Bearer Token Authentication.
 
-                        **MUHIM:** Swagger UI orqali to'g'ridan-to'g'ri token olish imkoni yo'q!
-                        Sabab: Token endpoint Basic Authorization header talab qiladi (old-hemis compatibility).
+                        Token olish:
+                        - Web (cookie): `POST /api/v1/web/auth/login` (JSON body)
+                        - Univer Legacy: `POST /app/rest/v2/oauth/token` (Basic header — `basicAuth` scheme orqali)
+                        - Univer/External: `POST /api/v1/{university|external}/oauth/token` (client_credentials)
 
-                        **Token olish uchun Postman yoki curl ishlating:**
-                        ```bash
-                        curl -X POST "http://localhost:8081/app/rest/v2/oauth/token" \\
-                          -H "Authorization: Basic Y2xpZW50OnNlY3JldA==" \\
-                          -H "Content-Type: application/x-www-form-urlencoded" \\
-                          -d "grant_type=password&username=YOUR_USERNAME&password=YOUR_PASSWORD"
-                        ```
-
-                        **Javobdan access_token ni oling va Swagger UI da Authorize bosib kiriting.**
-
-                        **Token expires in:** 30 days (legacy compatibility)
-                        **Refresh token:** Use refresh_token to get new access_token
+                        **TTL:** Access — 12 soat, Refresh — 7 kun (ADR-0009 1h migration kutilmoqda).
                         """)
             )
-            // NOTE: OAuth2 Password Flow Swagger UI dan ishlamaydi!
-            // Sabab: Endpoint Basic Authorization header talab qiladi (old-hemis compatibility),
-            // lekin Swagger UI client_id/client_secret ni form body sifatida yuboradi.
-            //
-            // Token olish uchun Postman yoki curl ishlating:
-            // curl -X POST "http://localhost:8081/app/rest/v2/oauth/token" \
-            //   -H "Authorization: Basic Y2xpZW50OnNlY3JldA==" \
-            //   -H "Content-Type: application/x-www-form-urlencoded" \
-            //   -d "grant_type=password&username=feruz&password=your_password"
-            ;
+            .addSecuritySchemes("basicAuth",
+                new SecurityScheme()
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("basic")
+                    .description("""
+                        HTTP Basic Authentication — CUBA legacy `/app/rest/v2/oauth/token` uchun.
+
+                        Format: `Authorization: Basic base64(client_id:client_secret)`
+
+                        Faqat token olish endpoint'ida ishlatiladi. Boshqa endpoint'lar `bearerAuth` (JWT) talab qiladi.
+                        """)
+            );
     }
 
     /**
@@ -376,69 +357,34 @@ public class OpenApiConfig {
      * Note: Faqat yangi API'lar, universitet API'lari ko'rinmaydi
      */
     @Bean
-    public GroupedOpenApi webFrontendApi() {
+    public GroupedOpenApi webApi() {
         return GroupedOpenApi.builder()
-            .group("Web Frontend API v1")
-            .displayName("Web Frontend API v1")
+            .group("web")
+            .displayName("Web Frontend API")
             .packagesToScan("uz.hemis.api.web.controller", "uz.hemis.web.controller")
             .pathsToMatch("/api/v1/web/**")
             .pathsToExclude("/actuator/**", "/error")
+            // Default 401/403/500 + avto summary (97 ta undocumented endpoint web ichida)
+            .addOpenApiCustomizer(defaultResponsesCustomizer())
+            .addOpenApiCustomizer(fallbackSummaryCustomizer())
             .addOpenApiCustomizer(openApi -> {
-                // KRITIK: Faqat web frontend tag'larini ko'rsatamiz
-                // Universitet API tag'lari ko'rinmasin!
-                openApi.setTags(Arrays.asList(
-                    new Tag()
-                        .name("Web Authentication v1")
-                        .description("hemis-front uchun authentication API - Login, Logout, Refresh, Me"),
-                    new Tag()
-                        .name("📊 Dashboard Statistics")
-                        .description("Dashboard statistika - 30-min Redis cache, REPLICA database, 3M+ records"),
-                    new Tag()
-                        .name("Registry - Faculties")
-                        .description("Fakultetlar Reestri - Lazy tree, pagination, search, export"),
-                    new Tag()
-                        .name("Registry - Universities")
-                        .description("Muassasalar Reestri - Advanced filtering, export"),
-                    new Tag()
-                        .name("Menu API")
-                        .description("Dynamic menu structure - Permission-filtered, multilingual"),
-                    new Tag()
-                        .name("I18n API")
-                        .description("Internationalization - Message translation, bulk loading"),
-                    new Tag()
-                        .name("Translation Admin")
-                        .description("Tizim tarjimalarini boshqarish - CRUD, cache, export"),
-                    new Tag()
-                        .name("Language API")
-                        .description("Language management - Available languages, locale settings")
-                ));
-
-                // Sodda description - ortiqcha ma'lumotlar kerak emas
+                // Tag'lar avtomatik discover qilinadi (controller @Tag annotatsiyalaridan).
+                // Eskirgan setTags ro'yxati olib tashlandi — controller'lar @Tag(description=...)
+                // bilan o'z hujjatini beradi (MenuController, I18nController, va h.k.).
                 openApi.info(new Info()
-                    .title("Web Frontend API v1")
+                    .title("Web Frontend API")
                     .version("1.0.0")
                     .description("""
                         # Web Frontend API
 
                         hemis-front React dasturchilar uchun modern REST API.
 
-                        ## Authentication
+                        **Auth:** JWT (cookie + Authorization header).
 
-                        Barcha endpoint'lar JWT token talab qiladi.
+                        1. `POST /api/v1/web/auth/login` — token olish (HTTPOnly cookie o'rnatiladi)
+                        2. Keyingi so'rovlar: cookie avtomatik yoki `Authorization: Bearer <token>`
 
-                        1. `/api/v1/web/auth/login` - Token olish
-                        2. Keyingi so'rovlarda: `Authorization: Bearer <token>`
-                        
-                        ## Registry APIs
-                        
-                        - **/registry/faculties** - Fakultetlar (lazy tree)
-                        - **/registry/universities** - Muassasalar (advanced filters)
-                        
-                        ## System APIs
-                        
-                        - **/menu** - Dynamic menu structure
-                        - **/i18n** - Multilingual support
-                        - **/admin/translations** - Translation management
+                        Barcha endpoint'lar `ResponseWrapper<T>` formatida: `{success, message, data, error}`.
                         """)
                     .contact(new Contact()
                         .name("HEMIS Development Team")
@@ -470,28 +416,46 @@ public class OpenApiConfig {
      * - 200+ OTM ishlatmoqda
      */
     @Bean
-    public GroupedOpenApi universityApi() {
+    public GroupedOpenApi legacyApi() {
         return GroupedOpenApi.builder()
-            .group("university")
-            .displayName("Universitet va Tashkilotlar API")
-            .pathsToMatch("/app/rest/v2/**", "/services/**", "/entities/**")
-            .pathsToExclude("/actuator/**", "/error", "/api/v1/web/**")
+            .group("legacy")
+            .displayName("Univer Legacy API (CUBA 7.3)")
+            // `/app/rest/**` — `/app/rest/v2/**` va `/app/rest/user/info` (LegacyUserInfo
+            // legacy fallback) ikkalasini ham qamrab oladi.
+            .pathsToMatch("/app/rest/**", "/services/**", "/entities/**")
+            .pathsToExclude("/actuator/**", "/error", "/api/v1/**")
+            // Default 401/403/500 + avto summary (429 ta undocumented endpoint legacy ichida)
+            .addOpenApiCustomizer(defaultResponsesCustomizer())
+            .addOpenApiCustomizer(fallbackSummaryCustomizer())
             .addOpenApiCustomizer(openApi -> {
-                // Sodda description - ortiqcha ma'lumotlar olib tashlangan
+                // 70 ta numbered tag (01-70) faqat shu group uchun (api-legacy controller'lari).
+                // endpoint_tester.html bilan sinxron tartiblangan.
+                openApi.setTags(apiTags());
+
                 openApi.info(new Info()
-                    .title("Universitet va Tashkilotlar API")
+                    .title("Univer Legacy API (CUBA 7.3)")
                     .version("2.0.0")
                     .description("""
-                        # Universitet API
+                        # Univer Legacy API
 
-                        Universitet IT dasturchilar uchun REST API.
+                        **Mijoz:** 224 ta OTM Univer (Yii2 PHP) — old-hemis CUBA Platform 7.3 1:1 mosligi.
+
+                        **Backward compatibility:** 175/175 contract test (compare_endpoints.js).
 
                         ## Authentication
 
-                        Barcha endpoint'lar JWT token talab qiladi.
+                        Token endpoint Basic Authorization header talab qiladi (CUBA legacy):
 
-                        1. `/app/rest/v2/oauth/token` - Token olish
-                        2. Keyingi so'rovlarda: `Authorization: Bearer <token>`
+                        1. `POST /app/rest/v2/oauth/token` — `Authorization: Basic <client:secret>` + form body (grant_type, username, password)
+                        2. Keyingi so'rovlarda: `Authorization: Bearer <access_token>`
+
+                        ## Response Format
+
+                        CUBA Platform shartnomasi:
+                        - `LinkedHashMap<String, Object>` (field order saqlanadi)
+                        - `_entityName`, `_instanceName` xizmatchi maydonlar
+                        - FK serializatsiya: nested object
+                        - Pagination: `{offset, limit, data, totalCount}`
                         """)
                     .contact(new Contact()
                         .name("HEMIS Development Team")
@@ -512,26 +476,77 @@ public class OpenApiConfig {
      * Access URL: /swagger-ui.html?urls.primaryName=university-new
      */
     @Bean
-    public GroupedOpenApi universityNewApi() {
+    public GroupedOpenApi universityApi() {
         return GroupedOpenApi.builder()
-            .group("university-new")
-            .displayName("University API v1 (New)")
+            .group("university")
+            .displayName("Univer API v1 (OAuth 2.1)")
             .packagesToScan("uz.hemis.api.university.controller")
             .pathsToMatch("/api/v1/university/**")
             .pathsToExclude("/actuator/**", "/error")
+            // Default 401/403/500 + avto summary (4 ta undocumented endpoint university ichida)
+            .addOpenApiCustomizer(defaultResponsesCustomizer())
+            .addOpenApiCustomizer(fallbackSummaryCustomizer())
             .addOpenApiCustomizer(openApi -> {
                 openApi.info(new Info()
-                    .title("University API v1")
+                    .title("Univer API v1 (OAuth 2.1)")
                     .version("1.0.0")
                     .description("""
-                        # University API v1
+                        # Univer API v1
 
-                        Yangi university endpointlar uchun zamonaviy REST API.
+                        **Mijoz:** 224 ta OTM Univer — yangi REST integratsiya (ADR-0005).
+
+                        **Auth:** OAuth 2.1 client_credentials per-OTM (`client_id` + secret + IP whitelist).
 
                         ## Authentication
 
-                        Barcha endpoint'lar JWT token talab qiladi.
-                        `Authorization: Bearer <token>`
+                        1. `POST /api/v1/university/oauth/token` — client_credentials grant
+                        2. Keyingi so'rovlarda: `Authorization: Bearer <access_token>`
+                        """)
+                    .contact(new Contact()
+                        .name("HEMIS Development Team")
+                        .email("support@hemis.uz"))
+                );
+            })
+            .build();
+    }
+
+    /**
+     * Group 4: Davlat tashkilotlari API (S2S)
+     *
+     * Target Audience: Davlat sistemalari (MyGov, MSPD, GUVD, BIMM, Tax)
+     *
+     * Includes:
+     * - /api/v1/external/oauth/token (S2S OAuth client_credentials)
+     * - /api/v1/external/** (kelajakdagi S2S endpointlar)
+     *
+     * Access URL: /swagger-ui.html?urls.primaryName=external
+     */
+    @Bean
+    public GroupedOpenApi externalApi() {
+        return GroupedOpenApi.builder()
+            .group("external")
+            .displayName("Davlat tashkilotlari API")
+            .packagesToScan("uz.hemis.api.external.controller")
+            .pathsToMatch("/api/v1/external/**")
+            .pathsToExclude("/actuator/**", "/error")
+            // Default 401/403/500 + avto summary (2 ta undocumented endpoint external ichida)
+            .addOpenApiCustomizer(defaultResponsesCustomizer())
+            .addOpenApiCustomizer(fallbackSummaryCustomizer())
+            .addOpenApiCustomizer(openApi -> {
+                openApi.info(new Info()
+                    .title("Davlat tashkilotlari API")
+                    .version("1.0.0")
+                    .description("""
+                        # External S2S API
+
+                        **Mijoz:** Davlat sistemalari (MyGov, MSPD, GUVD, BIMM, Tax/Soliq).
+
+                        **Auth:** OAuth 2.1 client_credentials + IP whitelist (S2S only).
+
+                        ## Authentication
+
+                        1. `POST /api/v1/external/oauth/token` — client_credentials grant
+                        2. Keyingi so'rovlarda: `Authorization: Bearer <access_token>`
                         """)
                     .contact(new Contact()
                         .name("HEMIS Development Team")
@@ -542,10 +557,90 @@ public class OpenApiConfig {
     }
 
     // =====================================================
-    // OpenAPI Customizers (Advanced)
+    // OpenAPI Customizers
     // =====================================================
 
-    // DEFERRED: Add global response examples
-    // DEFERRED: Add error code dictionary
-    // DEFERRED: Add request/response validators
+    /**
+     * Har bir endpoint'ga avtomatik 401/403/500 default ApiResponse'larni qo'shadi.
+     *
+     * Maqsad: manuel `@ApiResponses` yozmasdan ham qoplama 100% bo'lishi.
+     * Manual `@ApiResponse` qo'shilgan bo'lsa — saqlanadi (computeIfAbsent).
+     *
+     * Ushbu Customizer barcha 4 ta GroupedOpenApi'ga avtomatik qo'llaniladi
+     * (springdoc default mexanizmi).
+     */
+    @Bean
+    public OpenApiCustomizer defaultResponsesCustomizer() {
+        return openApi -> {
+            if (openApi.getPaths() == null) return;
+            openApi.getPaths().values().forEach(pathItem ->
+                pathItem.readOperations().forEach(operation -> {
+                    if (operation.getResponses() == null) return;
+                    operation.getResponses().computeIfAbsent("401",
+                        k -> new ApiResponse().description("Unauthorized — token yo'q yoki noto'g'ri"));
+                    operation.getResponses().computeIfAbsent("403",
+                        k -> new ApiResponse().description("Forbidden — ruxsat yetarli emas"));
+                    operation.getResponses().computeIfAbsent("500",
+                        k -> new ApiResponse().description("Internal Server Error"));
+                })
+            );
+        };
+    }
+
+    /**
+     * Method nomidan summary avtomatik generatsiya qilish (manuel `@Operation(summary=...)` yo'q paytda).
+     *
+     * Sabab: 500+ legacy endpoint manuel `@Operation`'siz qoldirilgan. Manuel yozish haftalar
+     * ish — buning o'rniga method nomi (`operationId`) va HTTP method'dan ma'no chiqaramiz:
+     *
+     * - `loadStudentByPinfl` (GET) → "Get: load student by pinfl"
+     * - `createGroupItem` (POST) → "Create: create group item"
+     * - `updateMetaInfo` (PUT) → "Update: update meta info"
+     *
+     * Manuel `@Operation(summary=...)` yozilgan bo'lsa — saqlanadi (computeIfAbsent bilan).
+     *
+     * Aralash holat: dasturchi qachon manuel summary yozsa — avto fallback bekor qilinadi.
+     */
+    @Bean
+    public OpenApiCustomizer fallbackSummaryCustomizer() {
+        return openApi -> {
+            if (openApi.getPaths() == null) return;
+            openApi.getPaths().forEach((path, pathItem) ->
+                pathItem.readOperationsMap().forEach((httpMethod, operation) -> {
+                    if (operation.getSummary() == null || operation.getSummary().isBlank()) {
+                        String operationId = operation.getOperationId();
+                        if (operationId != null && !operationId.isBlank()) {
+                            String prefix = switch (httpMethod) {
+                                case GET -> "Get";
+                                case POST -> "Create";
+                                case PUT -> "Update";
+                                case PATCH -> "Patch";
+                                case DELETE -> "Delete";
+                                default -> "Action";
+                            };
+                            operation.setSummary(prefix + ": " + humanize(operationId));
+                        } else {
+                            operation.setSummary(httpMethod + " " + path);
+                        }
+                    }
+                })
+            );
+        };
+    }
+
+    /**
+     * camelCase yoki snake_case operationId'ni o'qilishi qulay matnga aylantiradi.
+     * Misollar:
+     *   "loadStudentByPinfl" → "load student by pinfl"
+     *   "find_All_Groups"    → "find all groups"
+     */
+    private static String humanize(String operationId) {
+        // Spring/Springdoc operationId'larida `_1`, `_2` suffikslar bo'lishi mumkin (overload uchun) — olib tashlash
+        String cleaned = operationId.replaceAll("_\\d+$", "");
+        return cleaned
+            .replaceAll("([a-z])([A-Z])", "$1 $2")
+            .replace("_", " ")
+            .toLowerCase()
+            .strip();
+    }
 }

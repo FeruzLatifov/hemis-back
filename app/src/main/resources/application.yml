@@ -177,13 +177,14 @@ spring:
 
 springdoc:
   # Global API Docs Settings
+  # Production: application-prod.yml override qiladi (enabled: false)
   api-docs:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:true}
     path: /v3/api-docs
 
   # Swagger UI Settings
   swagger-ui:
-    enabled: true
+    enabled: ${SWAGGER_ENABLED:true}
     path: /swagger-ui.html
     disable-swagger-default-url: true
     display-request-duration: true

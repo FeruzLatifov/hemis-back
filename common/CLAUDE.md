@@ -128,59 +128,58 @@ public class ResourceNotFoundException extends HemisException {
 ## ResponseWrapper — API Response Structure
 
 ```java
-public record ResponseWrapper<T>(
-    boolean success,
-    T data,
-    ErrorPayload error,
-    PageInfo page,
-    Instant timestamp
-) {
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"success", "message", "data", "error"})
+public class ResponseWrapper<T> implements Serializable {
+
+    private Boolean success;
+    private String message;
+    private T data;
+    private ErrorResponse error;
 
     public static <T> ResponseWrapper<T> success(T data) {
-        return new ResponseWrapper<>(true, data, null, null, Instant.now());
+        ResponseWrapper<T> r = new ResponseWrapper<>();
+        r.setSuccess(true);
+        r.setData(data);
+        return r;
     }
 
-    public static <T> ResponseWrapper<T> success(T data, PageInfo page) {
-        return new ResponseWrapper<>(true, data, null, page, Instant.now());
+    public static <T> ResponseWrapper<T> success(T data, String message) {
+        ResponseWrapper<T> r = success(data);
+        r.setMessage(message);
+        return r;
     }
 
-    public static <T> ResponseWrapper<T> error(String code, String message) {
-        return new ResponseWrapper<>(false, null,
-            new ErrorPayload(code, message, List.of()), null, Instant.now());
+    public static <T> ResponseWrapper<T> error(String message) {
+        ResponseWrapper<T> r = new ResponseWrapper<>();
+        r.setSuccess(false);
+        r.setMessage(message);
+        return r;
     }
 
-    public static <T> ResponseWrapper<T> error(String code, String message, List<FieldError> details) {
-        return new ResponseWrapper<>(false, null,
-            new ErrorPayload(code, message, details), null, Instant.now());
-    }
-}
-
-public record ErrorPayload(String code, String message, List<FieldError> details) {}
-
-public record FieldError(String field, String code, String message) {}
-
-public record PageInfo(int number, int size, long totalElements, int totalPages) {
-
-    // ✓ Compact factory — primitive args only, ZERO Spring dependency
-    public static PageInfo of(int number, int size, long totalElements) {
-        int pages = size > 0 ? (int) Math.ceil((double) totalElements / size) : 0;
-        return new PageInfo(number, size, totalElements, pages);
+    public static <T> ResponseWrapper<T> error(String message, ErrorResponse error) {
+        ResponseWrapper<T> r = error(message);
+        r.setError(error);
+        return r;
     }
 }
 ```
 
-**Diqqat:** `PageInfo` faqat primitive konstruktor + factory bilan ishlaydi (`of(...)`).
-Spring `Page` ↔ `PageInfo` converter — `service` modulda (`PageMapper`):
+**Diqqat — `record` emas, `class`:**
+DTO uchun `record` afzal, lekin `ResponseWrapper` `@Data + @NoArgsConstructor + @AllArgsConstructor` (Lombok) bilan klass — Jackson legacy serializer'lar va `@JsonPropertyOrder` bilan moslashish uchun.
+
+**ErrorResponse strukturasi** (alohida klass): `timestamp`, `status`, `error`, `message`, `path`, `details` maydonlari mavjud — JSON'da error paytida ko'rinadi.
+
+**Pagination:** `ResponseWrapper`'da `page` maydon **YO'Q**. Sahifalangan natija uchun Spring `Page<T>` to'g'ridan-to'g'ri `data` ichida qaytariladi (`ResponseWrapper<Page<T>>`):
 
 ```java
-// service/.../mapper/PageMapper.java — Spring import shu yerda mumkin
-@Component
-public class PageMapper {
-    public <T> PageInfo from(org.springframework.data.domain.Page<T> p) {
-        return PageInfo.of(p.getNumber(), p.getSize(), p.getTotalElements());
-    }
-}
+return ResponseEntity.ok(ResponseWrapper.success(service.findAll(pageable)));
 ```
+
+Klient `data.content`, `data.totalElements`, `data.number`, `data.size` maydonlarini Spring `Page` JSON'idan oladi.
 
 **Sabab:** common = pure-Java library. Spring bog'liqligi bo'lsa, `common`'ni boshqa
 kontekstda (masalan SDK / shartnoma loyihasida) ishlatish imkonsiz bo'ladi.

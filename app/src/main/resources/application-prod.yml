@@ -164,7 +164,7 @@ hemis:
 # =====================================================
 # Security Configuration (SecurityProperties.java)
 # =====================================================
-# Consumed by: uz.hemis.app.config.SecurityProperties
+# Consumed by: uz.hemis.security.config.SecurityProperties
 # =====================================================
 
 security:
@@ -236,6 +236,21 @@ management:
     export:
       prometheus:
         enabled: true
+
+# =====================================================
+# Springdoc OpenAPI / Swagger (Production)
+# =====================================================
+# CRITICAL: Production'da swagger butunlay o'chirilgan.
+# Sabab: API hujjati orqali ichki struktura, tag'lar, payload misollar
+# tashqaridan ko'rinmasligi kerak. Hujjatni dev/staging muhitda ishlatish.
+# Aniq ehtiyoj bo'lganda override: SWAGGER_ENABLED=true ENV.
+# =====================================================
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
 
 # =====================================================
 # Logging (Production)

@@ -12,38 +12,52 @@
 
 ### 1. ResponseWrapper — barcha response uchun
 
+Real strukturasi: `{success, message, data, error}` (4 maydon, `@JsonInclude(NON_NULL)`).
+Tafsilot: [`common/CLAUDE.md` ResponseWrapper bo'limi](../common/CLAUDE.md).
+
 ```java
-// ✓ Success
+// ✓ Success (data bilan)
 {
   "success": true,
-  "data": { ... },
-  "timestamp": "2026-05-02T10:30:00Z"
+  "data": { ... }
 }
 
-// ✓ Error
+// ✓ Success (xabar bilan)
+{
+  "success": true,
+  "message": "Student created successfully",
+  "data": { "id": 1, "firstName": "Jane" }
+}
+
+// ✓ Error (oddiy xabar)
 {
   "success": false,
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "PINFL must be 14 digits",
-    "details": [
-      { "field": "pinfl", "code": "Pattern", "message": "..." }
-    ]
-  },
-  "timestamp": "2026-05-02T10:30:00Z"
+  "message": "Validation failed"
 }
 
-// ✓ Paginated
+// ✓ Error (ErrorResponse tafsiloti bilan)
+{
+  "success": false,
+  "message": "Validation failed",
+  "error": {
+    "timestamp": "2026-05-02T10:30:00Z",
+    "status": 400,
+    "error": "VALIDATION_ERROR",
+    "message": "PINFL must be 14 digits",
+    "path": "/api/v1/web/students"
+  }
+}
+
+// ✓ Paginated — Spring Page<T> to'g'ridan-to'g'ri data ichida
 {
   "success": true,
-  "data": [...],
-  "page": {
+  "data": {
+    "content": [...],
     "number": 0,
     "size": 20,
     "totalElements": 1500,
     "totalPages": 75
-  },
-  "timestamp": "..."
+  }
 }
 ```
 
@@ -250,7 +264,7 @@ hemis:
   # Bu yerda faqat istalsa override misoli (per-module override emas, hozir global config).
 ```
 
-**Filter:** `RateLimitFilter` (`app/security/`). To'liq misol va 429 response shape: `@security/CLAUDE.md`.
+**Filter:** `RateLimitFilter` (`security/filter/`). To'liq misol va 429 response shape: `@security/CLAUDE.md`.
 
 ---
 
