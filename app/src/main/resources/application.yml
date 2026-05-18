@@ -373,6 +373,57 @@ hemis:
     # Base URL for Swagger UI server selector
     server-url: ${SWAGGER_SERVER_URL:http://localhost:${SERVER_PORT:8081}}
 
+  # =====================================================
+  # Outbox Pattern Configuration (ADR-0007, ADR-0010)
+  # =====================================================
+  outbox:
+    enabled: ${OUTBOX_ENABLED:true}
+    poller:
+      interval-ms: 1000   # Har sekund poll
+      batch-size: 100     # Bir batch'da nechta event olish
+    retention:
+      days: 30            # Published event'larni 30 kun saqlash
+
+  # =====================================================
+  # Employee Sync Inbound Configuration (Univer → markaz)
+  # =====================================================
+  # 224 Univer → markaz xodim push. Controller HTTP qabul qiladi,
+  # KafkaTemplate (key=PINFL) → topic. Consumer DB upsert.
+  #
+  # Partition by PINFL → bir xil PINFL har doim bir xil partition →
+  # serial processing → optimistic-lock collision YO'Q.
+  employee-sync:
+    enabled: ${EMPLOYEE_SYNC_ENABLED:true}
+    topics:
+      inbound: hemis.employee.sync.inbound
+      dlq: hemis.employee.sync.inbound.dlq
+    producer:
+      send-timeout-ms: 30000   # 202 oldidan acks=all kutish (batch yig'iladi)
+    consumer:
+      concurrency: 12          # = topic partitions (1 partition = 1 thread)
+      retry:
+        max-attempts: 3        # 3-marta retry → DLQ
+        backoff-ms: 1000       # 1s fixed backoff (idempotent upsert — exponential kerak emas)
+
+  # =====================================================
+  # Webhook Outbound Configuration (ADR-0012)
+  # =====================================================
+  # Markaz → 224 Univer outbound callback infrastructure.
+  webhook:
+    enabled: ${WEBHOOK_ENABLED:true}
+    retry:
+      max-attempts: 5
+      initial-interval-ms: 1000    # 1 sekund (1-attempt)
+      multiplier: 5                 # 1s, 5s, 30s, 5min, 1h (exponential)
+      max-interval-ms: 3600000      # 1 soat (cap)
+    dispatcher:
+      connect-timeout-ms: 5000
+      read-timeout-ms: 30000
+      max-response-body-bytes: 4096  # Univer response truncation
+    topics:
+      events: hemis.webhook.events
+      dlq: hemis.webhook.dlq
+
   # Audit Logging Configuration
   # SECURITY: AUDIT_DB_PASSWORD ENV majburiy AUDIT_ENABLED=true bo'lganda.
   # Hardcoded default ataylab olib tashlangan (production'da ENV unutilishi xavfli).
