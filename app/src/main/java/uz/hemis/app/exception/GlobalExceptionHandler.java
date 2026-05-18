@@ -25,6 +25,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uz.hemis.common.dto.ErrorResponse;
 import uz.hemis.common.exception.BadRequestException;
@@ -423,6 +424,39 @@ public class GlobalExceptionHandler {
      * @param request HTTP request
      * @return error response
      */
+    /**
+     * Handle ResponseStatusException — Spring'ning HTTP status'i bilan tashlangan exception.
+     *
+     * <p>Status code va reason exception'dan olinadi. Generic Exception handler
+     * tutib olib 500 ga aylantirib qo'ymasligi uchun alohida.</p>
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<?> handleResponseStatus(
+            ResponseStatusException ex,
+            HttpServletRequest request
+    ) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
+        String reason = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+
+        log.warn("ResponseStatusException: {} {} - {}", status.value(), status.getReasonPhrase(), reason);
+
+        if (isLegacyEndpoint(request)) {
+            java.util.Map<String, String> legacyError = new java.util.LinkedHashMap<>();
+            legacyError.put("error", status.getReasonPhrase());
+            legacyError.put("details", reason);
+            return ResponseEntity.status(status).body(legacyError);
+        }
+
+        ErrorResponse error = ErrorResponse.of(
+                status.value(),
+                status.getReasonPhrase(),
+                reason,
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(status).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGenericException(
             Exception ex,

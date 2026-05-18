@@ -1,5 +1,6 @@
 package uz.hemis.api.legacy.controller.system;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,7 @@ import java.util.Map;
  *
  * @since 2.0.0
  */
+@Hidden  // Swagger UI'dan yashirin: wildcard fallback (mavjud bo'lmagan service/entity uchun 404)
 @RestController
 @Slf4j
 public class CubaCatchAllController {
