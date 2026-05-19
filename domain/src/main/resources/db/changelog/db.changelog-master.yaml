@@ -346,6 +346,28 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S010_seed_frontend_translations_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: S011_seed_webhook_menu
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Webhook admin menu entry under /system (2026-05-19, ADR-0012). Permission webhook.view from M004."
+      changes:
+        - sqlFile: { path: changesets/seed/S011_seed_webhook_menu.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S011_seed_webhook_menu_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S012_seed_outbox_menu
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Outbox admin menu entry under /system (2026-05-19). Permission outbox.view from M008."
+      changes:
+        - sqlFile: { path: changesets/seed/S012_seed_outbox_menu.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S012_seed_outbox_menu_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-seed-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}
@@ -415,3 +437,14 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M007_drop_employee_sync_log.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/migration/M007_drop_employee_sync_log_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M008_outbox_permissions
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Outbox admin RBAC: outbox.view (list/inspect), outbox.manage (retry/discard). SUPER_ADMIN: both, MINISTRY_ADMIN: view only."
+      changes:
+        - sqlFile: { path: changesets/migration/M008_outbox_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/migration/M008_outbox_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
