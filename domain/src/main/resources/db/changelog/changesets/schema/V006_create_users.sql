@@ -172,7 +172,6 @@ CREATE TABLE oauth_client (
 
     -- Network-level security (rules.md #5)
     allowed_ip_cidr          TEXT[],
-    require_mtls             BOOLEAN      NOT NULL DEFAULT FALSE,
 
     -- Rate limiting
     rate_limit_rpm           INTEGER      NOT NULL DEFAULT 60,

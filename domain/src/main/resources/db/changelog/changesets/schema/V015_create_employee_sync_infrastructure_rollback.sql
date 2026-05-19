@@ -8,10 +8,7 @@
 -- Drop order: dependent jadvallar avval (FK references)
 -- =====================================================
 
--- 1. Drop audit log (no FK from other tables — safe to drop first)
-DROP TABLE IF EXISTS employee_sync_log;
-
--- 2. Drop outbox event (multi-domain — but no FK from anywhere)
+-- 1. Drop outbox event (multi-domain — but no FK from anywhere)
 DROP TABLE IF EXISTS outbox_event;
 
 -- 3. Drop indexes on employee_job (before column drop)

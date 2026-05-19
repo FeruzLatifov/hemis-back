@@ -23,17 +23,21 @@
 -- =====================================================
 -- Har OTM uchun callback URL + HMAC secret. Admin UI orqali boshqariladi.
 -- Univer offline bo'lsa active=FALSE qo'yiladi → consumer skip qiladi.
+-- URL convention (2026-05-19): callback_url + active per-row saqlanmaydi.
+--   - URL = ${protocol}://{hemishe_e_university.student_url}${suffix}
+--     (application.yml: hemis.webhook.callback.protocol + .suffix)
+--   - active = hemishe_e_university.active (university lifecycle bilan sync)
+-- WebhookDispatcher buildCallbackUrl() + WebhookTargetRepository
+-- findAllForActiveUniversities() JPQL JOIN orqali derive qiladi.
 CREATE TABLE IF NOT EXISTS webhook_target (
     id                 UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     university_code    VARCHAR(10)  NOT NULL,
-    callback_url       VARCHAR(500) NOT NULL,
 
     -- HMAC secret: bcrypt hash (markazda saqlash). Plain secret faqat
     -- generate paytida UI'da bir marta ko'rsatiladi (Univer .env'ga yozadi).
     secret_hash        VARCHAR(255) NOT NULL,
 
     description        VARCHAR(255),
-    active             BOOLEAN      NOT NULL DEFAULT TRUE,
 
     -- Per-target retry config (default qiymatlar — application.yml override)
     timeout_ms         INT          NOT NULL DEFAULT 30000,
@@ -49,8 +53,6 @@ CREATE TABLE IF NOT EXISTS webhook_target (
     deleted_by         VARCHAR(50),
 
     -- Constraints
-    CONSTRAINT chk_webhook_url
-        CHECK (callback_url LIKE 'https://%' OR callback_url LIKE 'http://localhost%' OR callback_url LIKE 'http://127.0.0.1%'),
     CONSTRAINT chk_webhook_timeout
         CHECK (timeout_ms BETWEEN 1000 AND 60000),
     CONSTRAINT chk_webhook_retries
@@ -58,22 +60,16 @@ CREATE TABLE IF NOT EXISTS webhook_target (
 );
 
 COMMENT ON TABLE webhook_target IS
-    '224 ta OTM Univer webhook ro''yxati. Markaz event sodir bo''lganda bu
-     jadvaldan URL olinadi va REST callback yuboriladi. ADR-0012.';
+    '224 ta OTM Univer webhook ro''yxati. URL/active hemishe_e_university dan
+     derive qilinadi (M006 convention 2026-05-19). ADR-0012.';
 
 COMMENT ON COLUMN webhook_target.university_code IS
     'OTM identifikator (hemis_NNN dagi NNN qism). Per-OTM UNIQUE (partial index).';
-
-COMMENT ON COLUMN webhook_target.callback_url IS
-    'Univer-side qabul qiluvchi URL. Misol: https://hemis_337.univer.uz/api/hemis-callback/event';
 
 COMMENT ON COLUMN webhook_target.secret_hash IS
     'HMAC secret bcrypt hash. Plain secret faqat generate paytida qaytariladi
      (whsec_xxx format) — keyin OTM o''zining .env''ga yozadi. Markazda
      hash saqlanadi, signature verify qilinmaydi (Univer''da verify qilinadi).';
-
-COMMENT ON COLUMN webhook_target.active IS
-    'FALSE bo''lsa consumer event yubormaydi (OTM offline, manual disable, debug).';
 
 COMMENT ON COLUMN webhook_target.timeout_ms IS
     'HTTP request timeout (ms). Univer 30 sekunddan ortiq kutsa connection close.';
@@ -86,10 +82,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_webhook_target_university_code
     ON webhook_target (university_code)
     WHERE deleted_at IS NULL;
 
--- Faqat aktiv target'lar (consumer query bu indexdan foydalanadi)
-CREATE INDEX IF NOT EXISTS idx_webhook_target_active
-    ON webhook_target (university_code)
-    WHERE deleted_at IS NULL AND active = TRUE;
+-- M006 (2026-05-19): idx_webhook_target_active olib tashlandi —
+-- active column hemishe_e_university'dan derive qilinadi (per-row yo'q).
+-- Consumer query JOIN orqali ishlatadi (university.active filter).
 
 -- =====================================================
 -- 2. webhook_delivery_log — har attempt audit

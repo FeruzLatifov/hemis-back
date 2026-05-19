@@ -23,7 +23,6 @@ DROP INDEX IF EXISTS uq_webhook_delivery_event_target_attempt;
 DROP TABLE IF EXISTS webhook_delivery_log;
 
 -- 2. webhook_target indekslari va jadvali
-DROP INDEX IF EXISTS idx_webhook_target_active;
 DROP INDEX IF EXISTS uq_webhook_target_university_code;
 
 DROP TABLE IF EXISTS webhook_target;
