@@ -1,22 +1,22 @@
 ---
 id: ADR-0010
-status: proposed
+status: implemented
 date: 2026-05-08
+revised: 2026-05-19
 deciders: hemis-team
 agent: claude-code
 model: claude-opus-4-7
 affects:
   - domain
   - service
-  - api-legacy
-  - api-web
+  - api-university
 liquibase:
   - V015_create_employee_sync_infrastructure.sql
+  - M007_drop_employee_sync_log.sql
 entities:
   - Employee
   - EmployeeJobs
   - OutboxEvent
-  - EmployeeSyncLog
 verification: |
   # Schema applied
   ./gradlew :domain:liquibaseStatus | grep V015
@@ -29,16 +29,21 @@ verification: |
 related:
   - ADR-0007
   - ADR-0008
-  - ADR-0001
+  - ADR-0012
 ---
 
-# ADR 0010: Employee Sync — Transactional Outbox birinchi implementatsiyasi
+# ADR 0010: Employee Sync — Direct Kafka Producer pattern (api-university)
 
 ## Status
 
-Proposed (2026-05-08)
+**Implemented** (2026-05-08, qayta ko'rib chiqilgan: 2026-05-18 + 2026-05-19)
 
-> **Y-Statement:** 224 ta Univer (`hemis_337`, `hemis_401`, …) dagi xodim ma'lumotlarini markaziy HEMIS-back'ga sync qilish uchun, biz **Transactional Outbox Pattern** ni tanladik (sync REST → DB write + outbox row bir transactionda → background OutboxPublisher Kafka'ga jo'natadi → consumer'lar side-effect bajaradi), chunki bu yo'l UI consistency'ni saqlaydi (REST 200 = DB'da bor) va atomicity kafolatlaydi (DB write + event publish hech qachon ajralib chiqmaydi); oqibatda Univer kodi 1 satr o'zgarmaydi, eventual consistency UX bug yo'q, va keyinchalik multi-consumer ekosistemasi (cache invalidation, audit log, search index) Kafka topic orqali decouple qilinadi.
+> **Y-Statement:** 224 ta Univer (`hemis_337`, `hemis_401`, …) dagi xodim ma'lumotlarini markaziy HEMIS-back'ga sync qilish uchun, biz **Direct Kafka Producer + Idempotent Consumer** pattern'ini tanladik (api-university REST endpoint → KafkaTemplate.send() → 202 Accepted → background consumer DB upsert ON CONFLICT pinfl), chunki controller DB write qilmaydi (atomicity outbox kerakmas — DB write consumer'da), 224 OTM PHP kodi o'zgarmaydi (REST shape saqlanadi), va peak 10 ev/sec yuk Kafka partitioning bilan PINFL bo'yicha serial qayta ishlanadi (optimistic-lock collision yo'q).
+>
+> **2026-05-18 audit:** Asl ADR outbox pattern taklif qilgan edi, lekin realiteti — direct Kafka. Sabab: EmployeeSyncController **DB write qilmaydi** (consumer'da bo'ladi), shuning uchun outbox atomicity foydasi yo'q. Idempotent upsert (PINFL UNIQUE constraint) duplicate semantic'ni qoplaydi.
+>
+> **2026-05-19 revision — `employee_sync_log` jadvali DROP qilindi (M007):**
+> Tahlilda jadval 80% duplikat ekanligi aniqlandi (`activity_log` + `error_log` + Sentry birga 9 maydondan 7 tasini qoplaydi). Faqat unique qolardi: `source_uid` (allaqachon `employee_job.source_uid` da bor), `SKIP_UNCHANGED`/`CONFLICT_OVERWRITE` enum'lari (`content_hash` skip semantikasi bilan ifodalanadi). Jadval ADR-0003 ham buzgan — audit hot OLTP DB ichida emas, alohida `hemis_audit` DB'da bo'lishi shart. Yechim: `EmployeeSyncProcessor.process()` ga `@Audited(action=UPDATE, entity="Employee", entityClass=Employee.class)` annotation qo'shildi — sync event'lar avtomatik `activity_log` (hemis_audit DB) ga yoziladi. Production DB'da `employee_sync_log` bo'sh edi (Processor hech qachon yozmagan), shuning uchun ma'lumot yo'qotilmadi.
 
 ## Context
 
@@ -97,43 +102,46 @@ Demak Univer-side outbox **allaqachon mavjud** — faqat boshqa nomda (`yii2-que
 
 ## Decision
 
-**Employee/EmployeeJobs sync — Transactional Outbox Pattern (Chris Richardson) — ADR-0007 Stage 1 ning birinchi konkret implementatsiyasi.**
+**Employee sync — Direct Kafka Producer + Idempotent Consumer pattern (api-university).**
 
 ### Asosiy printsip
 
-> **Write path SYNC. Side-effects ASYNC via Kafka.**
+> **Controller pre-validate + Kafka publish (DB write yo'q). Consumer side DB upsert (idempotent).**
 
 ```
 Univer (224 OTM, kod o'zgarmaydi)
    │
-   │ POST /v2/services/employee/sync (Univer Yii queue)
+   │ POST /api/v1/university/employees/sync
+   │   (OAuth client_credentials, JWT university_code claim)
    ▼
-api-legacy: EmployeeSyncController
-   │ tenantGuard.verifyOwnership(universityCode)
-   ▼
-service: EmployeeSyncService.upsertBulk()
+api-university: EmployeeSyncController
    │
-   │ @Transactional {
-   │   ├── employee  upsert (PINFL idempotent)
-   │   ├── employee_job upsert (cascade by source_uid)
-   │   ├── employee_sync_log INSERT (audit)
-   │   └── outbox_event INSERT (atomic)
-   │ }
+   │ 1. resolveUniversityCode(JWT) yoki X-University-Code header (dev)
+   │ 2. Pre-validate PINFL har item uchun (Pinfl.isValid)
+   │ 3. Invalid items → rejections list
+   │ 4. Valid items → EmployeeSyncProducer.publish(batchId, ...)
    │
-   ▼ 200 OK { processed, conflicts, eventIds: [...] }
+   │ 5. CompletableFuture.allOf(futures).get(30s)  ← acks=all kutish
+   │
+   ▼ 202 Accepted {batchId, accepted, rejected, rejections[]}
 
    ╔═══════════════════════════════════════════════════════════╗
-   ║  Background (decoupled from request)                      ║
+   ║  Background (Kafka consumer)                              ║
    ╠═══════════════════════════════════════════════════════════╣
-   ║  OutboxPublisher (@Scheduled fixedDelay=1s)               ║
-   ║    SELECT ... WHERE published_at IS NULL LIMIT 100        ║
-   ║    kafkaTemplate.send("hemis.employee.events.v1", ...)    ║
-   ║    UPDATE outbox_event SET published_at = now()           ║
+   ║  Topic: hemis.employee.sync.inbound (12 partitions)       ║
+   ║  Key: PINFL → per-PINFL serial qayta ishlash              ║
+   ║  Concurrency: 12 (= partition count)                      ║
    ║                                                           ║
-   ║  Kafka topic: hemis.employee.events.v1                    ║
-   ║    ├── EmployeeCacheInvalidator (Redis L2 evict)          ║
-   ║    ├── EmployeeAuditLogger (hemis_audit DB consumer)      ║
-   ║    └── (future) EmployeeSearchIndexer, NotificationSvc    ║
+   ║  EmployeeSyncConsumer.consume():                          ║
+   ║    EmployeeSyncProcessor.process():                       ║
+   ║      INSERT INTO employee ... ON CONFLICT (pinfl) DO UPDATE║
+   ║      INSERT INTO employee_job ... ON CONFLICT (uc, src_uid)║
+   ║      INSERT INTO employee_sync_log (audit row)            ║
+   ║                                                           ║
+   ║  Xato boshqaruvi (DefaultErrorHandler):                   ║
+   ║    Throw → 3 retry (FixedBackOff 1s)                      ║
+   ║    Hali xato → DLQ topic (hemis.employee.sync.inbound.dlq)║
+   ║    Admin keyinchalik DLQ inspect/replay                   ║
    ╚═══════════════════════════════════════════════════════════╝
 ```
 
@@ -141,28 +149,35 @@ service: EmployeeSyncService.upsertBulk()
 
 | Qaror | Sabab |
 |-------|-------|
-| **Univer kodi o'zgarmaydi** | 175/175 contract (CLAUDE.md GOLDEN RULE #2) |
-| **REST endpoint sync** | UI consistency, Univer queue retry ishlatadi |
-| **DB write + outbox bir transactionda** | Atomicity (Chris Richardson Outbox Pattern canonical) |
-| **OutboxPublisher Spring `@Scheduled` poller** | Volume past (~10 ev/s) — Debezium CDC overkill (ADR-0007 stage 3) |
-| **Kafka publish failed → outbox kutadi** | Durable, no event loss |
-| **Initial bulk = special endpoint** | `/v2/services/employee/sync-bulk` chunked (500/batch), resumable |
-| **Admin UI create — sinxron, lekin same outbox** | UX consistency: REST 200 = DB'da, side-effects async |
-| **Kafka topic naming**: `hemis.{aggregate}.events.v1` | ADR-0007 ga muvofiq |
-| **Topic partition key**: `university_code` | Per-OTM ordering kafolat |
-| **Schema versioning**: JSONB payload + `schema_version` | Apicurio kelgunga qadar oddiy |
+| **Univer kodi o'zgarmaydi** | 175/175 contract (CLAUDE.md GOLDEN RULE #2) — REST shape saqlanadi |
+| **Controller DB write yo'q (Kafka publish only)** | Atomicity outbox kerakmas — DB write consumer'da. Pre-validate Univer'ga sinxron rad qaytaradi (invalid PINFL) |
+| **202 Accepted (200 emas)** | UX kontrakti — "qabul qilindi", "saqlandi" emas. Univer `batchId` orqali keyin `employee_sync_log` ni tekshirishi mumkin |
+| **`acks=all` + idempotent producer** | Exactly-once semantics (Kafka 3.x default) — controller 202 OLDIN publish kafolat |
+| **Topic partition key = PINFL** | Bir xil PINFL → bir partition → bir consumer thread → optimistic-lock collision yo'q |
+| **Concurrency = 12 (= partition count)** | Maksimal parallel ishlash, partition bo'yicha order saqlanadi |
+| **Idempotent consumer (ON CONFLICT pinfl)** | Duplicate publish (at-least-once Kafka) → DB darajada no-op |
+| **DLQ topic** | Poison pill yoki business rule failure → DLQ + admin manual review |
+| **Sync user — JWT subject (client_id)** | Audit tracking per-OTM |
+| **api-university modul (api-legacy emas)** | Yangi endpoint, yangi B2B kontrakt — api-legacy 175/175 saqlanadi |
 
-### Nima Kafka bilan, nima Kafka'siz
+### Nega outbox pattern EMAS?
 
-| Flow | Sync DB write | Outbox row | Kafka publish | UX javob |
-|------|--------------|------------|--------------|---------|
-| Univer event sync (`/v2/services/employee/sync`) | ✅ | ✅ | ✅ async | 200 OK darhol |
-| Markaziy admin create (UI, 6 OTM) | ✅ | ✅ | ✅ async | 200 OK darhol |
-| Markaziy admin update (UI) | ✅ | ✅ | ✅ async | 200 OK darhol |
-| Initial bulk sync (chunked) | ✅ | ❌ (skip — log only) | ❌ | 200 OK (chunk) |
-| Soft-delete (markaz) | ✅ | ✅ | ✅ async | 200 OK darhol |
+ADR-0010 asl yondashuvi outbox edi, lekin **realiteti** boshqacha bo'ldi va bu **to'g'ri qaror**:
 
-**Initial bulk skip outbox** — chunki initial sync = "hech qachon hech kim ko'rmagan past data". Cache invalidation, notification keraksiz. Faqat audit log yetadi (compliance).
+| Argument | Outbox pattern | Direct Kafka (tanlanган) |
+|----------|----------------|---------------------------|
+| Atomicity (DB write + event) | ✅ Bir tx | ❌ Yo'q (lekin **kerakmas** — controller DB write qilmaydi) |
+| UX consistency (200 = DB) | ✅ | ❌ (202 = queued, batchId polling) |
+| Univer kodi o'zgarmaydi | ✅ | ✅ |
+| Implementation complexity | ⚠️ Yuqori (outbox table + poller) | ✅ Past (KafkaTemplate.send) |
+| Throughput | ⚠️ Poll delay (1-2s) | ✅ Darhol |
+| Replay | ✅ Outbox row | ✅ Kafka topic |
+| Data loss (acks=all) | ❌ Yo'q | ❌ Yo'q (idempotent producer) |
+| Multi-consumer decoupling | ✅ | ✅ (bir xil topic) |
+
+**Asosiy farq:** outbox pattern foydali bo'ladi qachonki **controller DB write qiladi va atomic event ham kerak**. EmployeeSync inbound: controller DB write qilmaydi → outbox foydasi yo'q.
+
+**Outbox haqida:** `OutboxEventPublisher` infra mavjud (ADR-0007 Stage 1), ammo bu **api-legacy markaziy mutation** uchun (klassifikator, qoidalar) — ADR-0012 webhook fanout chain'ining manbasi. EmployeeSync (inbound) — boshqa flow.
 
 ## Alternatives Considered
 

@@ -68,7 +68,7 @@ public class EmployeeSyncController {
     @Operation(summary = "Xodimlarni sync qilish (async)",
             description = "OTM xodimlar ro'yxatini markaz Kafka topic'iga publish qiladi. " +
                     "DB upsert async — 202 Accepted darhol qaytadi. " +
-                    "Per-row natija {@code employee_sync_log} jadvalidan {@code batchId} bo'yicha. " +
+                    "Per-row audit `activity_log` (hemis_audit DB) — `entity_type='Employee'` + `entity_id=PINFL` filter. " +
                     "Idempotent: pinfl (employee), (universityCode, sourceUid) (job) bo'yicha INSERT ON CONFLICT.")
     @ApiResponses({
             @ApiResponse(responseCode = "202", description = "Sync queue'ga olindi"),

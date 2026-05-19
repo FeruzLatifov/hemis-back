@@ -19,7 +19,7 @@ import java.util.UUID;
  * Bu row'lar Kafka'ga qo'yilmagan, async qaytarib bo'lmaydi.</p>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@Schema(description = "Univer sync queue'ga olindi (async). Per-row natija employee_sync_log jadvalida.")
+@Schema(description = "Univer sync queue'ga olindi (async). Per-row natija activity_log jadvalida (hemis_audit DB).")
 public record EmployeeSyncAcceptedResponse(
         @Schema(description = "Bu sync chaqiruvi uchun batch identifikator (audit/trace).")
         UUID batchId,

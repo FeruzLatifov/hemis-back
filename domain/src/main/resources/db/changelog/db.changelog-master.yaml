@@ -405,3 +405,13 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M004_webhook_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/migration/M004_webhook_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M007_drop_employee_sync_log
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Drop employee_sync_log table (ADR-0010 audit 2026-05-19). 80% duplikat activity_log/error_log/Sentry bilan. ADR-0003 isolation buzilgan edi (hot OLTP DB ichida). EmployeeSyncProcessor @Audited orqali activity_log'ga yoziladi."
+      changes:
+        - sqlFile: { path: changesets/migration/M007_drop_employee_sync_log.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/migration/M007_drop_employee_sync_log_rollback.sql, relativeToChangelogFile: true, splitStatements: false }

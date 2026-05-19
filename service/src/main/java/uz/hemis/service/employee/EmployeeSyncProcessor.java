@@ -4,8 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.dto.employee.EmployeeSyncDto;
 import uz.hemis.common.vo.Pinfl;
+import uz.hemis.domain.entity.employee.Employee;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
 import uz.hemis.domain.repository.EmployeeRepository;
 
@@ -31,6 +34,7 @@ public class EmployeeSyncProcessor {
     private final EmployeeJobsRepository jobsRepo;
 
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "Employee", entityClass = Employee.class)
     public ProcessResult process(String universityCode, EmployeeSyncDto dto, String auditUser) {
         if (!Pinfl.isValid(dto.getPinfl())) {
             throw new IllegalArgumentException("Invalid PINFL: " + mask(dto.getPinfl()));
