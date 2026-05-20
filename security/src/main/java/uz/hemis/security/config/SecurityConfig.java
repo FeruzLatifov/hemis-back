@@ -175,10 +175,12 @@ public class SecurityConfig {
                             // Public endpoints (health checks)
                             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                             .requestMatchers("/api/v1/university/health").permitAll()
-                            // DEV-ONLY: Univer e2e employee sync test (X-University-Code header; production'da OAuth client_credentials)
-                            .requestMatchers("/api/v1/university/employees/sync").permitAll()
-                            // DEV-ONLY: Univer e2e building sync test (X-University-Code header; production'da OAuth client_credentials)
-                            .requestMatchers("/api/v1/university/buildings/sync").permitAll()
+                            .requestMatchers("/app/rest/v2/health/**").permitAll()
+                            // Univer sync endpoints — OAuth client_credentials majburiy (ADR-0005).
+                            // Avval permitAll edi (DEV-ONLY izoh bilan), lekin profile guard yo'q edi
+                            // → CRITICAL: 224 OTM nomidan har kim PINFL massa yuborishi mumkin edi.
+                            .requestMatchers("/api/v1/university/employees/sync").authenticated()
+                            .requestMatchers("/api/v1/university/buildings/sync").authenticated()
 
                             // Protected actuator endpoints (admin only)
                             .requestMatchers("/actuator/**").hasRole("ADMIN");
@@ -198,9 +200,9 @@ public class SecurityConfig {
 
                         authz
                         // OAuth2 Token endpoint (PUBLIC - for login)
-                        // CRITICAL: Must be public for universities to get tokens
+                        // CRITICAL: Must be public for universities to get tokens.
+                        // v1 (/app/rest/oauth/token) — 2026-05-20: olib tashlandi (chaqiruvchi yo'q).
                         .requestMatchers("/app/rest/v2/oauth/token").permitAll()
-                        .requestMatchers("/app/rest/oauth/token").permitAll() // Legacy fallback (v2 yo'q)
 
                         // Phase 2: B2B client_credentials grant endpoints (PUBLIC — Basic auth in body)
                         .requestMatchers(HttpMethod.POST, "/api/v1/university/oauth/token").permitAll()
@@ -224,8 +226,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/web/auth/reset-password").permitAll()
                         .requestMatchers("/api/v1/web/auth/**").authenticated()
 
-                        // I18n endpoints (PUBLIC - login sahifasi uchun ham tarjima kerak)
-                        .requestMatchers("/api/v1/web/i18n/**").permitAll()
+                        // I18n endpoints — login sahifa uchun translations anonim ochiq,
+                        // lekin /cache/* endpointlar @PreAuthorize ga tushishi kerak.
+                        // Blanket /i18n/** permitAll defense-in-depth fail edi.
+                        .requestMatchers(HttpMethod.GET, "/api/v1/web/i18n/messages",
+                                                          "/api/v1/web/i18n/messages/**",
+                                                          "/api/v1/web/i18n/health").permitAll()
 
                         // Language/System endpoints (hammasi token talab qiladi)
                         .requestMatchers("/api/v1/web/languages/**").authenticated()
