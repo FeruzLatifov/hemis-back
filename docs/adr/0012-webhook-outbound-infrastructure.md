@@ -11,7 +11,7 @@ affects:
   - api-web
   - common
 liquibase:
-  - V016_create_webhook_infrastructure.sql
+  - V015_create_webhook_infrastructure.sql
   - M004_webhook_permissions.sql
 entities:
   - WebhookTarget
@@ -19,7 +19,7 @@ entities:
   - WebhookDeliveryStatus
 verification: |
   # 1. Schema
-  ./gradlew :domain:liquibaseStatus | grep V016
+  ./gradlew :domain:liquibaseStatus | grep V015
   # 2. Compile
   ./gradlew :app:build -x test
   # 3. Permission grants
@@ -86,7 +86,7 @@ Accepted (2026-05-13)
 
 | Komponent | Tafsilot |
 |-----------|----------|
-| **`outbox_event`** | V015 jadval (ADR-0010 dan meros) — atomic DB write + event publish |
+| **`outbox_event`** | V014 jadval (ADR-0010 dan meros) — atomic DB write + event publish |
 | **`OutboxEventPublisher`** | Service'lar dan chaqiriladi (programmatic API) |
 | **`OutboxPoller`** | `@Scheduled(1s)` — outbox → Kafka topic (FOR UPDATE SKIP LOCKED) |
 | **`WebhookFanoutConsumer`** | Domain topiclardan o'qiydi, 224 OTM per-message yaratadi → `hemis.webhook.events` |
@@ -128,15 +128,17 @@ X-Hemis-University-Code: {NNN}
 }
 ```
 
-### Retry policy
+### Retry policy (2026-05-18 trim: 5 → 3 attempts)
 
 | HTTP javob | Status | Keyingi attempt |
 |-----------|--------|-----------------|
 | 2xx | SUCCESS | Terminal |
 | 4xx | FAILED | Terminal (payload xato) |
 | 5xx | RETRY | Exponential backoff |
-| Timeout | RETRY | 1s, 5s, 30s, 5min, 1h |
-| `attempt >= max_retries` | DLQ | Kafka DLQ topic + admin alert |
+| Timeout | RETRY | 1s, 30s, 5min |
+| `attempt >= 3` | DLQ | Kafka DLQ topic + admin alert |
+
+> **Asl plan 5 attempts edi (1s, 5s, 30s, 5min, 1h). Trim sababi:** Univer offline 1 soatdan oshsa baribir manual review kerak — 5-attempt 1 soat kutish foydasiz. 3-attempt = 5 minut total, keyin DLQ + admin alert. Past complexity, aniq SLA.
 
 ## Alternatives Considered
 
@@ -180,7 +182,7 @@ X-Hemis-University-Code: {NNN}
 
 | Sprint | Komponent | Status |
 |--------|-----------|--------|
-| 1.1 | V016 migration (webhook_target + webhook_delivery_log) | ✅ |
+| 1.1 | V015 migration (webhook_target + webhook_delivery_log) | ✅ |
 | 1.2 | OutboxEvent JPA entity | ✅ |
 | 1.3 | WebhookTarget + WebhookDeliveryLog entity | ✅ |
 | 1.4 | spring-kafka dependency + config | ✅ |
@@ -195,7 +197,7 @@ X-Hemis-University-Code: {NNN}
 # 1. Build
 ./gradlew :app:build -x test
 
-# 2. Liquibase status (V016 + M004 pending)
+# 2. Liquibase status (V015 + M004 pending)
 ./gradlew :domain:liquibaseStatus
 
 # 3. Local stack

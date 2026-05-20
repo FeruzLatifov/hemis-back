@@ -1,6 +1,6 @@
 # Liquibase Migration Guide
 
-> Database schema o'zgartirish uchun migration yaratish (V001-V014, M001+, S001+ patterni)
+> Database schema o'zgartirish uchun migration yaratish (V001-V015, M001-M005, S001-S013 patterni — keyingisi V016/M006/S014)
 
 ---
 
@@ -26,8 +26,8 @@ domain/src/main/resources/db/changelog/
 ├── db.changelog-master.yaml          # Master fayl (changeset tartibi)
 └── changesets/
     ├── schema/                       # V### — DDL
-    │   ├── V015_create_X.sql
-    │   └── V015_create_X_rollback.sql
+    │   ├── V016_create_X.sql
+    │   └── V016_create_X_rollback.sql
     ├── seed/                         # S### — reference data
     │   ├── S011_seed_X.sql
     │   └── S011_seed_X_rollback.sql
@@ -52,7 +52,7 @@ Har SQL fayl boshida: version, author (`hemis-team`), date, ADR ID (agar bo'lsa)
 ### 2. Forward Migration (V### namuna)
 
 ```sql
--- V015: Create department table
+-- V016: Create department table
 -- Author: hemis-team
 -- Date: 2026-05-07
 -- ADR: ADR-0006 (klassifikator emas — prefiks-siz)
@@ -85,7 +85,7 @@ COMMENT ON TABLE department IS 'Organizational department structure (ADR-NNNN)';
 ### 3. Rollback Script (V###_rollback.sql)
 
 ```sql
--- Rollback for V015: Drop department table
+-- Rollback for V016: Drop department table
 DROP TABLE IF EXISTS department CASCADE;
 ```
 
@@ -95,7 +95,7 @@ DROP TABLE IF EXISTS department CASCADE;
 
 ```yaml
 - changeSet:
-    id: V015_create_department
+    id: V016_create_department
     author: hemis-team
     logicalFilePath: ${changelog.path}
     comment: "ADR-NNNN — department domain"
@@ -103,9 +103,9 @@ DROP TABLE IF EXISTS department CASCADE;
       - onFail: MARK_RAN
       - not: { tableExists: { tableName: department } }
     changes:
-      - sqlFile: { path: changesets/schema/V015_create_department.sql, relativeToChangelogFile: true, splitStatements: false }
+      - sqlFile: { path: changesets/schema/V016_create_department.sql, relativeToChangelogFile: true, splitStatements: false }
     rollback:
-      - sqlFile: { path: changesets/schema/V015_create_department_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+      - sqlFile: { path: changesets/schema/V016_create_department_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 ```
 
 ### 5. Test va Verifikatsiya

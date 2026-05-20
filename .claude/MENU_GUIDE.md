@@ -2,7 +2,7 @@
 
 > Backend-driven menu + ko'p tilli tizim. F12 manipulyatsiyadan himoyalangan.
 >
-> **Schema haqiqat manbai:** `domain/src/main/resources/db/changelog/changesets/schema/V012-V014` (real DDL).
+> **Schema haqiqat manbai:** `domain/src/main/resources/db/changelog/changesets/schema/V011-V013` (real DDL).
 
 ---
 
@@ -28,16 +28,16 @@ Backend (Spring Boot)
 
 ---
 
-## Database Strukturasi (Real V012-V014)
+## Database Strukturasi (Real V011-V013)
 
 7 ta jadval, **barchasi SINGULAR** (rules.md "Naming Exceptions"):
 
 | Jadval | Changeset | Maqsad |
 |--------|-----------|--------|
-| `language` | V013 | Qo'llab-quvvatlanadigan tillar (`code` PK: `uz-UZ`, `ru-RU`, `en-US`, `oz-UZ`) |
-| `system_message` | V012 | i18n xabar kalitlari (`message_key` UNIQUE partial) |
-| `system_message_translation` | V012 | Tarjimalar (FK `system_message`, UNIQUE `message_id+language`) |
-| `menu` | V014 | Menyu hierarchy (parent_id self-FK, `menu_type`: main/system) |
+| `language` | V012 | Qo'llab-quvvatlanadigan tillar (`code` PK: `uz-UZ`, `ru-RU`, `en-US`, `oz-UZ`) |
+| `system_message` | V011 | i18n xabar kalitlari (`message_key` UNIQUE partial) |
+| `system_message_translation` | V011 | Tarjimalar (FK `system_message`, UNIQUE `message_id+language`) |
+| `menu` | V013 | Menyu hierarchy (parent_id self-FK, `menu_type`: main/system) |
 | `role` | V001 | Rollar (RBAC) |
 | `permission` | V002 | Huquqlar |
 | `user_role`, `role_permission` | V007 | RBAC junction (N:N) |
@@ -53,7 +53,7 @@ Backend (Spring Boot)
 - `user_roles` → `user_role`
 - Faqat `users` PLURAL (PostgreSQL `user` reserved word)
 
-### Menu jadval (V014)
+### Menu jadval (V013)
 
 ```sql
 CREATE TABLE menu (
@@ -78,9 +78,9 @@ CREATE TABLE menu (
 );
 ```
 
-Tafsilot: `V014_create_menus.sql` (49 seed item bilan).
+Tafsilot: `V013_create_menus.sql` (49 seed item bilan).
 
-### system_message jadval (V012)
+### system_message jadval (V011)
 
 ```sql
 CREATE TABLE system_message (
@@ -330,7 +330,7 @@ const ProtectedRoute = ({ children }) => {
 ## Checklist
 
 ### Database
-- [ ] V012-V014 migration applied (`./gradlew :domain:liquibaseUpdate`)
+- [ ] V011-V013 migration applied (`./gradlew :domain:liquibaseUpdate`)
 - [ ] FK va Partial UNIQUE constraint'lar to'g'ri (`uq_system_message_key WHERE deleted_at IS NULL`)
 - [ ] Seed data kiritildi (S005-S010)
 - [ ] Barcha 4 til uchun tarjimalar bor

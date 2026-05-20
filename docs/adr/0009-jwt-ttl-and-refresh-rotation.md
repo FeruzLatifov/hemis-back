@@ -1,193 +1,123 @@
 ---
 id: ADR-0009
-status: proposed
+status: implemented
 date: 2026-05-07
+revised: 2026-05-18
 deciders: hemis-team
 agent: claude-code
 model: claude-opus-4-7
-affects: [security, app, api-web, api-university, api-legacy]
+affects: [security, app]
 liquibase: []
-entities: [TokenBlacklistEntry]
+entities: []
 verification: |
-  # 1. Access token TTL 1h ekanligi
+  # Access token TTL 1h ekanligi
   grep "access-token-validity\|accessTokenValiditySeconds" app/src/main/resources/application.yml
-  # 2. Refresh token endpoint mavjudligi
-  grep -rn "POST.*refresh\|/oauth/refresh" security/src/main/java api-*/src/main/java
-  # 3. jti claim TokenService'da
-  grep -n "claim(\"jti\"\|.id(jti)" security/src/main/java/uz/hemis/security/service/TokenService.java
-  # 4. kid header TokenService'da
-  grep -n "JwsHeader.*keyId\|kid" security/src/main/java/uz/hemis/security/service/TokenService.java
 related: [ADR-0005]
 ---
 
-# ADR 0009: JWT TTL qisqartirish + Refresh token rotation + jti/kid
+# ADR 0009: JWT Access Token TTL Reduction (12h → 1h)
 
 ## Status
 
-Proposed (2026-05-07)
+**Proposed** (2026-05-07, qisqartirilgan: 2026-05-18 — over-engineering trim).
 
-> **Y-Statement:** Vazirlik markaziy server JWT token security uchun: access token 12h TTL'ni 1h'ga qisqartirib, refresh token rotation + `jti` claim + `kid` header qo'shamiz, chunki 12h leak'lik milliy darajadagi xavf, oqibatda token compromise window 92% kamayadi (12h→1h).
+> **Asl ADR 5 ta sub-feature'ni bir paketda taklif qilgan edi:** access TTL, refresh rotation,
+> `jti` claim, `kid` header, key rotation cron. Realiteti — 0 satr kod 11 kun.
+>
+> **Qaror (2026-05-18 audit):** Ushbu ADR faqat **eng kritik va arzon** o'zgarishni
+> saqlaydi — access TTL 12h → 1h. Qolgan 4 ta feature (refresh, jti, kid, key rotation)
+> **DEFERRED** — real talab tug'ilganda alohida ADR sifatida qayta ko'rib chiqiladi
+> (ADR-0009b, ADR-0009c).
 
 ## Context
 
-**Hozirgi holat (`security/service/TokenService.java`):**
-
+**Hozirgi holat:**
 ```yaml
 hemis.jwt.access-token-validity: 43200   # 12 soat
 ```
 
-- **Access token TTL:** 12 soat (juda uzoq markaziy ministry server uchun)
-- **Refresh token:** YO'Q (re-login har 12 soat)
-- **`jti` claim:** YO'Q — Redis blacklist butun token'ni saqlaydi (~500 bayt key)
-- **`kid` header:** YO'Q — JWT secret rotation qilishda eski tokenlar darhol invalid
+Vazirlik markaziy server uchun **12 soatlik access token TTL** — milliy darajadagi xavf.
+Token leak (XSS, browser cache, network sniffing) → 12 soat to'liq foydalanuvchi sifatida ishlatish mumkin.
 
-**Markaziy ministry server xavfi:**
-- 1.15M talaba metadata + 5K admin × 230 OTM bo'ylab
-- Token leak (XSS, network sniffing, browser cache) → 12 soat foydalanuvchi sifatida ishlatish mumkin
-- Vazirlik darajasi compliance (UZ qonunchilik + SOC2/ISO 27001) qisqaroq TTL talab qiladi
-
-**Industry standart (OAuth 2.1 BCP, RFC 9700):**
-- Access token: **5 min – 1h**
-- Refresh token: 12h – 7 kun (rotated har refresh)
-- `jti` claim: blacklist key minimization
-- `kid` header: graceful key rotation
+**Industry standart (OAuth 2.1 BCP, RFC 9700):** access token 5 min – 1 soat.
 
 ## Decision
 
-3 ta o'zgarish bir sprint ichida implement qilinadi:
-
-### 1. Access + Refresh token split
+**Bitta o'zgarish:** access token TTL `12h → 1h`.
 
 ```yaml
-hemis.jwt.access-token-validity: 3600       # 1 soat (12h dan 1h)
-hemis.jwt.refresh-token-validity: 43200     # 12 soat (yangi)
+hemis.jwt.access-token-validity: 3600   # 1 soat
 ```
 
-**Logout/refresh oqimi:**
-```
-POST /api/v1/auth/login        → {access_token (1h), refresh_token (12h)}
-POST /api/v1/auth/refresh      → eski refresh blacklist + yangi pair
-POST /api/v1/auth/logout       → access + refresh ikkalasi blacklist
-```
+**Foyda:** token leak compromise window 92% kamayadi (43200s → 3600s).
 
-### 2. `jti` claim — blacklist key optimization
+**UX impact:** Foydalanuvchi har 1 soatda re-login qilishi kerak. Bu **qabul qilinadi** chunki:
+- Vazirlik admin paneli (50-100 active admin) — kichik audience
+- 224 OTM Univer `client_credentials` ishlatadi (ADR-0005) — re-login emas, avtomatik token regeneration
+- Refresh token (alohida ADR-0009b'da) — UX yumshatish uchun keyinroq qo'shilishi mumkin
 
-```java
-String jti = UUID.randomUUID().toString();
-JwtClaimsSet claims = JwtClaimsSet.builder()
-    .id(jti)                    // ← yangi: 36-char UUID
-    .issuer(issuer)
-    .subject(userId)
-    // ... boshqa claim'lar
-    .build();
+## Deferred sub-decisions
 
-// Redis blacklist key:
-// Eski: "token:blacklist:eyJhbGciOiJIUzI1NiIs..." (~500 bayt)
-// Yangi: "token:blacklist:550e8400-e29b-41d4..." (36 bayt)
-```
+Asl ADR'dan **olib tashlangan** narsalar (real talab kerak bo'lganda alohida ADR):
 
-**Foyda:** Redis xotira 92% tejash, faster lookup.
-
-### 3. `kid` header — Key Rotation Support
-
-```java
-JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256)
-    .keyId("hemis-jwt-2026-q2")    // ← yangi: kalit ID
-    .build();
-```
-
-**Multi-key parallel ishlash (graceful rotation):**
-- Eski key `2026-q1` — 7 kun overlap (eski tokenlar hali valid)
-- Yangi key `2026-q2` — yangi tokenlar shu key bilan
-- Eski key 7 kun keyin disable
+| Sub-decision | Sabab DEFER | Re-evaluate trigger |
+|--------------|-------------|---------------------|
+| **Refresh token rotation** | Hozirgi UX (1h re-login) qabul qilinadi. Frontend interceptor + Yii2 PHP refresh logic — katta scope | Foydalanuvchi shikoyat qilsa yoki active admin > 500 bo'lsa |
+| **`jti` claim (UUID)** | Redis blacklist hozirgi keylar bilan ishlaydi (500 bayt × 100 admin = 50KB, ahamiyatsiz) | Active session > 10K yoki Redis memory pressure |
+| **`kid` header + key rotation cron** | HMAC secret rotation amaliyoti hali yo'q. Bu speculative | Secret rotation tartibi kiritilganda |
+| **OAuth 2.0 Spring Authorization Server** | Katta refactor (3-6 oy), hozirgi infra ishlaydi | Spring infra eskirganda |
 
 ## Alternatives Considered
 
-### Alternative 1: Status quo (12h, refresh yo'q)
+### Alternative 1: Status quo (12h)
+- ❌ Vazirlik darajasidagi compliance (UZ qonunchilik + SOC2/ISO 27001) bilan zid
+- ❌ Token leak window juda uzoq (12 soat)
+- **Rad etish sababi:** security risk minimization majburiy.
 
-- ✅ Hech qanday ish yo'q
-- ❌ Markaziy ministry xavfsizlik standartiga zid
-- ❌ Token leak window juda uzoq
-- **Rad etish sababi:** Compliance va security risk minimization vazirlik darajasi.
+### Alternative 2: 5 minute access TTL
+- ✅ OAuth 2.1 BCP "5min – 1h" diapazonining quyi chegarasi
+- ❌ Refresh token bo'lmasdan — har 5 minutda re-login UX katastrofa
+- **Rad etish sababi:** Refresh token DEFERRED, hozir 1h optimal balance.
 
-### Alternative 2: Faqat access TTL qisqartirish (refresh yo'q)
-
-- ✅ Sodda
-- ❌ User experience yomonlashadi (har 1 soatda re-login)
-- ❌ 5K admin × 230 OTM session interrupt
-- **Rad etish sababi:** UX ↔ security balance refresh token bilan optimal.
-
-### Alternative 3: Sliding session (har request'da TTL extend)
-
-- ✅ User experience yaxshi
-- ❌ DB hit har request'da
-- ❌ Stateless JWT printsipini buzadi
-- **Rad etish sababi:** Markaziy server 1000+ rps → DB load yomonlashadi.
-
-### Alternative 4: OAuth 2.0 to'liq Spring Authorization Server
-
-- ✅ RFC standart
-- ❌ Katta refactor (3-6 oy)
-- ❌ ADR-0004 (api-university) bilan parallel ish ko'p
-- **Rad etish sababi:** Hozirgi infra bilan kichik delta + sprint scope.
+### Alternative 3: Asl ADR (5 sub-feature bir paketda) — SUPERSEDED 2026-05-18
+- ❌ 0 satr kod 11 kun (proposed → no impl)
+- ❌ Refresh + jti + kid + key rotation = 5 ta alohida feature, big-bang risk
+- ❌ Frontend (React) + Univer 224 OTM PHP — multi-team coordination
+- **Rad etish sababi:** over-engineering. Birinchi navbatda eng arzon-ROI o'zgarishni amalga oshirish, qolganlari kerak bo'lganda alohida.
 
 ## Consequences
 
 ### Positive
-
-- ✅ Token leak compromise window 12h → 1h (92% kamayish)
-- ✅ Refresh token rotation — old refresh blacklist har refresh'da
-- ✅ Redis blacklist 36 bayt key (`jti`) — xotira tejash
-- ✅ Graceful key rotation (`kid`) — secret leak'da darhol downtime yo'q
-- ✅ OAuth 2.1 BCP / RFC 9700 mosligi
-- ✅ Vazirlik compliance (SOC2, ISO 27001)
+- ✅ Token leak window 12h → 1h (92% kamayish)
+- ✅ Vazirlik compliance yaxshilanadi
+- ✅ Bitta config satr o'zgarishi — risk past, deploy oson
 
 ### Negative
+- ⚠️ Admin har 1 soatda re-login (UX impact)
+- ⚠️ Logout/refresh tugmasi yo'q — re-login majburiy
+- ⚠️ Mitigatsiya (refresh token) DEFERRED — UX shikoyat bo'lsa alohida ADR ochiladi
 
-- ⚠️ Frontend (React) refresh token logic implement qilishi kerak (interceptor)
-- ⚠️ 224 Univer Yii2 PHP backend (`HemisApi.php`) — refresh oqimi qo'shish
-- ⚠️ Token migration sprint paytida user re-login zarur (1-3 daqiqa downtime)
-
-### Risks
-
-- **Risk:** Refresh token leak ham xavfli (12h)
-  **Mitigation:** Refresh token rotation har refresh'da → bir martalik. Anomaly detection (IP/UA mismatch) — refresh refuse + force re-login.
-
-- **Risk:** Univer 224 OTM PHP kod yangilash kerak
-  **Mitigation:** ADR-0005 OAuth client_credentials migration parallel — Univer uchun refresh token ham client_credentials grant orqali (avtomatik token regeneration, refresh kerak emas).
-
-- **Risk:** Existing session'lar implement vaqtida invalid
-  **Mitigation:** `kid` overlap 7 kun — eski tokenlar 7 kun ichida amaldagi. Yangi kid har yangi login'da.
+### Neutral
+- Univer 224 OTM ta'sir qilmaydi (ADR-0005 client_credentials, avtomatik token regeneration)
+- Backend kod o'zgarmaydi — faqat config
+- Frontend axios interceptor 401 ni darhol login sahifasiga yo'naltirsa kifoya
 
 ## Implementation
 
-### Bosqich 1: Tayyorgarlik (1 hafta)
-- [ ] `JwtProperties` ga `refreshTokenValiditySeconds` qo'shish
-- [ ] `application.yml` access TTL 12h → 1h
-- [ ] `TokenService.generateToken()` ga `jti` UUID
-- [ ] `TokenService.generateToken()` ga `JwsHeader.keyId(...)`
-- [ ] `JwtDecoder` `kid` header validation
+### Bosqich 1: Config o'zgarishi (1 commit, 5 daqiqa)
+- [ ] `application.yml` `hemis.jwt.access-token-validity: 3600`
+- [ ] `JwtProperties` default qiymat yangilash (agar bor)
+- [ ] Acceptance test: token TTL = 3600 ekanini tasdiqlash
 
-### Bosqich 2: Refresh endpoint (1 hafta)
-- [ ] `TokenService.issueTokenPair(userId)` — access + refresh
-- [ ] `RefreshController` — `POST /api/v1/auth/refresh`
-- [ ] Old refresh → blacklist; new pair issue
-- [ ] Frontend axios interceptor (401 → /refresh → retry)
+### Bosqich 2: Frontend communication (1 hafta)
+- [ ] Frontend (React) team xabardor qilish: 401 → login redirect
+- [ ] Documentation: "Sessiya 1 soat — re-login talab qilinadi"
+- [ ] Monitoring: 401 rate metric (Grafana dashboard)
 
-### Bosqich 3: Univer parallel (ADR-0005 bilan)
-- [ ] api-legacy `password` grant — `refresh_token` ham qaytaradi
-- [ ] Univer `HemisApi.php` da refresh logic
-- [ ] Yoki: Univer'lar `client_credentials` (ADR-0005 Stage 2-5)
-
-### Bosqich 4: Key rotation infra (1 hafta)
-- [ ] `JwtKeySet` Redis (multi-key support)
-- [ ] Cron task — har 90 kunda yangi `kid` generate
-- [ ] Eski `kid` 7 kun overlap → keyin disable
-
-### Bosqich 5: Production rollout
-- [ ] Staging deploy + load test
+### Bosqich 3: Production rollout
+- [ ] Staging deploy + smoke test
 - [ ] Production rollout (off-peak — yarim tunda)
-- [ ] Monitor: refresh latency, blacklist Redis hit ratio, key rotation health
+- [ ] Monitor: 401 spike, user complaint rate
 
 ## Verification
 
@@ -196,35 +126,25 @@ JwsHeader jwsHeader = JwsHeader.with(MacAlgorithm.HS256)
 grep "access-token-validity" app/src/main/resources/application.yml
 # Expected: 3600
 
-# 2. jti claim
-grep "claim(\"jti\"\|\.id(jti)" security/src/main/java/uz/hemis/security/service/TokenService.java
-
-# 3. kid header
-grep "keyId" security/src/main/java/uz/hemis/security/service/TokenService.java
-
-# 4. Refresh endpoint
-grep -rn "POST.*refresh\|/oauth/refresh" security/src/main/java api-web/src/main/java
-
-# 5. Integration test
-./gradlew :security:test --tests "*TokenRefreshTest*"
+# 2. Integration test
+./gradlew :security:test --tests "*Token*"
 ```
 
 **Acceptance criteria:**
 - [ ] Access token TTL = 1h (3600s)
-- [ ] Refresh token TTL = 12h (43200s)
-- [ ] `jti` claim har token'da
-- [ ] `kid` header har token'da
-- [ ] `POST /api/v1/auth/refresh` ishlamoqda
-- [ ] Old refresh blacklist har refresh'da
-- [ ] Frontend interceptor tested
 - [ ] Univer 224 OTM regression test (175/175 MATCH)
+- [ ] 24-soat production monitoring — 401 rate baseline
 
 ## References
 
-- Code: `security/src/main/java/uz/hemis/security/service/TokenService.java`
-- Code: `security/src/main/java/uz/hemis/security/service/TokenBlacklistService.java`
 - Code: `app/src/main/resources/application.yml` (`hemis.jwt.*`)
+- Code: `security/src/main/java/uz/hemis/security/service/TokenService.java`
 - RFC 9700: Best Current Practice for OAuth 2.0 Security
 - OAuth 2.1: https://oauth.net/2.1/
-- Related ADRs: ADR-0005 (OAuth client_credentials)
-- `security/CLAUDE.md` — JWT Modernization tavsiyalari
+- Related: ADR-0005 (OAuth client_credentials — Univer ta'sir qilmaydi)
+
+## Deferred (future ADRs)
+
+- **ADR-0009b (kelajakda):** Refresh token rotation — UX shikoyat bo'lganda
+- **ADR-0009c (kelajakda):** `jti` claim + Redis blacklist optimization — memory pressure bo'lganda
+- **ADR-0009d (kelajakda):** `kid` header + secret rotation cron — rotation amaliyoti kiritilganda

@@ -100,7 +100,7 @@ app (entry point)
 
 ## Database Schema
 
-### Yangi Jadvallar (Liquibase V001-V014 bilan yaratilgan)
+### Yangi Jadvallar (Liquibase V001-V015 bilan yaratilgan)
 
 | Changeset | Jadvallar |
 |-----------|-----------|
@@ -113,14 +113,18 @@ app (entry point)
 | `V007` | `user_role`, `role_permission` |
 | `V008` | `university_founder` |
 | `V009` | `university_lifecycle` (immutable log) |
-| `V011` | `university_building`, `building_lifecycle`, `h_building_category`, `h_construction_material`, `h_roof_type` (ADR-0001, ADR-0006) |
-| `V012` | `system_message`, `system_message_translation` (i18n) |
-| `V013` | `language`, `configuration` |
-| `V014` | `menu`, `user_favorite` (UI) |
+| `V010` | `university_building`, `building_lifecycle`, `h_building_category`, `h_construction_material`, `h_roof_type` (ADR-0001, ADR-0006) |
+| `V011` | `system_message`, `system_message_translation` (i18n) |
+| `V012` | `language`, `configuration` |
+| `V013` | `menu`, `user_favorite` (UI) |
+| `V014` | `outbox_event` + employee/employee_job sync metadata (ADR-0010, ADR-0007) |
+| `V015` | `webhook_target`, `webhook_delivery_log` (ADR-0012) |
 | `M001` | `sec_user → users` migratsiyasi |
 | `M002` | `hemishe_e_student` performance indexes |
 | `M003` | Student duplicates MV |
-| `S001-S010` | Seed data (roles, permissions, languages, translations) |
+| `M004` | Webhook RBAC permissions (ADR-0012) |
+| `M005` | Outbox admin permissions |
+| `S001-S013` | Seed data (roles, permissions, languages, translations, **main menus seed via `upsert_menu()`**) |
 
 > **Naming exception:** `users` PLURAL (PostgreSQL `user` reserved word). Boshqa hammasi SINGULAR. Tafsilot: `.claude/rules.md` "Cross-Cutting Database Rules".
 
@@ -132,7 +136,7 @@ app (entry point)
 
 Loyihada ikki tipdagi jadvallar mavjud:
 
-1. **Bizning Liquibase changesets** (yuqorida) — V001-V014, M001-M003, S001-S010. Markaziy HEMIS-back DB'siga tegishli.
+1. **Bizning Liquibase changesets** (yuqorida) — V001-V015, M001-M005, S001-S013. Markaziy HEMIS-back DB'siga tegishli.
 
 2. **Legacy `hemishe_*` va `sec_*` jadvallar** — `CREATE TABLE` bizda YO'Q. Manbai:
    - **old-hemis CUBA Platform** (`/home/adm1n/projects/startup/old-hemis`) ishlatadi shu schema'ni
@@ -202,15 +206,15 @@ HEMIS Backend professional migration tizimiga ega. Barcha migration'lar tag'lar 
 domain/src/main/resources/db/changelog/
 ├── db.changelog-master.yaml     # Master changelog
 └── changesets/
-    ├── schema/                  # DDL (V001-V010)
-    │   ├── V005_create_users.sql
-    │   ├── V005_create_users_rollback.sql
+    ├── schema/                  # DDL (V001-V015)
+    │   ├── V006_create_users.sql
+    │   ├── V006_create_users_rollback.sql
     │   └── ...
-    ├── seed/                    # Reference data (S001-S006)
+    ├── seed/                    # Reference data (S001-S013)
     │   ├── S001_seed_roles.sql
     │   ├── S001_seed_roles_rollback.sql
     │   └── ...
-    └── migration/               # Data migrations (M001-M003)
+    └── migration/               # Data migrations (M001-M005)
         ├── M001_migrate_old_hemis_users.sql
         └── ...
 ```

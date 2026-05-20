@@ -1,12 +1,12 @@
 ---
 name: menu-permission-add
-description: Admin web menyu + permission + i18n qo'shish (V012-V014 schema). Trigger - "menu qo'sh", "permission yarat", "tarjima qo'sh", "i18n key", "role permission".
+description: Admin web menyu + permission + i18n qo'shish (V011-V013 schema). Trigger - "menu qo'sh", "permission yarat", "tarjima qo'sh", "i18n key", "role permission".
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
 
 # Add Menu / Permission / i18n
 
-> Schema: V012 (menu), V013 (i18n), V014 (permission). To'liq spec: `.claude/MENU_GUIDE.md`.
+> Schema: V013 (menu), V011-V012 (i18n), V001-V002+V007 (permission/RBAC). To'liq spec: `.claude/MENU_GUIDE.md`.
 
 ## Workflow
 
@@ -106,6 +106,6 @@ grep -L "@PreAuthorize" api-web/src/main/java/uz/hemis/web/<feature>/*.java
 ## See also
 
 - `.claude/MENU_GUIDE.md` — to'liq schema
-- V012/V013/V014 migrations
+- V011/V012/V013 migrations
 - `security` modul — RBAC implementation
 - `.claude/agents/security-auditor.md` — review

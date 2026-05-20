@@ -127,7 +127,7 @@ Modul-darajadagi `CLAUDE.md` (api-legacy, service, domain, security, …) Claude
 | `.claude/architecture.md` | Modul diagram, DB routing, cache, deploy | 3 — context |
 | `.claude/ENDPOINT_PORTING_GUIDE.md` | Endpoint porting **canonical workflow** (8 qadam) | 1 — canonical |
 | `.claude/LIQUIBASE_GUIDE.md` | Liquibase migration **canonical workflow** (V###/M###/S###) | 1 — canonical |
-| `.claude/MENU_GUIDE.md` | Menu + i18n + xavfsizlik (real schema: V012-V014) | 2 — reference |
+| `.claude/MENU_GUIDE.md` | Menu + i18n + xavfsizlik (real schema: V011-V013) | 2 — reference |
 | `.claude/context.md` | Biznes domain (230 ta OTM, shundan 224 — Univer ekosistemi) | 3 — context |
 
 > **Qoida vs misol**: Ziddiyat bo'lsa `rules.md` ustun. `MANDATORY_REQUIREMENTS.md` faqat misol — qoida emas.

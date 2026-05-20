@@ -11,15 +11,14 @@ affects:
   - service
   - api-university
 liquibase:
-  - V015_create_employee_sync_infrastructure.sql
-  - M007_drop_employee_sync_log.sql
+  - V014_create_employee_sync_infrastructure.sql  # employee_sync_log drop inlined (2026-05-19)
 entities:
   - Employee
   - EmployeeJobs
   - OutboxEvent
 verification: |
   # Schema applied
-  ./gradlew :domain:liquibaseStatus | grep V015
+  ./gradlew :domain:liquibaseStatus | grep V014
   # Outbox table exists
   psql -d $DB_MASTER_NAME -c "\d outbox_event"
   # Employee sync metadata columns
@@ -42,7 +41,7 @@ related:
 >
 > **2026-05-18 audit:** Asl ADR outbox pattern taklif qilgan edi, lekin realiteti — direct Kafka. Sabab: EmployeeSyncController **DB write qilmaydi** (consumer'da bo'ladi), shuning uchun outbox atomicity foydasi yo'q. Idempotent upsert (PINFL UNIQUE constraint) duplicate semantic'ni qoplaydi.
 >
-> **2026-05-19 revision — `employee_sync_log` jadvali DROP qilindi (M007):**
+> **2026-05-19 revision — `employee_sync_log` jadvali DROP qilindi (V014 ichiga inline):**
 > Tahlilda jadval 80% duplikat ekanligi aniqlandi (`activity_log` + `error_log` + Sentry birga 9 maydondan 7 tasini qoplaydi). Faqat unique qolardi: `source_uid` (allaqachon `employee_job.source_uid` da bor), `SKIP_UNCHANGED`/`CONFLICT_OVERWRITE` enum'lari (`content_hash` skip semantikasi bilan ifodalanadi). Jadval ADR-0003 ham buzgan — audit hot OLTP DB ichida emas, alohida `hemis_audit` DB'da bo'lishi shart. Yechim: `EmployeeSyncProcessor.process()` ga `@Audited(action=UPDATE, entity="Employee", entityClass=Employee.class)` annotation qo'shildi — sync event'lar avtomatik `activity_log` (hemis_audit DB) ga yoziladi. Production DB'da `employee_sync_log` bo'sh edi (Processor hech qachon yozmagan), shuning uchun ma'lumot yo'qotilmadi.
 
 ## Context
@@ -277,14 +276,14 @@ ADR-0007 Stage 2 — keyinchalik mumkin, hozir emas.
 
 ### Stage 1.1 — Schema foundation (1 hafta)
 
-- [ ] **V015 migration** — bitta atomic changeset:
+- [ ] **V014 migration** — bitta atomic changeset:
   - `employee` ALTER: `synced_at TIMESTAMP NULL`
   - `employee_job` ALTER: `source_uid VARCHAR(100)`, `content_hash CHAR(64)`, `synced_at TIMESTAMP NULL`
   - `employee_job` partial UNIQUE INDEX `(university_code, source_uid) WHERE deleted_at IS NULL`
   - CREATE TABLE `outbox_event` (ADR-0007 Stage 1.2 dan kopirovka, kelajakda ko'p domen ishlatadi)
   - CREATE TABLE `employee_sync_log` (audit trail per-record sync attempt)
-- [ ] **Rollback file** — V015_*_rollback.sql
-- [ ] **master.yaml** — V015 changeset entry
+- [ ] **Rollback file** — V014_*_rollback.sql
+- [ ] **master.yaml** — V014 changeset entry
 - [ ] **Pre-commit hook** — yangi `outbox_event`, `employee_sync_log` mapping verification (`check_table_mappings.sh`)
 
 ### Stage 1.2 — Domain layer (1 hafta)
@@ -346,17 +345,17 @@ ADR-0007 Stage 2 — keyinchalik mumkin, hozir emas.
 - [ ] Concurrency tests — 50 parallel POST `/sync` (DB lock contention)
 - [ ] Outbox poller tests — race condition (multi-instance), Kafka failure simulation
 
-> **Eslatma:** ADR `Accepted` qarorni anglatadi, **implementatsiyani EMAS**. Implementatsiya holati majburiy:
-> - ⏳ Stage 1.1 — V015 migration (pending)
-> - ⏳ Stage 1.2-1.4 — domain + service + controller (pending)
-> - ⏳ Stage 1.5 — Kafka integration (pending, keyingi sprint)
-> - ⏳ Stage 1.6 — Bulk sync rollout (pending, OTM coordination)
+> **Eslatma:** ADR `Accepted` qarorni anglatadi, **implementatsiyani EMAS**. Implementatsiya holati (2026-05-19 holatiga):
+> - ✅ Stage 1.1 — V014 migration applied (`outbox_event` + employee sync columns)
+> - ✅ Stage 1.2-1.4 — `OutboxEvent` entity, `EmployeeSyncController`, `EmployeeSyncConsumer`
+> - ✅ Stage 1.5 — Kafka integration (`KafkaConfig`, idempotent producer, `OutboxPoller` SKIP LOCKED)
+> - ⏳ Stage 1.6 — Bulk sync rollout (OTM coordination — har OTM Yii2 HemisApi.php deploy)
 
 ## Verification
 
 ```bash
 # 1. Schema applied
-./gradlew :domain:liquibaseStatus | grep V015
+./gradlew :domain:liquibaseStatus | grep V014
 
 # 2. Outbox table mavjud
 psql -d $DB_MASTER_NAME -c "\d outbox_event"
@@ -381,7 +380,7 @@ curl http://localhost:8081/actuator/metrics/employee.sync.duration
 ```
 
 **Acceptance criteria:**
-- [ ] V015 changeset applied (master.yaml entry)
+- [ ] V014 changeset applied (master.yaml entry)
 - [ ] `outbox_event`, `employee_sync_log` jadvallar yaratilgan
 - [ ] `employee.synced_at`, `employee_job.source_uid/content_hash/synced_at` columnlar qo'shilgan
 - [ ] `EmployeeSyncService.syncFromUniver()` integration test o'tadi (real DB)
@@ -399,7 +398,7 @@ curl http://localhost:8081/actuator/metrics/employee.sync.duration
 - `domain/src/main/java/uz/hemis/domain/entity/employee/Employee.java` — target entity (V004)
 - `domain/src/main/java/uz/hemis/domain/entity/employee/EmployeeJobs.java` — target entity (V004)
 - `domain/src/main/resources/db/changelog/changesets/schema/V004_create_employee.sql` — base schema
-- `domain/src/main/resources/db/changelog/changesets/schema/V011_create_university_buildings.sql` — sync metadata pattern
+- `domain/src/main/resources/db/changelog/changesets/schema/V010_create_university_buildings.sql` — sync metadata pattern
 - `/home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php` — Univer-side sender (1764 lines)
 - `/home/adm1n/projects/startup/univer/common/config/hemis.php` — Univer sync model registry (`EEmployee`, `EEmployeeMeta`)
 

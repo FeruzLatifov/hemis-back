@@ -27,7 +27,7 @@
 
 HEMIS **modular monolith + bounded context** asosida quriladi.
 
-**Real holat (V001-V014, 2026-05-07):** Barcha yangi jadvallar `public` schema'da. Domain bo'linish faqat JPA package strukturasida (`uz.hemis.domain.entity.security`, `.employee`, `.infrastructure`).
+**Real holat (V001-V015, 2026-05-19):** Barcha yangi jadvallar `public` schema'da. Domain bo'linish faqat JPA package strukturasida (`uz.hemis.domain.entity.security`, `.employee`, `.infrastructure`).
 
 **DB:** `${DB_MASTER_NAME}` (lokal: `test1_hemis`, prod: turli).
 
@@ -36,9 +36,10 @@ HEMIS **modular monolith + bounded context** asosida quriladi.
 | Eski CUBA (FROZEN) | — (legacy dump) | `hemishe_e_*`, `hemishe_h_*` (102 ta), `hemishe_r_*`, `sec_user`, `sec_role` |
 | Auth | V001, V002, V006, V007 | `role`, `permission`, `users` (PLURAL — reserved), `oauth_client`, `password_history` |
 | HR | V003, V004 | `employee`, `employee_job`, `h_position`, `h_position_type` (ADR-0006) |
-| University | V005, V008, V009, V011 | `organization`, `university_profile`, `university_building`, `university_lifecycle`, `h_building_category` |
-| UI | V014 | `menu`, `user_favorite` |
-| i18n | V012, V013 | `system_message`, `system_message_translation`, `language`, `configuration` |
+| University | V005, V008, V009, V010 | `organization`, `university_profile`, `university_building`, `university_lifecycle`, `h_building_category` |
+| UI | V013 | `menu`, `user_favorite` |
+| i18n | V011, V012 | `system_message`, `system_message_translation`, `language`, `configuration` |
+| Sync/Webhook | V014, V015 | `outbox_event`, `webhook_target`, `webhook_delivery_log` |
 
 **Kelajak:** Fizik schema separation (`auth.*`, `hr.*`, `univ.*`) — alohida ADR talab qiladi. Hozir hammasi `public`.
 
@@ -68,7 +69,7 @@ Faqat **yangi business concept** uchun, ya'ni `hemishe_*` da mavjud bo'lmagan na
 
 ### ✅ YANGI JADVAL YARATILSA — schema va naming qoidalari
 
-- **Schema (hozir):** `public` (default — V001-V014 hammasi shu yerda). Domen schema separation kelajakdagi reja, ADR talab qiladi.
+- **Schema (hozir):** `public` (default — V001-V015 hammasi shu yerda). Domen schema separation kelajakdagi reja, ADR talab qiladi.
 - **Jadval nomi:** singular, lowercase, underscore separator (`employee_job`, `building_lifecycle`)
 - **Naming istisno (PostgreSQL reserved words):** `users`, `orders`, `groups` — PLURAL ishlatiladi (`user` keyword bilan to'qnashishni oldini olish). Boshqa hech qaysi jadval PLURAL emas.
 - **Prefix:** `h_` faqat ADR-0006 mezoni bo'yicha (klassifikator + FK target + sync). Boshqa jadvallar prefiks-siz.
@@ -210,15 +211,14 @@ public class Student extends BaseEntity {
 
 ```
 domain/src/main/resources/db/changelog/changesets/
-├── schema/      V001..V014+   DDL (CREATE TABLE, INDEX, CONSTRAINT)
-├── seed/        S001..S009+   DML (INSERT reference data)
+├── schema/      V001..V015+   DDL (CREATE TABLE, INDEX, CONSTRAINT)
+├── seed/        S001..S013+   DML (INSERT reference data)
 └── migration/   M001..M005+   Data migratsiya (legacy sistemadan)
 ```
 
-**Naming:**
-- `V021_create_schemas.sql` — schema'lar
-- `V022_move_tables_to_auth.sql` — jadvallar ko'chirish
-- `S010_seed_X.sql` — seed
+**Naming (keyingisi):**
+- `V016_create_X.sql` — schema
+- `S014_seed_X.sql` — seed
 - `M006_migrate_X.sql` — data
 
 **Har migration uchun rollback fayl majburiy:** `VXXX_...rollback.sql`
@@ -462,7 +462,7 @@ Bu — **Strangler Fig Pattern'ning to'liq yakuni**. Hozir faqat eski tizim bila
 
 ## Cross-Cutting Database Rules (2026-05-07 — kengaytirma)
 
-Quyidagi qoidalar `V001-V014` audit (2026-05-07) natijasida aniqlangan. Avval implicit edi, hozir explicit:
+Quyidagi qoidalar `V001-V015` audit (2026-05-07) natijasida aniqlangan. Avval implicit edi, hozir explicit:
 
 ### 1. Naming Exceptions — PostgreSQL Reserved Words
 
@@ -491,7 +491,7 @@ CREATE UNIQUE INDEX uq_users_email ON users(email) WHERE deleted_at IS NULL;
 
 **Sabab:** Soft-deleted yozuvni qayta yaratish kerak bo'lsa — oddiy UNIQUE bloklaydi. Partial UNIQUE soft-deleted'ni e'tiborsiz qoldiradi.
 
-**Hozirgi xato:** `oauth_client.client_id` (V006:154) — oddiy UNIQUE. Kelajak migration (M005) Partial UNIQUE'ga ko'chiradi.
+**Hozirgi xato:** `oauth_client.client_id` (V006:154) — oddiy UNIQUE. Kelajak migration (M006+) Partial UNIQUE'ga ko'chiradi.
 
 ### 3. FK Index Mandate — har FK ga partial index
 
@@ -534,7 +534,7 @@ Sprint check: `grep -L "## Implementation" docs/adr/*.md` → bo'sh bo'lishi sha
 ### 6. Bootstrap Source of Truth
 
 Har jadval uchun **manba** dokumentlangan:
-- **Bizning Liquibase changeset** (V001-V014, M001-M003, S001-S010) — bizning ownership
+- **Bizning Liquibase changeset** (V001-V015, M001-M005, S001-S013) — bizning ownership
 - **Legacy dump (old-hemis)** — `hemishe_*`, `sec_*` — manbai dump-NNNN.sql + commit-hash (`README.md` "DB Bootstrap" bo'limida)
 
 Yangi jadval qo'shilganda: `domain/CLAUDE.md` "Real holat" jadvaliga qator qo'shish (ADR-0006/0008 patterni).

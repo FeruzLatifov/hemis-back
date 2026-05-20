@@ -9,7 +9,7 @@ affects: [api-legacy, domain]
 liquibase:
   - V006_create_users.sql              # users jadval (yangi schema)
   - M001_migrate_old_hemis_users.sql   # sec_user → users full migration (runOnChange)
-  - M004_verify_sec_user_to_users_sync.sql  # delta backfill + sanity check (2026-05-07)
+  # M004 endi webhook permissions; sec_user→users sanity check faqat M001 (runOnChange: true) ichida (2026-05-19)
 entities: [User, SecUser, Employee, Teacher, EmployeeJobs, LegacyEmployeeJobs]
 verification: |
   # EmployeeJobs/Employee api-legacy'da bo'lmasligi kerak — 0 natija

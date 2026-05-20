@@ -11,7 +11,6 @@ include(
     "common",                   // Shared utilities, DTOs, Port interfaces
     "security",                 // JWT OAuth2 Resource Server
     "domain",                   // JPA entities + Port adapters + Liquibase
-    // "infrastructure-persistence", // DISABLED: Kotlin plugin issue, migrations in domain module
     "service",                  // Service layer + Cache adapters
     "api-legacy",               // 🎯 Legacy CUBA-compatible APIs (/app/rest/*)
     "api-web",                  // 🎯 Modern Web APIs (/api/v1/web/*)

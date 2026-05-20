@@ -9,7 +9,7 @@ affects:                      # qaysi modullar/papkalar ta'sirlangan
   - api-legacy
   - domain
 liquibase:                    # tegishli changeset fayllari
-  - V015_create_X.sql
+  - V016_create_X.sql
 entities:                     # tegishli JPA entity'lar
   - Department
 verification: ./scripts/check_table_mappings.sh   # bajarilganlikni tekshirish komandasi

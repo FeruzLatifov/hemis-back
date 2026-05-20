@@ -7,7 +7,7 @@ agent: human
 model: n/a            # human-decided, no AI agent involvement
 affects: [domain, api-web, api-university]
 liquibase:
-  - V011_create_university_buildings.sql
+  - V010_create_university_buildings.sql
 entities: [UniversityBuilding, BuildingLifecycle, HBuildingCategory, HConstructionMaterial, HRoofType]
 verification: ./gradlew :domain:liquibaseStatus
 related: [ADR-0006]
@@ -120,7 +120,7 @@ Bu **pragmatic trade-off** — soddaroq query + aniq ownership vs purest normali
 ## Havolalar
 
 - Excel template: `docs/Бино ва иншоотлар жадвали.xlsx`
-- Schema: `domain/src/main/resources/db/changelog/changesets/schema/V011_create_university_buildings.sql`
+- Schema: `domain/src/main/resources/db/changelog/changesets/schema/V010_create_university_buildings.sql`
 - Entity: `domain/src/main/java/uz/hemis/domain/entity/infrastructure/UniversityBuilding.java`
 - Domain-Driven Design (Eric Evans) — Bounded Contexts bobi
 

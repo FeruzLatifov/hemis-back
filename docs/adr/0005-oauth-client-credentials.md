@@ -17,13 +17,13 @@ related: [ADR-0004]
 
 ## Status
 
-Accepted (server-side: 2026-05-04); 224 OTM rollout — In Progress
+Accepted (server-side: 2026-05-04); 224 OTM rollout — OTM coordination'ga bog'liq (2026-05-18 trim).
 
 **Implementation:**
 - ✅ Server tomon (`OAuthClient`, `OAuthClientAuthenticationService`, `UniversityOAuthTokenController`) — to'liq
-- ⏳ 224 OTM PHP feature flag — bosqich 2 boshlanmagan
-- ⏳ Canary deploy — bosqich 3
-- ⏳ Decommission (12 oy) — bosqich 5
+- ⏳ 224 OTM PHP feature flag + Sunset + Decommission — **OTM IT coordination** (timeline yo'q)
+
+> **2026-05-18 trim:** Asl ADR Stage 2 (PHP feature flag, 2 hafta), Stage 3 (canary 5→50→150→224, 1 oy), Stage 4 (Sunset header, 6 oy), Stage 5 (decommission, 12 oy) — bu **over-engineering**. Real audience yo'q (production'da 224 OTM hali Univer deploy qilmagan), canary kim bilan? Arbitrary timeline. Hozir **server tomon tayyor** — Univer team integration boshlaganda real plan tug'iladi.
 
 ## Context
 
@@ -164,63 +164,21 @@ JOIN role r ON r.code = 'OTM_API'
 WHERE oc.client_type = 'UNIVERSITY_BACKEND';
 ```
 
-### Bosqich 2: PHP kodda feature flag (2 hafta)
+### Bosqichlar 2-5 — OTM coordination'ga bog'liq (2026-05-18 trim)
 
-```php
-// common/components/hemis/HemisApi.php
-public function apiLogin($username, $password)
-{
-    if (Config::get(Config::CONFIG_USE_CLIENT_CREDENTIALS)) {
-        return $this->_client->post('/api/v1/university/oauth/token', [
-            'grant_type'    => 'client_credentials',
-            'client_id'     => Config::get('OAUTH_CLIENT_ID'),
-            'client_secret' => Config::get('OAUTH_CLIENT_SECRET'),
-        ])->send();
-    }
-    // Eski rejim — backward compat
-    return $this->_client->post('v2/oauth/token', [
-        'grant_type' => 'password',
-        'username'   => $username,
-        'password'   => $password,
-    ])->send();
-}
-```
+Avval ADR'da batafsil 4 bosqich (PHP feature flag → canary deploy 5→50→150→224 → Sunset header → decommission) bilan 12 oy timeline rejalashtirilgan edi. Bu **over-engineering** chunki:
 
-### Bosqich 3: Canary deploy 224 OTM bo'ylab (1 oy)
+- **Real audience yo'q:** 224 OTM hali Univer production'da deploy qilmagan — canary kim bilan?
+- **Arbitrary timeline:** "6 oy Sunset", "12 oy decommission" — biznes constraint emas
+- **Speculative complexity:** PHP `CONFIG_USE_CLIENT_CREDENTIALS` flag, wave deploy schedule — Univer team boshlaganda real plan tug'iladi
 
-> **ADR-0007 bilan farq:** ADR-0007 (Kafka) `production'da user yo'q` deydi — bu hemis-back-ning Kafka stage'i kontekstida. Bu ADR-0005 esa **224 ta MAVJUD Univer client** (real user) progressiv migration uchun canary qiladi — boshqacha kontekst (existing client cohort).
+**Hozirgi yondashuv:**
+1. **Server tomon TAYYOR** — yangi OTM kelganda darhol `client_credentials` ishlatishi mumkin
+2. **Eski `password` grant ishlaydi** — backward compat, hech kim majburlanmaydi
+3. **Univer team integration boshlaganda:** real timeline + canary + sunset alohida ADR/ticket
+4. **Decommission yo'q hozircha** — eski `password` grant hech kimga to'sqinlik qilmaydi, faqat new OTM integration uchun `client_credentials` tavsiya
 
-| Hafta | OTM soni | Monitoring |
-|-------|----------|------------|
-| 1 | 5 ta (test/dev) | Audit log, error rate |
-| 2 | 50 ta (kichik OTM'lar) | Latency, success rate |
-| 3 | 150 ta | Anomaly detection |
-| 4 | 224 ta (hammasi) | Full deployment |
-
-### Bosqich 4: Eski URL deprecation (6 oy)
-
-```http
-HTTP/1.1 200 OK
-Sunset: Sat, 31 Dec 2027 23:59:59 GMT
-Deprecation: true
-Link: </api/v1/university/oauth/token>; rel="successor-version"
-```
-
-### Bosqich 5: Decommission (12 oy)
-
-```sql
--- 224 ta machine yozuvni users dan o'chirish
-UPDATE users SET deleted_at = NOW(), deleted_by = 'oauth-migration-2027'
-WHERE user_type = 'UNIVERSITY' AND username LIKE 'univer_%';
-
--- Eski endpoint 410 Gone
--- api-legacy/.../OAuthLegacyController.java
-@PostMapping("/oauth/token")
-public ResponseEntity<?> token() {
-    return ResponseEntity.status(410)
-        .body(new ErrorResponse("This endpoint is removed. Use /api/v1/university/oauth/token"));
-}
-```
+**Misol:** Univer 224 OTM ichida birinchi early adopter kelganda — `apiLogin()` da `CONFIG_USE_CLIENT_CREDENTIALS` feature flag PHP'da implement qilinadi. Hozirgi vaqtda **bu kod yozish ortiqcha**.
 
 ## Configuration
 

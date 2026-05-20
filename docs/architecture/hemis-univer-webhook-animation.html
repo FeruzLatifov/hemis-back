@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>HEMIS-back ↔ Univer Webhook Callback — Animatsiya</title>
+<style>
+  :root {
+    --bg: #0b0e14;
+    --bg-elev: #131722;
+    --bg-card: #1a2030;
+    --border: #2a3548;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --success: #3fb950;
+    --warning: #d29922;
+    --error: #f85149;
+    --markaz: #7c3aed;
+    --univer: #14b8a6;
+    --kafka: #f59e0b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+    font-size: 14px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--bg-elev);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .header h1 {
+    font-size: 1.5em;
+    background: linear-gradient(135deg, var(--markaz), var(--univer));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 4px;
+  }
+  .header p { color: var(--text-dim); font-size: 0.9em; }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding: 16px;
+    background: var(--bg-elev);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .btn {
+    background: var(--bg-card);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+  .btn:hover { background: var(--border); border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn.primary:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .speed-group { display: flex; gap: 4px; }
+  .speed-btn { padding: 6px 12px; font-size: 0.8em; }
+  .speed-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .step-info {
+    color: var(--text-dim);
+    font-size: 0.9em;
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border-radius: 6px;
+    min-width: 200px;
+    text-align: center;
+  }
+  .step-info .step-num { color: var(--accent); font-weight: 600; }
+
+  /* Main layout */
+  .pipeline {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .zone {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+  }
+  .zone-label {
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--bg);
+    padding: 0 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .zone-markaz .zone-label { color: var(--markaz); }
+  .zone-kafka .zone-label { color: var(--kafka); }
+  .zone-univer .zone-label { color: var(--univer); }
+
+  /* Components grid */
+  .components {
+    display: grid;
+    gap: 16px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .component {
+    background: var(--bg-card);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    min-height: 88px;
+  }
+
+  .component .num {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 24px;
+    height: 24px;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75em;
+    font-weight: 700;
+    color: var(--text-dim);
+    transition: all 0.3s;
+  }
+
+  .component .title {
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-bottom: 4px;
+  }
+  .component .subtitle {
+    color: var(--text-dim);
+    font-size: 0.8em;
+    font-family: 'SF Mono', Monaco, monospace;
+    word-break: break-word;
+  }
+
+  /* Component states */
+  .component.idle { opacity: 0.5; }
+  .component.active {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, var(--bg-card), rgba(88, 166, 255, 0.15));
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(88, 166, 255, 0.3);
+  }
+  .component.active .num {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+    animation: pulse 1s infinite;
+  }
+  .component.done {
+    border-color: var(--success);
+    background: linear-gradient(135deg, var(--bg-card), rgba(63, 185, 80, 0.08));
+  }
+  .component.done .num {
+    background: var(--success);
+    border-color: var(--success);
+    color: white;
+  }
+  .component.done .num::before { content: "✓"; }
+  .component.done .num span { display: none; }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.7); }
+    50% { box-shadow: 0 0 0 12px rgba(88, 166, 255, 0); }
+  }
+
+  /* Arrows between components */
+  .arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    color: var(--border);
+    font-size: 1.5em;
+    transition: color 0.3s;
+  }
+  .arrow.active {
+    color: var(--accent);
+    animation: arrowFlow 1s infinite;
+  }
+  .arrow.done { color: var(--success); }
+
+  @keyframes arrowFlow {
+    0%, 100% { transform: translateY(0); opacity: 0.5; }
+    50% { transform: translateY(4px); opacity: 1; }
+  }
+
+  /* Message packet (moving dot) */
+  .packet-track {
+    position: fixed;
+    pointer-events: none;
+    z-index: 100;
+  }
+  .packet {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 16px var(--accent), 0 0 32px var(--accent);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+  }
+  .packet.visible { opacity: 1; }
+  .packet.kafka { background: var(--kafka); box-shadow: 0 0 16px var(--kafka), 0 0 32px var(--kafka); }
+  .packet.http { background: var(--univer); box-shadow: 0 0 16px var(--univer), 0 0 32px var(--univer); }
+
+  /* Stats panel */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-elev);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-top: 20px;
+  }
+  .stat {
+    text-align: center;
+    padding: 8px;
+  }
+  .stat .value {
+    font-size: 1.4em;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'SF Mono', Monaco, monospace;
+  }
+  .stat .label {
+    color: var(--text-dim);
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+  .stat.success .value { color: var(--success); }
+  .stat.warning .value { color: var(--warning); }
+
+  /* Side info panel */
+  .info-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 360px;
+    max-height: 70vh;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    overflow-y: auto;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    transform: translateX(400px);
+    transition: transform 0.3s;
+    z-index: 50;
+  }
+  .info-panel.open { transform: translateX(0); }
+  .info-panel h3 {
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-size: 1.1em;
+  }
+  .info-panel .close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    cursor: pointer;
+    color: var(--text-dim);
+    font-size: 1.4em;
+  }
+  .info-panel code {
+    background: var(--bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--warning);
+  }
+  .info-panel pre {
+    background: var(--bg);
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.8em;
+    margin: 8px 0;
+    color: var(--text-dim);
+  }
+  .info-panel .latency {
+    display: inline-block;
+    background: var(--bg-card);
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--accent);
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 0.85em;
+    margin: 4px 4px 4px 0;
+  }
+
+  /* Progress bar */
+  .progress {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--markaz), var(--accent), var(--univer));
+    width: 0;
+    transition: width 0.4s;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8em;
+    color: var(--text-dim);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  @media (max-width: 720px) {
+    .info-panel { width: calc(100vw - 40px); right: 20px; bottom: 20px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>HEMIS-back ↔ Univer Webhook Callback Pipeline</h1>
+  <p>Markaz admin klassifikator yangilaganda → 254 OTM Univer DB'ga avtomat sinxronizatsiya</p>
+</div>
+
+<div class="controls">
+  <button class="btn primary" id="btnPlay">▶ Boshlash</button>
+  <button class="btn" id="btnPause" disabled>⏸ Pauza</button>
+  <button class="btn" id="btnReset">⏮ Reset</button>
+  <button class="btn" id="btnStep">⏭ Keyingi qadam</button>
+
+  <div class="speed-group">
+    <button class="btn speed-btn" data-speed="0.5">0.5x</button>
+    <button class="btn speed-btn active" data-speed="1">1x</button>
+    <button class="btn speed-btn" data-speed="2">2x</button>
+    <button class="btn speed-btn" data-speed="4">4x</button>
+  </div>
+
+  <div class="step-info">
+    Qadam: <span class="step-num" id="curStep">0</span> / 11
+    <span id="stepName" style="display:block;font-size:0.85em;margin-top:2px;color:var(--text)"></span>
+  </div>
+</div>
+
+<div class="pipeline">
+
+  <!-- Zone 1: MARKAZ -->
+  <div class="zone zone-markaz">
+    <div class="zone-label">🏛️ HEMIS-back (Markaz)</div>
+    <div class="components">
+      <div class="row">
+        <div class="component idle" data-id="1" id="c1">
+          <div class="num"><span>1</span></div>
+          <div class="title">👤 Admin Web</div>
+          <div class="subtitle">PUT /api/v1/web/classifiers/h_education_type/42</div>
+        </div>
+        <div class="component idle" data-id="2" id="c2">
+          <div class="num"><span>2</span></div>
+          <div class="title">⚙️ ClassifierWebService</div>
+          <div class="subtitle">.updateClassifierItem()<br>jdbcTemplate.update + outboxPublisher</div>
+        </div>
+        <div class="component idle" data-id="3" id="c3">
+          <div class="num"><span>3</span></div>
+          <div class="title">💾 outbox_event</div>
+          <div class="subtitle">INSERT (atomic with classifier UPDATE)</div>
+        </div>
+      </div>
+
+      <div class="arrow" id="a3-4">↓</div>
+
+      <div class="row">
+        <div class="component idle" data-id="4" id="c4">
+          <div class="num"><span>4</span></div>
+          <div class="title">⏰ OutboxPoller</div>
+          <div class="subtitle">@Scheduled(1s)<br>SKIP LOCKED batch=100</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone 2: KAFKA -->
+  <div class="zone zone-kafka">
+    <div class="zone-label">📨 Kafka (Event Bus)</div>
+    <div class="components">
+      <div class="row">
+        <div class="component idle" data-id="5" id="c5">
+          <div class="num"><span>5</span></div>
+          <div class="title">📨 Topic #1</div>
+          <div class="subtitle">hemis.classifier.events.v1<br>(3 partition, key=apiKey:code)</div>
+        </div>
+        <div class="component idle" data-id="6" id="c6">
+          <div class="num"><span>6</span></div>
+          <div class="title">🔀 WebhookFanout<br>Consumer</div>
+          <div class="subtitle">concurrency=3<br>findAllForActiveUniversities()</div>
+        </div>
+        <div class="component idle" data-id="7" id="c7">
+          <div class="num"><span>7</span></div>
+          <div class="title">📨 Topic #2</div>
+          <div class="subtitle">hemis.webhook.events<br>(6 partition, key=university_code)</div>
+        </div>
+      </div>
+
+      <div class="arrow" id="a7-8">↓</div>
+
+      <div class="row">
+        <div class="component idle" data-id="8" id="c8">
+          <div class="num"><span>8</span></div>
+          <div class="title">🚀 WebhookDispatcher</div>
+          <div class="subtitle">HMAC-SHA256 sign<br>HTTP POST + retry 3x</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone 3: UNIVER -->
+  <div class="zone zone-univer">
+    <div class="zone-label">🎓 Univer (per-OTM, 254 ta)</div>
+    <div class="components">
+      <div class="row">
+        <div class="component idle" data-id="9" id="c9">
+          <div class="num"><span>9</span></div>
+          <div class="title">📥 HemisCallback<br>Controller</div>
+          <div class="subtitle">POST /v1/hemis-callback/event<br>HMAC verify + replay window 5min</div>
+        </div>
+        <div class="component idle" data-id="10" id="c10">
+          <div class="num"><span>10</span></div>
+          <div class="title">📋 hemis_callback_log<br>+ Yii queue push</div>
+          <div class="subtitle">INSERT (idempotent) → ApplyHemisEventJob<br>(Redis backend)</div>
+        </div>
+        <div class="component idle" data-id="11" id="c11">
+          <div class="num"><span>11</span></div>
+          <div class="title">✅ Univer DB upsert</div>
+          <div class="subtitle">h_education_type<br>ON CONFLICT(code)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+</div>
+
+<div class="stats">
+  <div class="stat success">
+    <div class="value" id="statSuccess">0</div>
+    <div class="label">Muvaffaqiyat</div>
+  </div>
+  <div class="stat">
+    <div class="value" id="statLatency">0ms</div>
+    <div class="label">Latency</div>
+  </div>
+  <div class="stat">
+    <div class="value" id="statEvents">0</div>
+    <div class="label">Eventlar</div>
+  </div>
+  <div class="stat warning">
+    <div class="value" id="statBugs">5</div>
+    <div class="label">Fix qilingan bug'lar</div>
+  </div>
+  <div class="stat">
+    <div class="value">254</div>
+    <div class="label">Aktiv OTM</div>
+  </div>
+  <div class="stat">
+    <div class="value">~9s</div>
+    <div class="label">P95 fanout vaqti</div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="background:var(--markaz)"></span>Markaz (HEMIS-back)</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--kafka)"></span>Kafka</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--univer)"></span>Univer (per-OTM)</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--success)"></span>Tugagan</div>
+  <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>Faol</div>
+</div>
+
+<!-- Floating packet -->
+<div class="packet-track">
+  <div class="packet" id="packet"></div>
+</div>
+
+<!-- Info side panel -->
+<div class="info-panel" id="infoPanel">
+  <span class="close" onclick="closeInfo()">×</span>
+  <div id="infoContent"></div>
+</div>
+
+<script>
+  // ====== STEP DEFINITIONS ======
+  const STEPS = [
+    { id: 1, name: "Admin click", duration: 50, latency: 10,
+      title: "Admin tomonidan klassifikator yangilash",
+      desc: "Vazirlik admin web orqali h_education_type'da code=42 row'ni yangilaydi.",
+      code: "PUT /api/v1/web/classifiers/h_education_type/42\n{\n  \"name\": \"Yangi qiymat\"\n}",
+      latency_ms: 10 },
+
+    { id: 2, name: "ClassifierWebService", duration: 30, latency: 20,
+      title: "Service layer chaqiruvi",
+      desc: "ClassifierWebService.updateClassifierItem() — jdbcTemplate UPDATE + outboxEventPublisher.publish() bitta transaction'da.",
+      code: "@Transactional\njdbcTemplate.update(updateSql, params);\noutboxEventPublisher.publish(\n  \"classifier\",\n  apiKey + \":\" + code,\n  \"updated\",\n  {classifier_type, action, item}\n);",
+      latency_ms: 10 },
+
+    { id: 3, name: "Outbox INSERT", duration: 20, latency: 30,
+      title: "outbox_event jadval INSERT (atomic)",
+      desc: "Domain UPDATE va outbox INSERT bitta DB transaction — atomicity kafolatlangan. Markaz HTTP 200 OK javob.",
+      code: "INSERT INTO outbox_event (\n  id, aggregate_type, aggregate_id,\n  event_type, payload, schema_version\n) VALUES (\n  gen_random_uuid(), 'classifier',\n  'h_education_type:42', 'updated', ...\n);",
+      latency_ms: 10 },
+
+    { id: 4, name: "OutboxPoller pickup", duration: 970, latency: 1000,
+      title: "OutboxPoller @Scheduled tick",
+      desc: "Har 1 sekundda OutboxPoller pending event'larni o'qiydi (SKIP LOCKED, batch=100). Multi-instance safe.",
+      code: "@Scheduled(fixedDelay=1000)\n@Transactional(REQUIRES_NEW)\nList<OutboxEvent> events = repository\n  .pollUnpublishedForUpdate(100);",
+      latency_ms: 970,
+      bugFix: "🐛 Fix: AOP self-invocation trap — @Transactional pollAndPublish'ga ko'chirildi" },
+
+    { id: 5, name: "Kafka topic #1", duration: 20, latency: 1020,
+      title: "hemis.classifier.events.v1 publish",
+      desc: "OutboxPoller Kafka'ga publish qiladi (acks=all, idempotent producer). Topic: 3 partition, 30 kun retention.",
+      code: "kafkaTemplate.send(\n  \"hemis.classifier.events.v1\",\n  aggregateId,  // partition key\n  payloadJson\n);",
+      latency_ms: 20 },
+
+    { id: 6, name: "WebhookFanoutConsumer", duration: 30, latency: 1050,
+      title: "Fanout — har OTM uchun message",
+      desc: "WebhookFanoutConsumer (concurrency=3) Kafka'dan o'qiydi va 254 OTM uchun envelope yaratadi. Active university'lar JOIN orqali.",
+      code: "@KafkaListener(topics = {\n  \"hemis.classifier.events.v1\", ...\n})\nList<WebhookTarget> targets =\n  findAllForActiveUniversities();\n// 254 ta fanout message yaratiladi",
+      latency_ms: 30 },
+
+    { id: 7, name: "Kafka topic #2", duration: 50, latency: 1100,
+      title: "hemis.webhook.events publish",
+      desc: "Per-OTM message — key=university_code (partition routing). 6 partition, 30 kun retention.",
+      code: "for (target : activeTargets) {\n  envelope = build(event_id, event_type,\n    aggregate_type, aggregate_id, data);\n  kafkaTemplate.send(\n    \"hemis.webhook.events\",\n    target.universityCode,  // partition key\n    envelope);\n}",
+      latency_ms: 50,
+      bugFix: "🐛 Fix: WebhookEventEnvelope @JsonProperty (snake_case JSON serialization)" },
+
+    { id: 8, name: "WebhookDispatcher + HMAC", duration: 100, latency: 1200,
+      title: "HTTP POST + HMAC signature",
+      desc: "WebhookDispatcher (5 thread) consume + HMAC-SHA256 imzo + RestClient POST. URL: protocol + university.student_url + suffix.",
+      code: "url = \"https://\"\n     + university.studentUrl\n     + \"/rest/v1/hemis-callback/event\";\nsignature = hmacSha256(\n  secret, timestamp + \".\" + body);\nclient.post(url)\n  .header(\"X-Hemis-Signature\", signature)\n  .body(envelope).retrieve();",
+      latency_ms: 100,
+      bugFix: "🐛 Fix: WebhookDispatcher null check (eski malformed envelope skip)" },
+
+    { id: 9, name: "Univer endpoint", duration: 50, latency: 1300,
+      title: "HemisCallbackController qabul qiladi",
+      desc: "Univer Yii2 PHP — HMAC verify (timing-safe), replay window 5min, idempotency check (event_id).",
+      code: "public function actionEvent() {\n  $this->verifyHemisSignature();\n  if (HemisCallbackLog::isProcessed($eventId))\n    return ['status' => 'duplicate'];\n  // ... save + queue push\n}",
+      latency_ms: 50 },
+
+    { id: 10, name: "Callback log + Queue", duration: 30, latency: 1350,
+      title: "hemis_callback_log INSERT + Yii queue push",
+      desc: "Audit log (idempotency) + Yii2 queue (Redis backend) ga ApplyHemisEventJob push. HTTP 200 darhol qaytadi.",
+      code: "$log = new HemisCallbackLog();\n$log->event_id = $eventId;\n$log->status = STATUS_QUEUED;\n$log->save();\n\nYii::$app->queue->push(\n  new ApplyHemisEventJob([...]));",
+      latency_ms: 30 },
+
+    { id: 11, name: "Univer DB upsert", duration: 50, latency: 1400,
+      title: "ApplyHemisEventJob → DB upsert",
+      desc: "Queue worker (yii queue/listen) job exec qiladi. Raw SQL upsert h_education_type jadvalga. Eski Yii ActiveRecord sync hooks qo'zg'amaydi.",
+      code: "// Univer DB jadval nomi: h_X (hemishe_*siz)\n$table = strpos($type, 'h_') === 0\n         ? $type : 'h_' . $type;\n$db->createCommand()\n   ->upsert($table, $item, $item)\n   ->execute();",
+      latency_ms: 50,
+      bugFix: "🐛 Fix: hemishe_h_* prefix olib tashlandi (Univer'da yo'q edi)" }
+  ];
+
+  // ====== STATE ======
+  let currentStep = 0;
+  let isPlaying = false;
+  let speed = 1;
+  let totalLatency = 0;
+  let timeoutHandle = null;
+
+  // ====== DOM ======
+  const btnPlay = document.getElementById('btnPlay');
+  const btnPause = document.getElementById('btnPause');
+  const btnReset = document.getElementById('btnReset');
+  const btnStep = document.getElementById('btnStep');
+  const curStepEl = document.getElementById('curStep');
+  const stepNameEl = document.getElementById('stepName');
+  const progressBar = document.getElementById('progressBar');
+  const statSuccess = document.getElementById('statSuccess');
+  const statLatency = document.getElementById('statLatency');
+  const statEvents = document.getElementById('statEvents');
+  const packet = document.getElementById('packet');
+  const infoPanel = document.getElementById('infoPanel');
+  const infoContent = document.getElementById('infoContent');
+
+  // ====== Speed control ======
+  document.querySelectorAll('.speed-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.speed-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      speed = parseFloat(b.dataset.speed);
+    });
+  });
+
+  // ====== Component click ======
+  document.querySelectorAll('.component').forEach(c => {
+    c.addEventListener('click', () => {
+      const id = parseInt(c.dataset.id);
+      const step = STEPS[id - 1];
+      if (step) showInfo(step);
+    });
+  });
+
+  function showInfo(step) {
+    let html = `<h3>${step.id}. ${step.title}</h3>
+                <p style="margin-bottom:10px;color:var(--text-dim);font-size:0.9em">${step.desc}</p>
+                <span class="latency">⏱️ +${step.latency_ms}ms</span>
+                <span class="latency">📊 T+${step.latency}ms</span>`;
+    if (step.bugFix) {
+      html += `<div style="margin-top:10px;padding:8px;background:rgba(248,81,73,0.1);border-left:3px solid var(--error);border-radius:4px;font-size:0.85em;color:var(--text)">${step.bugFix}</div>`;
+    }
+    if (step.code) {
+      html += `<pre><code>${step.code.replace(/</g, '&lt;')}</code></pre>`;
+    }
+    infoContent.innerHTML = html;
+    infoPanel.classList.add('open');
+  }
+
+  function closeInfo() {
+    infoPanel.classList.remove('open');
+  }
+  window.closeInfo = closeInfo;
+
+  // ====== Animation ======
+  function activateStep(idx) {
+    // Mark previous as done
+    if (idx > 0) {
+      const prevC = document.getElementById('c' + idx);
+      if (prevC) {
+        prevC.classList.remove('active');
+        prevC.classList.add('done');
+      }
+    }
+    // Activate current
+    const c = document.getElementById('c' + (idx + 1));
+    if (c) {
+      c.classList.remove('idle');
+      c.classList.add('active');
+      animatePacket(idx);
+    }
+    // Update stats
+    const step = STEPS[idx];
+    currentStep = idx + 1;
+    totalLatency = step.latency;
+    curStepEl.textContent = currentStep;
+    stepNameEl.textContent = step.name;
+    statLatency.textContent = totalLatency + 'ms';
+    progressBar.style.width = (currentStep / STEPS.length * 100) + '%';
+
+    if (currentStep === STEPS.length) {
+      setTimeout(() => {
+        const lastC = document.getElementById('c' + currentStep);
+        if (lastC) {
+          lastC.classList.remove('active');
+          lastC.classList.add('done');
+        }
+        statSuccess.textContent = parseInt(statSuccess.textContent) + 1;
+        statEvents.textContent = parseInt(statEvents.textContent) + 1;
+        isPlaying = false;
+        btnPlay.disabled = false;
+        btnPause.disabled = true;
+        btnPlay.textContent = '🔄 Qaytadan';
+      }, step.duration / speed);
+    }
+  }
+
+  function animatePacket(idx) {
+    const fromId = idx === 0 ? 'c1' : 'c' + idx;
+    const toId = 'c' + (idx + 1);
+    const fromEl = document.getElementById(fromId);
+    const toEl = document.getElementById(toId);
+    if (!fromEl || !toEl) return;
+
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+
+    // Choose packet color
+    packet.className = 'packet';
+    if (idx >= 4 && idx <= 6) packet.classList.add('kafka');
+    if (idx >= 7) packet.classList.add('http');
+
+    // Start position
+    packet.style.left = (fromRect.left + fromRect.width / 2 - 8) + 'px';
+    packet.style.top = (fromRect.top + fromRect.height / 2 - 8) + 'px';
+    packet.classList.add('visible');
+
+    requestAnimationFrame(() => {
+      // End position
+      packet.style.left = (toRect.left + toRect.width / 2 - 8) + 'px';
+      packet.style.top = (toRect.top + toRect.height / 2 - 8) + 'px';
+    });
+
+    setTimeout(() => packet.classList.remove('visible'), 600 / speed);
+  }
+
+  function play() {
+    if (currentStep === STEPS.length) {
+      reset();
+    }
+    isPlaying = true;
+    btnPlay.disabled = true;
+    btnPause.disabled = false;
+    btnPlay.textContent = '▶ Boshlash';
+    nextStep();
+  }
+
+  function nextStep() {
+    if (!isPlaying) return;
+    if (currentStep >= STEPS.length) return;
+    activateStep(currentStep);
+    const step = STEPS[currentStep - 1];
+    timeoutHandle = setTimeout(nextStep, step.duration / speed);
+  }
+
+  function pause() {
+    isPlaying = false;
+    if (timeoutHandle) { clearTimeout(timeoutHandle); timeoutHandle = null; }
+    btnPlay.disabled = false;
+    btnPause.disabled = true;
+    btnPlay.textContent = '▶ Davom etish';
+  }
+
+  function reset() {
+    pause();
+    currentStep = 0;
+    totalLatency = 0;
+    curStepEl.textContent = '0';
+    stepNameEl.textContent = '';
+    statLatency.textContent = '0ms';
+    progressBar.style.width = '0%';
+    btnPlay.textContent = '▶ Boshlash';
+    document.querySelectorAll('.component').forEach(c => {
+      c.classList.remove('active', 'done');
+      c.classList.add('idle');
+    });
+    packet.classList.remove('visible');
+  }
+
+  function singleStep() {
+    if (currentStep >= STEPS.length) reset();
+    activateStep(currentStep);
+    setTimeout(() => {
+      const c = document.getElementById('c' + currentStep);
+      if (c && currentStep < STEPS.length) {
+        c.classList.remove('active');
+        c.classList.add('done');
+      }
+    }, STEPS[currentStep - 1].duration / speed);
+  }
+
+  btnPlay.addEventListener('click', play);
+  btnPause.addEventListener('click', pause);
+  btnReset.addEventListener('click', reset);
+  btnStep.addEventListener('click', singleStep);
+
+  // Click outside info panel to close
+  document.addEventListener('click', e => {
+    if (!infoPanel.contains(e.target) && !e.target.closest('.component')) {
+      closeInfo();
+    }
+  });
+</script>
+
+</body>
+</html>

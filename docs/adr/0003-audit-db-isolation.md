@@ -1,7 +1,8 @@
 ---
 id: ADR-0003
-status: implemented
+status: implemented-disabled-by-default
 date: 2026-05-04
+revised: 2026-05-18
 deciders: hemis-team
 agent: human
 model: n/a
@@ -10,8 +11,14 @@ liquibase:
   - app/src/main/resources/db/audit/V001_create_activity_log.sql
   - app/src/main/resources/db/audit/V002_create_error_log.sql
   - app/src/main/resources/db/audit/V003_create_login_log.sql
-entities: [ActivityLog, ErrorLog, LoginLog]
-verification: psql -h localhost -d $DB_AUDIT_NAME -c "\dt"
+# JPA @Entity sinflari YO'Q — audit DB JdbcTemplate orqali AuditRepository ichida yoziladi.
+# common/audit/{ActivityEvent,ErrorEvent,LoginEvent}.java — bu event record'lar (DTO), entity emas.
+entities: []
+verification: |
+  # Audit kod mavjud
+  grep -rn "@ConditionalOnProperty.*audit.enabled" service/ app/ | wc -l
+  # Production'da yoqilgan bo'lsa
+  psql -h $DB_AUDIT_HOST -d $DB_AUDIT_NAME -c "\dt"  # AUDIT_ENABLED=true bo'lganda
 related: []
 ---
 
@@ -19,7 +26,30 @@ related: []
 
 ## Status
 
-Accepted (2026-05-04)
+**Implemented (kod) + DISABLED by default (config)** (2026-05-04, 2026-05-18 audit clarification)
+
+> **Implementation status (2026-05-18 audit):**
+>
+> **Kod:** ✅ to'liq implement qilingan
+> - `AuditAspect` (`@Around` `@Audited` annotation)
+> - `AuditService`, `AuditEventListener`, `AuditContextHolder`
+> - `AuditDataSourceConfig` (master/replica routing)
+> - `AuditRequestFilter`, `AuditLogController` (admin view)
+> - 3 ta schema (`V001..V003`) — `activity_log`, `error_log`, `login_log`
+>
+> **Default config:** ❌ `AUDIT_ENABLED=false` — barcha 4 ta `@ConditionalOnProperty(matchIfMissing = false)` sinflar load qilinmaydi.
+>
+> **Production deploy uchun MAJBURIY:**
+> ```bash
+> AUDIT_ENABLED=true
+> AUDIT_DB_HOST=...
+> AUDIT_DB_NAME=hemis_audit
+> AUDIT_DB_USER=...
+> AUDIT_DB_PASSWORD=...
+> ```
+> Bularsiz audit log yo'q → compliance violation. Production runbook ushbu ENV majburiy ekanini hujjatlashtirishi kerak.
+>
+> **Nima uchun default OFF?** Dev environment'da audit DB qo'shimcha PostgreSQL instance kerak. Lokal development tezligini saqlash uchun default-off. Production deploy esa explicit yoqishni majbur qiladi (fail-fast — `AUDIT_DB_PASSWORD` ENV bo'lmasa `AuditDataSourceConfig` config error).
 
 ## Context
 

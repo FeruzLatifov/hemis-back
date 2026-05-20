@@ -9,8 +9,8 @@ affects: [domain, service]
 liquibase:
   - V003_create_positions.sql
   - V004_create_employee.sql
-  - V011_create_university_buildings.sql
-  - S008_seed_activity_statuses.sql
+  - V010_create_university_buildings.sql
+  - S008_seed_positions.sql
 entities: [HPositionType, HPosition, HBuildingCategory, HConstructionMaterial, HRoofType]
 verification: |
   grep -rn "@Table(name = \"h_" domain/src/main/java/uz/hemis/domain/entity/ | wc -l  # 5+ bo'lishi kerak
@@ -41,7 +41,7 @@ Yangi 5 ta klassifikator (`position_type`, `position`, `building_category`,
 Bu nomenklatura ekosistem bilan mos emas va kelajakdagi sync vositalarini
 murakkablashtiradi.
 
-DB hali production'ga deploy qilinmagan — V003 va V011 migration'larni
+DB hali production'ga deploy qilinmagan — V003 va V010 migration'larni
 bevosita yangilash xavfsiz.
 
 ## Decision
@@ -76,8 +76,8 @@ Shu mezonni bajarmaydigan jadvallar prefiks-siz yoziladi:
 | `role` (V001) | RBAC biznes domeni — Univer ekosistemi bilan sync emas (har stack o'zining roli) |
 | `permission` (V002) | RBAC biznes domeni — server-spetsifik, kod-da hardcoded ham bo'ladi |
 | `users` (V006) | HUMAN actor jadvali — refdata emas, oqim ma'lumoti |
-| `language` (V013) | i18n config — texnik, refdata semantikasi yo'q |
-| `menu` (V014) | UI struktura — refdata emas, hierarchical config |
+| `language` (V012) | i18n config — texnik, refdata semantikasi yo'q |
+| `menu` (V013) | UI struktura — refdata emas, hierarchical config |
 | `oauth_client` (V006) | Auth principal — server-spetsifik machine identity |
 | `university_lifecycle` (V009) | Event log — append-only operational jadval |
 
@@ -104,14 +104,14 @@ Uchovi **HA** — `h_` qo'sh. Birortasi **YO'Q** — prefiks-siz.
 - **Rad etish sababi:** Foydalanuvchi to'liq prefiks konvensiyasi tanladi —
   butun stack'da `h_*`/`H` izchillik.
 
-### Alternative 2: Yangi V015 migration yaratish (V003/V011 saqlash)
+### Alternative 2: Yangi V### migration yaratish (V003/V010 saqlash)
 
 - **Tasvir:** `RENAME TABLE position_type TO h_position_type;` ALTER
-  statementlari V015 migration'ida.
+  statementlari yangi V### migration'ida.
 - **Afzalligi:** Liquibase changeset id integrity saqlanadi. Production'da
   deploy qilingan bo'lsa, RENAME yagona safe yo'l.
-- **Kamchiligi:** DB hali production'ga deploy qilinmagan — V015 keraksiz
-  qatlam, V003/V011 oldingi deploy'lardan beri allaqachon ko'p marta
+- **Kamchiligi:** DB hali production'ga deploy qilinmagan — yangi V### keraksiz
+  qatlam, V003/V010 oldingi deploy'lardan beri allaqachon ko'p marta
   o'zgartirilgan.
 - **Rad etish sababi:** Avvalgi `users` jadval cleanup (V006 commit
   `2264867`) bilan bir xil pattern — production'ga chiqarilmagan migration
@@ -155,7 +155,7 @@ Uchovi **HA** — `h_` qo'sh. Birortasi **YO'Q** — prefiks-siz.
 
 ## Implementation
 
-1. **SQL migrations** (V003, V004, V011, S008):
+1. **SQL migrations** (V003, V004, V010, S008):
    - `CREATE TABLE position_type` → `h_position_type`
    - `CREATE TABLE position` → `h_position`
    - `CREATE TABLE building_category` → `h_building_category`
@@ -202,8 +202,8 @@ Uchovi **HA** — `h_` qo'sh. Birortasi **YO'Q** — prefiks-siz.
 - **Code (SQL):**
   - `domain/src/main/resources/db/changelog/changesets/schema/V003_create_positions.sql`
   - `domain/src/main/resources/db/changelog/changesets/schema/V004_create_employee.sql`
-  - `domain/src/main/resources/db/changelog/changesets/schema/V011_create_university_buildings.sql`
-  - `domain/src/main/resources/db/changelog/changesets/seed/S008_seed_activity_statuses.sql`
+  - `domain/src/main/resources/db/changelog/changesets/schema/V010_create_university_buildings.sql`
+  - `domain/src/main/resources/db/changelog/changesets/seed/S008_seed_positions.sql`
 
 - **Code (Java entities):**
   - `domain/src/main/java/uz/hemis/domain/entity/employee/HPositionType.java`

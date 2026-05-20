@@ -1,6 +1,6 @@
 # Runbook: Building Sync Failure
 
-**Modul:** Buildings (V014)
+**Modul:** Buildings (V010)
 **Endpoint:** `POST /api/v1/university/{universityCode}/buildings/sync`
 **Log tegi:** `UniversityBuildingSyncService`
 

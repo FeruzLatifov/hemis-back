@@ -1,39 +1,55 @@
 ---
 id: ADR-0007
-status: proposed
+status: partially-implemented
 date: 2026-05-06
 deciders: hemis-team
 agent: claude-code
 model: claude-opus-4-7
 affects: [service, api-external, infrastructure]
-liquibase: []
-entities: []
+liquibase:
+  - V014_create_employee_sync_infrastructure.sql
+  - V015_create_webhook_infrastructure.sql
+entities: [OutboxEvent]
 verification: |
-  # Stage 0 — docker-compose Kafka image mavjudligi
-  grep -A2 "kafka:" docker-compose.yml
-  # Stage 1+ — outbox jadval yaratilgan
-  grep -rn "outbox_event" domain/src/main/resources/db/changelog/ | wc -l
-related: [ADR-0008]
+  # Outbox jadval mavjud
+  psql -d $DB_MASTER_NAME -c "\d outbox_event"
+  # spring-kafka dependency
+  grep "spring-kafka" service/build.gradle.kts
+related: [ADR-0008, ADR-0010, ADR-0012]
 ---
 
-# ADR 0007: Sync Architecture — Kafka-first Approach (Greenfield)
+# ADR 0007: Sync Architecture — Selective Kafka Adoption
 
 ## Status
 
-Proposed (2026-05-05, qayta ko'rib chiqilgan: 2026-05-06 — pilot va REST hardening bosqichlari olib tashlandi)
+**Partially Implemented** (2026-05-06, qayta ko'rib chiqilgan: 2026-05-18 — Stage 2 va Apicurio SUPERSEDED/DEFERRED)
 
-> **Implementation status (2026-05-07 audit):**
-> - ✅ Stage 0 — `docker-compose.yml` da `apache/kafka:3.7.0` image mavjud (infrastructure ready)
-> - ❌ Stage 1 — `outbox_event` jadvali YO'Q (`grep "outbox_event" domain/src/main/resources/db/changelog/` → 0)
-> - ❌ Stage 1 — `OutboxPublisher`, `OutboxEvent` Java sinflari YO'Q
-> - ❌ Stage 1 — `service/build.gradle.kts` da `spring-kafka` dependency YO'Q
-> - ❌ Stage 1 — `application.yml` da `kafka:` config YO'Q
+> **Implementation status (2026-05-18 audit):**
 >
-> Bu ADR — **22KB strategic plan, 0 bayt kod**. Hozirda:
-> - Univer ↔ Hemis-back sync — REST orqali (`api-legacy` + `UniverApiService`)
-> - Kafka — faqat docker-compose'da (test qilish uchun)
+> **Markaz internal:**
+> - ✅ Stage 0 — Docker Compose Kafka (`apache/kafka:3.7.0`)
+> - ✅ Stage 1.1 — V014/V015 migration (`outbox_event` + `webhook_*` jadvallari)
+> - ✅ Stage 1.2 — `spring-kafka` dependency (`service/build.gradle.kts:47`)
+> - ✅ Stage 1.3 — `OutboxEvent` JPA entity + `OutboxEventRepository`
+> - ✅ Stage 1.4 — `OutboxEventPublisher` + `OutboxPoller` (`@Scheduled` 1s, SKIP LOCKED)
+> - ✅ Stage 1.5 — Kafka topic config (`KafkaTopicConfig.java`, `application.yml`)
+> - ✅ Stage 1.6 — `KafkaConfig` (acks=all, idempotent producer, manual ack)
+> - ✅ Stage 1.7 — Domain event publisher integration: `ClassifierWebService` ham `outboxEventPublisher.publish(...)` chaqirilgan (3 joy: line 46, 252, 329, 398). Webhook fanout topiclar boshqaruv yo'lida ishlamoqda. Boshqa domain'lar (Student, Contract, Grade) hali ulanmagan — Stage 1.8 qaytariladi.
 >
-> **Keyingi qadam:** Stage 1 (outbox jadvalı + V015 changeset + service skeleton) — alohida sprint, Univer 175/175 kontraktni saqlab qolish sharti bilan.
+> **Markazga inbound (api-university → Kafka):**
+> - ✅ `EmployeeSyncController` → direct Kafka publish (outbox EMAS — chunki controller DB write qilmaydi, atomicity kerakmas)
+> - ✅ `EmployeeSyncConsumer` — idempotent upsert (ON CONFLICT pinfl), DLQ
+> - ⚠️ Boshqa domain sync (Student, Contract, Schedule, Grade) — ❌ Implementation yo'q
+>
+> **Markazdan outbound (markaz → 224 Univer):**
+> - ✅ ADR-0012 webhook outbound (Outbox + Kafka fanout + REST callback)
+> - ✅ Source publisher (Stage 1.7) — ClassifierWebService bog'langan; Student/Contract/Grade keyingi sprint'da
+>
+> **Stage 2 (224 OTM Kafka producer migration) — SUPERSEDED (2026-05-18).**
+> Sabab: api-legacy 175/175 frozen kontrakt saqlanadi. 224 Univer PHP backend `HemisApi.php` REST orqali sync qiladi — Kafka producer migration kerakmas. Univer kodbase'iga PHP `rdkafka` ekstension deploy 224 OTM bo'yicha massive ops overhead bo'lardi (heterogeneous PHP environment, davlat tarmoq policy TCP 9092 yopiq). Real-time push uchun **webhook outbound** (ADR-0012) yetadi.
+>
+> **Schema Registry (Apicurio) — DEFERRED (2026-05-18).**
+> Sabab: hozirgi volume (~0.3 event/sec) JSONB + Bean Validation bilan to'liq qoplanadi. Apicurio cluster, CI gate, schema PR workflow — 100K+ event/day yoki multi-team schema evolution real talab bo'lganda re-evaluate.
 
 ## Context
 
@@ -475,92 +491,20 @@ REST response shape o'zgarmaydi — 224 OTM PHP klient buzilmaydi.
 | 5 | `hemis.audit.events.v1` | All write paths | hemis_audit DB consumer |
 | 6 | `hemis.publication.events.v1` | PublicationService CRUD | research analytics |
 
-#### 1.9 Schema Registry — birinchi schema'lar
+#### 1.9 Schema Registry (Apicurio) — DEFERRED (2026-05-18)
 
-```json
-// schemas/student-event-v1.avsc
-{
-  "type": "record",
-  "name": "StudentEvent",
-  "namespace": "uz.hemis.events",
-  "fields": [
-    {"name": "id", "type": "string"},
-    {"name": "eventType", "type": "string"},
-    {"name": "occurredAt", "type": "long", "logicalType": "timestamp-millis"},
-    {"name": "schemaVersion", "type": "int", "default": 1},
-    {"name": "payload", "type": {"type": "record", "name": "Student", "fields": [
-        {"name": "pinfl", "type": "string"},
-        {"name": "firstName", "type": "string"},
-        ...
-    ]}}
-  ]
-}
-```
+> Hozirgi volume (~0.3 event/sec) JSONB + Bean Validation bilan to'liq qoplanadi.
+> Apicurio cluster, CI gate, schema PR workflow — 100K+ event/day yoki multi-team
+> schema evolution real talab paydo bo'lganda re-evaluate.
+>
+> Hozircha JSONB payload `OutboxEvent.schema_version` field bilan version'lanadi
+> (manual increment), backward compat dasturchi tomonidan code review'da tekshiriladi.
 
-CI gate (GitHub Actions yoki Gitlab CI):
-```bash
-apicurio-cli compatibility check \
-  --registry-url $APICURIO_URL \
-  --artifact-id student-event \
-  --schema-file schemas/student-event-v1.avsc \
-  --compatibility BACKWARD
-```
+### Bosqich 2: 224 OTM Kafka producer migration — SUPERSEDED (2026-05-18)
 
-### Bosqich 2: 224 OTM Kafka producer migration (when ready)
-
-OTM PHP team tayyor bo'lganda:
-
-#### 2.1 Univer tomon outbox jadval qo'shiladi
-
-```sql
--- Univer hemis_NNN.sql
-CREATE TABLE outbox_event (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    aggregate_type VARCHAR(50),
-    payload JSONB,
-    occurred_at TIMESTAMP DEFAULT NOW(),
-    published_at TIMESTAMP
-);
-```
-
-#### 2.2 PHP Kafka producer (rdkafka extension)
-
-```php
-// common/components/hemis/sync/KafkaPublisher.php
-class KafkaPublisher {
-    public function publish(string $topic, string $key, array $payload) {
-        $conf = new \RdKafka\Conf();
-        $conf->set('bootstrap.servers', 'kafka.hemis-back:9092');
-        $producer = new \RdKafka\Producer($conf);
-        $kafkaTopic = $producer->newTopic($topic);
-        $kafkaTopic->produce(RD_KAFKA_PARTITION_UA, 0, json_encode($payload), $key);
-        $producer->flush(10000);
-    }
-}
-```
-
-#### 2.3 Per-OTM feature flag
-
-```php
-// common/components/hemis/HemisApi.php
-public function syncStudent($student) {
-    if (Config::get(Config::CONFIG_USE_KAFKA)) {
-        return $this->kafkaPublisher->publish(
-            'univer.student.events.v1',
-            $student->pinfl,
-            $student->toArray()
-        );
-    }
-    // Eski rejim — REST POST (default, backward compat)
-    return $this->_client->post('/v2/entities/hemishe_EStudent', $student->toArray())->send();
-}
-```
-
-#### 2.4 Wave deploy
-
-REST sync parallel ishlaydi — issue paydo bo'lsa REST'ga rollback (config flag toggle).
-
-Universitet o'z tezligida o'tadi. Markaz tomon majburlamaydi. REST sync **12+ oy saqlanadi**.
+> **Bekor qilindi.** api-legacy 175/175 frozen kontrakt saqlanadi. 224 Univer PHP backend REST orqali sync qiladi (`HemisApi.php`). Real-time push uchun ADR-0012 webhook outbound infrastructure ishlatiladi (markaz → 224 Univer HTTPS callback + HMAC, TCP 9092 emas).
+>
+> **Sabab batafsil:** PHP `rdkafka` ekstension 224 OTM heterogeneous environment'ga deploy massive ops overhead. Per-OTM SASL/SCRAM credential rotation, davlat tarmoq policy (TCP 9092 yopiq), Univer kodbase 175/175 contract risk — barchasi ROI past qiladi.
 
 ## Configuration
 

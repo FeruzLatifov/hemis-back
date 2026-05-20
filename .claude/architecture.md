@@ -187,7 +187,7 @@ Dependencies: ALL modules
    │   (Streaming)      │              │  (Streaming)       │
    │                    │              │                    │
    │   31 ta jadval     │              │  3 ta jadval       │
-   │   (V001..V014)     │              │  - activity_log    │
+   │   (V001..V015)     │              │  - activity_log    │
    │                    │              │  - error_log       │
    │                    │              │  - login_log       │
    │   Soft delete      │              │  REVOKE UPD,DEL    │
