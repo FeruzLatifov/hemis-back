@@ -89,7 +89,7 @@ public class FacultyService {
     /**
      * Get dictionaries for filters (cached)
      */
-    @Cacheable(value = "faculty-dictionaries", key = "'all'")
+    @Cacheable(value = "facultyDictionaries", key = "'all'")
     public FacultyDictionariesDto getDictionaries() {
         log.debug("Getting faculty dictionaries");
 

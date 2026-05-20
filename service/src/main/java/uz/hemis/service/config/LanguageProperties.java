@@ -86,8 +86,6 @@ public class LanguageProperties {
      *   <li>oz-UZ - Uzbek (Cyrillic script)</li>
      *   <li>ru-RU - Russian</li>
      *   <li>en-US - English (US)</li>
-     *   <li>kk-UZ - Karakalpak (future)</li>
-     *   <li>tg-TG - Tajik (future)</li>
      * </ul>
      */
     private List<String> supported = new ArrayList<>(Arrays.asList(

@@ -165,41 +165,57 @@ public class EmployeeJobsLegacyService {
     }
 
     /**
-     * Build OLD-HEMIS compatible instance name: "FULLNAME DepartmentName RateName"
+     * Build OLD-HEMIS compatible instance name: "FULLNAME DepartmentName RateName".
+     *
+     * <p>Optimizatsiya (2026-05-20): avval 3 ta alohida native query edi (employee,
+     * department, rate) → bitta LEFT JOIN. 20 row sahifa: 60 → 20 query.
+     * Hibernate batch fetch bu yerda yordam bermaydi (native JDBC).</p>
      */
     public String buildInstanceName(UUID employeeId, String departmentCode, String rateCode) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getEmployeeFullName(employeeId));
-
-        if (departmentCode != null && !departmentCode.isEmpty()) {
-            try {
-                Map<String, Object> row = jdbcTemplate.queryForMap(
-                        "SELECT name_uz FROM hemishe_e_university_department WHERE code = ? AND delete_ts IS NULL",
-                        departmentCode);
-                String deptName = row.get("name_uz") != null ? row.get("name_uz").toString() : null;
-                if (deptName != null && !deptName.isEmpty()) {
-                    sb.append(" ").append(deptName);
-                }
-            } catch (Exception e) {
-                log.debug("Failed to fetch department name for instanceName: code={}, error={}", departmentCode, e.getMessage());
-            }
+        if (employeeId == null) {
+            return "Unknown Employee";
         }
+        try {
+            // Bitta query: employee FROM, dept va rate code-LEFT JOIN.
+            // Code'lar NULL bo'lsa LEFT JOIN ON `? IS NULL OR table.code = ?` true qaytaradi
+            // — name NULL bo'ladi, append qilinmaydi (xuddi eski xulq).
+            Map<String, Object> row = jdbcTemplate.queryForMap(
+                    "SELECT t.firstname, t.lastname, t.fathername, " +
+                            "       d.name_uz AS dept_name, " +
+                            "       r.name AS rate_name " +
+                            "  FROM hemishe_e_teacher t " +
+                            "  LEFT JOIN hemishe_e_university_department d " +
+                            "    ON d.code = ? AND d.delete_ts IS NULL " +
+                            "  LEFT JOIN hemishe_h_university_employee_rate r " +
+                            "    ON r.code = ? AND r.delete_ts IS NULL " +
+                            " WHERE t.id = ? AND t.delete_ts IS NULL",
+                    departmentCode != null && !departmentCode.isEmpty() ? departmentCode : null,
+                    rateCode != null && !rateCode.isEmpty() ? rateCode : null,
+                    employeeId);
 
-        if (rateCode != null && !rateCode.isEmpty()) {
-            try {
-                Map<String, Object> row = jdbcTemplate.queryForMap(
-                        "SELECT name FROM hemishe_h_university_employee_rate WHERE code = ? AND delete_ts IS NULL",
-                        rateCode);
-                String rateName = row.get("name") != null ? row.get("name").toString() : null;
-                if (rateName != null && !rateName.isEmpty()) {
-                    sb.append(" ").append(rateName);
-                }
-            } catch (Exception e) {
-                log.debug("Failed to fetch rate name for instanceName: code={}, error={}", rateCode, e.getMessage());
+            StringBuilder sb = new StringBuilder();
+            sb.append(buildFullName(
+                    str(row.get("firstname")),
+                    str(row.get("lastname")),
+                    str(row.get("fathername"))
+            ).toUpperCase());
+
+            String deptName = str(row.get("dept_name"));
+            if (deptName != null && !deptName.isEmpty()) {
+                sb.append(" ").append(deptName);
             }
+            String rateName = str(row.get("rate_name"));
+            if (rateName != null && !rateName.isEmpty()) {
+                sb.append(" ").append(rateName);
+            }
+            return sb.toString();
+        } catch (EmptyResultDataAccessException e) {
+            return "Employee-" + employeeId;
+        } catch (Exception e) {
+            log.debug("Failed to build instanceName: empId={}, dept={}, rate={}, err={}",
+                    employeeId, departmentCode, rateCode, e.getMessage());
+            return "Employee-" + employeeId;
         }
-
-        return sb.toString();
     }
 
     /**

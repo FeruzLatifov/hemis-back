@@ -69,7 +69,7 @@ public class TranslationService {
      * Get translations by category
      * Useful for menu, forms, etc.
      */
-    @Cacheable(value = "translations-category", key = "#locale + '-' + #category")
+    @Cacheable(value = "translationsCategory", key = "#locale + '-' + #category")
     public Map<String, String> getTranslationsByCategory(String locale, String category) {
         log.debug("Loading translations for locale: {}, category: {}", locale, category);
         Map<String, String> data = translationRepository.getTranslationsMapByCategory(locale, category);

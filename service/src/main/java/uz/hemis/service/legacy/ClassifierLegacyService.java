@@ -166,9 +166,14 @@ public class ClassifierLegacyService {
 
     // ==================== EducationType ====================
 
+    // Cache invariant: barcha findAll* metodlar List.copyOf(...) bilan immutable qaytaradi.
+    // Sabab: Hibernate-managed mutable list cache'ga to'g'ridan-to'g'ri yozilsa, caller
+    // mutation cache'ni buzadi. @CacheEvict pair YO'Q — hemishe_h_* FROZEN (faqat seed),
+    // runtime modifikatsiya yo'q (`grep` 0 ta save/update/delete topdi).
+
     @Cacheable(value = "classifierEducationType", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<EducationType> findAllEducationTypes() {
-        return educationTypeRepository.findAll();
+        return List.copyOf(educationTypeRepository.findAll());
     }
 
     public Optional<EducationType> findEducationTypeByCode(String code) {
@@ -185,7 +190,7 @@ public class ClassifierLegacyService {
 
     @Cacheable(value = "classifierEducationForm", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<EducationForm> findAllEducationForms() {
-        return educationFormRepository.findAll();
+        return List.copyOf(educationFormRepository.findAll());
     }
 
     public Optional<EducationForm> findEducationFormByCode(String code) {
@@ -202,7 +207,7 @@ public class ClassifierLegacyService {
 
     @Cacheable(value = "classifierCourse", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<HCourse> findAllCourses() {
-        return hCourseRepository.findAll();
+        return List.copyOf(hCourseRepository.findAll());
     }
 
     public Optional<HCourse> findCourseByCode(String code) {
@@ -219,7 +224,7 @@ public class ClassifierLegacyService {
 
     @Cacheable(value = "classifierEducationYear", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<EducationYear> findAllEducationYears() {
-        return educationYearRepository.findAll();
+        return List.copyOf(educationYearRepository.findAll());
     }
 
     public Optional<EducationYear> findEducationYearByCode(String code) {
@@ -236,7 +241,7 @@ public class ClassifierLegacyService {
 
     @Cacheable(value = "classifierTransferType", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<TransferType> findAllTransferTypes() {
-        return transferTypeRepository.findAll();
+        return List.copyOf(transferTypeRepository.findAll());
     }
 
     public Optional<TransferType> findTransferTypeByCode(String code) {
@@ -253,7 +258,7 @@ public class ClassifierLegacyService {
 
     @Cacheable(value = "classifierAdmissionType", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<AdmissionType> findAllAdmissionTypes() {
-        return admissionTypeRepository.findAll();
+        return List.copyOf(admissionTypeRepository.findAll());
     }
 
     public Optional<AdmissionType> findAdmissionTypeByCode(String code) {

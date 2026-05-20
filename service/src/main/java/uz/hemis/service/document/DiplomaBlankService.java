@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -282,7 +283,11 @@ public class DiplomaBlankService {
      */
     @Audited(action = AuditAction.CREATE, entity = "DiplomaBlank", entityClass = DiplomaBlank.class)
     @Transactional
-    @CachePut(value = "diplomaBlanks", key = "#result.id")
+    @Caching(
+        put = { @CachePut(value = "diplomaBlanks", key = "#result.id") },
+        evict = { @CacheEvict(value = "diplomaBlanks", key = "'code:' + #result.blankCode",
+                              condition = "#result.blankCode != null") }
+    )
     public DiplomaBlankDto create(DiplomaBlankDto diplomaBlankDto) {
         log.info("Creating new diploma blank with code: {}", diplomaBlankDto.getBlankCode());
 
@@ -327,8 +332,15 @@ public class DiplomaBlankService {
      */
     @Audited(action = AuditAction.UPDATE, entity = "DiplomaBlank", entityClass = DiplomaBlank.class, keyArg = "id")
     @Transactional
-    @CachePut(value = "diplomaBlanks", key = "#id")
-    @CacheEvict(value = "diplomaBlanks", key = "'code:' + #result.blankCode")
+    @Caching(
+        put = { @CachePut(value = "diplomaBlanks", key = "#id") },
+        evict = {
+            @CacheEvict(value = "diplomaBlanks", key = "'code:' + #diplomaBlankDto.blankCode",
+                        condition = "#diplomaBlankDto.blankCode != null"),
+            @CacheEvict(value = "diplomaBlanks", key = "'code:' + #result.blankCode",
+                        condition = "#result != null && #result.blankCode != null")
+        }
+    )
     public DiplomaBlankDto update(UUID id, DiplomaBlankDto diplomaBlankDto) {
         log.info("Updating diploma blank with ID: {}", id);
 

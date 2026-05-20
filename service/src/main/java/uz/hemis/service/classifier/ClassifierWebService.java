@@ -18,6 +18,7 @@ import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.service.classifier.ClassifierMetadataRegistry.Category;
 import uz.hemis.service.classifier.ClassifierMetadataRegistry.ClassifierMeta;
+import uz.hemis.service.outbox.OutboxEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -42,6 +43,7 @@ import java.util.stream.Collectors;
 public class ClassifierWebService {
 
     private final JdbcTemplate jdbcTemplate;
+    private final OutboxEventPublisher outboxEventPublisher;
 
     // ==================== READ Operations ====================
 
@@ -239,7 +241,16 @@ public class ClassifierWebService {
         jdbcTemplate.update(insertSql, values.toArray());
         log.info("Classifier item created: {}.{} by {}", apiKey, dto.getCode(), currentUser);
 
-        return getClassifierItem(apiKey, dto.getCode());
+        ClassifierItemDto result = getClassifierItem(apiKey, dto.getCode());
+        // Univer ApplyHemisEventJob.applyClassifier() kutadigan format (hemis-univer contract):
+        //   { classifier_type: "h_X", action: "ADD|UPDATE|DELETE", item: {...} }
+        Map<String, Object> payload = Map.of(
+                "classifier_type", apiKey,
+                "action", "ADD",
+                "item", result
+        );
+        outboxEventPublisher.publish("classifier", apiKey + ":" + dto.getCode(), "created", payload);
+        return result;
     }
 
     @Transactional
@@ -308,7 +319,15 @@ public class ClassifierWebService {
         jdbcTemplate.update(updateSql, params.toArray());
         log.info("Classifier item updated: {}.{}", apiKey, code);
 
-        return getClassifierItem(apiKey, code);
+        ClassifierItemDto result = getClassifierItem(apiKey, code);
+        // Univer ApplyHemisEventJob format (hemis-univer contract)
+        Map<String, Object> payload = Map.of(
+                "classifier_type", apiKey,
+                "action", "UPDATE",
+                "item", result
+        );
+        outboxEventPublisher.publish("classifier", apiKey + ":" + code, "updated", payload);
+        return result;
     }
 
     /**
@@ -370,6 +389,18 @@ public class ClassifierWebService {
         }
 
         log.info("Classifier item deleted: {}.{}", apiKey, code);
+        // Univer ApplyHemisEventJob format — DELETE uchun item.id orqali update
+        Map<String, Object> payload = Map.of(
+                "classifier_type", apiKey,
+                "action", "DELETE",
+                "item", Map.of("code", code)
+        );
+        outboxEventPublisher.publish(
+                "classifier",
+                apiKey + ":" + code,
+                schema.hasDeleteTs ? "soft_deleted" : "deleted",
+                payload
+        );
     }
 
     // ==================== Helpers ====================

@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.domain.entity.security.UserFavorite;
 import uz.hemis.domain.repository.UserFavoriteRepository;
+import uz.hemis.service.favorite.dto.FavoriteReorderItem;
 
 import java.util.List;
 import java.util.UUID;
@@ -143,10 +144,10 @@ public class UserFavoriteService {
      * @param items  list of menu codes with their new order numbers
      */
     @Transactional
-    public void reorderFavorites(UUID userId, List<FavoriteOrderItem> items) {
+    public void reorderFavorites(UUID userId, List<FavoriteReorderItem> items) {
         log.info("Reordering {} favorites for userId: {}", items.size(), userId);
 
-        for (FavoriteOrderItem item : items) {
+        for (FavoriteReorderItem item : items) {
             userFavoriteRepository.findByUserIdAndMenuCode(userId, item.code())
                 .ifPresent(fav -> {
                     fav.setOrderNumber(item.order());
@@ -158,15 +159,4 @@ public class UserFavoriteService {
         log.info("Favorites reordered successfully for userId: {}", userId);
     }
 
-    // =====================================================
-    // DTOs
-    // =====================================================
-
-    /**
-     * DTO for reorder operation
-     *
-     * @param code  the menu code
-     * @param order the new order number
-     */
-    public record FavoriteOrderItem(String code, int order) {}
 }

@@ -18,8 +18,10 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.webhook.WebhookDeliveryLog;
 import uz.hemis.domain.entity.webhook.WebhookTarget;
+import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.domain.repository.webhook.WebhookDeliveryLogRepository;
 import uz.hemis.domain.repository.webhook.WebhookTargetRepository;
 
@@ -61,6 +63,7 @@ import java.util.UUID;
 public class WebhookDispatcher {
 
     private final WebhookTargetRepository targetRepository;
+    private final UniversityRepository universityRepository;
     private final WebhookDeliveryLogRepository deliveryLogRepository;
     private final HmacSigner hmacSigner;
     private final WebhookSecretVault secretVault;
@@ -69,7 +72,13 @@ public class WebhookDispatcher {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final WebhookMetrics metrics;
 
-    @Value("${hemis.webhook.retry.max-attempts:5}")
+    @Value("${hemis.webhook.callback.protocol:https}")
+    private String callbackProtocol;
+
+    @Value("${hemis.webhook.callback.suffix:/rest/v1/hemis-callback/event}")
+    private String callbackSuffix;
+
+    @Value("${hemis.webhook.retry.max-attempts:3}")
     private int maxAttempts;
 
     @Value("${hemis.webhook.retry.initial-interval-ms:1000}")
@@ -103,23 +112,46 @@ public class WebhookDispatcher {
         String envelopeJson = record.value();
 
         try {
-            // 1. Envelope parse
+            // 1. Envelope parse — defensive null check (eski schema malformed message'larini skip)
             JsonNode envelope = objectMapper.readTree(envelopeJson);
-            UUID eventId = UUID.fromString(envelope.get("event_id").asText());
-            String eventType = envelope.get("event_type").asText();
+            JsonNode eventIdNode = envelope.get("event_id");
+            JsonNode eventTypeNode = envelope.get("event_type");
+            if (eventIdNode == null || eventTypeNode == null) {
+                log.warn("Malformed envelope (no event_id/type) for university={} — skipping (offset={})",
+                        universityCode, record.offset());
+                ack.acknowledge();
+                return;
+            }
+            UUID eventId = UUID.fromString(eventIdNode.asText());
+            String eventType = eventTypeNode.asText();
 
-            // 2. Target lookup
-            WebhookTarget target = targetRepository.findByUniversityCodeAndActiveTrue(universityCode)
-                    .orElse(null);
-
-            if (target == null) {
-                log.debug("No active target for {} — event {} skipped", universityCode, eventId);
+            // 2. University active check (active flag university tomondan keladi — 2026-05-18 refactor)
+            University university = universityRepository.findById(universityCode).orElse(null);
+            if (university == null || !Boolean.TRUE.equals(university.getActive())
+                    || university.getDeleteTs() != null) {
+                log.debug("University {} inactive/deleted — event {} skipped", universityCode, eventId);
                 ack.acknowledge();
                 return;
             }
 
-            // 3. Dispatch
-            dispatchWithRetry(target, eventId, eventType, envelopeJson, 1);
+            // 3. Target lookup (secret + per-OTM tuning)
+            WebhookTarget target = targetRepository.findByUniversityCode(universityCode).orElse(null);
+            if (target == null) {
+                log.debug("No webhook target for {} — event {} skipped (secret not configured)",
+                        universityCode, eventId);
+                ack.acknowledge();
+                return;
+            }
+
+            // 4. Dispatch — URL derive: protocol + student_url + suffix
+            String callbackUrl = buildCallbackUrl(university);
+            if (callbackUrl == null) {
+                log.warn("University {} has no student_url — event {} skipped",
+                        universityCode, eventId);
+                ack.acknowledge();
+                return;
+            }
+            dispatchWithRetry(target, callbackUrl, eventId, eventType, envelopeJson, 1);
 
             ack.acknowledge();
 
@@ -130,12 +162,31 @@ public class WebhookDispatcher {
     }
 
     /**
+     * Callback URL build: protocol + university.student_url + suffix.
+     *
+     * <p>Convention (2026-05-18): har OTM uchun bir xil suffix dubl edi —
+     * application.yml'da bir marta yoziladi.</p>
+     *
+     * @return null agar university.student_url bo'sh
+     */
+    private String buildCallbackUrl(University university) {
+        String studentUrl = university.getStudentUrl();
+        if (studentUrl == null || studentUrl.isBlank()) {
+            return null;
+        }
+        // student_url DB'da scheme'siz saqlanadi (256 OTM dan 0 ta has_proto) — defensive trim
+        String host = studentUrl.replaceFirst("^https?://", "").replaceAll("/$", "");
+        return callbackProtocol + "://" + host + callbackSuffix;
+    }
+
+    /**
      * Bir dispatch attempt + result asosida status update.
      *
      * <p>Public — {@link WebhookRetryScheduler} ham chaqirishi mumkin (retry).</p>
      */
     public void dispatchWithRetry(
             WebhookTarget target,
+            String callbackUrl,
             UUID eventId,
             String eventType,
             String envelopeJson,
@@ -152,7 +203,7 @@ public class WebhookDispatcher {
         long startNs = System.nanoTime();
 
         try {
-            ResponseEntity<String> response = doHttpPost(target, envelopeJson);
+            ResponseEntity<String> response = doHttpPost(target, callbackUrl, envelopeJson);
             int duration = (int) ((System.nanoTime() - startNs) / 1_000_000);
 
             logEntry.markSuccess(
@@ -179,11 +230,11 @@ public class WebhookDispatcher {
 
         } catch (HttpServerErrorException | ResourceAccessException e) {
             // 5xx yoki network error — retry yoki DLQ
-            handleRetryable(target, eventId, eventType, envelopeJson, attemptN, logEntry, e);
+            handleRetryable(target, callbackUrl, eventId, eventType, envelopeJson, attemptN, logEntry, e);
 
         } catch (Exception e) {
             // Unexpected error
-            handleRetryable(target, eventId, eventType, envelopeJson, attemptN, logEntry, e);
+            handleRetryable(target, callbackUrl, eventId, eventType, envelopeJson, attemptN, logEntry, e);
         }
 
         deliveryLogRepository.save(logEntry);
@@ -191,6 +242,7 @@ public class WebhookDispatcher {
 
     private void handleRetryable(
             WebhookTarget target,
+            String callbackUrl,
             UUID eventId,
             String eventType,
             String envelopeJson,
@@ -226,7 +278,7 @@ public class WebhookDispatcher {
         return LocalDateTime.now().plus(Duration.ofMillis(delayMs));
     }
 
-    private ResponseEntity<String> doHttpPost(WebhookTarget target, String body) {
+    private ResponseEntity<String> doHttpPost(WebhookTarget target, String callbackUrl, String body) {
         long timestamp = System.currentTimeMillis() / 1000;
         String plainSecret = secretVault.resolve(target);
         String signature = hmacSigner.sign(plainSecret, timestamp, body);
@@ -236,7 +288,7 @@ public class WebhookDispatcher {
                 .build();
 
         return client.post()
-                .uri(target.getCallbackUrl())
+                .uri(callbackUrl)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .header("X-Hemis-Signature", signature)
                 .header("X-Hemis-Timestamp", String.valueOf(timestamp))

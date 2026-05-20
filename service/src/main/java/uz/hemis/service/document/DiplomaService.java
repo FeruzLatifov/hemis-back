@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -321,7 +322,16 @@ public class DiplomaService {
      */
     @Audited(action = AuditAction.CREATE, entity = "Diploma", entityClass = Diploma.class)
     @Transactional
-    @CachePut(value = "diplomas", key = "#result.id")
+    @Caching(
+        put = { @CachePut(value = "diplomas", key = "#result.id") },
+        evict = {
+            // Number va hash alias'lar (oldin null cache'lab qolingan bo'lsa, evict).
+            @CacheEvict(value = "diplomas", key = "'number:' + #result.diplomaNumber",
+                        condition = "#result.diplomaNumber != null"),
+            @CacheEvict(value = "diplomas", key = "'hash:' + #result.diplomaHash",
+                        condition = "#result.diplomaHash != null")
+        }
+    )
     public DiplomaDto create(DiplomaDto diplomaDto) {
         log.info("Creating new diploma with number: {}", diplomaDto.getDiplomaNumber());
 
@@ -377,8 +387,20 @@ public class DiplomaService {
      */
     @Audited(action = AuditAction.UPDATE, entity = "Diploma", entityClass = Diploma.class, keyArg = "id")
     @Transactional
-    @CachePut(value = "diplomas", key = "#id")
-    @CacheEvict(value = "diplomas", key = "'number:' + #result.diplomaNumber")
+    @Caching(
+        put = { @CachePut(value = "diplomas", key = "#id") },
+        evict = {
+            // Eski va yangi number/hash alias'lar — DTO va DB yangi qiymat farq qilishi mumkin.
+            @CacheEvict(value = "diplomas", key = "'number:' + #diplomaDto.diplomaNumber",
+                        condition = "#diplomaDto.diplomaNumber != null"),
+            @CacheEvict(value = "diplomas", key = "'number:' + #result.diplomaNumber",
+                        condition = "#result != null && #result.diplomaNumber != null"),
+            @CacheEvict(value = "diplomas", key = "'hash:' + #diplomaDto.diplomaHash",
+                        condition = "#diplomaDto.diplomaHash != null"),
+            @CacheEvict(value = "diplomas", key = "'hash:' + #result.diplomaHash",
+                        condition = "#result != null && #result.diplomaHash != null")
+        }
+    )
     public DiplomaDto update(UUID id, DiplomaDto diplomaDto) {
         log.info("Updating diploma with ID: {}", id);
 

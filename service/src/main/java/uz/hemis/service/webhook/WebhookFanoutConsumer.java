@@ -14,6 +14,7 @@ import uz.hemis.domain.entity.webhook.WebhookTarget;
 import uz.hemis.domain.repository.webhook.WebhookTargetRepository;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Webhook fanout consumer — domain event'larni 224 OTM bo'yicha tarqatuvchi.
@@ -72,8 +73,9 @@ public class WebhookFanoutConsumer {
         String payload = record.value();
 
         try {
-            // Aktiv OTM ro'yxati (cache qilish mumkin — keyingi optimization)
-            List<WebhookTarget> activeTargets = targetRepository.findAllByActiveTrue();
+            // Aktiv OTM ro'yxati — 2026-05-18 refactor: university.active JOIN orqali
+            // (webhook_target.active field olib tashlandi, source of truth = hemishe_e_university)
+            List<WebhookTarget> activeTargets = targetRepository.findAllForActiveUniversities();
             if (activeTargets.isEmpty()) {
                 log.debug("No active webhook targets — skipping fanout for {}/{}", topic, aggregateId);
                 ack.acknowledge();
@@ -119,14 +121,16 @@ public class WebhookFanoutConsumer {
             throws JsonProcessingException {
         // Topic'dan aggregate type ajratish: hemis.classifier.events.v1 → classifier
         String aggregateType = parseAggregateType(topic);
-        String eventType = aggregateType + ".updated";  // domain default — actual event_type
-                                                         // sub-field domainPayload ichida bo'lishi mumkin
+        // hemis-univer kontrakt convention: event_type doim "{aggregate}.updated" formatda.
+        // Sub-action (ADD/UPDATE/DELETE) — domain payload ichidagi `data.action` field orqali.
+        // Univer ApplyHemisEventJob.applyClassifier() shu pattern bilan ishlaydi.
+        String eventType = aggregateType + ".updated";
 
         // Domain payload'ni Object sifatida parse qilib data field'iga qo'yamiz
         Object data = objectMapper.readValue(domainPayload, Object.class);
 
         WebhookEventEnvelope envelope = new WebhookEventEnvelope(
-                java.util.UUID.randomUUID(),  // event_id (yangi UUID — Kafka offset'dan ajratilgan)
+                UUID.randomUUID(),  // event_id (yangi UUID — Kafka offset'dan ajratilgan)
                 eventType,
                 aggregateType,
                 aggregateId,

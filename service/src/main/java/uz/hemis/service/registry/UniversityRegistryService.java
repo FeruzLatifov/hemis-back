@@ -340,9 +340,9 @@ public class UniversityRegistryService {
         @CacheEvict(value = "universitiesSearch", allEntries = true),
         @CacheEvict(value = "universityDictionaries", allEntries = true),
         @CacheEvict(value = "universitiesSearch", key = "'detail:' + #code"),
-        // Cross-service desync prevention — UniversityService cache namespacelar
+        // Cross-service desync prevention — UniversityService cache namespacelar.
+        // universityNullable cache producer codebase'da yo'q (dead evict) — olib tashlandi.
         @CacheEvict(value = "university", key = "#code"),
-        @CacheEvict(value = "universityNullable", key = "#code"),
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
@@ -373,9 +373,8 @@ public class UniversityRegistryService {
         @CacheEvict(value = "universitiesSearch", allEntries = true),
         @CacheEvict(value = "universityDictionaries", allEntries = true),
         @CacheEvict(value = "universitiesSearch", key = "'detail:' + #code"),
-        // Cross-service desync prevention — UniversityService cache namespacelar
+        // Cross-service desync prevention — universityNullable olib tashlandi (producer yo'q).
         @CacheEvict(value = "university", key = "#code"),
-        @CacheEvict(value = "universityNullable", key = "#code"),
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),

@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -94,7 +95,11 @@ public class ContractService {
 
     @Audited(action = AuditAction.CREATE, entity = "Contract", entityClass = Contract.class)
     @Transactional
-    @CachePut(value = "contracts", key = "#result.id")
+    @Caching(
+        put = { @CachePut(value = "contracts", key = "#result.id") },
+        evict = { @CacheEvict(value = "contracts", key = "'number:' + #result.contractNumber",
+                              condition = "#result.contractNumber != null") }
+    )
     public ContractDto create(ContractDto contractDto) {
         log.info("Creating contract: {}", contractDto.getContractNumber());
         // Tenant scope — caller can only create contracts in their own university.
@@ -113,7 +118,16 @@ public class ContractService {
 
     @Audited(action = AuditAction.UPDATE, entity = "Contract", entityClass = Contract.class, keyArg = "id")
     @Transactional
-    @CachePut(value = "contracts", key = "#id")
+    @Caching(
+        put = { @CachePut(value = "contracts", key = "#id") },
+        evict = {
+            // Number o'zgargan bo'lsa eski va yangi number alias'larni evict.
+            @CacheEvict(value = "contracts", key = "'number:' + #contractDto.contractNumber",
+                        condition = "#contractDto.contractNumber != null"),
+            @CacheEvict(value = "contracts", key = "'number:' + #result.contractNumber",
+                        condition = "#result != null && #result.contractNumber != null")
+        }
+    )
     public ContractDto update(UUID id, ContractDto contractDto) {
         log.info("Updating contract: {}", id);
 

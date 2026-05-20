@@ -490,17 +490,17 @@ public class I18nService {
         }
 
         // ✅ FIX (2026-05): TranslationService cache'lari ham clear bo'lsin
-        // ("translations" va "translations-category" — TranslationService.getAllTranslations,
+        // ("translations" va "translationsCategory" — TranslationService.getAllTranslations,
         //  getTranslationsByCategory). Avval bu cache'lar 30 daqiqa stale qolardi admin update'dan keyin.
         org.springframework.cache.Cache translationsCache = cacheManager.getCache("translations");
         if (translationsCache != null) {
             translationsCache.clear();
             log.info("✅ Cleared translations cache");
         }
-        org.springframework.cache.Cache translationsCategoryCache = cacheManager.getCache("translations-category");
+        org.springframework.cache.Cache translationsCategoryCache = cacheManager.getCache("translationsCategory");
         if (translationsCategoryCache != null) {
             translationsCategoryCache.clear();
-            log.info("✅ Cleared translations-category cache");
+            log.info("✅ Cleared translationsCategory cache");
         }
 
         // Publish invalidation event (for distributed pods)

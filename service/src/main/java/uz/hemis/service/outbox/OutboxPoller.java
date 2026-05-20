@@ -33,7 +33,7 @@ import java.util.concurrent.TimeoutException;
  * <p><strong>Retry semantics:</strong></p>
  * <ul>
  *   <li>Kafka send fail → {@code retry_count++}, {@code last_error} update</li>
- *   <li>retry_count &gt;= 100 (V015 CHECK) → row "stuck" — DLQ candidate ({@code findDlqCandidates})</li>
+ *   <li>retry_count &gt;= 100 (V014 CHECK) → row "stuck" — DLQ candidate ({@code findDlqCandidates})</li>
  *   <li>Manual admin retry: published_at NULL'ga qaytarish</li>
  * </ul>
  *
@@ -51,10 +51,14 @@ public class OutboxPoller {
     @Value("${hemis.outbox.poller.batch-size:100}")
     private int batchSize;
 
+    @Value("${hemis.outbox.retention.days:30}")
+    private int retentionDays;
+
     /** Per-event Kafka send timeout (sekund). */
     private static final long KAFKA_SEND_TIMEOUT_SEC = 10;
 
     @Scheduled(fixedDelayString = "${hemis.outbox.poller.interval-ms:1000}")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void pollAndPublish() {
         try {
             processBatch();
@@ -70,8 +74,11 @@ public class OutboxPoller {
      * <p>Transaction scope: pollUnpublishedForUpdate + markPublished/markRetry. Lock SKIP_LOCKED
      * bilan boshqa replica'lar o'tkazib yuboradi. Transaction commit Kafka send'dan keyin —
      * Kafka write success bo'lsa published_at o'rnatiladi.</p>
+     *
+     * <p><strong>Diqqat:</strong> @Transactional annotation pollAndPublish'da — Spring AOP
+     * self-invocation trap (this.processBatch() proxy bypass qiladi). Annotation bu yerda
+     * informational maqsadli — actual tx pollAndPublish'dan keladi.</p>
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processBatch() {
         List<OutboxEvent> events = repository.pollUnpublishedForUpdate(batchSize);
         if (events.isEmpty()) {
@@ -123,7 +130,7 @@ public class OutboxPoller {
     @Scheduled(cron = "0 0 3 * * *")
     @Transactional
     public void cleanupOldPublished() {
-        int retentionDays = 30;  // TODO: read from config
+        // retentionDays application.yml dan keladi (`hemis.outbox.retention.days`, default 30).
         LocalDateTime cutoff = LocalDateTime.now().minusDays(retentionDays);
         int deleted = repository.deletePublishedBefore(cutoff);
         if (deleted > 0) {

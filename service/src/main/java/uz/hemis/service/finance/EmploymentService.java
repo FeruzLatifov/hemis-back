@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -79,7 +80,11 @@ public class EmploymentService {
 
     @Audited(action = AuditAction.CREATE, entity = "Employment", entityClass = Employment.class)
     @Transactional
-    @CachePut(value = "employments", key = "#result.id")
+    @Caching(
+        put = { @CachePut(value = "employments", key = "#result.id") },
+        evict = { @CacheEvict(value = "employments", key = "'code:' + #result.employmentCode",
+                              condition = "#result.employmentCode != null") }
+    )
     public EmploymentDto create(EmploymentDto employmentDto) {
         log.info("Creating employment: {}", employmentDto.getEmploymentCode());
 
@@ -96,7 +101,15 @@ public class EmploymentService {
 
     @Audited(action = AuditAction.UPDATE, entity = "Employment", entityClass = Employment.class, keyArg = "id")
     @Transactional
-    @CachePut(value = "employments", key = "#id")
+    @Caching(
+        put = { @CachePut(value = "employments", key = "#id") },
+        evict = {
+            @CacheEvict(value = "employments", key = "'code:' + #employmentDto.employmentCode",
+                        condition = "#employmentDto.employmentCode != null"),
+            @CacheEvict(value = "employments", key = "'code:' + #result.employmentCode",
+                        condition = "#result != null && #result.employmentCode != null")
+        }
+    )
     public EmploymentDto update(UUID id, EmploymentDto employmentDto) {
         log.info("Updating employment: {}", id);
 

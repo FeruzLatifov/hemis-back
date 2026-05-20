@@ -244,6 +244,35 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // 1.15M qator full COUNT(*) ~5s; estimate ~1ms. 1 daqiqa TTL — health-check only.
         redisCacheConfigurations.put("studentCountEstimate", defaultConfig.entryTtl(Duration.ofMinutes(1)));
 
+        // =====================================================
+        // Domain caches — avval missing TTL, default 30min fallback ishlatilardi.
+        // Endi explicit konfiguratsiya (memory predictability + ops grep'ablilik).
+        // =====================================================
+
+        // Students alias-key (pinfl:, id:) — hot lookup, 1 soat.
+        redisCacheConfigurations.put("students", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("studentMetas", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("doctoralStudents", defaultConfig.entryTtl(Duration.ofHours(1)));
+
+        // Finance/Document (mutable, admin'lar edit qiladi) — 30 daqiqa.
+        redisCacheConfigurations.put("contracts", defaultConfig.entryTtl(DASHBOARD_TTL));
+        redisCacheConfigurations.put("employments", defaultConfig.entryTtl(DASHBOARD_TTL));
+        redisCacheConfigurations.put("diplomas", defaultConfig.entryTtl(DASHBOARD_TTL));
+        redisCacheConfigurations.put("diplomaBlanks", defaultConfig.entryTtl(DASHBOARD_TTL));
+
+        // Departments + Faculty dictionaries — 6 soat (registry, statik).
+        redisCacheConfigurations.put("departments", defaultConfig.entryTtl(Duration.ofHours(6)));
+        redisCacheConfigurations.put("facultyDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+
+        // Speciality stats — heavy aggregation, 1 soat.
+        redisCacheConfigurations.put("specialityStats", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("specialitySummary", defaultConfig.entryTtl(Duration.ofHours(1)));
+
+        // Translations — admin tomondan tahrirlanmagunicha katta TTL.
+        // Eski nom translations-category — camelCase translationsCategory.
+        redisCacheConfigurations.put("translations", defaultConfig.entryTtl(Duration.ofHours(1)));
+        redisCacheConfigurations.put("translationsCategory", defaultConfig.entryTtl(Duration.ofHours(1)));
+
         // Create Redis cache manager (L2)
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

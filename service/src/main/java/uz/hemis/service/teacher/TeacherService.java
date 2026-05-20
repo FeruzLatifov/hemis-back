@@ -190,22 +190,6 @@ public class TeacherService {
     }
 
     /**
-     * @deprecated Use {@link #getTeacherByPinfl(String, String)} — cross-tenant safe.
-     * Backward compat wrapper logs SECURITY warning.
-     */
-    @Deprecated(since = "2.5.0", forRemoval = true)
-    @Transactional(readOnly = true)
-    public Map<String, Object> getTeacherByPinfl(String pinfl) {
-        log.warn("SECURITY: getTeacherByPinfl(pinfl) called without universityCode — "
-                + "use getTeacherByPinfl(pinfl, universityCode) for tenant scope.");
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("success", false);
-        result.put("code", "forbidden");
-        result.put("data", "University scope required");
-        return result;
-    }
-
-    /**
      * Get teacher by code — direct repository lookup (was: JPA Example.of probe).
      *
      * <p>Teacher.code unique globally (each university issues its own prefix), so

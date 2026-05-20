@@ -128,7 +128,16 @@ public class StudentCoreService {
 
     @Audited(action = AuditAction.CREATE, entity = "Student", entityClass = Student.class)
     @Transactional
-    @CachePut(value = "students", key = "#result.id")
+    @org.springframework.cache.annotation.Caching(
+        put = { @CachePut(value = "students", key = "#result.id") },
+        evict = {
+            // pinfl:X alias evict: avval null cache'lab qolingan bo'lsa
+            // (StudentDto findByPinfl xato bilan null qaytargan paytda), yangi
+            // yozuv ko'rinmas edi. Master/duplicate ajratish — findMasterByPinfl bilan.
+            @CacheEvict(value = "students", key = "'pinfl:' + #result.pinfl",
+                        condition = "#result != null && #result.pinfl != null")
+        }
+    )
     public StudentDto create(StudentDto studentDto) {
         log.info("Creating new student (OLD-HEMIS compatible) - PINFL: {}, University: {}, EducationType: {}, Year: {}",
                 Pinfl.maskOrEmpty(studentDto.getPinfl()), studentDto.getUniversity(), studentDto.getEducationType(), studentDto.getEducationYear());
@@ -283,8 +292,17 @@ public class StudentCoreService {
 
     @Audited(action = AuditAction.UPDATE, entity = "Student", entityClass = Student.class, keyArg = "id")
     @Transactional
-    @CachePut(value = "students", key = "#id")
-    @CacheEvict(value = "students", key = "'pinfl:' + #result.pinfl")
+    @org.springframework.cache.annotation.Caching(
+        put = { @CachePut(value = "students", key = "#id") },
+        evict = {
+            // Eski DTO va yangi result pinfl'lari (DB'da o'zgartirish mumkin emas — sanitize'da bloklangan,
+            // lekin defensive). isDuplicate=true bo'lsa ham master alias evict — cache stale bo'lmasin.
+            @CacheEvict(value = "students", key = "'pinfl:' + #studentDto.pinfl",
+                        condition = "#studentDto.pinfl != null"),
+            @CacheEvict(value = "students", key = "'pinfl:' + #result.pinfl",
+                        condition = "#result != null && #result.pinfl != null")
+        }
+    )
     public StudentDto update(UUID id, StudentDto studentDto) {
         log.info("Updating student with ID: {}", id);
 

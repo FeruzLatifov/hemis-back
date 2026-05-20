@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -96,7 +97,17 @@ public class DoctoralStudentService {
     }
 
     @Transactional
-    @CachePut(value = "doctoralStudents", key = "#result.id")
+    @Caching(
+        put = { @CachePut(value = "doctoralStudents", key = "#result.id") },
+        evict = {
+            // Alias key evict: studentIdNumber:X va passportPin:X eski yozuv (null)
+            // cache'lab qolgan bo'lsa, yangi yozuv ko'rinmas edi.
+            @CacheEvict(value = "doctoralStudents", key = "'studentIdNumber:' + #result.studentIdNumber",
+                        condition = "#result.studentIdNumber != null"),
+            @CacheEvict(value = "doctoralStudents", key = "'passportPin:' + #result.passportPin",
+                        condition = "#result.passportPin != null")
+        }
+    )
     public DoctoralStudentDto create(DoctoralStudentDto doctoralStudentDto) {
         log.info("Creating doctoral student");
 
@@ -118,7 +129,21 @@ public class DoctoralStudentService {
     }
 
     @Transactional
-    @CachePut(value = "doctoralStudents", key = "#id")
+    @Caching(
+        put = { @CachePut(value = "doctoralStudents", key = "#id") },
+        evict = {
+            // Alias key'lar: ham eski qiymat (DB'da update'dan oldin) ham yangi qiymat
+            // (DTO'dagi) — DTO va DB farq qilishi mumkin (PIN o'zgardi). Ikkalasi ham evict.
+            @CacheEvict(value = "doctoralStudents", key = "'studentIdNumber:' + #doctoralStudentDto.studentIdNumber",
+                        condition = "#doctoralStudentDto.studentIdNumber != null"),
+            @CacheEvict(value = "doctoralStudents", key = "'passportPin:' + #doctoralStudentDto.passportPin",
+                        condition = "#doctoralStudentDto.passportPin != null"),
+            @CacheEvict(value = "doctoralStudents", key = "'studentIdNumber:' + #result.studentIdNumber",
+                        condition = "#result != null && #result.studentIdNumber != null"),
+            @CacheEvict(value = "doctoralStudents", key = "'passportPin:' + #result.passportPin",
+                        condition = "#result != null && #result.passportPin != null")
+        }
+    )
     public DoctoralStudentDto update(UUID id, DoctoralStudentDto doctoralStudentDto) {
         log.info("Updating doctoral student: {}", id);
 

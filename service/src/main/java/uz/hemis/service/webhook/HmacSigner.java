@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
@@ -64,18 +65,16 @@ public class HmacSigner {
     /**
      * Constant-time compare — timing attack himoya.
      *
-     * <p>Standard {@code String.equals()} early return qiladi (timing leak).
-     * Bu metod har doim bir xil vaqt sarflaydi.</p>
+     * <p>{@link MessageDigest#isEqual(byte[], byte[])} JDK 7+ da constant-time'ga
+     * kafolatlangan (`compareTo` JIT branch prediction'ga ochiq emas). Avval `char`
+     * XOR ishlatardik — Java `int` arithmetic JIT branch leak xavfini saqlardi.</p>
      */
     public boolean verify(String expected, String received) {
         if (expected == null || received == null) return false;
-        if (expected.length() != received.length()) return false;
-
-        int result = 0;
-        for (int i = 0; i < expected.length(); i++) {
-            result |= expected.charAt(i) ^ received.charAt(i);
-        }
-        return result == 0;
+        return MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                received.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     private static String toHex(byte[] bytes) {

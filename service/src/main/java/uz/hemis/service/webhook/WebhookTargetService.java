@@ -13,14 +13,21 @@ import uz.hemis.common.dto.webhook.WebhookTargetDto;
 import uz.hemis.common.dto.webhook.WebhookTargetUpdateRequest;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.webhook.WebhookDeliveryLog;
 import uz.hemis.domain.entity.webhook.WebhookDeliveryStatus;
 import uz.hemis.domain.entity.webhook.WebhookTarget;
+import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.domain.repository.webhook.WebhookDeliveryLogRepository;
 import uz.hemis.domain.repository.webhook.WebhookTargetRepository;
+import org.springframework.beans.factory.annotation.Value;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Webhook target boshqaruv service layer.
@@ -34,18 +41,38 @@ import java.util.UUID;
 public class WebhookTargetService {
 
     private final WebhookTargetRepository targetRepository;
+    private final UniversityRepository universityRepository;
     private final WebhookDeliveryLogRepository deliveryLogRepository;
     private final WebhookSecretService secretService;
     private final WebhookSecretVault secretVault;
     private final WebhookDispatcher dispatcher;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
+    @Value("${hemis.webhook.callback.protocol:https}")
+    private String callbackProtocol;
+
+    @Value("${hemis.webhook.callback.suffix:/rest/v1/hemis-callback/event}")
+    private String callbackSuffix;
+
     // =====================================================
     // CRUD
     // =====================================================
 
     public List<WebhookTargetDto> findAll() {
-        return targetRepository.findAll().stream().map(this::toDto).toList();
+        // N+1 hal: avval barcha target'larni, keyin university'larni bitta IN-clause
+        // bilan oldindan yuklab, Map orqali O(1) lookup. Avval 1 + N findById edi.
+        List<WebhookTarget> targets = targetRepository.findAll();
+        if (targets.isEmpty()) return List.of();
+
+        Set<String> codes = targets.stream()
+                .map(WebhookTarget::getUniversityCode)
+                .collect(Collectors.toSet());
+        Map<String, University> universityByCode = new HashMap<>();
+        universityRepository.findAllById(codes).forEach(u -> universityByCode.put(u.getCode(), u));
+
+        return targets.stream()
+                .map(t -> toDto(t, universityByCode.get(t.getUniversityCode())))
+                .toList();
     }
 
     public WebhookTargetDto findById(UUID id) {
@@ -76,12 +103,10 @@ public class WebhookTargetService {
 
         WebhookTarget target = new WebhookTarget();
         target.setUniversityCode(request.universityCode());
-        target.setCallbackUrl(request.callbackUrl());
         target.setDescription(request.description());
         target.setSecretHash(secretService.hash(plainSecret));
-        target.setActive(true);
         target.setTimeoutMs(request.timeoutMs() != null ? request.timeoutMs() : 30000);
-        target.setMaxRetries(request.maxRetries() != null ? request.maxRetries() : 5);
+        target.setMaxRetries(request.maxRetries() != null ? request.maxRetries() : 3);
 
         WebhookTarget saved = targetRepository.save(target);
 
@@ -99,9 +124,7 @@ public class WebhookTargetService {
     public WebhookTargetDto update(UUID id, WebhookTargetUpdateRequest request) {
         WebhookTarget target = loadOrThrow(id);
 
-        if (request.callbackUrl() != null) target.setCallbackUrl(request.callbackUrl());
         if (request.description() != null) target.setDescription(request.description());
-        if (request.active() != null) target.setActive(request.active());
         if (request.timeoutMs() != null) target.setTimeoutMs(request.timeoutMs());
         if (request.maxRetries() != null) target.setMaxRetries(request.maxRetries());
 
@@ -201,7 +224,15 @@ public class WebhookTargetService {
         log.info("Sandbox webhook test: target={} ({}), eventId={}",
                 target.getUniversityCode(), targetId, testEventId);
 
-        dispatcher.dispatchWithRetry(target, testEventId, testEventType, envelopeJson, 1);
+        University university = universityRepository.findById(target.getUniversityCode())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "University: " + target.getUniversityCode()));
+        String callbackUrl = buildCallbackUrl(university);
+        if (callbackUrl == null) {
+            throw new IllegalStateException(
+                    "University " + target.getUniversityCode() + " has no student_url — cannot dispatch");
+        }
+        dispatcher.dispatchWithRetry(target, callbackUrl, testEventId, testEventType, envelopeJson, 1);
 
         // Eng so'nggi log entry'ni qaytarish (so'rovchi natijani ko'rishi uchun)
         return deliveryLogRepository
@@ -220,13 +251,28 @@ public class WebhookTargetService {
                 .orElseThrow(() -> new ResourceNotFoundException("WebhookTarget: " + id));
     }
 
+    /**
+     * Bitta target uchun convenience — University ni alohida fetch qiladi (1 query).
+     * Bulk path'lar (findAll) {@link #toDto(WebhookTarget, University)} ni ishlatadi.
+     */
     private WebhookTargetDto toDto(WebhookTarget t) {
+        University u = universityRepository.findById(t.getUniversityCode()).orElse(null);
+        return toDto(t, u);
+    }
+
+    private WebhookTargetDto toDto(WebhookTarget t, University university) {
+        // URL + active university'dan derive (2026-05-18 refactor)
+        String callbackUrl = university != null ? buildCallbackUrl(university) : null;
+        Boolean active = university != null
+                && Boolean.TRUE.equals(university.getActive())
+                && university.getDeleteTs() == null;
+
         return new WebhookTargetDto(
                 t.getId(),
                 t.getUniversityCode(),
-                t.getCallbackUrl(),
+                callbackUrl,
                 t.getDescription(),
-                t.getActive(),
+                active,
                 t.getTimeoutMs(),
                 t.getMaxRetries(),
                 t.getCreatedAt(),
@@ -234,6 +280,16 @@ public class WebhookTargetService {
                 t.getUpdatedAt(),
                 t.getUpdatedBy()
         );
+    }
+
+    /** Callback URL build: protocol + university.student_url + suffix (convention). */
+    private String buildCallbackUrl(University university) {
+        String studentUrl = university.getStudentUrl();
+        if (studentUrl == null || studentUrl.isBlank()) {
+            return null;
+        }
+        String host = studentUrl.replaceFirst("^https?://", "").replaceAll("/$", "");
+        return callbackProtocol + "://" + host + callbackSuffix;
     }
 
     private WebhookDeliveryLogDto toLogDto(WebhookDeliveryLog l) {

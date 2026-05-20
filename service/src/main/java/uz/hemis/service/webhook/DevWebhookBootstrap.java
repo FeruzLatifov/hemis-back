@@ -18,6 +18,12 @@ import uz.hemis.domain.repository.webhook.WebhookTargetRepository;
  * bo'lsa, startup'da {@code webhook_target} row yaratadi va plain secret'ni
  * {@link WebhookSecretVault} ga joylashtiradi.</p>
  *
+ * <p><strong>URL convention (2026-05-18):</strong> callback URL endi
+ * {@code application.yml} convention'dan derive: {@code protocol + university.student_url + suffix}.
+ * Lokal dev uchun {@code WEBHOOK_CALLBACK_PROTOCOL=http} +
+ * {@code hemishe_e_university.student_url='localhost:9999'} qo'yib testlash mumkin
+ * (yoki Univer real domain ishlatilsa, OTM 337 ning student.adu.uz yo'naltirishi kerak).</p>
+ *
  * <p>Production'da hech qachon ishlamasligi shart — profile + property double guard.</p>
  */
 @Component
@@ -32,7 +38,6 @@ public class DevWebhookBootstrap implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     private static final String UNIVERSITY_CODE = "337";
-    private static final String CALLBACK_URL = "http://localhost:9999/v1/hemis-callback/event";
     private static final String PLAIN_SECRET = "whsec_dev_test_secret_DO_NOT_USE_IN_PROD";
 
     @Override
@@ -42,10 +47,8 @@ public class DevWebhookBootstrap implements CommandLineRunner {
                 .orElseGet(() -> {
                     WebhookTarget fresh = new WebhookTarget();
                     fresh.setUniversityCode(UNIVERSITY_CODE);
-                    fresh.setCallbackUrl(CALLBACK_URL);
                     fresh.setSecretHash(passwordEncoder.encode(PLAIN_SECRET));
                     fresh.setDescription("Dev test target — auto-seeded by DevWebhookBootstrap");
-                    fresh.setActive(true);
                     fresh.setTimeoutMs(15000);
                     fresh.setMaxRetries(3);
                     return targetRepository.save(fresh);

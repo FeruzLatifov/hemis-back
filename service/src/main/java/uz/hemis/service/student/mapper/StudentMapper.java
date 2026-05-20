@@ -48,6 +48,9 @@ public interface StudentMapper {
     @Mapping(target = "fullname", ignore = true)  // Computed field via getter method getFullname()
     @Mapping(source = "firstName", target = "firstname")  // Entity getter: getFirstName() -> DTO field: firstname
     @Mapping(source = "isDuplicate", target = "isDuplicate", defaultValue = "false")  // Default to false if null
+    // DTO-only fields — entity'da yo'q (compose service'da to'ldiriladi yoki UI-side render).
+    @Mapping(target = "currentTerrain", ignore = true)
+    @Mapping(target = "statusEducationYear", ignore = true)
     StudentDto toDto(Student student);
 
     /**

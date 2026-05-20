@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 import uz.hemis.common.dto.building.BuildingCreateUpdateDto;
 import uz.hemis.common.dto.building.BuildingDto;
 import uz.hemis.common.dto.building.BuildingLifecycleDto;
@@ -29,7 +30,11 @@ import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
  * method'lari orqali aylantiriladi.</p>
  */
 @Mapper(componentModel = "spring",
-        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+        nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
+        // AuditableEntity audit columns (id, version, createdAt/By, updatedAt/By,
+        // deletedAt/By) DTO'da yo'q — MapStruct warning'larini bostiramiz, chunki
+        // ular @PrePersist/@PreUpdate orqali boshqariladi.
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BuildingMapper {
 
     ObjectMapper SHARED_OBJECT_MAPPER = new ObjectMapper();

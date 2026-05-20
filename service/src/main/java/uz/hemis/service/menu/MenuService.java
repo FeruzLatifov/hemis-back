@@ -100,13 +100,14 @@ public class MenuService {
         // Sort by order
         sortMenuItems(filteredMenu);
 
-        // Build response
+        // Build response — cache invariant: immutable list, caller mutation
+        // (e.g., List.add() controller'da) cache'ni buzmasligi shart.
+        // List.copyOf'siz, L1 Caffeine reference saqlaydi va keyingi caller
+        // o'sha listni mutate qila olardi.
         return MenuResponse.builder()
-            .menu(filteredMenu)
-            .permissions(userPermissions)
+            .menu(List.copyOf(filteredMenu))
+            .permissions(List.copyOf(userPermissions))
             .locale(locale)
-            // Note: _meta omitted - misleading when served from cache
-            // HTTP headers (Cache-Control, Age) provide accurate cache info
             .build();
     }
 
@@ -190,10 +191,13 @@ public class MenuService {
                 }
 
                 // ✅ FAST: Get from pre-loaded cache (no DB query!)
+                // Locale supported emas bo'lsa, getOrDefault(...) NPE qaytaradi —
+                // shuning uchun outer getOrDefault(locale, Map.of()) bilan o'rab olamiz.
                 MenuItem filteredItem = MenuItem.builder()
                     .id(item.getId())
                     .i18nKey(translationKey)
-                    .label(translations.get(locale).getOrDefault(translationKey, translationKey))
+                    .label(translations.getOrDefault(locale, java.util.Map.of())
+                                       .getOrDefault(translationKey, translationKey))
                     .labels(labelsMap)
                     .url(item.getUrl())
                     .icon(item.getIcon())
@@ -363,7 +367,7 @@ public class MenuService {
             .url(menu.getUrl())
             .icon(menu.getIcon())
             .permission(menu.getPermission())
-            .menuType(menu.getMenuType().getValue())
+            .menuType(menu.getMenuType())
             .active(menu.getActive())
             .order(menu.getOrderNumber())
             .build();

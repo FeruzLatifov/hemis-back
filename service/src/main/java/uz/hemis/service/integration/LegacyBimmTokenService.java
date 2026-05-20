@@ -45,7 +45,10 @@ public class LegacyBimmTokenService {
 
     private static final String CACHE_KEY = "bimm:oauth2:token";
     private static final String DB_TOKEN_KEY = "bimm-token";
-    private static final Duration TOKEN_TTL = Duration.ofSeconds(864000); // 10 days
+    // Token leak window'ni kichraytirish: 10 kun → 1 soat.
+    // BIMM serveri token'ni qaytib bermasa, kesh expire bo'lib qayta token oladi.
+    // ApiMspd (15-30s) va GUVD (30s) bilan moslashuv (avval 10 kun anomaly edi).
+    private static final Duration TOKEN_TTL = Duration.ofHours(1);
 
     @Value("${hemis.integration.bimm.oauth2.url:https://api-mspd.edu.uz/auth/token}")
     private String oauth2Url;
@@ -99,10 +102,12 @@ public class LegacyBimmTokenService {
         log.info("Fetching new BIMM OAuth2 token from: {}", oauth2Url);
 
         try {
-            // Old-hemis format: form-urlencoded with empty grant_type, scope, client_id, client_secret
+            // Old-hemis format: form-urlencoded with empty grant_type, scope, client_id, client_secret.
+            // URLEncoder.encode: parol/username'da `+`, `&`, `=`, `%` bo'lsa wire'da buzilmasin.
             String body = String.format(
                     "grant_type=&username=%s&password=%s&scope=&client_id=&client_secret=",
-                    username, password
+                    java.net.URLEncoder.encode(username, java.nio.charset.StandardCharsets.UTF_8),
+                    java.net.URLEncoder.encode(password, java.nio.charset.StandardCharsets.UTF_8)
             );
 
             URL urlObj = URI.create(oauth2Url).toURL();

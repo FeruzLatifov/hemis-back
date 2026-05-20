@@ -1,6 +1,7 @@
 package uz.hemis.service.webhook;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import java.time.LocalDateTime;
@@ -38,12 +39,12 @@ import java.util.UUID;
         "data"
 })
 public record WebhookEventEnvelope(
-        UUID eventId,
-        String eventType,
-        String aggregateType,
-        String aggregateId,
-        LocalDateTime occurredAt,
-        Integer schemaVersion,
-        Object data
+        @JsonProperty("event_id") UUID eventId,
+        @JsonProperty("event_type") String eventType,
+        @JsonProperty("aggregate_type") String aggregateType,
+        @JsonProperty("aggregate_id") String aggregateId,
+        @JsonProperty("occurred_at") LocalDateTime occurredAt,
+        @JsonProperty("schema_version") Integer schemaVersion,
+        @JsonProperty("data") Object data
 ) {
 }

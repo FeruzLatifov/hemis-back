@@ -53,10 +53,10 @@ public class OutboxEventPublisher {
      * Event yozish (parent transaction'da). Asosiy entity {@code save()} dan keyin chaqirilishi
      * tavsiya etiladi — bir xil transactionda ikkalasi ham commit/rollback bo'ladi.
      *
-     * @param aggregateType  V015 CHECK constraint: employee, employee_job, student, teacher,
+     * @param aggregateType  V014 CHECK constraint: employee, employee_job, student, teacher,
      *                       classifier, university, building, audit
      * @param aggregateId    domain entity ID (UUID/string)
-     * @param eventType      V015 CHECK constraint: created, updated, deleted, synced,
+     * @param eventType      V014 CHECK constraint: created, updated, deleted, synced,
      *                       soft_deleted, restored, conflict_resolved
      * @param payload        Event body — JSON serialize qilinadi (record/DTO afzal)
      * @return outbox row ID (audit/correlation)

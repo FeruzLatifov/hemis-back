@@ -134,8 +134,11 @@ public class SocialService extends AbstractGovernmentApiService {
     }
 
     /**
-     * egov.uz ga to'g'ridan-to'g'ri GUVD token bilan (API-MSPD da yo'q endpointlar uchun)
-     * TODO: api_mspd ga daftar routerlar qo'shilganda bu method o'chiriladi
+     * egov.uz ga to'g'ridan-to'g'ri GUVD token bilan (API-MSPD da yo'q endpointlar uchun).
+     *
+     * <p><strong>Future removal:</strong> api_mspd ga "daftar" router'lari qo'shilganda
+     * bu metod va GUVD direct fallback o'chiriladi. Bog'liq: external api_mspd team.
+     * Issue tracker'da rejada (LEGACY-CLEANUP).</p>
      */
     @SuppressWarnings("unchecked")
     private Object callEgovDirect(String url, String body, String serviceName) {

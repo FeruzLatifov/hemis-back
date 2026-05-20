@@ -1,11 +1,11 @@
 package uz.hemis.service.menu.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.hemis.domain.entity.system.MenuType;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,11 +82,12 @@ public class MenuItem {
     private String permission;
 
     /**
-     * Menu type: "main" (default) or "system"
-     * <p>Frontend uses this to separate main menus from system menus</p>
+     * Menu type: MAIN (default) or SYSTEM.
+     * <p>JSON wire format: lowercase ("main" / "system") — MenuType ga
+     * @JsonValue qo'yilgan, frontend shu shaklni kutadi.</p>
      */
     @Builder.Default
-    private String menuType = "main";
+    private MenuType menuType = MenuType.MAIN;
 
     @Builder.Default
     private List<MenuItem> items = new ArrayList<>();
@@ -94,21 +95,5 @@ public class MenuItem {
     @Builder.Default
     private Boolean active = true;
 
-    // Alias for 'active' - frontend expects 'visible'
-    @JsonProperty("visible")
-    public Boolean getVisible() {
-        return active;
-    }
-
-    public void setVisible(Boolean visible) {
-        this.active = visible;
-    }
-
     private Integer order;
-
-    // Frontend compatibility: orderNum
-    @JsonProperty("orderNum")
-    public Integer getOrderNum() {
-        return order != null ? order : 0;
-    }
 }

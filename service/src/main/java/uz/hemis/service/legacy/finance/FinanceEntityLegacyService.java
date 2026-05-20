@@ -59,7 +59,10 @@ public class FinanceEntityLegacyService {
      * @deprecated OOM risk on 1.15M students × 12 months = ~14M rows. Use
      *             {@link #findAllScholarshipAmount(Pageable)} instead.
      */
-    @Deprecated(since = "2.5.0", forRemoval = true)
+    // forRemoval=false: Pageable variant mavjud (yuqorida), lekin api-legacy controllers
+    // hozircha non-paged version'ni ishlatadi (Univer 175/175 contract). Compiler warning
+    // controller migration kerakligini yodga soladi — ammo to'g'ridan-to'g'ri o'chirilmaydi.
+    @Deprecated(since = "2.5.0", forRemoval = false)
     public List<ScholarshipAmount> findAllScholarshipAmount() {
         log.warn("DEPRECATED: findAllScholarshipAmount() — use Pageable variant. OOM risk on large dataset.");
         return scholarshipAmountRepository.findAll();
@@ -136,7 +139,10 @@ public class FinanceEntityLegacyService {
     /**
      * @deprecated OOM risk — use {@link #findAllScholarship(Pageable)} instead.
      */
-    @Deprecated(since = "2.5.0", forRemoval = true)
+    // forRemoval=false: Pageable variant mavjud (yuqorida), lekin api-legacy controllers
+    // hozircha non-paged version'ni ishlatadi (Univer 175/175 contract). Compiler warning
+    // controller migration kerakligini yodga soladi — ammo to'g'ridan-to'g'ri o'chirilmaydi.
+    @Deprecated(since = "2.5.0", forRemoval = false)
     public List<Scholarship> findAllScholarship() {
         log.warn("DEPRECATED: findAllScholarship() — use Pageable variant.");
         return scholarshipRepository.findAll();
@@ -309,7 +315,10 @@ public class FinanceEntityLegacyService {
     /**
      * @deprecated OOM risk — use Pageable variant.
      */
-    @Deprecated(since = "2.5.0", forRemoval = true)
+    // forRemoval=false: Pageable variant mavjud (yuqorida), lekin api-legacy controllers
+    // hozircha non-paged version'ni ishlatadi (Univer 175/175 contract). Compiler warning
+    // controller migration kerakligini yodga soladi — ammo to'g'ridan-to'g'ri o'chirilmaydi.
+    @Deprecated(since = "2.5.0", forRemoval = false)
     public List<ContractStatistics> findAllContractStatistics() {
         log.warn("DEPRECATED: findAllContractStatistics() — use Pageable variant.");
         return contractStatisticsRepository.findAll();
@@ -403,7 +412,10 @@ public class FinanceEntityLegacyService {
     /**
      * @deprecated OOM risk — use Pageable variant.
      */
-    @Deprecated(since = "2.5.0", forRemoval = true)
+    // forRemoval=false: Pageable variant mavjud (yuqorida), lekin api-legacy controllers
+    // hozircha non-paged version'ni ishlatadi (Univer 175/175 contract). Compiler warning
+    // controller migration kerakligini yodga soladi — ammo to'g'ridan-to'g'ri o'chirilmaydi.
+    @Deprecated(since = "2.5.0", forRemoval = false)
     public List<REmployment> findAllREmployment() {
         log.warn("DEPRECATED: findAllREmployment() — use Pageable variant.");
         return rEmploymentRepository.findAll();

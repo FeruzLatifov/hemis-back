@@ -108,14 +108,24 @@ public class UniversityInfoService {
     @Cacheable(value = "universityDashboard", key = "#universityCode", unless = "#result == null")
     public UniversityDashboardDto getUniversityDashboard(String universityCode) {
         log.debug("Loading university dashboard (cache MISS) for code: {}", universityCode);
-        List<UniversityFounder> founderEntities = getFounders(universityCode);
+
+        // Self-invocation cache bypass'dan saqlanish uchun repository to'g'ridan-to'g'ri.
+        // this.getFounders()/getLifecycle() chaqirilsa, AOP proxy bypass bo'lib,
+        // @Cacheable annotation ishlamaydi. Bu yerda dashboard butun cache'da turadi,
+        // shuning uchun ichki cache'lar duplikat ham bo'lar edi.
+        List<UniversityFounder> founderEntities =
+                founderRepository.findByUniversityCode(universityCode);
 
         return UniversityDashboardDto.builder()
                 .founders(founderEntities.stream().map(UniversityFounderDto::from).toList())
-                .lifecycle(getLifecycle(universityCode).stream().map(UniversityLifecycleDto::from).toList())
+                .lifecycle(lifecycleRepository.findByUniversityCodeOrderByEventDateDesc(universityCode)
+                        .stream().map(UniversityLifecycleDto::from).toList())
                 .buildings(buildingRepository.findByUniversityCodeOrderByNameAsc(universityCode)
                         .stream().map(buildingMapper::toDto).toList())
-                .rector(getRector(universityCode))
+                // getRector(...) self-invocation — AOP bypass. universityRector cache
+                // baribir bypass bo'lar edi; private helper'ga delegate (cache faqat
+                // external chaqiriqda ishlaydi).
+                .rector(findRectorFromDb(universityCode))
                 .build();
     }
 
@@ -128,6 +138,14 @@ public class UniversityInfoService {
      */
     @Cacheable(value = "universityRector", key = "#universityCode", unless = "#result == null")
     public RectorDto getRector(String universityCode) {
+        return findRectorFromDb(universityCode);
+    }
+
+    /**
+     * Rector lookup — getUniversityDashboard self-invocation safe entry point.
+     * Cache bo'lmaydi (intentional — dashboard cache yetadi).
+     */
+    private RectorDto findRectorFromDb(String universityCode) {
         // 1. NEW: employee + employee_jobs (vazirlik tayinlagan)
         try {
             List<Map<String, Object>> rows = jdbcTemplate.queryForList("""
