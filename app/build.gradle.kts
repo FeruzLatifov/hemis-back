@@ -8,6 +8,34 @@
 plugins {
     id("org.springframework.boot")
     id("io.spring.dependency-management")
+    // Sentry Gradle Plugin — source context upload (stacktrace'da kod ko'rinishi).
+    // Self-hosted Sentry: sentry.e-edu.uz. Source upload faqat SENTRY_AUTH_TOKEN
+    // berilganda va CI=true bo'lganda — lokal dev iteratsiyani sekinlashtirmaydi.
+    id("io.sentry.jvm.gradle") version "3.12.0"
+}
+
+// =====================================================
+// Sentry Gradle Plugin Configuration
+// =====================================================
+sentry {
+    // Self-hosted Sentry URL — SENTRY_URL env var orqali Sentry CLI'ga uzatiladi
+    // (.env'da: SENTRY_URL=https://sentry.e-edu.uz). Plugin'da url property yo'q.
+
+    // Organization va project (Sentry UI'da yaratilgan)
+    org.set("sentry")
+    projectName.set("java-spring-boot")
+
+    // Source context — token va CI bo'lganda upload qiladi
+    val sentryAuth = System.getenv("SENTRY_AUTH_TOKEN")
+    val hasValidToken = !sentryAuth.isNullOrBlank() && sentryAuth != "test"
+    includeSourceContext.set(hasValidToken && System.getenv("CI") != null)
+    if (hasValidToken) {
+        authToken.set(sentryAuth)
+    }
+
+    // SDK qo'lda dependency sifatida qo'shilgan (sentry-spring-boot-4:8.40.0).
+    // autoInstallation false — version konflikt'ni oldini olish.
+    autoInstallation.enabled.set(false)
 }
 
 dependencies {

@@ -6,10 +6,10 @@ spring:
   # =====================================================
   # Auto-Configuration Exclusions (to reduce warnings)
   # =====================================================
-  autoconfigure:
-    exclude:
-      - io.sentry.spring.boot.jakarta.SentryAutoConfiguration  # Exclude Sentry when disabled
-      
+  # Sentry exclusion olib tashlandi — SENTRY_ENABLED=false bo'lsa, sentry.enabled
+  # property'i auto-config'ni o'chiradi (bean yaratilmaydi, exclude shart emas).
+
+
   # =====================================================
   # Development DataSource
   # =====================================================

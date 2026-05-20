@@ -411,11 +411,18 @@ hemis:
   # Markaz → 224 Univer outbound callback infrastructure.
   webhook:
     enabled: ${WEBHOOK_ENABLED:true}
+    # URL construction convention (2026-05-18):
+    #   final = {protocol}://{hemishe_e_university.student_url}{suffix}
+    # Misol: student_url="student.adu.uz" → "https://student.adu.uz/rest/v1/hemis-callback/event"
+    # Sabab: 254 OTM uchun bir xil suffix saqlash dubl (DRY) — convention bir marta yoziladi.
+    callback:
+      protocol: ${WEBHOOK_CALLBACK_PROTOCOL:https}
+      suffix: ${WEBHOOK_CALLBACK_SUFFIX:/rest/v1/hemis-callback/event}
     retry:
-      max-attempts: 5
+      max-attempts: 3              # ADR-0012 trim 2026-05-18 (5 → 3)
       initial-interval-ms: 1000    # 1 sekund (1-attempt)
-      multiplier: 5                 # 1s, 5s, 30s, 5min, 1h (exponential)
-      max-interval-ms: 3600000      # 1 soat (cap)
+      multiplier: 30                # 1s, 30s, 5min (exponential — total ~5 min)
+      max-interval-ms: 300000       # 5 minut (cap)
     dispatcher:
       connect-timeout-ms: 5000
       read-timeout-ms: 30000
@@ -532,8 +539,8 @@ hemis:
       secret: ${JWT_SECRET}
       # Key ID — JWS header `kid` (must match JWK in SecurityConfig.jwtEncoder)
       key-id: ${JWT_KEY_ID:hemis-jwt-key}
-      # Token expiration (seconds) - default: 12 hours
-      expiration: ${JWT_EXPIRATION:43200}
+      # Token expiration (seconds) - default: 1 hour (ADR-0009, 2026-05-18)
+      expiration: ${JWT_EXPIRATION:3600}
       # Refresh token expiration (seconds) - default: 7 days
       refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800}
       # Issuer
