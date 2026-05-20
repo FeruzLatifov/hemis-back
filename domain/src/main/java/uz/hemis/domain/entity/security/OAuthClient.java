@@ -140,10 +140,6 @@ public class OAuthClient extends AuditableEntity {
     @Column(name = "allowed_ip_cidr", columnDefinition = "text[]")
     private List<String> allowedIpCidr;
 
-    /** mTLS required — future, high-trust clients (MyGov callback, E-Imzo). */
-    @Column(name = "require_mtls", nullable = false)
-    private Boolean requireMtls = Boolean.FALSE;
-
     // =====================================================
     // Rate Limiting
     // =====================================================

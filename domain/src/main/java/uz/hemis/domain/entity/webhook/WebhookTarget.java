@@ -8,11 +8,16 @@ import org.hibernate.annotations.SQLRestriction;
 import uz.hemis.domain.entity.base.AuditableEntity;
 
 /**
- * Webhook target — 224 ta OTM Univer'ning callback URL ro'yxati.
+ * Webhook target — 254 ta OTM Univer'ga HMAC callback uchun secret + per-OTM tuning.
  *
- * <p>Markaz event sodir bo'lganda (klassifikator update, qoida push) bu jadvaldan
- * faol OTM URL'lari olinadi va REST callback yuboriladi. Univer endpoint'i HMAC
- * SHA-256 signature orqali autentifikatsiya qiladi.</p>
+ * <p><strong>URL convention (2026-05-18):</strong> Callback URL'ni bu yerda
+ * saqlamaymiz — har OTM uchun bir xil suffix dubl bo'lar edi. URL deyiladi:
+ * {@code ${webhook.callback.protocol}://{university.student_url}${webhook.callback.suffix}}
+ * — masalan {@code https://student.adu.uz/rest/v1/hemis-callback/event}.
+ * {@code student_url} {@code hemishe_e_university} jadvalidan keladi (254/254 to'ldirilgan).</p>
+ *
+ * <p><strong>Active flag:</strong> {@code hemishe_e_university.active}'dan keladi —
+ * bu yerda alohida flag dubl bo'lar edi.</p>
  *
  * <p><strong>Secret saqlash:</strong> Plain secret faqat generate paytida UI'da
  * bir marta ko'rsatiladi. Markazda {@code secret_hash} (bcrypt) saqlanadi.
@@ -21,7 +26,7 @@ import uz.hemis.domain.entity.base.AuditableEntity;
  * <p><strong>Auditing:</strong> {@link AuditableEntity} — modern schema audit columns
  * ({@code created_at/by}, {@code updated_at/by}, {@code deleted_at/by}, {@code version}).</p>
  *
- * @see V016_create_webhook_infrastructure.sql
+ * @see V015_create_webhook_infrastructure.sql
  * @since ADR-0012
  */
 @Entity
@@ -36,10 +41,6 @@ public class WebhookTarget extends AuditableEntity {
     @Column(name = "university_code", nullable = false, length = 10)
     private String universityCode;
 
-    /** Univer-side qabul qiluvchi URL (HTTPS production, http://localhost dev). */
-    @Column(name = "callback_url", nullable = false, length = 500)
-    private String callbackUrl;
-
     /**
      * HMAC secret bcrypt hash. Plain qiymat hech qachon saqlanmaydi —
      * generate paytida UI'da ko'rsatiladi, Univer {@code .env}'ga yozadi.
@@ -51,21 +52,11 @@ public class WebhookTarget extends AuditableEntity {
     @Column(name = "description", length = 255)
     private String description;
 
-    /** {@code FALSE} = consumer event yubormaydi (offline, manual disable, debug). */
-    @Column(name = "active", nullable = false)
-    private Boolean active = true;
-
     /** HTTP request timeout (millisekund). Default 30s. */
     @Column(name = "timeout_ms", nullable = false)
     private Integer timeoutMs = 30000;
 
     /** Maksimal retry urinish. Bekor qilinsa event DLQ topic'ga tushadi. */
     @Column(name = "max_retries", nullable = false)
-    private Integer maxRetries = 5;
-
-    /** Aktiv va o'chirilmagan target ekanligini tekshirish. */
-    @Transient
-    public boolean isDeliverable() {
-        return Boolean.TRUE.equals(active) && !isDeleted();
-    }
+    private Integer maxRetries = 3;
 }

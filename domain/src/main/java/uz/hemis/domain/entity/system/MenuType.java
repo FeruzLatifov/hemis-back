@@ -1,5 +1,7 @@
 package uz.hemis.domain.entity.system;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.AttributeConverter;
 
 /**
@@ -11,7 +13,8 @@ import jakarta.persistence.AttributeConverter;
  *   <li>{@link #SYSTEM} — System menu (shown below separator)</li>
  * </ul>
  *
- * <p>Database stores lowercase values ("main", "system").</p>
+ * <p>Wire format (JSON va DB): lowercase "main"/"system" — frontend va
+ * V013 CHECK constraint shu shaklni kutadi.</p>
  */
 public enum MenuType {
     MAIN("main"),
@@ -23,10 +26,12 @@ public enum MenuType {
         this.value = value;
     }
 
+    @JsonValue
     public String getValue() {
         return value;
     }
 
+    @JsonCreator
     public static MenuType fromValue(String value) {
         for (MenuType type : values()) {
             if (type.value.equalsIgnoreCase(value)) {

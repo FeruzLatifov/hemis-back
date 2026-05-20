@@ -65,7 +65,7 @@ public interface EmployeeJobsRepository extends JpaRepository<EmployeeJobs, UUID
     }
 
     /**
-     * Univer sync upsert key — (university_code, source_uid) (V015 unique partial index).
+     * Univer sync upsert key — (university_code, source_uid) (V014 unique partial index).
      * source_uid Univer'ning ichki ID, idempotent lookup uchun.
      */
     @Query(value = "SELECT * FROM employee_job " +

@@ -13,7 +13,7 @@ import java.util.UUID;
 /**
  * Transactional Outbox Pattern entity (Chris Richardson).
  *
- * <p>V015 migration'da yaratilgan jadval — atomic DB write + event publish.
+ * <p>V014 migration'da yaratilgan jadval — atomic DB write + event publish.
  * {@code @Transactional} ichida bu row va asosiy domain entity birga yoziladi.
  * Background {@code OutboxPublisher} ({@code @Scheduled}) keyin {@code published_at IS NULL}
  * row'larni Kafka topic'ga jo'natadi.</p>
@@ -25,7 +25,7 @@ import java.util.UUID;
  * bir jadval employee, student, classifier, webhook event'lariga xizmat qiladi.</p>
  *
  * @see <a href="https://microservices.io/patterns/data/transactional-outbox.html">Transactional Outbox</a>
- * @since ADR-0010 / V015 (2026-05-08)
+ * @since ADR-0010 / V014 (2026-05-08)
  */
 @Entity
 @Table(name = "outbox_event")
@@ -42,7 +42,7 @@ public class OutboxEvent {
 
     /**
      * Domain discriminator — Kafka topic routing uchun.
-     * Ruxsat etilgan qiymatlar (V015 CHECK constraint):
+     * Ruxsat etilgan qiymatlar (V014 CHECK constraint):
      * employee, employee_job, student, teacher, classifier, university, building, audit.
      */
     @Column(name = "aggregate_type", nullable = false, length = 50)
@@ -53,7 +53,7 @@ public class OutboxEvent {
     private String aggregateId;
 
     /**
-     * Event tipi. Ruxsat etilgan qiymatlar (V015 CHECK constraint):
+     * Event tipi. Ruxsat etilgan qiymatlar (V014 CHECK constraint):
      * created, updated, deleted, synced, soft_deleted, restored, conflict_resolved.
      */
     @Column(name = "event_type", nullable = false, length = 50)
@@ -82,7 +82,7 @@ public class OutboxEvent {
     @Column(name = "published_at")
     private LocalDateTime publishedAt;
 
-    /** Retry urinish soni. Max 100 (V015 CHECK constraint). */
+    /** Retry urinish soni. Max 100 (V014 CHECK constraint). */
     @Column(name = "retry_count", nullable = false)
     private Integer retryCount = 0;
 

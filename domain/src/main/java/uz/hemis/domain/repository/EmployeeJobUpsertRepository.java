@@ -9,7 +9,7 @@ import java.util.UUID;
  *
  * <p>Conflict key — partial UNIQUE
  * {@code uq_ejob_univer_source(university_code, source_uid) WHERE source_uid IS NOT NULL AND deleted_at IS NULL}
- * (V015). Faqat Univer push qilgan row'lar (source_uid NOT NULL) uchun ishlaydi —
+ * (V014). Faqat Univer push qilgan row'lar (source_uid NOT NULL) uchun ishlaydi —
  * markazda admin UI orqali yaratilganlar (source_uid IS NULL) conflict yaratmaydi.</p>
  *
  * <p>UPDATE branch faqat Univer DTO'dan keladigan field'larni yangilaydi

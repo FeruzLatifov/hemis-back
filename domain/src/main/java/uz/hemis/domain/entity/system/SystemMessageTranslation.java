@@ -27,17 +27,12 @@ import java.util.UUID;
  *   <li>No soft delete (translations don't need it)</li>
  * </ul>
  *
- * <p><strong>Supported Languages (9 total):</strong></p>
+ * <p><strong>Active Languages (4):</strong></p>
  * <ul>
  *   <li>uz-UZ - O'zbek (lotin)</li>
  *   <li>oz-UZ - Ўзбек (kirill)</li>
  *   <li>ru-RU - Русский</li>
  *   <li>en-US - English</li>
- *   <li>kk-UZ - Қазақ</li>
- *   <li>tg-TG - Тоҷикӣ</li>
- *   <li>kz-KZ - Қазақ</li>
- *   <li>tm-TM - Türkmen</li>
- *   <li>kg-KG - Кыргыз</li>
  * </ul>
  *
  * <p><strong>Usage:</strong></p>

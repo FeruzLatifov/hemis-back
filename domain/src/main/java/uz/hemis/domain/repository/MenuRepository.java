@@ -178,23 +178,6 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
     @Query("SELECT COUNT(m) FROM Menu m WHERE m.active = true")
     long countActiveMenus();
 
-    // =====================================================
-    // Complete Tree Queries (Performance Optimized)
-    // =====================================================
-
-    /**
-     * Find complete menu tree (root menus with children eagerly fetched)
-     *
-     * <p>Performance-optimized query with eager fetching</p>
-     * <p>Fetches root menus and their first-level children</p>
-     * <p>For deeper nesting, use recursive loading in service layer</p>
-     * <p>Used for menu caching and initial load</p>
-     *
-     * @return list of all root menus with children
-     */
-    @Query("SELECT m FROM Menu m WHERE m.parent IS NULL AND m.active = true ORDER BY m.orderNumber ASC")
-    List<Menu> findCompleteMenuTree();
-
     /**
      * Find menu by ID with children eagerly fetched
      *

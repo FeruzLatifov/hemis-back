@@ -9,7 +9,7 @@ package uz.hemis.domain.entity.webhook;
  *   retry   → success | failed | retry | dlq
  * </pre>
  *
- * @see V016_create_webhook_infrastructure.sql
+ * @see V015_create_webhook_infrastructure.sql
  */
 public enum WebhookDeliveryStatus {
     /** Consumer yuborishni boshladi, hali javob kelmagan. */

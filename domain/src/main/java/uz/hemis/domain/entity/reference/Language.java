@@ -22,21 +22,12 @@ import uz.hemis.domain.entity.base.AuditableEntity;
  *   <li>Code field as unique identifier (uz-UZ, ru-RU, etc.)</li>
  * </ul>
  *
- * <p><strong>Currently Active Languages (4):</strong></p>
+ * <p><strong>Active Languages (4):</strong></p>
  * <ul>
  *   <li>uz-UZ - O'zbekcha (Lotin) - Primary language</li>
  *   <li>oz-UZ - O'zbekcha (Kirill)</li>
  *   <li>ru-RU - Russkij</li>
  *   <li>en-US - English</li>
- * </ul>
- *
- * <p><strong>Planned Languages (5 - Future Support):</strong></p>
- * <ul>
- *   <li>kk-UZ - Karakalpak</li>
- *   <li>tg-TG - Tajik</li>
- *   <li>kz-KZ - Kazakh</li>
- *   <li>tm-TM - Turkmen</li>
- *   <li>kg-KG - Kyrgyz</li>
  * </ul>
  *
  * <p><strong>Note:</strong> No @SQLRestriction — classifier uses isActive flag instead of soft delete.
@@ -71,11 +62,6 @@ public class Language extends AuditableEntity {
     public static final String UZBEK_CYRILLIC = "oz-UZ";
     public static final String RUSSIAN = "ru-RU";
     public static final String ENGLISH = "en-US";
-    public static final String KARAKALPAK = "kk-UZ";
-    public static final String TAJIK = "tg-TG";
-    public static final String KAZAKH = "kz-KZ";
-    public static final String TURKMEN = "tm-TM";
-    public static final String KYRGYZ = "kg-KG";
 
     // =====================================================
     // Language Properties

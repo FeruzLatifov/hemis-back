@@ -6,7 +6,7 @@ import jakarta.persistence.Converter;
 /**
  * JPA converter: enum ↔ lowercase db value ('pending','success','failed','retry','dlq').
  *
- * <p>V016 migration CHECK constraint lowercase string'larni kutadi
+ * <p>V015 migration CHECK constraint lowercase string'larni kutadi
  * ({@code status IN ('pending','success','failed','retry','dlq')}), enum nomi esa
  * uppercase ({@code PENDING}). Default {@code EnumType.STRING} uppercase'ni yozardi.</p>
  */

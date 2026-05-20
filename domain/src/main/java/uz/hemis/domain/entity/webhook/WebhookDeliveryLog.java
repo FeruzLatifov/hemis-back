@@ -23,7 +23,7 @@ import java.util.UUID;
  *   3. attempt_n &gt; max_retries → DLQ
  * </pre>
  *
- * @see V016_create_webhook_infrastructure.sql
+ * @see V015_create_webhook_infrastructure.sql
  * @since ADR-0012
  */
 @Entity

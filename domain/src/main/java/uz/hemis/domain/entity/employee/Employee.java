@@ -125,7 +125,7 @@ public class Employee extends AuditableEntity {
     @Convert(converter = TinConverter.class)
     private Tin tin;
 
-    /** V015 sync marker — Univer'dan oxirgi sync vaqti (NULL = sync qilinmagan). */
+    /** V014 sync marker — Univer'dan oxirgi sync vaqti (NULL = sync qilinmagan). */
     @Column(name = "synced_at")
     private LocalDateTime syncedAt;
 

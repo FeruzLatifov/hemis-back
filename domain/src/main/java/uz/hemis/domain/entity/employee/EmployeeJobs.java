@@ -107,11 +107,11 @@ public class EmployeeJobs extends AuditableEntity {
     @Column(name = "decree_date")
     private LocalDate decreeDate;
 
-    /** V015 sync — Univer'ning ichki ID. Idempotent upsert key bilan (university_code, source_uid). */
+    /** V014 sync — Univer'ning ichki ID. Idempotent upsert key bilan (university_code, source_uid). */
     @Column(name = "source_uid", length = 100)
     private String sourceUid;
 
-    /** V015 sync — oxirgi sync vaqti (NULL = manual yaratilgan). */
+    /** V014 sync — oxirgi sync vaqti (NULL = manual yaratilgan). */
     @Column(name = "synced_at")
     private LocalDateTime syncedAt;
 }
