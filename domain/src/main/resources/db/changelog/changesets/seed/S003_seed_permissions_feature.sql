@@ -383,7 +383,7 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
 -- =====================================================
--- Buildings Module (3 permissions — V014 module)
+-- Buildings Module (3 permissions — V010 module)
 -- =====================================================
 
 INSERT INTO permission (resource, action, code, name, description, category, created_by)

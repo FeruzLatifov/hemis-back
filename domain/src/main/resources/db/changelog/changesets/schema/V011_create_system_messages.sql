@@ -1,4 +1,4 @@
--- V012: Create system_message and system_message_translation tables
+-- V011: Create system_message and system_message_translation tables
 
 CREATE TABLE system_message (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

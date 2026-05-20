@@ -1,5 +1,5 @@
 -- =====================================================
--- V013: language + configuration — system-wide settings
+-- V012: language + configuration — system-wide settings
 -- =====================================================
 -- Author: hemis-team
 -- Purpose:

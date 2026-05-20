@@ -1,9 +1,9 @@
 -- =====================================================
--- V016 ROLLBACK: WEBHOOK INFRASTRUCTURE
+-- V015 ROLLBACK: WEBHOOK INFRASTRUCTURE
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2026-05-13
--- Purpose: V016 da yaratilgan webhook_target + webhook_delivery_log
+-- Purpose: V015 da yaratilgan webhook_target + webhook_delivery_log
 --          jadvallarini va indekslarini olib tashlash.
 --
 -- DIQQAT: Bu rollback PRODUCTION'da bajarilsa:

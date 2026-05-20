@@ -1,5 +1,5 @@
 -- =====================================================
--- V015: EMPLOYEE SYNC INFRASTRUCTURE
+-- V014: EMPLOYEE SYNC INFRASTRUCTURE
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2026-05-08
@@ -155,7 +155,7 @@ CREATE INDEX IF NOT EXISTS idx_outbox_correlation
     ON outbox_event (correlation_id)
     WHERE correlation_id IS NOT NULL;
 
--- M007 (2026-05-19): employee_sync_log jadvali olib tashlandi.
+-- 2026-05-19 inline fix: employee_sync_log jadvali olib tashlandi (dropped M007 → inlined here).
 -- Sabab: activity_log (hemis_audit DB) + Sentry bilan 80% duplikat edi.
 -- EmployeeSyncProcessor @Audited annotation orqali activity_log'ga yoziladi.
 -- ADR-0010 revision (2026-05-19).

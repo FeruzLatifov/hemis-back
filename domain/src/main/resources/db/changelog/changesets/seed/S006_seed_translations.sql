@@ -521,7 +521,7 @@ PERFORM _seed_msg('menu', 'Contract categories',    'Shartnoma toifalari',      
 PERFORM _seed_msg('menu', 'University count',       'OTMlar soni',                  'ОТМлар сони',               'Количество ВУЗов');
 PERFORM _seed_msg('menu', 'Faculty list report',    'Fakultetlar ro''yxati',         'Факультетлар рўйхати',      'Список факультетов');
 
--- Missing menu translations (M005 gettext migration)
+-- Missing menu translations (gettext-style)
 PERFORM _seed_msg('menu', 'Directions',             'Yo''nalishlar',                 'Йўналишлар',                'Направления');
 PERFORM _seed_msg('menu', 'Teacher list',           'O''qituvchilar ro''yxati',       'Ўқитувчилар рўйхати',       'Список преподавателей');
 PERFORM _seed_msg('menu', 'Positions',              'Lavozimlar',                   'Лавозимлар',                'Должности');

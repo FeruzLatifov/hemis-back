@@ -1,8 +1,8 @@
 databaseChangeLog:
   # =====================================================
-  # HEMIS DATABASE MIGRATIONS (v2.0 — Clean Architecture, Dependency-First)
+  # HEMIS DATABASE MIGRATIONS (v2.1 — Sequential Renumber, Gap-Free)
   # =====================================================
-  # 14 schema + 9 seed + 3 migration changesets.
+  # 15 schema + 12 seed + 5 migration changesets.
   #
   # Order principle: STRICT dependency order — every table is created AFTER
   # the tables it references. Every FK is declared INLINE; NO cross-file
@@ -17,7 +17,7 @@ databaseChangeLog:
       value: db/changelog/db.changelog-master.yaml
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # PHASE 1: SCHEMA — 14 files (strict dependency order)
+  # PHASE 1: SCHEMA — 15 files (strict dependency order)
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # V001: role                                      (RBAC catalog leaf)
   # V002: permission                                (RBAC catalog leaf)
@@ -29,10 +29,12 @@ databaseChangeLog:
   # V007: user_role + role_permission               (RBAC junctions — references V001/V002/V006)
   # V008: university_founder                        (references V004 employee, V005 organization)
   # V009: university_lifecycle                      (immutable log)
-  # V011: buildings (5 tables)                      (depends on hemishe_e_university)
-  # V012: system_message + system_message_translation (i18n catalog)
-  # V013: language + configuration                  (i18n + system settings)
-  # V014: menu + user_favorite                      (UI — references V006 users)
+  # V010: buildings (5 tables)                      (depends on hemishe_e_university)
+  # V011: system_message + system_message_translation (i18n catalog)
+  # V012: language + configuration                  (i18n + system settings)
+  # V013: menu + user_favorite                      (UI — references V006 users)
+  # V014: outbox_event + employee/employee_job sync metadata (ADR-0010, ADR-0007)
+  # V015: webhook_target + webhook_delivery_log     (ADR-0012)
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
@@ -151,7 +153,7 @@ databaseChangeLog:
         - sqlFile: { path: changesets/schema/V009_create_university_lifecycle_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V011_create_university_buildings
+      id: V010_create_university_buildings
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "Buildings domain: 3 classifiers + university_building + building_lifecycle"
@@ -159,12 +161,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: university_building } }
       changes:
-        - sqlFile: { path: changesets/schema/V011_create_university_buildings.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V010_create_university_buildings.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V011_create_university_buildings_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V010_create_university_buildings_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V012_create_system_messages
+      id: V011_create_system_messages
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "i18n: system_message + system_message_translation"
@@ -172,12 +174,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: system_message } }
       changes:
-        - sqlFile: { path: changesets/schema/V012_create_system_messages.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V011_create_system_messages.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V012_create_system_messages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V011_create_system_messages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V013_create_languages
+      id: V012_create_languages
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "i18n: language + system configuration"
@@ -185,12 +187,12 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: language } }
       changes:
-        - sqlFile: { path: changesets/schema/V013_create_languages.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V012_create_languages.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V013_create_languages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V012_create_languages_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V014_create_menus
+      id: V013_create_menus
       author: hemis-team
       logicalFilePath: ${changelog.path}
       comment: "UI: menu + user_favorite + 49 seed items (references users)"
@@ -198,22 +200,22 @@ databaseChangeLog:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: menu } }
       changes:
-        - sqlFile: { path: changesets/schema/V014_create_menus.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V013_create_menus.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V014_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V013_create_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: V015_create_employee_sync_infrastructure
+      id: V014_create_employee_sync_infrastructure
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "Employee sync infra: ALTER employee/employee_job (sync metadata) + outbox_event + employee_sync_log (ADR-0010, ADR-0007 Stage 1)"
+      comment: "Employee sync infra: ALTER employee/employee_job (sync metadata) + outbox_event (ADR-0010, ADR-0007 Stage 1)"
       preConditions:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: outbox_event } }
       changes:
-        - sqlFile: { path: changesets/schema/V015_create_employee_sync_infrastructure.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V014_create_employee_sync_infrastructure.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V015_create_employee_sync_infrastructure_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V014_create_employee_sync_infrastructure_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: tag-schema-complete
@@ -223,20 +225,20 @@ databaseChangeLog:
         - tagDatabase: { tag: schema-v1.0 }
 
   - changeSet:
-      id: V016_create_webhook_infrastructure
+      id: V015_create_webhook_infrastructure
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      comment: "Webhook outbound infra: webhook_target (224 OTM URL+secret) + webhook_delivery_log (audit). Outbox (V015) → Kafka → REST callback. ADR-0012."
+      comment: "Webhook outbound infra: webhook_target (224 OTM URL+secret) + webhook_delivery_log (audit). Outbox (V014) → Kafka → REST callback. ADR-0012."
       preConditions:
         - onFail: MARK_RAN
         - not: { tableExists: { tableName: webhook_target } }
       changes:
-        - sqlFile: { path: changesets/schema/V016_create_webhook_infrastructure.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V015_create_webhook_infrastructure.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/schema/V016_create_webhook_infrastructure_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/schema/V015_create_webhook_infrastructure_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # PHASE 2: SEED — 9 files
+  # PHASE 2: SEED — 13 files
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   - changeSet:
@@ -302,15 +304,7 @@ databaseChangeLog:
       rollback:
         - sqlFile: { path: changesets/seed/S006_seed_translations_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
-  - changeSet:
-      id: S007_seed_classifier_menus
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      runOnChange: true
-      changes:
-        - sqlFile: { path: changesets/seed/S007_seed_classifier_menus.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/seed/S007_seed_classifier_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+  # S007 moved AFTER S011 — needs 'classifiers' parent menu row from S011_seed_main_menus.
 
   - changeSet:
       id: S008_seed_positions
@@ -346,26 +340,48 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S010_seed_frontend_translations_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: S011_seed_webhook_menu
+      id: S011_seed_main_menus
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "50 ta main menu item (9 root + 41 child) — V013 upsert_menu() helper ishlatadi. S012/S013 menu seedlardan AVVAL ishlashi shart (system root parent ham shu yerda yaratiladi)."
+      changes:
+        - sqlFile: { path: changesets/seed/S011_seed_main_menus.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S011_seed_main_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S007_seed_classifier_menus
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Classifier sub-menus (Financial, Diploma, Speciality) — S011 dan KEYIN ishlaydi (classifiers parent row S011 da yaratiladi)."
+      changes:
+        - sqlFile: { path: changesets/seed/S007_seed_classifier_menus.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S007_seed_classifier_menus_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S012_seed_webhook_menu
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
       comment: "Webhook admin menu entry under /system (2026-05-19, ADR-0012). Permission webhook.view from M004."
       changes:
-        - sqlFile: { path: changesets/seed/S011_seed_webhook_menu.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/seed/S012_seed_webhook_menu.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/seed/S011_seed_webhook_menu_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/seed/S012_seed_webhook_menu_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: S012_seed_outbox_menu
+      id: S013_seed_outbox_menu
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
-      comment: "Outbox admin menu entry under /system (2026-05-19). Permission outbox.view from M008."
+      comment: "Outbox admin menu entry under /system (2026-05-19). Permission outbox.view from M005."
       changes:
-        - sqlFile: { path: changesets/seed/S012_seed_outbox_menu.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/seed/S013_seed_outbox_menu.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/seed/S012_seed_outbox_menu_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/seed/S013_seed_outbox_menu_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: tag-seed-complete
@@ -429,12 +445,18 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M004_webhook_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
-      id: M008_outbox_permissions
+      id: M005_outbox_permissions
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
       comment: "Outbox admin RBAC: outbox.view (list/inspect), outbox.manage (retry/discard). SUPER_ADMIN: both, MINISTRY_ADMIN: view only."
       changes:
-        - sqlFile: { path: changesets/migration/M008_outbox_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/migration/M005_outbox_permissions.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/migration/M008_outbox_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/migration/M005_outbox_permissions_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  # M006_gnk_integration_permission OLIB TASHLANDI (2026-05-20)
+  # Sabab: LegalEntityOldServiceController @PreAuthorize HEAD'ga qaytarildi (1:1 old-hemis compat).
+  # Bundan tashqari M006'da check constraint violations bor edi:
+  #   - action='query' — chk_permission_action ruxsat etmaydi (view/create/edit/delete/export/import/manage/access/sync)
+  #   - category='INTEGRATION' — chk_permission_category ruxsat etmaydi (CORE/ADMIN/MENU/CUSTOM/REPORTS)

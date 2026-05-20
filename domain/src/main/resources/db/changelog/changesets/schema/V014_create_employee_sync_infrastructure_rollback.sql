@@ -1,9 +1,9 @@
 -- =====================================================
--- V015 ROLLBACK: EMPLOYEE SYNC INFRASTRUCTURE
+-- V014 ROLLBACK: EMPLOYEE SYNC INFRASTRUCTURE
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2026-05-08
--- Reverses V015_create_employee_sync_infrastructure.sql
+-- Reverses V014_create_employee_sync_infrastructure.sql
 --
 -- Drop order: dependent jadvallar avval (FK references)
 -- =====================================================

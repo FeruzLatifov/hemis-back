@@ -1,18 +1,18 @@
 -- =====================================================
--- V016: WEBHOOK INFRASTRUCTURE (Outbound markaz → Univer)
+-- V015: WEBHOOK INFRASTRUCTURE (Outbound markaz → Univer)
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2026-05-13
 -- ADR: docs/adr/0012-webhook-outbound-infrastructure.md (proposed)
 -- Purpose: 224 ta Univer (hemis_337, hemis_401, ...) ga markaz tomondan
---          event push qilish infrastrukturasi. Outbox (V015 `outbox_event`)
+--          event push qilish infrastrukturasi. Outbox (V014 `outbox_event`)
 --          → Kafka topic → Consumer → REST callback (HMAC-signed) → Univer.
 --
 -- Birga ishlash:
---   - V015 `outbox_event` — universal event source (employee, classifier,
+--   - V014 `outbox_event` — universal event source (employee, classifier,
 --     rule_push, otm_block, notification — har biri 1 row)
---   - V016 `webhook_target` — 224 OTM ro'yxati (URL, secret, retry config)
---   - V016 `webhook_delivery_log` — har attempt audit (event × target × attempt)
+--   - V015 `webhook_target` — 224 OTM ro'yxati (URL, secret, retry config)
+--   - V015 `webhook_delivery_log` — har attempt audit (event × target × attempt)
 --
 -- Self-contained: faqat 2 yangi jadval (webhook_target, webhook_delivery_log).
 -- Mavjud jadvallarga ALTER yo'q.
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS webhook_target (
 
 COMMENT ON TABLE webhook_target IS
     '224 ta OTM Univer webhook ro''yxati. URL/active hemishe_e_university dan
-     derive qilinadi (M006 convention 2026-05-19). ADR-0012.';
+     derive qilinadi (URL convention 2026-05-19). ADR-0012.';
 
 COMMENT ON COLUMN webhook_target.university_code IS
     'OTM identifikator (hemis_NNN dagi NNN qism). Per-OTM UNIQUE (partial index).';
@@ -82,7 +82,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_webhook_target_university_code
     ON webhook_target (university_code)
     WHERE deleted_at IS NULL;
 
--- M006 (2026-05-19): idx_webhook_target_active olib tashlandi —
+-- 2026-05-19 inline fix (dropped M006): idx_webhook_target_active olib tashlandi —
 -- active column hemishe_e_university'dan derive qilinadi (per-row yo'q).
 -- Consumer query JOIN orqali ishlatadi (university.active filter).
 

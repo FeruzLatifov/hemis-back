@@ -1,23 +1,26 @@
 -- =====================================================
--- S012: SEED OUTBOX MENU ENTRY
+-- S012: SEED WEBHOOK MENU ENTRY
 -- =====================================================
 -- Author: hemis-team
 -- Date: 2026-05-19
--- Purpose: /system/outbox menu entry (OutboxAdminController admin UI).
+-- Purpose: Add 'sys-webhooks' menu under 'system' parent for
+--          frontend /system/webhooks (WebhookTargetController admin UI).
 -- Parent: system (10000000-0000-0000-0000-000000000009)
--- order_number: 7 (after webhooks=6)
--- Permission: outbox.view (M008)
+-- Existing children: translations(1), users(2), roles(3), logs(4), report-updates(5)
+-- New child: webhooks (6)
+-- Permission: webhook.view (M004 already seeded)
+-- Strategy: IDEMPOTENT UPSERT (ON CONFLICT DO UPDATE)
 -- =====================================================
 
 INSERT INTO menu (id, code, i18n_key, url, icon, permission, order_number, is_active, parent_id, created_at, updated_at, menu_type)
 VALUES (
-    '20000009-0000-0000-0000-000000000007',
-    'sys-outbox',
-    'Outbox Queue',
-    '/system/outbox',
-    'inbox',
-    'outbox.view',
-    7,
+    '20000009-0000-0000-0000-000000000006',
+    'sys-webhooks',
+    'Webhook Targets',
+    '/system/webhooks',
+    'webhook',
+    'webhook.view',
+    6,
     true,
     '10000000-0000-0000-0000-000000000009',
     CURRENT_TIMESTAMP,
