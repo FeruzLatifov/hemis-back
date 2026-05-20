@@ -414,7 +414,9 @@ public class TokenService {
                 .encode(JwtEncoderParameters.from(jwsHeader(), claims.build()))
                 .getTokenValue();
 
-        log.info("Issued CLIENT token for '{}' (type={}, univ={}, ttl={}s, authorities={}, scope={})",
+        // 'client_id' OAuth identifier hisoblanadi (sekret emas), lekin OTM-level audit'da
+        // sezilarli — log.debug ga ko'chirildi (production debug profile'da yoqilsa ko'rinadi).
+        log.debug("Issued CLIENT token for '{}' (type={}, univ={}, ttl={}s, authorities={}, scope={})",
                 client.getClientId(),
                 client.getClientType(),
                 universityCode,

@@ -139,10 +139,10 @@ public class LegacyPasswordEncoder implements PasswordEncoder {
             byte[] computedHash = hashPbkdf2(rawPassword.toString(), salt, iterations);
             String computedHashBase64 = Base64.getEncoder().encodeToString(computedHash);
 
-            boolean matches = storedHash.equals(computedHashBase64);
-            log.debug("PBKDF2 password match: {} (iterations: {})", matches, iterations);
-
-            return matches;
+            // Boolean natijani log'ga yozish login enumeration leak — log.debug ham
+            // production'da DEBUG profile'da yoqilgan bo'lsa, parol mosligi
+            // ko'rinib qoladi. Faqat iteration soni log'ga (operational).
+            return storedHash.equals(computedHashBase64);
 
         } catch (Exception e) {
             log.error("Error verifying CUBA PBKDF2 password: {}", e.getMessage(), e);
