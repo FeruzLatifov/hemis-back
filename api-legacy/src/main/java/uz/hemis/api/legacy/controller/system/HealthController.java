@@ -56,4 +56,5 @@ public class HealthController {
 
         return ResponseEntity.ok(ResponseWrapper.success(version));
     }
+
 }

@@ -30,7 +30,10 @@ import java.util.Map;
 @RequestMapping("/api/v1/web/audit")
 @Tag(name = "Audit Logs", description = "Tizim audit loglarini ko'rish va tahlil qilish")
 @SecurityRequirement(name = "bearerAuth")
-@PreAuthorize("hasAuthority('audit.view')")
+// Defense-in-depth: 'audit.view' permission + role check (SUPER_ADMIN yoki MINISTRY_ADMIN).
+// UNIVERSITY_ADMIN cross-OTM audit log ko'rmasligi shart — vazirlik darajasidagi audit
+// faqat ministry rollar uchun. Per-OTM audit feature alohida endpoint (kelajakda).
+@PreAuthorize("hasAuthority('audit.view') and (hasRole('SUPER_ADMIN') or hasRole('MINISTRY_ADMIN'))")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

@@ -13,12 +13,14 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.favorite.UserFavoriteService;
+import uz.hemis.service.favorite.dto.FavoriteReorderItem;
 import uz.hemis.service.favorite.dto.UserFavoriteCreateRequest;
 import uz.hemis.service.favorite.dto.UserFavoriteDto;
 
@@ -271,7 +273,7 @@ public class UserFavoriteController {
     })
     public ResponseEntity<Void> reorderFavorites(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestBody List<UserFavoriteService.FavoriteOrderItem> items
+            @Valid @RequestBody List<FavoriteReorderItem> items
     ) {
         UUID userId = UUID.fromString(jwt.getSubject());
         log.debug("PATCH /api/v1/web/favorites/reorder - userId: {}, items: {}", userId, items.size());

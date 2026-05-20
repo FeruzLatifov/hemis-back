@@ -11,8 +11,6 @@ dependencies {
     implementation(project(":security"))
 
     implementation("org.springframework.boot:spring-boot-starter-web")
-    // TODO: Add webflux when needed for async S2S integrations
-    // implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
 

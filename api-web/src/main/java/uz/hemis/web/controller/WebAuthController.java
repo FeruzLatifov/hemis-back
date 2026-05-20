@@ -17,6 +17,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -358,6 +359,7 @@ public class WebAuthController {
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserInfoResponse> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = parseUserIdOrThrow(jwt.getSubject());
         log.info("/auth/me request for userId: {}", userId);
@@ -377,8 +379,9 @@ public class WebAuthController {
     //  POST /cache/clear
     // ==========================================================
 
-    @Operation(summary = "Clear user cache", description = "Joriy foydalanuvchi keshini tozalash")
+    @Operation(summary = "Clear user cache", description = "Joriy foydalanuvchi keshini tozalash (faqat o'z keshi).")
     @PostMapping("/cache/clear")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Object>> clearUserCache(@AuthenticationPrincipal Jwt jwt) {
         UUID userId = parseUserIdOrThrow(jwt.getSubject());
         log.info("POST /cache/clear for userId: {}", userId);
