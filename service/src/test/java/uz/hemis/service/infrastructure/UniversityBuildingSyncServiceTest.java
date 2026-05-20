@@ -1,39 +1,39 @@
 package uz.hemis.service.infrastructure;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import uz.hemis.common.dto.building.BuildingSyncDto;
 import uz.hemis.common.dto.building.BuildingSyncResult;
 import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
 import uz.hemis.domain.repository.UniversityBuildingRepository;
 import uz.hemis.service.infrastructure.mapper.BuildingMapper;
-import uz.hemis.service.security.TenantGuard;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
- * {@link UniversityBuildingSyncService} unit testlar — idempotency ustida.
+ * {@link UniversityBuildingSyncService} idempotency unit testlar.
  *
- * <p>Muhim kategoriyalar:
+ * <p>2026-05-20 refactor — TenantGuard service'dan olib tashlandi (auth boundary
+ * controller'da), BuildingCadastreAutoFiller drop qilindi (cadastre table o'chirildi).
+ * Cross-tenant testlar controller-level test'ga ko'chiriladi.</p>
+ *
+ * <p>Hozirda testlar:
  * <ul>
  *   <li>Yangi sourceUid → INSERT</li>
  *   <li>Bir xil hash bilan mavjud → SKIP (no DB write)</li>
@@ -49,20 +49,16 @@ class UniversityBuildingSyncServiceTest {
     private UniversityBuildingRepository repo;
 
     @Mock
-    private BuildingCadastreAutoFiller autoFiller;
-
-    @Mock
     private BuildingMapper mapper;
 
     @Mock
     private BuildingMetrics metrics;
 
-    /**
-     * Real TenantGuard — SecurityContextHolder bilan integratsiya saqlanadi.
-     * {@code setAuthenticatedTenant} bilan testlar JWT contextni populate qiladi.
-     */
-    @Spy
-    private TenantGuard tenantGuard = new TenantGuard();
+    @Mock
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache dashboardCache;
 
     @InjectMocks
     private UniversityBuildingSyncService service;
@@ -77,28 +73,7 @@ class UniversityBuildingSyncServiceTest {
                 .categoryCode("ACADEMIC")
                 .yearBuilt(2010)
                 .build();
-        // Default authenticated tenant: university_code=401 — mos endpoint chaqiruvchi.
-        // Har test bu setup'ni override qilishi mumkin.
-        setAuthenticatedTenant("401");
-    }
-
-    @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
-    }
-
-    /** OAuth2 client_credentials JWT bilan SecurityContext'ni populate qiladi. */
-    private void setAuthenticatedTenant(String universityCode) {
-        Jwt jwt = Jwt.withTokenValue("mock-test-token")
-                .header("alg", "HS256")
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(3600))
-                .subject("00000000-0000-0000-0000-000000000001")
-                .claim("client_type", "UNIVERSITY_BACKEND")
-                .claim("university_code", universityCode)
-                .build();
-        SecurityContextHolder.getContext()
-                .setAuthentication(new JwtAuthenticationToken(jwt));
+        when(cacheManager.getCache(anyString())).thenReturn(dashboardCache);
     }
 
     @Test
@@ -113,15 +88,13 @@ class UniversityBuildingSyncServiceTest {
         assertThat(result.getSuccessCount()).isEqualTo(1);
         assertThat(result.getFailureCount()).isZero();
         verify(repo).save(any(UniversityBuilding.class));
-        verify(autoFiller).autoFill(any(UniversityBuilding.class));
     }
 
     @Test
     @DisplayName("O'zgarmagan sourceUid — SKIP (DB yozuv yo'q)")
     void sync_whenUnchangedHash_skipsUpdate() {
         UniversityBuilding existing = new UniversityBuilding();
-        // hash birinchi sync'da hisoblanadi → keyingi sync ham shu hash
-        existing.setContentHash(expectedHashFor(syncDto));
+        existing.setContentHash(computeSameHashAsService(syncDto));
         when(repo.findByUniversityCodeAndSourceUid("401", "univer-bld-123"))
                 .thenReturn(Optional.of(existing));
 
@@ -174,27 +147,11 @@ class UniversityBuildingSyncServiceTest {
     }
 
     /**
-     * Test utility — sync service ichidagi hash logic'iga mos ishlab chiqilgan.
-     * Har bir test uchun qaytariladigan string content'ni mos hash bilan beradi.
-     * Real hash test'dan xabari yo'q — skip test o'zini qayta xato qilishi mumkin.
-     */
-    private String expectedHashFor(BuildingSyncDto d) {
-        // Service computeHash'ni private qilgani sababli — bu yerda content string'ni qayta
-        // qurish va hash qilish kerak. Sodda yechim: InvocationOnMock bilan emas, private method'ni
-        // reflection bilan chaqirish. Hozircha test uchun oddiy placeholder string ishlatamiz.
-        // Real hash equality test'ni integration testda tekshiramiz.
-        //
-        // NOTE: Bu test SKIP scenariosi uchun — existing.contentHash == incomingHash
-        // shuning uchun bu yerda hash service ishlatgan algoritm bilan MOS kelishi kerak.
-        // Sodda yondashuv: service'ni test double bilan override qilish.
-        return computeSameHashAsService(d);
-    }
-
-    /**
-     * Service.computeHash() bilan aniq bir xil algoritm (package-private test).
-     * NOTE: production kod o'zgarsa, bu ham yangilanishi kerak.
+     * Service.computeHash() bilan aniq bir xil algoritm.
+     * Production kod o'zgarsa, bu ham yangilanishi kerak.
      */
     private String computeSameHashAsService(BuildingSyncDto d) {
+        // 17 ta field — service.computeHash bilan AYNAN bir tartibda (cadastre noteoldidan).
         String content = String.join("|",
                 safe(d.getName()),
                 safe(d.getCategoryCode()),
@@ -211,6 +168,7 @@ class UniversityBuildingSyncServiceTest {
                 safe(d.getLongitude()),
                 safe(d.getMapUrl()),
                 safe(d.getCadNumber()),
+                safe(d.getCadastre()),
                 safe(d.getNote())
         );
         try {
@@ -224,59 +182,5 @@ class UniversityBuildingSyncServiceTest {
 
     private String safe(Object o) {
         return o == null ? "" : o.toString();
-    }
-
-    // =====================================================
-    // Cross-tenant scope enforcement (defense-in-depth)
-    // =====================================================
-
-    @Test
-    @DisplayName("Cross-tenant: caller universityCode=999, request=401 → SecurityException (403)")
-    void sync_whenForeignTenant_throwsSecurityException() {
-        setAuthenticatedTenant("999");  // caller boshqa OTM
-        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
-                .isInstanceOf(SecurityException.class)
-                .hasMessageContaining("Caller does not own university 401");
-        verifyNoInteractions(repo, mapper, autoFiller);
-    }
-
-    @Test
-    @DisplayName("Missing JWT claim: token'da university_code yo'q → SecurityException")
-    void sync_whenJwtHasNoUniversityClaim_throwsSecurityException() {
-        Jwt jwt = Jwt.withTokenValue("no-claim-token")
-                .header("alg", "HS256")
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plusSeconds(3600))
-                .subject("00000000-0000-0000-0000-000000000001")
-                .claim("client_type", "EXTERNAL_SYSTEM")  // no university_code claim
-                .build();
-        SecurityContextHolder.getContext()
-                .setAuthentication(new JwtAuthenticationToken(jwt));
-
-        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
-                .isInstanceOf(SecurityException.class)
-                .hasMessageContaining("Caller does not own university 401");
-        verifyNoInteractions(repo, mapper, autoFiller);
-    }
-
-    @Test
-    @DisplayName("Non-JWT auth (UsernamePasswordToken) → SecurityException (USER tokeni bilan kirib bo'lmaydi)")
-    void sync_whenNonJwtAuth_throwsSecurityException() {
-        SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("user", "pass", List.of())
-        );
-
-        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
-                .isInstanceOf(SecurityException.class);
-        verifyNoInteractions(repo, mapper, autoFiller);
-    }
-
-    @Test
-    @DisplayName("Anonymous (no SecurityContext) → SecurityException")
-    void sync_whenAnonymous_throwsSecurityException() {
-        SecurityContextHolder.clearContext();
-        assertThatThrownBy(() -> service.syncFromUniver("401", List.of(syncDto)))
-                .isInstanceOf(SecurityException.class);
-        verifyNoInteractions(repo, mapper, autoFiller);
     }
 }

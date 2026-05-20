@@ -14,7 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uz.hemis.domain.entity.security.UserFavorite;
 import uz.hemis.domain.repository.UserFavoriteRepository;
-import uz.hemis.service.favorite.UserFavoriteService.FavoriteOrderItem;
+import uz.hemis.service.favorite.dto.FavoriteReorderItem;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -352,10 +352,10 @@ class UserFavoriteServiceTest {
         @DisplayName("reorders existing favorites with new order numbers")
         void reordersExistingFavoritesWithNewOrderNumbers() {
             // Given - swap dashboard (0->2) and rating (2->0)
-            List<FavoriteOrderItem> items = List.of(
-                    new FavoriteOrderItem("dashboard", 2),
-                    new FavoriteOrderItem("registry-e-reestr", 1),
-                    new FavoriteOrderItem("rating-university", 0)
+            List<FavoriteReorderItem> items = List.of(
+                    new FavoriteReorderItem("dashboard", 2),
+                    new FavoriteReorderItem("registry-e-reestr", 1),
+                    new FavoriteReorderItem("rating-university", 0)
             );
 
             when(userFavoriteRepository.findByUserIdAndMenuCode(userId, "dashboard"))
@@ -383,9 +383,9 @@ class UserFavoriteServiceTest {
         @DisplayName("skips non-existing menu codes without error")
         void skipsNonExistingMenuCodes() {
             // Given
-            List<FavoriteOrderItem> items = List.of(
-                    new FavoriteOrderItem("dashboard", 0),
-                    new FavoriteOrderItem("nonexistent-menu", 1)
+            List<FavoriteReorderItem> items = List.of(
+                    new FavoriteReorderItem("dashboard", 0),
+                    new FavoriteReorderItem("nonexistent-menu", 1)
             );
 
             when(userFavoriteRepository.findByUserIdAndMenuCode(userId, "dashboard"))
@@ -411,7 +411,7 @@ class UserFavoriteServiceTest {
         @DisplayName("empty items list - no repository interactions")
         void emptyItemsList_noRepositoryInteractions() {
             // Given
-            List<FavoriteOrderItem> items = Collections.emptyList();
+            List<FavoriteReorderItem> items = Collections.emptyList();
 
             // When
             userFavoriteService.reorderFavorites(userId, items);
@@ -425,8 +425,8 @@ class UserFavoriteServiceTest {
         @DisplayName("single item reorder - updates order number correctly")
         void singleItemReorder_updatesOrderNumber() {
             // Given
-            List<FavoriteOrderItem> items = List.of(
-                    new FavoriteOrderItem("dashboard", 5)
+            List<FavoriteReorderItem> items = List.of(
+                    new FavoriteReorderItem("dashboard", 5)
             );
 
             when(userFavoriteRepository.findByUserIdAndMenuCode(userId, "dashboard"))

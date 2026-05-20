@@ -11,7 +11,9 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import uz.hemis.domain.entity.employee.EmployeeJobs;
 import uz.hemis.domain.entity.employee.Teacher;
+import uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs;
 import uz.hemis.domain.repository.EmployeeJobsRepository;
+import uz.hemis.domain.repository.LegacyEmployeeJobsRepository;
 import uz.hemis.domain.repository.TeacherRepository;
 
 import java.util.HashMap;
@@ -33,6 +35,9 @@ class TeacherCubaServiceTest {
 
     @Mock
     private EmployeeJobsRepository employeeJobsRepository;
+
+    @Mock
+    private LegacyEmployeeJobsRepository legacyEmployeeJobsRepository;
 
     @InjectMocks
     private TeacherCubaService service;
@@ -185,11 +190,11 @@ class TeacherCubaServiceTest {
         void returnsSuccessWhenTeacherExists() {
             Teacher teacher = createTeacher();
             UUID jobId = UUID.randomUUID();
-            EmployeeJobs savedJob = new EmployeeJobs();
+            // ADR-0008: TeacherCubaService addJob() endi LegacyEmployeeJobs ga yozadi
+            // (hemishe_e_employee_jobs jadval, Univer 175/175 contract).
+            LegacyEmployeeJobs savedJob = new LegacyEmployeeJobs();
             savedJob.setId(jobId);
-            // P1.T4 — addJob endi save() ishlatadi (saveAndFlush emas) + pre-check
-            // existsBy*. Default false (no conflict).
-            when(employeeJobsRepository.save(any(EmployeeJobs.class))).thenReturn(savedJob);
+            when(legacyEmployeeJobsRepository.save(any(LegacyEmployeeJobs.class))).thenReturn(savedJob);
 
             Map<String, Object> jobData = new HashMap<>();
             jobData.put("employee", teacher.getId().toString());

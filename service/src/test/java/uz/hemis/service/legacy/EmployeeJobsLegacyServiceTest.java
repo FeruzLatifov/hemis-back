@@ -25,7 +25,7 @@ class EmployeeJobsLegacyServiceTest {
     private CubaNestedObjectLoader nestedObjectLoader;
 
     @Mock
-    private uz.hemis.domain.repository.EmployeeJobsRepository employeeJobsRepository;
+    private uz.hemis.domain.repository.LegacyEmployeeJobsRepository employeeJobsRepository;
 
     private EmployeeJobsLegacyService service;
 

@@ -275,17 +275,22 @@ class StudentCoreServiceTest {
         }
 
         @Test
-        @DisplayName("throws ValidationException when user from different university")
-        void throwsValidation_whenUnauthorized() {
+        @DisplayName("Old-hemis 1:1 compat — cross-tenant softDelete ruxsat etiladi (TenantGuard commented)")
+        void crossTenantSoftDelete_permitted_oldHemis1to1() {
+            // Old-hemis CUBA Univer'ga cross-OTM softDelete ruxsat berardi.
+            // StudentCoreService.softDelete() ichidagi tenantGuard chaqiruvi commented out.
+            // userUniversityCode parametr saqlangan (signature stability), lekin enforce qilinmaydi.
             student.setUniversity("999");
-
             when(studentRepository.findById(studentId)).thenReturn(Optional.of(student));
+            when(studentRepository.save(student)).thenReturn(student);
+            StudentDto dto = new StudentDto();
+            dto.setId(studentId);
+            when(studentMapper.toDto(student)).thenReturn(dto);
 
-            assertThatThrownBy(() -> studentCoreService.softDelete(studentId, "401"))
-                    .isInstanceOf(ValidationException.class)
-                    .hasMessageContaining("Access denied");
+            studentCoreService.softDelete(studentId, "401");  // caller=401, student=999
 
-            verify(studentRepository, never()).save(any());
+            assertThat(student.getDeleteTs()).isNotNull();
+            verify(studentRepository).save(student);
         }
     }
 

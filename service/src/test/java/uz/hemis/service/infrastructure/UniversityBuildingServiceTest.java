@@ -8,6 +8,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import uz.hemis.common.dto.building.BuildingCreateUpdateDto;
 import uz.hemis.common.dto.building.BuildingDto;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -25,6 +27,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -52,10 +56,13 @@ class UniversityBuildingServiceTest {
     private BuildingLifecycleRepository lifecycleRepo;
 
     @Mock
-    private BuildingCadastreAutoFiller autoFiller;
+    private BuildingMapper mapper;
 
     @Mock
-    private BuildingMapper mapper;
+    private CacheManager cacheManager;
+
+    @Mock
+    private Cache dashboardCache;
 
     @InjectMocks
     private UniversityBuildingService service;
@@ -73,6 +80,8 @@ class UniversityBuildingServiceTest {
         building.setName("Bosh bino");
         building.setCategoryCode("ACADEMIC");
         dto = BuildingDto.builder().id(buildingId).name("Bosh bino").build();
+        // Cache eviction stub — only used by mutation paths, lenient to avoid strict-stubbing fail.
+        lenient().when(cacheManager.getCache(anyString())).thenReturn(dashboardCache);
     }
 
     @Test
@@ -104,7 +113,8 @@ class UniversityBuildingServiceTest {
 
         service.create("401", createDto);
 
-        verify(autoFiller).autoFill(entity);
+        // 2026-05-06: BuildingCadastreAutoFiller olib tashlandi (university_cadastre drop).
+        // Endi faqat lifecycle event tekshiriladi.
         ArgumentCaptor<BuildingLifecycle> captor = ArgumentCaptor.forClass(BuildingLifecycle.class);
         verify(lifecycleRepo).save(captor.capture());
         assertThat(captor.getValue().getEventType()).isEqualTo(EventType.CONSTRUCTED);
