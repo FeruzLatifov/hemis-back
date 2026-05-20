@@ -12,6 +12,9 @@ import java.util.UUID;
  * <p><strong>Diqqat:</strong> {@code secret_hash} hech qachon API javobida qaytarilmaydi —
  * faqat {@code WebhookSecretResponse} yangi generate paytida plain secret beradi.</p>
  *
+ * <p><strong>callbackUrl + active (2026-05-18):</strong> javobda URL derive qilingan
+ * holatda kelishi mumkin (admin UI ko'rsata olishi uchun), university'dan derive.</p>
+ *
  * @since ADR-0012
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -23,9 +26,9 @@ import java.util.UUID;
 public record WebhookTargetDto(
         UUID id,
         String universityCode,
-        String callbackUrl,
+        String callbackUrl,    // derived: protocol+university.student_url+suffix (admin UI preview)
         String description,
-        Boolean active,
+        Boolean active,        // derived: university.active
         Integer timeoutMs,
         Integer maxRetries,
         LocalDateTime createdAt,

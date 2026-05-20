@@ -17,7 +17,7 @@ import java.time.LocalDate;
  * Univer (per-OTM Yii2 e_employee row) → markaz (employee + employee_job) sync payload.
  *
  * <p>Idempotent upsert key: {@code pinfl} (PINFL — 14 digit).</p>
- * <p>Job upsert key: {@code (universityCode, sourceUid)} pair (V015 unique partial index).</p>
+ * <p>Job upsert key: {@code (universityCode, sourceUid)} pair (V014 unique partial index).</p>
  */
 @Data
 @Builder

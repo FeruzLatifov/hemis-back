@@ -10,30 +10,22 @@ import jakarta.validation.constraints.Size;
 /**
  * Yangi webhook target qo'shish so'rovi.
  *
+ * <p><strong>URL convention (2026-05-18):</strong> callbackUrl bu yerda yo'q —
+ * URL avtomatik derive bo'ladi: {@code ${protocol}://{university.student_url}${suffix}}.
+ * Faqat {@code universityCode} + secret avtomatik generate.</p>
+ *
  * @since ADR-0012
  */
-@Schema(description = "Yangi webhook target ro'yxatdan o'tkazish (Univer URL + retry config)")
+@Schema(description = "Yangi webhook target — universityCode + secret avtomatik generate (URL university.student_url'dan)")
 public record WebhookTargetCreateRequest(
 
         @NotBlank
         @Pattern(regexp = "\\d{3,10}", message = "Faqat raqamlar (3-10 ta)")
-        @Schema(example = "337", description = "OTM identifikator (hemis_NNN dagi NNN)")
+        @Schema(example = "337", description = "OTM identifikator (hemishe_e_university.code)")
         String universityCode,
 
-        @NotBlank
-        @Pattern(
-                regexp = "^https?://.+",
-                message = "URL https:// (yoki http://localhost dev) bilan boshlanishi kerak"
-        )
-        @Size(max = 500)
-        @Schema(
-                example = "https://hemis_337.univer.uz/api/hemis-callback/event",
-                description = "Univer callback endpoint URL"
-        )
-        String callbackUrl,
-
         @Size(max = 255)
-        @Schema(example = "Toshkent davlat universiteti", description = "Inson o'qiy oladigan tavsif")
+        @Schema(example = "Andijon davlat universiteti", description = "Inson o'qiy oladigan tavsif")
         String description,
 
         @Min(1000)
@@ -43,7 +35,7 @@ public record WebhookTargetCreateRequest(
 
         @Min(0)
         @Max(10)
-        @Schema(example = "5", defaultValue = "5", description = "Maksimal retry urinishlar")
+        @Schema(example = "3", defaultValue = "3", description = "Maksimal retry urinishlar")
         Integer maxRetries
 ) {
 }
