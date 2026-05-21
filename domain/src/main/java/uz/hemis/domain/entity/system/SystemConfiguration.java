@@ -49,10 +49,10 @@ import java.util.Objects;
  */
 @Entity
 @Table(
-    name = "configurations",
+    name = "configuration",
     indexes = {
-        @Index(name = "idx_configurations_path", columnList = "path", unique = true),
-        @Index(name = "idx_configurations_category", columnList = "category")
+        @Index(name = "uq_configuration_path", columnList = "path", unique = true),
+        @Index(name = "idx_configuration_category", columnList = "category")
     }
 )
 @SQLRestriction("deleted_at IS NULL")

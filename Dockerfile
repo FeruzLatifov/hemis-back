@@ -9,7 +9,7 @@
 # =====================================================
 # Build Stage
 # =====================================================
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:25-jdk-alpine AS builder
 
 WORKDIR /app
 
@@ -52,7 +52,7 @@ RUN ./gradlew :app:bootJar -x test --no-daemon
 # =====================================================
 # Runtime Stage
 # =====================================================
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 

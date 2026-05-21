@@ -74,14 +74,19 @@ probes:
     timeoutSeconds: 5
     failureThreshold: 24
   liveness:
-    path: /actuator/health
+    # Liveness — minimal check (livenessState faqat).
+    # DB/Redis down bo'lsa pod restart loop'ga tushmaydi (cascade oldini olish).
+    # Group sozlamasi: application.yml management.endpoint.health.group.liveness.include=livenessState
+    path: /actuator/health/liveness
     port: 8080
     initialDelaySeconds: 0
     periodSeconds: 30
     timeoutSeconds: 10
     failureThreshold: 3
   readiness:
-    path: /actuator/health
+    # Readiness — DB + Redis ulangan, traffic qabul qila oladi.
+    # DB tushganda traffic kelmasligi uchun group: readinessState,db,redis
+    path: /actuator/health/readiness
     port: 8080
     initialDelaySeconds: 0
     periodSeconds: 10

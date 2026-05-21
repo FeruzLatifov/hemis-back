@@ -226,6 +226,8 @@ management:
   endpoints:
     web:
       exposure:
+        # Prometheus hozir cluster'da deploy qilinmagan — Sentry self-hosted observability uchun ishlatiladi.
+        # Prometheus deploy qilinsa: include'ga prometheus qo'shish + ServiceMonitor/scrape config.
         include: health,info,metrics
 
   endpoint:
@@ -235,7 +237,7 @@ management:
   metrics:
     export:
       prometheus:
-        enabled: true
+        enabled: true  # MeterRegistry in-memory faol qoladi (WebhookMetrics/BuildingMetrics ishlaydi)
 
 # =====================================================
 # Springdoc OpenAPI / Swagger (Production)
