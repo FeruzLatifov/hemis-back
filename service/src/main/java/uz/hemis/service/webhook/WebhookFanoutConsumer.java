@@ -107,6 +107,13 @@ public class WebhookFanoutConsumer {
         } catch (Exception e) {
             // Top-level catch — Kafka offset commit qilmaslik (retry kelajakda)
             log.error("Fanout consumer failed for {}/{}", topic, aggregateId, e);
+            io.sentry.Sentry.captureException(e, scope -> {
+                scope.setLevel(io.sentry.SentryLevel.ERROR);
+                scope.setTag("component", "webhook");
+                scope.setTag("phase", "fanout");
+                scope.setTag("kafka_topic", topic);
+                scope.setExtra("aggregate_id", aggregateId);
+            });
             // ack qilmaymiz — Kafka qayta beradi
         }
     }

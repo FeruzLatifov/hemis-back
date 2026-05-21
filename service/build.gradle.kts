@@ -49,6 +49,12 @@ dependencies {
     // Swagger/OpenAPI annotations for DTOs
     compileOnly("org.springdoc:springdoc-openapi-starter-webmvc-api:3.0.3")
 
+    // Sentry SDK — observability/error capture (Sentry.captureException pattern).
+    // compileOnly: API ko'rinadi, runtime'da app modul'dan keladi (api-web bilan bir xil pattern).
+    // testRuntimeOnly: test'larda no-op Hub'siz silent fail bo'lmasligi uchun classpath'da bo'lsin.
+    compileOnly("io.sentry:sentry-spring-boot-4:8.40.0")
+    testRuntimeOnly("io.sentry:sentry-spring-boot-4:8.40.0")
+
     // Lombok (MUST be before MapStruct)
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

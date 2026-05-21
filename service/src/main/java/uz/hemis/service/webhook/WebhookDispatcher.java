@@ -2,6 +2,8 @@ package uz.hemis.service.webhook;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -157,6 +159,14 @@ public class WebhookDispatcher {
 
         } catch (Exception e) {
             log.error("Dispatcher failed for university={}", universityCode, e);
+            Sentry.captureException(e, scope -> {
+                scope.setLevel(SentryLevel.ERROR);
+                scope.setTag("component", "webhook");
+                scope.setTag("phase", "consume");
+                scope.setTag("university_code", universityCode);
+                scope.setExtra("kafka_offset", String.valueOf(record.offset()));
+                scope.setExtra("kafka_partition", String.valueOf(record.partition()));
+            });
             // ack qilmaymiz — Kafka retry
         }
     }
@@ -233,7 +243,18 @@ public class WebhookDispatcher {
             handleRetryable(target, callbackUrl, eventId, eventType, envelopeJson, attemptN, logEntry, e);
 
         } catch (Exception e) {
-            // Unexpected error
+            // Unexpected error — Sentry capture (boshqa catch'larda Kafka retry yo'q,
+            // bu yerda silent retry'ga olib keladi → kuzatish majburiy).
+            Sentry.captureException(e, scope -> {
+                scope.setLevel(SentryLevel.ERROR);
+                scope.setTag("component", "webhook");
+                scope.setTag("phase", "dispatch");
+                scope.setTag("university_code", target.getUniversityCode());
+                scope.setExtra("event_id", eventId.toString());
+                scope.setExtra("event_type", eventType);
+                scope.setExtra("attempt", String.valueOf(attemptN));
+                scope.setExtra("callback_url", callbackUrl);
+            });
             handleRetryable(target, callbackUrl, eventId, eventType, envelopeJson, attemptN, logEntry, e);
         }
 
@@ -278,7 +299,12 @@ public class WebhookDispatcher {
         return LocalDateTime.now().plus(Duration.ofMillis(delayMs));
     }
 
-    private ResponseEntity<String> doHttpPost(WebhookTarget target, String callbackUrl, String body) {
+    /**
+     * HTTP POST attempt — extracted as {@code protected} so unit tests can stub
+     * the network boundary via Mockito spy (avoids brittle {@code RestClient.Builder}
+     * fluent-chain mocks and external WireMock dependency).
+     */
+    protected ResponseEntity<String> doHttpPost(WebhookTarget target, String callbackUrl, String body) {
         long timestamp = System.currentTimeMillis() / 1000;
         String plainSecret = secretVault.resolve(target);
         String signature = hmacSigner.sign(plainSecret, timestamp, body);
@@ -318,6 +344,17 @@ public class WebhookDispatcher {
             kafkaTemplate.send(dlqTopic, universityCode, dlqPayload);
         } catch (Exception e) {
             log.error("Failed to send to DLQ topic {}: {}", dlqTopic, e.getMessage());
+            // DLQ Kafka send fail — eng kritik kuzatuv: event tamoman yo'qolyapti
+            // (delivery_log markDlq qilsa ham, broker manual replay uchun aktor yo'q).
+            Sentry.captureException(e, scope -> {
+                scope.setLevel(SentryLevel.FATAL);
+                scope.setTag("component", "webhook");
+                scope.setTag("phase", "dlq_publish");
+                scope.setTag("university_code", universityCode);
+                scope.setExtra("event_id", eventId.toString());
+                scope.setExtra("dlq_topic", dlqTopic);
+                scope.setExtra("original_error", errorMessage);
+            });
         }
     }
 

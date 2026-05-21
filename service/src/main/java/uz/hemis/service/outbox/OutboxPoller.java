@@ -65,6 +65,11 @@ public class OutboxPoller {
         } catch (Exception e) {
             // Top-level catch — scheduler exception scheduler'ni bloklab qo'ymasligi uchun
             log.error("Outbox poller batch failed", e);
+            io.sentry.Sentry.captureException(e, scope -> {
+                scope.setLevel(io.sentry.SentryLevel.ERROR);
+                scope.setTag("component", "outbox");
+                scope.setTag("phase", "poller_batch");
+            });
         }
     }
 

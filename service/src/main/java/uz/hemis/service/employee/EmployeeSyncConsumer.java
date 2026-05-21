@@ -50,6 +50,13 @@ public class EmployeeSyncConsumer {
             // DefaultErrorHandler max attempts'dan keyin DLQ'ga jo'natadi (offset commit ham qiladi).
             log.error("Cannot deserialize record partition={} offset={}: {}",
                     record.partition(), record.offset(), deserialErr.getMessage());
+            io.sentry.Sentry.captureException(deserialErr, scope -> {
+                scope.setLevel(io.sentry.SentryLevel.FATAL);
+                scope.setTag("component", "employee_sync");
+                scope.setTag("phase", "deserialize");
+                scope.setExtra("kafka_partition", String.valueOf(record.partition()));
+                scope.setExtra("kafka_offset", String.valueOf(record.offset()));
+            });
             throw deserialErr;
         }
 
@@ -73,6 +80,17 @@ public class EmployeeSyncConsumer {
                     event.payload() != null ? event.payload().getSourceUid() : null,
                     event.batchId(),
                     processErr.getMessage());
+            final EmployeeSyncEvent capturedEvent = event;
+            io.sentry.Sentry.captureException(processErr, scope -> {
+                scope.setLevel(io.sentry.SentryLevel.WARNING);
+                scope.setTag("component", "employee_sync");
+                scope.setTag("phase", "process");
+                scope.setTag("university_code", capturedEvent.universityCode());
+                scope.setExtra("batch_id", String.valueOf(capturedEvent.batchId()));
+                scope.setExtra("source_uid",
+                        capturedEvent.payload() != null ? capturedEvent.payload().getSourceUid() : null);
+                // PINFL TAQIQ — log'da mask qilingan, Sentry'ga ham yubormaslik
+            });
             throw processErr;
         }
     }

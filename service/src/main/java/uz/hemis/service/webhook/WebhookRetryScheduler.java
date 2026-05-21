@@ -1,5 +1,7 @@
 package uz.hemis.service.webhook;
 
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -58,6 +60,13 @@ public class WebhookRetryScheduler {
             doProcess();
         } catch (Exception e) {
             log.error("Webhook retry scheduler batch failed", e);
+            // Top-level scheduled task swallow — kuzatuvsiz qoldirib bo'lmaydi
+            // (DB lock, repository contention, deserialization fail bo'lishi mumkin).
+            Sentry.captureException(e, scope -> {
+                scope.setLevel(SentryLevel.ERROR);
+                scope.setTag("component", "webhook");
+                scope.setTag("phase", "retry_scheduler");
+            });
         }
     }
 
@@ -78,6 +87,15 @@ public class WebhookRetryScheduler {
                 retryOne(stale);
             } catch (Exception e) {
                 log.warn("Retry of delivery {} failed: {}", stale.getId(), e.getMessage());
+                Sentry.captureException(e, scope -> {
+                    scope.setLevel(SentryLevel.WARNING);
+                    scope.setTag("component", "webhook");
+                    scope.setTag("phase", "retry_one");
+                    scope.setTag("university_code", stale.getUniversityCode());
+                    scope.setExtra("delivery_log_id", String.valueOf(stale.getId()));
+                    scope.setExtra("event_id", String.valueOf(stale.getEventId()));
+                    scope.setExtra("attempt_n", String.valueOf(stale.getAttemptN()));
+                });
             }
         }
     }
