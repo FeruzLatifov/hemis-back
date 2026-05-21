@@ -216,15 +216,25 @@ class ApplyHemisEventJob extends BaseObject implements JobInterface
     private function applyClassifier()
     {
         $type = $this->data['classifier_type']; // h_region, h_gender, ...
-        $table = 'hemishe_h_' . $type;
+
+        // Univer DB classifier jadvallari `h_*` prefiks bilan (h_gender, h_education_type, ...).
+        // Markaz `hemishe_h_*` ishlatadi (CUBA legacy) — lekin Univer'da bu prefix YO'Q.
+        // Markaz `classifier_type` apiKey'ni `h_*` formatda yuboradi (ADR-0006), shuning uchun:
+        //   apiKey="h_education_type" → table="h_education_type"
+        //   apiKey="education_type"   → table="h_education_type" (defensive — agar h_ unutilsa)
+        $table = strpos($type, 'h_') === 0 ? $type : 'h_' . $type;
+
         Yii::$app->db->createCommand()->upsert($table, $this->data['item'])->execute();
         Yii::$app->cache->delete("classifier:$type");
     }
 
-    private function applyRule() { /* ... */ }
     private function applyOtmBlock() { /* ... */ }
+    // applyRule() — DEFERRED: Univer'da `system_rule` schema dizayni hozircha yo'q.
+    // Markaz rule.push event yuborganda — no-op + warning log (ApplyHemisEventJob:149-157).
 }
 ```
+
+> **Diqqat (2026-05-19 fix):** Actual production kod `ApplyHemisEventJob.php:98-103` shu defensive prefiks logikasini ishlatadi. Avvalgi `hemishe_h_` namunasi xato edi (Univer'da bu jadval yo'q → real fail `relation "hemishe_h_position" does not exist`).
 
 ### 3.4 Routing + config
 
@@ -296,7 +306,7 @@ sudo systemctl restart univer-queue-worker
 
 | event_type | aggregate_type | data | Univer nima qiladi |
 |------------|----------------|------|---------------------|
-| `classifier.updated` | classifier | `{type, action, item}` | `hemishe_h_*` jadval upsert |
+| `classifier.updated` | classifier | `{type, action, item}` | `h_*` jadval upsert (Univer-side, `hemishe_*` prefiksi YO'Q) |
 | `rule.push` | rule | `{rule_key, value, effective_until}` | `hemishe_r_rule` jadval upsert |
 | `otm.blocked` | university | `{block_reason}` | Univer login bekitish |
 | `webhook.test` | webhook | `{message}` | Faqat log (sandbox) |

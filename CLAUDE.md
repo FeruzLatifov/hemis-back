@@ -68,6 +68,16 @@ Univer eski URL bilan POST → api-legacy yangi jadvalga yozsa → Univer keying
 
 ---
 
+## Workflow (senior tarz)
+
+- **Plan Mode 80%** — kod yozishdan oldin reja (`EnterPlanMode`). Reja tayyor bo'lgach: *"buni staff muhandis sifatida qayta ko'rib chiq"* — zaif joylar chiqadi.
+- **Simplicity Mandate** (Boris Cherny) — iloji boricha **sodda**, minimal kod. Qator qo'shish o'rniga **o'chirish** mumkin bo'lsa — o'chir. Senior "ko'p kod" emas, "kam, lekin to'g'ri kod" yozadi.
+- **Avval mavjud kodni o'rgan** — assumption asosida yangi yozmaslik. DB schema + cross-project konvensiya majburiy audit.
+- **Repetition → command** — ikki marta bir xil prompt = `.claude/commands/`'ga skill bo'lib o'tadi.
+- **Xato → qoida** — Claude xato qilsa, darhol `CLAUDE.md` yoki [`.claude/rules.md`](.claude/rules.md)'ga qoida sifatida qo'shing, qaytarmasin.
+
+---
+
 ## Porting Triggers (PORT: …)
 
 URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'chirish workflow.
@@ -117,38 +127,17 @@ URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'ch
 
 ## Further Reading
 
-Modul-darajadagi `CLAUDE.md` (api-legacy, service, domain, security, …) Claude tomonidan o'sha papkada fayl o'qilganda **avtomatik** yuklanadi. Quyidagilar **manual** kontekst (kerak bo'lganda `Read`):
+Modul `CLAUDE.md` (api-legacy/service/domain/security/…) Claude tomonidan **avtomatik** yuklanadi.
 
-| Fayl | Qachon | Prioritet |
-|------|--------|-----------|
-| `.claude/rules.md` | **MAJBURIY qoidalar** (Java 25, OWASP 2025, DB schema, cache invariant) | **1 — canonical** |
-| `.claude/UNIVER_INTEGRATION.md` | **Univer ↔ HEMIS-back oqim** (per-OTM, REST, auth, schema) | **1 — canonical** |
-| `.claude/MANDATORY_REQUIREMENTS.md` | Swagger + test KOD MISOLLARI (rules.md ni to'ldiradi) | 2 — reference |
-| `.claude/architecture.md` | Modul diagram, DB routing, cache, deploy | 3 — context |
-| `.claude/ENDPOINT_PORTING_GUIDE.md` | Endpoint porting **canonical workflow** (8 qadam) | 1 — canonical |
-| `.claude/LIQUIBASE_GUIDE.md` | Liquibase migration **canonical workflow** (V###/M###/S###) | 1 — canonical |
-| `.claude/MENU_GUIDE.md` | Menu + i18n + xavfsizlik (real schema: V011-V013) | 2 — reference |
-| `.claude/context.md` | Biznes domain (230 ta OTM, shundan 224 — Univer ekosistemi) | 3 — context |
-
-> **Qoida vs misol**: Ziddiyat bo'lsa `rules.md` ustun. `MANDATORY_REQUIREMENTS.md` faqat misol — qoida emas.
+**Manual kontekst** (`Read` bilan, kerak bo'lganda):
+- **Canonical (qoida — ziddiyatda ustun):** [`.claude/rules.md`](.claude/rules.md), [`.claude/UNIVER_INTEGRATION.md`](.claude/UNIVER_INTEGRATION.md), [`.claude/ENDPOINT_PORTING_GUIDE.md`](.claude/ENDPOINT_PORTING_GUIDE.md), [`.claude/LIQUIBASE_GUIDE.md`](.claude/LIQUIBASE_GUIDE.md)
+- **Reference (misol):** [`.claude/MANDATORY_REQUIREMENTS.md`](.claude/MANDATORY_REQUIREMENTS.md) (Swagger+test), [`.claude/MENU_GUIDE.md`](.claude/MENU_GUIDE.md)
+- **Context (domen):** [`.claude/architecture.md`](.claude/architecture.md), [`.claude/context.md`](.claude/context.md)
 
 ---
 
-## Architecture Decision Records — `docs/adr/`
+## Architecture Decision Records
 
-| ADR | Mavzu |
-|-----|-------|
-| [0001](docs/adr/0001-building-table-design.md) | university_building alohida jadval |
-| [0002](docs/adr/0002-java-25-upgrade.md) | Java 25 LTS + Spring Boot 4.0.6 |
-| [0003](docs/adr/0003-audit-db-isolation.md) | Audit DB alohida `hemis_audit` |
-| [0004](docs/adr/0004-api-university-module.md) | api-university yangi modul (vazirlik ↔ 224 OTM Univer integratsiya) |
-| [0005](docs/adr/0005-oauth-client-credentials.md) | OAuth client_credentials migration |
-| [0006](docs/adr/0006-classifier-h-prefix.md) | Klassifikatorlar `h_*` prefiks |
-| [0007](docs/adr/0007-sync-architecture-evolution.md) | Kafka-first sync architecture |
-| [0008](docs/adr/0008-api-legacy-entity-rebinding.md) | api-legacy: User/Employee/EmployeeJobs → eski jadvallar |
-| [0009](docs/adr/0009-jwt-ttl-and-refresh-rotation.md) | JWT TTL 12h→1h + Refresh rotation + jti/kid (Proposed) |
-| [0010](docs/adr/0010-employee-sync-outbox-implementation.md) | Employee sync outbox implementation |
-| [0011](docs/adr/0011-swagger-multi-group-strategy.md) | Swagger 4-group strategiyasi (web/legacy/university/external) + production swagger off |
-| [0012](docs/adr/0012-webhook-outbound-infrastructure.md) | Webhook outbound infrastructure (markaz → 224 Univer): Outbox + Kafka + REST callback + HMAC |
+**12 ta ADR** — [`docs/adr/README.md`](docs/adr/README.md) (ro'yxat + status). Yirik mavzular: Java 25 (0002), Audit DB isolation (0003), Klassifikator `h_*` (0006), Kafka sync (0007), JWT TTL+rotation (0009), Webhook outbound (0012).
 
-Yangi qaror — `docs/adr/template.md` orqali. Tarix: `CHANGELOG.md`.
+Yangi qaror — [`docs/adr/template.md`](docs/adr/template.md) orqali. Tarix: [`CHANGELOG.md`](CHANGELOG.md).
