@@ -81,7 +81,7 @@ Eng muhim qoidalar (qisqacha):
 - **Naming:** `V###/M###/S###` (schema/migration/seed) + `_rollback.sql` MAJBURIY
 - **Idempotent:** `IF NOT EXISTS`, `ON CONFLICT DO NOTHING`
 - **Long-running:** multi-step (NULLable add → backfill batched → NOT NULL constraint)
-- **`CREATE INDEX CONCURRENTLY`** + `runInTransaction: false`
+- **1M+ row legacy jadval (hemishe_e_*) index — CONCURRENTLY pattern MAJBURIY:** `runInTransaction: false` + `CREATE INDEX CONCURRENTLY IF NOT EXISTS` + `splitStatements: true` + Liquibase `preConditions` (DO $$ block ichida ishlamaydi). Misol: [`M002a-e`](src/main/resources/db/changelog/changesets/migration/). Tafsilot: [`LIQUIBASE_GUIDE.md`](../.claude/LIQUIBASE_GUIDE.md) "CONCURRENTLY pattern" bo'limi
 - **`hemishe_*` schema FROZEN:** ALTER/DROP/RENAME TAQIQ. Yangi ustun → `ref_ext` extension table
 - **Pre-commit hook** rollback fayl yo'qligini bloklaydi
 

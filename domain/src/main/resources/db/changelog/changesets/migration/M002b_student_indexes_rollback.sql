@@ -1,0 +1,24 @@
+-- Rollback M002b — drop hemishe_e_student indexes concurrently (no lock).
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_university_status_createts;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_active_code_desc;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_delts_code;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_univ_status_delts;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_pinfl_prefix;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_code_prefix;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_pinfl_trgm;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_code_trgm;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_firstname_trgm;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_lastname_trgm;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_lastname;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_pinfl;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_code;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_gender;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_education_year;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_education_form;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_education_type;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_faculty;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_course;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_payment_form;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_status;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_university;
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_delete_ts;

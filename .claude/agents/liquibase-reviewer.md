@@ -123,13 +123,39 @@ END $$;
 ALTER TABLE big_table ALTER COLUMN status SET NOT NULL;
 ```
 
-**For indexes on large tables:**
+**For indexes on large tables — CONCURRENTLY pattern (MAJBURIY for 1M+ row legacy tables):**
+
+```yaml
+# master.yaml — changeset
+- changeSet:
+    id: M00X_table_indexes
+    runInTransaction: false           # MAJBURIY — CONCURRENTLY tx-incompatible
+    preConditions:
+      - onFail: MARK_RAN              # Jadval yo'q → silent skip
+      - sqlCheck:
+          expectedResult: 1
+          sql: "SELECT COUNT(*) FROM information_schema.tables WHERE ..."
+    changes:
+      - sqlFile:
+          path: ...
+          splitStatements: true       # ; bo'yicha ajratish
+          endDelimiter: ";"
+```
+
 ```sql
--- Liquibase changeset attribute: runInTransaction: false
+-- SQL fayl — CONCURRENTLY DO $$ block ichida YO'Q
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_student_email
     ON hemishe_e_student(email)
     WHERE delete_ts IS NULL;
 ```
+
+**Red flags (REJECT qiling):**
+- `CREATE INDEX CONCURRENTLY` `DO $$ ... $$` block ichida — PostgreSQL rad qiladi
+- `runInTransaction: false` yo'q — CONCURRENTLY ishlamaydi
+- `splitStatements: false` ko'p CONCURRENTLY statement bilan — sessions birga ishlamaydi
+- 1M+ row jadvalda CONCURRENTLY siz `CREATE INDEX` — prod downtime risk
+
+**Canonical reference:** [`.claude/LIQUIBASE_GUIDE.md`](../LIQUIBASE_GUIDE.md) "CONCURRENTLY pattern" bo'limi + real misol [`M002a-e_*`](../../domain/src/main/resources/db/changelog/changesets/migration/).
 
 ### 6. 🟡 Missing FK index (P1 — performance)
 

@@ -126,8 +126,88 @@ DROP TABLE IF EXISTS department CASCADE;
 | Yangi jadval | `V### CREATE TABLE` (yuqorida) |
 | Ustun qo'shish | `ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...` + default qiymat |
 | Seed data | `S### INSERT INTO ... ON CONFLICT (code) DO NOTHING` (yoki `DO UPDATE` agar idempotent rebuild kerak) |
-| Legacy `hemishe_*` performance | `M### CREATE INDEX CONCURRENTLY` (CONCURRENTLY transaction'da ishlamaydi — alohida changeset) |
+| **Legacy `hemishe_*` index (1M+ row)** | **CONCURRENTLY pattern — pastdagi bo'lim majburiy** |
 | Materialized view | `M### CREATE MATERIALIZED VIEW IF NOT EXISTS` + `REFRESH MATERIALIZED VIEW CONCURRENTLY` |
+
+---
+
+## CONCURRENTLY pattern — MAJBURIY (1M+ row jadvallar uchun)
+
+> **Qoida:** `hemishe_e_student`, `hemishe_e_teacher`, `hemishe_e_employee_jobs` va shu kabi **1M+ row legacy jadvallar**ga yangi index qo'shilganda **majburiy** zero-downtime pattern. Boris Cherny "kam, lekin to'g'ri kod" — bir marta qilingan, qaytariladigan ish.
+>
+> **Sabab:** Oddiy `CREATE INDEX` 1.15M talaba jadvalida `ACCESS EXCLUSIVE LOCK` 30+ daqiqa ushlaydi → Univer (224 OTM) write'lari timeout, connection pool exhaust, real downtime.
+
+### 1. SQL fayl ichida
+
+```sql
+-- ✓ TO'G'RI — har statement alohida, DO $$ block ICHIDA EMAS
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_student_university
+    ON hemishe_e_student ("_university");
+
+CREATE UNIQUE INDEX CONCURRENTLY IF NOT EXISTS uq_student_pinfl_master
+    ON hemishe_e_student (pinfl)
+    WHERE is_duplicate = true AND delete_ts IS NULL;
+```
+
+```sql
+-- ✗ XATO — CONCURRENTLY DO $$ ichida ishlatib bo'lmaydi
+-- ERROR: CREATE INDEX CONCURRENTLY cannot run inside a transaction block
+DO $$
+BEGIN
+    CREATE INDEX CONCURRENTLY ...;  -- crash
+END $$;
+```
+
+### 2. Master.yaml changeset
+
+```yaml
+- changeSet:
+    id: M00X_table_indexes
+    author: hemis-team
+    runInTransaction: false          # MAJBURIY — CONCURRENTLY tx-incompatible
+    comment: "..."
+    preConditions:
+      - onFail: MARK_RAN              # Jadval yo'q bo'lsa skip (defensive)
+      - onError: MARK_RAN
+      - sqlCheck:
+          expectedResult: 1
+          sql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'hemishe_e_X'"
+    changes:
+      - sqlFile:
+          path: changesets/migration/M00X_table_indexes.sql
+          relativeToChangelogFile: true
+          splitStatements: true       # ; bo'yicha ajratish (har biri alohida session)
+          endDelimiter: ";"
+    rollback:
+      - sqlFile:
+          path: changesets/migration/M00X_table_indexes_rollback.sql
+          relativeToChangelogFile: true
+          splitStatements: true
+          endDelimiter: ";"
+```
+
+### 3. UNIQUE INDEX defensive guard
+
+UNIQUE constraint mavjud duplikatda fail beradi. FROZEN schema (`hemishe_*`) policy bo'yicha **data yozish taqiq** — duplicate cleanup alohida ish. Liquibase preCondition bilan skip qilamiz:
+
+```yaml
+preConditions:
+  - onFail: MARK_RAN
+  - sqlCheck:
+      expectedResult: 0
+      sql: "SELECT COUNT(*) FROM (SELECT col FROM table WHERE delete_ts IS NULL GROUP BY col HAVING COUNT(*) > 1) dups"
+```
+
+### 4. Rollback ham CONCURRENTLY
+
+```sql
+-- DROP INDEX ham CONCURRENTLY (online drop, lock-free)
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_X;
+```
+
+### 5. Real misol
+
+[`M002a-e_*`](../domain/src/main/resources/db/changelog/changesets/migration/) — 26 ta index 5 ta alohida changeset'da, har biri preCondition + `runInTransaction: false` + `splitStatements: true` bilan.
 
 ---
 
@@ -140,6 +220,8 @@ DROP TABLE IF EXISTS department CASCADE;
 - ❌ Master.yaml ga qo'shmasdan changeset commit qilish
 - ❌ FK declaration index'siz (har FK ga partial index majburiy)
 - ❌ Soft-delete jadvallarda oddiy UNIQUE (Partial UNIQUE majburiy)
+- ❌ **1M+ row legacy jadvalda `CREATE INDEX` (CONCURRENTLY siz)** — `ACCESS EXCLUSIVE LOCK` prod'da downtime. **Yuqoridagi CONCURRENTLY pattern majburiy**
+- ❌ **`CREATE INDEX CONCURRENTLY` `DO $$` block ichida** — PostgreSQL rad qiladi. Defensive guard'ni Liquibase `preConditions` ga ko'chir
 
 ---
 

@@ -412,16 +412,101 @@ databaseChangeLog:
       changes:
         - tagDatabase: { tag: v1.0.0 }
 
+  # ─────────────────────────────────────────────────────────────────
+  # M002 split — CONCURRENTLY index build (zero-downtime, prod-ready)
+  #
+  # Pattern: every changeset uses runInTransaction: false + CREATE INDEX
+  # CONCURRENTLY (PostgreSQL constraint — CONCURRENTLY cannot run in tx
+  # block). splitStatements: true ⇒ each ";" is its own session.
+  # preConditions guard FROZEN-schema tables and pre-existing duplicates
+  # (DEFENSIVE — MARK_RAN on miss, no data writes).
+  #
+  # Canonical rule: see .claude/LIQUIBASE_GUIDE.md "CONCURRENTLY pattern".
+  # ─────────────────────────────────────────────────────────────────
+
   - changeSet:
-      id: M002_student_performance_indexes
+      id: M002a_pg_trgm_extension
       author: hemis-team
       logicalFilePath: ${changelog.path}
-      runOnChange: true
-      comment: "Index migrations on legacy hemishe_e_student — pg_trgm + filter + composite + PINFL master race-fix UNIQUE (defensive guard for partial dev dumps and pre-existing PINFL duplicates)"
+      comment: "Enable pg_trgm extension — prerequisite for GIN trigram indexes."
       changes:
-        - sqlFile: { path: changesets/migration/M002_student_performance_indexes.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/migration/M002a_pg_trgm_extension.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
-        - sqlFile: { path: changesets/migration/M002_student_performance_indexes_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+        - sqlFile: { path: changesets/migration/M002a_pg_trgm_extension_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M002b_student_indexes
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runInTransaction: false
+      comment: "hemishe_e_student 23 ta index — filter + B-tree + GIN trigram + prefix + composite + keyset. CONCURRENTLY, online build."
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'hemishe_e_student'"
+      changes:
+        - sqlFile: { path: changesets/migration/M002b_student_indexes.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/migration/M002b_student_indexes_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+
+  - changeSet:
+      id: M002c_student_pinfl_master_unique
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runInTransaction: false
+      comment: "PINFL master uniqueness (partial UNIQUE) — concurrent-enrollment race fix. MARK_RAN if existing duplicates."
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'hemishe_e_student'"
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM (SELECT pinfl FROM hemishe_e_student WHERE is_duplicate = true AND delete_ts IS NULL GROUP BY pinfl HAVING COUNT(*) > 1) dups"
+      changes:
+        - sqlFile: { path: changesets/migration/M002c_student_pinfl_master_unique.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/migration/M002c_student_pinfl_master_unique_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M002d_diploma_trigram
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runInTransaction: false
+      comment: "hemishe_e_student_diploma — GIN trigram for LIKE %X% substring search."
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'hemishe_e_student_diploma'"
+      changes:
+        - sqlFile: { path: changesets/migration/M002d_diploma_trigram.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/migration/M002d_diploma_trigram_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M002e_student_meta_uid_unique
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runInTransaction: false
+      comment: "hemishe_e_student_meta (u_id, _university) race-fix UNIQUE. MARK_RAN if existing duplicates."
+      preConditions:
+        - onFail: MARK_RAN
+        - onError: MARK_RAN
+        - sqlCheck:
+            expectedResult: 1
+            sql: "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'hemishe_e_student_meta'"
+        - sqlCheck:
+            expectedResult: 0
+            sql: "SELECT COUNT(*) FROM (SELECT u_id, \"_university\" FROM hemishe_e_student_meta WHERE delete_ts IS NULL GROUP BY u_id, \"_university\" HAVING COUNT(*) > 1) dups"
+      changes:
+        - sqlFile: { path: changesets/migration/M002e_student_meta_uid_unique.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/migration/M002e_student_meta_uid_unique_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
       id: M003_student_duplicates
