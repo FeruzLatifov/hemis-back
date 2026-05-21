@@ -1,0 +1,89 @@
+# ════════════════════════════════════════════════════════════════════
+# gitleaks config — HEMIS Backend secret-scan
+#
+# Usage:
+#   gitleaks protect --staged --config=.gitleaks.toml --redact
+#   gitleaks detect --config=.gitleaks.toml --no-git --redact --source=.
+#
+# Pre-commit hook (scripts/git-hooks-pre-commit) avtomatik chaqiradi.
+# ════════════════════════════════════════════════════════════════════
+
+title = "HEMIS Backend"
+
+[extend]
+# Standart ruleset (~150 ta secret pattern: JWT, AWS, GCP, GitHub PAT, Slack, ...)
+useDefault = true
+
+# ─────────────────────────────────────────────────────────────────
+# Project-specific patterns
+# ─────────────────────────────────────────────────────────────────
+
+[[rules]]
+id = "hemis-jwt-secret"
+description = "HEMIS JWT signing secret in plaintext"
+regex = '''(?i)(jwt[_-]?secret|hemis[_-]?jwt[_-]?secret)\s*[:=]\s*['"]?[A-Za-z0-9+/=_-]{16,}['"]?'''
+keywords = ["jwt_secret", "hemis_jwt_secret", "JWT_SECRET"]
+
+[[rules]]
+id = "hemis-db-password"
+description = "Database password in plaintext (master/replica/audit)"
+regex = '''(?i)(db[_-]?(master|replica|audit)[_-]?password|spring\.datasource\.password)\s*[:=]\s*['"]?[A-Za-z0-9+/=!@#$%^&*_-]{8,}['"]?'''
+keywords = ["DB_MASTER_PASSWORD", "DB_REPLICA_PASSWORD", "AUDIT_DB_PASSWORD"]
+
+[[rules]]
+id = "hemis-oauth-default"
+description = "Default OAuth credentials (client/secret) — must be rotated before prod"
+regex = '''(?i)(oauth[_-]?client[_-]?(id|secret))\s*[:=]\s*['"]?(client|secret|default|admin|password|test|changeme)['"]?(\s|$)'''
+keywords = ["OAUTH_CLIENT_ID", "OAUTH_CLIENT_SECRET"]
+
+[[rules]]
+id = "hemis-webhook-secret"
+description = "Webhook plain secret leaked (must be whsec_xxx hash in DB only)"
+regex = '''(?i)(hemis[_-]?webhook[_-]?secret|webhook[_-]?secret)\s*[:=]\s*['"]?whsec_[A-Za-z0-9+/=_-]{32,}['"]?'''
+keywords = ["HEMIS_WEBHOOK_SECRET", "whsec_"]
+
+[[rules]]
+id = "hemis-redis-password"
+description = "Redis password in plaintext"
+regex = '''(?i)(redis[_-]?password|spring\.data\.redis\.password)\s*[:=]\s*['"]?[A-Za-z0-9+/=!@#$%^&*_-]{6,}['"]?'''
+keywords = ["REDIS_PASSWORD"]
+
+[[rules]]
+id = "hemis-external-api-key"
+description = "External integration API key (MSPD, BIMM, GUVD, OneID, MyGov)"
+regex = '''(?i)(mspd|bimm|guvd|oneid|mygov|gnk)[_-]?(api[_-]?key|secret|token)\s*[:=]\s*['"]?[A-Za-z0-9+/=_-]{16,}['"]?'''
+keywords = ["MSPD_API_KEY", "BIMM_SECRET", "GUVD_TOKEN", "ONEID_SECRET", "MYGOV_API_KEY", "GNK_OAUTH_CLIENT_SECRET"]
+
+# ─────────────────────────────────────────────────────────────────
+# Allowlist — false positive'ni o'tkazib yuborish
+# ─────────────────────────────────────────────────────────────────
+
+[allowlist]
+description = "Test fixture + placeholder + dev defaults"
+
+paths = [
+    '''(.*?)(/build/.*)''',                       # Gradle build artifacts
+    '''(.*?)(/\.gradle/.*)''',                    # Gradle cache
+    '''(.*?)(\.gitleaks\.toml)''',                # Bu config'ning o'zi
+    '''(.*?)(/src/test/resources/.*\.json)''',    # Test fixture JSON
+    '''(.*?)(/docs/.*\.md)''',                    # Docs (curl misol bilan)
+    '''(.*?)(/CHANGELOG\.md)''',                  # Changelog
+]
+
+regexes = [
+    '''(?i)example[_-]?password''',                                  # ${EXAMPLE_PASSWORD}
+    '''(?i)your[_-]?secret[_-]?here''',                              # placeholder
+    '''(?i)<your[_-]?[a-z_-]+>''',                                   # <YOUR_TOKEN> tag
+    '''\$\{[A-Z_]+(:[^}]*)?\}''',                                    # ${VAR}, ${VAR:default}
+    '''(?i)whsec_dev_test_secret_DO_NOT_USE_IN_PROD''',              # Dev sandbox
+    '''Basic Y2xpZW50OnNlY3JldA==''',                                # Swagger doc: client:secret (b64) — already known weak default, OAuth guard refuses in prod
+    '''(?i)test1_hemis''',                                           # Local dev DB name
+]
+
+stopwords = [
+    "EXAMPLE",
+    "PLACEHOLDER",
+    "TODO",
+    "DUMMY",
+    "FAKE",
+]

@@ -169,6 +169,26 @@ if [ -n "$STAGED_SQL" ]; then
     fi
 fi
 
+# ─────────────────────────────────────────────────────────────────
+# CHECK 5: Secret scan (gitleaks) — kerakli bo'lsa
+# Production secret git tarixiga kirsa, rotate qilish juda qiyin.
+# gitleaks .gitleaks.toml konfiguratsiyasini ishlatadi.
+# O'rnatish: apt install gitleaks  ·  brew install gitleaks
+# Bypass (acceptable false positive uchun): git commit --no-verify + izoh
+# ─────────────────────────────────────────────────────────────────
+if command -v gitleaks &> /dev/null; then
+    if ! gitleaks protect --staged --config="$REPO_ROOT/.gitleaks.toml" --redact --no-banner 2>&1; then
+        echo -e "${RED}🔴 BLOCKER — Secret leak detected by gitleaks${NC}"
+        echo "  Tekshir: yuqoridagi finding qator (redacted)."
+        echo "  Agar false positive — .gitleaks.toml [allowlist] ga qo'sh."
+        echo "  Yoki acceptable test fixture bo'lsa — git commit --no-verify (izoh bilan)."
+        EXIT_CODE=1
+    fi
+else
+    echo -e "${YEL}⚠ gitleaks o'rnatilmagan — secret scan o'tkazib yuborildi.${NC}"
+    echo -e "${YEL}  O'rnatish: apt install gitleaks  yoki  brew install gitleaks${NC}"
+fi
+
 if [ $EXIT_CODE -eq 0 ]; then
     echo -e "${GRN}✓ Pre-commit hook passed${NC}"
 fi

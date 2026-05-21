@@ -145,4 +145,51 @@ class ExceptionClassesTest {
             assertThat(ex.hasErrors()).isFalse();
         }
     }
+
+    @Nested
+    @DisplayName("BusinessRuleException (HTTP 422)")
+    class BusinessRuleExceptionTest {
+
+        @Test
+        @DisplayName("constructor with ruleCode + message stores both")
+        void constructor_withRuleCodeAndMessage() {
+            BusinessRuleException ex = new BusinessRuleException(
+                "OTM_CLOSED",
+                "Yopilgan OTM'ga yangi talaba kiritib bo'lmaydi: 337"
+            );
+
+            assertThat(ex.getRuleCode()).isEqualTo("OTM_CLOSED");
+            assertThat(ex.getMessage()).contains("Yopilgan OTM");
+            assertThat(ex.getMessage()).contains("337");
+        }
+
+        @Test
+        @DisplayName("constructor with cause preserves cause chain")
+        void constructor_withCause_preservesCause() {
+            IllegalStateException root = new IllegalStateException("DB lock contention");
+            BusinessRuleException ex = new BusinessRuleException(
+                "ENROLLMENT_WINDOW_EXPIRED",
+                "Registratsiya muddati o'tgan",
+                root
+            );
+
+            assertThat(ex.getRuleCode()).isEqualTo("ENROLLMENT_WINDOW_EXPIRED");
+            assertThat(ex.getCause()).isSameAs(root);
+        }
+
+        @Test
+        @DisplayName("is a RuntimeException (unchecked — service layer free to throw)")
+        void isRuntimeException() {
+            BusinessRuleException ex = new BusinessRuleException("X", "y");
+            assertThat(ex).isInstanceOf(RuntimeException.class);
+        }
+
+        @Test
+        @DisplayName("getRuleCode returns null when not provided via cause-only ctor — not applicable (ruleCode always required)")
+        void ruleCode_alwaysRequired() {
+            // Constructor signature requires ruleCode → compile-time enforced
+            BusinessRuleException ex = new BusinessRuleException("GRADE_FINALIZED", "Cannot update");
+            assertThat(ex.getRuleCode()).isNotNull().isNotEmpty();
+        }
+    }
 }

@@ -29,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import uz.hemis.common.dto.ErrorResponse;
 import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.common.exception.BusinessRuleException;
 import uz.hemis.common.exception.ExceptionHandlerUtils;
 import uz.hemis.common.exception.ResourceNotFoundException;
 // SpringValidationUtils is in the same package as this class (uz.hemis.app.exception)
@@ -180,6 +181,33 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    /**
+     * Handle BusinessRuleException — biznes qoidasi buzilgan (input sintaktik to'g'ri,
+     * lekin domen qoidasi bo'yicha amalga oshirib bo'lmaydi).
+     *
+     * <p>HTTP Status: 422 UNPROCESSABLE ENTITY</p>
+     *
+     * <p>Misol: CLOSED OTM'ga talaba kiritish, semestr yopilgandan keyin baho o'zgartirish.</p>
+     *
+     * @since ADR-0013
+     */
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessRule(
+            BusinessRuleException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Business rule violation [{}]: {}", ex.getRuleCode(), ex.getMessage());
+
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                ex.getRuleCode() != null ? ex.getRuleCode() : "BUSINESS_RULE_VIOLATION",
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
     }
 
     // =====================================================

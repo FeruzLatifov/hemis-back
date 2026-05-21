@@ -2,8 +2,10 @@ package uz.hemis.security.config;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 /**
  * Unit tests for {@link LegacyOAuthClientProperties}.
@@ -138,5 +140,90 @@ class LegacyOAuthClientPropertiesTest {
 
         // Then
         assertThat(props.getClientId()).isEqualTo("second-id");
+    }
+
+    // =====================================================
+    // Credential strength validation — non-blocking (must NOT throw)
+    // =====================================================
+
+    @Test
+    @DisplayName("Weak default 'client/secret' in dev profile — must NOT throw (warn only)")
+    void weakDefault_devProfile_doesNotThrow() {
+        LegacyOAuthClientProperties props = new LegacyOAuthClientProperties();
+        props.setEnvironment(new MockEnvironment().withProperty("spring.profiles.active", "dev"));
+        props.setClientId("client");
+        props.setClientSecret("secret");
+
+        assertThatCode(props::validateCredentialStrength)
+            .as("dev profile must not crash legacy auth on weak default")
+            .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Weak default 'client/secret' in PROD profile — must NOT throw (error log only)")
+    void weakDefault_prodProfile_doesNotThrow() {
+        LegacyOAuthClientProperties props = new LegacyOAuthClientProperties();
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        props.setEnvironment(env);
+        props.setClientId("client");
+        props.setClientSecret("secret");
+
+        assertThatCode(props::validateCredentialStrength)
+            .as("prod profile must surface issue via log.error WITHOUT cutting off 200+ legacy clients")
+            .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Strong credentials in PROD — no error, validation passes silently")
+    void strongCredentials_prodProfile_doesNotThrow() {
+        LegacyOAuthClientProperties props = new LegacyOAuthClientProperties();
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        props.setEnvironment(env);
+        props.setClientId("hemis-prod-client-9a4f2b");
+        props.setClientSecret("Z9!fM3pQx7vT2yWnLkR8aBh4dEgU6sCz");
+
+        assertThatCode(props::validateCredentialStrength)
+            .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Short clientId in PROD — must NOT throw (warning only)")
+    void shortClientId_prodProfile_doesNotThrow() {
+        LegacyOAuthClientProperties props = new LegacyOAuthClientProperties();
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        props.setEnvironment(env);
+        props.setClientId("short");
+        props.setClientSecret("Z9!fM3pQx7vT2yWnLkR8aBh4dEgU6sCz");
+
+        assertThatCode(props::validateCredentialStrength)
+            .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("No environment set (plain unit usage) — must NOT throw")
+    void noEnvironment_doesNotThrow() {
+        LegacyOAuthClientProperties props = new LegacyOAuthClientProperties();
+        props.setClientId("client");
+        props.setClientSecret("secret");
+
+        assertThatCode(props::validateCredentialStrength)
+            .as("plain `new` usage in tests must not crash")
+            .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Weak value 'admin/password' in PROD — must NOT throw (error log only)")
+    void otherWeakValues_prodProfile_doesNotThrow() {
+        LegacyOAuthClientProperties props = new LegacyOAuthClientProperties();
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        props.setEnvironment(env);
+        props.setClientId("admin");
+        props.setClientSecret("password");
+
+        assertThatCode(props::validateCredentialStrength).doesNotThrowAnyException();
     }
 }
