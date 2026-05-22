@@ -1,8 +1,19 @@
 # =====================================================
-# HEMIS Test Configuration
+# HEMIS Test Configuration — H2 in-memory (default)
 # =====================================================
-# CRITICAL: This configuration uses H2 in-memory database
-# Real PostgreSQL database is NEVER touched during tests
+# Bu config TEST-LEVEL DEFAULT — light unit/slice testlar uchun.
+# H2 MODE=PostgreSQL bilan PostgreSQL dialect emulate qiladi.
+#
+# !!! DIQQAT — ikki test infra'si mavjud:
+# 1. H2 (bu fayl): @WebMvcTest, @JsonTest, fast unit slice testlar uchun.
+# 2. Testcontainers PG-16: app/src/test/java/uz/hemis/app/integration/
+#    AbstractIntegrationTest extend qilgan testlar uchun (full @SpringBootTest
+#    + real Liquibase migration apply). Docker mavjud bo'lganda yoqiladi
+#    (@EnabledIf gate). Real production PG hech qachon test'da tegmaydi —
+#    Testcontainers o'zining ephemeral PG container'i (Docker tug'ilganda
+#    fresh, test oxirida o'chiriladi).
+#
+# Tafsilot: domain/CLAUDE.md "Testing Strategy" bo'limi.
 # =====================================================
 
 spring:
@@ -69,9 +80,10 @@ hemis:
 # =====================================================
 # IMPORTANT NOTES
 # =====================================================
-# 1. H2 in-memory database is created fresh for each test
-# 2. All data is lost after test completion
-# 3. Real PostgreSQL database is NEVER accessed
-# 4. Flyway migrations are DISABLED in tests
-# 5. DDL auto-create ensures clean test environment
+# 1. H2 in-memory database — light unit slice testlar uchun (fresh per test)
+# 2. Integration testlar (Testcontainers PG-16) o'zining ephemeral
+#    PostgreSQL container'ini ishlatadi (AbstractIntegrationTest gate)
+# 3. Real PRODUCTION PostgreSQL hech qachon test'da tegmaydi
+# 4. Flyway DISABLED, Liquibase off (H2 dialect — schema ddl-auto: create-drop)
+# 5. DDL auto-create — har test fresh schema
 # =====================================================

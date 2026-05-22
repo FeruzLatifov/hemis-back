@@ -329,7 +329,28 @@ public class OpenApiConfig {
             new Tag().name("67.OTM Config").description("OTM konfiguratsiyasi"),
             new Tag().name("68.Sertifikat").description("Sertifikatlar boshqaruvi"),
             new Tag().name("69.Amaliyot").description("Amaliyot boshqaruvi"),
-            new Tag().name("70.Qo'shimcha xizmatlar").description("Qo'shimcha xizmatlar")
+            new Tag().name("70.Qo'shimcha xizmatlar").description("Qo'shimcha xizmatlar"),
+
+            // ─── ADR-0011 sync: api-legacy controller @Tag annotation'lardan
+            //     keladi, ammo bu numbered ro'yxat default tartiblash uchun
+            //     kerak. Sub-numbered tag'lar (07., 08., …) controller'larda
+            //     parallel mavjud — Swagger UI alphabetic sort qiladi.
+            new Tag().name("07.Doktorant").description("Doktorant talabalar boshqaruvi"),
+            new Tag().name("08.O'quv reja").description("O'quv reja va kurikulum"),
+            new Tag().name("08.Yuridik shaxs").description("Yuridik shaxslar (GNK integratsiya)"),
+            new Tag().name("10.Imtihonlar").description("Imtihon va baholash boshqaruvi"),
+            new Tag().name("11.Fanlar").description("Fan va kurslar"),
+            new Tag().name("12.Dars jadvali").description("Dars jadvali va davomat"),
+            new Tag().name("14.GUVD").description("GUVD passport integratsiyasi"),
+            new Tag().name("30.Inspeksiya").description("Inspeksiya — talaba ro'yxati"),
+            new Tag().name("32.Akademik").description("Akademik faoliyat ko'rsatkichlari"),
+            new Tag().name("39.Inspeksiya administrative teacher2").description("Akademik darajalar inspeksiya"),
+            new Tag().name("40.Inspeksiya administrative teacher3").description("Treninglar inspeksiya"),
+            new Tag().name("62.Hokimiyat").description("Hokimiyat ma'lumot bazasi"),
+            new Tag().name("63.Shaxsiy ma'lumotlar").description("Foydalanuvchi shaxsiy ma'lumotlari"),
+            new Tag().name("64.Yuridik shaxslar").description("Yuridik shaxs ro'yxati"),
+            new Tag().name("98.Xabarlar").description("Tizim xabarlari va notification"),
+            new Tag().name("99.Test").description("Test va diagnostik endpoint'lar")
         );
     }
 
