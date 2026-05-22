@@ -9,6 +9,64 @@ Tarixiy ADR'lar uchun: [`docs/adr/`](docs/adr/).
 
 ## [Unreleased]
 
+### Audit Hardening (2026-05-21 → 2026-05-22) — P0+P1+P2+P3 yopildi
+
+8 ta commit, 54 fayl, +3435/-329 qator. ~30 audit item yakunlandi
+(asoslar to'liq; konkret biznes-policy class'lar, Sealed-Secrets va vazirlik
+credential ulanishi keyingi sprint). Univer kontrakt **175/175 MATCH**
+saqlandi (2026-05-22 jonli tasdiqlash).
+
+**Infrastructure (fix — P0 production blockers):**
+- `Dockerfile` — `eclipse-temurin 21-jdk/jre-alpine` → **25** (`build.gradle.kts` `JavaLanguageVersion(25)` bilan moslashtirildi; 21-jre prod'da `UnsupportedClassVersionError` xavfini bartaraf etdi).
+- `SystemConfiguration` entity `@Table(name="configurations")` → **`configuration`** + index nomlari singular — V012 schema bilan drift bartaraf etildi (Hibernate boot `relation "configurations" does not exist` xatosi).
+- `helm/hemis-back/values.yaml` — `livenessProbe.path: /actuator/health` → **`/actuator/health/liveness`**, `readinessProbe.path` → `/actuator/health/readiness` (application.yml liveness=livenessState, readiness=readinessState,db,redis group'lari sozlangan — DB tushganda pod restart cascade'ni oldini oladi).
+- `application-prod.yml` Prometheus expose qoldirildi (cluster'da hozir deploy yo'q, Sentry self-hosted observability uchun yetadi; kelajakda 1 qator `include` ga `prometheus` qo'shiladi).
+
+**Security:**
+- **OAuth weak-default soft-fail** (`LegacyOAuthClientProperties`): `EnvironmentAware` + `@PostConstruct validateCredentialStrength()` — `client/secret/admin/password/changeme/test/demo`/qisqa (<16 char) qiymatlar prod profile'da `log.error` + Sentry auto-capture, dev'da `log.warn`. **Boot fail YO'Q** — 200+ legacy klient (Univer Yii2, CUBA desktop) zarar ko'rmaydi. Sabab: `k8s-secret.env` shipping default `OAUTH_CLIENT_ID=client / OAUTH_CLIENT_SECRET=secret` brute-force xavfi. 6 yangi unit test.
+- **`BusinessRuleException` (HTTP 422)** — common module foundation (`ruleCode + message + cause`). `GlobalExceptionHandler` `@ExceptionHandler` mapping → 422 Unprocessable Entity. Kelajak policy class'lar (StudentInsertionPolicy, GradeEditPolicy, EnrollmentWindowGuard) uchun. 4 yangi unit test.
+- **gitleaks pre-commit hook** + `.gitleaks.toml` (6 HEMIS-specific rule: jwt-secret, db-password, oauth-default, webhook-secret, redis-password, external-api-key; allowlist `build/`+`docs/`+`${VAR}`). `scripts/git-hooks-pre-commit` — graceful skip (gitleaks o'rnatilmagan bo'lsa WARN, mavjud bo'lsa avtomatik secret-scan).
+- **SQL injection defense-in-depth** — `common/util/SqlTableValidator` regex `^(hemishe_[her]_[a-z_]+|h_[a-z_]+)$` guard. `VerificationService.loadSimpleReference` va `LegacyClassifierReferenceLoader.loadSimpleReference` SQL build oldidan validate (callsite'lar bugun hardcoded literal — future dynamic caller'lar guard'lab qo'yiladi). 50+ parameterized test (injection vector + malformed).
+
+**Database — M002 CONCURRENTLY refactor (zero-downtime):**
+- M002 monolith (1 ta `DO $$` block, 26 ta `CREATE INDEX`, `ACCESS EXCLUSIVE LOCK` 30+ daqiqa prod'da) → **5 ta alohida changeset** (`M002a_pg_trgm_extension`, `M002b_student_indexes` 23 idx, `M002c_student_pinfl_master_unique`, `M002d_diploma_trigram`, `M002e_student_meta_uid_unique`). Har biri `runInTransaction: false` + `CREATE INDEX CONCURRENTLY` + `splitStatements: true` + Liquibase `preConditions` (jadval mavjudligi + UNIQUE uchun duplicate-check, MARK_RAN gracefully). Rollback ham CONCURRENTLY.
+- 5 yillik real baza (1.15M+ talaba) — prod migration `ACCESS EXCLUSIVE LOCK` 30+ daqiqa downtime, Univer 224 OTM write'lari timeout. CONCURRENTLY = online build, write/read uzilmaydi.
+- **CONCURRENTLY pattern qoidaga aylantirildi:** [`LIQUIBASE_GUIDE.md`](.claude/LIQUIBASE_GUIDE.md) "CONCURRENTLY pattern — MAJBURIY (1M+ row jadvallar)" to'liq bo'lim, [`domain/CLAUDE.md`](domain/CLAUDE.md) qisqartirilgan eslatma, [`liquibase-reviewer.md`](.claude/agents/liquibase-reviewer.md) subagent uchun "red flags" — PR review paytida avtomatik tekshiriladi.
+
+**Observability:**
+- **`Sentry.captureException` kritik domain joylariga (6 joy)** — avval faqat 2 ta (GlobalExceptionHandler, WebExceptionHandler), domain silent fail Sentry'ga yetib bormas edi: `WebhookDispatcher.consume()` ERROR + kafka_offset/partition; `.dispatchWithRetry()` unexpected Exception ERROR + event_id/attempt; `.sendToDlq()` **FATAL** + dlq_topic (event tamoman yo'qoladi); `WebhookRetryScheduler.processDueRetries()` ERROR; `.retryOne()` WARNING + delivery_log_id; `WebhookFanoutConsumer` ERROR + kafka_topic/aggregate_id; `OutboxPoller.pollAndPublish()` ERROR; `EmployeeSyncConsumer.consume()` deserialize **FATAL** (poison pill); process WARNING. PII xavfsizlik: PINFL tag/extra'da YO'Q (rules.md Rule #7).
+- `service/build.gradle.kts`: `compileOnly("io.sentry:sentry-spring-boot-4:8.40.0")` + `testRuntimeOnly` (api-web bilan bir xil pattern — runtime app modul'dan).
+- **Custom metrics — 3 yangi class** (WebhookMetrics pattern): `EmployeeSyncMetrics` (`hemis_employee_sync_total{status,university}` + duration + `deserialize_failed`); `OutboxMetrics` (`hemis_outbox_publish_total{status,topic}` + duration + `hemis_outbox_queue_depth` Gauge + retention_deleted); `WebhookFanoutMetrics` (`hemis_webhook_fanout_total{topic,status}` + targets). `@Component` ro'yxatda — call site wire'lash keyingi sprint.
+- **Micrometer Tracing** — `micrometer-tracing-bridge-otel` + `sentry-opentelemetry-bootstrap:8.40.0`. Logback `%X{traceId}/%X{spanId}` pattern (logback-spring.xml) endi avtomatik to'ladi (span propagation).
+
+**Testing — +98 yangi `@Test` (markaziy auth/webhook pipeline qoplandi):**
+- `WebhookDispatcherTest` (8) — Mockito spy + `doHttpPost` protected (brittle `RestClient.Builder` fluent-chain mock o'rniga). 2xx success, 4xx terminal FAILED, 5xx retry+next_retry_at, 5xx attempt 3/3 DLQ + Kafka publish, ResourceAccessException retry, exponential backoff sanity, DLQ Kafka publish failure silenced, per-target maxRetries override.
+- `WebhookRetrySchedulerTest` (8) — empty queue early return, 3 due retries processed, retryOne placeholder DLQ, per-item isolation, `@Scheduled` top-level swallow, batchSize PageRequest, cleanup cutoff now-60d, cleanup 0 rows silent.
+- `CookieJwtAuthenticationFilterTest` (11) — no token pass-through, valid Bearer/cookie, header wins over cookie, blacklisted reject, no JTI authenticate, JwtException swallow, unexpected exception non-fatal, existing auth preserved, non-Bearer fallback, other cookies ignored.
+- `TokenBlacklistServiceTest` (14) — addToBlacklist TTL math, key prefix, null/empty/already-expired/expiry=now guards; isBlacklisted hasKey null (Redis quirk) fail-open; removeFromBlacklist null/empty no-op; clearAllBlacklist scan + delete per match.
+- `LegacyOAuthClientPropertiesTest` (+6) — weak default dev/prod no-throw, strong creds OK, short ID warning, no environment safe, other weak values (`admin/password`).
+- `ExceptionClassesTest.BusinessRuleException` (+4) — ctor ruleCode+message+cause, RuntimeException, ruleCode required.
+- `SqlTableValidatorTest` (50+ parameterized) — accept legacy + modern `h_*`, reject injection vectors (`;DROP TABLE`, `--`, UNION, schema escape, case mismatch).
+- `WireMockSampleTest` (3) — HTTP stub infra pattern (200 stub, header matcher, 503 error). MSPD/BIMM/GUVD client testlari uchun foundation.
+- `service/build.gradle.kts`: `testImplementation("org.wiremock:wiremock-standalone:3.10.0")`.
+
+**Documentation:**
+- `CLAUDE.md` 154 → 143 qator (DevGenius 2026 tamoyillari): ADR jadval kompakt (12 ADR → [`docs/adr/README.md`](docs/adr/README.md) link), Further Reading kompakt (Canonical/Reference/Context guruh), yangi `## Workflow (senior tarz)` bo'limi — Plan Mode 80% + staff-review, Simplicity Mandate (Boris Cherny), Avval mavjud kodni o'rgan, Repetition → command, Xato → qoida.
+- `docs/runbooks/webhook-delivery-failure.md` (yangi) — 5 failure mode diagnostic SQL/komanda (5xx retry loop, 403 HMAC fail, DLQ grow, Univer worker offline, rule.push DEFERRED) + lokal e2e test stack qadamlari.
+- `docs/runbooks/jwt-secret-rotation.md` (yangi) — 9 bo'lim: trigger, pre-flight, generate (`openssl rand -base64 64`), K8s Secret update, RollingUpdate restart, validation, eski session bekor strategy, post-rotation cleanup, incident response (leaked secret).
+- `docs/runbooks/audit-db-partition.md` (yangi) — 7 yillik retention strategiyasi (RANGE PARTITION BY created_at yearly), `pg_partman` avto-rotation namuna, migration template (V005 kelajakda yoziladi — actual data yo'q, AUDIT_ENABLED=false).
+- `docs/operations/external-credentials-pending.md` (yangi) — 7 ta tashqi integratsiya stub holatida (Billing, Email/SMTP, Tax, UzASBO, Mehnat, MyGov, OneID), har biri talab credential + effort.
+- `docs/integration/webhook-implementation-guide.md` sec 3.3 sinxronlash — eski `hemishe_h_*` prefiks → defensive `h_*` (actual `ApplyHemisEventJob.php:103` 2026-05-19 fix).
+- `OpenApiConfig.apiTags()` 67 → 83 tag (ADR-0011 polish): 07.Doktorant, 08.O'quv reja, 08.Yuridik shaxs, 10.Imtihonlar, 11.Fanlar, 12.Dars jadvali, 14.GUVD, 30.Inspeksiya, 32.Akademik, 39/40 administrative teacher, 62-64 Hokimiyat/shaxsiy/yuridik, 98.Xabarlar, 99.Test.
+- `application-test.yml` comment'lari to'g'rilandi (ikki test infra: H2 light slice + Testcontainers PG-16 — aniq tushuntirildi).
+
+**Qoldi (sizning qaroringizga):**
+- Konkret biznes-policy class'lar (`StudentInsertionPolicy`, `GradeEditPolicy`, `EnrollmentWindowGuard`) — foundation tayyor, lekin yangi feature
+- `AUDIT_DB_PASSWORD` ajratish (`.env` / `k8s-secret.env`) — ADR-0003 isolation, deploy paytida siz
+- Sealed-Secrets Helm integration — alohida deploy sprint
+- Vazirlik credential keldi paytida: Email SMTP / Tax / UzASBO / Mehnat actual ulanishi (Email birinchi — infra tayyor)
+- Konkret prod-time JWT secret rotation amalga oshirish (runbook tayyor)
+
 ### Architecture
 - **Webhook Outbound Infrastructure** (ADR-0012): Markaz → 224 Univer real-time event push. 5-bosqichli implementatsiya (Sprint 1-5):
   - **Sprint 1 (Foundation):** V015 migration (`webhook_target` + `webhook_delivery_log` jadvallar + 7 ta index), `OutboxEvent` JPA entity (V014 outbox_event'ga map), `WebhookTarget`/`WebhookDeliveryLog` entitylar + repository, `spring-kafka` dependency + `application.yml` Kafka config (idempotent producer, manual ack consumer).
