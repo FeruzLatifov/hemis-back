@@ -47,6 +47,11 @@ public class LegacyClassifierReferenceLoader {
             return null;
         }
 
+        // Defense-in-depth: tableName from caller — validate before SQL build
+        // (current callers all pass hardcoded literals, but future dynamic
+        // callers are guarded against injection).
+        uz.hemis.common.util.SqlTableValidator.validateLegacyClassifier(tableName);
+
         try {
             String sql = "SELECT code, name, name_ru, name_en, active, version FROM " + tableName
                     + " WHERE code = ? AND delete_ts IS NULL";

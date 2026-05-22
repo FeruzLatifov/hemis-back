@@ -69,6 +69,10 @@ dependencies {
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    // WireMock — HTTP server mock for external integration tests
+    // (MSPD, BIMM, GUVD, Univer REST client'lar uchun stub server).
+    testImplementation("org.wiremock:wiremock-standalone:3.10.0")
 }
 
 tasks.test {

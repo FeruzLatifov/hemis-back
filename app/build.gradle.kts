@@ -96,6 +96,13 @@ dependencies {
     implementation("io.sentry:sentry-spring-boot-4:8.40.0")
     implementation("io.sentry:sentry-logback:8.40.0")
 
+    // Micrometer Tracing — distributed tracing (traceId/spanId MDC injection).
+    // Logback pattern (logback-spring.xml) %X{traceId}/%X{spanId} avtomatik to'ladi.
+    // Sentry bridge — span'lar Sentry transaction'lariga ulanadi.
+    implementation("io.micrometer:micrometer-tracing")
+    implementation("io.sentry:sentry-opentelemetry-bootstrap:8.40.0")
+    implementation("io.micrometer:micrometer-tracing-bridge-otel")
+
     // HikariCP (connection pooling - included in spring-boot-starter-data-jpa)
     // No need to declare explicitly
 

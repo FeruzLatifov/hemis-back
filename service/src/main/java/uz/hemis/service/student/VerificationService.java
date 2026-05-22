@@ -122,12 +122,18 @@ public class VerificationService {
     }
 
     /**
-     * Load simple classifier reference from CUBA tables
+     * Load simple classifier reference from CUBA tables.
+     *
+     * <p>{@code tableName} is validated against {@link uz.hemis.common.util.SqlTableValidator}
+     * before string interpolation (defense-in-depth — current callsites all
+     * pass hardcoded literals, but future dynamic callers are guarded).</p>
      */
     private Map<String, Object> loadSimpleReference(String tableName, String entityName, String code) {
         if (code == null || code.isBlank()) {
             return null;
         }
+
+        uz.hemis.common.util.SqlTableValidator.validateLegacyClassifier(tableName);
 
         try {
             String sql = "SELECT code, name, name_ru, name_en, active, version FROM " + tableName + " WHERE code = ? AND delete_ts IS NULL";
