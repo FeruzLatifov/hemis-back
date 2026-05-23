@@ -72,3 +72,8 @@ test-output/
 # Generated
 generated/
 target/
+
+# Claude / Serena tooling (lokal per-developer state)
+.serena/
+.claude/settings.local.json
+ONBOARDING.md
