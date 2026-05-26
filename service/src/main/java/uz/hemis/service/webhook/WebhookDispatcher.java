@@ -245,7 +245,7 @@ public class WebhookDispatcher {
         } catch (Exception e) {
             // Unexpected error — Sentry capture (boshqa catch'larda Kafka retry yo'q,
             // bu yerda silent retry'ga olib keladi → kuzatish majburiy).
-            Sentry.captureException(e, scope -> {
+            io.sentry.protocol.SentryId sentryId = Sentry.captureException(e, scope -> {
                 scope.setLevel(SentryLevel.ERROR);
                 scope.setTag("component", "webhook");
                 scope.setTag("phase", "dispatch");
@@ -255,6 +255,8 @@ public class WebhookDispatcher {
                 scope.setExtra("attempt", String.valueOf(attemptN));
                 scope.setExtra("callback_url", callbackUrl);
             });
+            // Cross-link: to'liq stack/context Sentry'da, delivery log faqat ID saqlaydi.
+            logEntry.setSentryEventId(sentryId.toString());
             handleRetryable(target, callbackUrl, eventId, eventType, envelopeJson, attemptN, logEntry, e);
         }
 

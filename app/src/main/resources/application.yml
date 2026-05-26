@@ -423,6 +423,17 @@ hemis:
       initial-interval-ms: 1000    # 1 sekund (1-attempt)
       multiplier: 30                # 1s, 30s, 5min (exponential — total ~5 min)
       max-interval-ms: 300000       # 5 minut (cap)
+    # Delivery log retention (lean strategiya — to'liq stack Sentry'da, sentry_event_id cross-link).
+    # Status bo'yicha farqlangan: SUCCESS tez, FAILED uzoq, DLQ saqlanadi (manual review).
+    retention:
+      success-days: 30
+      failed-days: 90
+    # Secret shifrlash (K1) — plain HMAC secret AES-256-GCM bilan webhook_target.secret_enc'da saqlanadi.
+    # Kalit PROD'da env orqali MAJBURIY o'rnatilsin (default faqat dev). salt hex-encoded.
+    # Kalit yo'qolsa → barcha 224 secret deshifrlanmaydi, rotation kerak.
+    secret-encryption:
+      key: ${HEMIS_WEBHOOK_SECRET_ENCRYPTION_KEY:dev-only-webhook-key-change-in-prod}
+      salt: ${HEMIS_WEBHOOK_SECRET_ENCRYPTION_SALT:5c0744940b5c369b}
     dispatcher:
       connect-timeout-ms: 5000
       read-timeout-ms: 30000

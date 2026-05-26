@@ -42,11 +42,19 @@ public class WebhookTarget extends AuditableEntity {
     private String universityCode;
 
     /**
-     * HMAC secret bcrypt hash. Plain qiymat hech qachon saqlanmaydi —
-     * generate paytida UI'da ko'rsatiladi, Univer {@code .env}'ga yozadi.
+     * DEPRECATED (K1, 2026-05-26) — HMAC secret bcrypt hash. Markaz imzo qo'yadi, verify
+     * qilmaydi → bcrypt keraksiz. {@link #secretEnc} source of truth. Hozircha saqlanadi (kelajakda drop).
      */
-    @Column(name = "secret_hash", nullable = false, length = 255)
+    @Column(name = "secret_hash", length = 255)
     private String secretHash;
+
+    /**
+     * AES-256-GCM shifrlangan plain HMAC secret (K1). Imzo qo'yish manbai — markaz har outbound
+     * webhook'ni shu bilan imzolaydi. {@code WebhookSecretCipher} shifrlaydi; vault restart'da
+     * DB'dan lazy decrypt qilib rehydrate qiladi (in-memory MVP'ning restart-fragility'sini hal qiladi).
+     */
+    @Column(name = "secret_enc", length = 512)
+    private String secretEnc;
 
     /** Inson o'qiy oladigan tavsif (ixtiyoriy). */
     @Column(name = "description", length = 255)

@@ -1,5 +1,6 @@
 package uz.hemis.service.webhook;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import uz.hemis.domain.entity.webhook.WebhookTarget;
@@ -15,20 +16,23 @@ import java.util.concurrent.ConcurrentMap;
  * hisoblash uchun plain secret kerak. Vault bu nuans'ni hal qiladi:</p>
  *
  * <ul>
- *   <li>Secret generate qilinganda admin UI plain qiymatni vault'ga qo'shadi va Univer'ga ko'rsatadi</li>
- *   <li>Vault in-memory cache (ConcurrentHashMap) — application restart'da yo'qoladi</li>
- *   <li>Restart'dan keyin admin UI yangidan secret rotation qilishi kerak</li>
+ *   <li>Secret generate qilinganda admin UI plain qiymatni vault'ga (cache) + DB'ga
+ *       (AES-256-GCM {@code secret_enc}) yozadi va Univer'ga bir marta ko'rsatadi</li>
+ *   <li>Vault — in-memory cache. Cache miss bo'lsa (K1, 2026-05-26) {@code secret_enc}'dan
+ *       lazy decrypt qilib rehydrate qiladi → <strong>application restart'da yo'qolmaydi</strong></li>
  * </ul>
  *
  * <p><strong>Production refactor (kelajakda):</strong> HashiCorp Vault / AWS Secrets
- * Manager / Kubernetes Secret bilan integratsiya. Hozir MVP — in-memory.</p>
+ * Manager / Kubernetes Secret bilan integratsiya (kalit boshqaruvi). Hozir — DB-da AES-256-GCM.</p>
  *
- * @since ADR-0012
+ * @since ADR-0012 (K1: DB persistence)
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class WebhookSecretVault {
 
+    private final WebhookSecretCipher cipher;
     private final ConcurrentMap<String, String> universitySecrets = new ConcurrentHashMap<>();
 
     /**
@@ -48,14 +52,22 @@ public class WebhookSecretVault {
      * @throws WebhookSecretMissingException  agar secret restart'dan keyin yo'q bo'lsa
      */
     public String resolve(WebhookTarget target) {
-        String secret = universitySecrets.get(target.getUniversityCode());
-        if (secret == null) {
-            throw new WebhookSecretMissingException(
-                    "Plain secret unavailable for " + target.getUniversityCode() +
-                            " — admin must regenerate via /api/v1/web/admin/webhooks/{id}/regenerate-secret"
-            );
+        String code = target.getUniversityCode();
+        String secret = universitySecrets.get(code);
+        if (secret != null) {
+            return secret;
         }
-        return secret;
+        // Restart-safe (K1): cache miss → DB'dagi shifrlangan secret_enc'dan rehydrate.
+        if (target.getSecretEnc() != null && !target.getSecretEnc().isBlank()) {
+            String plain = cipher.decrypt(target.getSecretEnc());
+            universitySecrets.put(code, plain);
+            log.debug("Webhook secret rehydrated from DB for university={}", code);
+            return plain;
+        }
+        throw new WebhookSecretMissingException(
+                "Plain secret unavailable for " + code + " — secret_enc bo'sh. "
+                        + "Admin regenerate qilishi kerak: /api/v1/web/admin/webhooks/{id}/regenerate-secret"
+        );
     }
 
     /** Secret o'chirish (target deletion). */

@@ -74,6 +74,10 @@ public class WebhookDeliveryLog {
     @Column(name = "error_message", columnDefinition = "text")
     private String errorMessage;
 
+    /** Sentry event cross-link. To'liq stack/context Sentry'da; DB faqat ID saqlaydi (overlap kamaytirish). */
+    @Column(name = "sentry_event_id", length = 36)
+    private String sentryEventId;
+
     /** Request latency (millisekund). */
     @Column(name = "duration_ms")
     private Integer durationMs;

@@ -24,6 +24,7 @@ public record WebhookDeliveryLogDto(
         String status,
         LocalDateTime dispatchedAt,
         LocalDateTime completedAt,
-        LocalDateTime nextRetryAt
+        LocalDateTime nextRetryAt,
+        String sentryEventId
 ) {
 }

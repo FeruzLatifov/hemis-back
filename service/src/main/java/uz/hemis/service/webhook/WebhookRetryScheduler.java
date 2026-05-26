@@ -48,6 +48,12 @@ public class WebhookRetryScheduler {
     @Value("${hemis.webhook.retry.batch-size:50}")
     private int batchSize;
 
+    @Value("${hemis.webhook.retention.success-days:30}")
+    private int successRetentionDays;
+
+    @Value("${hemis.webhook.retention.failed-days:90}")
+    private int failedRetentionDays;
+
     /**
      * Due retry'larni qayta yuborish.
      *
@@ -123,15 +129,23 @@ public class WebhookRetryScheduler {
     }
 
     /**
-     * Retention cleanup — eski success/failed log'larni o'chirish (60 kun).
+     * Retention cleanup — status bo'yicha farqlangan (lean log strategiyasi):
+     *   SUCCESS → success-days (default 30) — audit qiymati past, tez tozalanadi
+     *   FAILED  → failed-days  (default 90) — troubleshooting uchun uzoqroq
+     *   DLQ     → o'chirilmaydi — manual admin review uchun saqlanadi
+     * To'liq stack/context Sentry'da (sentry_event_id cross-link). Outbox retention bilan bir xil cron.
      */
     @Scheduled(cron = "0 30 3 * * *")
     @Transactional
     public void cleanupCompletedLogs() {
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(60);
-        int deleted = deliveryLogRepository.deleteCompletedBefore(cutoff);
-        if (deleted > 0) {
-            log.info("Webhook delivery log cleanup: deleted {} row(s) older than 60 days", deleted);
+        LocalDateTime now = LocalDateTime.now();
+        int success = deliveryLogRepository.deleteByStatusAndCompletedAtBefore(
+                WebhookDeliveryStatus.SUCCESS, now.minusDays(successRetentionDays));
+        int failed = deliveryLogRepository.deleteByStatusAndCompletedAtBefore(
+                WebhookDeliveryStatus.FAILED, now.minusDays(failedRetentionDays));
+        if (success + failed > 0) {
+            log.info("Webhook delivery log retention: {} success (>{}d) + {} failed (>{}d) o'chirildi. DLQ saqlandi.",
+                    success, successRetentionDays, failed, failedRetentionDays);
         }
     }
 }

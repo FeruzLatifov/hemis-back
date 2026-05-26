@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.webhook.WebhookTarget;
@@ -35,7 +34,7 @@ public class DevWebhookBootstrap implements CommandLineRunner {
 
     private final WebhookTargetRepository targetRepository;
     private final WebhookSecretVault secretVault;
-    private final PasswordEncoder passwordEncoder;
+    private final WebhookSecretCipher secretCipher;
 
     private static final String UNIVERSITY_CODE = "337";
     private static final String PLAIN_SECRET = "whsec_dev_test_secret_DO_NOT_USE_IN_PROD";
@@ -47,7 +46,7 @@ public class DevWebhookBootstrap implements CommandLineRunner {
                 .orElseGet(() -> {
                     WebhookTarget fresh = new WebhookTarget();
                     fresh.setUniversityCode(UNIVERSITY_CODE);
-                    fresh.setSecretHash(passwordEncoder.encode(PLAIN_SECRET));
+                    fresh.setSecretEnc(secretCipher.encrypt(PLAIN_SECRET));  // K1: shifrlangan, restart-safe
                     fresh.setDescription("Dev test target — auto-seeded by DevWebhookBootstrap");
                     fresh.setTimeoutMs(15000);
                     fresh.setMaxRetries(3);

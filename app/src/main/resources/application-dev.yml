@@ -186,6 +186,10 @@ hemis:
     enforce-no-delete: true  # Still enforce in dev
 
   webhook:
+    # Local univer (student.univer.lc) TLS'siz http'da ishlaydi — base default 'https'ni
+    # override qilamiz. Aks holda buildCallbackUrl() https://student.univer.lc/... ga uradi.
+    callback:
+      protocol: ${WEBHOOK_CALLBACK_PROTOCOL:http}
     dev-seed:
       enabled: true  # DevWebhookBootstrap startupda webhook_target + vault yaratadi
 

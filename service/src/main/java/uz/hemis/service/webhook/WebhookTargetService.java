@@ -44,6 +44,7 @@ public class WebhookTargetService {
     private final UniversityRepository universityRepository;
     private final WebhookDeliveryLogRepository deliveryLogRepository;
     private final WebhookSecretService secretService;
+    private final WebhookSecretCipher secretCipher;
     private final WebhookSecretVault secretVault;
     private final WebhookDispatcher dispatcher;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
@@ -94,6 +95,14 @@ public class WebhookTargetService {
      */
     @Transactional
     public WebhookSecretResponse create(WebhookTargetCreateRequest request) {
+        // OTM mavjudligini tekshirish (orphan target oldini olish). hemishe_e_university
+        // FROZEN CUBA jadval — hard FK qo'yib bo'lmaydi (code unique key emas), shuning uchun
+        // app-layer validatsiya. Aks holda noto'g'ri university_code jim no-op target yaratardi
+        // (findAllForActiveUniversities JOIN'da hech qachon mos kelmaydi).
+        if (!universityRepository.existsByCode(request.universityCode())) {
+            throw new ResourceNotFoundException("University", "code", request.universityCode());
+        }
+
         if (targetRepository.existsByUniversityCode(request.universityCode())) {
             throw new ConflictException(
                     "Webhook target already exists for university: " + request.universityCode());
@@ -104,7 +113,8 @@ public class WebhookTargetService {
         WebhookTarget target = new WebhookTarget();
         target.setUniversityCode(request.universityCode());
         target.setDescription(request.description());
-        target.setSecretHash(secretService.hash(plainSecret));
+        // K1: plain secret AES-256-GCM shifrlangan holda DB'ga (imzo manbai, restart-safe).
+        target.setSecretEnc(secretCipher.encrypt(plainSecret));
         target.setTimeoutMs(request.timeoutMs() != null ? request.timeoutMs() : 30000);
         target.setMaxRetries(request.maxRetries() != null ? request.maxRetries() : 3);
 
@@ -153,7 +163,7 @@ public class WebhookTargetService {
     public WebhookSecretResponse regenerateSecret(UUID id) {
         WebhookTarget target = loadOrThrow(id);
         String plainSecret = secretService.generatePlainSecret();
-        target.setSecretHash(secretService.hash(plainSecret));
+        target.setSecretEnc(secretCipher.encrypt(plainSecret));  // K1: restart-safe DB persistence
 
         secretVault.store(target.getUniversityCode(), plainSecret);
 
@@ -306,7 +316,8 @@ public class WebhookTargetService {
                 l.getStatus() != null ? l.getStatus().getDbValue() : null,
                 l.getDispatchedAt(),
                 l.getCompletedAt(),
-                l.getNextRetryAt()
+                l.getNextRetryAt(),
+                l.getSentryEventId()
         );
     }
 }

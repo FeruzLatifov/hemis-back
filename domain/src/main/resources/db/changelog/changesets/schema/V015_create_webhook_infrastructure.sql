@@ -33,15 +33,24 @@ CREATE TABLE IF NOT EXISTS webhook_target (
     id                 UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     university_code    VARCHAR(10)  NOT NULL,
 
-    -- HMAC secret: bcrypt hash (markazda saqlash). Plain secret faqat
-    -- generate paytida UI'da bir marta ko'rsatiladi (Univer .env'ga yozadi).
-    secret_hash        VARCHAR(255) NOT NULL,
+    -- HMAC secret: bcrypt hash. DEPRECATED (K1, 2026-05-26) — markaz imzo qo'yadi,
+    -- verify qilmaydi, shuning uchun bcrypt hash keraksiz. secret_enc source of truth.
+    -- Hozircha saqlanadi (kelajakda drop). nullable — yangi target'lar to'ldirmaydi.
+    secret_hash        VARCHAR(255),
+
+    -- AES-256-GCM shifrlangan plain secret (K1). IMZO QO'YISH MANBAI: markaz har outbound
+    -- webhook'ni shu bilan imzolaydi. WebhookSecretVault restart'da DB'dan lazy decrypt qiladi
+    -- (oldin faqat in-memory edi → restart 224 OTM imzosini sindirardi).
+    -- Kalit: HEMIS_WEBHOOK_SECRET_ENCRYPTION_KEY (.env/KMS). Yo'qolsa → secret rotation kerak.
+    secret_enc         VARCHAR(512),
 
     description        VARCHAR(255),
 
     -- Per-target retry config (default qiymatlar — application.yml override)
+    -- max_retries DEFAULT 3: entity (WebhookTarget.java:61) + service create (109)
+    -- + application.yml hemis.webhook.retry.max-attempts bilan bir xil (ADR-0012 trim 2026-05-18, 5→3).
     timeout_ms         INT          NOT NULL DEFAULT 30000,
-    max_retries        INT          NOT NULL DEFAULT 5,
+    max_retries        INT          NOT NULL DEFAULT 3,
 
     -- AuditableEntity columns (modern naming — yangi schema)
     version            INT          NOT NULL DEFAULT 1,
@@ -75,7 +84,9 @@ COMMENT ON COLUMN webhook_target.timeout_ms IS
     'HTTP request timeout (ms). Univer 30 sekunddan ortiq kutsa connection close.';
 
 COMMENT ON COLUMN webhook_target.max_retries IS
-    'Maksimal retry urinish. Bekor qilinsa event DLQ topic''ga tushadi.';
+    'Maksimal yetkazish urinishi (attempt count). DEFAULT 3 — application.yml
+     hemis.webhook.retry.max-attempts bilan bir xil. attempt_n >= max_retries → DLQ
+     (WebhookDispatcher.java:276). Per-OTM override CHECK(0..10). Bekor qilinsa DLQ.';
 
 -- Per-OTM UNIQUE (soft-deleted target conflict yaratmaydi — partial index)
 CREATE UNIQUE INDEX IF NOT EXISTS uq_webhook_target_university_code
@@ -115,7 +126,8 @@ CREATE TABLE IF NOT EXISTS webhook_delivery_log (
     -- Response
     http_status     INT,         -- NULL = network error (timeout, connect refused)
     response_body   TEXT,        -- truncated to 4KB max (application layer)
-    error_message   TEXT,        -- exception text
+    error_message   TEXT,        -- exception text (qisqa sabab — to'liq stack Sentry'da)
+    sentry_event_id VARCHAR(36), -- Sentry event cross-link (stack/context Sentry'da, DB faqat ID saqlaydi)
     duration_ms     INT,
 
     status          VARCHAR(20)  NOT NULL,

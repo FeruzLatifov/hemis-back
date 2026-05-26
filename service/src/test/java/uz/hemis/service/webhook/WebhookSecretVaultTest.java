@@ -8,14 +8,16 @@ import uz.hemis.domain.entity.webhook.WebhookTarget;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("WebhookSecretVault — in-memory plain secret storage")
+@DisplayName("WebhookSecretVault — DB-backed (secret_enc) plain secret cache")
 class WebhookSecretVaultTest {
 
     private WebhookSecretVault vault;
+    private WebhookSecretCipher cipher;
 
     @BeforeEach
     void setUp() {
-        vault = new WebhookSecretVault();
+        cipher = new WebhookSecretCipher("test-encryption-key", "5c0744940b5c369b");
+        vault = new WebhookSecretVault(cipher);
     }
 
     @Test
@@ -75,6 +77,18 @@ class WebhookSecretVaultTest {
 
         assertThat(vault.resolve(makeTarget("337"))).isEqualTo("secret-337");
         assertThat(vault.resolve(makeTarget("401"))).isEqualTo("secret-401");
+    }
+
+    @Test
+    @DisplayName("resolve() cache miss → secret_enc'dan rehydrate (restart-safe, K1)")
+    void resolve_cacheMiss_rehydratesFromSecretEnc() {
+        // Restart simulyatsiyasi: cache bo'sh, lekin DB'da shifrlangan secret_enc bor.
+        WebhookTarget target = makeTarget("337");
+        target.setSecretEnc(cipher.encrypt("whsec_persisted"));
+
+        assertThat(vault.resolve(target)).isEqualTo("whsec_persisted");
+        // Endi cache'da bo'lishi kerak
+        assertThat(vault.size()).isEqualTo(1);
     }
 
     private static WebhookTarget makeTarget(String code) {

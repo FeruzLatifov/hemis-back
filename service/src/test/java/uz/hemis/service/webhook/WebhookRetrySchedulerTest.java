@@ -51,6 +51,8 @@ class WebhookRetrySchedulerTest {
     @BeforeEach
     void setup() {
         ReflectionTestUtils.setField(scheduler, "batchSize", 50);
+        ReflectionTestUtils.setField(scheduler, "successRetentionDays", 30);
+        ReflectionTestUtils.setField(scheduler, "failedRetentionDays", 90);
     }
 
     // =========================================================
@@ -167,37 +169,46 @@ class WebhookRetrySchedulerTest {
     }
 
     // =========================================================
-    // Retention cleanup — cutoff is now − 60 days
+    // Retention cleanup — status bo'yicha farqlangan (SUCCESS −30d, FAILED −90d, DLQ saqlanadi)
     // =========================================================
 
     @Test
-    @DisplayName("cleanupCompletedLogs() passes cutoff = now − 60 days to repository")
-    void cleanupCompletedLogs_passesCorrectCutoff() {
-        when(deliveryLogRepository.deleteCompletedBefore(any(LocalDateTime.class)))
+    @DisplayName("cleanupCompletedLogs() — SUCCESS cutoff now−30d, FAILED cutoff now−90d")
+    void cleanupCompletedLogs_passesDifferentiatedCutoffs() {
+        when(deliveryLogRepository.deleteByStatusAndCompletedAtBefore(any(), any(LocalDateTime.class)))
             .thenReturn(7);
 
         LocalDateTime before = LocalDateTime.now();
         scheduler.cleanupCompletedLogs();
         LocalDateTime after = LocalDateTime.now();
 
-        ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
-        verify(deliveryLogRepository).deleteCompletedBefore(cutoff.capture());
+        ArgumentCaptor<LocalDateTime> successCutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(deliveryLogRepository)
+            .deleteByStatusAndCompletedAtBefore(eq(WebhookDeliveryStatus.SUCCESS), successCutoff.capture());
+        assertThat(successCutoff.getValue())
+            .isAfterOrEqualTo(before.minusDays(30).minus(1, ChronoUnit.SECONDS))
+            .isBeforeOrEqualTo(after.minusDays(30).plus(1, ChronoUnit.SECONDS));
 
-        LocalDateTime expectedMin = before.minusDays(60);
-        LocalDateTime expectedMax = after.minusDays(60);
-        assertThat(cutoff.getValue())
-            .isAfterOrEqualTo(expectedMin.minus(1, ChronoUnit.SECONDS))
-            .isBeforeOrEqualTo(expectedMax.plus(1, ChronoUnit.SECONDS));
+        ArgumentCaptor<LocalDateTime> failedCutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(deliveryLogRepository)
+            .deleteByStatusAndCompletedAtBefore(eq(WebhookDeliveryStatus.FAILED), failedCutoff.capture());
+        assertThat(failedCutoff.getValue())
+            .isAfterOrEqualTo(before.minusDays(90).minus(1, ChronoUnit.SECONDS))
+            .isBeforeOrEqualTo(after.minusDays(90).plus(1, ChronoUnit.SECONDS));
+
+        // DLQ hech qachon o'chirilmaydi
+        verify(deliveryLogRepository, never())
+            .deleteByStatusAndCompletedAtBefore(eq(WebhookDeliveryStatus.DLQ), any());
     }
 
     @Test
-    @DisplayName("cleanupCompletedLogs() with 0 rows deleted → no exception, no extra DB call")
+    @DisplayName("cleanupCompletedLogs() with 0 rows deleted → no exception, SUCCESS+FAILED ikki chaqiruv")
     void cleanupCompletedLogs_noRows_silent() {
-        when(deliveryLogRepository.deleteCompletedBefore(any(LocalDateTime.class)))
+        when(deliveryLogRepository.deleteByStatusAndCompletedAtBefore(any(), any(LocalDateTime.class)))
             .thenReturn(0);
 
         assertThatCode(() -> scheduler.cleanupCompletedLogs()).doesNotThrowAnyException();
-        verify(deliveryLogRepository, times(1)).deleteCompletedBefore(any());
+        verify(deliveryLogRepository, times(2)).deleteByStatusAndCompletedAtBefore(any(), any());
     }
 
     // =========================================================

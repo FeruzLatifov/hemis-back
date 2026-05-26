@@ -74,13 +74,17 @@ public interface WebhookDeliveryLogRepository extends JpaRepository<WebhookDeliv
             Pageable pageable
     );
 
-    /** Retention cleanup — eski success/failed log'larni o'chirish (60 kun). */
+    /**
+     * Retention cleanup — status bo'yicha farqlangan. DLQ o'chirilmaydi (manual review uchun saqlanadi).
+     * Scheduler ikki marta chaqiradi: SUCCESS (qisqa retention), FAILED (uzoqroq retention).
+     */
     @org.springframework.data.jpa.repository.Modifying
     @Query("""
             DELETE FROM WebhookDeliveryLog l
-             WHERE l.status IN (uz.hemis.domain.entity.webhook.WebhookDeliveryStatus.SUCCESS,
-                                uz.hemis.domain.entity.webhook.WebhookDeliveryStatus.FAILED)
+             WHERE l.status = :status
                AND l.completedAt < :cutoff
             """)
-    int deleteCompletedBefore(@Param("cutoff") LocalDateTime cutoff);
+    int deleteByStatusAndCompletedAtBefore(
+            @Param("status") WebhookDeliveryStatus status,
+            @Param("cutoff") LocalDateTime cutoff);
 }
