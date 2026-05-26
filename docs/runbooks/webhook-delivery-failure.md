@@ -190,7 +190,7 @@ cd /home/adm1n/projects/startup/hemis-back
 ./gradlew :app:bootRun  # port 8081
 
 # 2. Lokal Univer queue worker
-cd /home/adm1n/projects/startup/univer
+cd /home/adm1n/projects/startup/hemis-univer
 php yii queue/listen --verbose
 
 # 3. Sandbox event yuborish (markaz tomondan)
@@ -200,7 +200,7 @@ curl -X POST http://localhost:8081/api/v1/web/admin/webhooks/{id}/test \
 
 # 4. Univer-side tekshiruv
 psql -d hemis_337 -c "SELECT * FROM hemis_callback_log ORDER BY received_at DESC LIMIT 5;"
-tail -f /home/adm1n/projects/startup/univer/console/runtime/logs/app.log
+tail -f /home/adm1n/projects/startup/hemis-univer/console/runtime/logs/app.log
 ```
 
 ---

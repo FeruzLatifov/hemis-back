@@ -1,7 +1,7 @@
 # Univer ↔ HEMIS Backend — Per-Endpoint Real Audit
 
 > **Audit sanasi:** 2026-05-05 (yangilangan)
-> **Univer kodi:** `/home/adm1n/projects/startup/univer` (8873 PHP fayl)
+> **Univer kodi:** `/home/adm1n/projects/startup/hemis-univer` (8873 PHP fayl)
 > **HEMIS backend:** `/home/adm1n/projects/startup/hemis-back/api-legacy/`
 > **Method:** Deep code grep — `v2/(entities|services|oauth)` URL string'lari + `$itemUrl`/`$url` variable assignments + method-based HTTP calls
 

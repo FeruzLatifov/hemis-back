@@ -27,7 +27,7 @@ Accepted (server-side: 2026-05-04); 224 OTM rollout — OTM coordination'ga bog'
 
 ## Context
 
-**Hozirgi holat:** 224 ta per-OTM Univer Yii2 PHP backend (`/home/adm1n/projects/startup/univer/` — har OTM da alohida deploy) **MARKAZIY** (vazirlik darajasidagi) HEMIS-back'ga shu pattern bilan ulanadi:
+**Hozirgi holat:** 224 ta per-OTM Univer Yii2 PHP backend (`/home/adm1n/projects/startup/hemis-univer/` — har OTM da alohida deploy) **MARKAZIY** (vazirlik darajasidagi) HEMIS-back'ga shu pattern bilan ulanadi:
 
 ```php
 // HemisApi.php:724-735
@@ -195,7 +195,7 @@ hemis.security.oauth.client.refresh-token-ttl-seconds: 2592000  # 30 days
 - Code: `oauth_client` table — `domain/.../V006_create_users.sql`
 - Code: `OAuthClientAuthenticationService` (security module)
 - Code: `UniversityOAuthTokenController` (api-university module)
-- PHP integration: `/home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php:724 (apiLogin function)`
+- PHP integration: `/home/adm1n/projects/startup/hemis-univer/common/components/hemis/HemisApi.php:724 (apiLogin function)`
 - RFC 6749 §4.4: client_credentials grant
 - RFC 8594: Sunset HTTP Header Field
 - OAuth 2.1 BCP: https://oauth.net/2.1/

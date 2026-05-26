@@ -573,7 +573,7 @@ APICURIO_URL=http://apicurio:8080/apis/registry/v2
 
 ### Code (current state)
 - `/home/adm1n/projects/startup/hemis-back/api-legacy/` — current sync receivers (123 controller)
-- `/home/adm1n/projects/startup/univer/common/components/hemis/sync/` — current sync senders (35 caller)
+- `/home/adm1n/projects/startup/hemis-univer/common/components/hemis/sync/` — current sync senders (35 caller)
 - `docs/UNIVER_CONTRACT.md` — frozen API contract (67 endpoint)
 - `docs/UNIVER_ENDPOINT_AUDIT.md` — per-endpoint audit
 - `/home/adm1n/projects/startup/hemis-tools/docs/univer_tool/` — 175 ta integration test

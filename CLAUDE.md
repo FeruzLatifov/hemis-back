@@ -8,7 +8,7 @@
 > 3. **Qoidalarni JORIY qilish** (talaba kiritish cheklash, baho o'zgartirish cheklash, vaqt cheklov)
 > 4. **Davlat tashkilotlari INTEGRATSIYA** (MyGov, MSPD, BIMM, Tax/Soliq, GUVD, OneID)
 >
-> **Univer (`/home/adm1n/projects/startup/univer`)** — **Yii2 framework + PHP 7.4**, har 230 OTM da **alohida deploy** (`hemis_337`, `hemis_401`, …, `hemis_NNN` — 224 ta Univer ishlatuvchi). Univer'lar **network REST API** orqali markaziy HEMIS-back ga ulanadi. **Univer'ni qayta yozmaymiz** — faqat backend (old-hemis) ni modernizatsiya qilamiz.
+> **Univer (`/home/adm1n/projects/startup/hemis-univer`)** — **Yii2 framework + PHP 7.4**, har 230 OTM da **alohida deploy** (`hemis_337`, `hemis_401`, …, `hemis_NNN` — 224 ta Univer ishlatuvchi). Univer'lar **network REST API** orqali markaziy HEMIS-back ga ulanadi. **Univer'ni qayta yozmaymiz** — faqat backend (old-hemis) ni modernizatsiya qilamiz.
 
 Java 25 LTS + Spring Boot 4.0.6 modular monolith. PostgreSQL 18 master/replica + Redis 7.
 **Stack:** Spring Boot 4.0.6 · Liquibase 4.31.1 · MapStruct · Lombok · Auxiliary `hemis_audit` DB.

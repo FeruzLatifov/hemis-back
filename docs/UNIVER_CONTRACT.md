@@ -3,9 +3,9 @@
 > **CRITICAL:** Univer (224 universitetlarda deploy qilingan Yii2 PHP backend (per-OTM)) **67 ta endpoint** ishlatadi. Har bir o'zgarish 224 OTM uchun ta'sir qilishi mumkin.
 >
 > **Manbalar:**
-> - `/home/adm1n/projects/startup/univer/common/components/hemis/` — sync klasslar + HemisApi
-> - `/home/adm1n/projects/startup/univer/common/models/report/EGenericStat.php` — entity stats
-> - `/home/adm1n/projects/startup/univer/api/config/main.php` — route aliases
+> - `/home/adm1n/projects/startup/hemis-univer/common/components/hemis/` — sync klasslar + HemisApi
+> - `/home/adm1n/projects/startup/hemis-univer/common/models/report/EGenericStat.php` — entity stats
+> - `/home/adm1n/projects/startup/hemis-univer/api/config/main.php` — route aliases
 >
 > **Detal audit:** `docs/UNIVER_ENDPOINT_AUDIT.md`
 
@@ -211,7 +211,7 @@ BaseApiUpdater, GenericStatUpdater, StudentDebtUpdater, StudentScholarshipUpdate
 
 ## Modification Workflow (har refactor uchun)
 
-1. **Avval** verify: `grep -r "v2/entities/hemishe_E<Entity>\|v2/services/<endpoint>" /home/adm1n/projects/startup/univer --include="*.php"`
+1. **Avval** verify: `grep -r "v2/entities/hemishe_E<Entity>\|v2/services/<endpoint>" /home/adm1n/projects/startup/hemis-univer --include="*.php"`
 2. **Topilsa** — Univer ishlatadi, JSON shape o'zgartirmang
 3. **Topilmasa** — Univer ishlatmaydi, refactor xavfsiz
 4. **Har holda:** build + test → smoke test agar qulay bo'lsa

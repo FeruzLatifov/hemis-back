@@ -1,6 +1,6 @@
 # Univer ↔ HEMIS-back Integratsiya Oqimi
 
-> **Univer** = `/home/adm1n/projects/startup/univer` (Yii2 framework + PHP 7.4) — har 230 ta OTM da **alohida deploy**, har biri o'z `hemis_NNN` lokal DB bilan.
+> **Univer** = `/home/adm1n/projects/startup/hemis-univer` (Yii2 framework + PHP 7.4) — har 230 ta OTM da **alohida deploy**, har biri o'z `hemis_NNN` lokal DB bilan.
 >
 > **HEMIS-back** = vazirlik darajasidagi **markaziy** Spring Boot 4 + Java 25 server (1 deploy/cluster).
 >
@@ -125,7 +125,7 @@ Markaziy server davlat tashkilotlari bilan S2S integratsiya (api-external modul)
 Har OTM Univer Yii2'ning `users` jadvalida `username` (masalan `tatu_otm`) saqlanadi. Univer login form orqali user kiradi.
 
 ```php
-// /home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php:724 (apiLogin function)
+// /home/adm1n/projects/startup/hemis-univer/common/components/hemis/HemisApi.php:724 (apiLogin function)
 $response = $this->_client->post('v2/oauth/token', [
     'grant_type' => 'password',
     'username'   => $otm_username,

@@ -76,7 +76,7 @@ Va alohida flow'lar:
 
 ### Univer ekosistemasi mavjud holati
 
-`/home/adm1n/projects/startup/univer/` audit (2026-05-08):
+`/home/adm1n/projects/startup/hemis-univer/` audit (2026-05-08):
 
 - ✅ **`yii2-queue`** (`yiisoft/yii2-queue: ^2.0`) — Redis-backed durable queue, retry, exponential backoff
 - ✅ Per-row sync metadata: `_sync` (bool), `_sync_status` (5 ta enum), `_qid` (queue task id)
@@ -406,8 +406,8 @@ curl http://localhost:8081/actuator/metrics/employee.sync.duration
 - `domain/src/main/java/uz/hemis/domain/entity/employee/EmployeeJobs.java` — target entity (V004)
 - `domain/src/main/resources/db/changelog/changesets/schema/V004_create_employee.sql` — base schema
 - `domain/src/main/resources/db/changelog/changesets/schema/V010_create_university_buildings.sql` — sync metadata pattern
-- `/home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php` — Univer-side sender (1764 lines)
-- `/home/adm1n/projects/startup/univer/common/config/hemis.php` — Univer sync model registry (`EEmployee`, `EEmployeeMeta`)
+- `/home/adm1n/projects/startup/hemis-univer/common/components/hemis/HemisApi.php` — Univer-side sender (1764 lines)
+- `/home/adm1n/projects/startup/hemis-univer/common/config/hemis.php` — Univer sync model registry (`EEmployee`, `EEmployeeMeta`)
 
 ### Books / Patterns
 - Chris Richardson, *Microservices Patterns* (2018) — Outbox, Saga, CQRS chapters 4 & 5

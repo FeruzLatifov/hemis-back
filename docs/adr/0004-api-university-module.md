@@ -96,5 +96,5 @@ Bajarildi:
 
 - Code: `api-university/src/main/java/uz/hemis/api/university/`
 - RFC 6749: OAuth 2.0 Authorization Framework (§4.4 client_credentials)
-- PHP integration: `/home/adm1n/projects/startup/univer/common/components/hemis/HemisApi.php:728`
+- PHP integration: `/home/adm1n/projects/startup/hemis-univer/common/components/hemis/HemisApi.php:728`
 - Related: ADR-0005 (OAuth client_credentials migration plan)
