@@ -12,6 +12,11 @@
 --   - Outbound event push to'xtaydi
 -- =====================================================
 
+-- 0. webhook_apply_result (K2) indekslari va jadvali
+DROP INDEX IF EXISTS idx_apply_result_failed;
+DROP INDEX IF EXISTS uq_apply_result_event_university;
+DROP TABLE IF EXISTS webhook_apply_result;
+
 -- 1. webhook_delivery_log indekslari va jadvali
 DROP INDEX IF EXISTS idx_webhook_delivery_university;
 DROP INDEX IF EXISTS idx_webhook_delivery_dlq;

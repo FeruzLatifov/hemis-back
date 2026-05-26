@@ -22,8 +22,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.hemis.common.dto.ResponseWrapper;
+import uz.hemis.common.dto.webhook.WebhookApplyResultDto;
 import uz.hemis.common.dto.webhook.WebhookDeliveryLogDto;
 import uz.hemis.common.dto.webhook.WebhookSecretResponse;
 import uz.hemis.common.dto.webhook.WebhookTargetCreateRequest;
@@ -175,6 +177,29 @@ public class WebhookTargetController {
             @PageableDefault(size = 50) Pageable pageable
     ) {
         return ResponseEntity.ok(ResponseWrapper.success(service.findDlqEntries(pageable)));
+    }
+
+    // =====================================================
+    // Apply result views (K2) — "qaysi OTM da apply fail bo'ldi" (delivered != applied)
+    // =====================================================
+
+    @GetMapping("/apply-results")
+    @PreAuthorize("hasAuthority('webhook.view')")
+    @Operation(summary = "Univer apply natijalari (ack) — status filter ixtiyoriy ('applied'/'failed')")
+    public ResponseEntity<ResponseWrapper<Page<WebhookApplyResultDto>>> applyResults(
+            @RequestParam(required = false) String status,
+            @PageableDefault(size = 50) Pageable pageable
+    ) {
+        return ResponseEntity.ok(ResponseWrapper.success(service.listApplyResults(status, pageable)));
+    }
+
+    @GetMapping("/events/{eventId}/apply-results")
+    @PreAuthorize("hasAuthority('webhook.view')")
+    @Operation(summary = "Event uchun OTM apply natijalari (delivered != applied drill-down)")
+    public ResponseEntity<ResponseWrapper<List<WebhookApplyResultDto>>> applyResultsByEvent(
+            @PathVariable UUID eventId
+    ) {
+        return ResponseEntity.ok(ResponseWrapper.success(service.applyResultsByEvent(eventId)));
     }
 
     // =====================================================

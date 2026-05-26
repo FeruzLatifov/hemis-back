@@ -186,3 +186,42 @@ CREATE INDEX IF NOT EXISTS idx_webhook_delivery_dlq
 -- University filter (per-OTM hisobot)
 CREATE INDEX IF NOT EXISTS idx_webhook_delivery_university
     ON webhook_delivery_log (university_code, dispatched_at DESC);
+
+-- =====================================================
+-- 3. webhook_apply_result — APPLY natijasi (K2, univer → markaz ack)
+-- =====================================================
+-- "Delivered ≠ applied" gap'ini yopadi: webhook_delivery_log faqat YETKAZISHNI
+-- (HTTP 2xx) kuzatadi. Univer async apply qiladi — apply muvaffaqiyatsiz bo'lsa
+-- (h_* jadval yo'q, DB xato), markaz buni bilmasdi. Endi univer ApplyHemisEventJob
+-- apply tugagach markazga HMAC-imzolangan ack POST qiladi → bu jadvalga yoziladi.
+-- Adminka endi "qaysi OTM da apply muvaffaqiyatsiz" ni ko'rsata oladi.
+CREATE TABLE IF NOT EXISTS webhook_apply_result (
+    id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- outbox_event.id (soft FK — outbox retention 30 kun, natija audit uchun saqlanadi)
+    event_id        UUID         NOT NULL,
+    university_code VARCHAR(10)  NOT NULL,
+
+    -- Univer-side apply natijasi
+    status          VARCHAR(20)  NOT NULL,   -- 'applied' | 'failed'
+    applied_at      TIMESTAMP,               -- univer apply tugagan vaqt (applied bo'lsa)
+    error_message   TEXT,                    -- univer apply xatosi (failed bo'lsa, qisqa)
+
+    reported_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- markaz ack qabul qilgan vaqt
+
+    CONSTRAINT chk_apply_result_status
+        CHECK (status IN ('applied', 'failed'))
+);
+
+COMMENT ON TABLE webhook_apply_result IS
+    'Univer-side apply natijasi (K2). Univer ApplyHemisEventJob HMAC-imzolangan ack POST
+     qiladi → "delivered != applied" observability gap''ini yopadi. ADR-0012.';
+
+-- Bir event × OTM = bitta natija (oxirgi ack upsert qiladi)
+CREATE UNIQUE INDEX IF NOT EXISTS uq_apply_result_event_university
+    ON webhook_apply_result (event_id, university_code);
+
+-- Admin: "qaysi OTM da apply fail bo'ldi?"
+CREATE INDEX IF NOT EXISTS idx_apply_result_failed
+    ON webhook_apply_result (university_code, reported_at DESC)
+    WHERE status = 'failed';

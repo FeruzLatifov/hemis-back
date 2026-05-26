@@ -153,6 +153,7 @@ public class SecurityConfig {
                                 "/api/v1/external/oauth/token",    // External systems client_credentials
                                 "/api/v1/university/employees/sync", // DEV-ONLY: Univer e2e employee sync test (X-University-Code header)
                                 "/api/v1/university/buildings/sync", // DEV-ONLY: Univer e2e building sync test (X-University-Code header)
+                                "/api/v1/university/hemis-events/ack", // K2: univer apply-status ack (HMAC-signed, JWT emas)
                                 "/app/rest/v2/services/captcha/**", // Captcha endpoints (public)
                                 "/app/rest/v2/services/classifiers/info",     // Classifier info (PHP kod auth headersiz yuboradi)
                                 "/app/rest/v2/services/classifiers/allItems", // Classifier allItems (PHP kod auth headersiz yuboradi)
@@ -176,6 +177,9 @@ public class SecurityConfig {
                             .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                             .requestMatchers("/api/v1/university/health").permitAll()
                             .requestMatchers("/app/rest/v2/health/**").permitAll()
+                            // K2: univer apply-status ack — HMAC (X-Hemis-Signature) WebhookAckService'da
+                            // verify qilinadi (JWT emas, secret_enc bilan). Inbound webhook'ning teskarisi.
+                            .requestMatchers("/api/v1/university/hemis-events/ack").permitAll()
                             // Univer sync endpoints — OAuth client_credentials majburiy (ADR-0005).
                             // Avval permitAll edi (DEV-ONLY izoh bilan), lekin profile guard yo'q edi
                             // → CRITICAL: 224 OTM nomidan har kim PINFL massa yuborishi mumkin edi.

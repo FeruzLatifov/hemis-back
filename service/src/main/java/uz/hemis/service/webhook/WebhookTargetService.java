@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.dto.webhook.WebhookApplyResultDto;
 import uz.hemis.common.dto.webhook.WebhookDeliveryLogDto;
 import uz.hemis.common.dto.webhook.WebhookSecretResponse;
 import uz.hemis.common.dto.webhook.WebhookTargetCreateRequest;
@@ -14,10 +15,12 @@ import uz.hemis.common.dto.webhook.WebhookTargetUpdateRequest;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.university.University;
+import uz.hemis.domain.entity.webhook.WebhookApplyResult;
 import uz.hemis.domain.entity.webhook.WebhookDeliveryLog;
 import uz.hemis.domain.entity.webhook.WebhookDeliveryStatus;
 import uz.hemis.domain.entity.webhook.WebhookTarget;
 import uz.hemis.domain.repository.UniversityRepository;
+import uz.hemis.domain.repository.webhook.WebhookApplyResultRepository;
 import uz.hemis.domain.repository.webhook.WebhookDeliveryLogRepository;
 import uz.hemis.domain.repository.webhook.WebhookTargetRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +46,7 @@ public class WebhookTargetService {
     private final WebhookTargetRepository targetRepository;
     private final UniversityRepository universityRepository;
     private final WebhookDeliveryLogRepository deliveryLogRepository;
+    private final WebhookApplyResultRepository applyResultRepository;
     private final WebhookSecretService secretService;
     private final WebhookSecretCipher secretCipher;
     private final WebhookSecretVault secretVault;
@@ -318,6 +322,38 @@ public class WebhookTargetService {
                 l.getCompletedAt(),
                 l.getNextRetryAt(),
                 l.getSentryEventId()
+        );
+    }
+
+    // =====================================================
+    // Apply result views (K2) — "qaysi OTM da apply fail bo'ldi"
+    // =====================================================
+
+    /** Apply natijalar ro'yxati (status filter ixtiyoriy, masalan 'failed'). */
+    @Transactional(readOnly = true)
+    public Page<WebhookApplyResultDto> listApplyResults(String status, Pageable pageable) {
+        Page<WebhookApplyResult> page = (status != null && !status.isBlank())
+                ? applyResultRepository.findByStatusOrderByReportedAtDesc(status, pageable)
+                : applyResultRepository.findAllByOrderByReportedAtDesc(pageable);
+        return page.map(this::toApplyDto);
+    }
+
+    /** Bitta event bo'yicha barcha OTM apply natijasi (event drill-down). */
+    @Transactional(readOnly = true)
+    public List<WebhookApplyResultDto> applyResultsByEvent(UUID eventId) {
+        return applyResultRepository.findByEventIdOrderByUniversityCodeAsc(eventId).stream()
+                .map(this::toApplyDto)
+                .toList();
+    }
+
+    private WebhookApplyResultDto toApplyDto(WebhookApplyResult r) {
+        return new WebhookApplyResultDto(
+                r.getEventId(),
+                r.getUniversityCode(),
+                r.getStatus(),
+                r.getAppliedAt(),
+                r.getErrorMessage(),
+                r.getReportedAt()
         );
     }
 }
