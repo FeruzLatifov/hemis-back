@@ -43,6 +43,13 @@ related:
 >
 > **2026-05-19 revision — `employee_sync_log` jadvali DROP qilindi (V014 ichiga inline):**
 > Tahlilda jadval 80% duplikat ekanligi aniqlandi (`activity_log` + `error_log` + Sentry birga 9 maydondan 7 tasini qoplaydi). Faqat unique qolardi: `source_uid` (allaqachon `employee_job.source_uid` da bor), `SKIP_UNCHANGED`/`CONFLICT_OVERWRITE` enum'lari (`content_hash` skip semantikasi bilan ifodalanadi). Jadval ADR-0003 ham buzgan — audit hot OLTP DB ichida emas, alohida `hemis_audit` DB'da bo'lishi shart. Yechim: `EmployeeSyncProcessor.process()` ga `@Audited(action=UPDATE, entity="Employee", entityClass=Employee.class)` annotation qo'shildi — sync event'lar avtomatik `activity_log` (hemis_audit DB) ga yoziladi. Production DB'da `employee_sync_log` bo'sh edi (Processor hech qachon yozmagan), shuning uchun ma'lumot yo'qotilmadi.
+>
+> **2026-05-25 revision — Job (ish joyi) tarixi + defensive code resolution:**
+> Asl sync faqat xodim *shaxsiy* ma'lumotini olib kelardi (`employee_job` row'lar `department_code`/`position_code`=NULL bo'lib bo'sh yaratilardi). Endi to'liq ish joyi sync qilinadi, legacy `EmployeeMetaUpdater` (`hemishe_e_employee_jobs`) yonida **parallel**, uni o'zgartirmasdan:
+> - **Manba o'zgardi:** Univer console (`SyncEmployeesToHemisController`) endi `e_employee` o'rniga `e_employee_meta` JOIN `e_employee` (+ `e_department`) bo'yicha iteratsiya qiladi. Har meta yozuvi = bitta `employee_job` → ish joyi **tarixi** saqlanadi. `source_uid = univer-{code}-e_employee_meta-{metaId}` (avval `e_employee-{id}`).
+> - **Normalizatsiya:** bir shaxs → ko'p job, `employee.pinfl` (UNIQUE) orqali bittala `employee` rekordga bog'lanadi (`employee_job.employee_id` FK).
+> - **Pasport tasdiqlash upstream:** shaxsiy ma'lumot allaqachon Univer tomonidan markaz `v2/services/passport-data/*` (MSPD) orqali olingan va tasdiqlangan. Sync paytida markaz **qayta MSPD chaqirmaydi** (100k+ ortiqcha chaqiruvni oldini olish) — kelgan ma'lumotga ishonadi.
+> - **Defensive code resolution** (`EmployeeJobUpsertRepositoryImpl.UPSERT_SQL`): `department_code`/`position_code` endi resolving subquery orqali o'tadi — markaz klassifikatorida mavjud bo'lsa kod, aks holda NULL (FK violation YO'Q, batch DLQ'ga tushmaydi). `position_type_code` — Univer yubormaydi, `h_position.type_code` dan derive qilinadi (klassifikator kodlari bitta vazirlik manbasidan: Univer `h_teacher_position_type` = markaz `h_position`, masalan `16`=Kafedra mudiri). Schema o'zgarmadi, V014 frozen.
 
 ## Context
 

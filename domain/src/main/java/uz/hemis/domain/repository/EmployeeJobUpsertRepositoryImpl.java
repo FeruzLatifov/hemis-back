@@ -13,6 +13,12 @@ import java.util.UUID;
 @Repository
 public class EmployeeJobUpsertRepositoryImpl implements EmployeeJobUpsertRepository {
 
+    // Defensive code-resolution: Univer per-OTM kod yuboradi (klassifikator markazdan
+    // tarqatilgani uchun odatda mos), lekin drift bo'lsa (markaz klassifikatorida hali
+    // yo'q kod) xom INSERT FK violation berib butun batch'ni DLQ'ga tushirardi. Shuning
+    // o'rniga har FK kod resolving subquery orqali o'tadi → mavjud bo'lsa kod, aks holda
+    // NULL (FK nullable). position_type_code Univer'dan kelmaydi — h_position.type_code
+    // dan derive qilinadi (explicit kelsa, COALESCE u bilan ustun).
     private static final String UPSERT_SQL = """
             INSERT INTO employee_job (
                 id, employee_id, university_code, source_uid,
@@ -22,7 +28,13 @@ public class EmployeeJobUpsertRepositoryImpl implements EmployeeJobUpsertReposit
                 version, created_at, created_by, updated_at, updated_by
             ) VALUES (
                 gen_random_uuid(), :employeeId, :universityCode, :sourceUid,
-                :departmentCode, :positionCode, :positionTypeCode,
+                (SELECT d.code FROM hemishe_e_university_department d
+                    WHERE d.code = :departmentCode AND d.delete_ts IS NULL),
+                (SELECT p.code FROM h_position p WHERE p.code = :positionCode),
+                COALESCE(
+                    (SELECT pt.code FROM h_position_type pt WHERE pt.code = :positionTypeCode),
+                    (SELECT p.type_code FROM h_position p WHERE p.code = :positionCode)
+                ),
                 :startDate, :endDate, :contractNumber,
                 :isCurrent, :now,
                 1, :now, :auditUser, NULL, NULL
