@@ -9,6 +9,8 @@ affects:
   - domain
   - service
   - api-web
+  - api-university
+  - security
   - common
 liquibase:
   - V015_create_webhook_infrastructure.sql
@@ -17,6 +19,7 @@ entities:
   - WebhookTarget
   - WebhookDeliveryLog
   - WebhookDeliveryStatus
+  - WebhookApplyResult
 verification: |
   # 1. Schema
   ./gradlew :domain:liquibaseStatus | grep V015
@@ -225,6 +228,54 @@ curl http://localhost:8081/api/v1/web/admin/webhooks/{id}/deliveries \
 # 5. Prometheus metrics
 curl http://localhost:8081/actuator/prometheus | grep hemis_webhook
 ```
+
+## Revisions
+
+### 2026-05-27 — Post-implementation DB-architecture hardening
+
+Implementatsiyadan keyingi DB-arxitektura tahlili 6 ta tuzatishni keltirib chiqardi (dev/test, pre-launch):
+
+**K1 — Secret persistence (in-memory → shifrlangan DB).**
+`WebhookSecretVault` plain secret'ni `ConcurrentHashMap`'da saqlardi → application restart'da
+224 OTM ning HMAC imzosi sinardi (markaz signature qo'ya olmaydi). Endi plain secret
+`webhook_target.secret_enc` ustunida **AES-256-GCM** (`WebhookSecretCipher`,
+`Encryptors.delux`) bilan saqlanadi; vault cache miss'da DB'dan **lazy decrypt** qilib
+rehydrate qiladi (restart-safe). Kalit: `HEMIS_WEBHOOK_SECRET_ENCRYPTION_KEY` — **prod'da env
+majburiy**, yo'qolsa barcha secret rotation kerak. `secret_hash` (bcrypt) **deprecate** —
+markaz imzo qo'yadi, verify qilmaydi → bcrypt bu use-case uchun keraksiz. Kelajak: Vault/KMS.
+
+**K2 — Apply-status callback ("delivered ≠ applied" gap'i).**
+`webhook_delivery_log` faqat YETKAZISHNI (HTTP 2xx) kuzatardi. Univer async apply qiladi —
+apply muvaffaqiyatsiz bo'lsa (h_* jadval yo'q, DB xato) markaz bilmasdi. Endi univer
+`ApplyHemisEventJob` apply tugagach markazga **HMAC-imzolangan ack** POST qiladi
+(`POST /api/v1/university/hemis-events/ack`, permitAll + HMAC verify `secret_enc` bilan) →
+`webhook_apply_result` (PK `event_id`+`university_code`). Auth: **HMAC qayta ishlatish**
+(inbound webhook'ning teskarisi, simmetrik) — OAuth o'rniga (worker'da token kerak emas).
+Adminka: `GET /apply-results` + deliveries drawer'da "Apply" ustuni (Applied/Apply failed/No ack).
+
+**Y1 — Lean logging (Sentry vs DB chegarasi).**
+`webhook_delivery_log` aktiv operatsion holat (retry/DLQ/idempotency'ni boshqaradi) — Sentry
+uni almashtirmaydi. Lekin overlap kamaytirildi: DB'da to'liq stack o'rniga qisqa `error_message`
++ `sentry_event_id` cross-link; retention status bo'yicha farqlangan (`@Scheduled`):
+**SUCCESS 30 kun, FAILED 90 kun, DLQ saqlanadi**. Partitioning ATAYLAB qo'shilmadi — bu jadval
+≈8M/yil, domain konvensiyasi partitioning'ni >100M uchun belgilaydi (premature optimization).
+
+**O1 — Config drift.** `webhook_target.max_retries` DEFAULT 5→3 (entity/service/`application.yml`
+`max-attempts` bilan moslashtirildi, ADR-0012 trim 2026-05-18).
+
+**O3 — OTM existence validatsiya.** `WebhookTargetService.create` endi `universityRepository.existsByCode`
+bilan tekshiradi (orphan target oldini olish). Frozen `hemishe_e_university`'ga hard FK QO'YILMADI
+(code unique key emas, frozen schema) — app-layer validatsiya.
+
+**O4 — event_type lug'ati (canonical).** Ikki lug'at parallel ishlatiladi:
+- `outbox_event.event_type` ∈ `{created, updated, deleted, synced, ...}` (DB CHECK, generic domain event).
+- **Wire/delivery `event_type` = `{aggregate}.updated`** (masalan `classifier.updated`, `rule.push`,
+  `otm.blocked`) — `WebhookFanoutConsumer` outbox event'ni shu konvensiyaga normallashtiradi.
+  Univer `ApplyHemisEventJob` aynan shu wire formatда switch qiladi. **Canonical:** tashqi kontrakt
+  (univer ko'radigan) doim `{aggregate}.updated`.
+
+Yangi jadval: `webhook_apply_result`. Yangi komponentlar: `WebhookSecretCipher`, `WebhookAckService`,
+`WebhookAckController` (api-university). Schema o'zgarishlari `V015` ichida (pre-launch, additive fayl emas).
 
 ## References
 
