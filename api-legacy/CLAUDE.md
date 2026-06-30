@@ -253,7 +253,7 @@ import uz.hemis.domain.entity.legacy.employee.LegacyEmployeeJobs;  // hemishe_e_
 | 9 | **Error CUBA format** | `{error, details, exception}` (NOT `{success: false, error: {...}}`) | Alohida `@RestControllerAdvice(basePackages = "uz.hemis.api.legacy")` |
 | 10 | **Pagination CUBA** | `?offset=0&limit=20` + `{data: [...], totalCount: N}` | Spring `Pageable.of(offset/limit, limit)` manual conversion |
 
-**261 ta controller `toMap()` patterni ishlatadi — MapStruct YO'Q api-legacy'da.**
+**126 `@RestController` (82 fayl `toMap()`/`LinkedHashMap`) patterni ishlatadi — MapStruct YO'Q api-legacy'da.** (261 = old-hemis CUBA controller soni, api-legacy emas.)
 
 ---
 

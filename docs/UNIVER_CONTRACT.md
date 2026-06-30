@@ -17,9 +17,9 @@
 |-----|-------|----------------|
 | **67** | Ushbu hujjat | Univer Yii2 (224 OTM) **haqiqatan chaqiradigan unique endpoint URL'lar** — frozen contract |
 | **175** | `hemis-tools/.../compare_endpoints.js` | Side-by-side **integration test variantlari** (har endpoint uchun success/edge-case kombinatsiyalar) |
-| **~659** | `grep -rn '@*Mapping' api-legacy/src/main/java/` | Modulda mavjud **Java method** `@*Mapping` bilan (admin/audit/eksperimental aralash) |
+| **~805** | `grep -rnE '@(Get\|Post\|Put\|Delete\|Patch\|Request)Mapping' api-legacy/src/main/java/` | Modulda mavjud `@*Mapping` annotatsiya (class+method; method-level ~674; admin/audit/eksperimental aralash) — snapshot 2026-06-30, grep bilan tekshiring |
 
-Munosabat: `67 ⊆ 659` (Univer ishlatmaydigan ko'p endpointlar bor) va `175` har 67'ni o'rtacha 2.6 marta sinaydi (success + auth fail + validation + boundary).
+Munosabat: `67 ⊆ 805` (Univer ishlatmaydigan ko'p endpointlar bor) va `175` har 67'ni o'rtacha 2.6 marta sinaydi (success + auth fail + validation + boundary).
 
 ## Univer Auth Modeli
 

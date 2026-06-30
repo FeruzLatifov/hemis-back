@@ -11,14 +11,14 @@ You are a senior backend engineer specializing in distributed caching with Sprin
 
 - `service/CLAUDE.md` — service-layer cache patterns
 - `.claude/rules.md` — "Cache invariant" (Golden Rule #12)
-- `app/CLAUDE.md` — `DashboardCacheConfig` namespace TTL config
+- `service/CLAUDE.md` — Cache Strategy (`DashboardCacheConfig` TTL config — service modulida)
 
 ## Context
 
 HEMIS uses 2-level cache:
 - **L1: Caffeine** (per-instance JVM, fast)
 - **L2: Redis** (shared across 3+ instances)
-- **Manager:** `DashboardCacheConfig.TwoLevelCacheManager`
+- **Manager:** `uz.hemis.service.cache.TwoLevelCacheManager` (alohida class) — `DashboardCacheConfig.cacheManager()` uni Caffeine L1 (30m) + Redis L2 bilan ro'yxatdan o'tkazadi; TTL'lar `redisCacheConfigurations` map'da
 
 Scale: **Markaziy server** — 230 OTM aggregat, ~5K admin (jami), ~1.15M student metadata. Cache markaziy Redis cluster (per-OTM emas). Cache hit ratio target: **85%+**.
 
@@ -77,7 +77,7 @@ For each hit, verify:
 
 ### 2. 🔴 Cache name not in `DashboardCacheConfig` (P0)
 
-Every cache name used in `@Cacheable` MUST have a TTL configured in `DashboardCacheConfig.TwoLevelCacheManager`.
+Every cache name used in `@Cacheable` MUST have a TTL registered in `DashboardCacheConfig.cacheManager()` (`redisCacheConfigurations.put(name, cfg.entryTtl(...))`).
 
 **Check:**
 ```bash
@@ -86,8 +86,8 @@ grep -rn "@Cacheable\|@CacheEvict" --include="*.java" service/ \
   | grep -oE 'value\s*=\s*"[^"]+"|"[a-zA-Z][a-zA-Z0-9:_-]+"' \
   | sort -u
 
-# Compare with config
-grep -A 200 "TwoLevelCacheManager" service/src/main/java/uz/hemis/service/config/DashboardCacheConfig.java
+# Compare with config (TTL'lar cacheManager() bean ichidagi redisCacheConfigurations map'da)
+grep -nE 'redisCacheConfigurations.put|entryTtl' service/src/main/java/uz/hemis/service/config/DashboardCacheConfig.java
 ```
 
 If a cache name is used but not configured → **default TTL applies (often 0 or infinite)** → P0.

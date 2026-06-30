@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 /**
  * HEMIS Main Application v2.0.0 - Clean Architecture
  *
- * <p>Spring Boot 3.5.7 + JDK 21 LTS - Modular Monolith Architecture</p>
+ * <p>Spring Boot 4.0.6 + Java 25 LTS - Modular Monolith Architecture</p>
  *
  * <p><strong>CRITICAL CONSTRAINTS:</strong></p>
  * <ul>

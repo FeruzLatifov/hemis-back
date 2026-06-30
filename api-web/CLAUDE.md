@@ -5,6 +5,22 @@
 > Per-OTM frontend deploy YO'Q — bitta vazirlik web app, OTM admin'lar `university_code` filter bilan o'z scope'ini ko'radi.
 >
 > **Sof REST + JSON, Swagger to'liq, ResponseWrapper.** URL: `/api/v1/web/*`
+>
+> **Base package:** `uz.hemis.web.controller` (controllerlar), `uz.hemis.web.service` (DTO mapping + auth), `uz.hemis.web.dto`.
+
+---
+
+## Modul holati (kod bilan tasdiqlangan)
+
+- **19 controller / 124 endpoint / 101 `@PreAuthorize`** (`uz.hemis.web.controller.*`).
+- **Admin/maxsus controllerlar:**
+  - `OutboxAdminController` → `/api/v1/web/admin/outbox`
+  - `WebhookTargetController` → `/api/v1/web/admin/webhooks`
+  - `AuditLogController` → `/api/v1/web/audit`
+  - `DashboardController` → `/api/v1/web/dashboard`
+- **Auth = JWT HTTPOnly cookie:** `accessToken`/`refreshToken` cookie'lar `SameSite` bilan `WebAuthCookieService` orqali set/clear qilinadi (`Authorization: Bearer` header EMAS, asosiy oqim cookie).
+- **MapStruct YO'Q** — entity↔DTO mapping `uz.hemis.web.service.*` ichida qo'lda yoziladi (service'ga delegate).
+- **POI dependency** (`org.apache.poi:poi:5.5.1`, `poi-ooxml`) `build.gradle.kts`'da deklaratsiya qilingan, lekin hozircha kodda **ishlatilmagan** (Excel export rejada).
 
 ---
 
@@ -190,11 +206,15 @@ public class StudentController {
 
 ---
 
-### 6. Idempotency Key (POST/PUT)
+### 6. Idempotency Key (POST/PUT) — ⚠️ REJADA, IMPLEMENT QILINMAGAN
 
-Tarmoq xatosi → klient retry → duplikat yaratilmasligi uchun:
+> **Status:** Hozircha **kodda YO'Q**. `IdempotencyService` / idempotency-key handling repoda mavjud emas —
+> hech qaysi controller `Idempotency-Key` header'ni o'qib duplikatni oldini olmaydi. Quyidagi snippet —
+> kelajakda qo'shilishi mumkin bo'lgan **maqsadli pattern** (target), joriy holat emas. Yangi POST yozayotganda
+> bu pattern majburiy emas; kerak bo'lsa avval `IdempotencyService` qo'shilishi kerak.
 
 ```java
+// MAQSADLI PATTERN (hozircha mavjud emas — idempotencyService yozilishi kerak)
 @PostMapping
 @PreAuthorize("hasAuthority('students.create')")
 public ResponseEntity<...> create(
@@ -243,7 +263,7 @@ public class StudentController {
 }
 ```
 
-**Swagger UI:** `http://localhost:8081/api/swagger-ui.html`
+**Swagger UI:** `http://localhost:8081/swagger-ui.html` (server context-path `/`, prefiks YO'Q).
 
 ---
 
@@ -323,19 +343,27 @@ public static String maskPinfl(String pinfl) {
 - `@PreAuthorize("hasAuthority('<resource>.<action>')")` har endpoint
 - Custom SpEL scope check: `@PreAuthorize("... and @<entity>Security.canEdit(#id, authentication)")`
 - `@Valid @RequestBody` + `@PageableDefault(size=20, sort="...")`
-- `Idempotency-Key` header optional (POST/PUT)
 - Return `ResponseEntity<ResponseWrapper<T>>` har doim
 
-**Global Exception Handler** (`@RestControllerAdvice(basePackages = "uz.hemis.api.web")`):
+(Eslatma: `Idempotency-Key` handling hozircha implement qilinmagan — §6 ga qarang.)
 
-| Exception | HTTP | ResponseWrapper code |
-|-----------|------|----------------------|
-| `ResourceNotFoundException` | 404 | `RESOURCE_NOT_FOUND` |
-| `MethodArgumentNotValidException` | 400 | `VALIDATION_ERROR` + field details |
-| `ConflictException` | 409 | `CONFLICT` |
-| `BusinessRuleException` | 422 | `BUSINESS_RULE_VIOLATION` |
-| `AccessDeniedException` | 403 | `FORBIDDEN` |
-| `Exception` (fallback) | 500 | `INTERNAL_ERROR` (log.error + Sentry) |
+**Exception handling — ikki bosqichli:** common `GlobalExceptionHandler` markazlashgan (umumiy xatolar:
+`ResourceNotFoundException`, `BusinessRuleException`, `AccessDeniedException`, `Exception` fallback va h.k.).
+`WebExceptionHandler` (`@RestControllerAdvice(basePackages = "uz.hemis.web.controller")`) faqat **web-spetsifik**
+xatolarni override qiladi — auth, optimistic-lock, data-integrity, validation; qolgani common handler'ga delegate.
+
+`WebExceptionHandler` (`uz.hemis.web.controller.exception.WebExceptionHandler`) handle qiladigan xatolar:
+
+| Exception | HTTP | error code |
+|-----------|------|-----------|
+| `UsernameNotFoundException`, `BadCredentialsException` | 401 | `AUTH_FAILED` (localized + Sentry) |
+| `OptimisticLockException`, `ObjectOptimisticLockingFailureException` | 409 | `OPTIMISTIC_LOCK_CONFLICT` |
+| `DataIntegrityViolationException` (FK/CHECK/UNIQUE) | 400 | `DATA_INTEGRITY_VIOLATION` |
+| `MethodArgumentNotValidException` (@Valid body) | 400 | `VALIDATION_FAILED` + field details |
+| `ConstraintViolationException` (path/param @Validated) | 400 | `CONSTRAINT_VIOLATION` |
+
+> Boshqa barcha xatolar (404, 422, 403, 500, …) common `GlobalExceptionHandler`'da markazlashgan —
+> bu yerda takrorlanmaydi.
 
 ---
 

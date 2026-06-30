@@ -13,22 +13,24 @@ import java.util.Base64;
 import java.util.HexFormat;
 
 /**
- * Legacy Password Encoder - Supports CUBA Platform (MD5, SHA-1, PBKDF2) and BCrypt formats
+ * Legacy Password Encoder - Verifies BCrypt and CUBA Platform PBKDF2 formats only
  *
- * <p><strong>Supported Formats:</strong></p>
+ * <p><strong>Verified Formats (matches() == true possible):</strong></p>
  * <ol>
  *   <li><strong>BCrypt:</strong> $2a$10$... (new system - users table)</li>
- *   <li><strong>CUBA MD5:</strong> 32-char hex string (old-hemis default - CUBA 7.x)</li>
- *   <li><strong>CUBA SHA-1:</strong> 40-char hex string (older CUBA versions)</li>
  *   <li><strong>CUBA PBKDF2:</strong> hash:salt:iteration (colon-separated)</li>
  * </ol>
  *
+ * <p><strong>Rejected legacy formats (OWASP A02 — 2025):</strong> plain MD5 (32-char hex)
+ * and SHA-1 (40-char hex) are detected only to log a SECURITY event; matches() always
+ * returns {@code false}. Old CUBA users with these hashes must reset their password.</p>
+ *
  * <p><strong>Detection Logic:</strong></p>
  * <ul>
- *   <li>Starts with $2a$/$2b$/$2y$ → BCrypt</li>
- *   <li>Contains ":" with 3 parts → PBKDF2</li>
- *   <li>32-char hex string → MD5</li>
- *   <li>40-char hex string → SHA-1</li>
+ *   <li>Starts with $2a$/$2b$/$2y$ → BCrypt (verified)</li>
+ *   <li>Contains ":" with 3 parts → PBKDF2 (verified)</li>
+ *   <li>32-char hex string → MD5 (REJECTED — returns false)</li>
+ *   <li>40-char hex string → SHA-1 (REJECTED — returns false)</li>
  * </ul>
  */
 @Slf4j

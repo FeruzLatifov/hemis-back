@@ -33,7 +33,7 @@ import java.util.Optional;
  *    - External APIs: Tashqi tizimlar (S2S integration)
  *    - All APIs: To'liq hujjat (default)
  *
- * 2. Tag Hierarchy (70 kategoriya - endpoint_tester.html bilan mos)
+ * 2. Tag Hierarchy (~83 kategoriya - endpoint_tester.html bilan mos)
  *    - Raqamlangan kategoriyalar (01-70)
  *    - endpoint_tester.html bilan sinxronlashtirilgan
  *    - Clear, concise names
@@ -150,8 +150,8 @@ public class OpenApiConfig {
                 grant_type=client_credentials&client_id=CID&client_secret=SECRET
                 ```
 
-                **Token TTL:** Access — 12 soat, Refresh — 7 kun.
-                ADR-0009 (Proposed): 1 soat access TTL + refresh rotation migration kutilmoqda.
+                **Token TTL:** Access — 1 soat, Refresh — 7 kun.
+                ADR-0009 (implemented): 1 soat access TTL + refresh rotation.
 
                 Olingan token'ni "Authorize" tugmasiga kiriting (yoki `Authorization: Bearer ...` header).
 
@@ -218,7 +218,7 @@ public class OpenApiConfig {
                         - Univer Legacy: `POST /app/rest/v2/oauth/token` (Basic header — `basicAuth` scheme orqali)
                         - Univer/External: `POST /api/v1/{university|external}/oauth/token` (client_credentials)
 
-                        **TTL:** Access — 12 soat, Refresh — 7 kun (ADR-0009 1h migration kutilmoqda).
+                        **TTL:** Access — 1 soat, Refresh — 7 kun (ADR-0009 implemented).
                         """)
             )
             .addSecuritySchemes("basicAuth",
@@ -249,7 +249,7 @@ public class OpenApiConfig {
      * API Tags - endpoint_tester.html BILAN MOSLASHTIRILGAN
      * =====================================================
      *
-     * Total: 70 kategoriya (endpoint_tester.html dan)
+     * Total: ~83 kategoriya (endpoint_tester.html dan)
      * =====================================================
      */
     private List<Tag> apiTags() {

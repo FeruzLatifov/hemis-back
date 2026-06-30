@@ -8,7 +8,7 @@
 > 3. **Qoidalarni JORIY qilish** (talaba kiritish cheklash, baho o'zgartirish cheklash, vaqt cheklov)
 > 4. **Davlat tashkilotlari INTEGRATSIYA** (MyGov, MSPD, BIMM, Tax/Soliq, GUVD, OneID)
 >
-> **Univer (`/home/adm1n/projects/startup/hemis-univer`)** — **Yii2 framework + PHP 7.4**, har 230 OTM da **alohida deploy** (`hemis_337`, `hemis_401`, …, `hemis_NNN` — 224 ta Univer ishlatuvchi). Univer'lar **network REST API** orqali markaziy HEMIS-back ga ulanadi. **Univer'ni qayta yozmaymiz** — faqat backend (old-hemis) ni modernizatsiya qilamiz.
+> **Univer (`/home/adm1n/projects/startup/hemis-univer`)** — **Yii2 framework** (prod 224 OTM hozir **PHP 7.4** da ishlab turibdi; lokal `hemis-univer` stack **PHP 8.4 + Yii2 2.0.51** — modernizatsiyaga tayyorlangan), har 230 OTM da **alohida deploy** (`hemis_337`, `hemis_401`, …, `hemis_NNN` — 224 ta Univer ishlatuvchi). Univer'lar **network REST API** orqali markaziy HEMIS-back ga ulanadi. **Univer ilovasini to'liq qayta yozmaymiz** — faqat integratsiya glue (webhook receiver `HemisCallbackController`, employee sync console, OAuth client) yoziladi/tuzatiladi.
 
 Java 25 LTS + Spring Boot 4.0.6 modular monolith. PostgreSQL 18 master/replica + Redis 7.
 **Stack:** Spring Boot 4.0.6 · Liquibase 4.31.1 · MapStruct · Lombok · Auxiliary `hemis_audit` DB.
@@ -52,7 +52,7 @@ Univer eski URL bilan POST → api-legacy yangi jadvalga yozsa → Univer keying
 
 **Batafsil jadval va konventsiya:** [`api-legacy/CLAUDE.md`](api-legacy/CLAUDE.md) "Modul ↔ Jadval mosligi" + Entity nomlanish konventsiyasi (Legacy* prefiks).
 
-**Hozirgi 3 buzilgan import** (User/Employee/EmployeeJobs api-legacy ichida yangi schema): tuzatish reja [`ADR-0008`](docs/adr/0008-api-legacy-entity-rebinding.md). Pre-commit hook yangi violation'larni bloklab turadi (`scripts/git-hooks-pre-commit`).
+**ADR-0008 holati (2/3 hal qilindi):** `Employee` import olib tashlandi, `EmployeeJobs`→`LegacyEmployeeJobs` ko'chirildi. `User`→`users` — documented permanent exception (3 fayl; `check_table_mappings.sh` `ALLOWED_NEW_SCHEMA_IN_LEGACY=("User")`). Tafsilot: [`ADR-0008`](docs/adr/0008-api-legacy-entity-rebinding.md). Pre-commit hook yangi violation'larni bloklab turadi (`scripts/git-hooks-pre-commit`).
 
 ---
 
@@ -82,7 +82,7 @@ Univer eski URL bilan POST → api-legacy yangi jadvalga yozsa → Univer keying
 
 URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'chirish workflow.
 
-**Pattern:** `toMap()` + `LinkedHashMap` (NOT MapStruct — api-legacy 261 controller shu patterni ishlatadi).
+**Pattern:** `toMap()` + `LinkedHashMap` (NOT MapStruct — api-legacy 126 `@RestController`, 82 fayl shu patterni ishlatadi).
 
 **Ishlatma:** code review, schema o'zgartirish, oddiy savol — bular porting EMAS.
 
@@ -93,7 +93,7 @@ URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'ch
 
 ## Subagent, Skills va Slash Commands
 
-`.claude/agents/`: 5 ta domen-spetsifik audit agent — `cuba-format-checker`, `liquibase-reviewer`, `n-plus-one-detector` (`model: sonnet`); `security-auditor`, `cache-strategist` (`model: opus`). PR review yoki audit ishida `Task` tool orqali parallel chaqiriladi.
+`.claude/agents/`: 6 ta domen-spetsifik audit agent — `cuba-format-checker`, `liquibase-reviewer`, `n-plus-one-detector`, `webhook-outbox-reviewer` (`model: sonnet`); `security-auditor`, `cache-strategist` (`model: opus`). PR review yoki audit ishida `Task` tool orqali parallel chaqiriladi (`webhook-outbox-reviewer` — webhook/outbox/employee-sync o'zgarganda).
 
 `.claude/commands/`: `/check-coverage`, `/audit-cache` (cache-strategist agent wrapper), `/review-pr` (5 agent parallel orkestrator).
 
@@ -111,7 +111,8 @@ URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'ch
 **Backend pattern:**
 - `cache-add/` — @Cacheable + TTL + evict pair + AOP safety
 - `kafka-outbox-topic/` — outbox + producer + consumer + DLQ (ADR-0007)
-- `menu-permission-add/` — sys_menu + sys_permission + i18n (3 til)
+- `menu-permission-add/` — menu + permission + i18n (system_message, 4 til)
+- `webhook-target-add/` — yangi OTM webhook target + secret rotatsiya + HMAC (ADR-0012)
 
 **api-legacy specific:**
 - `endpoint-port/` — CUBA endpoint 1:1 port (`PORT:` trigger pattern)
@@ -138,6 +139,6 @@ Modul `CLAUDE.md` (api-legacy/service/domain/security/…) Claude tomonidan **av
 
 ## Architecture Decision Records
 
-**12 ta ADR** — [`docs/adr/README.md`](docs/adr/README.md) (ro'yxat + status). Yirik mavzular: Java 25 (0002), Audit DB isolation (0003), Klassifikator `h_*` (0006), Kafka sync (0007), JWT TTL+rotation (0009), Webhook outbound (0012).
+**13 ta ADR** — [`docs/adr/README.md`](docs/adr/README.md) (ro'yxat + status). Yirik mavzular: Java 25 (0002), Audit DB isolation (0003), Klassifikator `h_*` (0006), Kafka sync (0007), JWT TTL+rotation (0009), Webhook outbound (0012), Business rule enforcement (0013).
 
 Yangi qaror — [`docs/adr/template.md`](docs/adr/template.md) orqali. Tarix: [`CHANGELOG.md`](CHANGELOG.md).

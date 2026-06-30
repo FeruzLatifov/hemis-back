@@ -77,51 +77,42 @@ public class StudentMutableDto {  // request/response with state
 }
 ```
 
-**Eslatma:** `@Data` DTO'da OK (entity emas), lekin `record` afzal.
+**Eslatma:** `record` afzal (immutable, concise), **lekin** mavjud kod ko'pincha `@Data` class
+(Jackson/Lombok legacy moslik). Hozirgi holat: **23 record vs 58 class**, 51 fayl `@Data`. Yangi
+DTO uchun `record`'ni boshlang'ich tanlov sifatida ko'ring, eski class'larni majburan migratsiya qilmang.
 
 ---
 
 ## Exception Hierarchy
 
+Umumiy base klass **YO'Q**. `exception/` paketda **5 ta** exception, hammasi to'g'ridan-to'g'ri `RuntimeException`'dan extend qiladi + `ExceptionHandlerUtils` helper:
+
 ```
 RuntimeException
-└── HemisException (base)
-    ├── ResourceNotFoundException     → HTTP 404
-    ├── ValidationException           → HTTP 400 (Bean Validation)
-    ├── BusinessRuleException         → HTTP 422
-    ├── ConflictException             → HTTP 409
-    ├── UnauthorizedException         → HTTP 401
-    ├── ForbiddenException            → HTTP 403
-    ├── RateLimitException            → HTTP 429
-    └── ExternalIntegrationException  → HTTP 502/503
+├── BadRequestException         → HTTP 400  (message / message+cause)
+├── ValidationException         → HTTP 400  (errors: Map<String,String> field-level)
+├── BusinessRuleException       → HTTP 422  (ruleCode field, ADR-0013 rules engine)
+├── ConflictException           → HTTP 409  (duplicate PINFL / OTM code / webhook target)
+└── ResourceNotFoundException   → HTTP 404  (resourceName/fieldName/fieldValue yoki message)
 ```
 
 ```java
-public class HemisException extends RuntimeException {
-    private final String code;
-    private final List<FieldError> details;
-
-    public HemisException(String code, String message) {
-        super(message);
-        this.code = code;
-        this.details = List.of();
-    }
-
-    public HemisException(String code, String message, List<FieldError> details) {
-        super(message);
-        this.code = code;
-        this.details = details;
-    }
+// 422 — biznes qoidasi buzilgan (input sintaktik to'g'ri)
+public class BusinessRuleException extends RuntimeException {
+    private final String ruleCode;  // OTM_CLOSED, GRADE_FINALIZED, ENROLLMENT_WINDOW_EXPIRED
+    public BusinessRuleException(String ruleCode, String message) { ... }
+    public String getRuleCode() { return ruleCode; }
 }
 
-public class ResourceNotFoundException extends HemisException {
-    public ResourceNotFoundException(String entity, Object id) {
-        super("RESOURCE_NOT_FOUND", entity + " not found with id: " + id);
-    }
+// 400 — field-level xatolar bilan
+public class ValidationException extends RuntimeException {
+    private final Map<String, String> errors;
+    public ValidationException(String message, Map<String, String> errors) { ... }
+    public boolean hasErrors() { ... }
 }
 ```
 
-**Qoida:** Yangi exception qo'shsangiz, base'dan extend qiling. Generic `RuntimeException` taqiq.
+**Tafovut:** `ValidationException` (400) format/syntax · `BusinessRuleException` (422) biznes qoidasi · `ConflictException` (409) mavjud yozuv bilan to'qnashuv.
 
 ---
 
@@ -150,6 +141,21 @@ public class ResponseWrapper<T> implements Serializable {
     public static <T> ResponseWrapper<T> success(T data, String message) {
         ResponseWrapper<T> r = success(data);
         r.setMessage(message);
+        return r;
+    }
+
+    // data'siz, faqat success message
+    public static <T> ResponseWrapper<T> success(String message) {
+        ResponseWrapper<T> r = new ResponseWrapper<>();
+        r.setSuccess(true);
+        r.setMessage(message);
+        return r;
+    }
+
+    public static <T> ResponseWrapper<T> error(ErrorResponse error) {
+        ResponseWrapper<T> r = new ResponseWrapper<>();
+        r.setSuccess(false);
+        r.setError(error);
         return r;
     }
 
@@ -188,103 +194,71 @@ kontekstda (masalan SDK / shartnoma loyihasida) ishlatish imkonsiz bo'ladi.
 
 ## Constants
 
-```java
-public final class ApiConstants {
-    private ApiConstants() {}
-
-    public static final String API_V1_WEB = "/api/v1/web";
-    public static final String API_V1_EXTERNAL = "/api/v1/external";
-    public static final String API_V1_UNIVERSITY = "/api/v1/university";
-    public static final String API_LEGACY = "/app/rest/v2";
-
-    public static final String HEADER_IDEMPOTENCY = "Idempotency-Key";
-    public static final String HEADER_API_KEY = "X-API-Key";
-    public static final String HEADER_TRACE_ID = "X-Trace-Id";
-}
-
-public final class SecurityConstants {
-    private SecurityConstants() {}
-
-    public static final int BCRYPT_STRENGTH = 12;  // OWASP 2025
-    public static final long ACCESS_TOKEN_VALIDITY = 12 * 60 * 60;  // 12 hours
-    public static final long REFRESH_TOKEN_VALIDITY = 7 * 24 * 60 * 60;  // 7 days
-
-    public static final String AUTH_HEADER = "Authorization";
-    public static final String BEARER_PREFIX = "Bearer ";
-}
-```
-
-**Convention:**
-- Class `final` + private constructor (instance yaratilmasligi uchun)
-- All fields `public static final`
-- Naming: SCREAMING_SNAKE_CASE
+> **Hozircha YO'Q (rejalashtirilgan).** `ApiConstants` / `SecurityConstants` kabi markaziy
+> constant klasslar `common`'da hali mavjud emas — kerak bo'lganda konvensiya:
+> `final` class + private constructor, barcha maydon `public static final`, SCREAMING_SNAKE_CASE.
 
 ---
 
 ## Datasource Routing Annotations
 
+`datasource/` paket — **3 ta** tip (`DataSourceContextHolder` YO'Q; ThreadLocal context service modulida):
+
 ```java
-// Markup interface — service uses it; aspect (in service module) routes to replica
-@Target(ElementType.METHOD)
+// Markup annotation — service ishlatadi, aspect (service modulida) replica/master'ga yo'naltiradi
+@Target({ElementType.METHOD, ElementType.TYPE})  // METHOD + TYPE (klass-level ham)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ReadOnly {}
+public @interface ReadOnly {}   // REPLICA
 
-@Target(ElementType.METHOD)
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface WriteOnly {}
-
-// ThreadLocal context (no Spring dep)
-public class DataSourceContextHolder {
-    private static final ThreadLocal<DataSourceType> CONTEXT = new ThreadLocal<>();
-
-    public static void set(DataSourceType type) { CONTEXT.set(type); }
-    public static DataSourceType get() { return CONTEXT.get(); }
-    public static void clear() { CONTEXT.remove(); }
-}
+public @interface WriteOnly {}  // MASTER
 
 public enum DataSourceType { MASTER, REPLICA }
 ```
 
 ---
 
-## Utilities
+## Utilities, Value Objects & Validation
 
-### PINFL Helper
+`PinflUtils` / `DateUtils` **YO'Q**. Real tarkib:
 
-```java
-public final class PinflUtils {
-    private PinflUtils() {}
-
-    private static final Pattern PINFL_PATTERN = Pattern.compile("\\d{14}");
-
-    public static boolean isValid(String pinfl) {
-        return pinfl != null && PINFL_PATTERN.matcher(pinfl).matches();
-    }
-
-    public static String mask(String pinfl) {
-        if (pinfl == null || pinfl.length() != 14) return pinfl;
-        return pinfl.substring(0, 8) + "****";
-    }
-}
-```
-
-### Date Helper
+### util/ — log-safe helperlar
 
 ```java
-public final class DateUtils {
-    private DateUtils() {}
+// PII maskirovka (OWASP A09 — Logging Failures). PII log'da hech qachon plain chiqmaydi.
+PiiMask.phone("+998901234567");  // → +998*****4567
+PiiMask.email("john.doe@example.com");  // → j***@example.com
+PiiMask.name("Aliyev Ali");  // → A*********
 
-    public static final ZoneId TASHKENT = ZoneId.of("Asia/Tashkent");
-
-    public static LocalDateTime nowTashkent() {
-        return LocalDateTime.now(TASHKENT);
-    }
-
-    public static Instant toInstant(LocalDateTime ldt) {
-        return ldt.atZone(TASHKENT).toInstant();
-    }
-}
+// Native SQL table-name guard (SQL injection defense-in-depth)
+// Regex: ^(hemishe_[her]_[a-z][a-z0-9_]*|h_[a-z][a-z0-9_]*)$
+SqlTableValidator.validateLegacyClassifier(tableName);  // SQL build'dan oldin
 ```
+
+### vo/ — Value Objects + validation/ — Jakarta constraint juftlari
+
+`vo/{Pinfl, Tin, PhoneNumber, DateRange}` — type-safe value object'lar.
+Har biriga `validation/` da Jakarta constraint + validator jufti:
+
+| VO | Constraint | Validator |
+|----|-----------|-----------|
+| `Pinfl` | `@ValidPinfl` | `PinflValidator` |
+| `Tin` | `@ValidTin` | `TinValidator` |
+| `PhoneNumber` | `@ValidPhoneNumber` | `PhoneNumberValidator` |
+
+> PINFL maskirovka uchun `Pinfl.maskOrEmpty(String)` ishlatiladi (PiiMask emas).
+
+---
+
+## Notable packages
+
+- `dto/webhook/` — `WebhookAckRequest`, `WebhookApplyResultDto`, `WebhookDeliveryLogDto`,
+  `WebhookSecretResponse`, `WebhookTarget{Create,Update}Request`, `WebhookTargetDto` (ADR-0012 outbound webhook).
+- `dto/employee/` — `EmployeeSyncEvent`, `EmployeeSyncDto`, `EmployeeSyncAcceptedResponse` (employee sync).
+- `port/security/` — `UserLoadingPort`, `LegacyUserLoadingPort`, `PermissionLoadingPort`,
+  `UserIdentificationPort`; `port/cache/` — `CachePort`, `CacheEvictionPort`, `DistributedCachePort`.
+  Bular **interfeys** (hexagonal port): common implementatsiya saqlamaydi, faqat shartnoma (Spring'siz).
 
 ---
 
@@ -308,7 +282,7 @@ public final class DateUtils {
 - [ ] DTO: prefer `record` over class
 - [ ] Bean Validation annotations only (no behavior)
 - [ ] Constants: `final` class + private ctor + `public static final`
-- [ ] Exception extends `HemisException`
+- [ ] Exception: `extends RuntimeException` (umumiy base klass yo'q)
 - [ ] Unit test (no Spring context needed)
 - [ ] No business logic — only data structures + utilities
 

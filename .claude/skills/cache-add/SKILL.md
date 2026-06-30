@@ -26,7 +26,7 @@ public Foo findById(Long id) { return repo.findById(id).orElse(null); }
 
 ### 2. TTL (MAJBURIY) — `DashboardCacheConfig`
 
-`service/src/main/java/uz/hemis/service/config/DashboardCacheConfig.java` — `TwoLevelCacheManager` ro'yxatiga `<cacheName>` + TTL qo'shish:
+`service/src/main/java/uz/hemis/service/config/DashboardCacheConfig.java` — `cacheManager()` ichidagi `redisCacheConfigurations` map'iga `<cacheName>` + TTL qo'shish (`redisCacheConfigurations.put("<cacheName>", defaultConfig.entryTtl(...));`):
 
 | Data turi | TTL |
 |-----------|-----|

@@ -94,6 +94,15 @@ Task({
 })
 ```
 
+#### f) Webhook/Outbox Reviewer — if `service/webhook/**`, `service/outbox/**`, `service/employee/**`, `domain/entity/{webhook,outbox}/**`, or V014/V015 changed
+```
+Task({
+  subagent_type: "webhook-outbox-reviewer",
+  description: "Webhook/outbox pipeline review",
+  prompt: "Review webhook/outbox/employee-sync changes: <list>. Verify: outbox atomicity (Propagation.MANDATORY), idempotent upsert (ON CONFLICT), HMAC signature (outbound + ack constant-time), secret persistence (secret_enc AES-256-GCM, no plaintext), DLQ routing + FATAL Sentry, retention/max_retries config drift, K2 apply-status feedback, OTM existsByCode validation, no PINFL in Sentry."
+})
+```
+
 ### 4. Run static checks
 
 In parallel with agents:

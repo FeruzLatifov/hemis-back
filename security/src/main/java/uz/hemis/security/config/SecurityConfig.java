@@ -51,7 +51,7 @@ import java.util.List;
  *   <li>OAuth2 Resource Server with JWT validation</li>
  *   <li>Stateless session management (no cookies)</li>
  *   <li>CORS enabled for 200+ universities</li>
- *   <li>CSRF disabled (REST API, no session)</li>
+ *   <li>CSRF enabled (double-submit cookie — CookieCsrfTokenRepository)</li>
  *   <li>Method-level security with @PreAuthorize</li>
  * </ul>
  *
@@ -105,7 +105,7 @@ public class SecurityConfig {
      *   <li>JWT-based authentication (header + cookie support)</li>
      *   <li>Token blacklist support (logout revocation via Redis)</li>
      *   <li>CORS enabled for cross-origin requests</li>
-     *   <li>CSRF disabled (stateless REST API)</li>
+     *   <li>CSRF enabled (double-submit cookie — public auth/oauth/ack/swagger ignored)</li>
      *   <li>Public endpoints: /actuator/health, /actuator/info</li>
      *   <li>Protected endpoints: /app/rest/v2/** (JWT required)</li>
      *   <li>Admin endpoints: /admin/** (ROLE_ADMIN required)</li>

@@ -12,14 +12,24 @@
 ### 1. Application Configuration
 
 ```java
-@SpringBootApplication(scanBasePackages = "uz.hemis")
-@EnableJpaRepositories(basePackages = "uz.hemis.domain.repository")
-@EntityScan(basePackages = "uz.hemis.domain.entity")
-@EnableJpaAuditing
 @EnableCaching
-@EnableAsync
+@EnableJpaAuditing
 @EnableScheduling
-@EnableTransactionManagement
+@EnableAsync
+@SpringBootApplication(scanBasePackages = {
+        "uz.hemis.common",
+        "uz.hemis.security",
+        "uz.hemis.domain",
+        "uz.hemis.service",
+        "uz.hemis.api.legacy",     // CUBA entity APIs (/app/rest/v2/entities/*)
+        "uz.hemis.api.web",        // Modern UI APIs (/app/rest/v2/*, /api/v1/web/*)
+        "uz.hemis.web",            // Web authentication controllers (/api/v1/web/auth/*)
+        "uz.hemis.api.external",   // S2S integrations
+        "uz.hemis.api.university", // University APIs (/api/v1/university/*)
+        "uz.hemis.app"
+})
+@EntityScan(basePackages = "uz.hemis.domain.entity")
+@EnableJpaRepositories(basePackages = "uz.hemis.domain.repository")
 public class HemisApplication {
     public static void main(String[] args) {
         SpringApplication.run(HemisApplication.class, args);
@@ -27,7 +37,7 @@ public class HemisApplication {
 }
 ```
 
-**Diqqat:** `scanBasePackages = "uz.hemis"` — barcha modullar import bo'lishi uchun. Aks holda boshqa modul bean'lari topilmaydi.
+**Diqqat:** `scanBasePackages` — yagona `"uz.hemis"` EMAS, har modul aniq sanab o'tilgan (9 paket + app). Aks holda boshqa modul bean'lari topilmaydi. `@EnableTransactionManagement` YO'Q — Spring Boot auto-config kifoya.
 
 ### 2. Profile Strategy
 
@@ -57,108 +67,91 @@ SPRING_PROFILES_ACTIVE=migrate ./gradlew :domain:liquibaseUpdate
 
 ```java
 @RestControllerAdvice
+@Order(Ordered.LOWEST_PRECEDENCE)   // module-level @RestControllerAdvice (api-legacy/web/...) avval ishlasin
+@RequiredArgsConstructor
 @Slf4j
-@Order(Ordered.HIGHEST_PRECEDENCE)
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleNotFound(ResourceNotFoundException ex) {
+    private final ApplicationEventPublisher eventPublisher;   // 500 → ErrorEvent (audit)
+    private final ObjectMapper objectMapper;
+
+    @ExceptionHandler(ResourceNotFoundException.class)         // 404
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest req) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(ResponseWrapper.error("RESOURCE_NOT_FOUND", ex.getMessage()));
+            .body(ErrorResponse.of(404, "Not Found", ex.getMessage(), req.getRequestURI()));
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleValidation(MethodArgumentNotValidException ex) {
-        List<FieldError> details = ex.getBindingResult().getFieldErrors().stream()
-            .map(fe -> new FieldError(fe.getField(), fe.getCode(),
-                Optional.ofNullable(fe.getDefaultMessage()).orElse("Invalid")))
-            .toList();
-        return ResponseEntity.badRequest()
-            .body(ResponseWrapper.error("VALIDATION_ERROR", "Validation failed", details));
+    @ExceptionHandler(BusinessRuleException.class)             // 422 (ADR-0013) — biznes qoidasi buzilgan
+    public ResponseEntity<ErrorResponse> handleBusinessRule(BusinessRuleException ex, HttpServletRequest req) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+            .body(ErrorResponse.of(422, ex.getRuleCode(), ex.getMessage(), req.getRequestURI()));
     }
 
-    @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleConflict(ConflictException ex) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(ResponseWrapper.error("CONFLICT", ex.getMessage()));
-    }
+    @ExceptionHandler(ResponseStatusException.class)          // status/reason exception'dan; generic 500 ga tushib qolmasin
+    public ResponseEntity<?> handleResponseStatus(ResponseStatusException ex, HttpServletRequest req) { ... }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleAccessDenied(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            .body(ResponseWrapper.error("FORBIDDEN", "Insufficient permissions"));
-    }
+    @ExceptionHandler(NoResourceFoundException.class)         // missing static resource → 404 (500 emas)
+    public ResponseEntity<?> handleNoResourceFound(NoResourceFoundException ex, HttpServletRequest req) { ... }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
-        log.warn("Data integrity violation", ex);
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(ResponseWrapper.error("DATA_INTEGRITY",
-                "Operation conflicts with existing data"));  // Don't leak DB constraint name
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ResponseWrapper<Void>> handleGeneric(Exception ex) {
+    @ExceptionHandler(Exception.class)                        // 500 — fallback
+    public ResponseEntity<?> handleGenericException(Exception ex, HttpServletRequest req) {
         log.error("Unhandled exception", ex);
-        Sentry.captureException(ex);
-        return ResponseEntity.internalServerError()
-            .body(ResponseWrapper.error("INTERNAL_ERROR", "An unexpected error occurred"));
+        publishErrorEvent(ex, req);                            // audit (hemis.audit.enabled=true bo'lsa)
+        if (isLegacyEndpoint(req)) { /* CUBA {error, details} format */ }
+        String eventId = String.valueOf(Sentry.captureException(ex));
+        return ResponseEntity.internalServerError().body(ErrorResponse.of(500, "Internal Server Error",
+            "An unexpected error occurred. Please try again later.", req.getRequestURI(), eventId, "INTERNAL_ERROR"));
         // ✗ NEVER expose ex.getMessage() to client (may leak internal info)
     }
+    // Qolgan handlerlar: BadRequest/IllegalArgument/Validation/MethodArgumentNotValid/
+    // ConstraintViolation/MethodArgumentTypeMismatch (400), AccessDenied/AuthorizationDenied (403),
+    // HttpMessageNotReadable (400, legacy'da 500), HttpMediaTypeNotSupported (415).
 }
 ```
 
-**Diqqat:** `api-legacy` o'z `@RestControllerAdvice(basePackages = "uz.hemis.api.legacy")` bilan override qiladi (CUBA error format).
+**Diqqat:**
+- Body tipi `ResponseWrapper` EMAS — `uz.hemis.common.dto.ErrorResponse` (`.of(...)` / `.validationError(...)` factory).
+- `ConflictException` / `DataIntegrityViolationException` handler **YO'Q** (`ConflictException` class hatto yaratilmagan — `application.yml` Sentry ignore'da TODO).
+- Legacy CUBA error format **alohida advice EMAS** — shu handler ichida inline `isLegacyEndpoint(req)` tekshiruvi orqali (`/app/rest/v2/`, `/rest/v2/` → `{error, details}` shape). Modul-darajadagi `LegacyExceptionHandler` (api-legacy) o'z scope'ida ustun.
 
 ### 4. Filter Chain Order
 
+Real fayllar: `app/filter/TraceIdFilter.java` + `app/filter/AuditRequestFilter.java`
+(ikkalasi ham `@Component extends OncePerRequestFilter`). `FilterChainConfig` /
+`RequestLoggingFilter` class **YO'Q** — quyidagi `@Order` to'g'ridan-to'g'ri
+filter class'da qo'yilgan, alohida registration config emas.
+
 ```java
-@Configuration
-public class FilterChainConfig {
-
-    // Order: First = outermost (runs first on request, last on response)
-    @Bean public FilterRegistrationBean<TraceIdFilter> traceIdFilter() {
-        FilterRegistrationBean<TraceIdFilter> reg = new FilterRegistrationBean<>(new TraceIdFilter());
-        reg.setOrder(Ordered.HIGHEST_PRECEDENCE);  // 1st - inject traceId to MDC
-        return reg;
-    }
-
-    @Bean public FilterRegistrationBean<RequestLoggingFilter> requestLogging() {
-        FilterRegistrationBean<RequestLoggingFilter> reg = new FilterRegistrationBean<>(new RequestLoggingFilter());
-        reg.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
-        return reg;
-    }
-
-    // RateLimitFilter — security/filter/ modulida @Component, auto-registratsiya
-    // (default order). Agar explicit order kerak bo'lsa, FilterRegistrationBean
-    // bilan inject qilib o'rab oling va auto-registratsiyani o'chiring:
-    @Bean public FilterRegistrationBean<RateLimitFilter> rateLimitRegistration(RateLimitFilter filter) {
-        FilterRegistrationBean<RateLimitFilter> reg = new FilterRegistrationBean<>(filter);
-        reg.setOrder(Ordered.HIGHEST_PRECEDENCE + 2);  // Before auth — fail fast
-        return reg;
-    }
-    // Spring Security filters here (auto-ordered)
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)   // 1-o'rin — traceId MDC'ga (har log uchun)
+public class TraceIdFilter extends OncePerRequestFilter {
+    // X-Request-ID / X-Trace-Id header'dan oladi yoki 8-char UUID generate qiladi,
+    // MDC.put("traceId", ...) + response.setHeader("X-Request-ID", ...)
 }
+
+@Component   // AuditRequestFilter — body capture (ContentCachingRequestWrapper) + audit log
+public class AuditRequestFilter extends OncePerRequestFilter { ... }
 ```
 
-**Order:**
-1. TraceId injection (MDC for logging)
-2. Request logging (before auth — log even unauthorized)
-3. Rate limit (before auth — protect login from brute force)
+**Order (haqiqiy):**
+1. TraceId injection (MDC for logging) — `HIGHEST_PRECEDENCE`
+2. Audit request (body capture; `hemis.audit.enabled` bilan gated)
+3. Rate limit (security modulida, before auth — login brute-force himoyasi)
 4. Spring Security (JWT validation, @PreAuthorize)
 5. Controller dispatch
 
 ### 5. Bean Configuration Centralization
 
-```java
-// ✓ TO'G'RI — config in dedicated class
-@Configuration
-public class RestClientConfig {
-    @Bean
-    public RestClient ministryRestClient() { ... }
+Real S2S HTTP client config: `app/config/RestTemplateConfig.java` (`RestClientConfig`
+EMAS) — Apache HttpClient 5 connection pool + timeout bilan bitta `RestTemplate` bean.
+Quyidagi `RestClient` misol **illustrativ** (bir nechta named client pattern):
 
+```java
+// ✓ TO'G'RI — config in dedicated class (haqiqiy: RestTemplateConfig)
+@Configuration
+public class RestTemplateConfig {
     @Bean
-    public RestClient mspdRestClient() { ... }
+    public RestTemplate restTemplate() { /* HttpClient 5 pool + timeout */ }
 }
 
 // ✗ XATO — bean in arbitrary class
@@ -193,14 +186,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,liquibase
+        include: health,info,metrics,mappings,liquibase
+        # prometheus DEFERRED — Spring Boot 4 micrometer-registry-prometheus dep conflict.
+        # "mappings" bor (endpoint inventarizatsiya), "prometheus" hozircha YO'Q.
   endpoint:
     health:
       show-details: when-authorized  # Anonymous: just status
-      probes.enabled: true             # k8s readiness/liveness
-    env.enabled: true
+      probes:
+        enabled: true                # k8s readiness/liveness
   health:
     db.enabled: true
+    diskspace.enabled: true
     redis.enabled: true
 ```
 
@@ -263,6 +259,21 @@ server:
 
 **Kubernetes:** `terminationGracePeriodSeconds: 60` (Spring 30s + buffer).
 
+### 11. Notable `application.yml` Blocks
+
+```yaml
+spring:
+  threads:
+    virtual:
+      enabled: true   # Java 25 LTS, JEP 491 — Tomcat HTTP + @Async default executor → virtual threads
+```
+
+`application.yml` da quyidagi domen bloklari ham mavjud (qaytadan yozmang, mavjudini sozlang):
+- `spring.kafka.*` — Transactional Outbox + webhook fanout (ADR-0007, ADR-0012)
+- `hemis.employee-sync.*` — 224 Univer → markaz xodim push (topic/DLQ, consumer concurrency=12)
+- `hemis.webhook.*` — markaz → 224 Univer outbound callback (retry, secret-encryption, retention)
+- `hemis.outbox.*` — poller interval + retention (30 kun)
+
 ---
 
 ## Configuration Hierarchy
@@ -279,13 +290,15 @@ application.yml
 
 **Misol:**
 ```yaml
-# application.yml
+# application.yml (haqiqiy yo'l: hemis.security.jwt.secret)
 hemis:
-  jwt:
-    secret: ${HEMIS_JWT_SECRET:default-dev-secret-change-me}
+  security:
+    jwt:
+      secret: ${JWT_SECRET}          # default YO'Q — har profilda MAJBURIY (fail-fast)
+      expiration: ${JWT_EXPIRATION:3600}   # 1 soat (ADR-0009 qo'llangan, 2026-05-18)
 ```
 
-Production'da `HEMIS_JWT_SECRET` ENV majburiy. Default bo'lsa, log'ga warning.
+`JWT_SECRET` default'siz — ENV o'rnatilmasa app ko'tarilmaydi (zaif default sirib ketmasligi uchun). Access token TTL default 3600s = 1 soat (ADR-0009 implemented, eski 12 soat emas).
 
 ---
 

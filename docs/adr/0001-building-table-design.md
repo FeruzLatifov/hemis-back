@@ -201,3 +201,13 @@ CONSTRAINT chk_ub_coords_pair CHECK
 ```
 
 Faqat ikkalasi bor yoki ikkalasi yo'q — yarim-to'ldirilgan yozuvlarni blokirovka qiladi.
+
+---
+
+## Implementation
+
+- [x] **1A — `university_building` alohida jadval** — `V010_create_university_buildings.sql`; entity `domain/entity/infrastructure/UniversityBuilding.java` (`extends AuditableEntity`, `@SQLRestriction("deleted_at IS NULL")`). `h_building_category` klassifikator (ADR-0006). ✅
+- [x] **1B — Lifecycle event tracking** — `V009_create_university_lifecycle.sql` (`university_lifecycle` log jadval); Application Event Listener orqali populatsiya. ✅
+- [x] **1C — Coordinates NULLABLE + CHECK** — `latitude`/`longitude` NULLABLE + `chk_ub_coords_pair` (ikkalasi bor yoki ikkalasi yo'q). ✅
+
+> Status: **Implemented** — uchchala sub-qaror (1A/1B/1C) deploy qilingan (V009/V010). Buildings sync runbook: `docs/runbooks/buildings-sync-failure.md`.

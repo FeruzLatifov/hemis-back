@@ -179,24 +179,68 @@ public class ReportService {
 
 ## Cache Strategy (DashboardCacheConfig)
 
-Bizdagi 2-level cache (Caffeine L1 + Redis L2):
+Bizdagi 2-level cache (Caffeine L1 + Redis L2). **L1 Caffeine unified 30m** (`TwoLevelCacheManager.java:52`); L2 Redis TTL per-cache (`DashboardCacheConfig.cacheManager()` ichidagi `redisCacheConfigurations` map):
 
 ```java
-// Cache name → TTL mapping
-"classifierEducationType"     → 24h  (kam o'zgaradi)
-"hokimiyatClassifiers"        → 24h
-"studentGpa"                  → 1h   (o'rtacha)
-"users"                       → 30m  (o'zgaradi)
-"sessions"                    → 12h  (JWT lifetime)
-"permissions"                 → 1h   (RBAC)
-"menus"                       → 6h   (UI menyu)
+// Real cache name → L2 TTL mapping (DashboardCacheConfig.cacheManager())
+"userPermissions"             → 30m  (DEFAULT_TTL)
+"menu"                        → 30m  (DEFAULT_TTL)
+"i18n"                        → 30m  (DEFAULT_TTL)
+"stats"                       → 30m  (DASHBOARD_TTL)
+"studentGpa"                  → 24h  (heavy aggregation)
+"classifier*" / "hokimiyatClassifiers" → 24h  (reference, kam o'zgaradi)
+"university*"                 → 1h–24h (List/Children 24h, Profile/Rector 1h)
 ```
 
+> **DIQQAT:** `users`, `sessions`, `permissions`, `menus` (plural) nomlari bu modulda **YO'Q**. JWT session lifecycle bu modulda emas — **security** modulda. Real RBAC cache nomi `userPermissions` (`menu`, `i18n` singular).
+
 **Yangi cache qo'shilganda:**
-1. `DashboardCacheConfig.TwoLevelCacheManager` da TTL config
+1. `DashboardCacheConfig.cacheManager()` `redisCacheConfigurations` map'da TTL config
 2. `@Cacheable` annotation
 3. Mutation method'da `@CacheEvict`
 4. Test (cache hit/miss/evict)
+
+---
+
+## Subsystem Packages (sync + integratsiya)
+
+### `webhook/` — markaz → OTM outbound (ADR-0012)
+
+13 fayl. Markaz event'larni 224 OTM Univer'iga HMAC-imzolangan webhook orqali yetkazadi.
+
+- `WebhookFanoutConsumer` — Kafka fanout consumer, `concurrency = "3"`.
+- `WebhookDispatcher` — per-target deliver, `@KafkaListener concurrency = "5"` (224 OTM parallel).
+- `HmacSigner` — `X-Hemis-Signature/Timestamp/University-Code` HMAC imzo.
+- `WebhookSecretCipher` / `WebhookSecretVault` / `WebhookSecretService` — secret persistence (K1: secret_enc at-rest shifrlash).
+- `WebhookAckService` — **K2 apply-status feedback** ("delivered != applied" gap). Univer apply qilgach markazga ack POST → `webhook_apply_result` upsert.
+- `WebhookRetryScheduler` — retry backoff scheduler.
+- `WebhookTargetService`, `WebhookMetrics`, `WebhookFanoutMetrics`, `WebhookEventEnvelope`, `DevWebhookBootstrap`.
+
+### `outbox/` — transactional outbox → Kafka (ADR-0007)
+
+- `OutboxEventPublisher` — business transaction ichida outbox row INSERT (at-least-once).
+- `OutboxPoller` — `@Scheduled(fixedDelayString=...interval-ms:1000)` (1s) batch `batch-size:100`; **retention cleanup** `@Scheduled(cron = "0 0 3 * * *")` default 30 kun (`hemis.outbox.retention.days:30`).
+- `KafkaTopicConfig` — topic deklaratsiya, retention 30d (DLQ 90d).
+- `OutboxAdminService`, `OutboxMetrics`, `OutboxPublishException`.
+
+### `employee/` — Univer inbound sync consumer
+
+- `EmployeeSyncConsumer` — `@KafkaListener` concurrency = 12 (= topic partition soni; bir xil PINFL bir partition → serial, optimistic-lock collision yo'q). **deserialize xato → Sentry FATAL** (poison pill, retry foydasi yo'q) → throw → DefaultErrorHandler DLQ. **process xato → Sentry** + throw → retry → DLQ.
+- `EmployeeSyncProcessor` (1 message = 1 transaction = 1 row), `EmployeeSyncProducer`, `EmployeeSyncMetrics`.
+
+### `integration/` — davlat/OTM REST klientlar
+
+> **DIQQAT:** `UniverApiService` nomli klass **YO'Q**. Univer/gov REST klientlari:
+
+- `HemisApiService`, `LegacyOtmIntegrationService`, `GatewayService` — OTM/legacy integratsiya.
+- `ApiMspdClient` + `ApiMspdTokenService` — MSPD.
+- `GuvdTokenService` — GUVD token.
+- `LegacyBimmTokenService` — BIMM token.
+- `ExternalIntegrationService`, `EmploymentIntegrationService`.
+
+### Sentry konvensiyasi (5 fayl)
+
+`Sentry.captureException(err, scope -> {...})` — `WebhookRetryScheduler`, `WebhookDispatcher`, `WebhookFanoutConsumer`, `EmployeeSyncConsumer`, `OutboxPoller`. `scope.setTag("phase", ...)` bilan markirovka. **PII (PINFL) tag/extra'ga YOZILMAYDI** — faqat partition/offset/universityCode kabi non-PII identifikatorlar.
 
 ---
 

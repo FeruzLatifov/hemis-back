@@ -9,6 +9,17 @@ Tarixiy ADR'lar uchun: [`docs/adr/`](docs/adr/).
 
 ## [Unreleased]
 
+### Webhook K1/K2/Y1/O Hardening + Employee-Sync Defensive (2026-05-23 → 2026-05-27)
+
+ADR-0012 webhook outbound to'liq hardening + ADR-0010 employee-sync defensive resolution. Univer kontrakt **175/175 MATCH** tegilmadi (ishlar service/domain/common/api-university — api-legacy frozen). Tafsilot: Serena memory `recent_audit_p4`.
+
+- **K1 — secret persistence (ab929c1):** `WebhookSecretVault` in-memory → `webhook_target.secret_enc` (AES-256-GCM, restart-safe); yangi `WebhookSecretCipher`. Prod `HEMIS_WEBHOOK_SECRET_ENCRYPTION_KEY` env majburiy; eski `secret_hash` (bcrypt) deprecate.
+- **K2 — apply-status feedback loop (e8009bf):** "delivered ≠ applied" gap. Yangi `webhook_apply_result` jadval (V015), `WebhookAckController` (api-university `POST /hemis-events/ack`, permitAll + HMAC, JWT EMAS), `WebhookAckService`, `WebhookApplyResult` entity+repo, `WebhookAckRequest`/`WebhookApplyResultDto` (common). Admin: `WebhookTargetController` apply-results endpointlari.
+- **Y1 — lean logging (ab929c1):** `webhook_delivery_log` retention SUCCESS 30d / FAILED 90d / DLQ saqlanadi; yangi `sentry_event_id` cross-link ustun.
+- **O1/O3/O4 (ab929c1, 9285840):** `max_retries` DEFAULT 5→3 (CHECK 0-10); `WebhookTargetService.create` `existsByCode` OTM validatsiya (orphan target oldini); `event_type` canonical lug'at.
+- **Employee-sync defensive code-resolution (7fedb8c, ADR-0010 rev):** manba `e_employee_meta JOIN e_employee` → har meta = bitta `employee_job` (ish tarixi); `EmployeeJobUpsertRepositoryImpl` resolving subquery (noma'lum `department_code`/`position_code` → NULL, FK violation YO'Q, DLQ'ga tushmaydi). V014 frozen.
+- **ADR:** 0012 `accepted → implemented` (post-impl hardening); 0010 2026-05-25 revision.
+
 ### Audit Hardening (2026-05-21 → 2026-05-22) — P0+P1+P2+P3 yopildi
 
 8 ta commit, 54 fayl, +3435/-329 qator. ~30 audit item yakunlandi

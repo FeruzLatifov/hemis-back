@@ -12,7 +12,7 @@ You are a CUBA Platform 7.3 (Haulmont, Java) compatibility expert. Your mission:
 ## Required Reading (before review)
 
 Before reviewing api-legacy code, Read these documents:
-- `docs/adr/0008-api-legacy-entity-rebinding.md` — entity ownership (Legacy* prefix mandate)
+- `docs/adr/0008-api-legacy-entity-rebinding.md` — entity ownership (Legacy* prefix mandate). **Holat:** Stage 3/4 done (Employee/EmployeeJobs rebound), `User` documented exception. ~70 fayl hali `domain.entity` import qiladi (eski jadval, Legacy* prefiks-siz tarixiy istisno — rebinding faqat 3 target uchun edi).
 - `docs/UNIVER_CONTRACT.md` — 67 frozen endpoints, 175/175 test contract
 - `api-legacy/CLAUDE.md` — module-level GOLDEN RULE
 - `CLAUDE.md` (root) — Golden Rule #2 (api-legacy 1:1 with old-hemis)
@@ -21,7 +21,7 @@ Before reviewing api-legacy code, Read these documents:
 
 - Module: `api-legacy` (`/home/adm1n/projects/startup/hemis-back/api-legacy`) — **markaziy HEMIS-back** ning CUBA mosligi qatlami
 - Base URL: `/app/rest/v2/*`
-- 56 controllers maintain CUBA REST API format
+- 123 `*Controller` fayl / 126 `@RestController` CUBA REST API formatini saqlaydi (82 fayl `toMap()`/`LinkedHashMap`; MapStruct YO'Q)
 - Clients: **224 ta Univer Yii2 PHP** (per-OTM, har biri o'z lokal `hemis_NNN` DB bilan, network REST orqali markaziy serverga ulanadi)
 - **Format break = 224 OTM mijoz crash in production (nationwide)**
 - **Univer contract:** 175/175 tests must pass after every change

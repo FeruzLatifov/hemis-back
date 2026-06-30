@@ -102,8 +102,8 @@ public class DashboardCacheConfig implements CachingConfigurer {
      *
      * <p><strong>L1 + L2 Configuration:</strong></p>
      * <ul>
-     *   <li>L1 (Caffeine): 1000 entries, 10 minutes TTL, per-pod</li>
-     *   <li>L2 (Redis): Per-cache TTL (menu=60min, stats=30min), distributed</li>
+     *   <li>L1 (Caffeine): 1000 entries, 30 minutes TTL, per-pod</li>
+     *   <li>L2 (Redis): Per-cache TTL (menu=30min, stats=30min), distributed</li>
      * </ul>
      *
      * <p><strong>Read Flow:</strong></p>
@@ -141,9 +141,9 @@ public class DashboardCacheConfig implements CachingConfigurer {
 
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
-        // Default Redis L2 configuration (60 minutes)
+        // Default Redis L2 configuration (30 minutes)
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(DEFAULT_TTL)                                            // 1 hour TTL
+                .entryTtl(DEFAULT_TTL)                                            // 30 min TTL
                 .prefixCacheNameWith(CACHE_PREFIX)                                // Versioned prefix (cache:v2:)
                 .serializeKeysWith(RedisSerializationContext.SerializationPair    // String keys
                         .fromSerializer(new StringRedisSerializer()))
@@ -157,13 +157,13 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Dashboard cache: 30 minutes
         redisCacheConfigurations.put("stats", defaultConfig.entryTtl(DASHBOARD_TTL));
 
-        // Menu cache: 1 hour
+        // Menu cache: 30 minutes
         redisCacheConfigurations.put("menu", defaultConfig.entryTtl(DEFAULT_TTL));
 
-        // I18n cache: 1 hour
+        // I18n cache: 30 minutes
         redisCacheConfigurations.put("i18n", defaultConfig.entryTtl(DEFAULT_TTL));
 
-        // User permissions cache: 1 hour
+        // User permissions cache: 30 minutes
         redisCacheConfigurations.put("userPermissions", defaultConfig.entryTtl(DEFAULT_TTL));
 
         // University search cache (paged + filters): 30 minutes

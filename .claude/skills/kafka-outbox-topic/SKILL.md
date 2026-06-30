@@ -147,6 +147,6 @@ docker exec hemis-kafka kafka-consumer-groups --bootstrap-server localhost:9092 
 ## See also
 
 - ADR-0007 (sync architecture) · ADR-0010 (employee outbox)
-- `domain/.../entity/sync/` — mavjud outbox entity
+- `domain/.../entity/outbox/OutboxEvent.java` — mavjud outbox entity (`@Table(name = "outbox_event")`)
 - `.claude/skills/liquibase-changeset` — migration
 - `docs/architecture/` — sync diagrams

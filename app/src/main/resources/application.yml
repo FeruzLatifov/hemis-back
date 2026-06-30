@@ -1,7 +1,7 @@
 # =====================================================
 # HEMIS Application Configuration
 # =====================================================
-# Stack: Spring Boot 4.0.2 + JDK 21 LTS + PostgreSQL 16+
+# Stack: Spring Boot 4.0.6 + Java 25 + PostgreSQL 18
 # Mode: NO-RENAME • NO-DELETE • NO-BREAKING-CHANGES
 # =====================================================
 

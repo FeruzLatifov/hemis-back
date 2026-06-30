@@ -1,6 +1,6 @@
 # HEMIS Backend – Coding Standards (v3.0)
 
-**Oxirgi yangilanish:** 2026-05-02
+**Oxirgi yangilanish:** 2026-06-30
 **Status:** Active
 **Scale:** 230 universitet, ~1.15M talaba (Vazirlik miqyosi)
 
@@ -19,7 +19,7 @@
 9. **AOP self-invocation awareness:** `@Cacheable`, `@Transactional`, `@Async`, `@PreAuthorize` on private methods or same-class calls **do NOT work** — Spring proxy bypasses them. Extract to separate `@Service` bean.
 10. **Java 25 modern features:** Prefer `record` for DTOs, pattern matching for `switch`, sealed classes for closed hierarchies. **Forbidden:** Lombok `@Data` on JPA entities (triggers N+1 via `equals`/`hashCode`).
 11. **External integration timeout:** Hozir RestTemplate'da global timeout aniq belgilanmagan — har yangi integration'da `RestClient.Builder().requestFactory(...)` orqali connect+read timeout (10s/30s) sozlanishi kerak.
-12. **Cache invariant:** Every `@Cacheable` MUST have a corresponding `@CacheEvict` on mutation methods. Cache name MUST be configured in `DashboardCacheConfig.TwoLevelCacheManager` with explicit TTL.
+12. **Cache invariant:** Every `@Cacheable` MUST have a corresponding `@CacheEvict` on mutation methods. Cache name + TTL MUST be registered in `DashboardCacheConfig.cacheManager()` (`redisCacheConfigurations.put(name, cfg.entryTtl(...))` map). `uz.hemis.service.cache.TwoLevelCacheManager` (alohida top-level class) shu RedisCacheManager'ni Caffeine L1 (unified 30m) bilan o'raydi.
 
 ---
 
@@ -39,7 +39,7 @@ HEMIS **modular monolith + bounded context** asosida quriladi.
 | University | V005, V008, V009, V010 | `organization`, `university_profile`, `university_building`, `university_lifecycle`, `h_building_category` |
 | UI | V013 | `menu`, `user_favorite` |
 | i18n | V011, V012 | `system_message`, `system_message_translation`, `language`, `configuration` |
-| Sync/Webhook | V014, V015 | `outbox_event`, `webhook_target`, `webhook_delivery_log` |
+| Sync/Webhook | V014, V015 | `outbox_event` (V014), `webhook_target`, `webhook_delivery_log`, `webhook_apply_result` (V015 — K2 apply-status) |
 
 **Kelajak:** Fizik schema separation (`auth.*`, `hr.*`, `univ.*`) — alohida ADR talab qiladi. Hozir hammasi `public`.
 
@@ -79,6 +79,7 @@ Faqat **yangi business concept** uchun, ya'ni `hemishe_*` da mavjud bo'lmagan na
 | Jadval turi | Ustunlar | Base class |
 |---|---|---|
 | Operational entity | `version, created_at/by, updated_at/by, deleted_at/by` | `AuditableEntity` |
+| Operational (hard-delete) | `version, created_at/by, updated_at/by` (soft-delete YO'Q) | `AuditableEntityNoSoftDelete` |
 | Reference (classifier) | `version, created_at/by, updated_at/by, is_active` | `ReferenceEntity` |
 | Immutable (log) | `created_at, created_by` | `ImmutableEntity` |
 | Junction (N:N) | `created_at` | — |
@@ -320,7 +321,7 @@ Application
          └─ Database (~10ms)
 ```
 
-Manager: `DashboardCacheConfig.TwoLevelCacheManager`
+Manager: `uz.hemis.service.cache.TwoLevelCacheManager` (top-level class; `DashboardCacheConfig.cacheManager()` orqali ro'yxatdan o'tadi — TTL `redisCacheConfigurations` map'da)
 
 ### Cache Invariant — MAJBURIY
 
@@ -408,7 +409,7 @@ Yangi kod yozilganda **modern API afzal**:
 - **`@MockBean` → `@MockitoBean`** (Spring Boot 4.x)
 - **`RestTemplate` → `RestClient`** (Spring 6.1+, fluent + type-safe)
 - **`JdbcTemplate` → `JdbcClient`** (Spring 6.1+)
-- **`@Value` → `@ConfigurationProperties`** (63 ta `@Value` migration kandidat)
+- **`@Value` → `@ConfigurationProperties`** (~29 fayl `@Value` qoldi, 2026-06-30 — migration davom etmoqda; 63 dan kamaydi)
 - **HikariCP `leak-detection-threshold: 60000`** master pool'da MAJBURIY
 - **PostgreSQL `statement_timeout`** har profilda (`30s` dev, `60s` prod)
 
@@ -506,15 +507,13 @@ gender_code VARCHAR(20) REFERENCES public.hemishe_h_gender(code),
 CREATE INDEX idx_employee_gender_code ON employee(gender_code) WHERE deleted_at IS NULL;
 ```
 
-Index'siz: `DELETE FROM hemishe_h_gender` o'nlab daqiqa, JOIN'da sequential scan. Audit: `M004_classifier_fk_indexes` changeset rejada (V004 classifier FK'lari uchun).
+Index'siz: `DELETE FROM hemishe_h_gender` o'nlab daqiqa, JOIN'da sequential scan. Classifier FK indekslari **V004 ichida bajarilgan** (masalan `idx_ejob_position ON employee_job(position_code)`). M004/M005 slotlari band (`M004_webhook_permissions`, `M005_outbox_permissions`).
 
 ### 4. Module ↔ Entity Ownership — Pre-commit Reject
 
-`api-legacy/**/*.java` ichida YANGI schema entity import topilsa — pre-commit hook reject qiladi:
+`api-legacy/**/*.java` ichida YANGI schema entity import topilsa — pre-commit hook reject qiladi. **Yagona ruxsat:** `check_table_mappings.sh`'da `ALLOWED_NEW_SCHEMA_IN_LEGACY=("User")` (documented exception, 3 fayl: `LegacySecurityHelper`, `UserController`, `LegacyUserInfoController`).
 
-```
-api-legacy/**/import.*entity\.(security\.User|employee\.Employee|employee\.EmployeeJobs)\b → REJECT
-```
+**ADR-0008 holati (2026-06-30):** `Employee` import olib tashlangan, `EmployeeJobs`→`LegacyEmployeeJobs` ko'chirilgan (Stage 3/4 ✅). `User`→`users` documented permanent exception (Stage 2). **Eslatma:** `EmployeeCertificate`/`EmployeeRate` eski `hemishe_*` jadvalga map bo'lsa-da `Legacy*` prefiks-siz (tarixiy istisno, hook reject qilmaydi).
 
 Manba: ADR-0008. Implementation: `.claude/hooks/post-edit.sh` (✅ active, `.claude/settings.json` PostToolUse'da ro'yxatda) + `.git/hooks/pre-commit` (4 check).
 

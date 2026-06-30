@@ -1,7 +1,8 @@
 ---
 id: ADR-0012
-status: accepted
+status: implemented
 date: 2026-05-13
+revised: 2026-05-27
 deciders: hemis-team
 agent: claude-code
 model: claude-opus-4-7
@@ -43,7 +44,7 @@ related:
 
 ## Status
 
-Accepted (2026-05-13)
+Implemented (2026-05-13; post-implementation hardening 2026-05-27 — K1 secret persistence, K2 apply-status ack, Y1 retention, O1/O3 config drift)
 
 > **Y-Statement:** Markaz tomondagi event'larni (klassifikator update, qoidalar push, OTM block) 224 ta Univer Yii2 PHP backend'iga real-time yetkazish uchun, biz **Transactional Outbox + Kafka fanout + REST webhook callback** strategiyasini tanladik, chunki bu yo'l Univer kodbase'ida minimal o'zgarish talab qiladi (yangi Yii2 controller + jadval + queue handler), markaz tomondan high-throughput va replay imkoniyatini beradi, va davlat tarmoq policy'lari bilan mos (faqat HTTPS — TCP 9092 kerak emas). Oqibatda real-time push (~2-5 sekund latency), per-OTM retry boshqaruvi, DLQ orqali silent failure himoyasi.
 

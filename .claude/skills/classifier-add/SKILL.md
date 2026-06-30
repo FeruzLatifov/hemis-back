@@ -92,7 +92,7 @@ public class H<Name>Service {
 }
 ```
 
-**MAJBURIY:** `service/.../config/DashboardCacheConfig.java` ichidagi `TwoLevelCacheManager` ro'yxatiga `classifier<Name>` qo'shish, TTL **24h** (klassifikator kam o'zgaradi).
+**MAJBURIY:** `service/.../config/DashboardCacheConfig.java` `cacheManager()` ichidagi `redisCacheConfigurations` map'iga `classifier<Name>` qo'shish (`redisCacheConfigurations.put("classifier<Name>", defaultConfig.entryTtl(Duration.ofHours(24)));`), TTL **24h** (klassifikator kam o'zgaradi).
 
 ### 5. REST endpoint
 
@@ -135,4 +135,4 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/v1/classifiers/
 - ADR-0006 · ADR-0007
 - `.claude/skills/liquibase-changeset/SKILL.md`
 - `service/.../config/DashboardCacheConfig.java`
-- `domain/.../entity/classifier/` — mavjud misollar
+- Mavjud `h_*` entity misollari: `domain/.../entity/employee/HPosition.java` (`@Table(name = "h_position")`), `domain/.../entity/infrastructure/HRoofType.java` (`@Table(name = "h_roof_type")`)

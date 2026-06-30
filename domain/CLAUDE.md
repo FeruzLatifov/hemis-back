@@ -187,7 +187,9 @@ to'g'ri base class ishlatish — har bir convention'ning aniq qoidasi:
 | Convention | Base class | Soft-delete | Audit columns | Qachon |
 |------------|-----------|-------------|---------------|--------|
 | **CUBA legacy** | `BaseEntity`, `LegacyClassifierEntity` | `delete_ts`, `deleted_by` | `create_ts`, `created_by`, `update_ts`, `updated_by` | Eski `hemishe_*` jadvallari (FROZEN schema) |
-| **Modern** | `AuditableEntity`, `ImmutableEntity` | `deleted_at`, `deleted_by` | `created_at`, `created_by`, `updated_at`, `updated_by` | Yangi jadvallar (prefiks-siz, `h_*` yangi classifierlar, modular monolith) |
+| **Modern** | `AuditableEntity` | `deleted_at`, `deleted_by` | `created_at`, `created_by`, `updated_at`, `updated_by` | Yangi jadvallar (prefiks-siz, `h_*` yangi classifierlar, modular monolith) |
+
+> **Modern base variantlar** (`entity/base/`): `AuditableEntity` — to'liq soft-delete (`deleted_at` + `updated_at`); `AuditableEntityNoSoftDelete` — soft-delete YO'Q, faqat `version` + `updated_at` (API sync snapshot uchun); `ImmutableEntity` — append-only, faqat `created_at`/`created_by` (update/delete yo'q); `ReferenceEntity` — modern classifier (`code` PK, soft-delete o'rniga `is_active` flag).
 
 **Qoida:**
 - Eski `hemishe_*` jadvalga **map qilinayotgan** entity → `BaseEntity` extend (column'lar CUBA tomonidan boshqariladi, FROZEN)
@@ -204,9 +206,9 @@ public class Student extends BaseEntity { ... }
 
 // ✓ Yangi modular jadval — AuditableEntity (deleted_at/created_at)
 @Entity
-@Table(name = "university_legal")
+@Table(name = "university_building")
 @SQLRestriction("deleted_at IS NULL")
-public class UniversityLegal extends AuditableEntity { ... }
+public class UniversityBuilding extends AuditableEntity { ... }
 ```
 
 **Migration tomonida:**
@@ -259,7 +261,7 @@ Sabab: cross-schema FK overhead, search_path murakkabliklari, hemis_337 (224 OTM
 | `hemishe_e_*` | Eski CUBA entity (FROZEN) | `hemishe_e_student`, `hemishe_e_university` |
 | `hemishe_h_*` | Eski CUBA klassifikator (FROZEN) | `hemishe_h_gender`, `hemishe_h_soato` |
 | `h_*` (yangi) | Yangi klassifikatorlar (FK target) | `h_building_category`, `h_position` |
-| (prefiksiz) | Yangi entity (biznes ob'ekt) | `users`, `employee`, `organization`, `university_building` |
+| (prefiksiz) | Yangi entity (biznes ob'ekt) | `users`, `employee`, `organization`, `university_building`, `webhook_target` (+ `webhook_delivery_log`, `webhook_apply_result` — K2, ADR-0012), `outbox_event` (ADR-0007) |
 | `sec_user` | Old CUBA auth (FROZEN, parallel) | sec_user_role, sec_role_permission |
 
 **Klassifikator (`h_*`) mezoni:** boshqa jadvallar tomonidan FK reference target sifatida ishlatilsa

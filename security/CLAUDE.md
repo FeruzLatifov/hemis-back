@@ -14,20 +14,29 @@
 |---|---------|-------|
 | 1 | **Password Encoding** | `BCryptPasswordEncoder(12)` (OWASP 2025 min). Argon2id yangi loyihalar uchun. CUBA legacy → `LegacyPasswordEncoder` (BCrypt + PBKDF2 hybrid) |
 | 2 | **JWT Configuration** | HS256 (dev) / RS256 (prod). Claims: `iss`, `sub` (UUID), `exp` (12h), `username`, `university_id` (UNIVERSITY_ADMIN), `client_id` (224 Univer OAuth) |
-| 3 | **Token Validation** | `oauth2ResourceServer.jwt()` + `STATELESS` session + CSRF disable. Redis blacklist `token:blacklist:` ~1ms check |
+| 3 | **Token Validation** | `oauth2ResourceServer.jwt()` + `STATELESS` session + CSRF **ENABLED** (`CookieCsrfTokenRepository` double-submit; public auth/oauth/ack/swagger path'lar `ignoringRequestMatchers`). Redis blacklist `token:blacklist:` ~1ms check |
 | 4 | **`@PreAuthorize`** | `hasAuthority('students.create')` + custom SpEL `@studentSecurity.canEdit(#id, auth)` for OTM scope. SUPER_ADMIN bypass via `admin.full` |
 | 5 | **RBAC Format** | `{resource}.{action}` (e.g. `students.view`, `admin.full`). Cache Redis 1h TTL, evict on role/permission change |
 | 6 | **PII Logging** | TAQIQ: `password`, `pinfl`, `student.toString()`. ✓ Mask: `pinfl.substring(0,8)+"****"` |
-| 7 | **Rate Limiting** | Per-role (VIEWER 60, UNIVERSITY_ADMIN 300, MINISTRY 600, SUPER 1000) + per-client (UNIVER_CLIENT 600 — 224 Univer OAuth). Redis sliding window + Bucket4j. 429 + `Retry-After` header |
+| 7 | **Rate Limiting** | `RateLimitFilter` — in-memory `ConcurrentHashMap` counters: global + per-IP login (brute-force, login/token path) + per-university (JWT `university_code`) + per-IP fallback (anonim). **Default `security.rate-limit.enabled=false`** — prod'da `=true` qo'yish shart. Bucket4j YO'Q (kelajak sprint). Redis sliding-window FAQAT OAuth token endpoint uchun (`RateLimitService`, prefix `ratelimit:oauth:`). 429 + `Retry-After` |
 | 8 | **CORS** | `setAllowedOriginPatterns(...)` explicit list. `setAllowCredentials(true)` + `*` = security hole |
 | 9 | **SQL Injection** | JPQL `@Query` parametr, `JdbcTemplate ?` placeholder, Specification API. String concat MUTLAQO TAQIQ |
 | 10 | **XSS** | API JSON → Jackson auto-escape ✓. HTML template (email) → manual `StringEscapeUtils.escapeHtml4` |
 
 **Eng kritik (1, 4, 6, 9):** weak password = brute-force; `@PreAuthorize` yo'q = IDOR; PII leak = compliance violation; SQL injection = data leak.
 
-### JWT Modernization (kelajakdagi sprint)
+### JWT Modernization
 
-Hozirgi token'da `jti` yo'q. Tavsiya: `jti` + `kid` + refresh rotation **bir sprint'da birga**. Avval ADR yozing.
+**Bajarildi** (ADR-0009 implemented): `TokenService` har token uchun `jti = UUID.randomUUID()` (access + refresh), `kid` JWS header (key rotation). Refresh token rotation + replay detection — refresh consume bo'lganda eski `jti` qolgan umri davomida blacklist'ga (`token:blacklist:`) yoziladi, takror ishlatilsa rad etiladi.
+
+**Keyingi qadam:** `kid` + RS256 prod migratsiya (hozir HS256 secret key; asimmetrik signing prod uchun).
+
+### Implemented security facts (kod bilan tasdiqlangan)
+
+- **Weak-default soft-fail guard** — `LegacyOAuthClientProperties`: `WEAK_VALUES` ro'yxati + `MIN_SECRET_LENGTH=16`. Prod profilda zaif/qisqa credential → `log.error`, lekin **boot fail YO'Q** (200+ legacy klient buzilmasin). Blank → `@NotBlank` boot fail.
+- **K2 ack endpoint** — `/api/v1/university/hemis-events/ack` = `permitAll` + **HMAC** (`X-Hemis-Signature`, `WebhookAckService` verify, `secret_enc`). JWT EMAS (ADR-0012, inbound webhook teskarisi).
+- **Univer sync endpointlar** — `/api/v1/university/employees/sync` va `/buildings/sync` `permitAll` → **`authenticated()`** (OAuth client_credentials majburiy, ADR-0005). Avval profile guard yo'q edi → har kim PINFL massa yuborishi mumkin edi.
+- **`full_name` claim olib tashlandi** — OWASP A09 (token PII'ni localStorage'ga leak qiladi). Frontend `/me` endpoint orqali oladi.
 
 ---
 

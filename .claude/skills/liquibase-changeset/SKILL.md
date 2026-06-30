@@ -35,7 +35,7 @@ Faqat `M###` orqali **index/MV qo'shish** ruxsat. ALTER COLUMN/DROP — Univer 2
 
 ### 3. Forward fayl yaratish
 
-`<CS_DIR>/schema/V###_short_name.sql` (yoki `data/M###_*.sql` / `seed/S###_*.sql`):
+`<CS_DIR>/schema/V###_short_name.sql` (yoki `migration/M###_*.sql` / `seed/S###_*.sql`):
 
 ```sql
 --liquibase formatted sql
@@ -74,12 +74,21 @@ Rollback **DDL'ni teskari tartibda** + `IF EXISTS`. Data uchun: backup table'dan
 
 ### 5. master.yaml ro'yxat
 
-`domain/src/main/resources/db/changelog/db.changelog-master.yaml` ichiga to'g'ri kategoriyaga (schema/data/seed):
+`domain/src/main/resources/db/changelog/db.changelog-master.yaml` ichiga to'g'ri kategoriyaga (schema/migration/seed). Real format **`- changeSet:`** (NOT `- include:`) — forward + rollback **alohida `sqlFile` yozuv**:
 
 ```yaml
-  - include:
-      file: db/changelog/changesets/schema/V###_short_name.sql
+  - changeSet:
+      id: V###_short_name
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "ADR-NNNN — qisqa sabab"
+      changes:
+        - sqlFile: { path: changesets/schema/V###_short_name.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/schema/V###_short_name_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 ```
+
+> `CONCURRENTLY` indeks (`CREATE INDEX CONCURRENTLY`) uchun ushbu changeSet'da `splitStatements: true` + `runInTransaction: false` qo'ying (CONCURRENTLY tranzaksiya ichida ishlamaydi).
 
 > Yo'q bo'lsa migration ishga tushmaydi — eng tez-tez xatolar manbai.
 

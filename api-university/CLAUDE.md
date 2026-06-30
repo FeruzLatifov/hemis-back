@@ -1,208 +1,114 @@
-# api-university module — University-Scoped Endpoints
+# api-university module — Univer ↔ Markaz Integration Channel
 
-> **Markaziy HEMIS-back** ichida **224 ta Univer Yii2 PHP backend** uchun integratsiya kanali (vazirlik markaz ↔ OTM yo'nalishi).
+> **Markaziy HEMIS-back** ichida **224 ta Univer Yii2 PHP backend** uchun integratsiya kanali (OTM → vazirlik markaz yo'nalishi).
+>
+> **Modul roli:** CRUD EMAS — **write/sync-oriented** integratsiya kanali. Univer'lar (per-OTM Yii2) markazga ma'lumot **PUSH** qiladi (employees, buildings sync), token oladi, webhook apply-status ack qaytaradi va kadastr gateway proxy orqali so'rov yuboradi. Bu modulda `/students`, `/faculties`, `/curriculum` kabi CRUD endpoint **YO'Q**, `@Cacheable` **YO'Q** (write/sync xulq).
 >
 > **3 maqsad (loyiha 4 maqsadidan):**
-> 1. **Aggregation:** 224 ta Univer (per-OTM Yii2) ma'lumotini markaziy DB'ga yig'ish
+> 1. **Aggregation:** 224 ta Univer (per-OTM Yii2) ma'lumotini markaziy DB'ga yig'ish (employees/buildings sync → Kafka)
 > 2. **Klassifikator distribution:** `h_*` jadvallari (gender, soato, position_type) — markazdan Univer'larga sync (ADR-0006)
 > 3. **Qoidalar joriy qilish:** vazirlik biznes konstraint (talaba kiritish vaqt cheklov, baho lock) — Univer'lar markazdan oladi
 >
 > **Auth:** OAuth 2.1 `client_credentials` (per-OTM `client_id` + secret + IP whitelist) — ADR-0005.
 >
-> **Markaziy DB + scope filter:** bitta markaziy DB ichida 230 OTM rows — har Univer client (224 ta) o'z `university_code` filter orqali rows'ini ko'radi (rows-level isolation, klassik multi-tenant deploy emas).
->
-> **Mijozlari:** faqat **224 ta Univer Yii2 PHP** (per-OTM client_credentials).
-> Davlat sistemalari (MyGov, MSPD, BIMM, Tax, GUVD) — alohida `api-external` modul (S2S API Key + IP whitelist).
+> **Mijozlari:** faqat **224 ta Univer Yii2 PHP** (per-OTM client_credentials, `ClientType.UNIVERSITY`).
+> Davlat sistemalari (MyGov, MSPD, BIMM, Tax, GUVD) — alohida `api-external` modul (S2S, `ClientType.EXTERNAL_SYSTEM`).
 
 ---
 
-## Critical Rules
+## Real Endpoints (6 controller, 7 mapping)
 
-### 1. University Scope Validation — MAJBURIY
+Barchasi `/api/v1/university` prefix ostida.
 
-Har endpoint UNIVERSITY_ADMIN uchun:
-- User'ning `universityId` claim'i token'da
-- Resource'ning `universityId` ga mos bo'lishi shart
-- SUPER_ADMIN/MINISTRY_ADMIN bypass
+| Endpoint | Controller | Tavsif |
+|----------|-----------|--------|
+| `POST /oauth/token` (form) | `UniversityOAuthTokenController#tokenForm` | OAuth 2.1 `client_credentials`, form/multipart body (ADR-0005) |
+| `POST /oauth/token` (JSON) | `UniversityOAuthTokenController#tokenJson` | Bir xil issuer, JSON body variant (legacy `univer.php` PHP clientlar uchun) |
+| `POST /employees/sync` | `EmployeeSyncController` | Univer xodim batch'i → Kafka `EmployeeSyncProducer.publish` (ADR-0010, idempotent `INSERT ... ON CONFLICT`) |
+| `POST /buildings/sync` | `BuildingSyncController` | Univer bino batch'i → `(universityCode, sourceUid)` bo'yicha upsert |
+| `POST /hemis-events/ack` | `WebhookAckController` | K2 apply-status feedback loop — Univer markaz webhook'ini apply qilib ack qaytaradi (ADR-0012) |
+| `GET /gateway/kadastr/by-cadnum` | `GatewayController` | `api-mspd` kadastr passthrough proxy, `@PreAuthorize("isAuthenticated()")` |
+| `GET /health` | `UniversityApiHealthController` | Liveness probe |
 
-```java
-// ✓ TO'G'RI — university scope check
-@GetMapping("/{id}")
-@PreAuthorize("hasAuthority('students.view') and @universityScope.canAccess(#id, authentication)")
-public ResponseEntity<StudentDto> getStudent(@PathVariable Long id) { ... }
+### OAuth token (ADR-0005)
 
-// Bean
-@Component("universityScope")
-@RequiredArgsConstructor
-public class UniversityScopeChecker {
+`POST /oauth/token` ikki Content-Type qabul qiladi (form-urlencoded/multipart **va** JSON) — ikkalasi ham `OAuthClientTokenIssuer.issue(...)` ga delegate qiladi. `grant_type=client_credentials`, `Authorization: Basic <client_id:secret>`, IP whitelist tekshiruvi. Univer Yii2 PHP clientlar ba'zi versiyada JSON RPC orqali token oladi, shu sabab dual-format.
 
-    private final StudentRepository studentRepo;
+> **api-external bilan farq:** `api-external` tashqi davlat tizimlari S2S token beradi (`ClientType.EXTERNAL_SYSTEM`); `api-university` — Univer OTM (`ClientType.UNIVERSITY`). Ikkala modul ham bir xil `OAuthClientTokenIssuer.issue` ni ulashadi, faqat client turi va scope farq qiladi.
 
-    public boolean canAccess(Long studentId, Authentication auth) {
-        // SUPER_ADMIN bypass
-        if (hasAuthority(auth, "admin.full")) return true;
+### Sync endpoints (ADR-0007 Kafka, ADR-0010 employee-sync)
 
-        Long userUniversityId = ((CustomPrincipal) auth.getPrincipal()).universityId();
-        if (userUniversityId == null) return false;  // No scope → deny
+`POST /employees/sync` — kelgan batch har item bo'yicha `EmployeeSyncProducer.publish(batchId, universityCode, syncUser, dto)` orqali Kafka'ga yoziladi (async, future timeout monitoring). Consumer markaziy DB'ga idempotent yozadi: `pinfl` (employee), `(universityCode, sourceUid)` (job) bo'yicha `INSERT ON CONFLICT`. `POST /buildings/sync` — `BuildingSyncService.syncFromUniver(universityCode, items)`, `(universityCode, sourceUid)` upsert.
 
-        return studentRepo.findUniversityIdByStudentId(studentId)
-            .map(uni -> uni.equals(userUniversityId))
-            .orElse(false);
-    }
+### Webhook ack (ADR-0012 — K2 feedback loop)
 
-    private boolean hasAuthority(Authentication auth, String authority) {
-        return auth.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals(authority));
-    }
-}
-```
+`POST /hemis-events/ack` — markaz outbound webhook yuborgach, Univer event'ni apply qilib **apply-status** ni shu kanal orqali qaytaradi. Auth **JWT EMAS** — HMAC:
+- `X-Hemis-Signature` — HMAC imzo
+- `X-Hemis-Timestamp` — replay himoyasi
+- `X-Hemis-University-Code` — OTM identifikatori
 
-### 2. List Endpoint — Auto-filter by University
+`WebhookAckService.processAck(universityCode, signature, timestamp, rawBody)` raw body ustidan imzoni tekshiradi.
 
-```java
-// ✗ XATO — barcha universitet'lardan talaba qaytadi
-@GetMapping
-public Page<StudentDto> list(Pageable pageable) {
-    return studentService.findAll(pageable);
-}
+### Gateway proxy
 
-// ✓ TO'G'RI — service'da auto-filter
-@GetMapping
-@PreAuthorize("hasAuthority('students.view')")
-public Page<StudentDto> list(Pageable pageable, Authentication auth) {
-    Long universityId = extractUniversityId(auth);
-    return studentService.findAllByUniversity(universityId, pageable);
-}
-```
-
-**Service implementation:**
-```java
-public Page<StudentDto> findAllByUniversity(Long universityId, Pageable pageable) {
-    if (universityId == null) {
-        // SUPER_ADMIN: barcha universitetlar
-        return studentRepo.findAll(pageable).map(mapper::toDto);
-    }
-    return studentRepo.findByUniversityId(universityId, pageable).map(mapper::toDto);
-}
-```
-
-### 3. Cross-University Access TAQIQ
-
-UNIVERSITY_ADMIN boshqa universitet ma'lumotini hech qachon ko'rmasligi shart. Validation:
-
-```java
-@PostMapping("/transfer")
-@PreAuthorize("hasAuthority('students.transfer')")
-public ResponseEntity<...> transferStudent(@RequestBody TransferRequest req, Authentication auth) {
-    Long callerUniversityId = extractUniversityId(auth);
-    Long studentUniversityId = studentService.getUniversityId(req.studentId());
-
-    if (callerUniversityId != null && !callerUniversityId.equals(studentUniversityId)) {
-        throw new ForbiddenException("Cannot transfer student from another university");
-    }
-    // ... transfer logic
-}
-```
-
-### 4. Aggregate Query — Performance Trap
-
-```java
-// ✗ XATO — har universitet uchun alohida query
-public Map<Long, Long> studentCountPerUniversity() {
-    Map<Long, Long> result = new HashMap<>();
-    for (Long uniId : getAllUniversityIds()) {
-        result.put(uniId, studentRepo.countByUniversityId(uniId));  // 230 query!
-    }
-    return result;
-}
-
-// ✓ TO'G'RI — single query group by
-@Query("""
-    SELECT s.universityId, COUNT(s)
-    FROM Student s
-    WHERE s.deletedAt IS NULL
-    GROUP BY s.universityId
-""")
-List<Object[]> countByUniversityNative();
-```
+`GET /gateway/kadastr/by-cadnum` — `api-mspd` kadastr xizmatiga passthrough proxy (Univer foydalanuvchisi kadastr raqami bo'yicha so'rov yuboradi). `@PreAuthorize("isAuthenticated()")`.
 
 ---
 
-## Markaziy DB + OTM Scope Best Practices
+## universityCode resolution — spoofing himoyasi
 
-> **Eslatma:** klassik "multi-tenant deploy" EMAS — markaziy server, bitta DB, rows-level isolation `university_code`/`university_id` filter orqali.
+`universityCode` **hech qachon URL'dan kelmaydi** (caller spoofing'ning oldini olish — ministry convention). Sync endpointlarda ikki bosqichli resolution:
 
-### Database — Single Schema, Scope Column
+1. **Production:** JWT `university_code` claim (OAuth2 `client_credentials` token'idan).
+2. **Dev/test fallback:** `X-University-Code` HTTP header (faqat dev profile, security filter `permitAll`, localhost).
 
-Bizdagi pattern: bitta markaziy DB, har entity'da `university_id` column. Avzallik: vazirlik aggregation reportlari oson (224 OTM bo'yicha statistika bir SQL).
+Hech biri topilmasa → `401` (`universityCode aniqlanmadi`).
 
 ```java
-@Entity
-@Table(name = "hemishe_e_student",
-       indexes = @Index(name = "idx_student_university", columnList = "university_id, faculty_id"))
-public class Student extends AuditableEntity {
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "university_id", nullable = false)
-    private University university;
-
-    // Composite index (university_id, faculty_id) — most queries filter both
+// EmployeeSyncController / BuildingSyncController — resolveUniversityCode(request)
+if (auth instanceof JwtAuthenticationToken jwtAuth) {
+    String fromToken = jwtAuth.getToken().getClaimAsString("university_code");
+    if (fromToken != null) return fromToken;
 }
+String fromHeader = request.getHeader("X-University-Code");   // dev fallback
+if (fromHeader != null) return fromHeader;
+throw new ...("universityCode aniqlanmadi — JWT 'university_code' claim yoki 'X-University-Code' header kerak");
 ```
 
-### Hibernate Filter (alternativa)
-
-```java
-@FilterDef(name = "universityFilter", parameters = @ParamDef(name = "uniId", type = Long.class))
-@Filter(name = "universityFilter", condition = "university_id = :uniId")
-
-// Service'da:
-em.unwrap(Session.class)
-    .enableFilter("universityFilter")
-    .setParameter("uniId", currentUniversityId);
-```
-
-**Trade-off:** Filter har query'ga avto qo'shiladi (good), lekin native query'da ishlamaydi (bad).
-
-### Cache Key — University-Scoped
-
-```java
-// ✓ TO'G'RI — cache key universityId bilan
-@Cacheable(value = "studentsByFaculty",
-           key = "#universityId + ':' + #facultyId + ':' + #pageable.pageNumber")
-public Page<StudentDto> findByFacultyId(Long universityId, Long facultyId, Pageable p) { ... }
-```
-
-Aks holda: Universitet A admin Universitet B cache'idagi ma'lumotni ko'radi (data leak!).
+`hemis-events/ack` esa universityCode'ni HMAC bilan birga `X-Hemis-University-Code` header'dan oladi (JWT yo'q).
 
 ---
 
-## URL Pattern
+## Markaziy DB + OTM Scope
 
-```
-/api/v1/university/students
-/api/v1/university/faculties
-/api/v1/university/employees
-/api/v1/university/curriculum
-```
+> Klassik "multi-tenant deploy" EMAS — markaziy server, bitta DB, rows-level isolation `university_code` filter orqali. Har Univer client (224 ta) o'z `university_code` bilan kelgan ma'lumotini yozadi/yangilaydi.
 
-`/{universityId}/` URL'da YOQ — universityId token'dan olinadi (URL spoofing'dan himoya).
+Sync entity'lar markaziy DB'da `university_code` column bilan yoziladi; vazirlik aggregation reportlari 224 OTM bo'yicha bitta SQL bilan olinadi.
+
+---
+
+## ADR bog'lanishlar
+
+- **ADR-0005** — OAuth `client_credentials` token issuance (`OAuthClientTokenIssuer`)
+- **ADR-0007** — Kafka sync (outbox/producer/consumer/DLQ)
+- **ADR-0010** — employee-sync (idempotent `ON CONFLICT`, job tarixi)
+- **ADR-0012** — K2 webhook apply-status ack (HMAC feedback loop)
 
 ---
 
 ## PR Checklist
 
-- [ ] Har endpoint `@PreAuthorize` + university scope check
-- [ ] List query — service'da auto-filter by university
-- [ ] Mutation endpoint — cross-university check (Forbidden)
-- [ ] Cache key includes universityId
-- [ ] Aggregate query — single SQL with GROUP BY (not N queries)
-- [ ] No `/{universityId}/` in URL (use token claim)
-- [ ] Test: cross-university access returns 403
-- [ ] Test: SUPER_ADMIN bypass works
+- [ ] Sync endpoint — `universityCode` JWT claim'dan (URL'da EMAS); dev fallback faqat `X-University-Code`
+- [ ] Sync yozuvi idempotent (`ON CONFLICT` / upsert key)
+- [ ] Kafka publish — future timeout/error handling (ADR-0007/0010)
+- [ ] Webhook ack — HMAC (`X-Hemis-Signature` + timestamp + university-code) tekshiriladi, JWT emas
+- [ ] Gateway endpoint — `@PreAuthorize("isAuthenticated()")`
+- [ ] Yangi OAuth client turi to'g'ri (`ClientType.UNIVERSITY`)
+- [ ] CRUD/`@Cacheable` qo'shilmadi (bu modul write/sync-oriented)
 
 ---
 
 ## See Also
-- `../security/CLAUDE.md` — `@PreAuthorize` patterns, custom SpEL
-- `../api-web/CLAUDE.md` — Modern REST patterns
+- `../api-external/CLAUDE.md` — tashqi davlat S2S token (`ClientType.EXTERNAL_SYSTEM`)
+- `../security/CLAUDE.md` — OAuth issuer, `@PreAuthorize` patterns
+- `../api-mspd/CLAUDE.md` — kadastr gateway upstream
