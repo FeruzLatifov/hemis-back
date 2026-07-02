@@ -99,6 +99,19 @@ WHERE r.code = 'MINISTRY_ADMIN'
   )
 ON CONFLICT DO NOTHING;
 
+-- Ministry: diploma-blank-distribution write actions (central CRUD card create/edit/delete).
+-- These are CORE-category so already covered above; kept explicit for clarity/idempotency.
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
+SELECT r.id, p.id, 'system'
+FROM role r CROSS JOIN permission p
+WHERE r.code = 'MINISTRY_ADMIN'
+  AND p.code IN (
+    'institutions.diploma-blank-distribution.create',
+    'institutions.diploma-blank-distribution.edit',
+    'institutions.diploma-blank-distribution.delete'
+  )
+ON CONFLICT DO NOTHING;
+
 -- =====================================================
 -- INSPECTOR: View-only across all modules (old-hemis: Inspeksiya)
 -- =====================================================

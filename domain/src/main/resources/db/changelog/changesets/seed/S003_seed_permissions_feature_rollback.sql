@@ -10,11 +10,14 @@ DECLARE
     role_perms_exists BOOLEAN;
     perms_exists BOOLEAN;
     _codes text[] := ARRAY[
-        -- Institutions (9)
+        -- Institutions (14)
         'institutions.view', 'institutions.universities.view', 'institutions.faculties.view',
         'institutions.departments.view', 'institutions.attached-specialities.view',
         'institutions.attached-specialities.create', 'institutions.attached-specialities.edit',
         'institutions.attached-specialities.delete', 'institutions.university-specialities.view',
+        'institutions.diploma-blanks.view', 'institutions.diploma-blank-distribution.view',
+        'institutions.diploma-blank-distribution.create', 'institutions.diploma-blank-distribution.edit',
+        'institutions.diploma-blank-distribution.delete',
         -- Students sub-menus (6)
         'students.list.view', 'students.directions.view', 'students.groups.view',
         'students.diplomas.view', 'students.scholarships.view', 'students.certificates.view',

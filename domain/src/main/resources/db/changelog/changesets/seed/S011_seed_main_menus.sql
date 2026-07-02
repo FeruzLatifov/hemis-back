@@ -25,6 +25,8 @@ SELECT upsert_menu('20000002-0000-0000-0000-000000000002'::uuid, 'inst-faculties
 SELECT upsert_menu('20000002-0000-0000-0000-000000000003'::uuid, 'inst-departments',            'Departments',              '/institutions/departments',            'users',     'institutions.departments.view',             3, '10000000-0000-0000-0000-000000000002'::uuid);
 SELECT upsert_menu('20000002-0000-0000-0000-000000000004'::uuid, 'inst-attached-specialities',  'University specialities',  '/institutions/attached-specialities',  'layers',    'institutions.attached-specialities.view',   4, '10000000-0000-0000-0000-000000000002'::uuid);
 SELECT upsert_menu('20000002-0000-0000-0000-000000000005'::uuid, 'inst-university-specialities','Institution specialities', '/institutions/university-specialities','book-open', 'institutions.university-specialities.view', 5, '10000000-0000-0000-0000-000000000002'::uuid);
+SELECT upsert_menu('20000002-0000-0000-0000-000000000006'::uuid, 'inst-diploma-blanks',         'Diploma blanks',           '/institutions/diploma-blanks',          'file-badge','institutions.diploma-blanks.view',          6, '10000000-0000-0000-0000-000000000002'::uuid);
+SELECT upsert_menu('20000002-0000-0000-0000-000000000007'::uuid, 'inst-blank-distribution',     'Blank distribution',       '/institutions/diploma-blank-distribution','send',    'institutions.diploma-blank-distribution.view', 7, '10000000-0000-0000-0000-000000000002'::uuid);
 
 -- =====================================================
 -- CHILDREN OF: students (6 items)
@@ -115,7 +117,7 @@ BEGIN
      WHERE deleted_at IS NULL
        AND code IN (
            'dashboard','institutions','students','teachers','science','reports','rating','classifiers','system',
-           'inst-universities','inst-faculties','inst-departments','inst-attached-specialities','inst-university-specialities',
+           'inst-universities','inst-faculties','inst-departments','inst-attached-specialities','inst-university-specialities','inst-diploma-blanks','inst-blank-distribution',
            'student-list','student-directions','student-groups','student-diplomas','student-scholarships','student-certificates',
            'teacher-list','teacher-positions','teacher-qualifications','teacher-employee-jobs',
            'sci-researchers','sci-projects','sci-publications','sci-methodical','sci-intellectual','sci-dissertation-defense','sci-research-activity',
@@ -131,10 +133,10 @@ BEGIN
        AND code IN ('dashboard','institutions','students','teachers','science','reports','rating','classifiers','system');
 
     RAISE NOTICE 'S013: MAIN MENU SEEDED';
-    RAISE NOTICE '   Main menu items: % (expected 54)', menu_count;
+    RAISE NOTICE '   Main menu items: % (expected 56)', menu_count;
     RAISE NOTICE '   Root items: % (expected 9)', root_menu_count;
 
-    IF menu_count <> 54 THEN
-        RAISE WARNING 'S013: expected 54 main menu items, found %', menu_count;
+    IF menu_count <> 56 THEN
+        RAISE WARNING 'S013: expected 56 main menu items, found %', menu_count;
     END IF;
 END $$;

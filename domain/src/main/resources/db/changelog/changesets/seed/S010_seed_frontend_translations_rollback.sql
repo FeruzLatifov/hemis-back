@@ -60,6 +60,11 @@ DECLARE
         'Education type','Speciality level','Speciality','Bachelor','Master','Ordinatura','Doctoral',
         'No attached specialities have been added yet','Attached speciality created',
         'Attached speciality updated','Attached speciality deleted','Delete attached speciality?',
+        -- Diploma blanks + Blank distribution registry cards ('Number' owned by student registry — excluded)
+        'Diploma blanks','Blank distribution','Blank code','Series','Start number','End number',
+        'Quantity','Blank category','Received date','Distribution date','Supplier',
+        'Add distribution','Edit distribution','No diploma blanks have been added yet',
+        'No distributions have been added yet',
         'No permissions available','No permissions found',
         'No roles found','No roles have been created yet','No students found','No translations found',
         'Cache cleared','Cache cleared successfully','JSON files downloaded',

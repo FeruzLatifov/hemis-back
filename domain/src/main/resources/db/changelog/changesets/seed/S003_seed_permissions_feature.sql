@@ -69,6 +69,36 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.diploma-blanks', 'view', 'institutions.diploma-blanks.view', 'View Diploma Blanks', 'View diploma blanks list', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.diploma-blank-distribution', 'view', 'institutions.diploma-blank-distribution.view', 'View Blank Distribution', 'View blank distribution list', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.diploma-blank-distribution', 'create', 'institutions.diploma-blank-distribution.create', 'Create Blank Distribution', 'Create blank distribution', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.diploma-blank-distribution', 'edit', 'institutions.diploma-blank-distribution.edit', 'Edit Blank Distribution', 'Edit blank distribution', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.diploma-blank-distribution', 'delete', 'institutions.diploma-blank-distribution.delete', 'Delete Blank Distribution', 'Delete blank distribution', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
 -- =====================================================
 -- Students Module (6 permissions)
 -- Note: students.view is in S002 (base) — not duplicated here
@@ -455,11 +485,14 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO feature_count FROM permission
     WHERE code IN (
-        -- Institutions (9)
+        -- Institutions (14)
         'institutions.view', 'institutions.universities.view', 'institutions.faculties.view',
         'institutions.departments.view', 'institutions.attached-specialities.view',
         'institutions.attached-specialities.create', 'institutions.attached-specialities.edit',
         'institutions.attached-specialities.delete', 'institutions.university-specialities.view',
+        'institutions.diploma-blanks.view', 'institutions.diploma-blank-distribution.view',
+        'institutions.diploma-blank-distribution.create', 'institutions.diploma-blank-distribution.edit',
+        'institutions.diploma-blank-distribution.delete',
         -- Students sub-menus (6)
         'students.list.view', 'students.directions.view', 'students.groups.view',
         'students.diplomas.view', 'students.scholarships.view', 'students.certificates.view',
@@ -490,8 +523,8 @@ BEGIN
         'users.manage'
     );
 
-    IF feature_count < 61 THEN
-        RAISE WARNING 'S003: Expected >= 61 feature permissions, found %', feature_count;
+    IF feature_count < 66 THEN
+        RAISE WARNING 'S003: Expected >= 66 feature permissions, found %', feature_count;
     ELSE
         RAISE NOTICE 'S003: % feature permissions seeded', feature_count;
     END IF;

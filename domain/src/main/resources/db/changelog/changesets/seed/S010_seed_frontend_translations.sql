@@ -369,6 +369,24 @@ PERFORM _seed_msg('message', 'Attached speciality updated',                     
 PERFORM _seed_msg('message', 'Attached speciality deleted',                              'Biriktirilgan mutaxassislik o''chirildi','Бириктирилган мутахассислик ўчирилди','Прикреплённая специальность удалена');
 PERFORM _seed_msg('confirm', 'Delete attached speciality?',                              'Biriktirilgan mutaxassislik o''chirilsinmi?','Бириктирилган мутахассислик ўчирилсинми?','Удалить прикреплённую специальность?');
 
+-- Diploma blanks + Blank distribution registry cards (institutions module)
+-- NOTE: 'Number' already seeded below (student registry) — reused, not duplicated.
+PERFORM _seed_msg('label',   'Diploma blanks',                                           'Diplom blankalari',               'Диплом бланкалари',               'Дипломные бланки');
+PERFORM _seed_msg('label',   'Blank distribution',                                       'Blank taqsimlash',                'Бланк тақсимлаш',                 'Распределение бланков');
+PERFORM _seed_msg('label',   'Blank code',                                               'Blank kodi',                      'Бланк коди',                      'Код бланка');
+PERFORM _seed_msg('label',   'Series',                                                   'Seriya',                          'Серия',                           'Серия');
+PERFORM _seed_msg('label',   'Start number',                                             'Boshlang''ich raqam',             'Бошланғич рақам',                 'Начальный номер');
+PERFORM _seed_msg('label',   'End number',                                               'Oxirgi raqam',                    'Охирги рақам',                    'Конечный номер');
+PERFORM _seed_msg('label',   'Quantity',                                                 'Miqdor',                          'Миқдор',                          'Количество');
+PERFORM _seed_msg('label',   'Blank category',                                           'Blank toifasi',                   'Бланк тоифаси',                   'Категория бланка');
+PERFORM _seed_msg('label',   'Received date',                                            'Qabul qilingan sana',             'Қабул қилинган сана',             'Дата получения');
+PERFORM _seed_msg('label',   'Distribution date',                                        'Taqsimlash sanasi',               'Тақсимлаш санаси',                'Дата распределения');
+PERFORM _seed_msg('label',   'Supplier',                                                 'Yetkazib beruvchi',               'Етказиб берувчи',                 'Поставщик');
+PERFORM _seed_msg('action',  'Add distribution',                                         'Taqsimlash qo''shish',            'Тақсимлаш қўшиш',                 'Добавить распределение');
+PERFORM _seed_msg('action',  'Edit distribution',                                        'Taqsimlashni tahrirlash',         'Тақсимлашни таҳрирлаш',           'Редактировать распределение');
+PERFORM _seed_msg('message', 'No diploma blanks have been added yet',                    'Hali birorta blank qo''shilmagan','Ҳали бирорта бланк қўшилмаган',   'Пока не добавлено ни одного бланка');
+PERFORM _seed_msg('message', 'No distributions have been added yet',                     'Hali birorta taqsimlash qo''shilmagan','Ҳали бирорта тақсимлаш қўшилмаган','Пока не добавлено ни одного распределения');
+
 -- Student registry cards — Diplomas, Scholarships, Certificates
 PERFORM _seed_msg('label',   'Student',                                                  'Talaba',                          'Талаба',                          'Студент');
 PERFORM _seed_msg('label',   'Diploma number',                                           'Diplom raqami',                   'Диплом рақами',                   'Номер диплома');

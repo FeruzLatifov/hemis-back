@@ -275,6 +275,12 @@ public class DashboardCacheConfig implements CachingConfigurer {
         redisCacheConfigurations.put("groupDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
         redisCacheConfigurations.put("attachedSpecialityDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
 
+        // Diploma-blanks read-only registry dictionaries (universities + distinct statuses) — 6 soat.
+        redisCacheConfigurations.put("diplomaBlanksDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+
+        // Diploma-blank distribution CRUD dictionaries (universities + classifiers) — 6 soat.
+        redisCacheConfigurations.put("diplomaBlankDistributionDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+
         // Student registry card dictionaries (read-only) — 6 soat (registry, statik).
         redisCacheConfigurations.put("diplomasDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
         redisCacheConfigurations.put("scholarshipsDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
