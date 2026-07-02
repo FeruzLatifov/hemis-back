@@ -502,6 +502,22 @@ PERFORM _seed_msg('label',   'Scholar database',                                
 PERFORM _seed_msg('label',   'Link',                                                     'Havola',                          'Ҳавола',                          'Ссылка');
 PERFORM _seed_msg('message', 'No records have been added yet',                           'Hali birorta yozuv qo''shilmagan','Ҳали бирорта ёзув қўшилмаган',    'Пока не добавлено ни одной записи');
 
+-- Academic + Economic reports — KPIs, chart titles, table headers.
+-- NOTE: 'Average score','Debtors','University','By education type','By gender','Total',
+--   'Top universities','Academic report','Economic report' reused (seeded above) — not duplicated.
+PERFORM _seed_msg('label',   'Average attendance',                                       'O''rtacha davomat',               'Ўртача давомат',                  'Средняя посещаемость');
+PERFORM _seed_msg('label',   'Universities covered',                                     'Qamrab olingan OTMlar',           'Қамраб олинган ОТМлар',           'Охваченные вузы');
+PERFORM _seed_msg('label',   'Top universities by average score',                        'O''rtacha ball bo''yicha yetakchi OTMlar','Ўртача балл бўйича етакчи ОТМлар','Ведущие вузы по среднему баллу');
+PERFORM _seed_msg('label',   'Per-university academic performance',                      'OTM bo''yicha o''zlashtirish',    'ОТМ бўйича ўзлаштириш',           'Успеваемость по вузам');
+PERFORM _seed_msg('label',   'Absentee students',                                        'Davomati past talabalar',         'Давомати паст талабалар',         'Студенты с пропусками');
+PERFORM _seed_msg('label',   'Total graduates',                                          'Jami bitiruvchilar',              'Жами битирувчилар',               'Всего выпускников');
+PERFORM _seed_msg('label',   'Laboratories',                                             'Laboratoriyalar',                 'Лабораториялар',                  'Лаборатории');
+PERFORM _seed_msg('label',   'ICT equipment',                                            'AKT jihozlari',                   'АКТ жиҳозлари',                   'ИКТ оборудование');
+PERFORM _seed_msg('label',   'Graduates by year',                                        'Yillar bo''yicha bitiruvchilar',  'Йиллар бўйича битирувчилар',      'Выпускники по годам');
+PERFORM _seed_msg('label',   'By workplace compatibility',                               'Ish joyi mosligi bo''yicha',      'Иш жойи мослиги бўйича',          'По соответствию месту работы');
+PERFORM _seed_msg('label',   'Top universities by graduate count',                       'Bitiruvchilar soni bo''yicha yetakchi OTMlar','Битирувчилар сони бўйича етакчи ОТМлар','Ведущие вузы по числу выпускников');
+PERFORM _seed_msg('label',   'Laboratories by university',                               'OTM bo''yicha laboratoriyalar',   'ОТМ бўйича лабораториялар',       'Лаборатории по вузам');
+
 END $$;
 
 -- =====================================================

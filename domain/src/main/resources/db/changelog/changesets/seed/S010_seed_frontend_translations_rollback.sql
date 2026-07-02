@@ -149,7 +149,13 @@ DECLARE
         'Institution specialities','Dissertation defense','Employee','Employee type','Employee form',
         'Job start date','Job end date','Defense date','Defense place','Patent type','Property date',
         'Number','H-index','Scientific work count','Reference count','Scholar database','Link',
-        'No records have been added yet'
+        'No records have been added yet',
+        -- ACADEMIC + ECONOMIC REPORTS. 'Average score','Debtors','University','By education type',
+        --   'By gender','Total','Top universities','Academic report','Economic report' reused — excluded.
+        'Average attendance','Universities covered','Top universities by average score',
+        'Per-university academic performance','Absentee students','Total graduates','Laboratories',
+        'ICT equipment','Graduates by year','By workplace compatibility',
+        'Top universities by graduate count','Laboratories by university'
     ];
 BEGIN
     SELECT EXISTS (
