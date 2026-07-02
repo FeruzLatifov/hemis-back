@@ -36,7 +36,7 @@ DECLARE
         'Role name','Role details','Permissions','Current status','Changed fields','Created',
         'Endpoint','Entity','Entity type','Event','Event type','Errors','Error type','Failure reason',
         'Old value','New value','Total activities','Total errors','Total logins','Top user','Synced',
-        'Group','Groups','Per page','Shown','Gender','Education form','Education year',
+        'Group','Groups','Group count','Group name','Group ID','No groups have been added yet','Per page','Shown','Gender','Education form','Education year',
         'Enrollment records','Living area','Object area','Utility area',
         'Cadastral cost','Share sum','Successor','Duplicate analysis','Column settings',
         'Message','Text','Version','Security','University','University Information',
@@ -53,7 +53,14 @@ DECLARE
         'Password must be at least 6 characters','Phone number must be in format +998XXXXXXXXX',
         -- MESSAGES
         'No data available','No active records','No duplicate translations found',
-        'No faculties have been added yet','No permissions available','No permissions found',
+        'No faculties have been added yet','No departments have been added yet',
+        'Department count','Department type',
+        -- Attached specialities registry (university speciality CRUD card)
+        'University specialities','Add attached speciality','Edit attached speciality',
+        'Education type','Speciality level','Speciality','Bachelor','Master','Ordinatura','Doctoral',
+        'No attached specialities have been added yet','Attached speciality created',
+        'Attached speciality updated','Attached speciality deleted','Delete attached speciality?',
+        'No permissions available','No permissions found',
         'No roles found','No roles have been created yet','No students found','No translations found',
         'Cache cleared','Cache cleared successfully','JSON files downloaded',
         'JSON files downloading...','External data synced successfully','Lifecycle event added',
@@ -107,7 +114,42 @@ DECLARE
         -- CONFIRM
         'Are you sure you want to {{action}} user','Are you sure you want to unlock user',
         -- SOCIAL
-        'Facebook','Instagram','Telegram','Twitter','LinkedIn','YouTube'
+        'Facebook','Instagram','Telegram','Twitter','LinkedIn','YouTube',
+        -- STUDENT REGISTRY CARDS (Diplomas, Scholarships, Certificates)
+        'Student','Diploma number','Register number','Register date','Graduation date',
+        'Average grade','Total credit','Admission year','Verified','No diplomas have been added yet',
+        'Scholarship category','Scholarship type','Payment form','Decree','Start date','End date',
+        'Semester','Monthly amounts','Amount','No scholarships have been added yet',
+        'Certificate type','Certificate name','Certificate grade','Certificate subject',
+        'Serial number','Issue date','Valid until','No certificates have been added yet',
+        -- SCIENCE REGISTRY CARDS (Researchers, Scientific projects, publications, Methodical)
+        -- ('Scientific projects','Scientific publications' owned by S006 — excluded)
+        'Researchers','Methodical publications','Full name','Student ID number','Science branch',
+        'Dissertation theme','Doctoral student type','Accepted date',
+        'No researchers have been added yet','Project number','Project type','Contract number',
+        'Contract date','No scientific projects have been added yet','Authors','Author count',
+        'Source','Issue year','Publication type','No publications have been added yet',
+        'Publisher','No methodical works have been added yet',
+        -- ANALYTICS REPORT CARDS (KPIs, block titles, columns, filters)
+        -- ('By education type','By region','Education year' owned above — excluded)
+        'Total students','Grant','Contract','Male','Female','By education form','By gender',
+        'By payment form','Top universities','Students count','Total institutions','Faculties',
+        'Cathedras','By ownership','By university type','University structure','Total publications',
+        'Total projects','Doctoral students','Publications by type','Publications by university',
+        'Projects by type','Projects by university','Publications','Projects','Total teachers',
+        'PhD holders','Professors','By academic degree','By academic rank','By age','By university',
+        'Teachers count','No report data available',
+        -- RATING CARDS (menu titles + University/Publications/Projects/Doctoral students/
+        --   Top universities/Total publications/Total projects/By university reused — excluded)
+        'Rank','Total','Indicators','Universities ranked','Top university',
+        'Average score','Average GPA','Debtors','Students counted',
+        -- NEW REGISTRY CARDS (Employee jobs, Institution specialities, Dissertation defense,
+        --   Publication property, Research activity). 'Employee jobs'/'Scientific activity' (S006),
+        --   'Decree number' (S009), 'Speciality code'/'Speciality name' (S006) excluded.
+        'Institution specialities','Dissertation defense','Employee','Employee type','Employee form',
+        'Job start date','Job end date','Defense date','Defense place','Patent type','Property date',
+        'Number','H-index','Scientific work count','Reference count','Scholar database','Link',
+        'No records have been added yet'
     ];
 BEGIN
     SELECT EXISTS (

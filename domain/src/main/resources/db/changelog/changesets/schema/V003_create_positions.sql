@@ -37,7 +37,8 @@ CREATE TABLE h_position (
     name       VARCHAR(255) NOT NULL,
     name_ru    VARCHAR(255),
     name_en    VARCHAR(255),
-    type_code  VARCHAR(10)  NOT NULL REFERENCES h_position_type(code),
+    type_code  VARCHAR(10)  NOT NULL DEFAULT '12' REFERENCES h_position_type(code),  -- DEFAULT '12' (Professor-o'qituvchi guruhi, S008): generic ClassifierWebService INSERT type_code'ni yubormaydi
+
     is_active  BOOLEAN      NOT NULL DEFAULT true,
     sort_order INTEGER               DEFAULT 0,
     version    INTEGER               DEFAULT 1,

@@ -17,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import uz.hemis.common.dto.ErrorResponse;
+import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ExceptionHandlerUtils;
 import uz.hemis.service.shared.I18nService;
 
@@ -92,6 +93,28 @@ public class WebExceptionHandler {
                 request.getRequestURI(),
                 null,
                 "OPTIMISTIC_LOCK_CONFLICT"
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    /**
+     * Business-level duplicate — operatsiya mavjud faol yozuv bilan to'qnashadi
+     * (masalan attached-speciality takror biriktirish). DB unique constraint yo'q joyda
+     * service qo'lda tekshiradi va {@link ConflictException} tashlaydi.
+     */
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(
+            ConflictException ex,
+            HttpServletRequest request
+    ) {
+        log.warn("Conflict at {}: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse error = ErrorResponse.of(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null,
+                "CONFLICT"
         );
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }

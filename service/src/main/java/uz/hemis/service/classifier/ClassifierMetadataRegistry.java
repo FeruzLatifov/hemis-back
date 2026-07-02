@@ -125,6 +125,10 @@ public final class ClassifierMetadataRegistry {
         // UNCHANGED: hemishe_h_employment_form — boshqa jadval, migratsiya qilinmagan
         reg("hemishe_h_employment_form", Category.EMPLOYEE, "Bandlik shakllari", "Формы занятости", "Employment forms", true, false);
         reg("hemishe_h_qualification", Category.EMPLOYEE, "Malaka toifalari", "Категории квалификации", "Qualification categories", true, false);
+        // h_position (V003 + S008 seed) — apiKey EXPLICIT 'position' (auto-derive 'h-position' bo'lardi).
+        // Fanout classifier_type='position' → Univer hemishe_h_position ga apply qiladi.
+        // type_code generic INSERT'da yo'q → V003 DB DEFAULT '12' (Professor-o'qituvchi guruhi).
+        reg("h_position", "position", Category.EMPLOYEE, "Lavozimlar", "Должности", "Positions", true, false);
         reg("hemishe_h_academic_degree", Category.EMPLOYEE, "Ilmiy darajalar", "Ученые степени", "Academic degrees", true, false);
         reg("hemishe_h_academic_rank", Category.EMPLOYEE, "Ilmiy unvonlar", "Ученые звания", "Academic ranks", true, false);
         reg("hemishe_h_teacher_achievement_type", Category.EMPLOYEE, "O'qituvchi yutuqlari turlari", "Типы достижений преподавателей", "Teacher achievement types", true, false);

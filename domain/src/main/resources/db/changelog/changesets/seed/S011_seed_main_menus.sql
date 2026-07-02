@@ -17,13 +17,14 @@ SELECT upsert_menu('10000000-0000-0000-0000-000000000008'::uuid, 'classifiers', 
 SELECT upsert_menu('10000000-0000-0000-0000-000000000009'::uuid, 'system',       'System',       NULL,          'settings',     'system.view',         9, NULL, 'system');
 
 -- =====================================================
--- CHILDREN OF: institutions (4 items)
+-- CHILDREN OF: institutions (5 items)
 -- =====================================================
 
-SELECT upsert_menu('20000002-0000-0000-0000-000000000001'::uuid, 'inst-universities',         'Universities',           '/institutions/universities',          'building', 'institutions.universities.view',         1, '10000000-0000-0000-0000-000000000002'::uuid);
-SELECT upsert_menu('20000002-0000-0000-0000-000000000002'::uuid, 'inst-faculties',            'Faculties',              '/institutions/faculties',             'school',   'institutions.faculties.view',            2, '10000000-0000-0000-0000-000000000002'::uuid);
-SELECT upsert_menu('20000002-0000-0000-0000-000000000003'::uuid, 'inst-departments',          'Departments',            '/institutions/departments',           'users',    'institutions.departments.view',          3, '10000000-0000-0000-0000-000000000002'::uuid);
-SELECT upsert_menu('20000002-0000-0000-0000-000000000004'::uuid, 'inst-attached-specialities','University specialities','/institutions/attached-specialities', 'layers',   'institutions.attached-specialities.view',4, '10000000-0000-0000-0000-000000000002'::uuid);
+SELECT upsert_menu('20000002-0000-0000-0000-000000000001'::uuid, 'inst-universities',           'Universities',             '/institutions/universities',           'building',  'institutions.universities.view',            1, '10000000-0000-0000-0000-000000000002'::uuid);
+SELECT upsert_menu('20000002-0000-0000-0000-000000000002'::uuid, 'inst-faculties',              'Faculties',                '/institutions/faculties',              'school',    'institutions.faculties.view',               2, '10000000-0000-0000-0000-000000000002'::uuid);
+SELECT upsert_menu('20000002-0000-0000-0000-000000000003'::uuid, 'inst-departments',            'Departments',              '/institutions/departments',            'users',     'institutions.departments.view',             3, '10000000-0000-0000-0000-000000000002'::uuid);
+SELECT upsert_menu('20000002-0000-0000-0000-000000000004'::uuid, 'inst-attached-specialities',  'University specialities',  '/institutions/attached-specialities',  'layers',    'institutions.attached-specialities.view',   4, '10000000-0000-0000-0000-000000000002'::uuid);
+SELECT upsert_menu('20000002-0000-0000-0000-000000000005'::uuid, 'inst-university-specialities','Institution specialities', '/institutions/university-specialities','book-open', 'institutions.university-specialities.view', 5, '10000000-0000-0000-0000-000000000002'::uuid);
 
 -- =====================================================
 -- CHILDREN OF: students (6 items)
@@ -37,22 +38,25 @@ SELECT upsert_menu('20000003-0000-0000-0000-000000000005'::uuid, 'student-schola
 SELECT upsert_menu('20000003-0000-0000-0000-000000000006'::uuid, 'student-certificates', 'Student certificates', '/students/certificates', 'file-text',    'students.certificates.view', 6, '10000000-0000-0000-0000-000000000003'::uuid);
 
 -- =====================================================
--- CHILDREN OF: teachers (3 items)
+-- CHILDREN OF: teachers (4 items)
 -- =====================================================
 
 SELECT upsert_menu('20000004-0000-0000-0000-000000000001'::uuid, 'teacher-list',           'Teacher list',           '/teachers',                'list',      'teachers.list.view',           1, '10000000-0000-0000-0000-000000000004'::uuid);
 SELECT upsert_menu('20000004-0000-0000-0000-000000000002'::uuid, 'teacher-positions',      'Positions',              '/teachers/positions',      'briefcase', 'teachers.positions.view',      2, '10000000-0000-0000-0000-000000000004'::uuid);
 SELECT upsert_menu('20000004-0000-0000-0000-000000000003'::uuid, 'teacher-qualifications', 'Teacher qualifications', '/teachers/qualifications', 'award',     'teachers.qualifications.view', 3, '10000000-0000-0000-0000-000000000004'::uuid);
+SELECT upsert_menu('20000004-0000-0000-0000-000000000004'::uuid, 'teacher-employee-jobs',  'Employee jobs',          '/teachers/employee-jobs',  'briefcase', 'teachers.employee-jobs.view',  4, '10000000-0000-0000-0000-000000000004'::uuid);
 
 -- =====================================================
--- CHILDREN OF: science (5 items)
+-- CHILDREN OF: science (7 items)
 -- =====================================================
 
-SELECT upsert_menu('20000005-0000-0000-0000-000000000001'::uuid, 'sci-researchers',  'Researchers',             '/science/researchers',  'user-check',     'science.researchers.view',  1, '10000000-0000-0000-0000-000000000005'::uuid);
-SELECT upsert_menu('20000005-0000-0000-0000-000000000002'::uuid, 'sci-projects',     'Scientific projects',     '/science/projects',     'lightbulb',      'science.projects.view',     2, '10000000-0000-0000-0000-000000000005'::uuid);
-SELECT upsert_menu('20000005-0000-0000-0000-000000000003'::uuid, 'sci-publications', 'Scientific publications', '/science/publications', 'book',           'science.publications.view', 3, '10000000-0000-0000-0000-000000000005'::uuid);
-SELECT upsert_menu('20000005-0000-0000-0000-000000000004'::uuid, 'sci-methodical',   'Methodical publications', '/science/methodical',   'book-open',      'science.methodical.view',   4, '10000000-0000-0000-0000-000000000005'::uuid);
-SELECT upsert_menu('20000005-0000-0000-0000-000000000005'::uuid, 'sci-intellectual', 'Intellectual property',   '/science/intellectual', 'briefcase',      'science.intellectual.view', 5, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000001'::uuid, 'sci-researchers',         'Researchers',             '/science/researchers',         'user-check', 'science.researchers.view',          1, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000002'::uuid, 'sci-projects',            'Scientific projects',     '/science/projects',            'lightbulb',  'science.projects.view',             2, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000003'::uuid, 'sci-publications',        'Scientific publications', '/science/publications',        'book',       'science.publications.view',         3, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000004'::uuid, 'sci-methodical',          'Methodical publications', '/science/methodical',          'book-open',  'science.methodical.view',           4, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000005'::uuid, 'sci-intellectual',        'Intellectual property',   '/science/intellectual',        'briefcase',  'science.intellectual.view',         5, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000006'::uuid, 'sci-dissertation-defense','Dissertation defense',    '/science/dissertation-defense','award',      'science.dissertation-defense.view', 6, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000007'::uuid, 'sci-research-activity',   'Scientific activity',     '/science/research-activity',   'activity',   'science.research-activity.view',    7, '10000000-0000-0000-0000-000000000005'::uuid);
 
 -- =====================================================
 -- CHILDREN OF: reports (6 items)
@@ -111,10 +115,10 @@ BEGIN
      WHERE deleted_at IS NULL
        AND code IN (
            'dashboard','institutions','students','teachers','science','reports','rating','classifiers','system',
-           'inst-universities','inst-faculties','inst-departments','inst-attached-specialities',
+           'inst-universities','inst-faculties','inst-departments','inst-attached-specialities','inst-university-specialities',
            'student-list','student-directions','student-groups','student-diplomas','student-scholarships','student-certificates',
-           'teacher-list','teacher-positions','teacher-qualifications',
-           'sci-researchers','sci-projects','sci-publications','sci-methodical','sci-intellectual',
+           'teacher-list','teacher-positions','teacher-qualifications','teacher-employee-jobs',
+           'sci-researchers','sci-projects','sci-publications','sci-methodical','sci-intellectual','sci-dissertation-defense','sci-research-activity',
            'reports-students','reports-teachers','reports-institutions','reports-academic','reports-research','reports-economic',
            'rating-administrative','rating-academic','rating-scientific','rating-gpa',
            'cls-general','cls-structure','cls-employee','cls-student','cls-education','cls-study','cls-science','cls-organizational',
@@ -127,10 +131,10 @@ BEGIN
        AND code IN ('dashboard','institutions','students','teachers','science','reports','rating','classifiers','system');
 
     RAISE NOTICE 'S013: MAIN MENU SEEDED';
-    RAISE NOTICE '   Main menu items: % (expected 50)', menu_count;
+    RAISE NOTICE '   Main menu items: % (expected 54)', menu_count;
     RAISE NOTICE '   Root items: % (expected 9)', root_menu_count;
 
-    IF menu_count <> 50 THEN
-        RAISE WARNING 'S013: expected 50 main menu items, found %', menu_count;
+    IF menu_count <> 54 THEN
+        RAISE WARNING 'S013: expected 54 main menu items, found %', menu_count;
     END IF;
 END $$;

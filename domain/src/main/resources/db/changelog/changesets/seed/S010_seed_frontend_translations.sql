@@ -129,6 +129,9 @@ PERFORM _seed_msg('label',  'Top user',                               'Eng faol 
 PERFORM _seed_msg('label',  'Synced',                                 'Sinxronlandi',                    'Синхронланди',                    'Синхронизировано');
 PERFORM _seed_msg('label',  'Group',                                  'Guruh',                           'Гуруҳ',                           'Группа');
 PERFORM _seed_msg('label',  'Groups',                                 'Guruhlar',                        'Гуруҳлар',                        'Группы');
+PERFORM _seed_msg('label',  'Group count',                            'Guruhlar soni',                   'Гуруҳлар сони',                   'Количество групп');
+PERFORM _seed_msg('label',  'Group name',                             'Guruh nomi',                      'Гуруҳ номи',                      'Название группы');
+PERFORM _seed_msg('label',  'Group ID',                               'Guruh ID',                        'Гуруҳ ID',                        'ID группы');
 PERFORM _seed_msg('label',  'Per page',                               'Sahifada',                        'Саҳифада',                        'На странице');
 PERFORM _seed_msg('label',  'Shown',                                  'Ko''rsatilgan',                   'Кўрсатилган',                     'Показано');
 PERFORM _seed_msg('label',  'Gender',                                 'Jinsi',                           'Жинси',                           'Пол');
@@ -192,6 +195,7 @@ PERFORM _seed_msg('validation', 'Phone number must be in format +998XXXXXXXXX', 
 -- ──────────────────────────────────────────────────────
 PERFORM _seed_msg('message', 'No data available',                                        'Ma''lumot mavjud emas',           'Маълумот мавжуд эмас',            'Нет данных');
 PERFORM _seed_msg('message', 'No active records',                                        'Faol yozuvlar yo''q',             'Фаол ёзувлар йўқ',                'Нет активных записей');
+PERFORM _seed_msg('message', 'No groups have been added yet',                            'Hali birorta guruh qo''shilmagan','Ҳали бирорта гуруҳ қўшилмаган',   'Пока не добавлено ни одной группы');
 PERFORM _seed_msg('message', 'No duplicate translations found',                          'Dublikat tarjimalar topilmadi',   'Дубликат таржималар топилмади',   'Дубликаты переводов не найдены');
 PERFORM _seed_msg('message', 'No faculties have been added yet',                         'Hali fakultetlar qo''shilmagan',  'Ҳали факультетлар қўшилмаган',    'Факультеты ещё не добавлены');
 PERFORM _seed_msg('message', 'No permissions available',                                 'Ruxsatlar mavjud emas',           'Рухсатлар мавжуд эмас',           'Разрешения недоступны');
@@ -342,6 +346,161 @@ PERFORM _seed_msg('label',   'Telegram',                                        
 PERFORM _seed_msg('label',   'Twitter',                                                  'Twitter',                         'Twitter',                         'Twitter');
 PERFORM _seed_msg('label',   'LinkedIn',                                                 'LinkedIn',                        'LinkedIn',                        'LinkedIn');
 PERFORM _seed_msg('label',   'YouTube',                                                  'YouTube',                         'YouTube',                         'YouTube');
+
+-- Departments (Kafedralar) registry — kafedra = department_type 12
+PERFORM _seed_msg('label',   'Department count',                                         'Kafedralar soni',                 'Кафедралар сони',                 'Количество кафедр');
+PERFORM _seed_msg('label',   'Department type',                                          'Kafedra turi',                    'Кафедра тури',                    'Тип кафедры');
+PERFORM _seed_msg('message', 'No departments have been added yet',                       'Hali birorta kafedra qo''shilmagan','Ҳали бирорта кафедра қўшилмаган', 'Кафедры еще не добавлены');
+
+-- Attached specialities (Biriktirilgan mutaxassisliklar) registry — university speciality CRUD card
+PERFORM _seed_msg('label',   'University specialities',                                  'Universitet mutaxassisliklari',   'Университет мутахассисликлари',   'Специальности университета');
+PERFORM _seed_msg('action',  'Add attached speciality',                                  'Mutaxassislik biriktirish',       'Мутахассислик бириктириш',        'Прикрепить специальность');
+PERFORM _seed_msg('action',  'Edit attached speciality',                                 'Biriktirilgan mutaxassislikni tahrirlash','Бириктирилган мутахассисликни таҳрирлаш','Редактировать прикреплённую специальность');
+PERFORM _seed_msg('label',   'Education type',                                           'Ta''lim turi',                    'Таълим тури',                     'Тип образования');
+PERFORM _seed_msg('label',   'Speciality level',                                         'Mutaxassislik darajasi',          'Мутахассислик даражаси',          'Уровень специальности');
+PERFORM _seed_msg('label',   'Speciality',                                               'Mutaxassislik',                   'Мутахассислик',                   'Специальность');
+PERFORM _seed_msg('label',   'Bachelor',                                                 'Bakalavr',                        'Бакалавр',                        'Бакалавр');
+PERFORM _seed_msg('label',   'Master',                                                   'Magistr',                         'Магистр',                         'Магистр');
+PERFORM _seed_msg('label',   'Ordinatura',                                               'Ordinatura',                      'Ординатура',                      'Ординатура');
+PERFORM _seed_msg('label',   'Doctoral',                                                 'Doktorantura',                    'Докторантура',                    'Докторантура');
+PERFORM _seed_msg('message', 'No attached specialities have been added yet',             'Hali birorta mutaxassislik biriktirilmagan','Ҳали бирорта мутахассислик бириктирилмаган','Пока не прикреплено ни одной специальности');
+PERFORM _seed_msg('message', 'Attached speciality created',                              'Mutaxassislik biriktirildi',      'Мутахассислик бириктирилди',      'Специальность прикреплена');
+PERFORM _seed_msg('message', 'Attached speciality updated',                              'Biriktirilgan mutaxassislik yangilandi','Бириктирилган мутахассислик янгиланди','Прикреплённая специальность обновлена');
+PERFORM _seed_msg('message', 'Attached speciality deleted',                              'Biriktirilgan mutaxassislik o''chirildi','Бириктирилган мутахассислик ўчирилди','Прикреплённая специальность удалена');
+PERFORM _seed_msg('confirm', 'Delete attached speciality?',                              'Biriktirilgan mutaxassislik o''chirilsinmi?','Бириктирилган мутахассислик ўчирилсинми?','Удалить прикреплённую специальность?');
+
+-- Student registry cards — Diplomas, Scholarships, Certificates
+PERFORM _seed_msg('label',   'Student',                                                  'Talaba',                          'Талаба',                          'Студент');
+PERFORM _seed_msg('label',   'Diploma number',                                           'Diplom raqami',                   'Диплом рақами',                   'Номер диплома');
+PERFORM _seed_msg('label',   'Register number',                                          'Reyestr raqami',                  'Реестр рақами',                   'Регистрационный номер');
+PERFORM _seed_msg('label',   'Register date',                                            'Reyestr sanasi',                  'Реестр санаси',                   'Дата регистрации');
+PERFORM _seed_msg('label',   'Graduation date',                                          'Bitirish sanasi',                 'Битириш санаси',                  'Дата выпуска');
+PERFORM _seed_msg('label',   'Average grade',                                            'O''rtacha baho',                  'Ўртача баҳо',                     'Средний балл');
+PERFORM _seed_msg('label',   'Total credit',                                             'Jami kredit',                     'Жами кредит',                     'Всего кредитов');
+PERFORM _seed_msg('label',   'Admission year',                                           'Qabul yili',                      'Қабул йили',                      'Год поступления');
+PERFORM _seed_msg('label',   'Verified',                                                 'Tasdiqlangan',                    'Тасдиқланган',                    'Подтверждён');
+PERFORM _seed_msg('message', 'No diplomas have been added yet',                          'Hali birorta diplom qo''shilmagan','Ҳали бирорта диплом қўшилмаган',  'Пока не добавлено ни одного диплома');
+PERFORM _seed_msg('label',   'Scholarship category',                                     'Stipendiya toifasi',              'Стипендия тоифаси',               'Категория стипендии');
+PERFORM _seed_msg('label',   'Scholarship type',                                         'Stipendiya turi',                 'Стипендия тури',                  'Тип стипендии');
+PERFORM _seed_msg('label',   'Payment form',                                             'To''lov shakli',                  'Тўлов шакли',                     'Форма оплаты');
+PERFORM _seed_msg('label',   'Decree',                                                   'Buyruq',                          'Буйруқ',                          'Приказ');
+PERFORM _seed_msg('label',   'Start date',                                               'Boshlanish sanasi',               'Бошланиш санаси',                 'Дата начала');
+PERFORM _seed_msg('label',   'End date',                                                 'Tugash sanasi',                   'Тугаш санаси',                    'Дата окончания');
+PERFORM _seed_msg('label',   'Semester',                                                 'Semestr',                         'Семестр',                         'Семестр');
+PERFORM _seed_msg('label',   'Monthly amounts',                                          'Oylik miqdorlar',                 'Ойлик миқдорлар',                 'Ежемесячные суммы');
+PERFORM _seed_msg('label',   'Amount',                                                   'Miqdor',                          'Миқдор',                          'Сумма');
+PERFORM _seed_msg('message', 'No scholarships have been added yet',                      'Hali birorta stipendiya qo''shilmagan','Ҳали бирорта стипендия қўшилмаган','Пока не добавлено ни одной стипендии');
+PERFORM _seed_msg('label',   'Certificate type',                                         'Sertifikat turi',                 'Сертификат тури',                 'Тип сертификата');
+PERFORM _seed_msg('label',   'Certificate name',                                         'Sertifikat nomi',                 'Сертификат номи',                 'Название сертификата');
+PERFORM _seed_msg('label',   'Certificate grade',                                        'Sertifikat darajasi',             'Сертификат даражаси',             'Уровень сертификата');
+PERFORM _seed_msg('label',   'Certificate subject',                                      'Sertifikat fani',                 'Сертификат фани',                 'Предмет сертификата');
+PERFORM _seed_msg('label',   'Serial number',                                            'Seriya raqami',                   'Серия рақами',                    'Серийный номер');
+PERFORM _seed_msg('label',   'Issue date',                                               'Berilgan sana',                   'Берилган сана',                   'Дата выдачи');
+PERFORM _seed_msg('label',   'Valid until',                                              'Amal qilish muddati',             'Амал қилиш муддати',              'Действителен до');
+PERFORM _seed_msg('message', 'No certificates have been added yet',                      'Hali birorta sertifikat qo''shilmagan','Ҳали бирорта сертификат қўшилмаган','Пока не добавлено ни одного сертификата');
+
+-- Science registry cards — Researchers, Scientific projects, Scientific publications, Methodical publications
+-- NOTE: 'Scientific projects' and 'Scientific publications' are already seeded by S006 — not duplicated here.
+PERFORM _seed_msg('label',   'Researchers',                                              'Tadqiqotchilar',                  'Тадқиқотчилар',                   'Исследователи');
+PERFORM _seed_msg('label',   'Methodical publications',                                  'Metodik nashrlar',                'Методик нашрлар',                 'Методические публикации');
+PERFORM _seed_msg('label',   'Full name',                                                'F.I.Sh.',                         'Ф.И.Ш.',                          'Ф.И.О.');
+PERFORM _seed_msg('label',   'Student ID number',                                        'Talaba ID raqami',                'Талаба ID рақами',                'ID номер студента');
+PERFORM _seed_msg('label',   'Science branch',                                           'Fan tarmog''i',                   'Фан тармоғи',                     'Отрасль науки');
+PERFORM _seed_msg('label',   'Dissertation theme',                                       'Dissertatsiya mavzusi',           'Диссертация мавзуси',             'Тема диссертации');
+PERFORM _seed_msg('label',   'Doctoral student type',                                    'Doktorant turi',                  'Докторант тури',                  'Тип докторанта');
+PERFORM _seed_msg('label',   'Accepted date',                                            'Qabul sanasi',                    'Қабул санаси',                    'Дата приёма');
+PERFORM _seed_msg('message', 'No researchers have been added yet',                       'Hali birorta tadqiqotchi qo''shilmagan','Ҳали бирорта тадқиқотчи қўшилмаган','Пока не добавлено ни одного исследователя');
+PERFORM _seed_msg('label',   'Project number',                                           'Loyiha raqami',                   'Лойиҳа рақами',                   'Номер проекта');
+PERFORM _seed_msg('label',   'Project type',                                             'Loyiha turi',                     'Лойиҳа тури',                     'Тип проекта');
+PERFORM _seed_msg('label',   'Contract number',                                          'Shartnoma raqami',                'Шартнома рақами',                 'Номер договора');
+PERFORM _seed_msg('label',   'Contract date',                                            'Shartnoma sanasi',                'Шартнома санаси',                 'Дата договора');
+PERFORM _seed_msg('message', 'No scientific projects have been added yet',               'Hali birorta ilmiy loyiha qo''shilmagan','Ҳали бирорта илмий лойиҳа қўшилмаган','Пока не добавлено ни одного научного проекта');
+PERFORM _seed_msg('label',   'Authors',                                                  'Mualliflar',                      'Муаллифлар',                      'Авторы');
+PERFORM _seed_msg('label',   'Author count',                                             'Mualliflar soni',                 'Муаллифлар сони',                 'Количество авторов');
+PERFORM _seed_msg('label',   'Source',                                                   'Manba',                           'Манба',                           'Источник');
+PERFORM _seed_msg('label',   'Issue year',                                               'Nashr yili',                      'Нашр йили',                       'Год издания');
+PERFORM _seed_msg('label',   'Publication type',                                         'Nashr turi',                      'Нашр тури',                       'Тип публикации');
+PERFORM _seed_msg('message', 'No publications have been added yet',                      'Hali birorta nashr qo''shilmagan','Ҳали бирорта нашр қўшилмаган',    'Пока не добавлено ни одной публикации');
+PERFORM _seed_msg('label',   'Publisher',                                                'Nashriyot',                       'Нашриёт',                         'Издательство');
+PERFORM _seed_msg('message', 'No methodical works have been added yet',                  'Hali birorta metodik nashr qo''shilmagan','Ҳали бирорта методик нашр қўшилмаган','Пока не добавлено ни одной методической публикации');
+
+-- Analytics report cards — KPIs, block titles, columns, filters
+-- NOTE: report menu titles (Students/Teachers/Institutions/Academic/Scientific/Economic report)
+--       and 'By education type','By region','Education year' already seeded above — reused, not duplicated.
+-- Students report
+PERFORM _seed_msg('label',   'Total students',                                           'Jami talabalar',                  'Жами талабалар',                  'Всего студентов');
+PERFORM _seed_msg('label',   'Grant',                                                    'Grant',                           'Грант',                           'Грант');
+PERFORM _seed_msg('label',   'Contract',                                                 'Kontrakt',                        'Контракт',                        'Контракт');
+PERFORM _seed_msg('label',   'Male',                                                     'Erkak',                           'Эркак',                           'Мужской');
+PERFORM _seed_msg('label',   'Female',                                                   'Ayol',                            'Аёл',                             'Женский');
+PERFORM _seed_msg('label',   'By education form',                                        'Ta''lim shakli bo''yicha',        'Таълим шакли бўйича',             'По форме образования');
+PERFORM _seed_msg('label',   'By gender',                                                'Jinsi bo''yicha',                 'Жинси бўйича',                    'По полу');
+PERFORM _seed_msg('label',   'By payment form',                                          'To''lov shakli bo''yicha',        'Тўлов шакли бўйича',              'По форме оплаты');
+PERFORM _seed_msg('label',   'Top universities',                                         'Yetakchi OTMlar',                 'Етакчи ОТМлар',                   'Ведущие вузы');
+PERFORM _seed_msg('label',   'Students count',                                           'Talabalar soni',                  'Талабалар сони',                  'Количество студентов');
+-- Institutions report
+PERFORM _seed_msg('label',   'Total institutions',                                       'Jami muassasalar',                'Жами муассасалар',                'Всего учреждений');
+PERFORM _seed_msg('label',   'Faculties',                                                'Fakultetlar',                     'Факультетлар',                    'Факультеты');
+PERFORM _seed_msg('label',   'Cathedras',                                                'Kafedralar',                      'Кафедралар',                      'Кафедры');
+PERFORM _seed_msg('label',   'By ownership',                                             'Mulkchilik bo''yicha',            'Мулкчилик бўйича',                'По собственности');
+PERFORM _seed_msg('label',   'By university type',                                       'OTM turi bo''yicha',              'ОТМ тури бўйича',                 'По типу вуза');
+PERFORM _seed_msg('label',   'University structure',                                     'OTM tuzilmasi',                   'ОТМ тузилмаси',                   'Структура вуза');
+-- Scientific report
+PERFORM _seed_msg('label',   'Total publications',                                       'Jami nashrlar',                   'Жами нашрлар',                    'Всего публикаций');
+PERFORM _seed_msg('label',   'Total projects',                                           'Jami loyihalar',                  'Жами лойиҳалар',                  'Всего проектов');
+PERFORM _seed_msg('label',   'Doctoral students',                                        'Doktorantlar',                    'Докторантлар',                    'Докторанты');
+PERFORM _seed_msg('label',   'Publications by type',                                     'Nashrlar turi bo''yicha',         'Нашрлар тури бўйича',             'Публикации по типу');
+PERFORM _seed_msg('label',   'Publications by university',                               'Nashrlar OTM bo''yicha',          'Нашрлар ОТМ бўйича',              'Публикации по вузам');
+PERFORM _seed_msg('label',   'Projects by type',                                         'Loyihalar turi bo''yicha',        'Лойиҳалар тури бўйича',           'Проекты по типу');
+PERFORM _seed_msg('label',   'Projects by university',                                   'Loyihalar OTM bo''yicha',         'Лойиҳалар ОТМ бўйича',            'Проекты по вузам');
+PERFORM _seed_msg('label',   'Publications',                                             'Nashrlar',                        'Нашрлар',                         'Публикации');
+PERFORM _seed_msg('label',   'Projects',                                                 'Loyihalar',                       'Лойиҳалар',                       'Проекты');
+-- Teachers report
+PERFORM _seed_msg('label',   'Total teachers',                                           'Jami o''qituvchilar',             'Жами ўқитувчилар',                'Всего преподавателей');
+PERFORM _seed_msg('label',   'PhD holders',                                              'Ilmiy darajaga egalar',           'Илмий даражага эгалар',           'Со степенью');
+PERFORM _seed_msg('label',   'Professors',                                               'Professorlar',                    'Профессорлар',                    'Профессора');
+PERFORM _seed_msg('label',   'By academic degree',                                       'Ilmiy daraja bo''yicha',          'Илмий даража бўйича',             'По учёной степени');
+PERFORM _seed_msg('label',   'By academic rank',                                         'Ilmiy unvon bo''yicha',           'Илмий унвон бўйича',              'По учёному званию');
+PERFORM _seed_msg('label',   'By age',                                                   'Yosh bo''yicha',                  'Ёш бўйича',                       'По возрасту');
+PERFORM _seed_msg('label',   'By university',                                            'OTM bo''yicha',                   'ОТМ бўйича',                      'По вузам');
+PERFORM _seed_msg('label',   'Teachers count',                                           'O''qituvchilar soni',             'Ўқитувчилар сони',                'Количество преподавателей');
+-- Empty state
+PERFORM _seed_msg('message', 'No report data available',                                 'Hisobot ma''lumotlari yo''q',     'Ҳисобот маълумотлари йўқ',        'Нет данных отчёта');
+
+-- Rating cards — ranking tables, KPIs (menu titles + University/Publications/Projects/
+--   Doctoral students/Top universities/Total publications/Total projects/By university reused above)
+PERFORM _seed_msg('label',   'Rank',                                                     'O''rin',                          'Ўрин',                            'Место');
+PERFORM _seed_msg('label',   'Total',                                                    'Jami',                            'Жами',                            'Итого');
+PERFORM _seed_msg('label',   'Indicators',                                               'Ko''rsatkichlar',                 'Кўрсаткичлар',                    'Показатели');
+PERFORM _seed_msg('label',   'Universities ranked',                                      'Reytingdagi OTMlar',              'Рейтингдаги ОТМлар',              'Вузов в рейтинге');
+PERFORM _seed_msg('label',   'Top university',                                            'Yetakchi OTM',                    'Етакчи ОТМ',                      'Лидер рейтинга');
+PERFORM _seed_msg('label',   'Average score',                                            'O''rtacha ball',                  'Ўртача балл',                     'Средний балл');
+PERFORM _seed_msg('label',   'Average GPA',                                               'O''rtacha GPA',                   'Ўртача GPA',                      'Средний GPA');
+PERFORM _seed_msg('label',   'Debtors',                                                   'Qarzdorlar',                      'Қарздорлар',                      'Должники');
+PERFORM _seed_msg('label',   'Students counted',                                          'Hisobga olingan talabalar',       'Ҳисобга олинган талабалар',       'Учтено студентов');
+
+-- New registry cards — Employee jobs, Institution specialities, Dissertation defense,
+--   Publication property/intellectual, Research activity.
+-- NOTE: 'Employee jobs' and 'Scientific activity' (menu) owned by S006; 'Decree number' by S009;
+--       'Speciality code'/'Speciality name' by S006 — not duplicated here.
+PERFORM _seed_msg('label',   'Institution specialities',                                 'OTM mutaxassisliklari',           'ОТМ мутахассисликлари',           'Специальности вуза');
+PERFORM _seed_msg('label',   'Dissertation defense',                                     'Dissertatsiya himoyasi',          'Диссертация ҳимояси',             'Защита диссертации');
+PERFORM _seed_msg('label',   'Employee',                                                 'Xodim',                           'Ходим',                           'Сотрудник');
+PERFORM _seed_msg('label',   'Employee type',                                            'Xodim turi',                      'Ходим тури',                      'Тип сотрудника');
+PERFORM _seed_msg('label',   'Employee form',                                            'Shtat shakli',                    'Штат шакли',                      'Форма штата');
+PERFORM _seed_msg('label',   'Job start date',                                           'Ish boshlangan sana',             'Иш бошланган сана',               'Дата начала работы');
+PERFORM _seed_msg('label',   'Job end date',                                             'Ish tugagan sana',                'Иш тугаган сана',                 'Дата окончания работы');
+PERFORM _seed_msg('label',   'Defense date',                                             'Himoya sanasi',                   'Ҳимоя санаси',                    'Дата защиты');
+PERFORM _seed_msg('label',   'Defense place',                                            'Himoya joyi',                     'Ҳимоя жойи',                      'Место защиты');
+PERFORM _seed_msg('label',   'Patent type',                                              'Patent turi',                     'Патент тури',                     'Тип патента');
+PERFORM _seed_msg('label',   'Property date',                                             'Ro''yxatga olingan sana',         'Рўйхатга олинган сана',           'Дата регистрации');
+PERFORM _seed_msg('label',   'Number',                                                   'Raqam',                           'Рақам',                           'Номер');
+PERFORM _seed_msg('label',   'H-index',                                                  'H-indeks',                        'H-индекс',                        'H-индекс');
+PERFORM _seed_msg('label',   'Scientific work count',                                    'Ilmiy ishlar soni',              'Илмий ишлар сони',                'Количество научных работ');
+PERFORM _seed_msg('label',   'Reference count',                                          'Iqtiboslar soni',                'Иқтибослар сони',                 'Количество цитирований');
+PERFORM _seed_msg('label',   'Scholar database',                                         'Ilmiy baza',                      'Илмий база',                      'Научная база');
+PERFORM _seed_msg('label',   'Link',                                                     'Havola',                          'Ҳавола',                          'Ссылка');
+PERFORM _seed_msg('message', 'No records have been added yet',                           'Hali birorta yozuv qo''shilmagan','Ҳали бирорта ёзув қўшилмаган',    'Пока не добавлено ни одной записи');
 
 END $$;
 

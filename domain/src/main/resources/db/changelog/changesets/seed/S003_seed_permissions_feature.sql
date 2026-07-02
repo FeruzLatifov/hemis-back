@@ -45,6 +45,30 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.attached-specialities', 'create', 'institutions.attached-specialities.create', 'Create Attached Speciality', 'Create attached speciality', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.attached-specialities', 'edit', 'institutions.attached-specialities.edit', 'Edit Attached Speciality', 'Edit attached speciality', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.attached-specialities', 'delete', 'institutions.attached-specialities.delete', 'Delete Attached Speciality', 'Delete attached speciality', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('institutions.university-specialities', 'view', 'institutions.university-specialities.view', 'View Institution Specialities', 'View institution specialities list', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
 -- =====================================================
 -- Students Module (6 permissions)
 -- Note: students.view is in S002 (base) — not duplicated here
@@ -109,6 +133,12 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('teachers.employee-jobs', 'view', 'teachers.employee-jobs.view', 'View Employee Jobs', 'View employee jobs', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
 -- =====================================================
 -- Science Module (6 permissions)
 -- =====================================================
@@ -145,6 +175,18 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
 
 INSERT INTO permission (resource, action, code, name, description, category, created_by)
 VALUES ('science.intellectual', 'view', 'science.intellectual.view', 'View Intellectual Property', 'View intellectual property', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('science.dissertation-defense', 'view', 'science.dissertation-defense.view', 'View Dissertation Defense', 'View dissertation defense', 'CORE', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('science.research-activity', 'view', 'science.research-activity.view', 'View Scientific Activity', 'View scientific activity', 'CORE', 'system')
 ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
@@ -413,17 +455,21 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO feature_count FROM permission
     WHERE code IN (
-        -- Institutions (5)
+        -- Institutions (9)
         'institutions.view', 'institutions.universities.view', 'institutions.faculties.view',
         'institutions.departments.view', 'institutions.attached-specialities.view',
+        'institutions.attached-specialities.create', 'institutions.attached-specialities.edit',
+        'institutions.attached-specialities.delete', 'institutions.university-specialities.view',
         -- Students sub-menus (6)
         'students.list.view', 'students.directions.view', 'students.groups.view',
         'students.diplomas.view', 'students.scholarships.view', 'students.certificates.view',
-        -- Teachers sub-menus (3)
+        -- Teachers sub-menus (4)
         'teachers.list.view', 'teachers.positions.view', 'teachers.qualifications.view',
-        -- Science (6)
+        'teachers.employee-jobs.view',
+        -- Science (8)
         'science.view', 'science.researchers.view', 'science.projects.view',
         'science.publications.view', 'science.methodical.view', 'science.intellectual.view',
+        'science.dissertation-defense.view', 'science.research-activity.view',
         -- Reports sub-menus (6)
         'reports.students.view', 'reports.teachers.view', 'reports.institutions.view',
         'reports.academic.view', 'reports.research.view', 'reports.economic.view',
@@ -444,8 +490,8 @@ BEGIN
         'users.manage'
     );
 
-    IF feature_count < 54 THEN
-        RAISE WARNING 'S003: Expected >= 54 feature permissions, found %', feature_count;
+    IF feature_count < 61 THEN
+        RAISE WARNING 'S003: Expected >= 61 feature permissions, found %', feature_count;
     ELSE
         RAISE NOTICE 'S003: % feature permissions seeded', feature_count;
     END IF;

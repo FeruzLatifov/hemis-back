@@ -157,6 +157,14 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Dashboard cache: 30 minutes
         redisCacheConfigurations.put("stats", defaultConfig.entryTtl(DASHBOARD_TTL));
 
+        // Ministry analytics reports (students/institutions/scientific/teachers) — heavy replica
+        // GROUP BY aggregation, keyed per-report + params. Same 30 min tier as "stats".
+        redisCacheConfigurations.put("reports", defaultConfig.entryTtl(DASHBOARD_TTL));
+
+        // Ministry rating leaderboards (administrative/academic/scientific/gpa) — ranked-by-university
+        // aggregation over the replica, keyed per-rating + params. Same 30 min tier as "reports".
+        redisCacheConfigurations.put("ratings", defaultConfig.entryTtl(DASHBOARD_TTL));
+
         // Menu cache: 30 minutes
         redisCacheConfigurations.put("menu", defaultConfig.entryTtl(DEFAULT_TTL));
 
@@ -263,6 +271,27 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Departments + Faculty dictionaries — 6 soat (registry, statik).
         redisCacheConfigurations.put("departments", defaultConfig.entryTtl(Duration.ofHours(6)));
         redisCacheConfigurations.put("facultyDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+        redisCacheConfigurations.put("departmentDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+        redisCacheConfigurations.put("groupDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+        redisCacheConfigurations.put("attachedSpecialityDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+
+        // Student registry card dictionaries (read-only) — 6 soat (registry, statik).
+        redisCacheConfigurations.put("diplomasDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+        redisCacheConfigurations.put("scholarshipsDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+        redisCacheConfigurations.put("certificatesDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+
+        // Science registry card dictionaries (read-only) — 24 soat (reference/classifier tier, statik).
+        redisCacheConfigurations.put("researchersDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("scientificProjectsDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("publicationsDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("methodicalDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+
+        // Per-OTM read-only registry card dictionaries (5 new cards) — 24 soat (reference/classifier tier, statik).
+        redisCacheConfigurations.put("employeeJobsDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("universitySpecialitiesDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("dissertationDefenseDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("intellectualDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
+        redisCacheConfigurations.put("researchActivityDictionaries", defaultConfig.entryTtl(Duration.ofHours(24)));
 
         // Speciality stats — heavy aggregation, 1 soat.
         redisCacheConfigurations.put("specialityStats", defaultConfig.entryTtl(Duration.ofHours(1)));

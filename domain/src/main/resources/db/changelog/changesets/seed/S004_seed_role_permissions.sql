@@ -86,6 +86,19 @@ FROM role r CROSS JOIN permission p
 WHERE r.code = 'MINISTRY_ADMIN' AND p.action = 'view'
 ON CONFLICT DO NOTHING;
 
+-- Ministry: attached-specialities write actions (central CRUD card create/edit/delete).
+-- These are CORE-category so already covered above; kept explicit for clarity/idempotency.
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
+SELECT r.id, p.id, 'system'
+FROM role r CROSS JOIN permission p
+WHERE r.code = 'MINISTRY_ADMIN'
+  AND p.code IN (
+    'institutions.attached-specialities.create',
+    'institutions.attached-specialities.edit',
+    'institutions.attached-specialities.delete'
+  )
+ON CONFLICT DO NOTHING;
+
 -- =====================================================
 -- INSPECTOR: View-only across all modules (old-hemis: Inspeksiya)
 -- =====================================================

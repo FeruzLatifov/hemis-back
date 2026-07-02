@@ -1,7 +1,7 @@
 -- =====================================================
--- Rollback S003: REMOVE FEATURE PERMISSIONS (54)
+-- Rollback S003: REMOVE FEATURE PERMISSIONS (57)
 -- =====================================================
--- Deletes the 54 feature permissions created by S003.
+-- Deletes the 57 feature permissions created by S003.
 -- Removes role_permissions FK references first, then the permissions.
 -- =====================================================
 
@@ -10,17 +10,21 @@ DECLARE
     role_perms_exists BOOLEAN;
     perms_exists BOOLEAN;
     _codes text[] := ARRAY[
-        -- Institutions (5)
+        -- Institutions (9)
         'institutions.view', 'institutions.universities.view', 'institutions.faculties.view',
         'institutions.departments.view', 'institutions.attached-specialities.view',
+        'institutions.attached-specialities.create', 'institutions.attached-specialities.edit',
+        'institutions.attached-specialities.delete', 'institutions.university-specialities.view',
         -- Students sub-menus (6)
         'students.list.view', 'students.directions.view', 'students.groups.view',
         'students.diplomas.view', 'students.scholarships.view', 'students.certificates.view',
-        -- Teachers sub-menus (3)
+        -- Teachers sub-menus (4)
         'teachers.list.view', 'teachers.positions.view', 'teachers.qualifications.view',
-        -- Science (6)
+        'teachers.employee-jobs.view',
+        -- Science (8)
         'science.view', 'science.researchers.view', 'science.projects.view',
         'science.publications.view', 'science.methodical.view', 'science.intellectual.view',
+        'science.dissertation-defense.view', 'science.research-activity.view',
         -- Reports sub-menus (6)
         'reports.students.view', 'reports.teachers.view', 'reports.institutions.view',
         'reports.academic.view', 'reports.research.view', 'reports.economic.view',
@@ -54,13 +58,13 @@ BEGIN
         DELETE FROM role_permission WHERE permission_id IN (
             SELECT id FROM permission WHERE code = ANY(_codes)
         );
-        RAISE NOTICE 'S003 Rollback: Deleted role_permissions for 54 feature permissions';
+        RAISE NOTICE 'S003 Rollback: Deleted role_permissions for 57 feature permissions';
     END IF;
 
     -- Remove the permissions
     IF perms_exists THEN
         DELETE FROM permission WHERE code = ANY(_codes);
-        RAISE NOTICE 'S003 Rollback: Deleted 54 feature permissions';
+        RAISE NOTICE 'S003 Rollback: Deleted 57 feature permissions';
     ELSE
         RAISE NOTICE 'S003 Rollback: permissions table does not exist, skipping';
     END IF;
