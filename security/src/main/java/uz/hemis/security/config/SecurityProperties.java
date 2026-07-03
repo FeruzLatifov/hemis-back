@@ -225,7 +225,7 @@ public class SecurityProperties {
     public List<String> getAllowedOrigins() {
         if (cors.getAllowedOrigins().isEmpty()) {
             // Development fallback
-            return List.of("http://localhost:3000", "http://localhost:8081");
+            return List.of("http://localhost:43434", "http://localhost:3000", "http://localhost:8081");
         }
         return cors.getAllowedOrigins();
     }

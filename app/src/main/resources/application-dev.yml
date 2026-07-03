@@ -9,7 +9,6 @@ spring:
   # Sentry exclusion olib tashlandi — SENTRY_ENABLED=false bo'lsa, sentry.enabled
   # property'i auto-config'ni o'chiradi (bean yaratilmaydi, exclude shart emas).
 
-
   # =====================================================
   # Development DataSource
   # =====================================================
@@ -152,6 +151,8 @@ logging:
     liquibase.changelog: INFO
     # Suppress AuthenticationProvider warning (configuration is intentional)
     org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
+    # Kafka client INFO metadata loglarini kamaytirish (WARN — real muammolar ko'rinadi)
+    org.apache.kafka: WARN
 
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
@@ -163,6 +164,8 @@ logging:
 hemis:
   cors:
     allowed-origins:
+      - http://localhost:43434
+      - http://127.0.0.1:43434
       - http://localhost:3000
       - http://localhost:5173
       - http://127.0.0.1:3000
