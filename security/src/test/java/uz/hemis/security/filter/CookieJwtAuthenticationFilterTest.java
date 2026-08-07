@@ -38,8 +38,9 @@ import static org.mockito.Mockito.when;
  * existing authentication preservation.</p>
  *
  * <p><strong>Strategy:</strong> pure Mockito + {@code MockHttpServletRequest} —
- * no Spring context. Filter chain always proceeds (it's a soft gate; downstream
- * authorization enforces access).</p>
+ * no Spring context. The chain proceeds for valid/absent/undecodable tokens, but a
+ * blacklisted (revoked) token hard-fails with 401 and stops the chain so the OAuth2
+ * resource-server filter cannot re-authenticate it.</p>
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CookieJwtAuthenticationFilter Tests")
@@ -147,7 +148,7 @@ class CookieJwtAuthenticationFilterTest {
     // =========================================================
 
     @Test
-    @DisplayName("Blacklisted JWT (logged-out token) → SecurityContext stays empty, chain proceeds")
+    @DisplayName("Blacklisted JWT (logged-out token) → 401, SecurityContext empty, chain STOPS")
     void blacklistedToken_isRejected() throws Exception {
         Jwt jwt = jwtFor("revoked-jti", "user@hemis.uz");
         request.addHeader("Authorization", "Bearer revoked.jwt");
@@ -159,7 +160,10 @@ class CookieJwtAuthenticationFilterTest {
         assertThat(SecurityContextHolder.getContext().getAuthentication())
             .as("blacklisted token must not grant access")
             .isNull();
-        verify(filterChain, times(1)).doFilter(request, response);
+        // Hard-fail: the chain must NOT proceed to the OAuth2 resource-server filter, which would
+        // otherwise re-authenticate the revoked token (the blacklist-bypass fix).
+        verify(filterChain, never()).doFilter(request, response);
+        assertThat(response.getStatus()).isEqualTo(401);
     }
 
     // =========================================================

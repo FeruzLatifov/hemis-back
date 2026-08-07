@@ -86,15 +86,20 @@ public class CookieJwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // 3. Check if token is blacklisted (logout revocation)
                 if (jti != null && tokenBlacklistService.isBlacklisted(jti)) {
-                    log.warn("🚨 Blacklisted token attempt: jti={}, subject={}", jti, jwt.getSubject());
-                    // Don't set authentication → request will be treated as unauthenticated
-                    // This is correct behavior: logged-out tokens should not grant access
-                } else {
-                    // 4. Token is valid and not blacklisted → authenticate
-                    JwtAuthenticationToken authentication = new JwtAuthenticationToken(jwt);
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                    log.debug("✅ JWT authentication successful: subject={}, jti={}", jwt.getSubject(), jti);
+                    // Hard-fail (was: abstain). A revoked/logged-out token must NOT continue down
+                    // the chain, where the OAuth2 resource-server BearerTokenAuthenticationFilter
+                    // would re-decode and re-authenticate it — the blacklist-bypass gap. Stop with 401.
+                    log.warn("🚨 Blacklisted (revoked) token rejected: jti={}, subject={}", jti, jwt.getSubject());
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write(
+                            "{\"success\":false,\"error\":{\"code\":\"TOKEN_REVOKED\",\"message\":\"Token has been revoked\"}}");
+                    return;
                 }
+                // 4. Token is valid and not blacklisted → authenticate
+                JwtAuthenticationToken authentication = new JwtAuthenticationToken(jwt);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                log.debug("✅ JWT authentication successful: subject={}, jti={}", jwt.getSubject(), jti);
             }
         } catch (JwtException e) {
             log.debug("JWT validation failed: {}", e.getMessage());

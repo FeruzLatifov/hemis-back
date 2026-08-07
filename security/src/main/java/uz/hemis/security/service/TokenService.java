@@ -77,6 +77,31 @@ public class TokenService {
     @Value("${hemis.security.jwt.key-id:hemis-jwt-default}")
     private String keyId;
 
+    /**
+     * Boot-time sanity guard for token TTLs. Catches the classic milliseconds-as-seconds
+     * misconfiguration (e.g. {@code JWT_EXPIRATION=86400000} → ~1000-day access tokens).
+     * <strong>Non-fatal by design</strong>: only logs an error, never blocks startup — so it can
+     * never break the 224-OTM integration whose machine tokens are minted here — but it makes the
+     * misconfig impossible to miss in deploy logs. The real fix is to set the value in SECONDS.
+     */
+    @jakarta.annotation.PostConstruct
+    void validateTokenTtls() {
+        final long maxSaneAccessSeconds = 86_400;      // 24h
+        final long maxSaneRefreshSeconds = 2_592_000;  // 30d
+        if (accessTokenValiditySeconds > maxSaneAccessSeconds) {
+            log.error("JWT access-token TTL = {}s (~{} days) exceeds the sane max of {}s. "
+                    + "This looks like a milliseconds-as-seconds misconfig (JWT_EXPIRATION); "
+                    + "set it in SECONDS (e.g. 3600). Tokens are effectively non-expiring until fixed.",
+                    accessTokenValiditySeconds, accessTokenValiditySeconds / 86_400, maxSaneAccessSeconds);
+        }
+        if (refreshTokenValiditySeconds > maxSaneRefreshSeconds) {
+            log.error("JWT refresh-token TTL = {}s (~{} days) exceeds the sane max of {}s. "
+                    + "This looks like a milliseconds-as-seconds misconfig (JWT_REFRESH_EXPIRATION); "
+                    + "set it in SECONDS (e.g. 604800).",
+                    refreshTokenValiditySeconds, refreshTokenValiditySeconds / 86_400, maxSaneRefreshSeconds);
+        }
+    }
+
     /** Build JWS header with HS256 algorithm + kid (key rotation support).
      *  Defensive: keyId null/blank bo'lsa (test/profile yo'q), kid'siz quriladi. */
     private JwsHeader jwsHeader() {

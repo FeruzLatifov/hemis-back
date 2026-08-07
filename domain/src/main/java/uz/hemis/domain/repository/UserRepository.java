@@ -220,6 +220,20 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("SELECT u.university.code FROM User u WHERE u.id = :userId")
     Optional<String> findUniversityCodeById(@Param("userId") UUID userId);
 
+    /**
+     * Load the OTM scope inputs (user_type + university code) for a user by ID.
+     *
+     * <p>Used by the server-side scope resolver (BOLA/IDOR defence) to derive the caller's
+     * {@code AccessScope}. LEFT JOIN so ministry/system users (null university) still return a row —
+     * an INNER join would drop them and the resolver would wrongly deny-all.</p>
+     *
+     * @param userId user UUID
+     * @return the user's (user_type, university_code); empty if no such user
+     */
+    @Query("SELECT new uz.hemis.common.auth.UserScopeData(u.userType, univ.code) " +
+           "FROM User u LEFT JOIN u.university univ WHERE u.id = :userId")
+    Optional<uz.hemis.common.auth.UserScopeData> findScopeById(@Param("userId") UUID userId);
+
     // =====================================================
     // Admin Filtered Queries
     // =====================================================
