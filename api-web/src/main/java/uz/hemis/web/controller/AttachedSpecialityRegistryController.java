@@ -15,14 +15,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.http.ContentDisposition;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.registry.AttachedSpecialityRegistryService;
@@ -32,10 +30,9 @@ import uz.hemis.service.registry.dto.AttachedSpecialityDictionariesDto;
 import uz.hemis.service.registry.dto.AttachedSpecialityRowDto;
 import uz.hemis.service.registry.dto.AttachedSpecialityUpdateDto;
 import uz.hemis.service.util.PageResponses;
+import uz.hemis.web.export.XlsxStreamExporter;
+import uz.hemis.web.export.XlsxSupport;
 
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,7 +61,7 @@ import java.util.UUID;
                 - Server-side pagination, sorting, search and filtering
                 - Create / update / delete (soft delete)
                 - Duplicate guard (409) — no DB unique constraint
-                - CSV export with UTF-8 BOM
+                - Streaming .xlsx export (all rows, no cap)
                 - Cached filter/form dictionaries
 
                 **Use Case:** Frontend /institutions/attached-specialities page
@@ -77,6 +74,7 @@ import java.util.UUID;
 public class AttachedSpecialityRegistryController {
 
     private final AttachedSpecialityRegistryService service;
+    private final XlsxStreamExporter xlsxExporter;
 
     // =====================================================
     // List
@@ -295,17 +293,19 @@ public class AttachedSpecialityRegistryController {
     @PostMapping("/export")
     @PreAuthorize("hasAuthority('institutions.attached-specialities.view')")
     @Operation(
-            summary = "Export attached specialities to CSV",
-            description = "Export rows matching the current filters. UTF-8 BOM for Excel compatibility.",
+            summary = "Export attached specialities to Excel (.xlsx)",
+            description = "Streams ALL rows matching the current filters as a professional .xlsx "
+                    + "(no row cap; constant memory via SXSSF; formula-injection-safe).",
             tags = {"Registry - Attached Specialities"}
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "CSV file",
-                    content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary"))),
+            @ApiResponse(responseCode = "200", description = "Workbook streamed",
+                    content = @Content(mediaType = XlsxSupport.XLSX_CONTENT_TYPE,
+                            schema = @Schema(type = "string", format = "binary"))),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
     })
-    public ResponseEntity<byte[]> export(
+    public ResponseEntity<StreamingResponseBody> export(
             @Parameter(description = "Search query") @RequestParam(required = false) String q,
             @Parameter(description = "University code") @RequestParam(required = false) String universityCode,
             @Parameter(description = "Education type code") @RequestParam(required = false) String educationType,
@@ -315,45 +315,20 @@ public class AttachedSpecialityRegistryController {
         log.info("POST /api/v1/web/registry/attached-specialities/export - q={}, universityCode={}, educationType={}, educationForm={}, active={}",
                 q, universityCode, educationType, educationForm, active);
 
-        List<AttachedSpecialityRowDto> rows = service.export(q, universityCode, educationType, educationForm, active);
-        byte[] csvBytes = generateCsvFile(rows);
-
-        String filename = "attached_specialities_"
-                + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv";
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(new MediaType("text", "csv", StandardCharsets.UTF_8));
-        headers.setContentDisposition(ContentDisposition.attachment()
-                .filename(filename, StandardCharsets.UTF_8).build());
-        headers.setContentLength(csvBytes.length);
-
-        return ResponseEntity.ok().headers(headers).body(csvBytes);
-    }
-
-    private byte[] generateCsvFile(List<AttachedSpecialityRowDto> rows) {
-        StringBuilder csv = new StringBuilder();
-        csv.append('﻿'); // UTF-8 BOM
-        csv.append("OTM kodi,OTM nomi,Ta'lim turi,Ta'lim shakli,Daraja,Mutaxassislik,Holati\n");
-        for (AttachedSpecialityRowDto r : rows) {
-            csv.append(escapeCsv(r.universityCode())).append(",");
-            csv.append(escapeCsv(r.universityName())).append(",");
-            csv.append(escapeCsv(r.educationTypeName())).append(",");
-            csv.append(escapeCsv(r.educationFormName())).append(",");
-            csv.append(escapeCsv(r.specialityLevel())).append(",");
-            csv.append(escapeCsv(r.specialityName())).append(",");
-            csv.append(Boolean.TRUE.equals(r.active()) ? "Faol" : "Nofaol");
-            csv.append("\n");
-        }
-        return csv.toString().getBytes(StandardCharsets.UTF_8);
-    }
-
-    private String escapeCsv(String value) {
-        if (value == null) {
-            return "";
-        }
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        return value;
+        return xlsxExporter.export(
+                "attached_specialities",
+                "Mutaxassisliklar",
+                List.of("OTM kodi", "OTM nomi", "Ta'lim turi", "Ta'lim shakli", "Daraja", "Mutaxassislik", "Holati"),
+                new int[]{14, 40, 18, 18, 14, 48, 10},
+                pageable -> service.list(q, universityCode, educationType, educationForm, active, pageable),
+                r -> new String[]{
+                        r.universityCode(),
+                        r.universityName(),
+                        r.educationTypeName(),
+                        r.educationFormName(),
+                        r.specialityLevel(),
+                        r.specialityName(),
+                        Boolean.TRUE.equals(r.active()) ? "Faol" : "Nofaol"
+                });
     }
 }

@@ -1,0 +1,28 @@
+id,code,name_uz,name_ru,name_en,parent_id,edu_form,_year,_year2,active,is_checked,version,created,created_by,education_level
+1d5225f6-71c0-2828-e750-70802f0ee7e2,70211701,Xalq ijodiyoti (Baxshi va doston ijrochiligi),,Folk art (Bakhshi and epic performance),f649bfff-09cc-493b-8174-adead34e097f,,,,t,f,1,2026-03-11,admin,MASTER
+a64baed1-8d68-98c1-4a51-d854fdd92444,Shifrsiz,Boshqa Tillarda So‘zlashuvchilarga Ingliz Tilini O‘rgatish MA TESOL,Преподавание английского языка носителям других языков (MA TESOL),MA TESOL,0657bfed-569d-435b-866d-6e736b46e701,,,,t,f,1,2026-04-02,admin,MASTER
+d4d7f2d4-c8aa-aa32-7e14-e0990d498855,Shifrsiz,Kiberxafsizlik,Кибербезопасность,Cybersecurity,0657bfed-569d-435b-866d-6e736b46e701,,,,t,f,1,2026-04-02,admin,MASTER
+966c05e0-0b5d-3d60-bd72-071799ab050d,Shifrsiz,Artificial Intelegence and Business Transformation,Искусственный интеллект и трансформация бизнеса,Artificial Intelegence and Business Transformation,0657bfed-569d-435b-866d-6e736b46e701,,,,t,f,1,2026-04-02,admin,MASTER
+19180afc-265d-86a3-bdcd-5f0d961f0329,shifrsiz,Global menejment,,Global Management,466b583b-7ae4-73c6-f4d4-65cfee6a5b96,,,,t,f,2,2026-05-15,admin,MASTER
+4d1294c8-208c-3151-eb00-3f9baa0e13ff,shifrsiz,Dasturiy ta'minot muhandisligi,,Software Engineering,466b583b-7ae4-73c6-f4d4-65cfee6a5b96,,,,t,f,2,2026-05-15,admin,MASTER
+e648829c-a901-f6a5-675c-337e7174927c,70210401,Dizayn (libos dizayni),,Design (Fashion Design),f649bfff-09cc-493b-8174-adead34e097f,,,,t,f,1,2026-06-05,admin,MASTER
+f4e3bc6d-e179-52a4-0604-e73ccc2f08c1,70711101,Tibbiyot injiniringi,,Medical Engineering,9c30a392-a17c-452c-8080-97c0847993a3,,,,t,f,1,2026-06-05,admin,MASTER
+cf7d68f6-7fea-43c0-1024-53dbeff0a536,70420109,Xalqaro tijoriy huquq,,LLM in International Commercial Law,d60d20bb-9ab8-447c-a300-a9c541cf5a4c,,,,t,f,1,2026-06-23,admin,MASTER
+2b41ec85-c37f-8451-1d04-7d8c8700fecd,70411001,Inson resurslarini boshqarish va iste'dodni rivojlantirish,,MA in Human Resource Management and Talent Development,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+a6d24ad7-fbf0-0119-7295-b6d213993a7f,70110102,Ta'lim va pedagogik texnologiyalar,,MA in Learning and Teaching,548d8dea-d0ea-44ab-afcd-a205bfe7a41a,,,,t,f,1,2026-06-23,admin,MASTER
+20dfc58e-ebcc-1ed5-9277-14d3644e876f,70110102,Ta'lim va pedagogik texnologiyalar (Boshqa til vakillariga ingliz tilini o'qitish (TESOL)),,MA in Learning and Teaching (Teaching English to Speakers of Other Languages (TESOL)),548d8dea-d0ea-44ab-afcd-a205bfe7a41a,,,,t,f,1,2026-06-23,admin,MASTER
+099b55d2-de7e-6b43-47ae-3becc339d813,70410901,Xalqaro biznes boshqaruvi,,MA in International Business Management,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+3c7c04cd-ed8e-7214-aafe-d28e35d37898,70410901,Xalqaro biznes boshqaruvi (Ijodiy madaniy turizm yo'nalishi),,MA in International Business Management  (Creative Cultural Tourism),72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+655796b6-1a6b-9efe-4086-92b5be33163d,70410901,Xalqaro biznes boshqaruvi (Tadbirkorlik va innovatsiyalar yo'nalishi),,MA in International Business Management  (Entrepreneurship and Innovation),72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+55ef7187-6a48-119c-f241-c3ed13fc44db,70410901,MBA dasturi (Umumiy menejment yo'nalishi),,MBA with General Management,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+f53c3ec1-be28-c7c0-057d-13470149ef8f,70410901,MBA dasturi (Ma'lumotlar tahlili yo'nalishi),,MBA with Data Enabled Analytics,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+e9253cfd-c9b8-584f-6bdd-5914b52caad2,70410901,MBA dasturi (Marketing yo'nalishi),,MBA with Marketing,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+4c9316eb-02ee-faa0-dbea-08030002c636,70410901,MBA dasturi (Inson resurslarini boshqarish yo'nalishi),,MBA with Human Resource Management,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+78e93a0a-c9a5-c7b6-a7da-b9423267baba,70410901,MBA (Moliya yo'nalishi),,MBA in Finance,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+ea4702f0-078c-fa9b-cc21-067ae8f8125f,70410102,Amaliy iqtisodiyot,,MSc in Applied Economics,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+09115fd0-ff1b-61fc-6844-c8687aad7b02,70410702,Biznes tahlili va analitika,,MSc in Business Intelligence and Analytics,72e2440a-4428-4f56-aa2c-97defc746a67,,,,t,f,1,2026-06-23,admin,MASTER
+3301821e-c454-ffed-ddab-84ea3adc57e1,70910215,Jamoat salomatligi,,MSc in Public Health Science,1f1187c0-3bff-4fa0-8be1-4acd6f63a17e,,,,t,f,1,2026-06-23,admin,MASTER
+fb03c657-46e3-ebba-d279-6cbd3d860fc9,70220405,Ijtimoiy fanlarda ilmiy tadqiqot usullari,,MSc in Research Methods for Social Sciences,c5dee814-9563-4c58-814a-4304767c654e,,,,t,f,1,2026-06-23,admin,MASTER
+4630f16b-7b7d-e880-c357-56686f45d283,21.05.04,Konchilik ishi,,Mining,0657bfed-569d-435b-866d-6e736b46e701,,,,t,f,1,2026-06-25,admin,MASTER
+5c9d1d20-4ff9-e9fb-c531-5d391ea38b28,70110102,Ta'lim va pedagogik texnologiyalar yo'nalishi,,Postgraduate Certificate in Learning and Teaching,548d8dea-d0ea-44ab-afcd-a205bfe7a41a,,,,t,f,1,2026-06-29,admin,MASTER
+c3c7177d-ff8d-6fc7-93eb-546a0d31e2c8,70220405,Ijtimoiy fanlarda ilmiy tadqiqot usullari yo'nalishi,,Postgraduate Certificate in Research Methods​​ for Social Sciences,07d1ccee-049d-4af7-88b0-0d67f0ef98dc,,,,t,f,1,2026-06-30,admin,MASTER

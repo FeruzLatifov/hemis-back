@@ -19,6 +19,7 @@ import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.registry.UniversitySpecialityRegistryService;
@@ -26,9 +27,10 @@ import uz.hemis.service.registry.dto.SpecialityDetailDto;
 import uz.hemis.service.registry.dto.SpecialityDictionariesDto;
 import uz.hemis.service.registry.dto.SpecialityRowDto;
 import uz.hemis.service.util.PageResponses;
+import uz.hemis.web.export.XlsxStreamExporter;
+import uz.hemis.web.export.XlsxSupport;
 
-import java.nio.charset.StandardCharsets;
-import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 /**
  * University Speciality Registry Controller - READ-ONLY frontend UI API.
@@ -51,6 +53,7 @@ import java.time.format.DateTimeFormatter;
 public class UniversitySpecialityRegistryController {
 
     private final UniversitySpecialityRegistryService universitySpecialityRegistryService;
+    private final XlsxStreamExporter xlsxExporter;
 
     @GetMapping
     @PreAuthorize("hasAuthority('institutions.university-specialities.view')")
@@ -128,14 +131,17 @@ public class UniversitySpecialityRegistryController {
 
     @PostMapping("/export")
     @PreAuthorize("hasAuthority('institutions.university-specialities.view')")
-    @Operation(summary = "Export university specialities to CSV (UTF-8 BOM)")
+    @Operation(summary = "Export university specialities to Excel (.xlsx)",
+            description = "Streams ALL rows matching the current filters as a professional .xlsx "
+                    + "(no row cap; constant memory via SXSSF; formula-injection-safe).")
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "CSV generated",
-            content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary"))),
+        @ApiResponse(responseCode = "200", description = "Workbook streamed",
+            content = @Content(mediaType = XlsxSupport.XLSX_CONTENT_TYPE,
+                schema = @Schema(type = "string", format = "binary"))),
         @ApiResponse(responseCode = "401", description = "Unauthorized"),
         @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
     })
-    public ResponseEntity<byte[]> exportSpecialities(
+    public ResponseEntity<StreamingResponseBody> exportSpecialities(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String universityCode,
             @RequestParam(required = false) String educationType,
@@ -144,39 +150,19 @@ public class UniversitySpecialityRegistryController {
         log.info("POST /api/v1/web/registry/university-specialities/export - q={}, universityCode={}, educationType={}, active={}",
                  q, universityCode, educationType, active);
 
-        Page<SpecialityRowDto> page = universitySpecialityRegistryService.getSpecialities(
-            q, universityCode, educationType, active, Pageable.ofSize(10000));
-
-        StringBuilder csv = new StringBuilder();
-        csv.append('﻿');
-        csv.append("Mutaxassislik kodi,Mutaxassislik nomi,OTM,Ta'lim turi,O'quv yili,Faol\n");
-        for (SpecialityRowDto d : page.getContent()) {
-            csv.append(escapeCsv(d.specialityCode())).append(",");
-            csv.append(escapeCsv(d.specialityName())).append(",");
-            csv.append(escapeCsv(d.universityName())).append(",");
-            csv.append(escapeCsv(d.educationTypeName())).append(",");
-            csv.append(escapeCsv(d.educationYear())).append(",");
-            csv.append(Boolean.TRUE.equals(d.active()) ? "Faol" : "Nofaol").append("\n");
-        }
-        byte[] bytes = csv.toString().getBytes(StandardCharsets.UTF_8);
-
-        String filename = "university_specialities_" + timestamp() + ".csv";
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(new MediaType("text", "csv", StandardCharsets.UTF_8));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(filename, StandardCharsets.UTF_8).build());
-        headers.setContentLength(bytes.length);
-        return ResponseEntity.ok().headers(headers).body(bytes);
-    }
-
-    private static String timestamp() {
-        return java.time.LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-    }
-
-    private static String escapeCsv(String value) {
-        if (value == null) return "";
-        if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
-            return "\"" + value.replace("\"", "\"\"") + "\"";
-        }
-        return value;
+        return xlsxExporter.export(
+                "university_specialities",
+                "Mutaxassisliklar",
+                List.of("Mutaxassislik kodi", "Mutaxassislik nomi", "OTM", "Ta'lim turi", "O'quv yili", "Faol"),
+                new int[]{18, 48, 40, 18, 12, 10},
+                pageable -> universitySpecialityRegistryService.getSpecialities(q, universityCode, educationType, active, pageable),
+                d -> new String[]{
+                        d.specialityCode(),
+                        d.specialityName(),
+                        d.universityName(),
+                        d.educationTypeName(),
+                        d.educationYear(),
+                        Boolean.TRUE.equals(d.active()) ? "Faol" : "Nofaol"
+                });
     }
 }

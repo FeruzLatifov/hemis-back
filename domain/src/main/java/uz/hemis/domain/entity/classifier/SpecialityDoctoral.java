@@ -21,12 +21,10 @@ public class SpecialityDoctoral extends BaseEntity {
     @Column(name = "name", length = 1024)
     private String name;
 
-    @Column(name = "name_en")
-    private String nameEn;
-
-    @Column(name = "name_ru")
-    private String nameRu;
-
+    // NOTE: hemishe_h_speciality_doctoral has only `name` (no name_en/name_ru,
+    // unlike sibling classifiers). Mapping the missing columns made Hibernate
+    // emit `sd1_0.name_en` → "column does not exist". Keep this entity to the
+    // real table shape.
     @Column(name = "active")
     private Boolean active;
 }

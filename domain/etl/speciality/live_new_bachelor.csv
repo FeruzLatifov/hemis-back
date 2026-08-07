@@ -1,0 +1,27 @@
+id,code,name_uz,name_ru,name_en,parent_id,edu_form,_year,_year__u91504,active,is_checked,version,created,created_by,education_level
+590faa72-352b-6ed8-6092-9d1c14faa8bc,60412900,"Xalqaro ""Foundation"" Dasturi","Международный курс ""Foundation""",International Foundation Course,d6ec1be6-c242-4eb6-9ef7-092250331b99,,,,t,f,3,2026-02-17,admin,BACHELOR
+0c2274e7-be27-529c-c39b-6a5aebc936a5,Shifrsiz,Raqamli marketing,,Bachelor of Arts in Digital Marketing,fe73b446-e2fd-5bf3-bbe2-a8e495660505,,,,t,f,4,2026-02-27,admin,BACHELOR
+1f197140-8c20-6895-59f7-67d4942601bc,Shifrsiz,Ishga tushirish (Startup) menejmenti,,Bachelor of Arts in Startup Management,7dbe02e5-f4fe-4cbc-809e-33ee5a02d860,,,,t,f,2,2026-02-27,admin,BACHELOR
+be36c06e-dba0-fcdc-9e58-46e528fe7957,Shifrsiz,Informatika (Dasturiy ta’minot),,Bachelor of Science in Computer Science,7dbe02e5-f4fe-4cbc-809e-33ee5a02d860,,,,t,f,2,2026-02-27,admin,BACHELOR
+722f8c30-d05b-29a0-8a9b-ad67d92345df,Shifrsiz,Ingliz tili va Ingliz tilini o‘qitish,,Bachelor of Arts in English Language and English Language Teaching,bf705e65-188f-4347-8827-95b0c38e3716,,,,t,f,2,2026-02-27,admin,BACHELOR
+5b1d1fd1-b8b8-2db6-eab5-c7e2698a3e44,Shifrsiz,PR menejment va PR tahlil bakalavri,,Bachelor of PR management and PR analysis,90130248-a223-4454-acbe-46818be5142d,,,,t,f,3,2026-02-27,admin,BACHELOR
+a42c5baf-4f72-2c78-df90-5c2fed2a3a7c,Shifrsiz,Ta’lim muassasalarini boshqaruv bakalavri,,Bachelor of Arts in Management of educational institutions,bf705e65-188f-4347-8827-95b0c38e3716,,,,t,f,3,2026-02-27,admin,BACHELOR
+7d485035-8c5b-b27f-c990-f875b98f2aa5,Shifrsiz,Turizm va mehmondo‘stlik bakalavrlari,,Bachelors of Tourism and Hospitality,d4b1f509-3e9b-4b04-a3c8-2dd84a03a05e,,,,t,f,3,2026-02-27,admin,BACHELOR
+29ea31d1-f9fa-f86d-9143-95ad3b60b5bb,Shifrsiz,Jurnalistika va ommaviy kommunikatsiyalar,,Bachelor of Arts in Journalism and Mass Communication,6b13c03b-4ff7-4e34-9569-e6e0a9e2e227,,,,t,f,3,2026-02-27,admin,BACHELOR
+6d9fbb4b-2d74-ab5a-545e-f961ab0f41cb,Shifrsiz,PR va media menejmenti,,PR and Media Management,6b13c03b-4ff7-4e34-9569-e6e0a9e2e227,,,,t,f,3,2026-02-27,admin,BACHELOR
+9b8b1d66-e4c0-8e9a-8183-690cfb27046c,60711400,Sanoat ishlab chiqarish texnologiyalari,Технологии промышленного производства,Industrial production technologies,9a888a11-8dcf-4ce3-8eee-d3fe0a16a63f,,,,t,f,1,2026-03-10,admin,BACHELOR
+033682ad-20b4-da66-17c7-5f386fd4196a,60910700,Farmatsiya (Klinik farmatsiya),,Pharmacy (clinic pharmacy),960be177-4e20-4a3c-b381-a1d816370e3f,,,,t,f,1,2026-03-28,admin,BACHELOR
+e2cd0ea7-3369-1f11-d783-8c01f8e4400c,60910700,Farmatsiya (Farmatsevtik tahlil),,Pharmacy (pharmaceutical analysis),960be177-4e20-4a3c-b381-a1d816370e3f,,,,t,f,1,2026-03-28,admin,BACHELOR
+3a04ab34-c439-5701-1197-8216be3e6e8b,60910700,Farmatsiya (Farmatsiya ishi),,Pharmacy (pharmaceuticals ),960be177-4e20-4a3c-b381-a1d816370e3f,,,,t,f,1,2026-03-28,admin,BACHELOR
+987b2521-a746-a85a-ee2c-88c5ace14b84,60730400,Muhandislik kommunikasiyalari qurilishi va ekspluatatsiyasi (Suv ta'minoti va kanalizatsiya tizimlari),,Construction and Maintenance of Engineering Communications (Water Supply and Sewerage Systems),424d2c91-1144-41da-bdbf-e183f677e9bd,,,,t,f,1,2026-05-18,admin,BACHELOR
+4b831480-3103-6488-003b-0194f15a0078,60730400,Muhandislik kommunikasiyalari qurilishi va ekspluatatsiyasi (Issiqlik-gaz ta'minoti va ventilyatsiya),,Construction and Maintenance of Engineering Communications (Heat and Gas Supply and Ventilation),424d2c91-1144-41da-bdbf-e183f677e9bd,,,,t,f,1,2026-05-18,admin,BACHELOR
+67f53057-0af2-9b39-1a07-f57eaa3fa1b8,60410900,Biznes menejment,,BA (Hons) in Business Management,d6ec1be6-c242-4eb6-9ef7-092250331b99,,,,t,f,1,2026-06-23,admin,BACHELOR
+3b98c3d4-32ed-744f-9229-9038b5985bff,60410900,Biznes menejment va marketing,,BA (Hons) in Business Management with Marketing,d6ec1be6-c242-4eb6-9ef7-092250331b99,,,,t,f,1,2026-06-23,admin,BACHELOR
+ced5b84a-88a2-4d3b-ecc9-21cad75c8f6a,60410900,Biznes menejment va moliya,,BA (Hons) in Business Management with Finance,d6ec1be6-c242-4eb6-9ef7-092250331b99,,,,t,f,1,2026-06-23,admin,BACHELOR
+eb61ca0a-317f-e5bb-dcd4-7d2a703fa9be,60420100,Tijoriy huquq,,BA (Hons) in Commercial Law,beb8ab45-3536-4e89-92d1-52c933bc8a7d,,,,t,f,1,2026-06-23,admin,BACHELOR
+91beda8a-1e0d-4448-e075-bb3d862e61c7,-,Xalqaro aloqalar va huquq,,BA (Hons) in International Relations and Law,beb8ab45-3536-4e89-92d1-52c933bc8a7d,,,,t,f,2,2026-06-23,admin,BACHELOR
+6a166f63-227f-4af6-38b9-78fc2c10cd0c,60610100,Biznesda axborot tizimlari,,BSc (Hons) in Business Information Systems,f51dd7d0-bb53-4734-9eaf-602930c7a950,,,,t,f,1,2026-06-23,admin,BACHELOR
+5e94e673-dac9-955b-1d5f-a440e457ae74,60610100,Kompyuter ilmlari,,BSc (Hons) in Computer Science,f51dd7d0-bb53-4734-9eaf-602930c7a950,,,,t,f,2,2026-06-23,admin,BACHELOR
+f12f6b70-c1f9-65b4-4e09-ba3f1064fa42,60410100,Iqtisodiyot va moliya,,BSc (Hons) in Economics with Finance,d6ec1be6-c242-4eb6-9ef7-092250331b99,,,,t,f,1,2026-06-23,admin,BACHELOR
+12b04cb2-3503-b8d0-65b0-0521318931a7,60410100,Iqtisodiyot va ma'lumotlar ilmi,,BSc (Hons) in Economics with Data Science,d6ec1be6-c242-4eb6-9ef7-092250331b99,,,,t,f,1,2026-06-23,admin,BACHELOR
+532de421-cfb9-ed68-23cd-5259da46aa62,60410500,Moliya,,BSc (Hons) in Finance,d6ec1be6-c242-4eb6-9ef7-092250331b99,,,,t,f,1,2026-06-23,admin,BACHELOR

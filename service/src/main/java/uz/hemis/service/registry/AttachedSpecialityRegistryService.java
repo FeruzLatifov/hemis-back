@@ -62,9 +62,6 @@ public class AttachedSpecialityRegistryService {
     private final SpecialityOrdinaturaRepository ordinaturaRepository;
     private final SpecialityDoctoralRepository doctoralRepository;
 
-    /** Hard cap for CSV export — protects memory when the filter is broad. */
-    private static final int EXPORT_HARD_LIMIT = 5000;
-
     /**
      * Shared SELECT + JOIN skeleton. {@code sb/sm/so/sd} resolve the four possible
      * speciality columns; {@code COALESCE} collapses the single populated one.
@@ -107,7 +104,10 @@ public class AttachedSpecialityRegistryService {
             "specialityName", "speciality_name",
             "active", "a.active"
     );
-    private static final String DEFAULT_ORDER_BY = "university_name ASC, speciality_name ASC";
+    // a.id is appended as a total-order tiebreaker: the streaming .xlsx export pages through the
+    // result with separate LIMIT/OFFSET statements, so tied rows must have a stable order or they
+    // would be duplicated/skipped across page boundaries.
+    private static final String DEFAULT_ORDER_BY = "university_name ASC, speciality_name ASC, a.id ASC";
 
     // =====================================================
     // READ (REPLICA)
@@ -179,19 +179,6 @@ public class AttachedSpecialityRegistryService {
         return new AttachedSpecialityDictionariesDto(universities, educationTypes, educationForms, specialities);
     }
 
-    /**
-     * Export rows matching the filters (capped at {@link #EXPORT_HARD_LIMIT}).
-     */
-    public List<AttachedSpecialityRowDto> export(String q, String universityCode, String educationType,
-                                                 String educationForm, Boolean active) {
-        Pageable exportPage = org.springframework.data.domain.PageRequest.of(0, EXPORT_HARD_LIMIT);
-        Page<AttachedSpecialityRowDto> page = list(q, universityCode, educationType, educationForm, active, exportPage);
-        if (page.getTotalElements() > EXPORT_HARD_LIMIT) {
-            log.warn("Attached-speciality export truncated: matched {} rows, returning first {}",
-                    page.getTotalElements(), EXPORT_HARD_LIMIT);
-        }
-        return page.getContent();
-    }
 
     // =====================================================
     // WRITE (MASTER)
@@ -326,7 +313,8 @@ public class AttachedSpecialityRegistryService {
                 orders.add(column + (o.isAscending() ? " ASC" : " DESC"));
             }
         }
-        return orders.isEmpty() ? DEFAULT_ORDER_BY : String.join(", ", orders);
+        // Append the PK as a final tiebreaker so any custom sort is still a total order (stable paging).
+        return orders.isEmpty() ? DEFAULT_ORDER_BY : String.join(", ", orders) + ", a.id ASC";
     }
 
     private static void bindParams(Query query, List<Object> params) {
