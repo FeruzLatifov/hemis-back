@@ -8,6 +8,8 @@ import uz.hemis.common.dto.report.ColumnDto;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 
 import java.util.List;
 
@@ -24,17 +26,20 @@ import java.util.List;
 public class InstitutionReportService {
 
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
-    @Cacheable(value = "reports", key = "'institutions:' + (#universityCode ?: '')")
+    @Cacheable(value = "reports", key = "'institutions:' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(String universityCode) {
         log.info("🏛️ Building institutions report (uni={})", universityCode);
 
-        ReportSupport.Filter uf = support.filter().eq("u.code", universityCode);
+        AccessScope scope = scopeResolver.currentScope();
+
+        ReportSupport.Filter uf = support.filter().scoped("u.code", scope, universityCode);
         String uw = uf.sql();
         Object[] ua = uf.args();
 
         // Department counts share the same optional university scope (via university_code).
-        ReportSupport.Filter df = support.filter().eq("d.university_code", universityCode);
+        ReportSupport.Filter df = support.filter().scoped("d.university_code", scope, universityCode);
         String dw = df.sql();
         Object[] da = df.args();
 
@@ -63,11 +68,11 @@ public class InstitutionReportService {
                         " WHERE u.delete_ts IS NULL" + uw +
                         " GROUP BY COALESCE(ut.name, u._university_type) ORDER BY cnt DESC", ua),
                 support.bar("byRegion", "By region",
-                        "SELECT COALESCE(sr.name, u._soato_region), COUNT(*) AS cnt" +
+                        "SELECT COALESCE(sr.name_uz, u._soato_region), COUNT(*) AS cnt" +
                         " FROM hemishe_e_university u" +
                         " LEFT JOIN hemishe_h_soato sr ON sr.code = u._soato_region AND sr.delete_ts IS NULL" +
                         " WHERE u.delete_ts IS NULL" + uw +
-                        " GROUP BY COALESCE(sr.name, u._soato_region) ORDER BY cnt DESC", ua),
+                        " GROUP BY COALESCE(sr.name_uz, u._soato_region) ORDER BY cnt DESC", ua),
                 support.table("universityStructure", "University structure",
                         List.of(new ColumnDto("university", "University"),
                                 new ColumnDto("faculties", "Faculties"),

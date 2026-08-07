@@ -61,7 +61,9 @@ public class EmployeeJobsRegistryService {
         "t.id, t._employee, " + EMP_NAME + ", t._university, u.name, " +
         "t._department, dep.name_uz, t._employee_type, et.name, " +
         "t._employee_position, pos.name, t._employee_status, st.name, " +
-        "t.job_start_date, t.job_end_date, t.active ";
+        // hemishe_e_employee_jobs has no `active` column — a job is "active"
+        // (current) when it has not yet ended.
+        "t.job_start_date, t.job_end_date, (t.job_end_date IS NULL) ";
 
     public Page<EmployeeJobsRowDto> getEmployeeJobs(String q, String universityCode, String employeeType,
                                                     Boolean active, Pageable pageable) {
@@ -153,7 +155,7 @@ public class EmployeeJobsRegistryService {
             params.add(employeeType.trim());
         }
         if (active != null) {
-            where.append("AND t.active = ? ");
+            where.append("AND (t.job_end_date IS NULL) = ? ");
             params.add(active);
         }
         return where.toString();

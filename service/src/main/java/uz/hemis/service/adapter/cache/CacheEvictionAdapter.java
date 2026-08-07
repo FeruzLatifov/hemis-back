@@ -80,6 +80,20 @@ public class CacheEvictionAdapter implements CacheEvictionPort {
         }
     }
 
+    @Override
+    public void evictScopeForUser(String userId) {
+        log.info("CacheEvictionPort: evictScopeForUser({})", userId);
+        try {
+            UUID uuid = UUID.fromString(userId);
+            org.springframework.cache.Cache cache = cacheManager.getCache("userScope");
+            if (cache != null) {
+                cache.evict(uuid);
+            }
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid userId format: {}", userId);
+        }
+    }
+
     // =====================================================
     // Translation/i18n Cache Operations
     // =====================================================

@@ -58,6 +58,13 @@ public class WebhookDeliveryLog {
     @Column(name = "university_code", nullable = false, length = 10)
     private String universityCode;
 
+    /**
+     * Yuborilgan webhook envelope (JSON) — retry replay uchun (ADR-0012).
+     * {@code NULL} = eski payload'siz row → scheduler retry qila olmaydi (DLQ'ga o'tadi).
+     */
+    @Column(name = "payload", columnDefinition = "text")
+    private String payload;
+
     /** Attempt raqami (1 = birinchi, max 10). */
     @Column(name = "attempt_n", nullable = false)
     private Integer attemptN = 1;

@@ -43,7 +43,6 @@ public class WebhookRetryScheduler {
 
     private final WebhookDeliveryLogRepository deliveryLogRepository;
     private final WebhookDispatcher dispatcher;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Value("${hemis.webhook.retry.batch-size:50}")
     private int batchSize;
@@ -76,7 +75,9 @@ public class WebhookRetryScheduler {
         }
     }
 
-    @Transactional
+    // @Transactional YO'Q — ataylab: (1) processDueRetries() → doProcess() self-invocation'da
+    // proxy-based @Transactional baribir bypass bo'lardi (Golden Rule #9); (2) redispatch() ichida
+    // HTTP POST bor — uni bitta uzun DB tx ichida ushlab turmaslik kerak. Har save alohida tx.
     public void doProcess() {
         List<WebhookDeliveryLog> due = deliveryLogRepository.findDueRetries(
                 WebhookDeliveryStatus.RETRY,
@@ -106,26 +107,14 @@ public class WebhookRetryScheduler {
         }
     }
 
+    /**
+     * Bitta due retry'ni qayta yuborish. Envelope payload endi {@code webhook_delivery_log.payload}'da
+     * saqlanadi (V015), shuning uchun {@link WebhookDispatcher#redispatch} to'liq replay qiladi
+     * (attempt_n + 1, exponential backoff, max_retries'da DLQ). Eski "to'g'ridan DLQ" placeholder
+     * olib tashlandi (ADR-0012 retry endi haqiqatan ishlaydi).
+     */
     private void retryOne(WebhookDeliveryLog stale) {
-        // Eski log'ni "consumed" deb belgilash (RETRY → pending bo'lib qoladi keyingi attempt'da yangi row)
-        // Aslida — biz dispatcher'ni qayta chaqiramiz, u yangi log row yaratadi.
-        // Eski row'ni status'ini o'zgartirmaymiz (audit trail).
-
-        // Envelope DB'da yo'q — biz log'da faqat eventId saqlaymiz.
-        // Real implementation: outbox_event jadvalidan payload'ni qayta o'qish kerak yoki
-        // webhook_delivery_log jadvaliga payload qo'shish kerak.
-        //
-        // MVP yondashuvi: outbox_event'dan qayta o'qish (eventId orqali).
-        // Lekin outbox_event 30 kun keyin tozalanadi — eski retry yo'qoladi.
-
-        log.info("Manual retry pending — full envelope replay implemented in admin endpoint (Sprint 4)");
-
-        // Hozircha mark next attempt — admin manual retry tugmasi orqali Sprint 4'da
-        // implementatsiya qilinadi (envelope payload admin UI'dan keladi).
-        stale.setStatus(WebhookDeliveryStatus.DLQ);
-        stale.setErrorMessage("Retry scheduler placeholder — full implementation in Sprint 4");
-        stale.setCompletedAt(LocalDateTime.now());
-        deliveryLogRepository.save(stale);
+        dispatcher.redispatch(stale);
     }
 
     /**

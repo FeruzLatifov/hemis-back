@@ -74,7 +74,7 @@ public class DiplomaBlankRegistryService {
 
         String dataSql =
             "SELECT b.id, b.blank_code, b.series, b.\"number\", b._university, u.name, " +
-            "  b._blank_type, b._status, b.received_date, b.issued_date, b.academic_year, b.active " +
+            "  b._blank_type, b._status, b.received_date, b.issued_date, b.academic_year, (b.delete_ts IS NULL) " +
             BASE_FROM + where +
             "ORDER BY b.received_date DESC NULLS LAST, b.id " +
             "LIMIT ? OFFSET ?";
@@ -101,7 +101,7 @@ public class DiplomaBlankRegistryService {
 
         String sql =
             "SELECT b.id, b.blank_code, b.series, b.\"number\", b._university, u.name, " +
-            "  b._blank_type, b._status, b.received_date, b.issued_date, b.academic_year, b.active, " +
+            "  b._blank_type, b._status, b.received_date, b.issued_date, b.academic_year, (b.delete_ts IS NULL), " +
             "  b.supplier, b.batch_number, b.status_reason " +
             BASE_FROM +
             "WHERE b.delete_ts IS NULL AND b.id = ?";

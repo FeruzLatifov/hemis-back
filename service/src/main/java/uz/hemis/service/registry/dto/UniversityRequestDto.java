@@ -56,4 +56,6 @@ public class UniversityRequestDto {
     private Boolean addForeignStudent;
     private Boolean addTransferStudent;
     private Boolean addAcademicMobileStudent;
+    private Boolean allowAcademicImport;      // allow_academic_import (FROZEN col, old-hemis 2026-03-11)
+    private Boolean isFinancialIndependent;   // is_financial_independent (FROZEN col, old-hemis 2026-04-29)
 }

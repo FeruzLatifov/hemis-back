@@ -8,6 +8,8 @@ import uz.hemis.common.dto.report.ColumnDto;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 
 import java.util.List;
 
@@ -33,6 +35,7 @@ import java.util.List;
 public class AcademicReportService {
 
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     /** Score fact — guard soft-delete + non-null name + non-null measure. */
     private static final String SCORE =
@@ -45,14 +48,16 @@ public class AcademicReportService {
             " WHERE delete_ts IS NULL AND university_name IS NOT NULL AND attendance_percent IS NOT NULL";
 
     @Cacheable(value = "reports",
-            key = "'academic:' + (#educationYear ?: '') + ':' + (#educationType ?: '') + ':' + (#universityCode ?: '')")
+            key = "'academic:' + (#educationYear ?: '') + ':' + (#educationType ?: '') + ':' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(Integer educationYear, String universityCode, String educationType) {
         log.info("🎓 Building academic report (year={}, eduType={}, uni={})",
                 educationYear, educationType, universityCode);
 
+        AccessScope scope = scopeResolver.currentScope();
+
         // Same dimension columns on both fact tables → one shared filter.
         ReportSupport.Filter f = support.filter()
-                .eq("university_code", universityCode)
+                .scoped("university_code", scope, universityCode)
                 .eq("education_year_code", educationYear == null ? null : String.valueOf(educationYear))
                 .eq("education_type_code", educationType);
         String w = f.sql();

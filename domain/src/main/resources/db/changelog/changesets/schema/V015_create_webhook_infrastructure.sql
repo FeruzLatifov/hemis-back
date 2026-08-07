@@ -117,6 +117,10 @@ CREATE TABLE IF NOT EXISTS webhook_delivery_log (
     event_id        UUID         NOT NULL,
     event_type      VARCHAR(64)  NOT NULL,  -- denormalized for fast filtering
 
+    -- Yuborilgan webhook envelope (JSON) — retry replay uchun saqlanadi (ADR-0012 retry).
+    -- NULL = eski row (payload'siz) → scheduler retry qila olmaydi, DLQ'ga o'tkazadi.
+    payload         TEXT,
+
     -- Target (real FK)
     target_id       UUID         NOT NULL REFERENCES webhook_target(id) ON DELETE RESTRICT,
     university_code VARCHAR(10)  NOT NULL,  -- denormalized

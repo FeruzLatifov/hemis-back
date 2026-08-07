@@ -8,6 +8,8 @@ import uz.hemis.common.dto.report.ColumnDto;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.service.report.ReportSupport;
 
 import java.util.List;
@@ -29,18 +31,21 @@ public class ScientificRatingService {
 
     private final RatingSupport rating;
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
-    @Cacheable(value = "ratings", key = "'scientific:' + (#universityCode ?: '')")
+    @Cacheable(value = "ratings", key = "'scientific:' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(String universityCode) {
         log.info("🔬 Building scientific rating (uni={})", universityCode);
 
+        AccessScope scope = scopeResolver.currentScope();
+
         // Outer university filter (applied once to hemishe_e_university).
-        ReportSupport.Filter uf = support.filter().eq("u.code", universityCode);
+        ReportSupport.Filter uf = support.filter().scoped("u.code", scope, universityCode);
         String uw = uf.sql();
         Object[] ua = uf.args();
 
         // Direct per-source filters for the scalar KPIs.
-        ReportSupport.Filter pf = support.filter().eq("_university", universityCode);
+        ReportSupport.Filter pf = support.filter().scoped("_university", scope, universityCode);
         String pw = pf.sql();
         Object[] pa = pf.args();
 

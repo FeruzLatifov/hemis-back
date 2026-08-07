@@ -656,5 +656,7 @@ public class UniversityRegistryService {
         if (request.getAddForeignStudent() != null) entity.setAddForeignStudent(request.getAddForeignStudent());
         if (request.getAddTransferStudent() != null) entity.setAddTransferStudent(request.getAddTransferStudent());
         if (request.getAddAcademicMobileStudent() != null) entity.setAddAcademicMobileStudent(request.getAddAcademicMobileStudent());
+        if (request.getAllowAcademicImport() != null) entity.setAllowAcademicImport(request.getAllowAcademicImport());
+        if (request.getIsFinancialIndependent() != null) entity.setIsFinancialIndependent(request.getIsFinancialIndependent());
     }
 }

@@ -46,7 +46,7 @@ public class UniversityInfoController {
     private final UniversityProfileService profileService;
 
     @GetMapping("/{code}/dashboard")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.view') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Get university dashboard", description = "Returns all info (legal, founders, lifecycle, buildings) for one university")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Dashboard data retrieved"),
@@ -62,7 +62,7 @@ public class UniversityInfoController {
     }
 
     @GetMapping("/{code}/founders")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.view') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Get current founders", description = "Returns current founders list for a university")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Founders list retrieved"),
@@ -80,7 +80,7 @@ public class UniversityInfoController {
     }
 
     @GetMapping("/{code}/lifecycle")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.view') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Get lifecycle events", description = "Returns lifecycle events ordered by date descending for a university")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Lifecycle events retrieved"),
@@ -102,7 +102,7 @@ public class UniversityInfoController {
     // =====================================================
 
     @PostMapping("/{code}/sync")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.edit') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Sync all external data", description = "Fetch legal entity from external API and save. TIN is resolved automatically from university code.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Sync completed"),
@@ -119,7 +119,7 @@ public class UniversityInfoController {
     }
 
     @PostMapping("/{code}/lifecycle")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.edit') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Add lifecycle event", description = "Add a lifecycle event (CLOSED, MERGED, SUSPENDED, REACTIVATED, REORGANIZED, LICENSE_REVOKED)")
     public ResponseEntity<ResponseWrapper<UniversityLifecycleDto>> addLifecycleEvent(
             @PathVariable String code,
@@ -135,7 +135,7 @@ public class UniversityInfoController {
     // =====================================================
 
     @GetMapping("/{code}/officials")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.view') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Get university officials", description = "Returns ministry-appointed officials. history=true shows former officials too.")
     public ResponseEntity<ResponseWrapper<List<OfficialDto>>> getOfficials(
             @PathVariable String code,
@@ -147,7 +147,7 @@ public class UniversityInfoController {
     }
 
     @PostMapping("/{code}/officials")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.edit') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Appoint official", description = "Appoint a rector/prorektor. Previous holder is automatically deactivated.")
     public ResponseEntity<ResponseWrapper<OfficialDto>> appointOfficial(
             @PathVariable String code,
@@ -159,7 +159,7 @@ public class UniversityInfoController {
     }
 
     @DeleteMapping("/{code}/officials/{metaId}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.edit') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Dismiss official", description = "Deactivate an official appointment with decree")
     public ResponseEntity<Void> removeOfficial(
             @PathVariable String code,
@@ -172,7 +172,7 @@ public class UniversityInfoController {
     }
 
     @GetMapping("/lookup/person/{pinfl}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.edit')")
     @Operation(summary = "Lookup person by PINFL", description = "Find person in employee, teacher, or external API. Document/birthDate needed for external API.")
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> lookupPerson(
             @PathVariable String pinfl,
@@ -189,7 +189,7 @@ public class UniversityInfoController {
     // =====================================================
 
     @GetMapping("/{code}/profile")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.view') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Get university public profile", description = "Contacts, social links, description, documents")
     public ResponseEntity<ResponseWrapper<UniversityProfileDto>> getProfile(
             @PathVariable String code
@@ -199,7 +199,7 @@ public class UniversityInfoController {
     }
 
     @PutMapping("/{code}/profile")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.edit') and @scopeResolver.currentScope().allows(#code)")
     @Operation(summary = "Upsert university public profile", description = "Create or update contacts, social links, documents")
     public ResponseEntity<ResponseWrapper<UniversityProfileDto>> updateProfile(
             @PathVariable String code,
@@ -210,7 +210,7 @@ public class UniversityInfoController {
     }
 
     @GetMapping("/positions")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAuthority('universities.view')")
     @Operation(summary = "Get leadership positions", description = "Returns position classifier for university leadership")
     public ResponseEntity<ResponseWrapper<List<Map<String, Object>>>> getPositions() {
         List<Map<String, Object>> positions = officialService.getLeadershipPositions();

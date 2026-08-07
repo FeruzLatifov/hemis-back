@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
@@ -24,6 +26,7 @@ import java.util.List;
 public class StudentReportService {
 
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     /** Base predicate: active + not expelled (shared by every KPI/block). */
     private static final String BASE =
@@ -31,15 +34,18 @@ public class StudentReportService {
             "WHERE (s.is_expel IS NULL OR s.is_expel = false) AND s.status_code = '11'";
 
     @Cacheable(value = "reports",
-            key = "'students:' + (#educationYear ?: '') + ':' + (#educationType ?: '') + ':' + (#universityCode ?: '')")
+            key = "'students:' + (#educationYear ?: '') + ':' + (#educationType ?: '') + ':' " +
+                  "+ (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(Integer educationYear, String educationType, String universityCode) {
-        log.info("📈 Building students report (year={}, eduType={}, uni={})",
-                educationYear, educationType, universityCode);
+        AccessScope scope = scopeResolver.currentScope();
+        log.info("📈 Building students report (year={}, eduType={}, uni={}, scope={})",
+                educationYear, educationType, universityCode, scope.cacheKey());
 
         // NOTE: educationYear has no confirmed column on hemishe_r_student_full — accepted but not
         // applied to the WHERE (see report package docs / task issues).
+        // scoped(): server-derived OTM clamp — untrusted universityCode is only validated, never trusted.
         ReportSupport.Filter f = support.filter()
-                .eq("s.university_code", universityCode)
+                .scoped("s.university_code", scope, universityCode)
                 .eq("s.education_type_code", educationType);
         String w = f.sql();
         Object[] a = f.args();

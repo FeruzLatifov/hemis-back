@@ -234,7 +234,7 @@ public class DepartmentRegistryService {
                     "d.create_ts, d.created_by, d.update_ts, d.updated_by, d.version " +
                     "FROM hemishe_e_university_department d " +
                     "LEFT JOIN hemishe_e_university u ON u.code = d.university_code " +
-                    "LEFT JOIN university_department_type dt ON d._deparment_type = dt.code " +
+                    "LEFT JOIN hemishe_h_university_department_type dt ON d._deparment_type = dt.code " +
                     "WHERE d.code = ? AND d.delete_ts IS NULL";
 
         Query query = entityManager.createNativeQuery(sql);
@@ -295,8 +295,8 @@ public class DepartmentRegistryService {
                 .build()
         );
 
-        String deptTypeSql = "SELECT code, name FROM university_department_type " +
-                            "WHERE is_active = true ORDER BY name";
+        String deptTypeSql = "SELECT code, name FROM hemishe_h_university_department_type " +
+                            "WHERE delete_ts IS NULL AND active = true ORDER BY name";
         Query deptTypeQuery = entityManager.createNativeQuery(deptTypeSql);
 
         @SuppressWarnings("unchecked")

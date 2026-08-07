@@ -13,7 +13,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.dto.classifier.ClassifierItemDto;
 import uz.hemis.common.dto.student.StudentDictionariesDto;
 import uz.hemis.common.dto.student.StudentDictionariesDto.DictionaryItem;
@@ -67,6 +70,9 @@ public class StudentWebService {
 
     @Qualifier("dashboardJdbcTemplate")
     private final JdbcTemplate jdbcTemplate;
+
+    /** Server-derived tenant data-scope (OTM confinement) — api-web only. */
+    private final ScopeResolver scopeResolver;
 
     // =====================================================
     // Native SQL: 18 columns instead of 70+ (SELECT *)
@@ -140,7 +146,7 @@ public class StudentWebService {
      */
     @Cacheable(
             value = "studentsListSearch",
-            key = "#q + ':' + #searchField + ':' + #university + ':' + #educationType + ':' + #paymentForm + ':' + #studentStatus + ':' + #course + ':' + #faculty + ':' + #educationForm + ':' + #educationYear + ':' + #gender + ':' + #pageable.pageNumber + ':' + #pageable.pageSize",
+            key = "#q + ':' + #searchField + ':' + #university + ':' + #educationType + ':' + #paymentForm + ':' + #studentStatus + ':' + #course + ':' + #faculty + ':' + #educationForm + ':' + #educationYear + ':' + #gender + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + '|' + @scopeResolver.currentScopeKey()",
             unless = "#result == null || #pageable.pageNumber > 10"
     )
     public Page<StudentListDto> searchStudents(
@@ -159,6 +165,9 @@ public class StudentWebService {
     ) {
         log.debug("Searching students - q={}, searchField={}, university={}, page={}",
                 q, searchField, university, pageable.getPageNumber());
+
+        // Clamp the university filter to the caller's tenant scope (403 if out of scope).
+        String scopedUniversity = resolveUniversityScope(university);
 
         // 1. Build dynamic WHERE clause
         StringBuilder where = new StringBuilder("WHERE delete_ts IS NULL");
@@ -181,7 +190,7 @@ public class StudentWebService {
             }
         }
 
-        addFilter(where, params, "\"_university\"", university);
+        addFilter(where, params, "\"_university\"", scopedUniversity);
         addFilter(where, params, "\"_education_type\"", educationType);
         addFilter(where, params, "\"_payment_form\"", paymentForm);
         addFilter(where, params, "\"_student_status\"", studentStatus);
@@ -194,7 +203,7 @@ public class StudentWebService {
         String whereClause = where.toString();
 
         // 2. Total count — strategy depends on whether filters are active
-        boolean hasFilters = Stream.of(q, university, educationType, paymentForm, studentStatus,
+        boolean hasFilters = Stream.of(q, scopedUniversity, educationType, paymentForm, studentStatus,
                         course, faculty, educationForm, educationYear, gender)
                 .anyMatch(s -> s != null && !s.isBlank());
 
@@ -206,7 +215,7 @@ public class StudentWebService {
         } else {
             // Filters active → exact COUNT (fast because filters narrow dataset), cached
             total = getCachedCount(whereClause, params,
-                    q, university, educationType, paymentForm, studentStatus,
+                    q, scopedUniversity, educationType, paymentForm, studentStatus,
                     course, faculty, educationForm, educationYear, gender);
         }
 
@@ -352,6 +361,46 @@ public class StudentWebService {
     }
 
     // =====================================================
+    // Tenant scope (api-web) — mirrors ReportSupport.Filter.scoped for the raw-JDBC path
+    // =====================================================
+
+    /**
+     * Server-derived clamp for the {@code "_university"} filter.
+     * <ul>
+     *   <li>Ministry/system (unrestricted) → the requested value verbatim ({@code null} = national view).</li>
+     *   <li>OTM (restricted) → an out-of-scope requested code = 403; no code = clamp to the caller's own code(s).</li>
+     *   <li>Organization/unresolved (deny-all) → 403.</li>
+     * </ul>
+     * The returned string feeds {@link #addFilter} (single code → {@code = ?}, comma list → {@code IN (...)}).
+     */
+    private String resolveUniversityScope(String requested) {
+        AccessScope scope = scopeResolver.currentScope();
+        if (scope.unrestricted()) {
+            return (requested != null && !requested.isBlank()) ? requested : null;
+        }
+        if (scope.isDenyAll()) {
+            throw new AccessDeniedException("No university data scope for the current principal");
+        }
+        if (requested != null && !requested.isBlank()) {
+            for (String part : requested.split(",")) {
+                String code = part.trim();
+                if (!code.isEmpty() && !scope.allows(code)) {
+                    throw new AccessDeniedException("University out of scope: " + code);
+                }
+            }
+            return requested;
+        }
+        return String.join(",", scope.universityCodes());
+    }
+
+    /** Single-record guard: 403 if the loaded row's university is outside the caller's scope. */
+    private void assertUniversityInScope(String universityCode) {
+        if (!scopeResolver.currentScope().allows(universityCode)) {
+            throw new AccessDeniedException("Student is outside your university scope");
+        }
+    }
+
+    // =====================================================
     // Duplicate Detection
     // =====================================================
 
@@ -364,13 +413,16 @@ public class StudentWebService {
      * @param university optional university code filter (falls back to live CTE)
      * @return duplicate statistics with reason breakdown
      */
-    @Cacheable(value = "studentDuplicateStats", key = "#university != null ? #university : 'all'", unless = "#result == null")
+    @Cacheable(value = "studentDuplicateStats", key = "(#university != null ? #university : 'all') + '|' + @scopeResolver.currentScopeKey()", unless = "#result == null")
     public DuplicateStatsDto getDuplicateStats(String university) {
         log.debug("Getting duplicate stats - university={}", university);
 
+        // Clamp to tenant scope; a restricted (OTM) caller always resolves to its own code.
+        String scoped = resolveUniversityScope(university);
+
         // University filter requires live CTE (MV doesn't filter by university)
-        if (university != null && !university.isBlank()) {
-            return getDuplicateStatsLive(university);
+        if (scoped != null && !scoped.isBlank()) {
+            return getDuplicateStatsLive(scoped);
         }
 
         // Fast path: read from materialized view
@@ -461,14 +513,17 @@ public class StudentWebService {
      */
     @Cacheable(
             value = "studentDuplicates",
-            key = "#university + ':' + #reason + ':' + #pageable.pageNumber + ':' + #pageable.pageSize",
+            key = "#university + ':' + #reason + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + '|' + @scopeResolver.currentScopeKey()",
             unless = "#result == null || #pageable.pageNumber > 10"
     )
     public Page<DuplicateGroupDto> getDuplicates(String university, String reason, Pageable pageable) {
         log.debug("Getting duplicates - university={}, reason={}, page={}", university, reason, pageable.getPageNumber());
 
+        // Clamp to tenant scope; a restricted (OTM) caller always resolves to its own code.
+        String scoped = resolveUniversityScope(university);
+
         // 1. Get total count from cached stats
-        DuplicateStatsDto stats = getDuplicateStats(university);
+        DuplicateStatsDto stats = getDuplicateStats(scoped);
         long total = getTotalForReason(stats, reason);
 
         if (total == 0) {
@@ -481,10 +536,10 @@ public class StudentWebService {
         // 2. Get one page of duplicate PINFLs from materialized view (or live CTE)
         List<DuplicatePinflRow> pinflRows;
 
-        if (university == null || university.isBlank()) {
+        if (scoped == null || scoped.isBlank()) {
             pinflRows = queryDuplicatesFromView(reason, pageable);
         } else {
-            pinflRows = queryDuplicatesLive(university, reason, pageable);
+            pinflRows = queryDuplicatesLive(scoped, reason, pageable);
         }
 
         if (pinflRows.isEmpty()) {
@@ -583,6 +638,15 @@ public class StudentWebService {
 
         if (students.isEmpty()) {
             throw new ResourceNotFoundException("No students found for PINFL");
+        }
+
+        // Tenant-scope guard: a restricted (OTM) caller may open the cross-OTM duplicate card
+        // only for a PINFL that actually appears in its own scope — the feature stays cross-OTM
+        // for legitimate duplicate resolution, but arbitrary-PINFL fishing is blocked.
+        AccessScope scope = scopeResolver.currentScope();
+        if (!scope.unrestricted()
+                && students.stream().noneMatch(s -> scope.allows(s.universityCode()))) {
+            throw new AccessDeniedException("PINFL is outside your university scope");
         }
 
         // 2. Compute analysis
@@ -824,6 +888,7 @@ public class StudentWebService {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "id", id));
 
+        assertUniversityInScope(student.getUniversity());
         return studentMapper.toDto(student);
     }
 
@@ -840,6 +905,7 @@ public class StudentWebService {
         Student student = studentRepository.findByCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Student", "code", code));
 
+        assertUniversityInScope(student.getUniversity());
         return studentMapper.toDto(student);
     }
 
@@ -860,9 +926,12 @@ public class StudentWebService {
      * @param university optional university code filter
      * @return stats DTO with total, grant, contract, graduate counts
      */
-    @Cacheable(value = "studentStats", key = "#university != null ? #university : 'all'", unless = "#result == null")
+    @Cacheable(value = "studentStats", key = "(#university != null ? #university : 'all') + '|' + @scopeResolver.currentScopeKey()", unless = "#result == null")
     public StudentStatsDto getStats(String university) {
         log.debug("Getting student stats - university={}", university);
+
+        // Clamp to tenant scope (403 if out of scope); null = national (ministry only).
+        String scopedUniversity = resolveUniversityScope(university);
 
         // Reads directly from hemishe_e_student (same as old-hemis JPQL queries)
         // Old-hemis status codes (hemishe_h_student_status_type):
@@ -870,6 +939,10 @@ public class StudentWebService {
         //   '14' = Bitirgan  '15' = Ko'chirilgan
         // Old-hemis dashboard: COUNT WHERE studentStatus.code = '11'
         // Old-hemis graduates: studentStatus.code = '11' AND isGraduate = '1'
+
+        StringBuilder where = new StringBuilder("WHERE delete_ts IS NULL");
+        List<Object> params = new ArrayList<>();
+        addFilter(where, params, "\"_university\"", scopedUniversity);
 
         String sql = """
             SELECT
@@ -879,25 +952,14 @@ public class StudentWebService {
               COUNT(CASE WHEN "_student_status" = '14'
                            OR ("_student_status" = '11' AND is_graduate = '1') THEN 1 END) as graduate_count
             FROM hemishe_e_student
-            WHERE delete_ts IS NULL
-            """;
-
-        if (university != null && !university.isBlank()) {
-            sql += " AND \"_university\" = ?";
-            return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new StudentStatsDto(
-                    rs.getLong("total"),
-                    rs.getLong("grant_count"),
-                    rs.getLong("contract_count"),
-                    rs.getLong("graduate_count")
-            ), university);
-        }
+            """ + where;
 
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new StudentStatsDto(
                 rs.getLong("total"),
                 rs.getLong("grant_count"),
                 rs.getLong("contract_count"),
                 rs.getLong("graduate_count")
-        ));
+        ), params.toArray());
     }
 
     /**

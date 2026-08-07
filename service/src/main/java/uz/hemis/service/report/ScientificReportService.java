@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
@@ -26,25 +28,28 @@ import java.util.List;
 public class ScientificReportService {
 
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     @Cacheable(value = "reports",
-            key = "'scientific:' + (#educationYear ?: '') + ':' + (#universityCode ?: '')")
+            key = "'scientific:' + (#educationYear ?: '') + ':' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(Integer educationYear, String universityCode) {
         log.info("🔬 Building scientific report (year={}, uni={})", educationYear, universityCode);
 
+        AccessScope scope = scopeResolver.currentScope();
+
         // Publications: university + issue_year filters.
         ReportSupport.Filter pf = support.filter()
-                .eq("p._university", universityCode)
+                .scoped("p._university", scope, universityCode)
                 .eq("p.issue_year", educationYear);
         String pw = pf.sql();
         Object[] pa = pf.args();
 
         // Projects / doctorates: university scope only.
-        ReportSupport.Filter prf = support.filter().eq("pr._university", universityCode);
+        ReportSupport.Filter prf = support.filter().scoped("pr._university", scope, universityCode);
         String prw = prf.sql();
         Object[] pra = prf.args();
 
-        ReportSupport.Filter dsf = support.filter().eq("ds._university", universityCode);
+        ReportSupport.Filter dsf = support.filter().scoped("ds._university", scope, universityCode);
         String dsw = dsf.sql();
         Object[] dsa = dsf.args();
 

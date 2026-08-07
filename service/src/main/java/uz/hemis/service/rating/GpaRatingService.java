@@ -8,6 +8,8 @@ import uz.hemis.common.dto.report.ColumnDto;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.service.report.ReportSupport;
 
 import java.util.List;
@@ -37,6 +39,7 @@ public class GpaRatingService {
 
     private final RatingSupport rating;
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     /** Numeric-only guard so {@code CAST(gpa AS numeric)} is always safe. */
     private static final String NUMERIC_GUARD = "g.gpa ~ '^[0-9]+(\\.[0-9]+)?$'";
@@ -47,11 +50,12 @@ public class GpaRatingService {
             " JOIN hemishe_e_student s ON s.id = g.student_id AND s.delete_ts IS NULL" +
             " WHERE " + NUMERIC_GUARD;
 
-    @Cacheable(value = "ratings", key = "'gpa:' + (#universityCode ?: '')")
+    @Cacheable(value = "ratings", key = "'gpa:' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(String universityCode) {
         log.info("📊 Building GPA rating (uni={})", universityCode);
 
-        ReportSupport.Filter f = support.filter().eq("s._university", universityCode);
+        AccessScope scope = scopeResolver.currentScope();
+        ReportSupport.Filter f = support.filter().scoped("s._university", scope, universityCode);
         String w = f.sql();
         Object[] a = f.args();
 

@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
@@ -37,29 +39,31 @@ import java.util.List;
 public class EconomicReportService {
 
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     @Cacheable(value = "reports",
-            key = "'economic:' + (#educationYear ?: '') + ':' + (#universityCode ?: '')")
+            key = "'economic:' + (#educationYear ?: '') + ':' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(Integer educationYear, String universityCode) {
         log.info("💵 Building economic report (year={}, uni={})", educationYear, universityCode);
+        AccessScope scope = scopeResolver.currentScope();
         String year = educationYear == null ? null : String.valueOf(educationYear);
 
         // Employment fact: no delete_ts column on this entity.
         ReportSupport.Filter ef = support.filter()
-                .eq("e._university", universityCode)
+                .scoped("e._university", scope, universityCode)
                 .eq("e._education_year", year);
         String ew = ef.sql();
         Object[] ea = ef.args();
 
         // Infrastructure facts (laboratories / ict): soft-deletable, distinct column names.
         ReportSupport.Filter lf = support.filter()
-                .eq("l.university_code", universityCode)
+                .scoped("l.university_code", scope, universityCode)
                 .eq("l.education_year_code", year);
         String lw = lf.sql();
         Object[] la = lf.args();
 
         ReportSupport.Filter icf = support.filter()
-                .eq("i.university_code", universityCode)
+                .scoped("i.university_code", scope, universityCode)
                 .eq("i.education_year_code", year);
         String iw = icf.sql();
         Object[] ia = icf.args();

@@ -51,7 +51,7 @@ public class DoctoralStudentRegistryService {
         "LEFT JOIN hemishe_e_university u ON u.code = t._university AND u.delete_ts IS NULL " +
         "LEFT JOIN hemishe_h_science_branch sb ON sb.code = t._science_branch AND sb.delete_ts IS NULL " +
         "LEFT JOIN hemishe_h_doctoral_student_type dt ON dt.code = t._doctoral_student_type AND dt.delete_ts IS NULL " +
-        "LEFT JOIN hemishe_h_doctorate_student_status st ON st.code = t._doctorate_student_status AND st.delete_ts IS NULL ";
+        "LEFT JOIN hemishe_h_doctoral_student_status st ON st.code = t._doctorate_student_status AND st.delete_ts IS NULL ";
 
     private static final String ROW_COLS =
         "t.id, " + FULL_NAME + ", t.student_id_number, t._university, u.name, " +
@@ -124,7 +124,7 @@ public class DoctoralStudentRegistryService {
             loadUniversities(),
             loadClassifier("hemishe_h_science_branch"),
             loadClassifier("hemishe_h_doctoral_student_type"),
-            loadClassifier("hemishe_h_doctorate_student_status")
+            loadClassifier("hemishe_h_doctoral_student_status")
         );
     }
 

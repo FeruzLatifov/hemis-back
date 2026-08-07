@@ -174,11 +174,19 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // User permissions cache: 30 minutes
         redisCacheConfigurations.put("userPermissions", defaultConfig.entryTtl(DEFAULT_TTL));
 
+        // userScope: userId → OTM AccessScope inputs (user_type + university_code) for the tenant-scope
+        // resolver. Same 30 min tier as userPermissions; evicted together on user role/status/university change.
+        redisCacheConfigurations.put("userScope", defaultConfig.entryTtl(DEFAULT_TTL));
+
         // University search cache (paged + filters): 30 minutes
         redisCacheConfigurations.put("universitiesSearch", defaultConfig.entryTtl(DASHBOARD_TTL));
 
         // University dictionaries (static): 6 hours
         redisCacheConfigurations.put("universityDictionaries", defaultConfig.entryTtl(Duration.ofHours(6)));
+
+        // Unified speciality classifier distribution snapshot (h_speciality, APPROVED set):
+        // global reference data pulled by OTMs on bootstrap, rarely changes → 24h, evicted on curation edit.
+        redisCacheConfigurations.put("specialityDistribution", defaultConfig.entryTtl(Duration.ofHours(24)));
 
         // University domain caches — 230 OTM, rarely change (24 hour TTL)
         // findAllList (230 row list, dropdown'larda), findActive (dashboard widget)
@@ -302,11 +310,6 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Speciality stats — heavy aggregation, 1 soat.
         redisCacheConfigurations.put("specialityStats", defaultConfig.entryTtl(Duration.ofHours(1)));
         redisCacheConfigurations.put("specialitySummary", defaultConfig.entryTtl(Duration.ofHours(1)));
-
-        // Translations — admin tomondan tahrirlanmagunicha katta TTL.
-        // Eski nom translations-category — camelCase translationsCategory.
-        redisCacheConfigurations.put("translations", defaultConfig.entryTtl(Duration.ofHours(1)));
-        redisCacheConfigurations.put("translationsCategory", defaultConfig.entryTtl(Duration.ofHours(1)));
 
         // Create Redis cache manager (L2)
         RedisCacheManager redisCacheManager = RedisCacheManager.builder(connectionFactory)

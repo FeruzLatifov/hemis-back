@@ -8,6 +8,8 @@ import uz.hemis.common.dto.report.ColumnDto;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.service.report.ReportSupport;
 
 import java.util.List;
@@ -30,18 +32,21 @@ public class AcademicRatingService {
 
     private final RatingSupport rating;
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     private static final String FROM =
             " FROM hemishe_r_academic_score" +
             " WHERE delete_ts IS NULL AND score_percent IS NOT NULL";
 
     @Cacheable(value = "ratings",
-            key = "'academic:' + (#educationYear ?: '') + ':' + (#universityCode ?: '')")
+            key = "'academic:' + (#educationYear ?: '') + ':' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(Integer educationYear, String universityCode) {
         log.info("🎓 Building academic rating (year={}, uni={})", educationYear, universityCode);
 
+        AccessScope scope = scopeResolver.currentScope();
+
         ReportSupport.Filter f = support.filter()
-                .eq("university_code", universityCode)
+                .scoped("university_code", scope, universityCode)
                 .eq("education_year_code", educationYear == null ? null : String.valueOf(educationYear));
         String w = f.sql();
         Object[] a = f.args();

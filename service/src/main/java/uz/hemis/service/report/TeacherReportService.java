@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
@@ -33,6 +35,7 @@ import java.util.List;
 public class TeacherReportService {
 
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     private static final String BASE = "FROM hemishe_e_teacher t WHERE t.delete_ts IS NULL";
 
@@ -45,12 +48,14 @@ public class TeacherReportService {
             " AND (LOWER(ar.name) LIKE '%professor%' OR LOWER(ar.name) LIKE '%профессор%')";
 
     @Cacheable(value = "reports",
-            key = "'teachers:' + (#universityCode ?: '') + ':' + (#academicDegree ?: '')")
+            key = "'teachers:' + (#universityCode ?: '') + ':' + (#academicDegree ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(String universityCode, String academicDegree) {
         log.info("👩‍🏫 Building teachers report (uni={}, degree={})", universityCode, academicDegree);
 
+        AccessScope scope = scopeResolver.currentScope();
+
         ReportSupport.Filter f = support.filter()
-                .eq("t._university", universityCode)
+                .scoped("t._university", scope, universityCode)
                 .eq("t._academic_degree", academicDegree);
         String w = f.sql();
         Object[] a = f.args();

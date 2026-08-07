@@ -2,6 +2,7 @@ package uz.hemis.service.outbox;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.domain.entity.outbox.OutboxEvent;
 import uz.hemis.domain.repository.outbox.OutboxEventRepository;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -111,8 +113,15 @@ public class OutboxPoller {
         String key = event.getAggregateId();
         String value = event.getPayload();
 
+        // Outbox event.id'ni Kafka header sifatida uzatamiz — downstream consumer
+        // (masalan WebhookFanoutConsumer) uni deterministik `event_id` sifatida ishlatadi
+        // (redelivery'da Univer idempotency dedup buzilmasin). Wire-contract header: "hemis-event-id".
+        ProducerRecord<String, String> producerRecord = new ProducerRecord<>(topic, key, value);
+        producerRecord.headers().add("hemis-event-id",
+                event.getId().toString().getBytes(StandardCharsets.UTF_8));
+
         SendResult<String, String> result = kafkaTemplate
-                .send(topic, key, value)
+                .send(producerRecord)
                 .get(KAFKA_SEND_TIMEOUT_SEC, TimeUnit.SECONDS);
 
         RecordMetadata metadata = result.getRecordMetadata();

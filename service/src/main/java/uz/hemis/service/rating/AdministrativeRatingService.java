@@ -8,6 +8,8 @@ import uz.hemis.common.dto.report.ColumnDto;
 import uz.hemis.common.dto.report.ReportBlockDto;
 import uz.hemis.common.dto.report.ReportDto;
 import uz.hemis.common.dto.report.ReportKpiDto;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.service.report.ReportSupport;
 
 import java.util.List;
@@ -39,6 +41,7 @@ public class AdministrativeRatingService {
 
     private final RatingSupport rating;
     private final ReportSupport support;
+    private final ScopeResolver scopeResolver;
 
     /** Central RI administrative indicator tables carrying a {@code _university} column. */
     private static final List<String> RI_TABLES = List.of(
@@ -52,14 +55,16 @@ public class AdministrativeRatingService {
             "hemishe_ri_administrative_employee3");
 
     @Cacheable(value = "ratings",
-            key = "'administrative:' + (#educationYear ?: '') + ':' + (#universityCode ?: '')")
+            key = "'administrative:' + (#educationYear ?: '') + ':' + (#universityCode ?: '') + '|' + @scopeResolver.currentScopeKey()")
     public ReportDto build(Integer educationYear, String universityCode) {
         log.info("🏛️ Building administrative rating (year={}, uni={})", educationYear, universityCode);
+
+        AccessScope scope = scopeResolver.currentScope();
 
         // Per-table WHERE fragment is identical (same _university / _education_year columns), so we
         // build one filter and repeat its args once per UNION ALL branch.
         ReportSupport.Filter f = support.filter()
-                .eq("_university", universityCode)
+                .scoped("_university", scope, universityCode)
                 .eq("_education_year", educationYear == null ? null : String.valueOf(educationYear));
         String w = f.sql();
         Object[] one = f.args();

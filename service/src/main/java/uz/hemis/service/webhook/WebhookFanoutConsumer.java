@@ -10,11 +10,17 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
+import org.apache.kafka.common.header.Header;
+import org.springframework.kafka.support.SendResult;
 import uz.hemis.domain.entity.webhook.WebhookTarget;
 import uz.hemis.domain.repository.webhook.WebhookTargetRepository;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Webhook fanout consumer — domain event'larni 224 OTM bo'yicha tarqatuvchi.
@@ -45,6 +51,12 @@ public class WebhookFanoutConsumer {
     private final WebhookTargetRepository targetRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+
+    /** Fanout send'larni tasdiqlashni kutish limiti (barcha OTM message broker'ga yozilishi). */
+    private static final long FANOUT_SEND_TIMEOUT_SEC = 30;
+
+    /** Outbox event.id header nomi — {@code OutboxPoller} wire-contract bilan mos bo'lishi shart. */
+    private static final String HEADER_EVENT_ID = "hemis-event-id";
 
     /**
      * Webhook'ga jo'natiladigan domain topic'lar ro'yxati.
@@ -82,30 +94,38 @@ public class WebhookFanoutConsumer {
                 return;
             }
 
+            // Deterministik event_id — manba outbox event.id (Kafka header) → redelivery'da
+            // Univer idempotency dedup buzilmaydi (random UUID EMAS, SYNC-WH-02).
+            String sourceEventId = extractHeader(record, HEADER_EVENT_ID);
+
             // Envelope yaratish (domain payload'ni Univer-friendly format'ga o'rash)
-            String envelope = buildEnvelope(topic, aggregateId, payload);
+            String envelope = buildEnvelope(topic, aggregateId, payload, sourceEventId);
 
-            // Har OTM uchun alohida message (key=university_code → per-OTM partition)
-            int sent = 0;
+            // Har OTM uchun alohida message (key=university_code → per-OTM partition).
+            // Barcha send TASDIQLANMAGUNCHA kutamiz, faqat keyin ack. Aks holda ack↔broker-flush
+            // oynasida crash bo'lsa buffer'dagi xabarlar yo'qolardi (offset commit bo'lgani uchun
+            // qayta yetkazilmasdi — SYNC-WH-03). Bittasi fail bo'lsa → ack YO'Q → Kafka butun
+            // event'ni qayta beradi (at-least-once; event_id deterministik → Univer dedup qiladi).
+            List<CompletableFuture<SendResult<String, String>>> futures =
+                    new ArrayList<>(activeTargets.size());
             for (WebhookTarget target : activeTargets) {
-                try {
-                    kafkaTemplate.send(
-                            "hemis.webhook.events",
-                            target.getUniversityCode(),
-                            envelope
-                    );
-                    sent++;
-                } catch (Exception e) {
-                    // Bir OTM'ga publish fail bo'lsa qolganlarini bloklamaslik
-                    log.warn("Fanout to {} failed: {}", target.getUniversityCode(), e.getMessage());
-                }
+                futures.add(kafkaTemplate.send(
+                        "hemis.webhook.events",
+                        target.getUniversityCode(),
+                        envelope
+                ));
             }
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .get(FANOUT_SEND_TIMEOUT_SEC, TimeUnit.SECONDS);
 
-            log.debug("Fanout {}/{} → {} target(s)", topic, aggregateId, sent);
+            log.debug("Fanout {}/{} → {} target(s) confirmed", topic, aggregateId, activeTargets.size());
             ack.acknowledge();
 
         } catch (Exception e) {
             // Top-level catch — Kafka offset commit qilmaslik (retry kelajakda)
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             log.error("Fanout consumer failed for {}/{}", topic, aggregateId, e);
             io.sentry.Sentry.captureException(e, scope -> {
                 scope.setLevel(io.sentry.SentryLevel.ERROR);
@@ -124,7 +144,7 @@ public class WebhookFanoutConsumer {
      * <p>Domain payload — outbox'da {@code OutboxEventPublisher.publish(...)} qiladi.
      * Bu metod o'sha JSON'ni {@link WebhookEventEnvelope} bilan o'raydi.</p>
      */
-    private String buildEnvelope(String topic, String aggregateId, String domainPayload)
+    private String buildEnvelope(String topic, String aggregateId, String domainPayload, String sourceEventId)
             throws JsonProcessingException {
         // Topic'dan aggregate type ajratish: hemis.classifier.events.v1 → classifier
         String aggregateType = parseAggregateType(topic);
@@ -136,8 +156,11 @@ public class WebhookFanoutConsumer {
         // Domain payload'ni Object sifatida parse qilib data field'iga qo'yamiz
         Object data = objectMapper.readValue(domainPayload, Object.class);
 
+        // event_id — deterministik (manba outbox event.id yoki content-hash), random EMAS.
+        UUID eventId = deriveEventId(sourceEventId, aggregateType, aggregateId, domainPayload);
+
         WebhookEventEnvelope envelope = new WebhookEventEnvelope(
-                UUID.randomUUID(),  // event_id (yangi UUID — Kafka offset'dan ajratilgan)
+                eventId,
                 eventType,
                 aggregateType,
                 aggregateId,
@@ -147,6 +170,31 @@ public class WebhookFanoutConsumer {
         );
 
         return objectMapper.writeValueAsString(envelope);
+    }
+
+    /**
+     * Deterministik {@code event_id}: manba outbox event.id (Kafka header) bo'lsa — o'shani;
+     * bo'lmasa (eski/header'siz message) event mazmunidan barqaror UUID hosil qiladi.
+     * Hech qachon {@link UUID#randomUUID()} EMAS — redelivery'da bir xil event bir xil id olishi
+     * shart, aks holda Univer idempotency dedup buziladi (SYNC-WH-02).
+     */
+    private static UUID deriveEventId(String sourceEventId, String aggregateType,
+                                      String aggregateId, String domainPayload) {
+        if (sourceEventId != null && !sourceEventId.isBlank()) {
+            try {
+                return UUID.fromString(sourceEventId.trim());
+            } catch (IllegalArgumentException ignored) {
+                // header buzuq — content-hash fallback'ga o'tamiz
+            }
+        }
+        String seed = aggregateType + "|" + aggregateId + "|" + domainPayload;
+        return UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /** Kafka record header'idan string qiymat (UTF-8) — yo'q bo'lsa {@code null}. */
+    private static String extractHeader(ConsumerRecord<String, String> record, String key) {
+        Header header = record.headers().lastHeader(key);
+        return header == null ? null : new String(header.value(), StandardCharsets.UTF_8);
     }
 
     private static String parseAggregateType(String topic) {

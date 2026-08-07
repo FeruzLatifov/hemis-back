@@ -53,6 +53,14 @@ public interface CacheEvictionPort {
      */
     void evictPermissionsForUser(String userId);
 
+    /**
+     * Evict the cached OTM access-scope for a user. Call whenever the user's university, roles,
+     * or enabled/locked status changes, so a moved/dismissed user's scope does not linger until TTL.
+     *
+     * @param userId user UUID (string form)
+     */
+    void evictScopeForUser(String userId);
+
     // =====================================================
     // Translation/i18n Cache Operations
     // =====================================================

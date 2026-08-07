@@ -208,6 +208,7 @@ public class WebhookDispatcher {
         logEntry.setTarget(target);
         logEntry.setUniversityCode(target.getUniversityCode());
         logEntry.setAttemptN(attemptN);
+        logEntry.setPayload(envelopeJson);   // retry replay uchun saqlanadi (ADR-0012 retry)
         logEntry.setDispatchedAt(LocalDateTime.now());
 
         long startNs = System.nanoTime();
@@ -261,6 +262,46 @@ public class WebhookDispatcher {
         }
 
         deliveryLogRepository.save(logEntry);
+    }
+
+    /**
+     * Stale RETRY delivery'ni qayta yuborish — {@link WebhookRetryScheduler} chaqiradi.
+     *
+     * <p>Saqlangan {@code payload} (envelope) + target + callbackUrl asosida yangi attempt
+     * ({@link #dispatchWithRetry}, attempt_n + 1) bajaradi — u natijaga qarab yangi log row'ga
+     * SUCCESS / RETRY / DLQ yozadi. Eski (stale) row {@code next_retry_at = NULL} bilan belgilanadi
+     * → {@code findDueRetries} uni qayta tanlamaydi (RETRY holati audit trail sifatida qoladi).</p>
+     *
+     * <p>Payload/target/callbackUrl topilmasa — replay imkonsiz → cheksiz RETRY loop o'rniga
+     * stale DLQ'ga o'tadi (manual admin review).</p>
+     *
+     * <p>Transaction: ambient tx YO'Q (scheduler {@code @Transactional} emas) — har save alohida tx.
+     * {@code stale.getTarget()} (LAZY) o'qilmaydi; target repository orqali qayta yuklanadi.</p>
+     */
+    public void redispatch(WebhookDeliveryLog stale) {
+        String envelopeJson = stale.getPayload();
+        WebhookTarget target = targetRepository.findByUniversityCode(stale.getUniversityCode()).orElse(null);
+        University university = universityRepository.findById(stale.getUniversityCode()).orElse(null);
+        String callbackUrl = (university != null) ? buildCallbackUrl(university) : null;
+
+        if (envelopeJson == null || target == null || callbackUrl == null) {
+            stale.markDlq("Retry replay impossible: "
+                    + (envelopeJson == null ? "payload=null " : "")
+                    + (target == null ? "target=null " : "")
+                    + (callbackUrl == null ? "callbackUrl=null" : ""));
+            deliveryLogRepository.save(stale);
+            log.warn("Webhook retry → DLQ (replay data yo'q): event={} university={}",
+                    stale.getEventId(), stale.getUniversityCode());
+            return;
+        }
+
+        // Stale attempt'ni "consumed" deb belgilash — next_retry_at=NULL → findDueRetries chetlab o'tadi.
+        stale.setNextRetryAt(null);
+        deliveryLogRepository.save(stale);
+
+        // Yangi attempt (attempt_n + 1) — status'i dispatchWithRetry ichida hal qilinadi.
+        dispatchWithRetry(target, callbackUrl, stale.getEventId(), stale.getEventType(),
+                envelopeJson, stale.getAttemptN() + 1);
     }
 
     private void handleRetryable(
