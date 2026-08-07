@@ -7,7 +7,7 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 # Port Legacy Endpoint
 
 > **Canonical:** `.claude/ENDPOINT_PORTING_GUIDE.md` (8 qadam to'liq spec). Bu skill — qisqa avtomatlashtirish.
-> **Pattern:** `toMap()` + `LinkedHashMap` (NOT MapStruct — 261 ta controller shu pattern).
+> **Pattern:** `toMap()` + `LinkedHashMap` (NOT MapStruct — ~124 ta `@RestController` shu pattern, 0 ta MapStruct).
 
 ## Workflow (8 qadam)
 

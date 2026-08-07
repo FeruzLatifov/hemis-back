@@ -13,7 +13,7 @@
 3. **Single Source of Truth:** Har business concept uchun bitta jadval. Dublikat jadval yaratilmaydi.
 4. **Service layer required:** Controllers delegate to services. Repositories never called directly from controllers.
 5. **Security by default:** All endpoints require authentication and authorisation. Validate input; no raw SQL; no exposed internal exceptions. OWASP Top 10:2025 checklist mandatory.
-6. **Documentation & tests mandatory:** Every endpoint → Swagger annotations + integration test. Every service method → unit test. Minimum coverage 70% (service layer 90%) — enforced via Jacoco gate.
+6. **Documentation & tests mandatory:** Every endpoint → Swagger annotations + integration test. Every service method → unit test. Coverage **target** 70% (service layer 90%) — JaCoCo faqat *report* generatsiya qiladi (`jacocoTestReport`); hozircha **hard-gate YO'Q** (`JacocoCoverageVerification { enabled = false }`, `build.gradle.kts` — CUBA-era codebase'da real floor amalga oshirilmagan). Target meaningful bo'lganda per-module rule qayta yoqiladi.
 7. **Idempotent migrations:** Safe to run multiple times; always include rollback. Test forward + rollback on staging first.
 8. **No hardcoded secrets:** Use environment variables; never commit secrets. Rotation policy: JWT 90 days, DB password 180 days.
 9. **AOP self-invocation awareness:** `@Cacheable`, `@Transactional`, `@Async`, `@PreAuthorize` on private methods or same-class calls **do NOT work** — Spring proxy bypasses them. Extract to separate `@Service` bean.

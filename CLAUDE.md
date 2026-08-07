@@ -27,7 +27,7 @@ Hech qachon hard-code qilmang DB nomi/jadvalni. **Markaziy HEMIS-back DB:** loka
 |------|--------------------|----------------------|
 | **DB nomi** | `${DB_MASTER_NAME}` (`.env`) | `hemis_337`, `hemis_401`, …, `hemis_NNN` |
 | **Stack** | Java 25 + Spring + JPA | Yii2 PHP |
-| **Tegish** | `@Entity`/`@Table` + Hibernate | REST (`UniverApiService`) |
+| **Tegish** | `@Entity`/`@Table` + Hibernate | REST (`HemisApiService`/`LegacyOtmIntegrationService`) |
 | **Bizdagi jadvallar** | `hemishe_e_student`, `hemishe_e_teacher`, `hemishe_e_university`, … | — |
 | **Univer'da bor (bizda YO'Q)** | — | `hemishe_e_grade`, `hemishe_e_attendance`, `hemishe_e_course`, `hemishe_e_exam`, `hemishe_e_schedule`, `hemishe_e_contract`, `hemishe_e_curriculum`, `hemishe_e_employment`, `hemishe_e_enrollment`, `hemishe_e_department` |
 
@@ -48,7 +48,7 @@ Yangi qaror qabul qilishdan oldin: `grep -rn "<endpoint>" /home/adm1n/projects/s
 
 Tezkor qoida: **`api-legacy` faqat eski (`hemishe_*`, `sec_*`); qolganlari yangi schema**.
 
-Univer eski URL bilan POST → api-legacy yangi jadvalga yozsa → Univer keyingi GET eski jadvaldan o'qiydi → ma'lumot yo'qoladi (split-brain). Univer'dan ma'lumot kerak bo'lsa — `UniverApiService` (REST), `@Entity` qilmang.
+Univer eski URL bilan POST → api-legacy yangi jadvalga yozsa → Univer keyingi GET eski jadvaldan o'qiydi → ma'lumot yo'qoladi (split-brain). Univer'dan ma'lumot kerak bo'lsa — `service/integration` REST klient (`HemisApiService` / `LegacyOtmIntegrationService`), `@Entity` qilmang.
 
 **Batafsil jadval va konventsiya:** [`api-legacy/CLAUDE.md`](api-legacy/CLAUDE.md) "Modul ↔ Jadval mosligi" + Entity nomlanish konventsiyasi (Legacy* prefiks).
 
@@ -82,7 +82,7 @@ Univer eski URL bilan POST → api-legacy yangi jadvalga yozsa → Univer keying
 
 URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'chirish workflow.
 
-**Pattern:** `toMap()` + `LinkedHashMap` (NOT MapStruct — api-legacy 126 `@RestController`, 82 fayl shu patterni ishlatadi).
+**Pattern:** `toMap()` + `LinkedHashMap` (NOT MapStruct — api-legacy ~124 `@RestController` shu patterni ishlatadi, 0 ta MapStruct).
 
 **Ishlatma:** code review, schema o'zgartirish, oddiy savol — bular porting EMAS.
 
@@ -93,7 +93,7 @@ URL pattern `/services/*` yoki `/app/rest/*` + `PORT:` prefix → endpoint ko'ch
 
 ## Subagent, Skills va Slash Commands
 
-`.claude/agents/`: 6 ta domen-spetsifik audit agent — `cuba-format-checker`, `liquibase-reviewer`, `n-plus-one-detector`, `webhook-outbox-reviewer` (`model: sonnet`); `security-auditor`, `cache-strategist` (`model: opus`). PR review yoki audit ishida `Task` tool orqali parallel chaqiriladi (`webhook-outbox-reviewer` — webhook/outbox/employee-sync o'zgarganda).
+`.claude/agents/`: 6 ta domen-spetsifik audit agent — `cuba-format-checker`, `liquibase-reviewer`, `n-plus-one-detector`, `webhook-outbox-reviewer` (`model: sonnet`); `security-auditor`, `cache-strategist` (`model: opus`). PR review yoki audit ishida `Agent` tool orqali parallel chaqiriladi (`webhook-outbox-reviewer` — webhook/outbox/employee-sync o'zgarganda).
 
 `.claude/commands/`: `/check-coverage`, `/audit-cache` (cache-strategist agent wrapper), `/review-pr` (5 agent parallel orkestrator).
 

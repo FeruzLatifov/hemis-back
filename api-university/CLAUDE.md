@@ -2,7 +2,9 @@
 
 > **Markaziy HEMIS-back** ichida **224 ta Univer Yii2 PHP backend** uchun integratsiya kanali (OTM → vazirlik markaz yo'nalishi).
 >
-> **Modul roli:** CRUD EMAS — **write/sync-oriented** integratsiya kanali. Univer'lar (per-OTM Yii2) markazga ma'lumot **PUSH** qiladi (employees, buildings sync), token oladi, webhook apply-status ack qaytaradi va kadastr gateway proxy orqali so'rov yuboradi. Bu modulda `/students`, `/faculties`, `/curriculum` kabi CRUD endpoint **YO'Q**, `@Cacheable` **YO'Q** (write/sync xulq).
+> **Modul roli:** asosan **write/sync-oriented** integratsiya kanali. Univer'lar (per-OTM Yii2) markazga ma'lumot **PUSH** qiladi (employees, buildings sync), token oladi, webhook apply-status ack qaytaradi va kadastr gateway proxy orqali so'rov yuboradi. Bu modulda `/students`, `/faculties`, `/curriculum` kabi entity **CRUD endpoint YO'Q**.
+>
+> **Istisno — klassifikator distribution (maqsad #2, 2026-07-18):** OTM'ga umumiy `h_*` klassifikatorni yetkazish uchun **READ (pull snapshot) endpoint ruxsat etiladi** — `SpecialityDistributionController` (`GET /api/v1/university/classifiers/speciality`). Bu global reference data (har OTM bir xil oladi, **tenant-scope YO'Q**), shuning uchun service qatlamida **`@Cacheable`** (masalan `specialityDistribution` 24h, curation edit'да evict) — write/sync taqiqi bu READ distribution surface'ига tegishli emas. Entity CRUD taqiqi kuchda qoladi.
 >
 > **3 maqsad (loyiha 4 maqsadidan):**
 > 1. **Aggregation:** 224 ta Univer (per-OTM Yii2) ma'lumotini markaziy DB'ga yig'ish (employees/buildings sync → Kafka)
@@ -11,12 +13,12 @@
 >
 > **Auth:** OAuth 2.1 `client_credentials` (per-OTM `client_id` + secret + IP whitelist) — ADR-0005.
 >
-> **Mijozlari:** faqat **224 ta Univer Yii2 PHP** (per-OTM client_credentials, `ClientType.UNIVERSITY`).
+> **Mijozlari:** faqat **224 ta Univer Yii2 PHP** (per-OTM client_credentials, `ClientType.UNIVERSITY_BACKEND`).
 > Davlat sistemalari (MyGov, MSPD, BIMM, Tax, GUVD) — alohida `api-external` modul (S2S, `ClientType.EXTERNAL_SYSTEM`).
 
 ---
 
-## Real Endpoints (6 controller, 7 mapping)
+## Real Endpoints (7 controller, 8 mapping)
 
 Barchasi `/api/v1/university` prefix ostida.
 
@@ -28,13 +30,14 @@ Barchasi `/api/v1/university` prefix ostida.
 | `POST /buildings/sync` | `BuildingSyncController` | Univer bino batch'i → `(universityCode, sourceUid)` bo'yicha upsert |
 | `POST /hemis-events/ack` | `WebhookAckController` | K2 apply-status feedback loop — Univer markaz webhook'ini apply qilib ack qaytaradi (ADR-0012) |
 | `GET /gateway/kadastr/by-cadnum` | `GatewayController` | `api-mspd` kadastr passthrough proxy, `@PreAuthorize("isAuthenticated()")` |
+| `GET /classifiers/speciality` | `SpecialityDistributionController` | **READ** — OTM bootstrap PULL: `h_speciality` APPROVED FLAT v1 snapshot (global reference, tenant-scope YO'Q; service `@Cacheable`). Modern PUSH fanout'ning hamrohi |
 | `GET /health` | `UniversityApiHealthController` | Liveness probe |
 
 ### OAuth token (ADR-0005)
 
 `POST /oauth/token` ikki Content-Type qabul qiladi (form-urlencoded/multipart **va** JSON) — ikkalasi ham `OAuthClientTokenIssuer.issue(...)` ga delegate qiladi. `grant_type=client_credentials`, `Authorization: Basic <client_id:secret>`, IP whitelist tekshiruvi. Univer Yii2 PHP clientlar ba'zi versiyada JSON RPC orqali token oladi, shu sabab dual-format.
 
-> **api-external bilan farq:** `api-external` tashqi davlat tizimlari S2S token beradi (`ClientType.EXTERNAL_SYSTEM`); `api-university` — Univer OTM (`ClientType.UNIVERSITY`). Ikkala modul ham bir xil `OAuthClientTokenIssuer.issue` ni ulashadi, faqat client turi va scope farq qiladi.
+> **api-external bilan farq:** `api-external` tashqi davlat tizimlari S2S token beradi (`ClientType.EXTERNAL_SYSTEM`); `api-university` — Univer OTM (`ClientType.UNIVERSITY_BACKEND`). Ikkala modul ham bir xil `OAuthClientTokenIssuer.issue` ni ulashadi, faqat client turi va scope farq qiladi.
 
 ### Sync endpoints (ADR-0007 Kafka, ADR-0010 employee-sync)
 
@@ -103,8 +106,8 @@ Sync entity'lar markaziy DB'da `university_code` column bilan yoziladi; vazirlik
 - [ ] Kafka publish — future timeout/error handling (ADR-0007/0010)
 - [ ] Webhook ack — HMAC (`X-Hemis-Signature` + timestamp + university-code) tekshiriladi, JWT emas
 - [ ] Gateway endpoint — `@PreAuthorize("isAuthenticated()")`
-- [ ] Yangi OAuth client turi to'g'ri (`ClientType.UNIVERSITY`)
-- [ ] CRUD/`@Cacheable` qo'shilmadi (bu modul write/sync-oriented)
+- [ ] Yangi OAuth client turi to'g'ri (`ClientType.UNIVERSITY_BACKEND`)
+- [ ] Entity CRUD qo'shilmadi (bu modul write/sync-oriented). **Istisno:** klassifikator distribution READ (pull snapshot) — global reference, tenant-scope YO'Q, service `@Cacheable`+evict (masalan `SpecialityDistributionController`)
 
 ---
 

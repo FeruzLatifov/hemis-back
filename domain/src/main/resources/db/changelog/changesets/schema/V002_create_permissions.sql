@@ -28,7 +28,7 @@ CREATE TABLE permission (
         category IN ('CORE', 'ADMIN', 'MENU', 'CUSTOM', 'REPORTS')
     ),
     CONSTRAINT chk_permission_action CHECK (
-        action IN ('view', 'create', 'edit', 'delete', 'export', 'import', 'manage', 'access', 'sync')
+        action IN ('view', 'create', 'edit', 'delete', 'export', 'import', 'manage', 'access', 'sync', 'approve')
     )
 );
 

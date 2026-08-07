@@ -15,5 +15,6 @@ public enum PermissionAction {
     IMPORT,
     MANAGE,
     ACCESS,
-    SYNC
+    SYNC,
+    APPROVE
 }

@@ -285,7 +285,7 @@ Eng muhim:
 **Yangi `@Table(name="hemishe_e_*")` qo'shganda:**
 1. **`./scripts/check_table_mappings.sh`** majburiy (pre-commit hook avtomatik chaqiradi)
 2. Mismatch → entity Univer'da, bizda EMAS → JPA entity yaratmang
-3. Univer'dagi ma'lumot kerak bo'lsa → `service/integration/UniverApiService` (REST + `@Cacheable` per-OTM key)
+3. Univer'dagi ma'lumot kerak bo'lsa → `service/integration/HemisApiService` (yoki `LegacyOtmIntegrationService`) (REST + `@Cacheable` per-OTM key)
 
 **Audit checklist (yangi entity PR):**
 - [ ] Jadval `.env`'dagi DB'da mavjudmi? (`check_table_mappings.sh` ✅)

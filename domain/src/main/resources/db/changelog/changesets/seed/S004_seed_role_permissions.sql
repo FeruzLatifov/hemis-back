@@ -49,14 +49,30 @@ WHERE r.code = 'OTM_API'
     OR p.code LIKE 'reports.%'
     -- Rating: view
     OR p.code LIKE 'rating.%'
-    -- Classifiers: view + edit
-    OR p.code LIKE 'classifiers.%'
+    -- Classifiers: READ-ONLY (view). The center owns the classifiers (h_*); OTMs consume
+    -- them via distribution (webhook fanout), never write. Write actions (edit/create/
+    -- approve/delete) are web-admin-panel roles only — any stale write is stripped below.
+    OR (p.code LIKE 'classifiers.%' AND p.action = 'view')
     -- Dashboard
     OR p.code = 'dashboard.view'
     -- Menu navigation
     OR p.code = 'system.menu.view'
   )
 ON CONFLICT DO NOTHING;
+
+-- Read-only enforcement for the OTM_API machine role: strip any classifier WRITE grant it
+-- may still hold from the earlier broad `classifiers.%` clause (or a re-run before this was
+-- tightened). OTMs never write central classifiers — curation is web-admin-panel only.
+-- Runs BEFORE S016 (which grafts classifiers.speciality.edit onto whatever holds
+-- classifiers.edit), so removing classifiers.edit here also keeps OTM_API off speciality.edit.
+-- Idempotent: once clean, re-running deletes nothing. `action = 'view'` rows are preserved.
+DELETE FROM role_permission rp
+USING role r, permission p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND r.code = 'OTM_API'
+  AND p.code LIKE 'classifiers.%'
+  AND p.action <> 'view';
 
 -- =====================================================
 -- MINISTRY_ADMIN: Core business + admin (old-hemis: Ministry)
@@ -181,11 +197,25 @@ WHERE r.code = 'EXTERNAL_API'
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
+-- CLASSIFIER_MANAGER: classifier management ONLY (human central staff) + basic navigation.
+-- Least-privilege: classifiers.view + classifiers.edit (assign/fanout) + dashboard/menu for login landing.
+-- =====================================================
+INSERT INTO role_permission (role_id, permission_id, assigned_by)
+SELECT r.id, p.id, 'system'
+FROM role r CROSS JOIN permission p
+WHERE r.code = 'CLASSIFIER_MANAGER'
+  AND (
+    p.code LIKE 'classifiers.%'
+    OR p.code IN ('dashboard.view', 'system.menu.view')
+  )
+ON CONFLICT DO NOTHING;
+
+-- =====================================================
 -- Verification
 -- =====================================================
 DO $$
 DECLARE
-    sa INTEGER; otm INTEGER; ma INTEGER; insp INTEGER; vw INTEGER; rv INTEGER; ext INTEGER;
+    sa INTEGER; otm INTEGER; ma INTEGER; insp INTEGER; vw INTEGER; rv INTEGER; ext INTEGER; cm INTEGER;
 BEGIN
     SELECT COUNT(*) INTO sa FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'SUPER_ADMIN';
     SELECT COUNT(*) INTO otm FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'OTM_API';
@@ -194,7 +224,8 @@ BEGIN
     SELECT COUNT(*) INTO vw FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'VIEWER';
     SELECT COUNT(*) INTO rv FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'REPORT_VIEWER';
     SELECT COUNT(*) INTO ext FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'EXTERNAL_API';
+    SELECT COUNT(*) INTO cm FROM role_permission rp JOIN role r ON rp.role_id = r.id WHERE r.code = 'CLASSIFIER_MANAGER';
 
-    RAISE NOTICE 'S004: Role permissions — SUPER_ADMIN=%, OTM_API=%, MINISTRY_ADMIN=%, INSPECTOR=%, VIEWER=%, REPORT_VIEWER=%, EXTERNAL_API=%',
-        sa, otm, ma, insp, vw, rv, ext;
+    RAISE NOTICE 'S004: Role permissions — SUPER_ADMIN=%, OTM_API=%, MINISTRY_ADMIN=%, INSPECTOR=%, VIEWER=%, REPORT_VIEWER=%, EXTERNAL_API=%, CLASSIFIER_MANAGER=%',
+        sa, otm, ma, insp, vw, rv, ext, cm;
 END $$;

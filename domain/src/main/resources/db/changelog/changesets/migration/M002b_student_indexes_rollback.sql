@@ -1,4 +1,5 @@
 -- Rollback M002b — drop hemishe_e_student indexes concurrently (no lock).
+DROP INDEX CONCURRENTLY IF EXISTS idx_student_dup_analysis;
 DROP INDEX CONCURRENTLY IF EXISTS idx_student_university_status_createts;
 DROP INDEX CONCURRENTLY IF EXISTS idx_student_active_code_desc;
 DROP INDEX CONCURRENTLY IF EXISTS idx_student_delts_code;

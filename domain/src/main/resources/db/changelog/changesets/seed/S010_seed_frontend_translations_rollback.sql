@@ -160,7 +160,23 @@ DECLARE
         'Average attendance','Universities covered','Top universities by average score',
         'Per-university academic performance','Absentee students','Total graduates','Laboratories',
         'ICT equipment','Graduates by year','By workplace compatibility',
-        'Top universities by graduate count','Laboratories by university'
+        'Top universities by graduate count','Laboratories by university',
+        -- SPECIALITY CLASSIFIER (year filter + hierarchy-level taxonomy names + create form)
+        'Year','All years',
+        'Field of knowledge','Field of education','Direction','Sub-direction',
+        'Add speciality','Parent speciality','Top level','Search parent',
+        'Speciality created','Failed to create speciality','Refine your search to see more',
+        'This code already exists','This name already exists','This code and name already exist',
+        'Same parent','You can still create it','Cannot add a duplicate',
+        'The year will be added to the existing entry','Select years',
+        -- SPECIALITY CLASSIFIER (Excel export)
+        'Download Excel','Export completed','Export failed','Whole classifier','Current view',
+        'Parent code','Generated','Filters','No filter',
+        -- SPECIALITY CLASSIFIER (list view level columns)
+        'Level','Education level','Hierarchy level',
+        -- SPECIALITY CLASSIFIER (mandatory years + edit-change confirm)
+        'At least one year is required','Change admission years?',
+        'The current years will be replaced with the selected ones.','Added','Removed'
     ];
 BEGIN
     SELECT EXISTS (

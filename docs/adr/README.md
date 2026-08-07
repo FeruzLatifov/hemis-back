@@ -49,6 +49,7 @@ docs/adr/NNNN-short-title.md
 | [0011](0011-swagger-multi-group-strategy.md) | Swagger Multi-Group Strategy (web/legacy/university/external) | Accepted | 2026-05-10 |
 | [0012](0012-webhook-outbound-infrastructure.md) | Webhook Outbound Infrastructure (markaz → 224 Univer) | Implemented (hardened 2026-05-27: K1/K2/Y1/O) | 2026-05-13 |
 | [0013](0013-business-rule-enforcement.md) | Business Rule Enforcement Foundation (Rules Engine) | Partially Implemented (foundation done; policy klasslar pending) | 2026-05-21 |
+| [0014](0014-speciality-name-columns-and-identity.md) | Speciality nomlari — per-til ustunlar (tarjima-jadval EMAS) + identity constraint | Implemented | 2026-07-31 |
 
 ## Status qiymatlari
 

@@ -75,6 +75,46 @@ BEGIN
 END;
 $fn$ LANGUAGE plpgsql;
 
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- 6-arg overload: EXPLICIT en (message_key'dan ajratilgan).
+-- Plural suffiks kalitlari (_one/_few/_many/_other) uchun MAJBURIY: 5-arg forma
+-- en-US = message_key qiladi, shuning uchun suffiks ("...found_other") en/fallback
+-- qiymati sifatida UI'ga sizib chiqadi. Bu overload toza en saqlaydi.
+-- PL/pgSQL arity bo'yicha overload qiladi — 5-arg qulay forma o'zgarmaydi.
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CREATE OR REPLACE FUNCTION _seed_msg(
+    _cat TEXT, _key TEXT, _en TEXT, _uz TEXT, _oz TEXT, _ru TEXT
+) RETURNS VOID AS $fn6$
+DECLARE _id UUID;
+BEGIN
+    INSERT INTO system_message (id, category, message_key, message, is_active, created_at, updated_at, created_by, updated_by)
+    VALUES (gen_random_uuid(), _cat, _key, _uz, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'system', 'system')
+    ON CONFLICT (message_key) WHERE deleted_at IS NULL DO UPDATE SET
+        message = EXCLUDED.message,
+        category = EXCLUDED.category,
+        updated_at = CURRENT_TIMESTAMP,
+        updated_by = 'system'
+    RETURNING id INTO _id;
+
+    -- en-US (EXPLICIT — _key EMAS)
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'en-US', _en, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'uz-UZ', _uz, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'oz-UZ', _oz, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+
+    INSERT INTO system_message_translation (id, message_id, language, translation, created_at)
+    VALUES (gen_random_uuid(), _id, 'ru-RU', _ru, CURRENT_TIMESTAMP)
+    ON CONFLICT (message_id, language) DO UPDATE SET translation = EXCLUDED.translation, updated_at = CURRENT_TIMESTAMP;
+END;
+$fn6$ LANGUAGE plpgsql;
+
 
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 -- PART 1: COMMON UI TRANSLATIONS
@@ -283,6 +323,8 @@ PERFORM _seed_msg('table', 'Accreditation edit',    'Akkreditatsiya tahrir',    
 PERFORM _seed_msg('table', 'Add student',           'Talaba qo''shish',              'Талаба қўшиш',              'Добавление студентов');
 PERFORM _seed_msg('table', 'Allow grouping',        'Guruhlashga ruxsat',           'Гуруҳлашга рухсат',         'Разрешить группировку');
 PERFORM _seed_msg('table', 'Allow external transfer', 'Tashqariga o''tkazishga ruxsat', 'Ташқарига ўтказишга рухсат', 'Разрешить внешний перевод');
+PERFORM _seed_msg('table', 'Allow academic import', 'Akademik importga ruxsat',     'Академик импортга рухсат',  'Разрешить академический импорт');
+PERFORM _seed_msg('table', 'Financially independent', 'Moliyaviy mustaqil',         'Молиявий мустақил',         'Финансово независимый');
 
 -- Faculty table columns
 PERFORM _seed_msg('table', 'University name',       'OTM nomi',                     'ОТМ номи',                  'Название ВУЗа');
@@ -379,6 +421,8 @@ PERFORM _seed_msg('menu', 'Users',                  'Foydalanuvchilar',         
 PERFORM _seed_msg('menu', 'Roles',                  'Rollar',                       'Роллар',                    'Роли');
 PERFORM _seed_msg('menu', 'Audit Logs',              'Audit loglar',                  'Аудит логлар',              'Журнал аудита');
 PERFORM _seed_msg('menu', 'Report updates',         'Hisobot yangilanishlari',      'Ҳисоботларни янгилаш',      'Обновления отчётов');
+PERFORM _seed_msg('menu', 'Webhook Targets',        'Webhook manzillari',           'Вебхук манзиллари',         'Адреса вебхуков');
+PERFORM _seed_msg('menu', 'Outbox Queue',           'Chiquvchi navbat',             'Чиқувчи навбат',            'Очередь исходящих');
 
 -- E-Reestr submenus
 PERFORM _seed_msg('menu', 'Universities',           'Universitetlar',               'Университетлар',            'Университеты');
@@ -715,7 +759,6 @@ PERFORM _seed_msg('action', 'Search by {{field}}...', '{{field}} bo''yicha qidir
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 -- Sahifa sarlavhalari
-PERFORM _seed_msg('menu', 'Audit Logs', 'Audit loglar', 'Аудит логлар', 'Журнал аудита');
 PERFORM _seed_msg('label', 'Activity Log', 'Faoliyat logi', 'Фаолият логи', 'Журнал действий');
 PERFORM _seed_msg('label', 'Request Log', 'So''rovlar logi', 'Сўровлар логи', 'Журнал запросов');
 PERFORM _seed_msg('label', 'Error Log', 'Xatolar logi', 'Хатолар логи', 'Журнал ошибок');

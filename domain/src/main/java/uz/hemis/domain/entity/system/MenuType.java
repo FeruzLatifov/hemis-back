@@ -49,7 +49,11 @@ public enum MenuType {
 
         @Override
         public String convertToDatabaseColumn(MenuType attribute) {
-            return attribute != null ? attribute.getValue() : MAIN.getValue();
+            // Return null for null (not a MAIN default): the entity field defaults to MAIN so persist
+            // never passes null, and a converter that maps null->'main' would break any future
+            // COALESCE(:menuType, m.menuType) optional-filter query (silently forcing menuType='main').
+            // Same class of bug that hid NEEDS_REVIEW specialities via ReviewStatus.Converter.
+            return attribute != null ? attribute.getValue() : null;
         }
 
         @Override

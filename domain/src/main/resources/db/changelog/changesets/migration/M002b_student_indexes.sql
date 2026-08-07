@@ -54,3 +54,12 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_student_university_status_createts
     ON hemishe_e_student ("_university", "_student_status", create_ts DESC)
     WHERE delete_ts IS NULL;
 COMMENT ON INDEX idx_student_university_status_createts IS 'Multi-tenant + status + ORDER BY create_ts — keyset paging support.';
+
+-- ── Duplicate-analysis covering index (1) ───────────────────────────
+-- M003 mv_student_duplicates + duplicate-analysis CTE uchun covering index.
+-- Bu yerda (M002b) turadi, chunki 1.15M-row hemishe_e_student index CONCURRENTLY bo'lishi
+-- SHART (bloklovchi lock'siz). Feature MV/menu esa M003_student_duplicates'da qoladi.
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_student_dup_analysis
+    ON hemishe_e_student (pinfl, "_student_status", "_university", "_education_type",
+                          "_speciality_bachelor", "_speciality_master", "_speciality_ordinatura")
+    WHERE delete_ts IS NULL AND pinfl IS NOT NULL AND pinfl != '';

@@ -1,5 +1,5 @@
 -- V013: menu + user_favorite schema (DDL only)
--- Seed data S013_seed_main_menus.sql da.
+-- Seed data S011_seed_main_menus.sql da.
 
 -- =====================================================
 -- PART 1: MENU TABLE

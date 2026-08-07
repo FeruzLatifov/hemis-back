@@ -22,7 +22,7 @@ wc -l /tmp/cache-files.txt
 ### 2. `cache-strategist` agent'ni codebase-wide chaqirish
 
 ```
-Task({
+Agent({
   subagent_type: "cache-strategist",
   description: "Codebase-wide cache audit",
   prompt: "Audit ALL cache annotations across the codebase. Files: <paste /tmp/cache-files.txt>. \

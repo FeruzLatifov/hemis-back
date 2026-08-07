@@ -50,6 +50,19 @@ PERFORM _seed_msg('action', 'Edit role',                              'Rolni tah
 PERFORM _seed_msg('action', 'Delete role',                            'Rolni o''chirish',                'Ролни ўчириш',                    'Удалить роль');
 PERFORM _seed_msg('action', 'Remove filter',                          'Filtrni olib tashlash',           'Филтрни олиб ташлаш',             'Сбросить фильтр');
 PERFORM _seed_msg('action', 'Yes, clear',                             'Ha, tozalash',                    'Ҳа, тозалаш',                     'Да, очистить');
+
+-- Network / connectivity toasts (api client interceptor — no longer silent on outage)
+PERFORM _seed_msg('error',   'Request timed out',                     'So''rov vaqti tugadi',            'Сўров вақти тугади',              'Время запроса истекло');
+PERFORM _seed_msg('error',   'Server is temporarily unavailable',     'Server vaqtincha ishlamayapti',   'Сервер вақтинча ишламаяпти',      'Сервер временно недоступен');
+PERFORM _seed_msg('message', 'Please check your connection and try again', 'Ulanishni tekshiring va qayta urinib ko''ring', 'Уланишни текширинг ва қайта уриниб кўринг', 'Проверьте соединение и повторите попытку');
+PERFORM _seed_msg('message', 'Please try again in a moment',          'Bir ozdan so''ng qayta urinib ko''ring', 'Бир оздан сўнг қайта уриниб кўринг', 'Повторите попытку через мгновение');
+-- Pagination / navigation accessibility labels
+PERFORM _seed_msg('action',  'Navigate',                              'Harakatlanish',                   'Ҳаракатланиш',                    'Навигация');
+PERFORM _seed_msg('action',  'Previous page',                         'Oldingi sahifa',                  'Олдинги саҳифа',                  'Предыдущая страница');
+PERFORM _seed_msg('action',  'Next page',                             'Keyingi sahifa',                  'Кейинги саҳифа',                  'Следующая страница');
+PERFORM _seed_msg('action',  'Pagination',                            'Sahifalash',                      'Саҳифалаш',                       'Пагинация');
+PERFORM _seed_msg('action',  'Toggle submenu',                        'Quyi menyuni ochish/yopish',      'Қуйи менюни очиш/ёпиш',           'Открыть/закрыть подменю');
+PERFORM _seed_msg('action',  'Page {{number}}',                       '{{number}}-sahifa',               '{{number}}-саҳифа',               'Страница {{number}}');
 PERFORM _seed_msg('action', 'Yes, generate',                          'Ha, yaratish',                    'Ҳа, яратиш',                      'Да, сгенерировать');
 
 -- ──────────────────────────────────────────────────────
@@ -276,28 +289,34 @@ PERFORM _seed_msg('label',   'By rating',                                       
 -- `_many`, `_other`. Russian uses all four (CLDR), Uzbek/English use the
 -- one/other split. Each variant is its own message_key in this catalog,
 -- so the gettext-style helper still applies.
-PERFORM _seed_msg('label',   '{{count}} parameters',                                     '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметров');
-PERFORM _seed_msg('label',   '{{count}} parameters_one',                                 '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметр');
-PERFORM _seed_msg('label',   '{{count}} parameters_few',                                 '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметра');
-PERFORM _seed_msg('label',   '{{count}} parameters_many',                                '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметров');
-PERFORM _seed_msg('label',   '{{count}} parameters_other',                               '{{count}} parametr',              '{{count}} параметр',              '{{count}} параметров');
-PERFORM _seed_msg('label',   '{{count}} students found',                                 '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студентов');
-PERFORM _seed_msg('label',   '{{count}} students found_one',                             '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найден {{count}} студент');
-PERFORM _seed_msg('label',   '{{count}} students found_few',                             '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студента');
-PERFORM _seed_msg('label',   '{{count}} students found_many',                            '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студентов');
-PERFORM _seed_msg('label',   '{{count}} students found_other',                           '{{count}} ta talaba topildi',     '{{count}} та талаба топилди',     'Найдено {{count}} студентов');
-PERFORM _seed_msg('label',   '{{count}} groups found_one',                               '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдена {{count}} группа');
-PERFORM _seed_msg('label',   '{{count}} groups found_few',                               '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдено {{count}} группы');
-PERFORM _seed_msg('label',   '{{count}} groups found_many',                              '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдено {{count}} групп');
-PERFORM _seed_msg('label',   '{{count}} groups found_other',                             '{{count}} ta guruh topildi',      '{{count}} та гуруҳ топилди',      'Найдено {{count}} групп');
-PERFORM _seed_msg('label',   '{{count}} specialities found_one',                         '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направление');
-PERFORM _seed_msg('label',   '{{count}} specialities found_few',                         '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направления');
-PERFORM _seed_msg('label',   '{{count}} specialities found_many',                        '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направлений');
-PERFORM _seed_msg('label',   '{{count}} specialities found_other',                       '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди',    'Найдено {{count}} направлений');
-PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_one',             'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символа');
-PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_few',             'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символов');
-PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_many',            'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символов');
-PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_other',           'Kamida {{count}} belgi bo''lishi kerak','Камида {{count}} белги бўлиши керак','Должно быть не менее {{count}} символов');
+-- 6-arg forma: en EXPLICIT (toza) — suffiks UI'ga sizib chiqmaydi. Har plural
+-- kalitning BASE qatori ham bor (gate un-suffiksli t('...') literalini qidiradi +
+-- til-ichi fallback). uz/oz — {one, other} (invariant), ru — CLDR one/few/many/other.
+PERFORM _seed_msg('label', '{{count}} parameters',        '{{count}} parameters',  '{{count}} parametr', '{{count}} параметр', '{{count}} параметров');
+PERFORM _seed_msg('label', '{{count}} parameters_one',    '{{count}} parameter',   '{{count}} parametr', '{{count}} параметр', '{{count}} параметр');
+PERFORM _seed_msg('label', '{{count}} parameters_few',    '{{count}} parameters',  '{{count}} parametr', '{{count}} параметр', '{{count}} параметра');
+PERFORM _seed_msg('label', '{{count}} parameters_many',   '{{count}} parameters',  '{{count}} parametr', '{{count}} параметр', '{{count}} параметров');
+PERFORM _seed_msg('label', '{{count}} parameters_other',  '{{count}} parameters',  '{{count}} parametr', '{{count}} параметр', '{{count}} параметров');
+PERFORM _seed_msg('label', '{{count}} students found',       '{{count}} students found', '{{count}} ta talaba topildi', '{{count}} та талаба топилди', 'Найдено {{count}} студентов');
+PERFORM _seed_msg('label', '{{count}} students found_one',   '{{count}} student found',  '{{count}} ta talaba topildi', '{{count}} та талаба топилди', 'Найден {{count}} студент');
+PERFORM _seed_msg('label', '{{count}} students found_few',   '{{count}} students found', '{{count}} ta talaba topildi', '{{count}} та талаба топилди', 'Найдено {{count}} студента');
+PERFORM _seed_msg('label', '{{count}} students found_many',  '{{count}} students found', '{{count}} ta talaba topildi', '{{count}} та талаба топилди', 'Найдено {{count}} студентов');
+PERFORM _seed_msg('label', '{{count}} students found_other', '{{count}} students found', '{{count}} ta talaba topildi', '{{count}} та талаба топилди', 'Найдено {{count}} студентов');
+PERFORM _seed_msg('label', '{{count}} groups found',       '{{count}} groups found', '{{count}} ta guruh topildi', '{{count}} та гуруҳ топилди', 'Найдено {{count}} групп');
+PERFORM _seed_msg('label', '{{count}} groups found_one',   '{{count}} group found',  '{{count}} ta guruh topildi', '{{count}} та гуруҳ топилди', 'Найдена {{count}} группа');
+PERFORM _seed_msg('label', '{{count}} groups found_few',   '{{count}} groups found', '{{count}} ta guruh topildi', '{{count}} та гуруҳ топилди', 'Найдено {{count}} группы');
+PERFORM _seed_msg('label', '{{count}} groups found_many',  '{{count}} groups found', '{{count}} ta guruh topildi', '{{count}} та гуруҳ топилди', 'Найдено {{count}} групп');
+PERFORM _seed_msg('label', '{{count}} groups found_other', '{{count}} groups found', '{{count}} ta guruh topildi', '{{count}} та гуруҳ топилди', 'Найдено {{count}} групп');
+PERFORM _seed_msg('label', '{{count}} specialities found',       '{{count}} specialities found', '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди', 'Найдено {{count}} направлений');
+PERFORM _seed_msg('label', '{{count}} specialities found_one',   '{{count}} speciality found',   '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди', 'Найдено {{count}} направление');
+PERFORM _seed_msg('label', '{{count}} specialities found_few',   '{{count}} specialities found', '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди', 'Найдено {{count}} направления');
+PERFORM _seed_msg('label', '{{count}} specialities found_many',  '{{count}} specialities found', '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди', 'Найдено {{count}} направлений');
+PERFORM _seed_msg('label', '{{count}} specialities found_other', '{{count}} specialities found', '{{count}} ta yo''nalish topildi', '{{count}} та йўналиш топилди', 'Найдено {{count}} направлений');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters',       'Must be at least {{count}} characters', 'Kamida {{count}} belgi bo''lishi kerak', 'Камида {{count}} белги бўлиши керак', 'Должно быть не менее {{count}} символов');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_one',   'Must be at least {{count}} character',  'Kamida {{count}} belgi bo''lishi kerak', 'Камида {{count}} белги бўлиши керак', 'Должно быть не менее {{count}} символа');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_few',   'Must be at least {{count}} characters', 'Kamida {{count}} belgi bo''lishi kerak', 'Камида {{count}} белги бўлиши керак', 'Должно быть не менее {{count}} символов');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_many',  'Must be at least {{count}} characters', 'Kamida {{count}} belgi bo''lishi kerak', 'Камида {{count}} белги бўлиши керак', 'Должно быть не менее {{count}} символов');
+PERFORM _seed_msg('validation', 'Must be at least {{count}} characters_other', 'Must be at least {{count}} characters', 'Kamida {{count}} belgi bo''lishi kerak', 'Камида {{count}} белги бўлиши керак', 'Должно быть не менее {{count}} символов');
 PERFORM _seed_msg('label',   'Certificates',                                             'Sertifikatlar',                   'Сертификатлар',                   'Сертификаты');
 PERFORM _seed_msg('label',   'Scholarships',                                             'Stipendiyalar',                   'Стипендиялар',                    'Стипендии');
 PERFORM _seed_msg('label',   'Qualifications',                                           'Malakalar',                       'Малакалар',                       'Квалификации');
@@ -307,6 +326,8 @@ PERFORM _seed_msg('label',   'GPA rating',                                      
 PERFORM _seed_msg('error',   'Page not found',                                           'Sahifa topilmadi',                'Саҳифа топилмади',                'Страница не найдена');
 PERFORM _seed_msg('error',   'Sorry, the page you''re looking for doesn''t exist or has been moved.','Kechirasiz, siz qidirayotgan sahifa mavjud emas yoki ko''chirilgan.','Кечирасиз, сиз қидираётган саҳифа мавжуд эмас ёки кўчирилган.','Извините, страница, которую вы ищете, не существует или была перемещена.');
 PERFORM _seed_msg('error',   'If you believe this is an error, please contact the system administrator.','Agar bu xato deb hisoblasangiz, tizim administratoriga murojaat qiling.','Агар бу хато деб ҳисобласангиз, тизим администраторига мурожаат қилинг.','Если вы считаете это ошибкой, обратитесь к администратору.');
+PERFORM _seed_msg('error',   'Access denied',                                            'Ruxsat berilmagan',               'Рухсат берилмаган',               'Доступ запрещён');
+PERFORM _seed_msg('error',   'You don''t have permission to access this page.',           'Sizda bu sahifaga kirish uchun ruxsat yo''q.','Сизда бу саҳифага кириш учун рухсат йўқ.','У вас нет прав для доступа к этой странице.');
 PERFORM _seed_msg('error',   'An error occurred while loading this page. Please try again.','Bu sahifani yuklashda xato yuz berdi. Iltimos, qayta urinib ko''ring.','Бу саҳифани юклашда хато юз берди. Илтимос, қайта уриниб кўринг.','Произошла ошибка при загрузке страницы. Попробуйте снова.');
 PERFORM _seed_msg('error',   'Failed to add lifecycle event',                            'Hayot davri hodisasini qo''shib bo''lmadi','Ҳаёт даври ҳодисасини қўшиб бўлмади','Не удалось добавить событие жизненного цикла');
 PERFORM _seed_msg('error',   'Failed to appoint official',                               'Mansabdor tayinlanmadi',          'Мансабдор тайинланмади',          'Не удалось назначить должностное лицо');
@@ -536,6 +557,223 @@ PERFORM _seed_msg('label',   'By workplace compatibility',                      
 PERFORM _seed_msg('label',   'Top universities by graduate count',                       'Bitiruvchilar soni bo''yicha yetakchi OTMlar','Битирувчилар сони бўйича етакчи ОТМлар','Ведущие вузы по числу выпускников');
 PERFORM _seed_msg('label',   'Laboratories by university',                               'OTM bo''yicha laboratoriyalar',   'ОТМ бўйича лабораториялар',       'Лаборатории по вузам');
 
+-- ──────────────────────────────────────────────────────
+-- WAVE 4: hemis-front audit (2026-07-18) — missing t() keys
+--   classifiers · science · webhooks · outbox · system · institutions
+-- ──────────────────────────────────────────────────────
+-- label
+PERFORM _seed_msg('label', 'Education level', 'Ta''lim darajasi', 'Таълим даражаси', 'Уровень образования');
+PERFORM _seed_msg('label', 'Hierarchy level', 'Ierarxiya darajasi', 'Иерархия даражаси', 'Уровень иерархии');
+PERFORM _seed_msg('label', 'Level', 'Daraja', 'Даража', 'Уровень');
+PERFORM _seed_msg('label', 'List', 'Ro''yxat', 'Рўйхат', 'Список');
+PERFORM _seed_msg('label', 'Review status', 'Ko''rib chiqish holati', 'Кўриб чиқиш ҳолати', 'Статус проверки');
+PERFORM _seed_msg('label', 'Search by name or code', 'Nomi yoki kodi bo''yicha qidirish', 'Номи ёки коди бўйича қидириш', 'Поиск по названию или коду');
+PERFORM _seed_msg('label', 'Speciality classifier', 'Mutaxassislik klassifikatori', 'Мутахассислик классификатори', 'Классификатор специальностей');
+PERFORM _seed_msg('label', 'Sub-specialities', 'Ichki mutaxassisliklar', 'Ички мутахассисликлар', 'Подспециальности');
+PERFORM _seed_msg('label', 'Sync events', 'Sinxronizatsiya hodisalari', 'Синхронизация ҳодисалари', 'События синхронизации');
+PERFORM _seed_msg('label', 'Tree', 'Daraxt', 'Дарахт', 'Дерево');
+PERFORM _seed_msg('label', 'Unified bachelor and master speciality classifier', 'Bakalavr va magistr mutaxassisliklari yagona klassifikatori', 'Бакалавр ва магистр мутахассисликлари ягона классификатори', 'Единый классификатор специальностей бакалавриата и магистратуры');
+PERFORM _seed_msg('label', 'Additional information', 'Qo''shimcha ma''lumot', 'Қўшимча маълумот', 'Дополнительная информация');
+PERFORM _seed_msg('label', 'Batch number', 'Partiya raqami', 'Партия рақами', 'Номер партии');
+PERFORM _seed_msg('label', 'Faculty', 'Fakultet', 'Факультет', 'Факультет');
+PERFORM _seed_msg('label', 'Issued date', 'Berilgan sana', 'Берилган сана', 'Дата выдачи');
+PERFORM _seed_msg('label', 'Status reason', 'Holat sababi', 'Ҳолат сабаби', 'Причина статуса');
+PERFORM _seed_msg('label', 'Approved date', 'Tasdiqlangan sana', 'Тасдиқланган сана', 'Дата утверждения');
+PERFORM _seed_msg('label', 'Country', 'Davlat', 'Давлат', 'Страна');
+PERFORM _seed_msg('label', 'Currency', 'Valyuta', 'Валюта', 'Валюта');
+PERFORM _seed_msg('label', 'Diploma given by whom', 'Diplom kim tomonidan berilgan', 'Диплом ким томонидан берилган', 'Кем выдан диплом');
+PERFORM _seed_msg('label', 'Diploma given date', 'Diplom berilgan sana', 'Диплом берилган сана', 'Дата выдачи диплома');
+PERFORM _seed_msg('label', 'Keywords', 'Kalit so''zlar', 'Калит сўзлар', 'Ключевые слова');
+PERFORM _seed_msg('label', 'Locality', 'Aholi punkti', 'Аҳоли пункти', 'Населённый пункт');
+PERFORM _seed_msg('label', 'Methodical', 'Uslubiy', 'Услубий', 'Методический');
+PERFORM _seed_msg('label', 'Parameter', 'Parametr', 'Параметр', 'Параметр');
+PERFORM _seed_msg('label', 'Publication', 'Nashr', 'Нашр', 'Публикация');
+PERFORM _seed_msg('label', 'Publication database', 'Nashr bazasi', 'Нашр базаси', 'База публикаций');
+PERFORM _seed_msg('label', 'Research activity', 'Tadqiqot faoliyati', 'Тадқиқот фаолияти', 'Научная деятельность');
+PERFORM _seed_msg('label', 'Researcher', 'Tadqiqotchi', 'Тадқиқотчи', 'Исследователь');
+PERFORM _seed_msg('label', 'Scientific project', 'Ilmiy loyiha', 'Илмий лойиҳа', 'Научный проект');
+PERFORM _seed_msg('label', 'Student name', 'Talaba ismi', 'Талаба исми', 'Имя студента');
+PERFORM _seed_msg('label', 'Certificate', 'Sertifikat', 'Сертификат', 'Сертификат');
+PERFORM _seed_msg('label', 'Month', 'Oy', 'Ой', 'Месяц');
+PERFORM _seed_msg('label', 'Aggregate', 'Agregat', 'Агрегат', 'Агрегат');
+PERFORM _seed_msg('label', 'Aggregate ID', 'Agregat ID', 'Агрегат ID', 'ID агрегата');
+PERFORM _seed_msg('label', 'Aggregate type', 'Agregat turi', 'Агрегат тури', 'Тип агрегата');
+PERFORM _seed_msg('label', 'All aggregates', 'Barcha agregatlar', 'Барча агрегатлар', 'Все агрегаты');
+PERFORM _seed_msg('label', 'All entities', 'Barcha obyektlar', 'Барча объектлар', 'Все сущности');
+PERFORM _seed_msg('label', 'Attempt', 'Urinish', 'Уриниш', 'Попытка');
+PERFORM _seed_msg('label', 'Callback URL', 'Callback URL', 'Callback URL', 'URL обратного вызова');
+PERFORM _seed_msg('label', 'Causation ID', 'Sabab ID', 'Сабаб ID', 'ID причины');
+PERFORM _seed_msg('label', 'Correlation ID', 'Korrelyatsiya ID', 'Корреляция ID', 'ID корреляции');
+PERFORM _seed_msg('label', 'Delivery log', 'Yetkazish jurnali', 'Етказиш журнали', 'Журнал доставки');
+PERFORM _seed_msg('label', 'Duration', 'Davomiylik', 'Давомийлик', 'Длительность');
+PERFORM _seed_msg('label', 'Employee sync from Univer', 'Univerdan xodim sinxronizatsiyasi', 'Univerдан ходим синхронизацияси', 'Синхронизация сотрудников из Univer');
+PERFORM _seed_msg('label', 'Last error', 'Oxirgi xato', 'Охирги хато', 'Последняя ошибка');
+PERFORM _seed_msg('label', 'Max retries', 'Maksimal urinishlar', 'Максимал уринишлар', 'Макс. попыток');
+PERFORM _seed_msg('label', 'OTM Code', 'OTM kodi', 'ОТМ коди', 'Код вуза');
+PERFORM _seed_msg('label', 'Occurred', 'Yuz berdi', 'Юз берди', 'Произошло');
+PERFORM _seed_msg('label', 'Oldest pending', 'Eng eski kutilayotgan', 'Энг эски кутилаётган', 'Самое старое в ожидании');
+PERFORM _seed_msg('label', 'Outbox event', 'Outbox hodisasi', 'Outbox ҳодисаси', 'Событие outbox');
+PERFORM _seed_msg('label', 'Payload', 'Payload', 'Payload', 'Полезная нагрузка');
+PERFORM _seed_msg('label', 'Quick filters', 'Tezkor filtrlar', 'Тезкор филтрлар', 'Быстрые фильтры');
+PERFORM _seed_msg('label', 'Reason (optional)', 'Sabab (ixtiyoriy)', 'Сабаб (ихтиёрий)', 'Причина (необязательно)');
+PERFORM _seed_msg('label', 'Retries', 'Urinishlar', 'Уринишлар', 'Попытки');
+PERFORM _seed_msg('label', 'Routing', 'Marshrutlash', 'Маршрутлаш', 'Маршрутизация');
+PERFORM _seed_msg('label', 'Schema version', 'Sxema versiyasi', 'Схема версияси', 'Версия схемы');
+PERFORM _seed_msg('label', 'Search by university code or URL...', 'OTM kodi yoki URL bo''yicha qidirish...', 'ОТМ коди ёки URL бўйича қидириш...', 'Поиск по коду вуза или URL...');
+PERFORM _seed_msg('label', 'Timeline', 'Vaqt jadvali', 'Вақт жадвали', 'Хронология');
+PERFORM _seed_msg('label', 'Timeout', 'Timeout', 'Timeout', 'Таймаут');
+PERFORM _seed_msg('label', 'Timeout (ms)', 'Timeout (ms)', 'Timeout (ms)', 'Таймаут (мс)');
+PERFORM _seed_msg('label', 'Topic', 'Mavzu', 'Мавзу', 'Топик');
+PERFORM _seed_msg('label', 'Total targets', 'Jami manzillar', 'Жами манзиллар', 'Всего целей');
+PERFORM _seed_msg('label', 'Webhook secret — copy now', 'Webhook siri — hozir nusxalang', 'Webhook сири — ҳозир нусхаланг', 'Секрет webhook — скопируйте сейчас');
+PERFORM _seed_msg('label', 'menu, button...', 'menyu, tugma...', 'меню, тугма...', 'меню, кнопка...');
+PERFORM _seed_msg('label', 'min', 'daq', 'дақ', 'мин');
+PERFORM _seed_msg('label', 'Decree date', 'Buyruq sanasi', 'Буйруқ санаси', 'Дата приказа');
+PERFORM _seed_msg('label', 'Rate', 'Stavka', 'Ставка', 'Ставка');
+PERFORM _seed_msg('label', 'sq.m.', 'kv.m', 'кв.м', 'кв.м');
+-- {{count}} found — plural (noun-less, invariant); base + CLDR suffixes
+PERFORM _seed_msg('label', '{{count}} found', '{{count}} found', '{{count}} ta topildi', '{{count}} та топилди', 'Найдено: {{count}}');
+PERFORM _seed_msg('label', '{{count}} found_one', '{{count}} found', '{{count}} ta topildi', '{{count}} та топилди', 'Найдено: {{count}}');
+PERFORM _seed_msg('label', '{{count}} found_few', '{{count}} found', '{{count}} ta topildi', '{{count}} та топилди', 'Найдено: {{count}}');
+PERFORM _seed_msg('label', '{{count}} found_many', '{{count}} found', '{{count}} ta topildi', '{{count}} та топилди', 'Найдено: {{count}}');
+PERFORM _seed_msg('label', '{{count}} found_other', '{{count}} found', '{{count}} ta topildi', '{{count}} та топилди', 'Найдено: {{count}}');
+-- message
+PERFORM _seed_msg('message', 'Successfully created', 'Muvaffaqiyatli yaratildi', 'Муваффақиятли яратилди', 'Успешно создано');
+PERFORM _seed_msg('message', 'Outbox event discarded', 'Outbox hodisasi bekor qilindi', 'Outbox ҳодисаси бекор қилинди', 'Событие outbox отклонено');
+PERFORM _seed_msg('message', 'Outbox event re-queued for publish', 'Outbox hodisasi nashr uchun qayta navbatga qo''yildi', 'Outbox ҳодисаси нашр учун қайта навбатга қўйилди', 'Событие outbox повторно поставлено в очередь на публикацию');
+PERFORM _seed_msg('message', 'Saved successfully', 'Muvaffaqiyatli saqlandi', 'Муваффақиятли сақланди', 'Успешно сохранено');
+PERFORM _seed_msg('message', 'files created', 'fayl yaratildi', 'файл яратилди', 'файлов создано');
+PERFORM _seed_msg('message', 'Secret regenerated — update Univer .env immediately', 'Sir qayta yaratildi — Univer .env''ni darhol yangilang', 'Сир қайта яратилди — Univer .env''ни дарҳол янгиланг', 'Секрет перевыпущен — немедленно обновите Univer .env');
+PERFORM _seed_msg('message', 'Test event dispatched', 'Test hodisasi yuborildi', 'Тест ҳодисаси юборилди', 'Тестовое событие отправлено');
+PERFORM _seed_msg('message', 'Webhook target created — save the plain secret!', 'Webhook manzili yaratildi — ochiq sirni saqlang!', 'Webhook манзили яратилди — очиқ сирни сақланг!', 'Цель webhook создана — сохраните открытый секрет!');
+PERFORM _seed_msg('message', 'Webhook target deleted', 'Webhook manzili o''chirildi', 'Webhook манзили ўчирилди', 'Цель webhook удалена');
+PERFORM _seed_msg('message', 'Webhook target updated', 'Webhook manzili yangilandi', 'Webhook манзили янгиланди', 'Цель webhook обновлена');
+PERFORM _seed_msg('message', 'No data', 'Ma''lumot yo''q', 'Маълумот йўқ', 'Нет данных');
+PERFORM _seed_msg('message', 'View sync events for classifiers (outbox queue)', 'Klassifikatorlar uchun sinxronizatsiya hodisalarini ko''rish (outbox navbati)', 'Классификаторлар учун синхронизация ҳодисаларини кўриш (outbox навбати)', 'Просмотр событий синхронизации классификаторов (очередь outbox)');
+PERFORM _seed_msg('message', 'CSV file downloaded', 'CSV fayl yuklab olindi', 'CSV файл юклаб олинди', 'CSV-файл загружен');
+PERFORM _seed_msg('message', 'Callback URL is derived from hemishe_e_university.student_url — set it in the university registry first.', 'Callback URL hemishe_e_university.student_url''dan olinadi — avval universitet registrida o''rnating.', 'Callback URL hemishe_e_university.student_url''дан олинади — аввал университет регистрида ўрнатинг.', 'Callback URL берётся из hemishe_e_university.student_url — сначала задайте его в реестре вузов.');
+PERFORM _seed_msg('message', 'Event not found', 'Hodisa topilmadi', 'Ҳодиса топилмади', 'Событие не найдено');
+PERFORM _seed_msg('message', 'Event will be marked published_at=now without sending to Kafka. Use for poison pills or obsolete events.', 'Hodisa Kafka''ga yuborilmasdan published_at=now deb belgilanadi. Zararli yoki eskirgan hodisalar uchun ishlating.', 'Ҳодиса Kafka''га юборилмасдан published_at=now деб белгиланади. Зарарли ёки эскирган ҳодисалар учун ишлатинг.', 'Событие будет помечено published_at=now без отправки в Kafka. Используйте для «отравленных» или устаревших событий.');
+PERFORM _seed_msg('message', 'Inspect pending events, retry failures, discard poison pills.', 'Kutilayotgan hodisalarni tekshiring, xatolarni qayta urinib ko''ring, zararlilarini bekor qiling.', 'Кутилаётган ҳодисаларни текширинг, хатоларни қайта уриниб кўринг, зарарлиларини бекор қилинг.', 'Проверяйте ожидающие события, повторяйте неудачные, отклоняйте «отравленные».');
+PERFORM _seed_msg('message', 'Manage 224 OTM Univer webhook URLs, secrets and delivery logs', '224 OTM Univer webhook URL''lari, sirlari va yetkazish jurnallarini boshqaring', '224 ОТМ Univer webhook URL''лари, сирлари ва етказиш журналларини бошқаринг', 'Управление webhook-URL, секретами и журналами доставки 224 вузов Univer');
+PERFORM _seed_msg('message', 'No delivery attempts yet', 'Hali yetkazish urinishlari yo''q', 'Ҳали етказиш уринишлари йўқ', 'Пока нет попыток доставки');
+PERFORM _seed_msg('message', 'No outbox events match the current filters', 'Joriy filtrlarga mos outbox hodisalari yo''q', 'Жорий филтрларга мос outbox ҳодисалари йўқ', 'Нет событий outbox по текущим фильтрам');
+PERFORM _seed_msg('message', 'No webhook targets configured yet', 'Hali webhook manzillari sozlanmagan', 'Ҳали webhook манзиллари созланмаган', 'Цели webhook ещё не настроены');
+PERFORM _seed_msg('message', 'No webhook targets found for the search', 'Qidiruv bo''yicha webhook manzillari topilmadi', 'Қидирув бўйича webhook манзиллари топилмади', 'По поиску цели webhook не найдены');
+PERFORM _seed_msg('message', 'OTM code and callback URL cannot be changed here.', 'OTM kodi va callback URL bu yerda o''zgartirilmaydi.', 'ОТМ коди ва callback URL бу ерда ўзгартирилмайди.', 'Код вуза и callback URL здесь изменить нельзя.');
+PERFORM _seed_msg('message', 'OTM {{code}} will stop receiving webhooks. Soft delete — restorable.', 'OTM {{code}} webhooklarni qabul qilishni to''xtatadi. Yumshoq o''chirish — tiklanadi.', 'ОТМ {{code}} webhookларни қабул қилишни тўхтатади. Юмшоқ ўчириш — тикланади.', 'Вуз {{code}} перестанет получать webhook. Мягкое удаление — восстановимо.');
+PERFORM _seed_msg('message', 'OTM {{code}} — this plain secret is shown only once. Save it to Univer .env as HEMIS_WEBHOOK_SECRET.', 'OTM {{code}} — bu ochiq sir faqat bir marta ko''rsatiladi. Uni Univer .env''ga HEMIS_WEBHOOK_SECRET sifatida saqlang.', 'ОТМ {{code}} — бу очиқ сир фақат бир марта кўрсатилади. Уни Univer .env''га HEMIS_WEBHOOK_SECRET сифатида сақланг.', 'Вуз {{code}} — этот открытый секрет показывается только один раз. Сохраните его в Univer .env как HEMIS_WEBHOOK_SECRET.');
+PERFORM _seed_msg('message', 'Old secret will be invalidated immediately. New secret must be deployed to Univer .env before next event.', 'Eski sir darhol bekor qilinadi. Yangi sir keyingi hodisadan oldin Univer .env''ga joylanishi kerak.', 'Эски сир дарҳол бекор қилинади. Янги сир кейинги ҳодисадан олдин Univer .env''га жойланиши керак.', 'Старый секрет будет аннулирован немедленно. Новый секрет нужно развернуть в Univer .env до следующего события.');
+PERFORM _seed_msg('message', 'Retry count will be reset to 0 so the next OutboxPoller cycle will pick it up and try Kafka publish again.', 'Urinishlar soni 0 ga tushiriladi, shunda keyingi OutboxPoller sikli uni olib Kafka''ga qayta yuborishga urinadi.', 'Уринишлар сони 0 га туширилади, шунда кейинги OutboxPoller сикли уни олиб Kafka''га қайта юборишга уринади.', 'Счётчик попыток сбросится в 0, чтобы следующий цикл OutboxPoller снова опубликовал в Kafka.');
+PERFORM _seed_msg('message', 'duplicate groups found', 'dublikat guruh topildi', 'дубликат гуруҳ топилди', 'дублирующих групп найдено');
+PERFORM _seed_msg('message', 'translations with same text but different keys', 'matni bir xil, lekin kaliti har xil tarjimalar', 'матни бир хил, лекин калити ҳар хил таржималар', 'переводы с одинаковым текстом, но разными ключами');
+-- action
+PERFORM _seed_msg('action', 'Export to CSV', 'CSV''ga eksport', 'CSV''га экспорт', 'Экспорт в CSV');
+PERFORM _seed_msg('action', 'Add Webhook Target', 'Webhook manzili qo''shish', 'Webhook манзили қўшиш', 'Добавить цель webhook');
+PERFORM _seed_msg('action', 'Discard', 'Bekor qilish', 'Бекор қилиш', 'Отклонить');
+PERFORM _seed_msg('action', 'Edit Webhook Target', 'Webhook manzilini tahrirlash', 'Webhook манзилини таҳрирлаш', 'Изменить цель webhook');
+PERFORM _seed_msg('action', 'I saved it — close', 'Saqladim — yopish', 'Сақладим — ёпиш', 'Я сохранил — закрыть');
+PERFORM _seed_msg('action', 'Inspect', 'Tekshirish', 'Текшириш', 'Проверить');
+PERFORM _seed_msg('action', 'Prev', 'Oldingi', 'Олдинги', 'Назад');
+PERFORM _seed_msg('action', 'Re-queue', 'Qayta navbatga', 'Қайта навбатга', 'В очередь повторно');
+PERFORM _seed_msg('action', 'Regenerate secret', 'Sirni qayta yaratish', 'Сирни қайта яратиш', 'Перевыпустить секрет');
+PERFORM _seed_msg('action', 'Send test event', 'Test hodisasi yuborish', 'Тест ҳодисаси юбориш', 'Отправить тестовое событие');
+-- confirm
+PERFORM _seed_msg('confirm', 'Are you sure you want to delete role "{{name}}"? This action cannot be undone.', '"{{name}}" rolini ochirishga ishonchingiz komilmi? Bu amalni bekor qilib bolmaydi.', '"{{name}}" ролини ўчиришга ишончингиз комилми? Бу амални бекор қилиб бўлмайди.', 'Вы уверены, что хотите удалить роль "{{name}}"? Это действие необратимо.');
+PERFORM _seed_msg('confirm', 'Are you sure you want to delete user "{{username}}"? This action cannot be undone.', '"{{username}}" foydalanuvchisini ochirishga ishonchingiz komilmi? Bu amalni bekor qilib bolmaydi.', '"{{username}}" фойдаланувчисини ўчиришга ишончингиз комилми? Бу амални бекор қилиб бўлмайди.', 'Вы уверены, что хотите удалить пользователя "{{username}}"? Это действие необратимо.');
+PERFORM _seed_msg('confirm', 'Are you sure you want to unlock user "{{username}}"?', '"{{username}}" foydalanuvchisini blokdan chiqarishga ishonchingiz komilmi?', '"{{username}}" фойдаланувчисини блокдан чиқаришга ишончингиз комилми?', 'Вы уверены, что хотите разблокировать пользователя "{{username}}"?');
+PERFORM _seed_msg('confirm', 'Are you sure you want to {{action}} user "{{username}}"?', '"{{username}}" foydalanuvchisini {{action}} qilishga ishonchingiz komilmi?', '"{{username}}" фойдаланувчисини {{action}} қилишга ишончингиз комилми?', 'Вы уверены, что хотите {{action}} пользователя "{{username}}"?');
+PERFORM _seed_msg('confirm', 'Delete webhook target?', 'Webhook manzili o''chirilsinmi?', 'Webhook манзили ўчирилсинми?', 'Удалить цель webhook?');
+PERFORM _seed_msg('confirm', 'Discard this event?', 'Bu hodisa bekor qilinsinmi?', 'Бу ҳодиса бекор қилинсинми?', 'Отклонить это событие?');
+PERFORM _seed_msg('confirm', 'Re-queue this event?', 'Bu hodisa qayta navbatga qo''yilsinmi?', 'Бу ҳодиса қайта навбатга қўйилсинми?', 'Поставить событие в очередь повторно?');
+PERFORM _seed_msg('confirm', 'Regenerate webhook secret?', 'Webhook siri qayta yaratilsinmi?', 'Webhook сири қайта яратилсинми?', 'Перевыпустить секрет webhook?');
+PERFORM _seed_msg('confirm', 'Do you want to clear translations cache? This will force reload translations from backend.', 'Tarjimalar keshini tozalamoqchimisiz? Bu tarjimalarni backenddan qayta yuklashga majbur qiladi.', 'Таржималар кешини тозаламоқчимисиз? Бу таржималарни backendдан қайта юклашга мажбур қилади.', 'Очистить кэш переводов? Это принудительно перезагрузит переводы с бэкенда.');
+PERFORM _seed_msg('confirm', 'Do you want to regenerate properties files for all languages? This may take a few seconds.', 'Barcha tillar uchun properties fayllarini qayta yaratmoqchimisiz? Bu bir necha soniya olishi mumkin.', 'Барча тиллар учун properties файлларини қайта яратмоқчимисиз? Бу бир неча сония олиши мумкин.', 'Перегенерировать properties-файлы для всех языков? Это может занять несколько секунд.');
+-- status
+PERFORM _seed_msg('status', 'Needs review', 'Ko''rib chiqish kerak', 'Кўриб чиқиш керак', 'Требует проверки');
+PERFORM _seed_msg('status', 'Checked', 'Tekshirilgan', 'Текширилган', 'Проверено');
+PERFORM _seed_msg('status', 'Applied', 'Qo''llanildi', 'Қўлланилди', 'Применено');
+PERFORM _seed_msg('status', 'Apply failed', 'Qo''llash amalga oshmadi', 'Қўллаш амалга ошмади', 'Ошибка применения');
+PERFORM _seed_msg('status', 'Dispatched', 'Yuborilgan', 'Юборилган', 'Отправлено');
+PERFORM _seed_msg('status', 'Failed', 'Muvaffaqiyatsiz', 'Муваффақиятсиз', 'Ошибка');
+PERFORM _seed_msg('status', 'No ack', 'Tasdiq yo''q', 'Тасдиқ йўқ', 'Нет подтверждения');
+PERFORM _seed_msg('status', 'Not yet', 'Hali emas', 'Ҳали эмас', 'Ещё нет');
+-- error
+PERFORM _seed_msg('error', 'Failed to discard outbox event', 'Outbox hodisasini bekor qilib bo''lmadi', 'Outbox ҳодисасини бекор қилиб бўлмади', 'Не удалось отклонить событие outbox');
+PERFORM _seed_msg('error', 'Failed to retry outbox event', 'Outbox hodisasini qayta urinib bo''lmadi', 'Outbox ҳодисасини қайта уриниб бўлмади', 'Не удалось повторить событие outbox');
+PERFORM _seed_msg('error', 'Failed to create webhook target', 'Webhook manzilini yaratib bo''lmadi', 'Webhook манзилини яратиб бўлмади', 'Не удалось создать цель webhook');
+PERFORM _seed_msg('error', 'Failed to delete webhook target', 'Webhook manzilini o''chirib bo''lmadi', 'Webhook манзилини ўчириб бўлмади', 'Не удалось удалить цель webhook');
+PERFORM _seed_msg('error', 'Failed to dispatch test event', 'Test hodisasini yuborib bo''lmadi', 'Тест ҳодисасини юбориб бўлмади', 'Не удалось отправить тестовое событие');
+PERFORM _seed_msg('error', 'Failed to regenerate secret', 'Sirni qayta yaratib bo''lmadi', 'Сирни қайта яратиб бўлмади', 'Не удалось перевыпустить секрет');
+PERFORM _seed_msg('error', 'Failed to update webhook target', 'Webhook manzilini yangilab bo''lmadi', 'Webhook манзилини янгилаб бўлмади', 'Не удалось обновить цель webhook');
+PERFORM _seed_msg('error', 'You do not have permission to view this page', 'Bu sahifani ko''rish uchun ruxsatingiz yo''q', 'Бу саҳифани кўриш учун рухсатингиз йўқ', 'У вас нет прав для просмотра этой страницы');
+-- validation
+PERFORM _seed_msg('validation', 'Description must be ≤ 255 chars', 'Tavsif ≤ 255 belgidan iborat bo''lishi kerak', 'Тавсиф ≤ 255 белгидан иборат бўлиши керак', 'Описание не более 255 символов');
+PERFORM _seed_msg('validation', 'Max retries must be 0–10', 'Maksimal urinishlar 0–10 bo''lishi kerak', 'Максимал уринишлар 0–10 бўлиши керак', 'Макс. попыток должно быть 0–10');
+PERFORM _seed_msg('validation', 'Timeout must be 1000–60000 ms', 'Timeout 1000–60000 ms bo''lishi kerak', 'Timeout 1000–60000 ms бўлиши керак', 'Таймаут должен быть 1000–60000 мс');
+PERFORM _seed_msg('validation', 'University code must be 3–10 digits', 'Universitet kodi 3–10 raqamdan iborat bo''lishi kerak', 'Университет коди 3–10 рақамдан иборат бўлиши керак', 'Код вуза должен содержать 3–10 цифр');
+-- auth
+PERFORM _seed_msg('auth', 'We sent a password reset link to your email address. The link will expire in 15 minutes.', 'Parolni tiklash havolasini e-pochta manzilingizga yubordik. Havola 15 daqiqada tugaydi.', 'Паролни тиклаш ҳаволасини э-почта манзилингизга юбордик. Ҳавола 15 дақиқада тугайди.', 'Мы отправили ссылку для сброса пароля на вашу почту. Ссылка истечёт через 15 минут.');
+-- pagination
+PERFORM _seed_msg('pagination', 'Showing page {{cur}} of {{total}} ({{count}} total)', '{{total}} dan {{cur}}-sahifa ko''rsatilmoqda (jami {{count}})', '{{total}}дан {{cur}}-саҳифа кўрсатилмоқда (жами {{count}})', 'Страница {{cur}} из {{total}} (всего {{count}})');
+-- acronyms (technical; not translated except currency)
+PERFORM _seed_msg('label', 'DOI', 'DOI', 'DOI', 'DOI');
+PERFORM _seed_msg('label', 'HTTP', 'HTTP', 'HTTP', 'HTTP');
+PERFORM _seed_msg('label', 'DLQ', 'DLQ', 'DLQ', 'DLQ');
+PERFORM _seed_msg('label', 'UZS', 'so''m', 'сўм', 'сум');
+
+-- 'Years' — jadval sarlavhasi (ko'plik 'Yillar'); unit 'years' ('yil')dan farqli
+PERFORM _seed_msg('label', 'Years', 'Yillar', 'Йиллар', 'Годы');
+PERFORM _seed_msg('label', 'e.g. university full name', 'masalan: universitet to''liq nomi', 'масалан: университет тўлиқ номи', 'например: полное название вуза');
+
+-- Speciality classifier — year-filter labels (2026-07)
+PERFORM _seed_msg('label',  'Year',                                   'Yil',                             'Йил',                             'Год');
+PERFORM _seed_msg('label',  'All years',                              'Barcha yillar',                   'Барча йиллар',                    'Все годы');
+
+-- Speciality classifier — hierarchy-level taxonomy names (2026-07)
+PERFORM _seed_msg('label',  'Field of knowledge',                     'Bilim sohasi',                    'Билим соҳаси',                    'Область знаний');
+PERFORM _seed_msg('label',  'Field of education',                     'Ta''lim sohasi',                  'Таълим соҳаси',                   'Область образования');
+PERFORM _seed_msg('label',  'Direction',                              'Yo''nalish',                      'Йўналиш',                         'Направление');
+PERFORM _seed_msg('label',  'Sub-direction',                          'Ichki yo''nalish',                'Ички йўналиш',                    'Поднаправление');
+
+-- Speciality classifier — manual create form (2026-07)
+PERFORM _seed_msg('label',  'Add speciality',                         'Mutaxassislik qo''shish',          'Мутахассислик қўшиш',             'Добавить специальность');
+PERFORM _seed_msg('label',  'Parent speciality',                      'Yuqori bo''lim',                   'Юқори бўлим',                     'Родительская специальность');
+PERFORM _seed_msg('label',  'Top level',                              'Eng yuqori daraja',                'Энг юқори даража',                'Верхний уровень');
+PERFORM _seed_msg('label',  'Search parent',                          'Yuqori bo''limni qidirish',        'Юқори бўлимни қидириш',           'Поиск родителя');
+PERFORM _seed_msg('label',  'Speciality created',                     'Mutaxassislik qo''shildi',         'Мутахассислик қўшилди',           'Специальность добавлена');
+PERFORM _seed_msg('label',  'Failed to create speciality',            'Mutaxassislik qo''shib bo''lmadi', 'Мутахассислик қўшиб бўлмади',      'Не удалось добавить специальность');
+PERFORM _seed_msg('label',  'Refine your search to see more',         'Ko''proq ko''rish uchun qidiruvni aniqlashtiring', 'Кўпроқ кўриш учун қидирувни аниқлаштиринг', 'Уточните поиск, чтобы увидеть больше');
+
+-- Speciality classifier — duplicate warning (2026-07)
+PERFORM _seed_msg('label',  'This code already exists',               'Bu kod allaqachon mavjud',         'Бу код аллақачон мавжуд',         'Этот код уже существует');
+PERFORM _seed_msg('label',  'This name already exists',               'Bu nom allaqachon mavjud',         'Бу ном аллақачон мавжуд',         'Это название уже существует');
+PERFORM _seed_msg('label',  'This code and name already exist',       'Bu kod va nom allaqachon mavjud',  'Бу код ва ном аллақачон мавжуд',  'Этот код и название уже существуют');
+PERFORM _seed_msg('label',  'Same parent',                            'Aynan shu bo''lim ostida',         'Айнан шу бўлим остида',           'В том же разделе');
+PERFORM _seed_msg('label',  'You can still create it',                'Baribir qo''shishingiz mumkin',    'Барибир қўшишингиз мумкин',       'Всё равно можно добавить');
+PERFORM _seed_msg('label',  'Cannot add a duplicate',                 'Dublikat qo''shib bo''lmaydi',     'Дубликат қўшиб бўлмайди',         'Нельзя добавить дубликат');
+PERFORM _seed_msg('label',  'The year will be added to the existing entry', 'Yil mavjud yozuvga qo''shiladi', 'Йил мавжуд ёзувга қўшилади',  'Год будет добавлен к существующей записи');
+PERFORM _seed_msg('label',  'Select years',                           'Yillarni tanlang',                 'Йилларни танланг',                'Выберите годы');
+
+-- Speciality classifier — Excel export (2026-07)
+PERFORM _seed_msg('label',  'Download Excel',                         'Excelga yuklab olish',             'Excelга юклаб олиш',              'Скачать Excel');
+PERFORM _seed_msg('label',  'Export completed',                       'Eksport tayyor',                   'Экспорт тайёр',                   'Экспорт завершён');
+PERFORM _seed_msg('label',  'Export failed',                          'Eksport amalga oshmadi',           'Экспорт амалга ошмади',           'Не удалось экспортировать');
+PERFORM _seed_msg('label',  'Whole classifier',                       'Butun klassifikator',              'Бутун классификатор',             'Весь классификатор');
+PERFORM _seed_msg('label',  'Current view',                           'Joriy ko''rinish',                 'Жорий кўриниш',                   'Текущий вид');
+PERFORM _seed_msg('label',  'Parent code',                            'Ota kodi',                         'Ота коди',                        'Код родителя');
+PERFORM _seed_msg('label',  'Generated',                              'Yaratilgan',                       'Яратилган',                       'Создано');
+PERFORM _seed_msg('label',  'Filters',                                'Filtrlar',                         'Фильтрлар',                       'Фильтры');
+PERFORM _seed_msg('label',  'No filter',                              'Filtrsiz',                         'Фильтрсиз',                       'Без фильтра');
+
+-- ──────────────────────────────────────────────────────
+-- SPECIALITY CLASSIFIER — mandatory admission years + edit-change confirm
+-- ──────────────────────────────────────────────────────
+PERFORM _seed_msg('validation', 'At least one year is required',      'Kamida bitta yil tanlanishi shart', 'Камида битта йил танланиши шарт', 'Требуется хотя бы один год');
+PERFORM _seed_msg('label',  'Change admission years?',                'Qabul yillari o''zgartirilsinmi?', 'Қабул йиллари ўзгартирилсинми?',  'Изменить годы приёма?');
+PERFORM _seed_msg('label',  'The current years will be replaced with the selected ones.', 'Joriy yillar tanlangan yillar bilan almashtiriladi.', 'Жорий йиллар танланган йиллар билан алмаштирилади.', 'Текущие годы будут заменены выбранными.');
+PERFORM _seed_msg('label',  'Added',                                  'Qo''shiladi',                      'Қўшилади',                        'Добавляются');
+PERFORM _seed_msg('label',  'Removed',                                'O''chiriladi',                     'Ўчирилади',                       'Удаляются');
 END $$;
 
 -- =====================================================

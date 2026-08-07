@@ -7,72 +7,80 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 # Add Classifier (h_* prefix)
 
 > ADR-0006: Markaziy klassifikator → 230 OTM bir xil qiymatdan foydalanadi. CLAUDE.md "Klassifikatorlarni UMUMIY saqlash" maqsadi.
+>
+> **KANONIK SHAKL (ADR-0006, majburiy):** modern klassifikatorlar **`code`-PK** (natural key, `VARCHAR`) + **`ReferenceEntity`** base — ustunlar `name` / `name_ru` / `name_en`, `is_active`, `version` + 4 audit ustun.
+> ❌ Surrogat `id` / `BIGSERIAL` PK YO'Q · ❌ ustun `name_uz` EMAS (to'g'risi `name`) · ❌ soft-delete YO'Q (`is_active=false` ishlatiladi).
+> Real manba: `domain/.../entity/base/ReferenceEntity.java` + `V003_create_positions.sql` + `HPosition extends ReferenceEntity`.
 
 ## Workflow (5 layer)
 
 ### 1. Schema — V### migration
 
-`liquibase-changeset` skill ishlating. Standart shape:
+`liquibase-changeset` skill ishlating. Kanonik shape (`V003_create_positions.sql` bilan bir xil):
 
 ```sql
-CREATE TABLE IF NOT EXISTS h_<name> (
-    id           BIGSERIAL PRIMARY KEY,
-    code         VARCHAR(64)  NOT NULL UNIQUE,
-    name_uz      VARCHAR(255) NOT NULL,
-    name_ru      VARCHAR(255),
-    name_en      VARCHAR(255),
-    parent_id    BIGINT REFERENCES h_<name>(id),   -- ierarxik bo'lsa
-    sort_order   INTEGER DEFAULT 0,
-    is_active    BOOLEAN DEFAULT TRUE,
-    created_at   TIMESTAMPTZ DEFAULT now(),
-    updated_at   TIMESTAMPTZ DEFAULT now()
+CREATE TABLE h_<name> (
+    code       VARCHAR(20)  PRIMARY KEY,          -- natural key (ReferenceEntity.code); surrogat id YO'Q
+    name       VARCHAR(255) NOT NULL,             -- ustun nomi `name` (NOT name_uz)
+    name_ru    VARCHAR(255),
+    name_en    VARCHAR(255),
+    -- FK bo'lsa (h_position → h_position_type kabi):
+    -- type_code   VARCHAR(20) NOT NULL REFERENCES h_position_type(code),
+    -- Hierarxik bo'lsa: parent_code VARCHAR(20) REFERENCES h_<name>(code),
+    is_active  BOOLEAN      NOT NULL DEFAULT true,
+    sort_order INTEGER               DEFAULT 0,
+    version    INTEGER               DEFAULT 1,    -- @Version optimistic lock
+    created_at TIMESTAMP             DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP,
+    updated_by VARCHAR(50)
 );
-CREATE INDEX IF NOT EXISTS idx_h_<name>_code ON h_<name>(code);
-CREATE INDEX IF NOT EXISTS idx_h_<name>_active ON h_<name>(is_active) WHERE is_active;
+-- FK ustuniga indeks (PostgreSQL avtomatik qo'ymaydi):
+-- CREATE INDEX idx_h_<name>_type ON h_<name>(type_code);
 ```
+
+> ⚠️ Soft-delete ustuni (`deleted_at`/`delete_ts`) QO'SHMANG — klassifikator o'chirilmaydi, `is_active=false` qilinadi (ReferenceEntity qoidasi).
 
 ### 2. Seed — S### (boshlang'ich qiymatlar)
 
 ```sql
-INSERT INTO h_<name>(code, name_uz, name_ru) VALUES
+INSERT INTO h_<name>(code, name, name_ru) VALUES
   ('CODE1', 'Nomi UZ', 'Имя RU')
 ON CONFLICT (code) DO NOTHING;
 ```
 
 ### 3. JPA Entity (`domain` modul)
 
-`domain/src/main/java/uz/hemis/domain/entity/classifier/H<Name>.java`:
+`H<Name>` **`ReferenceEntity` dan meros oladi** — `code` (PK), `name` / `nameRu` / `nameEn`, `isActive`, `sortOrder`, `version` + audit ustunlar tayyor. Faqat qo'shimcha ustun (FK va h.k.) yoziladi.
+
+Joylashuv: klassifikatorning domen paketiga (mavjud misolga qarab) — masalan `entity/employee/H<Name>.java` (`HPosition`), `entity/infrastructure/H<Name>.java` (`HRoofType`). Alohida `classifier` paketi shart emas.
 
 ```java
 @Entity
 @Table(name = "h_<name>")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
-public class H<Name> {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@Getter @Setter @NoArgsConstructor
+public class H<Name> extends ReferenceEntity {
 
-    @Column(nullable = false, unique = true, length = 64)
-    private String code;
+    // ReferenceEntity beradi: code (PK, String), name, nameRu, nameEn,
+    // isActive, sortOrder, version, createdAt/By, updatedAt/By, equals/hashCode
 
-    @Column(name = "name_uz", nullable = false) private String nameUz;
-    @Column(name = "name_ru") private String nameRu;
-    @Column(name = "name_en") private String nameEn;
-    @Column(name = "is_active") private Boolean isActive = true;
-    @Column(name = "sort_order") private Integer sortOrder = 0;
-    @Column(name = "created_at", updatable = false) private Instant createdAt;
-    @Column(name = "updated_at") private Instant updatedAt;
+    // Faqat qo'shimcha ustun (FK bo'lsa):
+    @Column(name = "type_code", nullable = false, length = 20)
+    private String typeCode;   // FK → h_position_type(code)
 }
 ```
 
-> ❗ `@Data` / `@ToString` ishlatmang (equals/hashCode + lazy init buziladi).
+> ❗ `@Id` / `id` maydon YOZMANG — PK `code` `ReferenceEntity` dan keladi.
+> ❗ `@Data` / `@ToString` ishlatmang (equals/hashCode allaqachon ReferenceEntity'da; lazy init buziladi).
 
 ### 4. Repository + Service + Cache
 
+PK turi **`String`** (code) — `Long` EMAS:
+
 ```java
-public interface H<Name>Repository extends JpaRepository<H<Name>, Long> {
-    Optional<H<Name>> findByCode(String code);
+public interface H<Name>Repository extends JpaRepository<H<Name>, String> {
     List<H<Name>> findAllByIsActiveTrueOrderBySortOrderAsc();
+    // findById(code) — code PK bo'lgani uchun tayyor
 }
 
 @Service
@@ -109,21 +117,26 @@ public class H<Name>Controller {
 }
 ```
 
-## Univer distribution (ADR-0007)
+## Univer distribution (ADR-0007 / ADR-0012)
 
-Univer 224 OTM yangi klassifikatorni REST polling (`UniverApiService`) yoki Kafka topic (Phase 2) orqali oladi. Yangi klassifikator → Univer tomonida **alohida ishlamaydi**, faqat o'qiydi.
+Klassifikator markazdan OTM'ga **PUSH** qilinadi: outbox → Kafka (`hemis.classifier.events.v1`) → `WebhookFanoutConsumer` → 224 OTM HMAC callback (`kafka-outbox-topic` + `webhook-target-add` skill'lari). Univer (per-OTM) yangi qiymatni sync'da oladi va **faqat o'qiydi** — OTM tomonida alohida implement qilinmaydi. (REST fallback klient: `service/integration/HemisApiService`.)
 
 ## Verification
 
 ```bash
 ./gradlew :domain:liquibaseStatus
 grep "classifier<Name>" service/src/main/java/uz/hemis/service/config/DashboardCacheConfig.java
+grep -n "extends ReferenceEntity" domain/src/main/java/uz/hemis/domain/entity/**/H<Name>.java
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/v1/classifiers/<name> | jq length
 ./scripts/check_table_mappings.sh
 ```
 
 ## Constraints
 
+- ❌ Surrogat `id` / `BIGSERIAL` PK → ADR-0006 `code`-PK buziladi (`code VARCHAR` PK ishlating)
+- ❌ Ustun nomi `name_uz` → to'g'risi `name`
+- ❌ `ReferenceEntity` extend qilmaslik → audit/version/equals qo'lda yozilib xato bo'ladi
+- ❌ Soft-delete ustuni (`deleted_at`) → klassifikatorda `is_active` ishlatiladi
 - ❌ `@Cacheable` bor-u `DashboardCacheConfig` TTL yo'q → memory leak
 - ❌ `@CacheEvict` pair yo'q → 24h stale data
 - ❌ Entity'da `@Data` / `@ToString`
@@ -132,7 +145,9 @@ curl -H "Authorization: Bearer $TOKEN" http://localhost:8081/api/v1/classifiers/
 
 ## See also
 
-- ADR-0006 · ADR-0007
+- ADR-0006 · ADR-0007 · ADR-0012
+- Kanonik base: `domain/src/main/java/uz/hemis/domain/entity/base/ReferenceEntity.java`
+- Real DDL: `domain/src/main/resources/db/changelog/changesets/schema/V003_create_positions.sql`
 - `.claude/skills/liquibase-changeset/SKILL.md`
 - `service/.../config/DashboardCacheConfig.java`
-- Mavjud `h_*` entity misollari: `domain/.../entity/employee/HPosition.java` (`@Table(name = "h_position")`), `domain/.../entity/infrastructure/HRoofType.java` (`@Table(name = "h_roof_type")`)
+- Mavjud `h_*` entity misollari: `HPosition` (`entity/employee/`), `HRoofType` (`entity/infrastructure/`)

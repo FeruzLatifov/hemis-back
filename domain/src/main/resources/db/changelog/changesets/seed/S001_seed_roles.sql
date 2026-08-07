@@ -159,14 +159,35 @@ UPDATE role SET
     updated_by = 'system'
 WHERE code = 'UNIVERSITY_ADMIN';
 
+-- Role 8: CLASSIFIER_MANAGER — central/ministry staff who VIEW + ASSIGN classifiers to OTMs.
+-- HUMAN interactive role (login/password), least-privilege: classifiers only, no wider system access.
+-- Distinct from the OTM_API machine role. Assigned to central staff via UserAdminController.
+INSERT INTO role (id, code, name, description, role_type, active, created_by)
+VALUES (
+    gen_random_uuid(),
+    'CLASSIFIER_MANAGER',
+    'Classifier Manager',
+    'Central staff who view and assign classifiers (h_*) to OTMs (fanout). Human role — classifiers.view + classifiers.edit + basic navigation only.',
+    'CUSTOM',
+    TRUE,
+    'system'
+)
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name,
+    description = EXCLUDED.description,
+    role_type = EXCLUDED.role_type,
+    active = EXCLUDED.active,
+    updated_at = CURRENT_TIMESTAMP,
+    updated_by = 'system';
+
 -- Verification
 DO $$
 DECLARE
     role_count INTEGER;
 BEGIN
     SELECT COUNT(*) INTO role_count FROM role WHERE active = TRUE AND deleted_at IS NULL;
-    IF role_count < 7 THEN
-        RAISE WARNING 'S001: Expected 7 roles, found %', role_count;
+    IF role_count < 8 THEN
+        RAISE WARNING 'S001: Expected 8 roles, found %', role_count;
     END IF;
     RAISE NOTICE 'S001: % active roles seeded successfully', role_count;
 END $$;

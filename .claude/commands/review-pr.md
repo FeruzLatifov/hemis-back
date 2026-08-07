@@ -45,13 +45,13 @@ Lines: +AAAA / -BBB
 ### 3. Launch agents in parallel
 
 Use the `Task` tool to dispatch specialized subagent reviews. **Run all in a single message
-with multiple Task calls** so they execute concurrently — sequential calls double review time.
+with multiple Agent calls** so they execute concurrently — sequential calls double review time.
 
 Trigger each agent only when relevant files changed (skip otherwise — empty input wastes context):
 
 #### a) N+1 Detector — if `service/**`, `domain/**/repository/**`, or `**/*Mapper.java` changed
 ```
-Task({
+Agent({
   subagent_type: "n-plus-one-detector",
   description: "N+1 query detection",
   prompt: "Review these changed files for N+1 patterns: <comma-separated paths>. Focus on JPA fetch type, JOIN FETCH usage, @EntityGraph, Lombok @Data on entities, accessor calls inside iteration."
@@ -60,7 +60,7 @@ Task({
 
 #### b) Liquibase Reviewer — if `domain/src/main/resources/db/changelog/**` changed
 ```
-Task({
+Agent({
   subagent_type: "liquibase-reviewer",
   description: "Migration safety review",
   prompt: "Review these migration changesets: <list>. Verify rollback file presence, idempotency (IF NOT EXISTS), no ALTER on hemishe_* tables, master.yaml registration, lock-free DDL."
@@ -69,7 +69,7 @@ Task({
 
 #### c) Cache Strategist — if `@Cacheable` / `@CacheEvict` / `@CachePut` in diff
 ```
-Task({
+Agent({
   subagent_type: "cache-strategist",
   description: "Cache annotation review",
   prompt: "Review cache annotations added/changed: <list>. Verify TTL config in CacheConfig, AOP self-invocation safety, missing @CacheEvict pair on writes, mutable list caching, SpEL key safety."
@@ -78,7 +78,7 @@ Task({
 
 #### d) CUBA Format Checker — if `api-legacy/**` changed
 ```
-Task({
+Agent({
   subagent_type: "cuba-format-checker",
   description: "CUBA backward compat check",
   prompt: "Validate api-legacy changes preserve CUBA format: <list>. Check: LinkedHashMap (not HashMap), @JsonPropertyOrder, _entityName/_instanceName fields, FK as nested object, datetime format, error envelope shape."
@@ -87,7 +87,7 @@ Task({
 
 #### e) Security Auditor — if `security/**`, `**/controller/**`, or auth-related changed
 ```
-Task({
+Agent({
   subagent_type: "security-auditor",
   description: "OWASP 2025 audit",
   prompt: "Audit for OWASP Top 10:2025 violations: <list>. Pay special attention to: missing @PreAuthorize on controller methods, SQL injection (string concat in queries), PII logging (pinfl/password/token), hardcoded secrets, weak crypto, SSRF, unsafe deserialization."
@@ -96,7 +96,7 @@ Task({
 
 #### f) Webhook/Outbox Reviewer — if `service/webhook/**`, `service/outbox/**`, `service/employee/**`, `domain/entity/{webhook,outbox}/**`, or V014/V015 changed
 ```
-Task({
+Agent({
   subagent_type: "webhook-outbox-reviewer",
   description: "Webhook/outbox pipeline review",
   prompt: "Review webhook/outbox/employee-sync changes: <list>. Verify: outbox atomicity (Propagation.MANDATORY), idempotent upsert (ON CONFLICT), HMAC signature (outbound + ack constant-time), secret persistence (secret_enc AES-256-GCM, no plaintext), DLQ routing + FATAL Sentry, retention/max_retries config drift, K2 apply-status feedback, OTM existsByCode validation, no PINFL in Sentry."
@@ -174,7 +174,7 @@ If 0 P0 + 0 P1 → `✅ APPROVE`. Otherwise → `❌ REQUEST CHANGES`.
 
 ## Constraints
 
-- Always run agents in PARALLEL (single message with multiple Task calls), not sequential
+- Always run agents in PARALLEL (single message with multiple Agent calls), not sequential
 - If a subagent doesn't apply (e.g., no migration files) → skip, don't run with empty input
 - Don't approve PR with P0 findings, regardless of urgency
 - Don't suggest disabling agents to "speed up review"

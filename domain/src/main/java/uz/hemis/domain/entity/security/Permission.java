@@ -134,12 +134,13 @@ public class Permission extends AuditableEntity {
         return PermissionAction.VIEW == action;
     }
 
-    /** @return true if action is a write operation (CREATE, EDIT, DELETE, MANAGE) */
+    /** @return true if action is a write operation (CREATE, EDIT, DELETE, MANAGE, APPROVE) */
     public boolean isWritePermission() {
         return action == PermissionAction.CREATE
             || action == PermissionAction.EDIT
             || action == PermissionAction.DELETE
-            || action == PermissionAction.MANAGE;
+            || action == PermissionAction.MANAGE
+            || action == PermissionAction.APPROVE;
     }
 
     /** @return true if category is {@link PermissionCategory#ADMIN} */

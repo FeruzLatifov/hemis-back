@@ -47,12 +47,11 @@ VALUES (
     parent_id    = EXCLUDED.parent_id,
     updated_at   = CURRENT_TIMESTAMP;
 
--- ── Covering index for duplicate analysis CTE ────────────────────
-
-CREATE INDEX IF NOT EXISTS idx_student_dup_analysis
-    ON hemishe_e_student (pinfl, "_student_status", "_university", "_education_type",
-                          "_speciality_bachelor", "_speciality_master", "_speciality_ordinatura")
-    WHERE delete_ts IS NULL AND pinfl IS NOT NULL AND pinfl != '';
+-- ── Covering index — M002b'ga ko'chirildi (CONCURRENTLY, bloklovchi lock'siz) ────
+-- idx_student_dup_analysis endi M002b_student_indexes changeset'ida (runInTransaction:false).
+-- Sabab: 1.15M-row hemishe_e_student'ga oddiy CREATE INDEX SHARE lock olib butun jadval
+-- yozuvini bloklaydi (BACK-DB-01). Bu changeset endi faqat menu DML + mv_student_duplicates
+-- (MATERIALIZED VIEW CREATE bazani ACCESS SHARE bilan skanerlaydi — yozuvni bloklamaydi).
 
 -- ── Materialized view (consolidated M003+M004) ───────────────────
 

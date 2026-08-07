@@ -222,9 +222,10 @@ public class UserAdminService {
                 target.addRole(role);
             }
 
-            // Evict permission cache since roles changed
+            // Evict permission + menu + scope cache since roles/university changed
             cacheEvictionPort.evictPermissionsForUser(id.toString());
             cacheEvictionPort.evictMenuForUser(id.toString());
+            cacheEvictionPort.evictScopeForUser(id.toString());
         }
 
         User saved = userRepository.save(target);
@@ -279,6 +280,7 @@ public class UserAdminService {
         if (!saved.getEnabled()) {
             cacheEvictionPort.evictPermissionsForUser(id.toString());
             cacheEvictionPort.evictMenuForUser(id.toString());
+            cacheEvictionPort.evictScopeForUser(id.toString());
         }
 
         log.info("User status toggled: id={}, enabled={}, by={}", id, saved.getEnabled(), callerUserId);
@@ -327,9 +329,10 @@ public class UserAdminService {
         target.softDelete();
         userRepository.save(target);
 
-        // Evict permission + menu cache
+        // Evict permission + menu + scope cache
         cacheEvictionPort.evictPermissionsForUser(id.toString());
         cacheEvictionPort.evictMenuForUser(id.toString());
+        cacheEvictionPort.evictScopeForUser(id.toString());
 
         log.info("User soft-deleted: id={}, username={}, by={}", id, target.getUsername(), callerUserId);
     }

@@ -264,29 +264,32 @@ private Map<String, Object> toMap(Student e) {
 
 ---
 
-## 7. Per-OTM filter (Multi-tenant)
+## 7. Per-OTM filter (Multi-tenant) — modulga bog'liq
 
-Markaziy DB ichida 230 OTM ma'lumoti. Har OTM admin faqat o'z `university_code` rows'ini ko'radi (rows-level isolation).
+Markaziy DB'da 230 OTM ma'lumoti bor, lekin per-OTM row-level isolation **modulga qarab** farq qiladi. ⚠️ **api-legacy'da filter YO'Q** (quyida — bu `api-legacy/CLAUDE.md` bilan izchil).
 
-### Implementation
+- **api-legacy (`/app/rest/v2/*`, 224 OTM Univer client) — scope filter YO'Q.** Old-hemis CUBA'da OTM scope cheklovi yo'q edi (markaziy server, har OTM barcha ma'lumotni ko'rardi); api-legacy **1:1 shu xulqni saqlaydi** (`isAccessAllowed → true`, `TenantGuard` OFF). Kanonik manba: [`api-legacy/CLAUDE.md`](../api-legacy/CLAUDE.md) "ENG MUHIM QOIDA". ⚠️ Bu bilib qilingan bug-for-bug port — cross-OTM ko'rinish **xavfsizlik masalasi** sifatida alohida ko'rib chiqilishi kerak (kod concern, hozircha 1:1).
+- **Yangi modullar (api-web admin, api-university) — filter HA (kerak bo'lganda).** Vazirlik/OTM foydalanuvchi faqat o'z `university_code` rows'ini ko'radi (row-level isolation).
+
+### Implementation (faqat YANGI modul — api-web / api-university)
 
 ```java
 @GetMapping
 @Transactional(readOnly = true)
-public ResponseEntity<List<Map<String, Object>>> getAll(...) {
+public ResponseEntity<...> getAll(...) {
     String universityCode = authFacade.getCurrentUser().getUniversity().getCode();
-    Page<EmployeeJobs> page = repository.findByUniversityCode(universityCode, pageable);
-    return ResponseEntity.ok(toMapList(page.getContent()));
+    Page<...> page = repository.findByUniversityCode(universityCode, pageable);
+    return ResponseEntity.ok(toDtoList(page.getContent()));
 }
 ```
 
-### Entity vs Classifier
+### Filter matritsasi
 
-| Endpoint turi | Filter kerakmi? | Sabab |
-|---------------|-----------------|-------|
-| Entity (EStudent, EEmployeeJobs) | HA | Per-OTM ma'lumot |
-| Classifier (HGender, HPositionType) | YO'Q | Markaziy yagona qiymat (har OTM bir xil) |
-| Service (create/update) | HA | Yangi yozuv yaratadi |
+| Kontekst | Filter kerakmi? | Sabab |
+|----------|-----------------|-------|
+| **api-legacy** entity (`hemishe_e_*`) | **YO'Q** | 1:1 old-hemis, cross-OTM (`TenantGuard` OFF) |
+| Yangi modul entity (api-web / api-university) | HA | Per-OTM row-level isolation |
+| Classifier (`h_*` — HGender, HPositionType) | YO'Q | Markaziy yagona qiymat (har OTM bir xil) |
 
 ---
 
