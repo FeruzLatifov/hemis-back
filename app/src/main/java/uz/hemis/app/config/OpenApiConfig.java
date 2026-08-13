@@ -61,7 +61,7 @@ public class OpenApiConfig {
             OpenApiConfig.class.getPackage().getImplementationVersion()
     ).orElse("dev");
 
-    @Value("${hemis.swagger.server-url:http://localhost:8082}")
+    @Value("${hemis.swagger.server-url:}")
     private String swaggerServerUrl;
 
     // =====================================================
@@ -193,11 +193,20 @@ public class OpenApiConfig {
      * API Servers (Environment-based)
      */
     private List<Server> apiServers() {
-        return List.of(
-            new Server()
-                .url(swaggerServerUrl)
-                .description("🔗 Configured Base URL")
-        );
+        // PRIMARY = relative "/": Swagger UI "Try it out" targets the SAME origin the docs page was
+        // loaded from — localhost:8081, a LAN IP (172.18.x:8081), or a public domain — so it works
+        // no matter which host opened the docs, with no cross-origin/CORS failure. A hard-coded
+        // absolute URL is what made remote hosts fail ("Failed to fetch"), since the browser then
+        // hit its OWN localhost. Swagger UI defaults to servers[0], so the relative entry must be first.
+        List<Server> servers = new java.util.ArrayList<>();
+        servers.add(new Server().url("/").description("Same-origin — brauzer manzilига ergashadi"));
+        // Optional SECONDARY: an explicitly pinned PUBLIC url (prod behind a domain). localhost /
+        // 127.0.0.1 values are skipped on purpose — those are exactly what breaks remote access.
+        if (swaggerServerUrl != null && !swaggerServerUrl.isBlank()
+                && !swaggerServerUrl.contains("localhost") && !swaggerServerUrl.contains("127.0.0.1")) {
+            servers.add(new Server().url(swaggerServerUrl).description("🔗 Configured Base URL"));
+        }
+        return servers;
     }
 
     /**

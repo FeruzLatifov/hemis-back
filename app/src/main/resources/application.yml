@@ -370,8 +370,10 @@ logging:
 hemis:
   # Swagger/OpenAPI configuration
   swagger:
-    # Base URL for Swagger UI server selector
-    server-url: ${SWAGGER_SERVER_URL:http://localhost:${SERVER_PORT:8081}}
+    # Base URL for Swagger UI "Try it out". Empty (default) => relative "/", so requests follow the
+    # SAME origin the docs page was opened from (localhost, LAN IP, or domain) — no host/CORS mismatch.
+    # Pin an absolute URL only in prod behind a fixed domain, e.g. SWAGGER_SERVER_URL=https://hemis.uz
+    server-url: ${SWAGGER_SERVER_URL:}
 
   # =====================================================
   # Outbox Pattern Configuration (ADR-0007, ADR-0010)

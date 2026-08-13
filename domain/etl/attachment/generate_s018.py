@@ -1,45 +1,46 @@
 #!/usr/bin/env python3
 """
-generate_s018.py — reproducible generator for S018_seed_speciality_attachment_2026.sql
+generate_s018.py — reproducible generator for S018 (OTM<->speciality attachment, 2026-2027).
 
-Loads the 2026-2027 ministry OTM<->speciality assignment spreadsheets, resolves each
-plan row to an h_speciality UUID (NAME-identity first — see README), fans out per set
-education_form column, and (re)writes the S018 seed + rollback into the changelog.
-
-Run from anywhere:  python3 domain/etl/attachment/generate_s018.py
-Deterministic: same inputs -> byte-identical S018 output (uuid5 ids, sorted rows).
+STRATEGY (2026-anchored, no year backfill):
+  * The classifier's 2026 set is the ground truth. In 2026, each L3 (Yo'nalish) CODE is UNIQUE
+    (236 Bakalavr + 598 Magistr), so a Kateg-1 plan row resolves by CODE+2026 alone — no name
+    match, and the old same-code L3 (not in 2026) is automatically excluded (code-twin fixed).
+  * A Kateg-2 (L4, Ichki yo'nalish) plan row resolves ONLY among the CHILDREN of the resolved
+    2026 L3, by normalized name. If the profile is not a child of the 2026 L3 (renamed-away L4
+    under an old L3, or a brand-new profile absent from the classifier), it is NOT attached —
+    it is written to a "problematic" .xlsx for manual curation.
+  * NO h_speciality_year backfill (S018b removed): we never link a speciality to a year. Only
+    specialities already in 2026 are attached; an L4 inherits 2026 from its 2026 L3 parent.
 
 Sources (tracked next to this script):
   Bakalavr_2026-2027.xlsx  (education_type 11, sheet "Kunduzgi")
   Magistratura_2026-2027.xlsx (education_type 12, sheet "Sheet1")
-Classifier read from the checked-in seeds: S014 + S017 (h_speciality rows).
-education_form codes: Kunduzgi=11, Kechki=12, Masofa(viy)=16 — from
-  docs/old-klasifikatorlar/HEMIS_Klassifikator_Dump.json (hemishe_h_education_form).
+Classifier + years read from the checked-in seeds: S014+S017 (h_speciality), S015+S017 (years).
+Deterministic: same inputs -> byte-identical S018 output (uuid5 ids, sorted rows).
 """
-import openpyxl, re, uuid, difflib, os
+import openpyxl, re, uuid, os
 from collections import defaultdict, Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))          # .../hemis-back
+REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 SEED = os.path.join(REPO, "domain/src/main/resources/db/changelog/changesets/seed")
+DOCS = os.path.abspath(os.path.join(REPO, "..", "docs", "mutaxasisliklar", "otm biriktirish"))
 SPEC = [os.path.join(SEED, "S014_seed_h_speciality.sql"),
         os.path.join(SEED, "S017_seed_h_speciality_2026.sql")]
+YEARSRC = [os.path.join(SEED, "S015_seed_h_speciality_year.sql"),
+           os.path.join(SEED, "S017_seed_h_speciality_2026.sql")]
 XLSX = [("Bakalavr_2026-2027.xlsx", "Kunduzgi", "11"),
         ("Magistratura_2026-2027.xlsx", "Sheet1", "12")]
-# xlsx column index (0-based) -> education_form code
-FORMS = [(6, "11"), (7, "12"), (8, "16")]   # Kunduzgi / Kechki / Masofa
+FORMS = [(6, "11"), (7, "12"), (8, "16")]                # Kunduzgi / Kechki / Masofa(viy)
 NS = uuid.UUID("6f4a2b7e-0000-4000-8000-000000000018")   # stable uuid5 namespace for S018
-CB = "seed:S018-2026"                                    # created_by provenance tag
-# These two spreadsheets ARE the 2026-2027 ministry assignment plan, so EVERY attachment is bound
-# to this one academic year (-> university_speciality_attachment.edu_year, FK h_education_year.year).
-# The per-row "Yil" column is treated as a cross-check, not the source of truth: it must equal
-# ASSIGN_YEAR wherever it is filled (a blank cell is fine), else we abort loudly rather than emit a
-# mislabeled year. This guarantees the "har birini 2026-2027 o'quv yiliga biriktirish" requirement.
-ASSIGN_YEAR = 2026
+CB = "seed:S018-2026"
+ASSIGN_YEAR = 2026                                       # every attachment's own edu_year
 OUT_SEED = os.path.join(SEED, "S018_seed_speciality_attachment_2026.sql")
 OUT_RB   = os.path.join(SEED, "S018_seed_speciality_attachment_2026_rollback.sql")
+OUT_XLSX = os.path.join(DOCS, "muammoli_L4_profillar_2026.xlsx")
 
-# ---------- minimal SQL VALUES parser (name-keyed) ----------
+# ---------- minimal SQL VALUES parser ----------
 def parse_tuples(s):
     out=[];i=0;n=len(s);d=0;q=False;c=''
     while i<n:
@@ -79,25 +80,17 @@ def unq(v):
     if v=='NULL': return None
     if v.startswith("'") and v.endswith("'"): return v[1:-1].replace("''","'")
     return v
-def fold(t):
+def norm(t):   # full-name normalizer: strip apostrophes, ':' '(' ')', lower, collapse spaces
     t=t or ''
     for ch in "'’ʻʼ‘`": t=t.replace(ch,' ')
-    return re.sub(r'\s+',' ',t.lower()).strip()
-def base(t):
-    t=fold(t); t=re.split(r'[:(]',t)[0]; t=re.sub(r'[^0-9a-zа-яʼʻ ]',' ',t)
+    t=t.lower().replace(':',' ').replace('(',' ').replace(')',' ')
     return re.sub(r'\s+',' ',t).strip()
-def norm(t):
-    t=fold(t); t=t.replace('ts','s'); return re.sub(r'[^0-9a-zа-я]','',t)
-def cpl(a,b):
-    a=a or '';b=b or '';n=0
-    for x,y in zip(a,b):
-        if x==y:n+=1
-        else:break
-    return n
+def prof(t):   # ':' dan keyingi profil qismi (L4 uchun)
+    return norm(t.split(':',1)[1]) if ':' in t else norm(t)
 
-# ---------- load classifier (id, code, hl, folded/base/norm names) ----------
-CL=defaultdict(list); byName=defaultdict(list); byCode=defaultdict(list); byNorm=defaultdict(list)
-id2parent={}; id2hl={}; id2code={}; id2name={}; HASCHILD=set()   # tree maps for code-consistent resolution
+# ---------- load classifier ----------
+# spec[sid] = (code, edu, level, name);  children[parent_sid] = [(edu, idx)]
+CL=defaultdict(list); byCode=defaultdict(list); id2parent={}; spec={}
 for p in SPEC:
     txt=open(p,encoding='utf-8').read()
     for mm in re.finditer(r"INSERT INTO h_speciality \(([^)]*)\) VALUES(.*?)(?:ON CONFLICT|;\s*$)", txt, re.S|re.M):
@@ -108,166 +101,111 @@ for p in SPEC:
             if edu not in ('11','12') or not nm: continue
             hl=r.get('hierarchy_level'); hl=int(hl) if hl and str(hl).isdigit() else None
             sid=r.get('id'); pid=r.get('parent_id')
-            id2parent[sid]=pid; id2hl[sid]=hl; id2code[sid]=code; id2name[sid]=nm
-            if pid: HASCHILD.add(pid)
-            idx=len(CL[edu]); CL[edu].append((code, sid, hl, fold(nm), base(nm), norm(nm), nm))
-            byName[(edu,fold(nm))].append(idx)
+            spec[sid]=(code, edu, hl, nm); id2parent[sid]=pid
+            idx=len(CL[edu]); CL[edu].append((code, sid, hl, nm))
             if code: byCode[(edu,code)].append(idx)
-            byNorm[(edu,norm(nm))].append(idx)
+children=defaultdict(list)
+for _edu in CL:
+    for _idx,(c,sid,hl,nm) in enumerate(CL[_edu]):
+        pp=id2parent.get(sid)
+        if pp: children[pp].append((_edu,_idx))
 
-# (speciality_id, year) pairs already present in h_speciality_year (seeded by S015) — a speciality
-# "exists" in a year iff it has that pair. Used to backfill any attached speciality's assignment year.
-HAS_YEAR=set()
-_S015=os.path.join(SEED, "S015_seed_h_speciality_year.sql")
-if os.path.exists(_S015):
-    for _mm in re.finditer(r"\('([0-9a-fA-F-]{36})'\s*,\s*(\d{4})\)", open(_S015, encoding='utf-8').read()):
-        HAS_YEAR.add((_mm.group(1), int(_mm.group(2))))
+# ---------- load years -> 2026 set ----------
+HAS2026=set()
+for p in YEARSRC:
+    for blk in re.finditer(r"INSERT INTO h_speciality_year[^;]*;", open(p,encoding='utf-8').read(), re.S):
+        for m in re.finditer(r"\('([0-9a-fA-F-]{36})'\s*,\s*(\d{4})\)", blk.group(0)):
+            if int(m.group(2))==2026: HAS2026.add(m.group(1))
 
-children=defaultdict(list)   # classifier parent_sid -> [(edu, idx)] — for in-parent child resolution
-for _edu in list(CL.keys()):
-    for _idx,_row in enumerate(CL[_edu]):
-        _p=id2parent.get(_row[1])
-        if _p: children[_p].append((_edu, _idx))
+# 2026 L3 by (edu, code) — UNIQUE (verified: 236 Bak + 598 Mag, 0 dup)
+l3_2026 = {}
+for edu in CL:
+    for (c,sid,hl,nm) in CL[edu]:
+        if hl==3 and sid in HAS2026 and c:
+            l3_2026[(edu,c)] = sid        # unique — last wins, but there is only one
 
-def resolve_child(edu, parent_sid, shifr, fn, bn, nm):
-    """Resolve a kateg-2 (L4) row among the CLASSIFIER CHILDREN of the already-resolved kateg-1
-    parent, so parent & child always share a subtree (the Excel groups them; both carry the same
-    Shifr). Ranks by code==Shifr, exact/norm/base name. None if the parent has no matching child."""
-    best=None; bestkey=None
-    for (e,idx) in children.get(parent_sid, ()):
+def resolve_l3(edu, code):
+    return l3_2026.get((edu, code))       # unique 2026 L3 for this code (or None)
+
+def resolve_l4(edu, l3_sid, name):
+    """Match a Kateg-2 profile among the 2026 L3's OWN L4 children, by normalized name."""
+    pf=norm(name); pp=prof(name); best=None
+    for (e,idx) in children.get(l3_sid, ()):
         if e!=edu: continue
-        code,sid,hl,f,b,nrm,orig = CL[edu][idx]
-        key=( code==shifr, f==fn, nrm==nm, b==bn )
-        if bestkey is None or key>bestkey:
-            bestkey=key; best=sid
+        c,sid,hl,nm = CL[edu][idx]
+        if hl!=4: continue
+        cn=norm(nm)
+        if cn==pf: return sid
+        if pp and (cn.endswith(pp) or pp in cn): best=sid
     return best
 
-def pickbest(edu, idxs, shifr, want_hl):
-    scored=[]
-    for i in idxs:
-        code, hl = CL[edu][i][0], CL[edu][i][2]
-        key=((code==shifr), cpl(code or '',shifr), (hl==want_hl), (len(code or '')==8))
-        scored.append((key, -(int(re.sub(r'\D','',code or '9'*9) or 9**9)), i))
-    scored.sort(reverse=True)
-    return scored[0][2]
-
-def pick_in_code(edu, cands, want_hl, fn, bn, nm):
-    """Best classifier row among those sharing the Excel Shifr, at the wanted level. Ranks by:
-    child-bearing (disambiguates a duplicated yo'nalish -> the real parent), exact fold-name,
-    norm-name (colon/paren-insensitive), base-name. Returns None if the Shifr has no row at
-    want_hl (caller then falls through to the name-based tiers)."""
-    best=None; bestkey=None
-    for i in cands:
-        code,sid,hl,f,b,nrm,orig = CL[edu][i]
-        if want_hl is not None and hl != want_hl: continue
-        key=( sid in HASCHILD, f==fn, nrm==nm, b==bn, len(code or '')==8 )
-        if bestkey is None or key>bestkey:
-            bestkey=key; best=i
-    return best
-
-def resolve(edu, kateg, shifr, name):
-    fn=fold(name); bn=base(name); nm=norm(name)
-    want_hl=3 if kateg=='1' else (4 if kateg=='2' else None)
-    # CODE-FIRST: the Excel Shifr is the ministry's authoritative code. Resolve WITHIN that code
-    # (same level, best name; child-bearing node for a duplicated yo'nalish) so a parent (kateg 1)
-    # and its child (kateg 2) sharing a Shifr always land in the same classifier subtree — the tree
-    # is then derived from h_speciality.parent_id at display time (no parent rows stored here).
-    if byCode.get((edu, shifr)):
-        i = pick_in_code(edu, byCode[(edu,shifr)], want_hl, fn, bn, nm)
-        if i is not None:
-            return CL[edu][i][1], "0_CODE"
-    if byName.get((edu,fn)):
-        i=pickbest(edu, byName[(edu,fn)], shifr, want_hl)
-        return CL[edu][i][1], ("1_EXACT" if CL[edu][i][0]==shifr else "2_NAME")
-    if byNorm.get((edu,nm)):
-        return CL[edu][pickbest(edu, byNorm[(edu,nm)], shifr, want_hl)][1], "3_SPELL"
-    if byName.get((edu,bn)):
-        return CL[edu][pickbest(edu, byName[(edu,bn)], shifr, 3)][1], "4_PARENT"
-    if byNorm.get((edu,norm(bn))):
-        return CL[edu][pickbest(edu, byNorm[(edu,norm(bn))], shifr, 3)][1], "4_PARENT"
-    if byCode.get((edu,shifr)):
-        cand=[i for i in byCode[(edu,shifr)] if CL[edu][i][4]==bn or bn in CL[edu][i][4] or CL[edu][i][4] in bn]
-        if cand:
-            return CL[edu][pickbest(edu, cand, shifr, want_hl)][1], "5_CODE_BASE"
-    best=None;bestr=0
-    for i in byCode.get((edu,shifr),[]):
-        r=difflib.SequenceMatcher(None, fn, CL[edu][i][3]).ratio()
-        if r>bestr: bestr=r; best=i
-    if best is not None and bestr>=0.90:
-        return CL[edu][best][1], "6_FUZZY"
-    return None, "7_UNRESOLVED"
-
-# ---------- load xlsx data rows ----------
+# ---------- load xlsx ----------
 def load(fn, sheet, edu):
     wb=openpyxl.load_workbook(os.path.join(HERE, fn), read_only=True, data_only=True); ws=wb[sheet]
     out=[]
     for r in ws.iter_rows(min_row=2, values_only=True):
         shifr=str(r[3]).strip() if r[3] is not None else ''
-        if not re.fullmatch(r"\d{8}", shifr): continue          # skip OTM header rows (shifr=1)
+        if not re.fullmatch(r"\d{8}", shifr): continue     # skip OTM header rows (shifr=1..N)
         otmid=str(r[1]).strip() if r[1] is not None else ''
         kateg=str(r[2]).strip() if r[2] is not None else ''
         name=str(r[4] or '').strip()
-        yil=str(r[5]).strip() if r[5] is not None else ''
-        yr=int(yil) if yil.isdigit() else None       # assignment academic year (col 5 "Yil", e.g. 2026)
         forms=[c for (ci,c) in FORMS if (r[ci] is not None and str(r[ci]).strip()!='')]
-        out.append((edu, otmid, kateg, shifr, name, forms, yr))
+        out.append((edu, otmid, kateg, shifr, name, forms))
     wb.close(); return out
-
 rows=[]
 for fn,sheet,edu in XLSX: rows+=load(fn, sheet, edu)
 
-conf=Counter(); attach=set(); unresolved=[]; year_mismatch=[]
-cur_otm=None; cur_parent=None      # parent-context: last resolved kateg-1 (yo'nalish) for this OTM
-for edu,otmid,kateg,shifr,name,forms,yr in rows:
+# ---------- resolve ----------
+attach=set()                 # (otmid, sid, form)
+prob=[]                      # problematic Kateg-2 rows
+cur_l3=None; cur_code=None; cur_otm=None
+cnt=Counter()
+for edu,otmid,kateg,shifr,name,forms in rows:
     if kateg=='1':
-        sid,c = resolve(edu, '1', shifr, name)          # code-first L3 (child-bearing yo'nalish)
-        cur_otm, cur_parent = otmid, sid
+        sid=resolve_l3(edu, shifr)
+        cur_l3, cur_code, cur_otm = sid, shifr, otmid
+        if sid is None:
+            cnt['L3-2026-YOQ']+=1; prob.append((edu,otmid,'L3',shifr,name,'L3 2026-da yoq',''))
+            continue
+        cnt['L3-ok']+=1
+        for fc in forms: attach.add((otmid, sid, fc))
     elif kateg=='2':
-        sid=None; c=None
-        if otmid==cur_otm and cur_parent is not None:   # resolve the child WITHIN its yo'nalish parent
-            sid = resolve_child(edu, cur_parent, shifr, fold(name), base(name), norm(name))
-            if sid is not None: c="0_CHILD"
-        if sid is None:                                  # fallback: no context / parent lacks this child
-            sid,c = resolve(edu, '2', shifr, name)
-    else:
-        sid,c = resolve(edu, kateg, shifr, name)
-    conf[c]+=1
-    # Cross-check the source "Yil": a filled cell MUST agree with the 2026-2027 plan; blank is OK.
-    if yr is not None and yr != ASSIGN_YEAR: year_mismatch.append((edu,otmid,kateg,shifr,name,yr))
-    if sid is None: unresolved.append((edu,kateg,shifr,name)); continue
-    # Every assignment is bound to the 2026-2027 academic year (authoritative, not the raw column).
-    for fc in forms: attach.add((otmid, sid, fc, ASSIGN_YEAR))
+        sid = resolve_l4(edu, cur_l3, name) if (cur_l3 is not None and otmid==cur_otm) else None
+        if sid is not None:
+            cnt['L4-ok']+=1
+            for fc in forms: attach.add((otmid, sid, fc))
+        else:
+            # categorize: profil klassifikatorда bor (boshqa L3 da) yoki umuman yo'q
+            l4_same=[CL[edu][i] for i in byCode.get((edu,shifr),[]) if CL[edu][i][2]==4]
+            # EXACT name match (normalized) among the code's L4 -> the profile genuinely exists,
+            # only under an old (non-2026) yo'nalish. If it is NOT an exact match we do NOT suggest an
+            # approximate one — the classifier column simply reads "mavjud emas".
+            name_hit=sorted({x[3] for x in l4_same if norm(x[3])==norm(name)})
+            if name_hit:
+                cat="Profil klassifikatorda bor, lekin 2026-yildagi yo'nalish ostida emas (eski yo'nalishga tegishli, nomi o'zgartirilgan bo'lishi mumkin)"
+                cls="; ".join(name_hit)                          # full name(s), no truncation
+            elif l4_same:
+                cat="Bu yo'nalish kodida klassifikatorda ichki yo'nalishlar bor, ammo aynan shu profil (nomi) mavjud emas"
+                cls="mavjud emas"
+            else:
+                cat="Bu yo'nalish kodida klassifikatorda birorta ham ichki yo'nalish yo'q"
+                cls="mavjud emas"
+            cnt['L4-problem']+=1
+            prob.append((edu,otmid,'L4',shifr,name,cat,cls))
 
-print(f"xlsx data rows: {len(rows)}   resolution:", dict(sorted(conf.items())))
-# Diagnostic: is each attached L4 in the SAME classifier subtree as an attached parent for its OTM?
-# (tree is derived from h_speciality.parent_id at display time — this only measures resolution quality)
-_otm_sids=defaultdict(set)
-for _uc,_sid,_ef,_yr in attach: _otm_sids[_uc].add(_sid)
-_split=sum(1 for _uc,_sid,_ef,_yr in attach if id2hl.get(_sid)==4 and id2parent.get(_sid) not in _otm_sids[_uc])
-_old=len({id2code.get(_sid) for _uc,_sid,_ef,_yr in attach if not re.fullmatch(r'\d{8}', id2code.get(_sid) or '')})
-print(f"L4 tree-split: {_split}   OLD (non-8-digit) codes: {_old}")
-# YEAR-BACKFILL: every attached speciality must EXIST in its assignment year (h_speciality_year).
-# The assignment year is the attachment's edu_year; add any (speciality, year) missing from S015.
-NEED_YEAR = sorted({(_sid,_yr) for _uc,_sid,_ef,_yr in attach if (_sid, _yr) not in HAS_YEAR})
-print(f"attached (speciality,year) pairs MISSING from h_speciality_year -> backfill: {len(NEED_YEAR)}"
-      f"  (distinct specialities: {len({s for s,y in NEED_YEAR})})")
-if year_mismatch:
-    print(f"YEAR MISMATCH (source 'Yil' != {ASSIGN_YEAR}):", len(year_mismatch))
-    for m in year_mismatch[:20]: print("   ", m)
-    raise SystemExit(f"Refusing to generate: rows carry a year other than {ASSIGN_YEAR}.")
-if unresolved:
-    print("UNRESOLVED:", len(unresolved))
-    for u in unresolved: print("   ", u)
-    raise SystemExit("Refusing to generate: unresolved rows present.")
-
+print("resolution:", dict(sorted(cnt.items())))
 rows_out=[]
-for uc,sid,ef,yr in sorted(attach):
-    rid=str(uuid.uuid5(NS, f"{uc}|{sid}|{ef}|{yr}"))
-    rows_out.append((rid, uc, sid, ef, yr))
+for uc,sid,ef in sorted(attach):
+    rid=str(uuid.uuid5(NS, f"{uc}|{sid}|{ef}|{ASSIGN_YEAR}"))
+    rows_out.append((rid, uc, sid, ef))
 print(f"attachment rows (dedup): {len(rows_out)}   forms:", dict(Counter(r[3] for r in rows_out)),
-      "  years:", dict(Counter(r[4] for r in rows_out)), "  OTM:", len({r[1] for r in rows_out}))
+      "  OTM:", len({r[1] for r in rows_out}))
+# distinct problematic L4 profiles
+prob_distinct = sorted({(e,c,n,cat,cand) for (e,ot,lv,c,n,cat,cand) in prob if lv=='L4'})
+prob_otmcnt = Counter((e,c,n) for (e,ot,lv,c,n,cat,cand) in prob if lv=='L4')
+print(f"problematic L4 (distinct profil): {len(prob_distinct)}   (jami reja qatori: {sum(1 for x in prob if x[2]=='L4')})")
 
-# ---------- emit seed ----------
+# ---------- emit S018 ----------
 def esc(s): return s.replace("'","''")
 HDR="""-- =====================================================
 -- S018: SEED SPECIALITY -> OTM ATTACHMENT (2026-2027)
@@ -275,21 +213,18 @@ HDR="""-- =====================================================
 -- Author: hemis-team
 -- Purpose: Load the 2026-2027 ministry OTM<->speciality assignments into
 --          university_speciality_attachment (V019).
--- Resolution: each xlsx row carries the official 8-digit 2026 Shifr, so matching is
---          CODE-FIRST to the h_speciality UUID (0_CODE: code==Shifr, 8-digit, tie-broken
---          by child-bearing/form/name). Kateg-2 (ichki yo'nalish, L4) is resolved WITHIN
---          its Kateg-1 (yo'nalish, L3) parent context (0_CHILD) so a sub-direction binds
---          to the right parent. No old 7-digit classifier row is ever attached.
--- Year:    every attachment is bound to the 2026-2027 academic year (edu_year=2026),
---          FK -> h_education_year(year) — the SAME modern year classifier h_speciality_year
---          uses. The source 'Yil' column is cross-checked (mismatch aborts generation).
--- Fan-out: one row per set education_form column
---          Kunduzgi=11, Kechki=12, Masofa(viy)=16 (hemishe_h_education_form).
--- Keying: id = uuid5(ns, university_code|speciality_id|education_form|edu_year) so a
---          re-run is stable. created_by='seed:S018-2026' tags seed provenance
---          (rollback target). status='ACTIVE'.
--- Idempotent: ON CONFLICT on the live-unique index
---          (university_code, speciality_id, education_form, edu_year) WHERE deleted_at IS NULL.
+-- Resolution (2026-anchored, no year backfill):
+--   L3 (Kateg-1): resolved by CODE + 2026 year-link -> the UNIQUE 2026 Yo'nalish (in 2026 every
+--                 L3 code is unique, so the old same-code L3 is auto-excluded; code-twin solved).
+--   L4 (Kateg-2): resolved ONLY among the 2026 L3's OWN children, by name. A profile that is not
+--                 a child of the 2026 L3 (renamed-away or brand-new) is NOT attached here — it is
+--                 exported to docs/.../muammoli_L4_profillar_2026.xlsx for manual curation.
+--   NO h_speciality_year backfill: only specialities already in 2026 are attached.
+-- Year:    every attachment's own edu_year = 2026 (FK h_education_year.year); this does NOT modify
+--          the classifier's h_speciality_year.
+-- Fan-out: one row per set education_form column (Kunduzgi=11, Kechki=12, Masofa=16).
+-- Keying:  id = uuid5(ns, university_code|speciality_id|education_form|edu_year). status='ACTIVE'.
+-- Idempotent: ON CONFLICT (university_code, speciality_id, education_form, edu_year) WHERE deleted_at IS NULL.
 -- Generated by domain/etl/attachment/generate_s018.py. DO NOT hand-edit.
 -- =====================================================
 """
@@ -297,7 +232,7 @@ BATCH=500; lines=[HDR]
 for i in range(0,len(rows_out),BATCH):
     chunk=rows_out[i:i+BATCH]
     lines.append("INSERT INTO university_speciality_attachment (id, university_code, speciality_id, education_form, edu_year, status, created_by) VALUES")
-    lines.append(",\n".join(f"  ('{rid}', '{esc(uc)}', '{sid}', '{ef}', {yr}, 'ACTIVE', '{CB}')" for rid,uc,sid,ef,yr in chunk))
+    lines.append(",\n".join(f"  ('{rid}', '{esc(uc)}', '{sid}', '{ef}', {ASSIGN_YEAR}, 'ACTIVE', '{CB}')" for rid,uc,sid,ef in chunk))
     lines.append("ON CONFLICT (university_code, speciality_id, education_form, edu_year) WHERE deleted_at IS NULL DO NOTHING;\n")
 open(OUT_SEED,"w").write("\n".join(lines))
 open(OUT_RB,"w").write(
@@ -307,30 +242,34 @@ open(OUT_RB,"w").write(
     "-- =====================================================\n"
     f"DELETE FROM university_speciality_attachment WHERE created_by = '{CB}';\n")
 print("wrote:", OUT_SEED)
-print("wrote:", OUT_RB)
 
-# ---------- emit year backfill: every attached speciality must EXIST in its assignment year ----------
-# Uses the speciality<->year table (h_speciality_year). Distinct from the attachment's own edu_year.
-OUT_YR    = os.path.join(SEED, "S018b_seed_h_speciality_year_backfill.sql")
-OUT_YR_RB = os.path.join(SEED, "S018b_seed_h_speciality_year_backfill_rollback.sql")
-_yhdr=("-- =====================================================\n"
-       "-- S018b: BACKFILL h_speciality_year for specialities that S018 attaches to an OTM for a\n"
-       "--        given academic year but which do NOT yet carry that year. A speciality assigned\n"
-       "--        for a year must exist in that year (h_speciality_year). Distinct from the OTM\n"
-       "--        attachment's own edu_year. Idempotent (ON CONFLICT). Runs after S015/S017.\n"
-       "-- Generated by domain/etl/attachment/generate_s018.py. DO NOT hand-edit.\n"
-       "-- =====================================================\n")
-_yl=[_yhdr]
-for i in range(0,len(NEED_YEAR),BATCH):
-    chunk=NEED_YEAR[i:i+BATCH]
-    _yl.append("INSERT INTO h_speciality_year (speciality_id, year) VALUES")
-    _yl.append(",\n".join(f"  ('{sid}', {yr})" for sid,yr in chunk))
-    _yl.append("ON CONFLICT (speciality_id, year) DO NOTHING;\n")
-open(OUT_YR,"w").write("\n".join(_yl))
-_rb=["-- S018b ROLLBACK: remove ONLY the backfilled speciality-year rows (they were missing before).\n"]
-for i in range(0,len(NEED_YEAR),BATCH):
-    chunk=NEED_YEAR[i:i+BATCH]
-    _rb.append("DELETE FROM h_speciality_year WHERE (speciality_id, year) IN ("
-               + ",".join(f"('{sid}',{yr})" for sid,yr in chunk) + ");")
-open(OUT_YR_RB,"w").write("\n".join(_rb)+"\n")
-print("wrote:", OUT_YR, f"({len(NEED_YEAR)} backfill rows)")
+# ---------- emit problematic L4 as .xlsx (full text, no truncation) ----------
+from openpyxl.styles import Alignment, Font, PatternFill
+wb=openpyxl.Workbook(); ws=wb.active
+assert ws is not None
+ws.title="Muammoli L4 2026"
+headers=[
+    "Dastur",                                  # Bakalavr / Magistr
+    "Kod",                                     # 8-xonali yo'nalish kodi (profil shu kodni ulashadi)
+    "Reja (exel) dagi ichki yo'nalish nomi",   # vazirlik so'ragan L4 profil, to'liq
+    "Nima uchun biriktirilmadi (sabab)",       # to'liq izoh
+    "Klassifikatorda topilgan nom",            # aynan mos nom, yoki "mavjud emas"
+    "Nechta OTM so'ragan",                     # ustuvorlik
+]
+ws.append(headers)
+edulbl={'11':'Bakalavr','12':'Magistr'}
+for (e,c,n,cat,cand) in prob_distinct:
+    ws.append([edulbl.get(e,e), c, n, cat, cand, prob_otmcnt.get((e,c,n),0)])
+# header style
+hf=Font(bold=True, color="FFFFFF"); hfill=PatternFill("solid", fgColor="305496")
+for cell in ws[1]:
+    cell.font=hf; cell.fill=hfill
+    cell.alignment=Alignment(horizontal="center", vertical="center", wrap_text=True)
+# wide columns + wrap so nothing is cut off
+for col,w in zip("ABCDEF",[11,13,58,62,52,16]): ws.column_dimensions[col].width=w
+for row in ws.iter_rows(min_row=2):
+    for cell in row:
+        cell.alignment=Alignment(vertical="top", wrap_text=True)
+ws.freeze_panes="A2"
+wb.save(OUT_XLSX)
+print("wrote:", OUT_XLSX, f"({len(prob_distinct)} qator)")

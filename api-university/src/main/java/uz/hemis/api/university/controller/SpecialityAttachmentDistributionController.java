@@ -48,8 +48,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/university/speciality-attachments")
-@Tag(name = "University - Attachment Distribution",
-        description = "OTM bootstrap PULL of its own speciality attachments (per-university, cached)")
+@Tag(name = "Mutaxassisliklar")
 @SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
@@ -64,12 +63,25 @@ public class SpecialityAttachmentDistributionController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(
-            summary = "Pull this OTM's speciality-attachment snapshot",
+            summary = "OTMga biriktirilgan mutaxassisliklar ro'yxatini olish",
             description = """
-                    Full live attachment set for the calling OTM: which specialities it may run
-                    and in which education forms (Kunduzgi=11, Kechki=12, Masofa=16). The OTM is
-                    resolved from the JWT `university_code` claim — no request parameter. Served
-                    live off the read replica (always fresh, not application-cached).
+                    ## Shu OTM biriktirilgan mutaxassisliklar
+
+                    Chaqirayotgan OTM qaysi mutaxassisliklarni, qaysi ta'lim shaklida olib borishga ruxsat
+                    etilgani. **`data` — TEKIS massiv**; har element = bitta (mutaxassislik × ta'lim shakli).
+                    Bitta mutaxassislik bir nechta shaklda bo'lsa — bir nechta alohida qator.
+
+                    **OTM aniqlanishi:** JWT `university_code` claim'idan — so'rovda parametr YO'Q. Har OTM
+                    faqat o'zinikini oladi; boshqa OTM to'plamini so'rab bo'lmaydi (fail-closed, IDOR himoya).
+
+                    **Join kaliti:** `specialityCode` — klassifikator (`/classifiers/speciality`) `code`'si
+                    bilan AYNI qiymat; shu orqali biriktirishni umumiy klassifikator daraxtiga bog'laysiz.
+
+                    **Ta'lim shakli (`educationForm`):** 11=Kunduzgi · 12=Kechki · 16=Masofaviy.
+                    **Holat (`status`):** ACTIVE · SUSPENDED · REVOKED.
+
+                    **Qamrov:** replikadan jonli o'qiladi (har doim yangi, app-cache YO'Q). Kerak bo'lsa
+                    `status` bo'yicha OTM o'zi filtrlaydi (masalan faqat ACTIVE'larni ishga tushirish).
                     """
     )
     public ResponseEntity<ResponseWrapper<List<SpecialityAttachmentSnapshotDto>>> snapshot(

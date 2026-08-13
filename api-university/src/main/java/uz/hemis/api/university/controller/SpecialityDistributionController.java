@@ -36,8 +36,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/university/classifiers")
-@Tag(name = "University - Classifier Distribution",
-        description = "OTM bootstrap PULL of the unified speciality classifier (APPROVED FLAT v1 snapshot)")
+@Tag(name = "Mutaxassisliklar")
 @SecurityRequirement(name = "bearerAuth")
 @RequiredArgsConstructor
 @Slf4j
@@ -48,15 +47,42 @@ public class SpecialityDistributionController {
     @GetMapping("/speciality")
     @PreAuthorize("isAuthenticated()")
     @Operation(
-            summary = "Pull the unified speciality classifier snapshot (APPROVED, FLAT v1)",
+            summary = "Umumiy mutaxassislik klassifikatorini olish",
             description = """
-                    Full APPROVED, code-bearing, active h_speciality set for OTM bootstrap/re-sync.
-                    `educationType` (hemishe_h_education_type code: 11=Bakalavr, 12=Magistr) optionally
-                    narrows the pull; omit for both. Global reference data — identical for every OTM.
+                    ## Umumiy mutaxassislik klassifikatori
+
+                    **Javob shakli — MUHIM.** `data` — TEKIS (flat) JSON massiv, daraxt (nested tree) EMAS.
+                    Har element mustaqil qator bo'lib, o'z darajasi (`hierarchyLevel`) va otasi (`parentId`)
+                    havolasini olib yuradi — bu *adjacency list*. Daraxtni OTM tomoni o'zi quradi.
+
+                    **4 daraja (`hierarchyLevel`):** 1 = Bilim sohasi · 2 = Ta'lim sohasi ·
+                    3 = Yo'nalish (mutaxassislik) · 4 = Ichki yo'nalish.
+
+                    **Tartib:** `code` bo'yicha o'sish (`ORDER BY code ASC`) — daraja bo'yicha guruhlanmagan,
+                    shuning uchun daraxtni faqat `parentId` bo'yicha quring.
+
+                    **Qamrov:** faqat APPROVED + kodli + faol (`active=true`) qatorlar
+                    (NEEDS_REVIEW yoki kodsiz qatorlar tushmaydi).
+
+                    **Join/upsert kaliti:** `code` + `educationType` (id vaqt o'tib o'zgarishi mumkin, code
+                    barqaror). `educationType` (11=Bakalavr, 12=Magistr) filtri ixtiyoriy — bo'sh qoldirsangiz
+                    ikkalasi keladi. Global ma'lumot — har OTM aynan bir xil to'plamni oladi.
+
+                    **Daraxtni parentId'dan qurish (JS misol):**
+                    ```js
+                    const byId = new Map();
+                    for (const n of flat) { n.children = []; byId.set(n.id, n); }
+                    const roots = [];
+                    for (const n of flat) {
+                      const parent = n.parentId ? byId.get(n.parentId) : null;
+                      if (parent) parent.children.push(n); else roots.push(n);
+                    }
+                    // roots → L1 Bilim sohasi → children → L2 → L3 Yo'nalish → L4 Ichki yo'nalish
+                    ```
                     """
     )
     public ResponseEntity<ResponseWrapper<List<SpecialityDistItemDto>>> speciality(
-            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr)", example = "11")
+            @Parameter(description = "Ta'lim turi filtri (11=Bakalavr, 12=Magistr)", example = "11")
             @RequestParam(required = false) String educationType
     ) {
         List<SpecialityDistItemDto> items = specialityService.getDistributionSnapshot(educationType);

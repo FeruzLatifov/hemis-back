@@ -172,7 +172,7 @@ public class SpecialityAttachmentService {
         HSpeciality s = specialityRepository.findById(a.getSpecialityId()).orElse(null);
         return toRow(a, s, educationTypeNames(),
                 universityNames(List.of(a.getUniversityCode())), educationFormNames(),
-                parentNames(s != null ? List.of(s) : List.of()));
+                parentsById(s != null ? List.of(s) : List.of()));
     }
 
     // =====================================================
@@ -256,7 +256,7 @@ public class SpecialityAttachmentService {
         log.info("Speciality attachment created: id={}", saved.getId());
         return toRow(saved, speciality, educationTypeNames(),
                 universityNames(List.of(saved.getUniversityCode())), educationFormNames(),
-                parentNames(List.of(speciality)));
+                parentsById(List.of(speciality)));
     }
 
     /** Detach (soft delete) — 403 if the row is outside the caller's scope, 404 if missing. */
@@ -327,10 +327,10 @@ public class SpecialityAttachmentService {
                 .distinct()
                 .toList();
         Map<String, String> uniNames = universityNames(uniCodes);
-        Map<UUID, String> parentNames = parentNames(specById.values());
+        Map<UUID, HSpeciality> parentsById = parentsById(specById.values());
 
         List<SpecialityAttachmentRowDto> rows = content.stream()
-                .map(a -> toRow(a, specById.get(a.getSpecialityId()), eduNames, uniNames, formNames, parentNames))
+                .map(a -> toRow(a, specById.get(a.getSpecialityId()), eduNames, uniNames, formNames, parentsById))
                 .toList();
         return new PageImpl<>(rows, pageable, page.getTotalElements());
     }
@@ -365,7 +365,7 @@ public class SpecialityAttachmentService {
 
     private SpecialityAttachmentRowDto toRow(UniversitySpecialityAttachment a, HSpeciality speciality,
                                              Map<String, String> eduNames, Map<String, String> uniNames,
-                                             Map<String, String> formNames, Map<UUID, String> parentNames) {
+                                             Map<String, String> formNames, Map<UUID, HSpeciality> parentsById) {
         String eduType = speciality != null ? speciality.getEducationType() : null;
         String form = a.getEducationForm();
         Integer level = speciality != null ? speciality.getHierarchyLevel() : null;
@@ -374,6 +374,10 @@ public class SpecialityAttachmentService {
         // An L3 "Yo'nalish" row shows NO parent (its own parent is the L2 "Ta'lim sohasi", which this
         // registry does not surface). This registry only works with L3/L4.
         boolean showParent = level != null && level == 4 && parentId != null;
+        HSpeciality parent = showParent ? parentsById.get(parentId) : null;
+        String parentName = parent == null ? null
+                : (parent.getNameUz() != null ? parent.getNameUz() : parent.getCode());
+        String parentCode = parent == null ? null : parent.getCode();
         return new SpecialityAttachmentRowDto(
                 a.getId().toString(),
                 a.getUniversityCode(),
@@ -382,7 +386,8 @@ public class SpecialityAttachmentService {
                 speciality != null ? speciality.getCode() : null,
                 speciality != null ? speciality.getNameUz() : null,
                 level,
-                showParent ? parentNames.get(parentId) : null,
+                parentName,
+                parentCode,
                 eduType,
                 eduType == null ? null : eduNames.getOrDefault(eduType, eduType),
                 form,
@@ -392,8 +397,8 @@ public class SpecialityAttachmentService {
         );
     }
 
-    /** id → name for the parent specialities of the given rows (batch — no N+1). */
-    private Map<UUID, String> parentNames(Collection<HSpeciality> specialities) {
+    /** id → parent speciality entity for the given rows (batch — no N+1); yields parent name + code. */
+    private Map<UUID, HSpeciality> parentsById(Collection<HSpeciality> specialities) {
         List<UUID> parentIds = specialities.stream()
                 .filter(s -> s != null && s.getParentId() != null)
                 .map(HSpeciality::getParentId)
@@ -403,8 +408,7 @@ public class SpecialityAttachmentService {
             return Map.of();
         }
         return specialityRepository.findAllById(parentIds).stream()
-                .collect(Collectors.toMap(HSpeciality::getId,
-                        s -> s.getNameUz() != null ? s.getNameUz() : s.getCode(), (x, y) -> x));
+                .collect(Collectors.toMap(HSpeciality::getId, s -> s, (x, y) -> x));
     }
 
     private SpecialityAttachmentSnapshotDto toSnapshot(UniversitySpecialityAttachment a, HSpeciality speciality,

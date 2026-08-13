@@ -20,6 +20,8 @@ public record SpecialityAttachmentRowDto(
         Integer hierarchyLevel,
         /** Name of the parent speciality (the direction a sub-direction belongs to); null for a root/direction. */
         String parentName,
+        /** Code (Shifr) of the parent speciality — shown alongside {@link #parentName}; null for a root/direction. */
+        String parentCode,
         String educationType,
         String educationTypeName,
         String educationForm,
