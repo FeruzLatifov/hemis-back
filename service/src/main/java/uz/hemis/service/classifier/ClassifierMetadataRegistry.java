@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Classifier Metadata Registry — Barcha klasifikator jadvallarining whitelist + metadata registri.
  *
- * <p>116 ta klasifikator jadvali ({@code hemishe_h_*}) uchun metadata saqlaydi:
+ * <p>Klasifikator jadvallari ({@code hemishe_h_*}) uchun metadata saqlaydi:
  * jadval nomi, API kalit, kategoriya, sarlavha va boshqa xususiyatlar.</p>
  *
  * <p><strong>Xavfsizlik:</strong> Faqat shu registrda ro'yxatga olingan jadvallar bilan ishlashga ruxsat beriladi.
@@ -31,8 +31,7 @@ public final class ClassifierMetadataRegistry {
         STUDY("O'quv jarayoni", "Учебный процесс", "Study process"),
         SCIENCE("Ilmiy", "Научная деятельность", "Science"),
         FINANCIAL("Moliyaviy", "Финансовые", "Financial"),
-        DIPLOMA("Diplom", "Дипломы", "Diploma"),
-        SPECIALITY("Mutaxassisliklar", "Специальности", "Specialities");
+        DIPLOMA("Diplom", "Дипломы", "Diploma");
 
         @Getter
         private final String titleUz;
@@ -202,18 +201,21 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_diplom_blank_status", Category.DIPLOMA, "Diplom blank holati", "Статус бланка диплома", "Diploma blank status", true, false);
         reg("hemishe_h_diplom_blank_category", Category.DIPLOMA, "Diplom blank toifasi", "Категория бланка диплома", "Diploma blank category", true, false);
 
-        // ─── SPECIALITY (Mutaxassisliklar) — CUBA legacy, tegilmadi ───
-        reg("hemishe_h_bachelor_speciality", Category.SPECIALITY, "Bakalavriat yo'nalishlari", "Направления бакалавриата", "Bachelor specialities", false, false);
-        reg("hemishe_h_master_speciality", Category.SPECIALITY, "Magistratura mutaxassisliklari", "Специальности магистратуры", "Master specialities", false, false);
-        reg("hemishe_h_speciality_ordinatura", Category.SPECIALITY, "Ordinatura mutaxassisliklari", "Специальности ординатуры", "Ordinatura specialities", false, false);
-        reg("hemishe_h_speciality_bachelor", Category.SPECIALITY, "Bakalavriat mutaxassisliklari (eski)", "Специальности бакалавриата (старые)", "Bachelor specialities (legacy)", false, false);
-        reg("hemishe_h_speciality_master", Category.SPECIALITY, "Magistratura mutaxassisliklari (eski)", "Специальности магистратуры (старые)", "Master specialities (legacy)", false, false);
+        // ─── SPECIALITY — OLIB TASHLANDI (2026-08-08) ───
+        // Birlashtirilgan h_speciality mutaxassislik klassifikatori alohida bespoke karta
+        // orqali beriladi (/classifiers/speciality + classifiers.speciality.view,
+        // SpecialityClassifierController — generic ClassifierWebController EMAS). Eski 5 ta
+        // CUBA jadvali (hemishe_h_bachelor_speciality/master_speciality/speciality_ordinatura/
+        // speciality_bachelor/speciality_master) talaba ma'lumoti sifatida hali JONLI
+        // (StudentWebService xom SQL join/count), lekin generic browsable klassifikator
+        // sifatida OCHILMAYDI — sidebar'dagi bespoke "Mutaxassisliklar" bilan dublikat
+        // kategoriyani oldini olish uchun. Legacy browse kerak bo'lsa qayta reg() qilinadi.
     }
 
     /**
      * Register a classifier (apiKey auto-derived from table name).
      * Simple migrated: reg("gender", ...) → apiKey="gender"
-     * Legacy CUBA: reg("hemishe_h_speciality_master", ...) → apiKey="speciality-master"
+     * Legacy CUBA: reg("hemishe_h_diplom_blank_status", ...) → apiKey="diplom-blank-status"
      */
     private static void reg(String tableName, Category category,
                             String titleUz, String titleRu, String titleEn,

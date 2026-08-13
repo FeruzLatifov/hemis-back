@@ -9,6 +9,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import uz.hemis.common.audit.*;
+import uz.hemis.common.util.PiiMask;
+import uz.hemis.common.vo.Pinfl;
 
 import java.sql.Array;
 import java.sql.PreparedStatement;
@@ -16,9 +18,15 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Audit DB ga yozish uchun repository.
@@ -32,13 +40,24 @@ public class AuditRepository {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${hemis.audit.redact-fields:password}")
-    private String redactFieldsConfig;
+    /**
+     * Sensitive field-name keys, NORMALIZED (lowercased, non-alphanumerics stripped) so that
+     * {@code first_name}, {@code firstName} and {@code FirstName} all match one entry.
+     * Bound as a {@link List} (not a bare {@link String}) so the YAML sequence in
+     * {@code hemis.audit.redact-fields} actually resolves.
+     */
+    private final Set<String> redactKeys;
 
     public AuditRepository(@Qualifier("auditJdbcTemplate") JdbcTemplate jdbcTemplate,
-                           ObjectMapper objectMapper) {
+                           ObjectMapper objectMapper,
+                           @Value("${hemis.audit.redact-fields:password,token,secret,authorization,pinfl}")
+                           List<String> redactFields) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.redactKeys = redactFields.stream()
+                .map(AuditRepository::normalizeKey)
+                .filter(k -> !k.isBlank())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     public void saveActivity(ActivityEvent event) {
@@ -152,18 +171,92 @@ public class AuditRepository {
         }
     }
 
-    private Map<String, Object> redactSensitiveFields(Map<String, Object> map) {
-        if (map == null || redactFieldsConfig == null || redactFieldsConfig.isBlank()) return map;
-        List<String> redactFields = List.of(redactFieldsConfig.split(","));
-        Map<String, Object> result = new LinkedHashMap<>(map);
-        for (String field : redactFields) {
-            String key = field.trim();
-            if (result.containsKey(key) && result.get(key) != null) {
-                String val = result.get(key).toString();
-                result.put(key, val.length() > 4 ? val.substring(0, 4) + "****" : "****");
+    /**
+     * PII/secret redaction — RECURSIVE over Map/List/scalar. Two independent defenses:
+     * <ol>
+     *   <li><b>Key-based:</b> any field whose (normalized) name is in {@link #redactKeys} is masked
+     *       by inferred type — pinfl → {@link Pinfl#maskOrEmpty}, phone/email/name → {@link PiiMask},
+     *       everything else → prefix mask.</li>
+     *   <li><b>Value-based safety net:</b> any string containing a bare 14-digit run (a PINFL) is
+     *       masked wherever it appears — even under an unexpected key or embedded in free text
+     *       (e.g. a captured {@code error_log.request_body} {@code _raw} fragment).</li>
+     * </ol>
+     * This is the single choke-point for both {@code activity_log.old_value/new_value} and
+     * {@code error_log.request_body}, both of which flow through {@link #toJson}.
+     */
+    // Package-private (not private) so AuditRedactionTest can assert the PII/PINFL guardrail directly.
+    Map<String, Object> redactSensitiveFields(Map<String, Object> map) {
+        if (map == null) return null;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> redacted = (Map<String, Object>) redactValue(map);
+        return redacted;
+    }
+
+    private Object redactValue(Object value) {
+        switch (value) {
+            case null -> {
+                return null;
+            }
+            case Map<?, ?> m -> {
+                Map<String, Object> out = new LinkedHashMap<>();
+                for (Map.Entry<?, ?> e : m.entrySet()) {
+                    String key = String.valueOf(e.getKey());
+                    out.put(key, isSensitiveKey(key) ? maskField(key, e.getValue()) : redactValue(e.getValue()));
+                }
+                return out;
+            }
+            case List<?> list -> {
+                List<Object> out = new ArrayList<>(list.size());
+                for (Object item : list) out.add(redactValue(item));
+                return out;
+            }
+            case String s -> {
+                return maskEmbeddedPinfl(s);
+            }
+            case Number n -> {
+                // Value-net for a bare 14-digit PINFL delivered as a numeric literal under any key.
+                String digits = n.toString();
+                return PINFL_RUN.matcher(digits).matches() ? Pinfl.maskOrEmpty(digits) : value;
+            }
+            default -> {
+                return value;
             }
         }
-        return result;
+    }
+
+    private boolean isSensitiveKey(String key) {
+        return redactKeys.contains(normalizeKey(key));
+    }
+
+    /** Mask a value under a sensitive key by inferred type; nested structures are still walked. */
+    private Object maskField(String key, Object value) {
+        if (value == null) return null;
+        // A sensitive field may arrive as a numeric literal (e.g. {"pinfl": 12345678901234}) —
+        // mask its digit form too. Map/List under a sensitive key keeps recursing via redactValue.
+        String s = (value instanceof String str) ? str
+                : (value instanceof Number) ? value.toString()
+                : null;
+        if (s == null) return redactValue(value);
+        String nk = normalizeKey(key);
+        if (nk.equals("pinfl") || nk.equals("jshshir")) return Pinfl.maskOrEmpty(s);
+        if (nk.contains("phone")) return PiiMask.phone(s);
+        if (nk.contains("email")) return PiiMask.email(s);
+        if (nk.contains("name")) return PiiMask.name(s);
+        return s.length() > 4 ? s.substring(0, 4) + "****" : "****";
+    }
+
+    /** A bare 14-digit PINFL run, not part of a longer number. */
+    private static final Pattern PINFL_RUN = Pattern.compile("(?<!\\d)\\d{14}(?!\\d)");
+
+    private static String maskEmbeddedPinfl(String s) {
+        if (s == null || s.length() < 14) return s;
+        Matcher m = PINFL_RUN.matcher(s);
+        if (!m.find()) return s;
+        return m.replaceAll(mr -> Matcher.quoteReplacement(Pinfl.maskOrEmpty(mr.group())));
+    }
+
+    private static String normalizeKey(String key) {
+        return key == null ? "" : key.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
     }
 
 }

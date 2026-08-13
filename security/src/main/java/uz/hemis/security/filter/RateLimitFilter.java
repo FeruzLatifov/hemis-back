@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final SecurityProperties securityProperties;
+    private final uz.hemis.security.util.ClientIpResolver clientIpResolver;
 
     /** Per-university counters (authenticated requests). */
     private final Map<String, AtomicInteger> universityCounters = new ConcurrentHashMap<>();
@@ -213,19 +214,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return jwt.getClaimAsString("university_code");
     }
 
-    /** Real client IP — proxy header'lar faqat trusted proxy'dan keldi. */
+    /** Real client IP — forwarded headers honoured only from a trusted proxy (anti-spoof). */
     private String getClientIp(HttpServletRequest request) {
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isEmpty()) {
-            // Trusted-proxy validation soddalashtirilgan: production deploy K8s ingress orqali
-            // X-Forwarded-For ni faqat ingress qo'shadi. Local'da remoteAddr 127.0.0.1.
-            return xff.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        return request.getRemoteAddr();
+        return clientIpResolver.resolve(request);
     }
 
     private void sendRateLimitExceededResponse(HttpServletResponse response, String message) throws IOException {

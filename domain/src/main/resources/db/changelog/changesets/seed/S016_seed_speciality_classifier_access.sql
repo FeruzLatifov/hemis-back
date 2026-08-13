@@ -85,7 +85,7 @@ ON CONFLICT DO NOTHING;
 -- Re-point the existing cls-speciality menu (S007) to the dedicated permission + icon.
 UPDATE menu
 SET permission = 'classifiers.speciality.view',
-    i18n_key = 'Speciality classifier',
+    i18n_key = 'Specialities',
     icon = 'graduation-cap',
     updated_at = CURRENT_TIMESTAMP
 WHERE code = 'cls-speciality';

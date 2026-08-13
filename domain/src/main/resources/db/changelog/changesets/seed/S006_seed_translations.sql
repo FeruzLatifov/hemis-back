@@ -363,7 +363,7 @@ PERFORM _seed_msg('menu', 'System',                 'Tizim',                    
 -- Registry submenus
 PERFORM _seed_msg('menu', 'E-Registry',             'E-Reestr',                     'Э-Реестр',                  'Э-Реестр');
 PERFORM _seed_msg('menu', 'Scientific registry',    'Ilmiy reestr',                 'Илмий реестр',              'Научный реестр');
-PERFORM _seed_msg('menu', 'Student data',           'Talaba ma''lumotlari',          'Талаба маълумотлари',       'Данные студента');
+PERFORM _seed_msg('menu', 'Data',                   'Ma''lumotlar',                  'Маълумотлар',               'Данные');
 
 -- Rating submenus
 PERFORM _seed_msg('menu', 'Administrative rating',  'Administrativ reyting',        'Административ рейтинг',    'Административный рейтинг');
@@ -388,7 +388,6 @@ PERFORM _seed_msg('menu', 'Students',               'Talabalar',                
 PERFORM _seed_msg('menu', 'Education',              'Ta''lim',                       'Таълим',                    'Образование');
 PERFORM _seed_msg('menu', 'Study process',          'O''qish jarayoni',              'Ўқиш жараёни',              'Учебный процесс');
 PERFORM _seed_msg('menu', 'Science',                'Fan',                          'Фан',                       'Наука');
-PERFORM _seed_msg('menu', 'Organizational',         'Tashkiliy',                    'Ташкилий',                  'Организационный');
 PERFORM _seed_msg('menu', 'Contract types',         'Shartnoma turlari',            'Шартнома турлари',          'Типы договоров');
 
 -- Reports submenus
@@ -440,7 +439,7 @@ PERFORM _seed_msg('menu', 'Ordinatura specialities','Ordinatura mutaxassisliklar
 PERFORM _seed_msg('menu', 'University specialities','OTM mutaxassisliklari',        'ОТМ мутахассисликлари',     'Специальности ВУЗа');
 PERFORM _seed_msg('menu', 'Study groups',           'O''quv guruhlari',              'Ўқув гурухлари',            'Учебные группы');
 PERFORM _seed_msg('menu', 'Scholarship',            'Stipendiya',                   'Стипендия',                 'Стипендия');
-PERFORM _seed_msg('menu', 'Student certificates',   'Talaba sertifikatlari',        'Талаба сертификатлари',     'Сертификаты студентов');
+PERFORM _seed_msg('menu', 'Certificates',           'Sertifikatlar',                'Сертификатлар',             'Сертификаты');
 PERFORM _seed_msg('menu', 'Teacher certificates',   'O''qituvchi sertifikatlari',    'Ўқитувчи сертификатлари',   'Сертификаты преподавателей');
 PERFORM _seed_msg('menu', 'Students Lite',          'Talabalar Lite',               'Талабалар Lite',            'Студенты Lite');
 
@@ -567,12 +566,9 @@ PERFORM _seed_msg('menu', 'Faculty list report',    'Fakultetlar ro''yxati',    
 
 -- Missing menu translations (gettext-style)
 PERFORM _seed_msg('menu', 'Directions',             'Yo''nalishlar',                 'Йўналишлар',                'Направления');
-PERFORM _seed_msg('menu', 'Teacher list',           'O''qituvchilar ro''yxati',       'Ўқитувчилар рўйхати',       'Список преподавателей');
 PERFORM _seed_msg('menu', 'Positions',              'Lavozimlar',                   'Лавозимлар',                'Должности');
 PERFORM _seed_msg('menu', 'Teacher qualifications', 'Malaka oshirish',              'Малака оширш',              'Повышение квалификации');
 PERFORM _seed_msg('menu', 'Teacher reports',        'O''qituvchilar hisobotlari',    'Ўқитувчилар ҳисоботлари',   'Отчёты преподавателей');
-PERFORM _seed_msg('menu', 'Student classifiers',    'Talaba klassifikatorlari',     'Талаба классификаторлари',   'Классификаторы студентов');
-PERFORM _seed_msg('menu', 'Science classifiers',    'Fan klassifikatorlari',        'Фан классификаторлари',     'Классификаторы науки');
 
 
 -- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

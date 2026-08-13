@@ -163,7 +163,7 @@ def emit_seed_sql(rows, year_rows, batch=500):
         "-- Rollback S014: remove seeded speciality rows.\n"
         "-- FK order: attachment (ON DELETE RESTRICT) -> year (CASCADE) -> speciality.\n"
         "-- Attachments are deleted first or the RESTRICT FK aborts the rollback.\n"
-        "DELETE FROM h_speciality_attachment;\nDELETE FROM h_speciality_year;\nDELETE FROM h_speciality;\n")
+        "DELETE FROM university_speciality_attachment;\nDELETE FROM h_speciality_year;\nDELETE FROM h_speciality;\n")
 
     # ---- S015: h_speciality_year ----
     ylines = [

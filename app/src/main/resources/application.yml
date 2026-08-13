@@ -464,12 +464,28 @@ hemis:
       - /favicon.ico
     # Request/response body max hajmi (bayt)
     max-body-size: 10240
-    # Sensitive maydonlarni redact qilish
+    # Sensitive maydonlarni redact qilish (kalit-asosli; nomlar normalize qilinadi —
+    # first_name/firstName/FirstName bir xil hisoblanadi). PINFL bundan tashqari
+    # rekursiv value-scan orqali ham (14-raqamli qiymat) har joyda maskalanadi.
     redact-fields:
       - password
       - token
       - secret
       - authorization
+      - pinfl
+      - firstName
+      - lastName
+      - middleName
+      - fatherName
+      - fullName
+      - phone
+      - parentPhone
+      - email
+      - birthday
+      - serialNumber
+      - passport
+      - address
+      - tin
 
   # API Configuration
   api:

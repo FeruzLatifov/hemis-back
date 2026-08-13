@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import uz.hemis.common.dto.TokenResponse;
 import uz.hemis.domain.entity.security.OAuthClient;
-import uz.hemis.security.util.HttpClientIpResolver;
 
 import java.util.Base64;
 import java.util.HashMap;
@@ -48,6 +47,7 @@ public class OAuthClientTokenIssuer {
     private final OAuthClientAuthenticationService authenticationService;
     private final TokenService tokenService;
     private final RateLimitService rateLimitService;
+    private final uz.hemis.security.util.ClientIpResolver clientIpResolver;
 
     /**
      * Issue a machine token for the supplied request.
@@ -64,7 +64,7 @@ public class OAuthClientTokenIssuer {
                                    String grantType,
                                    String requestedScope,
                                    HttpServletRequest request) {
-        String remoteIp = HttpClientIpResolver.resolve(request);
+        String remoteIp = clientIpResolver.resolve(request);
 
         // OWASP A07 (audit P0.E2) — per-IP rate limit BEFORE auth.
         // Prevents brute-force of client_id/secret pairs by repeated requests.

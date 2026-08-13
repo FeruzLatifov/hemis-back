@@ -24,8 +24,9 @@ public class DiplomaEventPublisher {
      * Publish diploma issued event
      */
     public void publishDiplomaIssued(DiplomaIssuedEvent event) {
-        log.info("Publishing DiplomaIssuedEvent: diplomaId={}, number={}, student={}",
-            event.getDiplomaId(), event.getDiplomaNumber(), event.getStudentFullName());
+        // PII-safe: student full name intentionally omitted from the log line.
+        log.info("Publishing DiplomaIssuedEvent: diplomaId={}, number={}",
+            event.getDiplomaId(), event.getDiplomaNumber());
 
         eventPublisher.publishEvent(event);
 

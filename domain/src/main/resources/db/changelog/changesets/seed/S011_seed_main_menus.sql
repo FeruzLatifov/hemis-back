@@ -23,7 +23,6 @@ SELECT upsert_menu('10000000-0000-0000-0000-000000000009'::uuid, 'system',      
 SELECT upsert_menu('20000002-0000-0000-0000-000000000001'::uuid, 'inst-universities',           'Universities',             '/institutions/universities',           'building',  'institutions.universities.view',            1, '10000000-0000-0000-0000-000000000002'::uuid);
 SELECT upsert_menu('20000002-0000-0000-0000-000000000002'::uuid, 'inst-faculties',              'Faculties',                '/institutions/faculties',              'school',    'institutions.faculties.view',               2, '10000000-0000-0000-0000-000000000002'::uuid);
 SELECT upsert_menu('20000002-0000-0000-0000-000000000003'::uuid, 'inst-departments',            'Departments',              '/institutions/departments',            'users',     'institutions.departments.view',             3, '10000000-0000-0000-0000-000000000002'::uuid);
-SELECT upsert_menu('20000002-0000-0000-0000-000000000004'::uuid, 'inst-attached-specialities',  'University specialities',  '/institutions/attached-specialities',  'layers',    'institutions.attached-specialities.view',   4, '10000000-0000-0000-0000-000000000002'::uuid);
 SELECT upsert_menu('20000002-0000-0000-0000-000000000005'::uuid, 'inst-university-specialities','Institution specialities', '/institutions/university-specialities','book-open', 'institutions.university-specialities.view', 5, '10000000-0000-0000-0000-000000000002'::uuid);
 SELECT upsert_menu('20000002-0000-0000-0000-000000000006'::uuid, 'inst-diploma-blanks',         'Diploma blanks',           '/institutions/diploma-blanks',          'file-badge','institutions.diploma-blanks.view',          6, '10000000-0000-0000-0000-000000000002'::uuid);
 SELECT upsert_menu('20000002-0000-0000-0000-000000000007'::uuid, 'inst-blank-distribution',     'Blank distribution',       '/institutions/diploma-blank-distribution','send',    'institutions.diploma-blank-distribution.view', 7, '10000000-0000-0000-0000-000000000002'::uuid);
@@ -33,19 +32,19 @@ SELECT upsert_menu('20000002-0000-0000-0000-000000000007'::uuid, 'inst-blank-dis
 -- =====================================================
 
 -- Bo'lim darajasidagi (coarse) ruxsat: 'students.view' bo'lgan foydalanuvchi butun Talabalar bo'limini ko'radi va ochadi (menu ⟺ route izchil, sodda rol modeli).
-SELECT upsert_menu('20000003-0000-0000-0000-000000000001'::uuid, 'student-list',         'Student data',         '/students',              'list',         'students.view', 1, '10000000-0000-0000-0000-000000000003'::uuid);
+SELECT upsert_menu('20000003-0000-0000-0000-000000000001'::uuid, 'student-list',         'Data',         '/students',              'list',         'students.view', 1, '10000000-0000-0000-0000-000000000003'::uuid);
 SELECT upsert_menu('20000003-0000-0000-0000-000000000002'::uuid, 'student-directions',   'Directions',           '/students/directions',   'book-open',    'students.view', 2, '10000000-0000-0000-0000-000000000003'::uuid);
 SELECT upsert_menu('20000003-0000-0000-0000-000000000003'::uuid, 'student-groups',       'Study groups',         '/students/groups',       'users',        'students.view', 3, '10000000-0000-0000-0000-000000000003'::uuid);
 SELECT upsert_menu('20000003-0000-0000-0000-000000000004'::uuid, 'student-diplomas',     'Diplomas',             '/students/diplomas',     'award',        'students.view', 4, '10000000-0000-0000-0000-000000000003'::uuid);
 SELECT upsert_menu('20000003-0000-0000-0000-000000000005'::uuid, 'student-scholarships', 'Scholarship',          '/students/scholarships', 'dollar-sign',  'students.view', 5, '10000000-0000-0000-0000-000000000003'::uuid);
-SELECT upsert_menu('20000003-0000-0000-0000-000000000006'::uuid, 'student-certificates', 'Student certificates', '/students/certificates', 'file-text',    'students.view', 6, '10000000-0000-0000-0000-000000000003'::uuid);
+SELECT upsert_menu('20000003-0000-0000-0000-000000000006'::uuid, 'student-certificates', 'Certificates', '/students/certificates', 'file-text',    'students.view', 6, '10000000-0000-0000-0000-000000000003'::uuid);
 
 -- =====================================================
 -- CHILDREN OF: teachers (4 items)
 -- =====================================================
 
 -- Bo'lim darajasidagi (coarse) ruxsat: 'teachers.view' → butun O'qituvchilar bo'limi.
-SELECT upsert_menu('20000004-0000-0000-0000-000000000001'::uuid, 'teacher-list',           'Teacher list',           '/teachers',                'list',      'teachers.view', 1, '10000000-0000-0000-0000-000000000004'::uuid);
+SELECT upsert_menu('20000004-0000-0000-0000-000000000001'::uuid, 'teacher-list',           'List',           '/teachers',                'list',      'teachers.view', 1, '10000000-0000-0000-0000-000000000004'::uuid);
 SELECT upsert_menu('20000004-0000-0000-0000-000000000002'::uuid, 'teacher-positions',      'Positions',              '/teachers/positions',      'briefcase', 'teachers.view', 2, '10000000-0000-0000-0000-000000000004'::uuid);
 SELECT upsert_menu('20000004-0000-0000-0000-000000000003'::uuid, 'teacher-qualifications', 'Teacher qualifications', '/teachers/qualifications', 'award',     'teachers.view', 3, '10000000-0000-0000-0000-000000000004'::uuid);
 SELECT upsert_menu('20000004-0000-0000-0000-000000000004'::uuid, 'teacher-employee-jobs',  'Employee jobs',          '/teachers/employee-jobs',  'briefcase', 'teachers.view', 4, '10000000-0000-0000-0000-000000000004'::uuid);
@@ -56,12 +55,12 @@ SELECT upsert_menu('20000004-0000-0000-0000-000000000004'::uuid, 'teacher-employ
 
 -- Bo'lim darajasidagi (coarse) ruxsat: 'science.view' → butun Fan bo'limi.
 SELECT upsert_menu('20000005-0000-0000-0000-000000000001'::uuid, 'sci-researchers',         'Researchers',             '/science/researchers',         'user-check', 'science.view', 1, '10000000-0000-0000-0000-000000000005'::uuid);
-SELECT upsert_menu('20000005-0000-0000-0000-000000000002'::uuid, 'sci-projects',            'Scientific projects',     '/science/projects',            'lightbulb',  'science.view', 2, '10000000-0000-0000-0000-000000000005'::uuid);
-SELECT upsert_menu('20000005-0000-0000-0000-000000000003'::uuid, 'sci-publications',        'Scientific publications', '/science/publications',        'book',       'science.view', 3, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000002'::uuid, 'sci-projects',            'Projects',     '/science/projects',            'lightbulb',  'science.view', 2, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000003'::uuid, 'sci-publications',        'Publications', '/science/publications',        'book',       'science.view', 3, '10000000-0000-0000-0000-000000000005'::uuid);
 SELECT upsert_menu('20000005-0000-0000-0000-000000000004'::uuid, 'sci-methodical',          'Methodical publications', '/science/methodical',          'book-open',  'science.view', 4, '10000000-0000-0000-0000-000000000005'::uuid);
 SELECT upsert_menu('20000005-0000-0000-0000-000000000005'::uuid, 'sci-intellectual',        'Intellectual property',   '/science/intellectual',        'briefcase',  'science.view', 5, '10000000-0000-0000-0000-000000000005'::uuid);
 SELECT upsert_menu('20000005-0000-0000-0000-000000000006'::uuid, 'sci-dissertation-defense','Dissertation defense',    '/science/dissertation-defense','award',      'science.view', 6, '10000000-0000-0000-0000-000000000005'::uuid);
-SELECT upsert_menu('20000005-0000-0000-0000-000000000007'::uuid, 'sci-research-activity',   'Scientific activity',     '/science/research-activity',   'activity',   'science.view', 7, '10000000-0000-0000-0000-000000000005'::uuid);
+SELECT upsert_menu('20000005-0000-0000-0000-000000000007'::uuid, 'sci-research-activity',   'Research activity',     '/science/research-activity',   'activity',   'science.view', 7, '10000000-0000-0000-0000-000000000005'::uuid);
 
 -- =====================================================
 -- CHILDREN OF: reports (6 items)
@@ -84,18 +83,21 @@ SELECT upsert_menu('20000007-0000-0000-0000-000000000003'::uuid, 'rating-scienti
 SELECT upsert_menu('20000007-0000-0000-0000-000000000004'::uuid, 'rating-gpa',            'Student GPA',           '/rating/gpa',            'award',            'rating.gpa.view',            4, '10000000-0000-0000-0000-000000000007'::uuid);
 
 -- =====================================================
--- CHILDREN OF: classifiers (8 items)
+-- CHILDREN OF: classifiers (7 items here; cls-organizational removed 2026-08-08; +3 from S007 = 10 total)
 -- =====================================================
 
 -- Bo'lim darajasidagi (coarse) ruxsat: 'classifiers.view' → butun Klassifikatorlar bo'limi (backend ClassifierWebController ham classifiers.view enforce qiladi).
 SELECT upsert_menu('20000008-0000-0000-0000-000000000001'::uuid, 'cls-general',        'General data',        '/classifiers/general',        'file-text',      'classifiers.view', 1, '10000000-0000-0000-0000-000000000008'::uuid);
 SELECT upsert_menu('20000008-0000-0000-0000-000000000002'::uuid, 'cls-structure',      'Structure',           '/classifiers/structure',      'share-2',        'classifiers.view', 2, '10000000-0000-0000-0000-000000000008'::uuid);
 SELECT upsert_menu('20000008-0000-0000-0000-000000000003'::uuid, 'cls-employee',       'Employees',           '/classifiers/employee',       'users',          'classifiers.view', 3, '10000000-0000-0000-0000-000000000008'::uuid);
-SELECT upsert_menu('20000008-0000-0000-0000-000000000004'::uuid, 'cls-student',        'Student classifiers', '/classifiers/student',        'user-circle',    'classifiers.view', 4, '10000000-0000-0000-0000-000000000008'::uuid);
+SELECT upsert_menu('20000008-0000-0000-0000-000000000004'::uuid, 'cls-student',        'Students',             '/classifiers/student',        'user-circle',    'classifiers.view', 4, '10000000-0000-0000-0000-000000000008'::uuid);
 SELECT upsert_menu('20000008-0000-0000-0000-000000000005'::uuid, 'cls-education',      'Education',           '/classifiers/education',      'book',           'classifiers.view', 5, '10000000-0000-0000-0000-000000000008'::uuid);
 SELECT upsert_menu('20000008-0000-0000-0000-000000000006'::uuid, 'cls-study',          'Study process',       '/classifiers/study',          'edit',           'classifiers.view', 6, '10000000-0000-0000-0000-000000000008'::uuid);
-SELECT upsert_menu('20000008-0000-0000-0000-000000000007'::uuid, 'cls-science',        'Science classifiers', '/classifiers/science',        'graduation-cap', 'classifiers.view', 7, '10000000-0000-0000-0000-000000000008'::uuid);
-SELECT upsert_menu('20000008-0000-0000-0000-000000000008'::uuid, 'cls-organizational', 'Organizational',      '/classifiers/organizational', 'building-2',     'classifiers.view', 8, '10000000-0000-0000-0000-000000000008'::uuid);
+SELECT upsert_menu('20000008-0000-0000-0000-000000000007'::uuid, 'cls-science',        'Scientific activity', '/classifiers/science',        'graduation-cap', 'classifiers.view', 7, '10000000-0000-0000-0000-000000000008'::uuid);
+-- cls-organizational (Tashkiliy) REMOVED (2026-08-08, user-confirmed): dead link. Backend
+-- ClassifierMetadataRegistry has NO 'organizational' category -> /classifiers/organizational 404'd
+-- (empty page). Old-hemis 'Tashkiliy' = financial classifiers, now served by 'Moliyaviy' (cls-financial);
+-- organizational-structure classifiers live under 'Tuzilma' (cls-structure). Also drop from rollback.
 
 -- =====================================================
 -- CHILDREN OF: system (5 items)
@@ -121,7 +123,7 @@ BEGIN
      WHERE deleted_at IS NULL
        AND code IN (
            'dashboard','institutions','students','teachers','science','reports','rating','classifiers','system',
-           'inst-universities','inst-faculties','inst-departments','inst-attached-specialities','inst-university-specialities','inst-diploma-blanks','inst-blank-distribution',
+           'inst-universities','inst-faculties','inst-departments','inst-university-specialities','inst-diploma-blanks','inst-blank-distribution',
            'student-list','student-directions','student-groups','student-diplomas','student-scholarships','student-certificates',
            'teacher-list','teacher-positions','teacher-qualifications','teacher-employee-jobs',
            'sci-researchers','sci-projects','sci-publications','sci-methodical','sci-intellectual','sci-dissertation-defense','sci-research-activity',
@@ -137,10 +139,10 @@ BEGIN
        AND code IN ('dashboard','institutions','students','teachers','science','reports','rating','classifiers','system');
 
     RAISE NOTICE 'S011: MAIN MENU SEEDED';
-    RAISE NOTICE '   Main menu items: % (expected 56)', menu_count;
+    RAISE NOTICE '   Main menu items: % (expected 54)', menu_count;
     RAISE NOTICE '   Root items: % (expected 9)', root_menu_count;
 
-    IF menu_count <> 56 THEN
-        RAISE WARNING 'S011: expected 56 main menu items, found %', menu_count;
+    IF menu_count <> 54 THEN
+        RAISE WARNING 'S011: expected 54 main menu items, found %', menu_count;
     END IF;
 END $$;

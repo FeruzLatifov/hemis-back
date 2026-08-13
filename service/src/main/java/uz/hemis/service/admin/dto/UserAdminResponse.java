@@ -34,6 +34,10 @@ public class UserAdminResponse {
     @Schema(description = "Phone", example = "+998901234567")
     private String phone;
 
+    @Schema(description = "PINFL (JSHSHIR, 14 digits). PII — present ONLY when the caller holds "
+            + "the 'pinfl.view' permission; null/omitted otherwise.")
+    private String pinfl;
+
     @Schema(description = "University code", example = "TATU")
     private String universityCode;
 

@@ -20,20 +20,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.classifier.SpecialityAttachmentService;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentCreateDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentRowDto;
 import uz.hemis.service.util.PageResponses;
+import uz.hemis.web.export.XlsxStreamExporter;
+import uz.hemis.web.export.XlsxSupport;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
  * Speciality Attachment Controller — Frontend UI API.
  *
  * <p><strong>Card:</strong> Attach unified-classifier specialities to OTMs
- * ({@code h_speciality_attachment}). "Har OTM'ga o'ziga tegishlisini biriktirish."</p>
+ * ({@code university_speciality_attachment}). "Har OTM'ga o'ziga tegishlisini biriktirish."</p>
  *
  * <p><strong>Tenant-scoped (fail-closed):</strong> every read and write is confined to
  * the caller's server-derived {@link uz.hemis.common.auth.AccessScope} — an OTM caller
@@ -65,6 +70,7 @@ import java.util.UUID;
 public class SpecialityAttachmentController {
 
     private final SpecialityAttachmentService service;
+    private final XlsxStreamExporter xlsxExporter;
 
     // =====================================================
     // List
@@ -101,14 +107,118 @@ public class SpecialityAttachmentController {
             @Parameter(description = "Attachment status", example = "ACTIVE")
             @RequestParam(required = false) String status,
 
+            @Parameter(description = "Education type code (11=Bakalavr, 12=Magistr)", example = "11")
+            @RequestParam(required = false) String educationType,
+
+            @Parameter(description = "Education form code (11=Kunduzgi, 12=Kechki, 16=Masofaviy)", example = "11")
+            @RequestParam(required = false) String educationForm,
+
+            @Parameter(description = "Academic year (start year, e.g. 2026 = 2026-2027)", example = "2026")
+            @RequestParam(required = false) Integer eduYear,
+
             @Parameter(hidden = true)
             @PageableDefault(size = 20, sort = "universityCode", direction = Sort.Direction.ASC)
             Pageable pageable
     ) {
-        log.info("GET /api/v1/web/registry/speciality-attachments - universityCode={}, specialityId={}, status={}, page={}",
-                universityCode, specialityId, status, pageable.getPageNumber());
-        Page<SpecialityAttachmentRowDto> page = service.list(universityCode, specialityId, status, pageable);
+        log.info("GET /api/v1/web/registry/speciality-attachments - universityCode={}, specialityId={}, status={}, educationType={}, educationForm={}, eduYear={}, page={}",
+                universityCode, specialityId, status, educationType, educationForm, eduYear, pageable.getPageNumber());
+        Page<SpecialityAttachmentRowDto> page = service.list(universityCode, specialityId, status, educationType, educationForm, eduYear, pageable);
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(page)));
+    }
+
+    // =====================================================
+    // Filter options (only values present in attachments)
+    // =====================================================
+
+    @GetMapping("/filter-options")
+    @PreAuthorize("hasAuthority('institutions.speciality-attachments.view')")
+    @Operation(
+            summary = "Filter-dropdown options present in attachments",
+            description = """
+                    Universities, education types and education forms that ACTUALLY occur in the
+                    caller's in-scope attachments (never the full classifier) — so a filter never
+                    offers a choice that returns zero rows (e.g. only the OTMs with attachments).
+                    """,
+            tags = {"Registry - Speciality Attachments"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Options retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope")
+    })
+    public ResponseEntity<ResponseWrapper<SpecialityAttachmentFilterOptionsDto>> filterOptions() {
+        log.info("GET /api/v1/web/registry/speciality-attachments/filter-options");
+        return ResponseEntity.ok(ResponseWrapper.success(service.filterOptions()));
+    }
+
+    // =====================================================
+    // Export (streaming .xlsx, no row cap)
+    // =====================================================
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority('institutions.speciality-attachments.view')")
+    @Operation(
+            summary = "Export speciality attachments to Excel (.xlsx)",
+            description = "Streams ALL rows matching the current filters as a professional .xlsx "
+                    + "(no row cap; constant memory via SXSSF; formula-injection-safe). Omit all "
+                    + "filters to export everything in scope.",
+            tags = {"Registry - Speciality Attachments"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Workbook streamed",
+                    content = @Content(mediaType = XlsxSupport.XLSX_CONTENT_TYPE,
+                            schema = @Schema(type = "string", format = "binary"))),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope")
+    })
+    public ResponseEntity<StreamingResponseBody> export(
+            @Parameter(description = "University code") @RequestParam(required = false) String universityCode,
+            @Parameter(description = "Speciality id (UUID)") @RequestParam(required = false) UUID specialityId,
+            @Parameter(description = "Attachment status", example = "ACTIVE") @RequestParam(required = false) String status,
+            @Parameter(description = "Education type code") @RequestParam(required = false) String educationType,
+            @Parameter(description = "Education form code") @RequestParam(required = false) String educationForm,
+            @Parameter(description = "Academic year (start year, e.g. 2026)") @RequestParam(required = false) Integer eduYear
+    ) {
+        log.info("GET /api/v1/web/registry/speciality-attachments/export - universityCode={}, status={}, educationType={}, educationForm={}, eduYear={}",
+                universityCode, status, educationType, educationForm, eduYear);
+        // Classifier-style tree (mirrors the /classifiers/speciality export): "Ierarxiya darajasi | Kod |
+        // Mutaxassislik". Rows already arrive parent-before-child (repo ORDER BY code), so no separate
+        // "parent" column is needed — the L4 "Ichki yo'nalish" name is real-Excel-indented one level under
+        // its L3 "Yo'nalish" parent, which sits directly above it.
+        return xlsxExporter.export(
+                "biriktirilgan_mutaxassisliklar",
+                "Biriktirilgan mutaxassisliklar",
+                List.of("OTM kodi", "OTM nomi", "O'quv yili", "Ierarxiya darajasi", "Kod", "Mutaxassislik",
+                        "Ta'lim turi", "Ta'lim shakli", "Holati"),
+                new int[]{14, 44, 12, 18, 14, 60, 16, 16, 10},
+                pageable -> service.list(universityCode, specialityId, status, educationType, educationForm, eduYear, pageable),
+                r -> new String[]{
+                        r.universityCode(),
+                        r.universityName(),
+                        r.eduYear() != null ? r.eduYear() + "-" + (r.eduYear() + 1) : "",
+                        levelLabelUz(r.hierarchyLevel()),
+                        r.specialityCode(),
+                        r.specialityName(),
+                        r.educationTypeName(),
+                        r.educationFormName(),
+                        r.status()
+                },
+                5, // indent the "Mutaxassislik" column (0-based index 5)
+                r -> r.hierarchyLevel() != null && r.hierarchyLevel() == 4 ? 1 : 0); // L4 sits one level under L3
+    }
+
+    /** h_speciality taxonomy level → Uzbek label for the Excel export. */
+    private static String levelLabelUz(Integer level) {
+        if (level == null) {
+            return "";
+        }
+        return switch (level) {
+            case 1 -> "Bilim sohasi";
+            case 2 -> "Ta'lim sohasi";
+            case 3 -> "Yo'nalish";
+            case 4 -> "Ichki yo'nalish";
+            default -> String.valueOf(level);
+        };
     }
 
     @Schema(name = "SpecialityAttachmentRowResponse")

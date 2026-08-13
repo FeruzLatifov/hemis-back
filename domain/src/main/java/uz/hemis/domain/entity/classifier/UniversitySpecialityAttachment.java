@@ -9,7 +9,7 @@ import uz.hemis.domain.entity.base.AuditableEntity;
 import java.util.UUID;
 
 /**
- * Attach a unified-classifier speciality to an OTM — {@code h_speciality_attachment} (V019).
+ * Attach a unified-classifier speciality to an OTM — {@code university_speciality_attachment} (V019).
  *
  * <p>"Which speciality is this university allowed to run." A revocable business
  * record, so it uses {@link AuditableEntity} (modern audit WITH soft delete via
@@ -21,11 +21,11 @@ import java.util.UUID;
  * enforced fail-closed in the service layer.</p>
  */
 @Entity
-@Table(name = "h_speciality_attachment")
+@Table(name = "university_speciality_attachment")
 @SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
-public class HSpecialityAttachment extends AuditableEntity {
+public class UniversitySpecialityAttachment extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -37,6 +37,11 @@ public class HSpecialityAttachment extends AuditableEntity {
 
     @Column(name = "education_form", length = 32)
     private String educationForm;
+
+    /** Academic year of THIS assignment (2026 = 2026-2027) — distinct from the speciality's own
+     *  validity years in {@code h_speciality_year}. */
+    @Column(name = "edu_year", nullable = false)
+    private Integer eduYear;
 
     @Column(name = "status", nullable = false, length = 32)
     private String status = "ACTIVE";

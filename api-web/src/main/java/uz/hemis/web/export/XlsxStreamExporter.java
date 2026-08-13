@@ -19,8 +19,10 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -65,10 +67,24 @@ public class XlsxStreamExporter {
     public <T> ResponseEntity<StreamingResponseBody> export(
             String baseFilename, String sheetName, List<String> headers, int[] widths,
             Function<Pageable, Page<T>> fetchPage, Function<T, String[]> rowMapper) {
+        return export(baseFilename, sheetName, headers, widths, fetchPage, rowMapper, -1, null);
+    }
+
+    /**
+     * As {@link #export(String, String, List, int[], Function, Function)}, but renders one column as a
+     * visual tree: {@code indentColumn}'s cell is real-Excel-indented by {@code indentLevel.apply(row)}
+     * (0 = flush left). Rows must already be ordered parent-before-child so a child sits under its
+     * parent. {@code indentColumn < 0} or {@code indentLevel == null} disables indentation.
+     */
+    public <T> ResponseEntity<StreamingResponseBody> export(
+            String baseFilename, String sheetName, List<String> headers, int[] widths,
+            Function<Pageable, Page<T>> fetchPage, Function<T, String[]> rowMapper,
+            int indentColumn, Function<T, Integer> indentLevel) {
 
         // Fail-fast: a query error here maps to a clean JSON error before the stream is committed.
         Page<T> firstPage = fetchPage.apply(PageRequest.of(0, PAGE_SIZE));
         int cols = headers.size();
+        boolean indenting = indentColumn >= 0 && indentColumn < cols && indentLevel != null;
 
         StreamingResponseBody body = out -> {
             // try-with-resources: SXSSFWorkbook.close() also disposes the temp files (POI 5.x),
@@ -76,6 +92,8 @@ public class XlsxStreamExporter {
             try (SXSSFWorkbook wb = new SXSSFWorkbook(WINDOW)) {
                 Sheet sheet = wb.createSheet(XlsxSupport.uniqueSafeSheetName(sheetName, new HashSet<>()));
                 XlsxSupport.ExcelStyles styles = new XlsxSupport.ExcelStyles(wb);
+                // Cache one indent style per depth (created once — SXSSF hard-caps styles at 64k).
+                Map<Integer, org.apache.poi.ss.usermodel.CellStyle> indentStyles = new HashMap<>();
 
                 Row headerRow = sheet.createRow(0);
                 headerRow.setHeightInPoints(20);
@@ -93,10 +111,16 @@ public class XlsxStreamExporter {
                 while (true) {
                     for (T item : page.getContent()) {
                         String[] values = rowMapper.apply(item);
+                        int indent = indenting ? Math.max(0, indentLevel.apply(item) == null ? 0 : indentLevel.apply(item)) : 0;
                         Row row = sheet.createRow(rowIdx++);
                         for (int c = 0; c < cols; c++) {
                             Cell cell = row.createCell(c);
-                            cell.setCellStyle(styles.text);
+                            if (indenting && c == indentColumn && indent > 0) {
+                                cell.setCellStyle(indentStyles.computeIfAbsent(indent,
+                                        d -> XlsxSupport.ExcelStyles.indentedText(wb, d)));
+                            } else {
+                                cell.setCellStyle(styles.text);
+                            }
                             cell.setCellValue(XlsxSupport.sanitizeCell(c < values.length ? values[c] : ""));
                         }
                     }

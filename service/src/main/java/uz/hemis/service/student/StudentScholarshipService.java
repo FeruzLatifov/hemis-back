@@ -82,7 +82,8 @@ public class StudentScholarshipService {
      */
     @SuppressWarnings("unchecked")
     public Object checkScholarship(Map<String, Object> request) {
-        log.info("Checking scholarship2 eligibility: {}", request);
+        // PII-safe: request map holds tin + student PINFLs — log only the field names, never values.
+        log.info("Checking scholarship2 eligibility: fields={}", request.keySet());
         Map<String, Object> result = new LinkedHashMap<>();
 
         String tin = request.get("tin") != null ? request.get("tin").toString() : null;

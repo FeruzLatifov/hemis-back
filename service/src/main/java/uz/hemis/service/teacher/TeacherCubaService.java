@@ -68,7 +68,7 @@ public class TeacherCubaService {
      * @return Teacher ID map
      */
     public Map<String, Object> id(String data) {
-        log.info("Getting teacher ID - Data: {}", data);
+        log.info("Getting teacher ID - Data: {}", Pinfl.maskOrEmpty(data));
 
         if (CubaResponseHelper.isEmpty(data)) {
             return CubaResponseHelper.errorResponse("invalid_parameter", "Data parameter required");

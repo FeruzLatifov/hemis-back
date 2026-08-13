@@ -145,6 +145,11 @@ tasks.register<JavaExec>("liquibaseUpdate") {
     configureLiquibase("update")
 }
 
+tasks.register<JavaExec>("liquibaseReleaseLocks") {
+    description = "Release a stale Liquibase changelog lock (DATABASECHANGELOGLOCK)"
+    configureLiquibase("releaseLocks")
+}
+
 tasks.register<JavaExec>("liquibaseRollbackCount") {
     description = "Rollback N changesets (usage: -Pcount=5)"
     val count = project.findProperty("count")?.toString() ?: "1"

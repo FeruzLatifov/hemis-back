@@ -1,15 +1,15 @@
 # Mutaxassislik klassifikatori — ER diagramma (V018 + V019)
 
 > Yagona bakalavr+magistr mutaxassislik klassifikatori va unga tegishli jadvallar.
-> Manba: `V018_create_h_speciality.sql`, `V019_create_h_speciality_attachment.sql`. Qaror: **ADR-0014**.
+> Manba: `V018_create_h_speciality.sql`, `V019_create_university_speciality_attachment.sql`. Qaror: **ADR-0014**.
 
 ```mermaid
 erDiagram
     h_education_year   ||--o{ h_speciality_year       : "year (FK)"
     h_speciality       ||--o{ h_speciality_year       : "speciality_id (FK, CASCADE)"
     h_speciality       ||--o{ h_speciality            : "parent_id (self, tree)"
-    h_speciality       ||--o{ h_speciality_attachment : "speciality_id (FK, RESTRICT)"
-    hemishe_e_university ||..o{ h_speciality_attachment : "university_code (by-value, FK yo'q)"
+    h_speciality       ||--o{ university_speciality_attachment : "speciality_id (FK, RESTRICT)"
+    hemishe_e_university ||..o{ university_speciality_attachment : "university_code (by-value, FK yo'q)"
 
     h_education_year {
         int       year        PK "internal key = Univer kod"
@@ -44,7 +44,7 @@ erDiagram
         int       year          FK "-> h_education_year"
     }
 
-    h_speciality_attachment {
+    university_speciality_attachment {
         uuid      id             PK
         varchar   university_code   "by-value -> hemishe_e_university.code"
         uuid      speciality_id  FK "-> h_speciality (RESTRICT)"
@@ -65,7 +65,7 @@ erDiagram
 |--------|----------------------|
 | **h_speciality** | `uq_h_speciality_identity` **UNIQUE NULLS NOT DISTINCT (education_level, code, name_search)** — bir (edu,kod,nom) bitta yozuv. `name` va `name_search` — **GENERATED** ustunlar (yozib bo'lmaydi). Self-FK `parent_id` DEFERRABLE INITIALLY DEFERRED. |
 | **h_speciality_year** | `uq_h_speciality_year (speciality_id, year)`. Bu + yuqoridagi identity → `(edu,kod,nom,yil)` noyob. |
-| **h_speciality_attachment** | `uq_h_spec_attach (university_code, speciality_id, education_form) WHERE deleted_at IS NULL` — bir OTM'ga bir mutaxassislik bir marta (tirik). |
+| **university_speciality_attachment** | `uq_univ_spec_attach (university_code, speciality_id, education_form) WHERE deleted_at IS NULL` — bir OTM'ga bir mutaxassislik bir marta (tirik). |
 | **h_education_year** | `year` INT PK (Univer kodiga 1:1). Seed: legacy `hemishe_h_education_year`'dan + `generate_series(1991,2040)` fallback (legacy-mustaqil). |
 
 ## Funksiya

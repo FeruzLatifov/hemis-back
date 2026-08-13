@@ -187,6 +187,11 @@ public class DashboardCacheConfig implements CachingConfigurer {
         // Unified speciality classifier distribution snapshot (h_speciality, APPROVED set):
         // global reference data pulled by OTMs on bootstrap, rarely changes → 24h, evicted on curation edit.
         redisCacheConfigurations.put("specialityDistribution", defaultConfig.entryTtl(Duration.ofHours(24)));
+        // NB: the per-OTM speciality-ATTACHMENT snapshot is intentionally NOT cached — a per-tenant,
+        // index-backed ~150-row read is cheaper live off the replica than a Redis round-trip, and
+        // avoids the cross-pod invalidation problem for admin-edited data (see
+        // SpecialityAttachmentService.getSnapshot). Add back only with event-driven invalidation if
+        // load ever proves it hot.
 
         // University domain caches — 230 OTM, rarely change (24 hour TTL)
         // findAllList (230 row list, dropdown'larda), findActive (dashboard widget)

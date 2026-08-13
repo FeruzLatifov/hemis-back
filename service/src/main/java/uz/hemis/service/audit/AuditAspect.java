@@ -198,8 +198,14 @@ public class AuditAspect {
             // username — auditor uchun human-readable, cross-DB join'siz.
             if (auth instanceof JwtAuthenticationToken jwtAuth) {
                 Jwt jwt = jwtAuth.getToken();
+                // A machine/OAuth-client token carries typ=CLIENT and its `sub` is the
+                // oauth_client PK — NOT a users.id. Writing that PK into userId pollutes
+                // the column auditors join against `users` (the 224-client fleet is the
+                // highest audit-write volume). For clients we attribute by client_id
+                // (username claim) and leave userId NULL.
+                boolean isClient = "CLIENT".equals(jwt.getClaimAsString("typ"));
                 String sub = jwt.getSubject();
-                if (sub != null) {
+                if (sub != null && !isClient) {
                     try {
                         builder.userId(UUID.fromString(sub));
                     } catch (IllegalArgumentException ignored) {
@@ -209,6 +215,8 @@ public class AuditAspect {
                 String usernameClaim = jwt.getClaimAsString("username");
                 if (usernameClaim != null && !usernameClaim.isBlank()) {
                     builder.username(usernameClaim);
+                } else if (isClient && sub != null) {
+                    builder.username(sub); // client PK as a last-resort label, never as userId
                 }
                 String fullNameClaim = jwt.getClaimAsString("full_name");
                 if (fullNameClaim != null && !fullNameClaim.isBlank()) {

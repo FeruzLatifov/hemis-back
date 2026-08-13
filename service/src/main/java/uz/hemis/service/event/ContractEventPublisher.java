@@ -24,9 +24,9 @@ public class ContractEventPublisher {
      * Publish contract signed event
      */
     public void publishContractSigned(ContractSignedEvent event) {
-        log.info("Publishing ContractSignedEvent: contractId={}, number={}, student={}, amount={}",
-            event.getContractId(), event.getContractNumber(),
-            event.getStudentFullName(), event.getTotalAmount());
+        // PII-safe: student full name intentionally omitted from the log line.
+        log.info("Publishing ContractSignedEvent: contractId={}, number={}, amount={}",
+            event.getContractId(), event.getContractNumber(), event.getTotalAmount());
 
         eventPublisher.publishEvent(event);
 

@@ -356,12 +356,6 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
 INSERT INTO permission (resource, action, code, name, description, category, created_by)
-VALUES ('classifiers.organizational', 'view', 'classifiers.organizational.view', 'View Organizational Classifiers', 'View organizational classifiers', 'CORE', 'system')
-ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
-    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
-    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
-
-INSERT INTO permission (resource, action, code, name, description, category, created_by)
 VALUES ('classifiers.financial', 'view', 'classifiers.financial.view', 'View Financial Classifiers', 'View financial classifiers', 'CORE', 'system')
 ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
@@ -454,6 +448,14 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
     name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
     action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
 
+-- PII read-gate: seeing the raw PINFL (JSHSHIR) in user/person responses. Least privilege —
+-- granted to SUPER_ADMIN only (S004); action='view' already exists in the V002 CHECK + PermissionAction enum.
+INSERT INTO permission (resource, action, code, name, description, category, created_by)
+VALUES ('pinfl', 'view', 'pinfl.view', 'View PINFL', 'View raw PINFL (JSHSHIR) national ID in user/person responses', 'ADMIN', 'system')
+ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
+    name = EXCLUDED.name, description = EXCLUDED.description, resource = EXCLUDED.resource,
+    action = EXCLUDED.action, category = EXCLUDED.category, updated_at = CURRENT_TIMESTAMP, updated_by = 'system';
+
 -- =====================================================
 -- Buildings Module (3 permissions — V010 module)
 -- =====================================================
@@ -509,18 +511,20 @@ BEGIN
         -- Rating (5)
         'rating.view', 'rating.administrative.view', 'rating.academic.view',
         'rating.scientific.view', 'rating.gpa.view',
-        -- Classifiers (13: 9 view + 1 edit + 3 new categories)
+        -- Classifiers (12: 8 view + 1 edit + 3 new categories; organizational removed 2026-08-08)
         'classifiers.view', 'classifiers.edit', 'classifiers.general.view',
         'classifiers.structure.view', 'classifiers.employee.view', 'classifiers.student.view',
         'classifiers.education.view', 'classifiers.study.view', 'classifiers.science.view',
-        'classifiers.organizational.view', 'classifiers.financial.view',
+        'classifiers.financial.view',
         'classifiers.diploma.view', 'classifiers.speciality.view',
         -- System (9)
         'system.view', 'system.translation.view', 'system.translation.manage',
         'system.users.view', 'system.logs.view', 'system.report-update.view',
         'system.menu.view', 'system.menus.manage', 'audit.view',
         -- User Management (1)
-        'users.manage'
+        'users.manage',
+        -- PII read-gate (1)
+        'pinfl.view'
     );
 
     IF feature_count < 66 THEN

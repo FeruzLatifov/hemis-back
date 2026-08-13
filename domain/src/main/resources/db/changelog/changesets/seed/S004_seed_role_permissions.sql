@@ -211,8 +211,39 @@ WHERE r.code = 'CLASSIFIER_MANAGER'
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
+-- PII read-gate enforcement: pinfl.view is SUPER_ADMIN-ONLY (least privilege — raw JSHSHIR).
+-- SUPER_ADMIN gets it via the CROSS JOIN above; strip it from EVERY other role, since the broad
+-- `p.action = 'view'` catch-alls (MINISTRY_ADMIN line ~102, INSPECTOR line ~138) would otherwise
+-- auto-grant it. Same idiom as the OTM_API classifier-write strip above.
+-- Idempotent: once clean, re-running deletes nothing.
+-- =====================================================
+DELETE FROM role_permission rp
+USING role r, permission p
+WHERE rp.role_id = r.id
+  AND rp.permission_id = p.id
+  AND p.code = 'pinfl.view'
+  AND r.code <> 'SUPER_ADMIN';
+
+-- =====================================================
 -- Verification
 -- =====================================================
+DO $$
+DECLARE
+    leaked INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO leaked
+    FROM role_permission rp
+    JOIN role r ON rp.role_id = r.id
+    JOIN permission p ON rp.permission_id = p.id
+    WHERE p.code = 'pinfl.view' AND r.code <> 'SUPER_ADMIN';
+
+    IF leaked > 0 THEN
+        RAISE WARNING 'S004: pinfl.view leaked to % non-SUPER_ADMIN role(s) — PII read-gate breached', leaked;
+    ELSE
+        RAISE NOTICE 'S004: pinfl.view correctly restricted to SUPER_ADMIN only';
+    END IF;
+END $$;
+
 DO $$
 DECLARE
     sa INTEGER; otm INTEGER; ma INTEGER; insp INTEGER; vw INTEGER; rv INTEGER; ext INTEGER; cm INTEGER;

@@ -1,6 +1,17 @@
 -- Rollback S017: remove ONLY the 2026 supplementary NEW rows (targeted by id).
 -- Year rows first (FK), then the speciality rows. S014/S015 data untouched.
+-- Curation revert (must run BEFORE deleting the 2026 parent 2430d4df): re-point
+-- 60911300 Parameditsina back to its S014 parent (Oliy hamshiralik ishi) so the
+-- self-FK does not block deleting 2430d4df, and drop its curated 2026 year.
+UPDATE h_speciality SET parent_id = '25f8e201-6774-7d64-10f3-e5b8f8ce1055' WHERE id = 'c470f50d-4a5f-a925-3881-56ad2db91745';
+DELETE FROM h_speciality_year WHERE speciality_id = 'c470f50d-4a5f-a925-3881-56ad2db91745' AND year = 2026;
 DELETE FROM h_speciality_year WHERE speciality_id IN (
+  'bc02fd15-8919-462b-b04b-60c0a63ad3bd',
+  '7670a4eb-eaad-4cb3-8f2d-fded64423bf4',
+  '7fdf94cf-da05-49ad-b9b9-5cccd57a7e97',
+  '0fe57a24-808d-4f9d-acd3-3e09422e4420',
+  'f5fb6051-80a7-4a33-9c78-b0abd5b32bde',
+  'd32852a3-b2b6-4064-b9e8-c869b382be05',
   '93617c85-1605-5d54-aa1e-73b1c4b67106',
   'defdd731-e9fe-51e1-84ea-77c198e2577c',
   '0ef5c1a2-faac-58bb-80f4-f6d2979b9e4f',
@@ -68,6 +79,12 @@ DELETE FROM h_speciality_year WHERE speciality_id IN (
   'a5541f57-2351-54de-88ee-d29022b3b714'
 );
 DELETE FROM h_speciality WHERE id IN (
+  'bc02fd15-8919-462b-b04b-60c0a63ad3bd',
+  '7670a4eb-eaad-4cb3-8f2d-fded64423bf4',
+  '7fdf94cf-da05-49ad-b9b9-5cccd57a7e97',
+  '0fe57a24-808d-4f9d-acd3-3e09422e4420',
+  'f5fb6051-80a7-4a33-9c78-b0abd5b32bde',
+  'd32852a3-b2b6-4064-b9e8-c869b382be05',
   '93617c85-1605-5d54-aa1e-73b1c4b67106',
   'defdd731-e9fe-51e1-84ea-77c198e2577c',
   '0ef5c1a2-faac-58bb-80f4-f6d2979b9e4f',

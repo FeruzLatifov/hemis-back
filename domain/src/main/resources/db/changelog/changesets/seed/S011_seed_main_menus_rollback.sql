@@ -7,6 +7,6 @@ DELETE FROM menu WHERE code IN (
     'sci-researchers','sci-projects','sci-publications','sci-methodical','sci-intellectual','sci-dissertation-defense','sci-research-activity',
     'reports-students','reports-teachers','reports-institutions','reports-academic','reports-research','reports-economic',
     'rating-administrative','rating-academic','rating-scientific','rating-gpa',
-    'cls-general','cls-structure','cls-employee','cls-student','cls-education','cls-study','cls-science','cls-organizational',
+    'cls-general','cls-structure','cls-employee','cls-student','cls-education','cls-study','cls-science',
     'sys-translations','sys-users','sys-roles','sys-logs','sys-report-updates'
 );

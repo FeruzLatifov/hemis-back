@@ -253,20 +253,38 @@ public class User extends AuditableEntity {
     private LocalDateTime lockedAt;
 
     // =====================================================
-    // Person Identity Link (V009 / Phase 2 — Banner GOBTPAC pattern)
+    // Person Identity (PINFL anchor + optional employee bridge)
     // =====================================================
 
     /**
-     * FK to {@code employee(id)} — person identity of this login account.
+     * National ID — JSHSHIR/PINFL (14 digits). Person identity anchor.
      *
-     * <p>Pattern: Banner GOBTPAC.PIDM → SPRIDEN.PIDM. Hozircha {@code NULL}
-     * allowed (legacy 339 user satrlari employee bog'lanmagan). MyGov/E-Imzo
-     * SSO onboarding'idan keyin majburiy bo'ladi (PINFL lookup).</p>
-     *
-     * <p>FK constraint V009 migration oxirida qo'shilgan (deferred).</p>
+     * <p>Stored on {@code users} directly (not {@code employee}): ministry/org admins are
+     * NOT OTM employees. <strong>PII</strong> — never log, never persist into audit JSONB
+     * (recursive redaction handles nested cases). Uniqueness: partial-unique
+     * {@code uq_users_pinfl}. {@code NULL} for machine-migrated/legacy rows until onboarding.</p>
+     */
+    @Column(name = "pinfl", length = 14)
+    private String pinfl;
+
+    /**
+     * Optional bridge → {@code employee(id)}. Set ONLY when this login is itself an OTM
+     * employee (e.g. a rektor) — then join for OTM-HR data. PERMANENTLY optional: ministry
+     * and organization admins are not employees; their identity is {@link #pinfl} here, so
+     * PINFL never requires an employee join.
      */
     @Column(name = "employee_id")
     private UUID employeeId;
+
+    /**
+     * FK to {@code organization(id)} — ministry sub-org / external-body tenancy.
+     *
+     * <p>Raw {@code UUID} (not a lazy association) to keep reads self-contained; scope
+     * resolution loads the org→OTM mapping explicitly in P3. {@code NULL} for
+     * UNIVERSITY/MINISTRY/SYSTEM users.</p>
+     */
+    @Column(name = "organization_id")
+    private UUID organizationId;
 
     // =====================================================
     // Security Hardening (rules.md #5 — Security by default)

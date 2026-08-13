@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +13,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
+import uz.hemis.security.util.ClientIpResolver;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,8 +28,11 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class AuditRequestFilter extends OncePerRequestFilter {
+
+    private final ClientIpResolver clientIpResolver;
 
     @Value("${hemis.audit.enabled:false}")
     private boolean auditEnabled;
@@ -93,19 +98,9 @@ public class AuditRequestFilter extends OncePerRequestFilter {
         // va getRemoteAddr() ni haqiqiy client IP ga o'zgartiradi.
         // Shuning uchun birinchi X-Forwarded-For tekshiriladi (agar filter ishlamasa),
         // keyin getRemoteAddr() (filter ishlasa yoki proxy bo'lmasa).
-        String xff = request.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) {
-            String clientIp = xff.split(",")[0].trim();
-            log.debug("Client IP from X-Forwarded-For: {} (remoteAddr: {})", clientIp, request.getRemoteAddr());
-            return clientIp;
-        }
-        String realIp = request.getHeader("X-Real-IP");
-        if (realIp != null && !realIp.isBlank()) {
-            log.debug("Client IP from X-Real-IP: {} (remoteAddr: {})", realIp, request.getRemoteAddr());
-            return realIp;
-        }
-        log.debug("Client IP from remoteAddr: {} (no proxy headers)", request.getRemoteAddr());
-        return request.getRemoteAddr();
+        // Trusted-proxy-aware: forwarded headers are honoured only from a trusted proxy, so the
+        // forensic audit IP (activity_log / login_log / error_log user_ip) is not attacker-spoofable.
+        return clientIpResolver.resolve(request);
     }
 
 }

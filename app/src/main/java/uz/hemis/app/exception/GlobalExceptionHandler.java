@@ -594,8 +594,12 @@ public class GlobalExceptionHandler {
             if (auth != null && auth.isAuthenticated()) {
                 if (auth instanceof org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken jwtAuth) {
                     org.springframework.security.oauth2.jwt.Jwt jwt = jwtAuth.getToken();
+                    // Mirror AuditAspect.buildContext: a machine (typ=CLIENT) subject is an
+                    // oauth_client PK, NOT a users.id — never write it into user_id (it would
+                    // not join `users` and pollutes the actor column). Attribute it via username.
+                    boolean isClient = "CLIENT".equals(jwt.getClaimAsString("typ"));
                     String sub = jwt.getSubject();
-                    if (sub != null) {
+                    if (sub != null && !isClient) {
                         try {
                             ctxBuilder.userId(java.util.UUID.fromString(sub));
                         } catch (IllegalArgumentException ignored) {
@@ -605,6 +609,8 @@ public class GlobalExceptionHandler {
                     String usernameClaim = jwt.getClaimAsString("username");
                     if (usernameClaim != null && !usernameClaim.isBlank()) {
                         ctxBuilder.username(usernameClaim);
+                    } else if (isClient && sub != null) {
+                        ctxBuilder.username(sub);
                     }
                 } else {
                     String name = auth.getName();

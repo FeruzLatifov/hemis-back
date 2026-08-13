@@ -529,7 +529,7 @@ public class StudentCubaService {
      * Data can be: PINFL, passport serial, or student code
      */
     public Map<String, Object> id(String data) {
-        log.info("Getting student ID - Data: {}", data);
+        log.info("Getting student ID - Data: {}", Pinfl.maskOrEmpty(data));
 
         if (data == null || data.isEmpty()) {
             return CubaResponseHelper.errorResponse("invalid_parameter", "Data parameter is required");
@@ -558,7 +558,7 @@ public class StudentCubaService {
             }
         } catch (Exception e) {
             // Not JSON - treat as plain search value
-            log.debug("Data is not JSON, trying direct search: {}", data);
+            log.debug("Data is not JSON, trying direct search: {}", Pinfl.maskOrEmpty(data));
         }
 
         // Try multi-criteria search: PINFL or serial number or code

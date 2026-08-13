@@ -105,6 +105,20 @@ public final class XlsxSupport {
             thinBorder(text);
         }
 
+        /**
+         * A text ({@code @}-format, bordered) style indented by {@code indent} levels — for
+         * tree-style exports where a child row sits visually under its parent (real Excel
+         * indentation, so the cell value stays clean and formula-injection-safe).
+         */
+        public static CellStyle indentedText(Workbook wb, int indent) {
+            CellStyle s = wb.createCellStyle();
+            s.setVerticalAlignment(VerticalAlignment.TOP);
+            s.setDataFormat(wb.createDataFormat().getFormat("@"));
+            s.setIndention((short) Math.max(0, indent * 2));
+            thinBorder(s);
+            return s;
+        }
+
         private static void thinBorder(CellStyle s) {
             s.setBorderBottom(BorderStyle.THIN);
             s.setBorderTop(BorderStyle.THIN);

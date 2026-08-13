@@ -82,7 +82,8 @@ public class UserAdminService {
         Page<User> users = userRepository.findAllFiltered(
                 effectiveSearch, effectiveRole, effectiveUniversity, enabled, pageable);
 
-        return users.map(this::toResponse);
+        boolean canViewPinfl = caller.hasPermission("pinfl.view");
+        return users.map(u -> toResponse(u, canViewPinfl));
     }
 
     /**
@@ -95,7 +96,7 @@ public class UserAdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
 
         validateReadScope(caller, target);
-        return toResponse(target);
+        return toResponse(target, caller.hasPermission("pinfl.view"));
     }
 
     // =====================================================
@@ -160,7 +161,7 @@ public class UserAdminService {
                 roles.stream().map(Role::getCode).collect(Collectors.joining(",")),
                 callerUserId);
 
-        return toResponse(saved);
+        return toResponse(saved, caller.hasPermission("pinfl.view"));
     }
 
     /**
@@ -231,7 +232,7 @@ public class UserAdminService {
         User saved = userRepository.save(target);
         log.info("User updated: id={}, username={}, by={}", id, saved.getUsername(), callerUserId);
 
-        return toResponse(saved);
+        return toResponse(saved, caller.hasPermission("pinfl.view"));
     }
 
     /**
@@ -284,7 +285,7 @@ public class UserAdminService {
         }
 
         log.info("User status toggled: id={}, enabled={}, by={}", id, saved.getEnabled(), callerUserId);
-        return toResponse(saved);
+        return toResponse(saved, caller.hasPermission("pinfl.view"));
     }
 
     /**
@@ -305,7 +306,7 @@ public class UserAdminService {
         User saved = userRepository.save(target);
 
         log.info("Account unlocked: id={}, username={}, by={}", id, saved.getUsername(), callerUserId);
-        return toResponse(saved);
+        return toResponse(saved, caller.hasPermission("pinfl.view"));
     }
 
     /**
@@ -472,7 +473,11 @@ public class UserAdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", callerUserId));
     }
 
-    private UserAdminResponse toResponse(User user) {
+    /**
+     * @param canViewPinfl whether the CALLER holds {@code pinfl.view} — when false, the PII PINFL
+     *                     is omitted from the response (read-gated; least privilege).
+     */
+    private UserAdminResponse toResponse(User user, boolean canViewPinfl) {
         List<RoleSummary> roles = user.getRoles().stream()
                 .map(this::toRoleSummary)
                 .sorted(Comparator.comparing(RoleSummary::getCode))
@@ -489,6 +494,7 @@ public class UserAdminService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
+                .pinfl(canViewPinfl ? user.getPinfl() : null)
                 .universityCode(user.getUniversityCode())
                 .universityName(universityName)
                 .userType(user.getUserType() != null ? user.getUserType().name() : null)

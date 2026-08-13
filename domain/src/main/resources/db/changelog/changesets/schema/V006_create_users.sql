@@ -36,6 +36,12 @@ CREATE TABLE users
     full_name                VARCHAR(255),
     position                 VARCHAR(255),
 
+    -- National ID (JSHSHIR/PINFL, 14 raqam) — shaxs identifikatori anchor.
+    -- Bu YERDA saqlanadi (employee'da emas): vazirlik/tashkilot admini OTM xodimi EMAS.
+    -- PII: hech qachon log'ga, hech qachon audit JSONB'ga tushmaydi (rekursiv redaction).
+    -- Ruxsat-gate bilan o'qiladi. Machine/legacy satrlar uchun NULL (OneID/qo'lda — P4).
+    pinfl                    VARCHAR(14),
+
     -- User Settings (UI preferences)
     language                 VARCHAR(20),
     time_zone                VARCHAR(50),
@@ -46,6 +52,9 @@ CREATE TABLE users
     -- Legacy CUBA university FK (old-hemis standartiga mos)
     university_id            VARCHAR(255) REFERENCES hemishe_e_university (code)
                                           ON DELETE SET NULL ON UPDATE CASCADE,
+    -- Organization tenancy (vazirlik ost-tashkiloti / tashqi organ). RESTRICT: aktiv
+    -- admini bor tashkilotni jimgina o'chirib bo'lmaydi. Scope resolver — P3.
+    organization_id          UUID         REFERENCES organization (id) ON DELETE RESTRICT,
     phone                    VARCHAR(50),
 
     -- Account Status
@@ -54,9 +63,10 @@ CREATE TABLE users
     failed_attempts          INTEGER               DEFAULT 0,
     locked_at                TIMESTAMP,
 
-    -- Person identity link → V004 employee(id).
-    -- Pattern: Banner GOBTPAC.PIDM → SPRIDEN.PIDM.
-    -- Optional hozirda, Oy 6 keyin majburiy bo'ladi (MyGov/E-Imzo SSO uchun PINFL lookup).
+    -- Optional ko'prik → V004 employee(id). FAQAT bu login aynan OTM xodimi bo'lsa
+    -- (masalan rektor) o'rnatiladi — o'shanда OTM-HR ma'lumot uchun join. DOIMIY optional:
+    -- vazirlik/tashkilot admini xodim emas; PINFL to'g'ridan-to'g'ri users.pinfl'da
+    -- (PINFL uchun employee'ga join YO'Q).
     employee_id              UUID         REFERENCES employee(id) ON DELETE RESTRICT,
 
     -- Security hardening (rules.md #5 — Security by default)
@@ -78,7 +88,9 @@ CREATE TABLE users
     -- Constraints
     CONSTRAINT chk_user_type CHECK (
         user_type IN ('UNIVERSITY', 'MINISTRY', 'ORGANIZATION', 'SYSTEM')
-    )
+    ),
+    -- PINFL format: aynan 14 raqam (yoki NULL). Uniqueness — partial index (pastda).
+    CONSTRAINT chk_users_pinfl_format CHECK (pinfl IS NULL OR pinfl ~ '^\d{14}$')
 );
 
 -- Comments
@@ -86,7 +98,9 @@ COMMENT ON TABLE  users IS 'Core user accounts for authentication (humans only �
 COMMENT ON COLUMN users.version IS 'Optimistic locking version (JPA @Version)';
 COMMENT ON COLUMN users.deleted_at IS 'Soft delete timestamp (null = active)';
 COMMENT ON COLUMN users.locked_at IS 'Timestamp when account was locked (auto-unlock after 15 min)';
-COMMENT ON COLUMN users.employee_id IS 'FK to employee (person identity). Banner GOBTPAC.PIDM pattern.';
+COMMENT ON COLUMN users.employee_id IS 'Optional bridge to OTM employee(id). Set only when this login is an OTM employee (rektor). NULL for ministry/org admins.';
+COMMENT ON COLUMN users.pinfl IS 'JSHSHIR/PINFL national ID (14 digits). PII — never log, never persist into audit JSONB (recursive redaction). Read-gated. NULL for machine-migrated/legacy rows.';
+COMMENT ON COLUMN users.organization_id IS 'FK to organization(id). Ministry sub-org / external body tenancy. NULL for UNIVERSITY/MINISTRY/SYSTEM users. Scope resolution: P3.';
 
 -- Indexes
 CREATE INDEX idx_users_email              ON users (email)          WHERE email IS NOT NULL;
@@ -95,6 +109,7 @@ CREATE INDEX idx_users_deleted_at         ON users (deleted_at)     WHERE delete
 CREATE INDEX idx_users_enabled            ON users (enabled)        WHERE enabled = TRUE;
 CREATE INDEX idx_users_user_type          ON users (user_type);
 CREATE INDEX idx_users_employee_id        ON users (employee_id)    WHERE employee_id IS NOT NULL;
+CREATE INDEX idx_users_organization_id    ON users (organization_id) WHERE organization_id IS NOT NULL;
 CREATE INDEX idx_users_secret_expires     ON users (secret_expires_at) WHERE secret_expires_at IS NOT NULL;
 
 -- Partial UNIQUE indekslar: soft-deleted user'lar username/email'ni qayta ishlatishga ruxsat beradi
@@ -104,6 +119,10 @@ CREATE UNIQUE INDEX uq_users_email          ON users (email)           WHERE del
 -- Functional UNIQUE INDEX: case-insensitive collision oldini olish ("Admin" vs "admin")
 -- Avval username_lowercase ustuni shu vazifani bajarar edi — endi functional index, ustun saqlash kerak emas
 CREATE UNIQUE INDEX uq_users_username_lower ON users (LOWER(username)) WHERE deleted_at IS NULL;
+
+-- Bitta jismoniy shaxs = bitta akkaunt (D2). Partial: NULL pinfl (machine/legacy) ozod;
+-- soft-deleted satrlar pinfl'ni qayta ishlatishi mumkin.
+CREATE UNIQUE INDEX uq_users_pinfl          ON users (pinfl) WHERE pinfl IS NOT NULL AND deleted_at IS NULL;
 
 -- =====================================================
 -- PASSWORD HISTORY (parol qayta ishlatishni oldini olish)

@@ -80,9 +80,11 @@ public class TokenService {
     /**
      * Boot-time sanity guard for token TTLs. Catches the classic milliseconds-as-seconds
      * misconfiguration (e.g. {@code JWT_EXPIRATION=86400000} → ~1000-day access tokens).
-     * <strong>Non-fatal by design</strong>: only logs an error, never blocks startup — so it can
-     * never break the 224-OTM integration whose machine tokens are minted here — but it makes the
-     * misconfig impossible to miss in deploy logs. The real fix is to set the value in SECONDS.
+     * <strong>Non-fatal by design</strong>: never blocks startup (so it can never break the 224-OTM
+     * integration whose machine tokens are minted here) — but instead of merely logging, it now
+     * <strong>clamps</strong> an out-of-range TTL to a sane ceiling, so a milliseconds-as-seconds
+     * misconfig can no longer mint effectively-non-expiring tokens. The real fix is still to set the
+     * value in SECONDS; the clamp is the fail-safe.
      */
     @jakarta.annotation.PostConstruct
     void validateTokenTtls() {
@@ -90,15 +92,29 @@ public class TokenService {
         final long maxSaneRefreshSeconds = 2_592_000;  // 30d
         if (accessTokenValiditySeconds > maxSaneAccessSeconds) {
             log.error("JWT access-token TTL = {}s (~{} days) exceeds the sane max of {}s. "
-                    + "This looks like a milliseconds-as-seconds misconfig (JWT_EXPIRATION); "
-                    + "set it in SECONDS (e.g. 3600). Tokens are effectively non-expiring until fixed.",
-                    accessTokenValiditySeconds, accessTokenValiditySeconds / 86_400, maxSaneAccessSeconds);
+                    + "Milliseconds-as-seconds misconfig (JWT_EXPIRATION) — set it in SECONDS (e.g. 3600). "
+                    + "CLAMPING to {}s so tokens are not effectively non-expiring.",
+                    accessTokenValiditySeconds, accessTokenValiditySeconds / 86_400, maxSaneAccessSeconds, maxSaneAccessSeconds);
+            accessTokenValiditySeconds = maxSaneAccessSeconds; // fail-safe clamp — soft-fail (never blocks boot / the 224-OTM mint path)
         }
         if (refreshTokenValiditySeconds > maxSaneRefreshSeconds) {
             log.error("JWT refresh-token TTL = {}s (~{} days) exceeds the sane max of {}s. "
-                    + "This looks like a milliseconds-as-seconds misconfig (JWT_REFRESH_EXPIRATION); "
-                    + "set it in SECONDS (e.g. 604800).",
-                    refreshTokenValiditySeconds, refreshTokenValiditySeconds / 86_400, maxSaneRefreshSeconds);
+                    + "Milliseconds-as-seconds misconfig (JWT_REFRESH_EXPIRATION) — set it in SECONDS (e.g. 604800). "
+                    + "CLAMPING to {}s.",
+                    refreshTokenValiditySeconds, refreshTokenValiditySeconds / 86_400, maxSaneRefreshSeconds, maxSaneRefreshSeconds);
+            refreshTokenValiditySeconds = maxSaneRefreshSeconds; // fail-safe clamp
+        }
+        // Lower-bound floor: a zero/negative TTL (e.g. JWT_EXPIRATION=0) would mint already-expired
+        // tokens — clamp up so the guard is symmetric (still soft-fail, never blocks boot).
+        if (accessTokenValiditySeconds < 60) {
+            log.error("JWT access-token TTL = {}s is below the 60s floor (misconfig) — clamping to 60s.",
+                    accessTokenValiditySeconds);
+            accessTokenValiditySeconds = 60;
+        }
+        if (refreshTokenValiditySeconds < accessTokenValiditySeconds) {
+            log.error("JWT refresh-token TTL = {}s below access TTL {}s (misconfig) — clamping to match access.",
+                    refreshTokenValiditySeconds, accessTokenValiditySeconds);
+            refreshTokenValiditySeconds = accessTokenValiditySeconds;
         }
     }
 
@@ -400,9 +416,13 @@ public class TokenService {
         }
 
         Instant now = Instant.now();
-        int ttlSeconds = client.getAccessTokenTtlSeconds() == null
-                ? 3600
-                : client.getAccessTokenTtlSeconds();
+        // Machine tokens are re-minted on demand (client_credentials), so keep them short-lived to
+        // bound the compromise window: clamp the per-client TTL to a hard ceiling so a misconfigured
+        // or oversized access_token_ttl_seconds cannot mint a long-lived machine token.
+        // Tightening the ceiling toward ~15m is a P2 policy step (needs 224-OTM coordination).
+        final int maxMachineTtlSeconds = 3600; // 1h hard ceiling
+        int requestedTtl = client.getAccessTokenTtlSeconds() == null ? 3600 : client.getAccessTokenTtlSeconds();
+        int ttlSeconds = Math.min(Math.max(requestedTtl, 1), maxMachineTtlSeconds);
         Instant expiry = now.plusSeconds(ttlSeconds);
 
         // Effective authorities = role permissions ∪ direct scopes

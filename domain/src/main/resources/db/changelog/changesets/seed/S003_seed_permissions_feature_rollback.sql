@@ -34,18 +34,20 @@ DECLARE
         -- Rating (5)
         'rating.view', 'rating.administrative.view', 'rating.academic.view',
         'rating.scientific.view', 'rating.gpa.view',
-        -- Classifiers (13: 9 view + 1 edit + 3 new categories)
+        -- Classifiers (12: 8 view + 1 edit + 3 new categories; organizational removed 2026-08-08)
         'classifiers.view', 'classifiers.edit', 'classifiers.general.view',
         'classifiers.structure.view', 'classifiers.employee.view', 'classifiers.student.view',
         'classifiers.education.view', 'classifiers.study.view', 'classifiers.science.view',
-        'classifiers.organizational.view', 'classifiers.financial.view',
+        'classifiers.financial.view',
         'classifiers.diploma.view', 'classifiers.speciality.view',
         -- System (9)
         'system.view', 'system.translation.view', 'system.translation.manage',
         'system.users.view', 'system.logs.view', 'system.report-update.view',
         'system.menu.view', 'system.menus.manage', 'audit.view',
         -- User Management (1)
-        'users.manage'
+        'users.manage',
+        -- PII read-gate (1)
+        'pinfl.view'
     ];
 BEGIN
     SELECT EXISTS (
