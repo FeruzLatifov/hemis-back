@@ -276,18 +276,23 @@ databaseChangeLog:
       rollback:
         - sqlFile: { path: changesets/schema/V018_create_h_speciality_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
-  - changeSet:
-      id: V019_create_university_speciality_attachment
-      author: hemis-team
-      logicalFilePath: ${changelog.path}
-      comment: "Attach a unified-classifier speciality to an OTM (university_code). Permission/role driven, tenant-scope fail-closed in the service layer."
-      preConditions:
-        - onFail: MARK_RAN
-        - not: { tableExists: { tableName: university_speciality_attachment } }
-      changes:
-        - sqlFile: { path: changesets/schema/V019_create_university_speciality_attachment.sql, relativeToChangelogFile: true, splitStatements: false }
-      rollback:
-        - sqlFile: { path: changesets/schema/V019_create_university_speciality_attachment_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+  # ---------------------------------------------------------------------------
+  # V019 (attachment TABLE) TEMPORARILY DISABLED (2026-08-13) — the whole attachment feature is off,
+  # so the university_speciality_attachment table is NOT created either. ddl-auto=none, so the app
+  # still starts; the attachment endpoints 500 only if hit (menu off). RE-ENABLE with S018/S018b/S019.
+  # ---------------------------------------------------------------------------
+  # - changeSet:
+  #     id: V019_create_university_speciality_attachment
+  #     author: hemis-team
+  #     logicalFilePath: ${changelog.path}
+  #     comment: "Attach a unified-classifier speciality to an OTM (university_code). TEMPORARILY DISABLED with S018/S018b/S019."
+  #     preConditions:
+  #       - onFail: MARK_RAN
+  #       - not: { tableExists: { tableName: university_speciality_attachment } }
+  #     changes:
+  #       - sqlFile: { path: changesets/schema/V019_create_university_speciality_attachment.sql, relativeToChangelogFile: true, splitStatements: false }
+  #     rollback:
+  #       - sqlFile: { path: changesets/schema/V019_create_university_speciality_attachment_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # PHASE 2: SEED — 19 files
