@@ -122,7 +122,7 @@ public class UserAdminController {
     // =====================================================
 
     @PostMapping
-    @PreAuthorize("hasAuthority('users.manage')")
+    @PreAuthorize("hasAnyAuthority('users.create', 'users.manage')")
     @Operation(summary = "Create user", description = "Create a new user with roles")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User created"),
@@ -140,7 +140,7 @@ public class UserAdminController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('users.manage')")
+    @PreAuthorize("hasAnyAuthority('users.edit', 'users.manage')")
     @Operation(summary = "Update user", description = "Update user profile and roles (username is immutable)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "User updated"),
@@ -161,7 +161,7 @@ public class UserAdminController {
     }
 
     @PatchMapping("/{id}/password")
-    @PreAuthorize("hasAuthority('users.manage')")
+    @PreAuthorize("hasAnyAuthority('users.edit', 'users.manage')")
     @Operation(summary = "Change password", description = "Change user password (BCrypt hashed)")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Password changed"),
@@ -185,7 +185,7 @@ public class UserAdminController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('users.manage')")
+    @PreAuthorize("hasAnyAuthority('users.edit', 'users.manage')")
     @Operation(summary = "Toggle user status", description = "Enable or disable a user account")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Status toggled"),
@@ -205,7 +205,7 @@ public class UserAdminController {
     }
 
     @PatchMapping("/{id}/unlock")
-    @PreAuthorize("hasAuthority('users.manage')")
+    @PreAuthorize("hasAnyAuthority('users.edit', 'users.manage')")
     @Operation(summary = "Unlock account", description = "Unlock a locked user account and reset failed attempts")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Account unlocked"),
@@ -224,7 +224,7 @@ public class UserAdminController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('users.manage')")
+    @PreAuthorize("hasAnyAuthority('users.delete', 'users.manage')")
     @Operation(summary = "Delete user", description = "Soft delete a user (sets deleted_at timestamp)")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "User deleted"),
