@@ -520,20 +520,31 @@ public class OpenApiConfig {
             .addOpenApiCustomizer(defaultResponsesCustomizer())
             .addOpenApiCustomizer(fallbackSummaryCustomizer())
             .addOpenApiCustomizer(openApi -> {
-                // Best-practice: OAuth2 client_credentials flow. Swagger "Authorize"da client_id
-                // (masalan otm401) + client_secret kiritilsa, token /oauth/token'dan AVTOMAT olinadi
-                // va barcha so'rovga Bearer bo'lib qo'shiladi — qo'lda Basic/base64 yoki token
-                // copy-paste KERAK EMAS. Data endpointlar @SecurityRequirement(name="oauth2").
+                // Best-practice: YAGONA professional auth yo'li — OAuth2 client_credentials flow.
+                // Swagger "Authorize"da client_id (login, masalan otm401) + client_secret (parol)
+                // kiritilsa, token /oauth/token'dan AVTOMAT olinadi va barcha so'rovga Bearer bo'lib
+                // qo'shiladi — qo'lda Basic/base64 yoki token copy-paste KERAK EMAS. Token endpoint'i
+                // @Hidden (chalkash qo'lbola forma yo'q). Data endpointlar @SecurityRequirement(oauth2).
                 if (openApi.getComponents() == null) {
                     openApi.setComponents(new Components());
                 }
                 openApi.getComponents().addSecuritySchemes("oauth2", new SecurityScheme()
                         .type(SecurityScheme.Type.OAUTH2)
-                        .description("OTM client_credentials — client_id (masalan otm401) + client_secret "
-                                + "kiriting; Swagger token'ni /oauth/token'dan avtomat oladi.")
+                        .description("OTM client_credentials — **client_id** = login (masalan `otm401`), "
+                                + "**client_secret** = parol. Authorize bosing: Swagger token'ni "
+                                + "/oauth/token'dan avtomat oladi va har so'rovga qo'shadi.")
                         .flows(new OAuthFlows().clientCredentials(new OAuthFlow()
                                 .tokenUrl("/api/v1/university/oauth/token")
                                 .scopes(new Scopes()))));
+                // Bu group'da Authorize dialogi FAQAT oauth2 ko'rsatsin — global bearerAuth/basicAuth
+                // sxemalari bu yerda chalkashlik qiladi (OTM faqat client_credentials ishlatadi).
+                if (openApi.getComponents().getSecuritySchemes() != null) {
+                    openApi.getComponents().getSecuritySchemes().remove("bearerAuth");
+                    openApi.getComponents().getSecuritySchemes().remove("basicAuth");
+                }
+                // Group-darajali security → oauth2 (global bearerAuth requirement'ini almashtiradi,
+                // shunda hech bir operatsiya olib tashlangan sxemaga ishora qilmaydi).
+                openApi.setSecurity(List.of(new SecurityRequirement().addList("oauth2")));
                 openApi.info(new Info()
                     .title("Univer API v1 (OAuth 2.1)")
                     .version("1.0.0")
@@ -544,10 +555,27 @@ public class OpenApiConfig {
 
                         **Auth:** OAuth 2.1 client_credentials per-OTM (`client_id` + secret + IP whitelist).
 
-                        ## Authentication
+                        ---
 
-                        1. `POST /api/v1/university/oauth/token` — client_credentials grant
-                        2. Keyingi so'rovlarda: `Authorization: Bearer <access_token>`
+                        ## Token olish — Swagger'da (tavsiya etiladi)
+
+                        1. Yuqoridagi yashil **Authorize** tugmasini bosing.
+                        2. **client_id** = login (masalan `otm401`), **client_secret** = parol.
+                        3. **Authorize** → Swagger token'ni avtomat oladi va har so'rovga
+                           `Authorization: Bearer ...` bo'lib qo'shadi. Boshqa hech narsa kiritilmaydi.
+
+                        Endi istalgan endpointda **Try it out → Execute** — token o'zi qo'shiladi.
+
+                        ## Token olish — dasturiy (curl / univer.php)
+
+                        ```bash
+                        curl -X POST "https://api-test.hemis.uz/api/v1/university/oauth/token" \\
+                          -H "Content-Type: application/x-www-form-urlencoded" \\
+                          -d "grant_type=client_credentials&client_id=otm401&client_secret=<parol>"
+                        # → {"access_token":"eyJ...","token_type":"bearer","expires_in":3600}
+                        ```
+
+                        Keyingi so'rovlarda: `Authorization: Bearer <access_token>`.
                         """)
                     .contact(new Contact()
                         .name("HEMIS Development Team")

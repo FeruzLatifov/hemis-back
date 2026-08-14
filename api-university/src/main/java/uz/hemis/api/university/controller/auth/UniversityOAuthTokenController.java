@@ -1,5 +1,6 @@
 package uz.hemis.api.university.controller.auth;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -38,6 +39,13 @@ import java.util.Map;
  *
  * @since 2.1.0
  */
+// @Hidden: token endpoint'i Swagger UI operatsiyalar ro'yxatida KO'RSATILMAYDI. Yagona
+// professional auth yo'li — yashil "Authorize" tugmasi (oauth2 clientCredentials flow):
+// foydalanuvchi client_id (login) + client_secret (parol) kiritadi, Swagger token'ni shu
+// endpoint'dan AVTOMAT oladi. Endpoint o'zi to'liq ishlaydi (Spring mapping o'zgarmaydi) —
+// faqat chalkash qo'lbola "Try it out" formasi (grant_type=... qo'lda) yashiriladi, shunda
+// foydalanuvchi grant_type'ni noto'g'ri to'ldirib 400 (unsupported_grant_type) olmaydi.
+@Hidden
 @RestController
 @RequiredArgsConstructor
 @Slf4j
