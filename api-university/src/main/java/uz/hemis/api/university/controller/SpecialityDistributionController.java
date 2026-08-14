@@ -37,7 +37,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/university/classifiers")
 @Tag(name = "Mutaxassisliklar")
-@SecurityRequirement(name = "bearerAuth")
+@SecurityRequirement(name = "oauth2")
 @RequiredArgsConstructor
 @Slf4j
 public class SpecialityDistributionController {

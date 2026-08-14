@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.hemis.common.dto.TokenResponse;
 import uz.hemis.security.service.OAuthClientTokenIssuer;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -113,9 +115,11 @@ public class UniversityOAuthTokenController {
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(value = "grant_type", required = false) String grantType,
             @RequestParam(value = "scope", required = false) String scope,
+            @RequestParam(value = "client_id", required = false) String clientId,
+            @RequestParam(value = "client_secret", required = false) String clientSecret,
             HttpServletRequest request
     ) {
-        return tokenIssuer.issue(authorization, grantType, scope, request);
+        return tokenIssuer.issue(resolveBasicAuth(authorization, clientId, clientSecret), grantType, scope, request);
     }
 
     /**
@@ -154,6 +158,27 @@ public class UniversityOAuthTokenController {
     ) {
         String grantType = body == null ? null : body.get("grant_type");
         String scope = body == null ? null : body.get("scope");
-        return tokenIssuer.issue(authorization, grantType, scope, request);
+        String clientId = body == null ? null : body.get("client_id");
+        String clientSecret = body == null ? null : body.get("client_secret");
+        return tokenIssuer.issue(resolveBasicAuth(authorization, clientId, clientSecret), grantType, scope, request);
+    }
+
+    /**
+     * Resolve the {@code Authorization: Basic} header the issuer expects. Per RFC 6749 §2.3.1 a
+     * confidential client MAY authenticate either with the Basic header OR by including
+     * {@code client_id}/{@code client_secret} in the request body. The Basic header wins when
+     * present; otherwise body credentials are synthesized into one. This is what lets the Swagger
+     * UI OAuth2 {@code client_credentials} flow (which posts the credentials in the body) obtain a
+     * token without the caller hand-crafting a Base64 header.
+     */
+    private static String resolveBasicAuth(String authorization, String clientId, String clientSecret) {
+        if (authorization != null && !authorization.isBlank()) {
+            return authorization;
+        }
+        if (clientId != null && !clientId.isBlank() && clientSecret != null && !clientSecret.isBlank()) {
+            String creds = clientId + ":" + clientSecret;
+            return "Basic " + Base64.getEncoder().encodeToString(creds.getBytes(StandardCharsets.UTF_8));
+        }
+        return authorization;
     }
 }

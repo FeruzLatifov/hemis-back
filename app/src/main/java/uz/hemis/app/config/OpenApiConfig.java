@@ -6,6 +6,9 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.security.OAuthFlow;
+import io.swagger.v3.oas.models.security.OAuthFlows;
+import io.swagger.v3.oas.models.security.Scopes;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
@@ -517,6 +520,20 @@ public class OpenApiConfig {
             .addOpenApiCustomizer(defaultResponsesCustomizer())
             .addOpenApiCustomizer(fallbackSummaryCustomizer())
             .addOpenApiCustomizer(openApi -> {
+                // Best-practice: OAuth2 client_credentials flow. Swagger "Authorize"da client_id
+                // (masalan otm401) + client_secret kiritilsa, token /oauth/token'dan AVTOMAT olinadi
+                // va barcha so'rovga Bearer bo'lib qo'shiladi — qo'lda Basic/base64 yoki token
+                // copy-paste KERAK EMAS. Data endpointlar @SecurityRequirement(name="oauth2").
+                if (openApi.getComponents() == null) {
+                    openApi.setComponents(new Components());
+                }
+                openApi.getComponents().addSecuritySchemes("oauth2", new SecurityScheme()
+                        .type(SecurityScheme.Type.OAUTH2)
+                        .description("OTM client_credentials — client_id (masalan otm401) + client_secret "
+                                + "kiriting; Swagger token'ni /oauth/token'dan avtomat oladi.")
+                        .flows(new OAuthFlows().clientCredentials(new OAuthFlow()
+                                .tokenUrl("/api/v1/university/oauth/token")
+                                .scopes(new Scopes()))));
                 openApi.info(new Info()
                     .title("Univer API v1 (OAuth 2.1)")
                     .version("1.0.0")
