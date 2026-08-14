@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(
+            name: 'DEPLOY_ENV',
+            choices: ['new-ministry', 'test-hemis'],
+            description: 'Deploy target: new-ministry (asosiy) yoki test-hemis (2-domen test: api-test.hemis.uz)'
+        )
+    }
+
     options {
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
@@ -9,10 +17,10 @@ pipeline {
 
     environment {
         IMAGE_NAME    = 'harbor.e-edu.uz/ministry-back/hemis-back'
-        NAMESPACE     = 'new-ministry'
         RELEASE_NAME  = 'hemis-back'
         CHART_DIR     = 'helm/hemis-back'
         KUBECONFIG    = '/home/jenkins/.kube/config'
+        // NAMESPACE va VALUES_ARGS — DEPLOY_ENV parametridan Checkout'da o'rnatiladi
     }
 
     stages {
@@ -21,6 +29,14 @@ pipeline {
                 checkout scm
                 script {
                     env.IMAGE_TAG = "${env.BUILD_NUMBER}-${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}"
+                    env.NAMESPACE = params.DEPLOY_ENV
+                    // Base values.yaml har doim; test-hemis uchun qo'shimcha overlay (ingress host + existingSecret)
+                    if (params.DEPLOY_ENV == 'new-ministry') {
+                        env.VALUES_ARGS = "-f ${CHART_DIR}/values.yaml"
+                    } else {
+                        env.VALUES_ARGS = "-f ${CHART_DIR}/values.yaml -f ${CHART_DIR}/values/${params.DEPLOY_ENV}.yaml"
+                    }
+                    echo "Deploy target: namespace=${env.NAMESPACE}, tag=${env.IMAGE_TAG}"
                 }
             }
         }
@@ -53,7 +69,8 @@ pipeline {
             steps {
                 sh """
                     helm upgrade --install ${RELEASE_NAME} ${CHART_DIR} \
-                        --namespace ${NAMESPACE} \
+                        --namespace ${NAMESPACE} --create-namespace \
+                        ${VALUES_ARGS} \
                         --set image.repository=${IMAGE_NAME} \
                         --set image.tag=${IMAGE_TAG} \
                         --wait \

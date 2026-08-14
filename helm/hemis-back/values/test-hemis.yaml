@@ -1,0 +1,17 @@
+# =====================================================
+# test-hemis namespace overlay — 2-domen TEST muhiti
+# Backend: api-test.hemis.uz   Frontend: test.hemis.uz
+# =====================================================
+# Deploy (jenkins host, hemis-back repo):
+#   helm upgrade --install hemis-back ./helm/hemis-back -n test-hemis \
+#     -f helm/hemis-back/values.yaml -f helm/hemis-back/values/test-hemis.yaml \
+#     --set image.tag=<current-tag> --create-namespace --wait --timeout 8m
+#
+# Faqat base values.yaml'dan FARQ qiladiganlar shu yerda (qolgani meros).
+# CORS / cookie same-site / DB nomi / swagger — Secret (test-hemis-back-env) ichida env orqali.
+
+ingress:
+  host: api-test.hemis.uz
+
+# test namespace uchun alohida env Secret (new-ministry-back-env nusxasi + override)
+existingSecret: test-hemis-back-env
