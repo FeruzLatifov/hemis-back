@@ -530,8 +530,8 @@ public class OpenApiConfig {
                 }
                 openApi.getComponents().addSecuritySchemes("oauth2", new SecurityScheme()
                         .type(SecurityScheme.Type.OAUTH2)
-                        .description("OTM client_credentials — **client_id** = login (masalan `otm401`), "
-                                + "**client_secret** = parol. Authorize bosing: Swagger token'ni "
+                        .description("OTM client_credentials — **client_id** = Login, "
+                                + "**client_secret** = Parol. Authorize bosing: Swagger token'ni "
                                 + "/oauth/token'dan avtomat oladi va har so'rovga qo'shadi.")
                         .flows(new OAuthFlows().clientCredentials(new OAuthFlow()
                                 .tokenUrl("/api/v1/university/oauth/token")
@@ -560,18 +560,16 @@ public class OpenApiConfig {
                         ## Token olish — Swagger'da (tavsiya etiladi)
 
                         1. Yuqoridagi yashil **Authorize** tugmasini bosing.
-                        2. **client_id** = login (masalan `otm401`), **client_secret** = parol.
+                        2. **client_id** = Login, **client_secret** = Parol.
                         3. **Authorize** → Swagger token'ni avtomat oladi va har so'rovga
                            `Authorization: Bearer ...` bo'lib qo'shadi. Boshqa hech narsa kiritilmaydi.
 
-                        Endi istalgan endpointda **Try it out → Execute** — token o'zi qo'shiladi.
-
-                        ## Token olish — dasturiy (curl / univer.php)
+                        ## Token olish — dastur uchun
 
                         ```bash
                         curl -X POST "https://api-test.hemis.uz/api/v1/university/oauth/token" \\
                           -H "Content-Type: application/x-www-form-urlencoded" \\
-                          -d "grant_type=client_credentials&client_id=otm401&client_secret=<parol>"
+                          -d "grant_type=client_credentials&client_id=<Login>&client_secret=<Parol>"
                         # → {"access_token":"eyJ...","token_type":"bearer","expires_in":3600}
                         ```
 
