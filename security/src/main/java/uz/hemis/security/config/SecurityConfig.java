@@ -173,8 +173,11 @@ public class SecurityConfig {
                 // Authorization rules
                 .authorizeHttpRequests(authz -> {
                         authz
-                            // Public endpoints (health checks)
-                            .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                            // Public endpoints (health checks) — health/** covers the k8s
+                            // liveness/readiness sub-probes (/actuator/health/liveness,
+                            // /actuator/health/readiness); without /** they fall through to the
+                            // "/actuator/**" ADMIN rule below and the probes get 401 → restart loop.
+                            .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                             .requestMatchers("/api/v1/university/health").permitAll()
                             .requestMatchers("/app/rest/v2/health/**").permitAll()
                             // K2: univer apply-status ack — HMAC (X-Hemis-Signature) WebhookAckService'da
