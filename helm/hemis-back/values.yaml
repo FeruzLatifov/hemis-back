@@ -1,12 +1,12 @@
 replicaCount: 2
 
 image:
-  repository: harbor.e-edu.uz/ministry-back/hemis-back
+  repository: harbor.e-edu.uz/central_hemis-back/hemis-back
   tag: latest
   pullPolicy: IfNotPresent
 
 imagePullSecrets:
-  - name: new-ministry-pull-back
+  - name: central-hemis-pull-back
 
 service:
   type: ClusterIP
