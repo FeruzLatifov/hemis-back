@@ -1,6 +1,8 @@
 package uz.hemis.api.university.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,12 +18,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.classifier.SpecialityAttachmentService;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentSnapshotDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentSnapshotFilter;
 
 import java.util.List;
 
@@ -77,14 +81,48 @@ public class SpecialityAttachmentDistributionController {
                     **Join kaliti:** `specialityCode` — klassifikator (`/classifiers/speciality`) `code`'si
                     bilan AYNI qiymat; shu orqali biriktirishni umumiy klassifikator daraxtiga bog'laysiz.
 
+                    **Ta'lim turi (`educationType`):** 11=Bakalavr · 12=Magistr.
                     **Ta'lim shakli (`educationForm`):** 11=Kunduzgi · 12=Kechki · 16=Masofaviy.
-                    **Holat (`status`):** ACTIVE · SUSPENDED · REVOKED.
+                    **O'quv yili (`eduYear`):** 2026 = 2026-2027. **Holat (`status`):** ACTIVE · SUSPENDED · REVOKED.
 
-                    **Qamrov:** replikadan jonli o'qiladi (har doim yangi, app-cache YO'Q). Kerak bo'lsa
-                    `status` bo'yicha OTM o'zi filtrlaydi (masalan faqat ACTIVE'larni ishga tushirish).
+                    **Qamrov:** replikadan jonli o'qiladi (har doim yangi, app-cache YO'Q).
+
+                    ## Filtr parametrlari (ixtiyoriy, query-string)
+
+                    Barchasi **ixtiyoriy** — bittasi ham berilmasa butun to'plam qaytadi (eski xulq
+                    o'zgarmaydi). Bir nechtasi birga berilsa **VA (AND)** mantig'i bilan toraytiriladi.
+                    OTM identifikatori (`universityCode`) **hech qachon parametr emas** — u JWT'dan
+                    olinadi, shuning uchun filtr faqat SHU OTM to'plamini toraytiradi, boshqa OTM
+                    ma'lumotini ocholmaydi.
+
+                    | Parametr | Tur | Misol | Izoh |
+                    |----------|-----|-------|------|
+                    | `eduYear` | integer | `2026` | O'quv yili (2026 = 2026-2027) |
+                    | `educationType` | string | `11` | 11=Bakalavr, 12=Magistr |
+                    | `educationForm` | string | `11` | 11=Kunduzgi, 12=Kechki, 16=Masofaviy |
+                    | `status` | string | `ACTIVE` | ACTIVE / SUSPENDED / REVOKED (katta-kichik harf farqsiz) |
+                    | `specialityCode` | string | `60710100` | Mutaxassislik kodi (klassifikator `code`) |
+
+                    **Misol:** `?eduYear=2026&educationForm=11&status=ACTIVE` — 2026 o'quv yili, kunduzgi,
+                    faqat faol biriktirishlar.
                     """
     )
     public ResponseEntity<ResponseWrapper<List<SpecialityAttachmentSnapshotDto>>> snapshot(
+            @Parameter(description = "O'quv yili bo'yicha filtr (2026 = 2026-2027 o'quv yili). Bo'sh — barcha yillar.",
+                    example = "2026")
+            @RequestParam(required = false) Integer eduYear,
+            @Parameter(description = "Ta'lim turi kodi bo'yicha filtr: 11=Bakalavr, 12=Magistr. Bo'sh — barcha turlar.",
+                    example = "11", schema = @Schema(type = "string", allowableValues = {"11", "12"}))
+            @RequestParam(required = false) String educationType,
+            @Parameter(description = "Ta'lim shakli kodi bo'yicha filtr: 11=Kunduzgi, 12=Kechki, 16=Masofaviy. Bo'sh — barcha shakllar.",
+                    example = "11", schema = @Schema(type = "string", allowableValues = {"11", "12", "16"}))
+            @RequestParam(required = false) String educationForm,
+            @Parameter(description = "Holat bo'yicha filtr: ACTIVE / SUSPENDED / REVOKED. Bo'sh — barcha holatlar.",
+                    example = "ACTIVE", schema = @Schema(type = "string", allowableValues = {"ACTIVE", "SUSPENDED", "REVOKED"}))
+            @RequestParam(required = false) String status,
+            @Parameter(description = "Mutaxassislik kodi bo'yicha filtr (klassifikator code'i). Bo'sh — barcha mutaxassisliklar.",
+                    example = "60710100")
+            @RequestParam(required = false) String specialityCode,
             HttpServletRequest request) {
         String universityCode = resolveUniversityCode(request);
         // Defense-in-depth (consistent with SpecialityAttachmentService list/create/delete): even
@@ -95,8 +133,12 @@ public class SpecialityAttachmentDistributionController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "This OTM snapshot is outside your access scope");
         }
-        List<SpecialityAttachmentSnapshotDto> items = attachmentService.getSnapshot(universityCode);
-        log.info("OTM speciality-attachment pull: universityCode={}, items={}", universityCode, items.size());
+        // Filters only NARROW the caller's own set (tenant is always the JWT claim, never a param).
+        SpecialityAttachmentSnapshotFilter filter =
+                new SpecialityAttachmentSnapshotFilter(eduYear, educationType, educationForm, status, specialityCode);
+        List<SpecialityAttachmentSnapshotDto> items = attachmentService.getSnapshot(universityCode, filter);
+        log.info("OTM speciality-attachment pull: universityCode={}, items={}, filtered={}",
+                universityCode, items.size(), !filter.isEmpty());
         return ResponseEntity.ok(ResponseWrapper.success(items));
     }
 

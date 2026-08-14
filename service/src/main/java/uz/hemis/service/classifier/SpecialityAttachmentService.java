@@ -29,6 +29,7 @@ import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto.Option;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentRowDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentSnapshotDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentSnapshotFilter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -199,7 +200,8 @@ public class SpecialityAttachmentService {
      * pub/sub), not a TTL-only cache. The global classifier snapshot ({@code specialityDistribution})
      * stays cached — that one is a large, shared, all-tenant result, a different shape.</p>
      */
-    public List<SpecialityAttachmentSnapshotDto> getSnapshot(String universityCode) {
+    public List<SpecialityAttachmentSnapshotDto> getSnapshot(String universityCode,
+                                                             SpecialityAttachmentSnapshotFilter filter) {
         String code = universityCode == null ? "" : universityCode.trim();
         if (code.isEmpty()) {
             return List.of();
@@ -215,10 +217,17 @@ public class SpecialityAttachmentService {
         Map<UUID, HSpeciality> specById = specialityRepository.findAllById(specialityIds).stream()
                 .collect(Collectors.toMap(HSpeciality::getId, Function.identity()));
         Map<String, String> eduNames = educationTypeNames();
+        // Optional column filters (eduYear / educationType / educationForm / status / specialityCode).
+        // They only narrow THIS OTM's own set; the tenant is the JWT claim, never a filter, so no
+        // parameter can widen scope to another OTM. Applied in-memory over the tiny per-tenant read.
+        SpecialityAttachmentSnapshotFilter criteria =
+                filter != null ? filter : SpecialityAttachmentSnapshotFilter.none();
         List<SpecialityAttachmentSnapshotDto> snapshot = rows.stream()
                 .map(a -> toSnapshot(a, specById.get(a.getSpecialityId()), eduNames))
+                .filter(criteria::matches)
                 .toList();
-        log.debug("Speciality-attachment snapshot for OTM {}: {} rows", code, snapshot.size());
+        log.debug("Speciality-attachment snapshot for OTM {}: {} rows (filtered={})",
+                code, snapshot.size(), !criteria.isEmpty());
         return snapshot;
     }
 
@@ -421,6 +430,7 @@ public class SpecialityAttachmentService {
                 eduType,
                 eduType == null ? null : eduNames.getOrDefault(eduType, eduType),
                 a.getEducationForm(),
+                a.getEduYear(),
                 a.getStatus()
         );
     }

@@ -53,6 +53,12 @@ public record SpecialityAttachmentSnapshotDto(
         String educationForm,
 
         @Schema(
+                description = "O'quv yili — biriktirish qaysi qabul yili uchun amal qiladi (2026 = 2026-2027 o'quv yili).",
+                example = "2026",
+                requiredMode = Schema.RequiredMode.REQUIRED)
+        Integer eduYear,
+
+        @Schema(
                 description = "Biriktirish holati — ACTIVE (faol) / SUSPENDED (vaqtincha to'xtatilgan) / REVOKED (bekor qilingan).",
                 example = "ACTIVE",
                 requiredMode = Schema.RequiredMode.REQUIRED)

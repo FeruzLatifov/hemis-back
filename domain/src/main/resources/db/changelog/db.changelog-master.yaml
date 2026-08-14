@@ -502,6 +502,17 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S019_seed_speciality_attachment_menu_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: S020_seed_oauth_client_admin
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "OTM API-client (oauth_client) admin: permissions oauth-clients.view/manage (SUPER_ADMIN + MINISTRY_ADMIN) + sidebar menu sys-oauth-clients (/system/oauth-clients) under the system parent + 4-lang i18n. Seed only — oauth_client tables exist (V006). Runs after S006 (_seed_msg), S011 (system parent)."
+      changes:
+        - sqlFile: { path: changesets/seed/S020_seed_oauth_client_admin.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S020_seed_oauth_client_admin_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-seed-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}

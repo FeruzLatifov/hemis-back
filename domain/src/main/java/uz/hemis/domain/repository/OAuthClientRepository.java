@@ -1,5 +1,7 @@
 package uz.hemis.domain.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -98,6 +100,29 @@ public interface OAuthClientRepository extends JpaRepository<OAuthClient, UUID> 
     @Query("SELECT c FROM OAuthClient c WHERE c.university.code = :universityCode " +
            "AND c.isActive = true ORDER BY c.clientName")
     List<OAuthClient> findActiveByUniversityCode(@Param("universityCode") String universityCode);
+
+    // =====================================================
+    // Admin list (filtered + paged)
+    // =====================================================
+
+    /**
+     * Filtered + paged client list for the OTM API-client admin screen.
+     *
+     * @param search      matches clientId OR clientName (empty string = no filter)
+     * @param clientType  exact type, or {@code null} for no filter
+     * @param university  university code, or empty string for no filter
+     * @param active      {@code is_active} value, or {@code null} for no filter
+     */
+    @EntityGraph(attributePaths = {"university"})
+    @Query("SELECT c FROM OAuthClient c " +
+           "WHERE (:search = '' OR LOWER(c.clientId) LIKE LOWER(CONCAT('%', :search, '%')) " +
+           "       OR LOWER(c.clientName) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "AND (:university = '' OR c.university.code = :university) " +
+           "AND (:active IS NULL OR c.isActive = :active)")
+    Page<OAuthClient> findAllFiltered(@Param("search") String search,
+                                      @Param("university") String university,
+                                      @Param("active") Boolean active,
+                                      Pageable pageable);
 
     // =====================================================
     // Lifecycle Queries
