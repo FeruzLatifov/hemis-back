@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # =====================================================
 # HEMIS Backend - Multi-stage Docker Build (Best Practice)
 # =====================================================
@@ -32,8 +33,9 @@ COPY api-external/build.gradle.kts api-external/build.gradle.kts
 COPY api-university/build.gradle.kts api-university/build.gradle.kts
 COPY app/build.gradle.kts app/build.gradle.kts
 
-# Download dependencies (cache this layer if build files don't change)
-RUN ./gradlew dependencies --no-daemon || true
+# Download dependencies. --mount=type=cache persists ~/.gradle (deps + wrapper dist)
+# ACROSS builds, so a build-file change re-resolves fast instead of re-downloading all.
+RUN --mount=type=cache,target=/root/.gradle ./gradlew dependencies --no-daemon || true
 
 # Copy source code
 COPY common/src common/src
@@ -46,8 +48,8 @@ COPY api-external/src api-external/src
 COPY api-university/src api-university/src
 COPY app/src app/src
 
-# Build application (skip tests for faster build)
-RUN ./gradlew :app:bootJar -x test --no-daemon
+# Build application (skip tests). Same gradle cache mount → reused deps + build outputs.
+RUN --mount=type=cache,target=/root/.gradle ./gradlew :app:bootJar -x test --no-daemon
 
 # =====================================================
 # Runtime Stage
