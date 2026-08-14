@@ -153,8 +153,9 @@ public class OpenApiConfig {
                 grant_type=client_credentials&client_id=CID&client_secret=SECRET
                 ```
 
-                **Token TTL:** Access — 1 soat, Refresh — 7 kun.
-                ADR-0009 (implemented): 1 soat access TTL + refresh rotation.
+                **Token TTL:**
+                - Web/admin (user JWT): Access — 1 soat, Refresh — 7 kun (ADR-0009, refresh rotation).
+                - OTM machine (client_credentials): **24 soat** — tizimdan-tizimga, token kun davomida qayta ishlatiladi.
 
                 Olingan token'ni "Authorize" tugmasiga kiriting (yoki `Authorization: Bearer ...` header).
 
@@ -230,7 +231,8 @@ public class OpenApiConfig {
                         - Univer Legacy: `POST /app/rest/v2/oauth/token` (Basic header — `basicAuth` scheme orqali)
                         - Univer/External: `POST /api/v1/{university|external}/oauth/token` (client_credentials)
 
-                        **TTL:** Access — 1 soat, Refresh — 7 kun (ADR-0009 implemented).
+                        **TTL:** Web/admin (user JWT) — 1 soat access + 7 kun refresh (ADR-0009).
+                        OTM machine (client_credentials) — **24 soat** (tizimdan-tizimga).
                         """)
             )
             .addSecuritySchemes("basicAuth",
@@ -532,7 +534,8 @@ public class OpenApiConfig {
                         .type(SecurityScheme.Type.OAUTH2)
                         .description("OTM client_credentials — **client_id** = Login, "
                                 + "**client_secret** = Parol. Authorize bosing: Swagger token'ni "
-                                + "/oauth/token'dan avtomat oladi va har so'rovga qo'shadi.")
+                                + "/oauth/token'dan avtomat oladi va har so'rovga qo'shadi. "
+                                + "Token **24 soat** amal qiladi (bir marta olib kun davomida ishlatiladi).")
                         .flows(new OAuthFlows().clientCredentials(new OAuthFlow()
                                 .tokenUrl("/api/v1/university/oauth/token")
                                 .scopes(new Scopes()))));
@@ -564,13 +567,15 @@ public class OpenApiConfig {
                         3. **Authorize** → Swagger token'ni avtomat oladi va har so'rovga
                            `Authorization: Bearer ...` bo'lib qo'shadi. Boshqa hech narsa kiritilmaydi.
 
+                        **Token muddати:** 24 soat — OTM tokenni bir marta olib kun davomida ishlatadi.
+
                         ## Token olish — dastur uchun
 
                         ```bash
                         curl -X POST "https://api-test.hemis.uz/api/v1/university/oauth/token" \\
                           -H "Content-Type: application/x-www-form-urlencoded" \\
                           -d "grant_type=client_credentials&client_id=<Login>&client_secret=<Parol>"
-                        # → {"access_token":"eyJ...","token_type":"bearer","expires_in":3600}
+                        # → {"access_token":"eyJ...","token_type":"bearer","expires_in":86400}  # 24 soat
                         ```
 
                         Keyingi so'rovlarda: `Authorization: Bearer <access_token>`.

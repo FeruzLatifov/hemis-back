@@ -94,7 +94,7 @@ public class UniversityOAuthTokenController {
                     {
                       "access_token": "eyJhbGciOiJIUzI1NiIs...",
                       "token_type": "bearer",
-                      "expires_in": 3600,
+                      "expires_in": 86400,
                       "scope": "machine"
                     }
                     """)
