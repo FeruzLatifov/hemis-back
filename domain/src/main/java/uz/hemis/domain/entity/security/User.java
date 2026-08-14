@@ -24,7 +24,7 @@ import java.util.UUID;
  *
  * <p><strong>CRITICAL - OAuth2 Compatibility:</strong></p>
  * <ul>
- *   <li>Table: hemishe_user (NEW table for OAuth2)</li>
+ *   <li>Table: users (NEW table for OAuth2)</li>
  *   <li>Purpose: Store university user credentials for API access</li>
  *   <li>Password: BCrypt hashed (never plain text)</li>
  *   <li>Roles: Comma-separated (ROLE_ADMIN, ROLE_OTM_API, ROLE_USER)</li>
@@ -87,7 +87,7 @@ public class User extends AuditableEntity {
 
     /**
      * Roles (many-to-many relationship)
-     * Join Table: hemishe_user_role
+     * Join Table: user_role
      *
      * <p>Modern role management using proper entity relationships</p>
      * <p>Each user can have multiple roles (e.g., SUPER_ADMIN, MINISTRY_ADMIN)</p>

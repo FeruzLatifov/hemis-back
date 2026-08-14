@@ -52,6 +52,20 @@ public enum RoleCode {
      */
     VIEWER("VIEWER", "Viewer", RoleType.SYSTEM),
 
+    /**
+     * Inspector - Inspection / audit (old-hemis: Inspeksiya)
+     * <p>Type: SYSTEM</p>
+     * <p>Scope: Ministry-wide inspection / audit</p>
+     */
+    INSPECTOR("INSPECTOR", "Inspector", RoleType.SYSTEM),
+
+    /**
+     * External API - External system integration (student / employee / hokimiyat APIs)
+     * <p>Type: SYSTEM</p>
+     * <p>Scope: Machine-to-machine external integration</p>
+     */
+    EXTERNAL_API("EXTERNAL_API", "External API", RoleType.SYSTEM),
+
     // =====================================================
     // University Roles (UNIVERSITY)
     // =====================================================
@@ -72,7 +86,14 @@ public enum RoleCode {
      * <p>Type: CUSTOM</p>
      * <p>Scope: Reporting module</p>
      */
-    REPORT_VIEWER("REPORT_VIEWER", "Report Viewer", RoleType.CUSTOM);
+    REPORT_VIEWER("REPORT_VIEWER", "Report Viewer", RoleType.CUSTOM),
+
+    /**
+     * Classifier Manager - Central staff who view + assign classifiers (h_*) to OTMs (fanout)
+     * <p>Type: CUSTOM</p>
+     * <p>Scope: Classifier management (view + edit)</p>
+     */
+    CLASSIFIER_MANAGER("CLASSIFIER_MANAGER", "Classifier Manager", RoleType.CUSTOM);
 
     // =====================================================
     // Fields

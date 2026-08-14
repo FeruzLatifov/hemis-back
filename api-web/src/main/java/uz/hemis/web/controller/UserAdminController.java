@@ -298,9 +298,13 @@ public class UserAdminController {
             }
             Sort.Direction direction = parts.length > 1 && "desc".equalsIgnoreCase(parts[1].trim())
                     ? Sort.Direction.DESC : Sort.Direction.ASC;
-            return PageRequest.of(safePage, safeSize, Sort.by(direction, field));
+            // Append the PK as a tiebreaker so the sort is a total order — otherwise rows with an
+            // equal/null sort key (e.g. duplicate username) can jump between pages during paging.
+            return PageRequest.of(safePage, safeSize,
+                    Sort.by(direction, field).and(Sort.by(Sort.Direction.ASC, "id")));
         }
 
-        return PageRequest.of(safePage, safeSize, Sort.by(Sort.Direction.ASC, "username"));
+        return PageRequest.of(safePage, safeSize,
+                Sort.by(Sort.Direction.ASC, "username").and(Sort.by(Sort.Direction.ASC, "id")));
     }
 }
