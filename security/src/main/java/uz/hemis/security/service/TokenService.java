@@ -78,6 +78,17 @@ public class TokenService {
     private String keyId;
 
     /**
+     * OTM (client_credentials) machine token TTL in seconds — a single ministry-wide policy.
+     * Default 24h (env {@code OAUTH_CLIENT_TOKEN_EXPIRATION}). OTM backends are system-to-system
+     * callers that cache and reuse the token for its whole lifetime, so a short TTL only forced
+     * needless re-requests. Intentionally SEPARATE from the human/web JWT TTL
+     * ({@code hemis.security.jwt.expiration}, 1h per ADR-0009): lengthening machine tokens must
+     * never lengthen interactive user sessions.
+     */
+    @Value("${hemis.security.oauth.client-token-expiration:86400}")
+    private int clientTokenExpirationSeconds;
+
+    /**
      * Boot-time sanity guard for token TTLs. Catches the classic milliseconds-as-seconds
      * misconfiguration (e.g. {@code JWT_EXPIRATION=86400000} → ~1000-day access tokens).
      * <strong>Non-fatal by design</strong>: never blocks startup (so it can never break the 224-OTM
@@ -416,13 +427,13 @@ public class TokenService {
         }
 
         Instant now = Instant.now();
-        // Machine tokens are re-minted on demand (client_credentials), so keep them short-lived to
-        // bound the compromise window: clamp the per-client TTL to a hard ceiling so a misconfigured
-        // or oversized access_token_ttl_seconds cannot mint a long-lived machine token.
-        // Tightening the ceiling toward ~15m is a P2 policy step (needs 224-OTM coordination).
-        final int maxMachineTtlSeconds = 3600; // 1h hard ceiling
-        int requestedTtl = client.getAccessTokenTtlSeconds() == null ? 3600 : client.getAccessTokenTtlSeconds();
-        int ttlSeconds = Math.min(Math.max(requestedTtl, 1), maxMachineTtlSeconds);
+        // Machine token TTL = single ministry-wide policy (clientTokenExpirationSeconds; 24h default,
+        // env OAUTH_CLIENT_TOKEN_EXPIRATION). System-to-system OTM callers reuse the token for its
+        // lifetime, so a short TTL only forced needless re-requests. Sanity-clamp to [1min, 7day] so
+        // a milliseconds-as-seconds misconfig can't mint an effectively non-expiring token. The
+        // per-client oauth_client.access_token_ttl_seconds column is not consulted — the TTL is one
+        // uniform policy; a per-OTM override can be reintroduced here later if a real need arises.
+        int ttlSeconds = Math.min(Math.max(clientTokenExpirationSeconds, 60), 604800);
         Instant expiry = now.plusSeconds(ttlSeconds);
 
         // Effective authorities = role permissions ∪ direct scopes

@@ -578,6 +578,11 @@ hemis:
       jwk-set-uri: ${JWT_JWK_SET_URI:}
       issuer-uri: ${JWT_ISSUER_URI:}
     oauth:
+      # OTM (client_credentials) machine token TTL, seconds — default 24h. OTM backends are
+      # system-to-system callers that reuse the token for its whole lifetime, so a short TTL only
+      # forced needless re-requests. Env-tunable (OAUTH_CLIENT_TOKEN_EXPIRATION). SEPARATE from the
+      # human/web JWT TTL (hemis.security.jwt.expiration, 1h ADR-0009) — never lengthens user sessions.
+      client-token-expiration: ${OAUTH_CLIENT_TOKEN_EXPIRATION:86400}
       # Legacy client credentials (Basic auth)
       # CRITICAL: No defaults — must be configured per profile
       client-id: ${OAUTH_CLIENT_ID:}

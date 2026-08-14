@@ -91,7 +91,8 @@ class OAuth2ClientCredentialsIntegrationTest extends AbstractIntegrationTest {
         testClient.setIsActive(Boolean.TRUE);
         testClient.setRateLimitRpm(60);
         testClient.setRateLimitBurst(10);
-        testClient.setAccessTokenTtlSeconds(3600);
+        // Machine token TTL is a ministry-wide policy (hemis.security.oauth.client-token-expiration,
+        // default 24h) — the per-client access_token_ttl_seconds column is no longer consulted.
         testClient.setSecretVersion(1);
         testClient.getRoles().add(otmApi);
         testClient = clientRepository.save(testClient);
@@ -117,7 +118,7 @@ class OAuth2ClientCredentialsIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.access_token", notNullValue()))
                 .andExpect(jsonPath("$.token_type").value("bearer"))
-                .andExpect(jsonPath("$.expires_in").value(3600))
+                .andExpect(jsonPath("$.expires_in").value(86400)) // ministry-wide machine token TTL (24h)
                 .andReturn();
 
         String body = result.getResponse().getContentAsString();
