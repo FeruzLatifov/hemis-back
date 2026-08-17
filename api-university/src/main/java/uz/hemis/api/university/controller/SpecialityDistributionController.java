@@ -12,11 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.classifier.HSpecialityService;
-import uz.hemis.service.classifier.dto.SpecialityDistItemDto;
-
-import java.util.List;
+import uz.hemis.service.classifier.dto.SpecialityClassifierDistResponse;
 
 /**
  * Speciality classifier DISTRIBUTION to OTMs — bootstrap PULL snapshot.
@@ -51,6 +48,12 @@ public class SpecialityDistributionController {
             description = """
                     ## Umumiy mutaxassislik klassifikatori
 
+                    **Envelope:** `{ success, message, title, version, count, data }`. `title` — klassifikator
+                    sarlavhasi (educationType'ga qarab: 11 → "Bakalavriat ta'lim yo'nalishlari", 12 → "Magistratura
+                    mutaxassisliklari"); `version` — tarqatiladiganlarning `SUM(version)`'i (OTM cache-bust —
+                    o'zgarganda oshadi, `!=` bilan solishtiriladi); `count` — `data` uzunligi. Har element ham
+                    o'z `version`'ini oladi (per-mutaxassislik delta-sync).
+
                     **Javob shakli — MUHIM.** `data` — TEKIS (flat) JSON massiv, daraxt (nested tree) EMAS.
                     Har element mustaqil qator bo'lib, o'z darajasi (`hierarchyLevel`) va otasi (`parentId`)
                     havolasini olib yuradi — bu *adjacency list*. Daraxtni OTM tomoni o'zi quradi.
@@ -81,12 +84,13 @@ public class SpecialityDistributionController {
                     ```
                     """
     )
-    public ResponseEntity<ResponseWrapper<List<SpecialityDistItemDto>>> speciality(
+    public ResponseEntity<SpecialityClassifierDistResponse> speciality(
             @Parameter(description = "Ta'lim turi filtri (11=Bakalavr, 12=Magistr)", example = "11")
             @RequestParam(required = false) String educationType
     ) {
-        List<SpecialityDistItemDto> items = specialityService.getDistributionSnapshot(educationType);
-        log.info("OTM speciality-classifier pull: educationType={}, items={}", educationType, items.size());
-        return ResponseEntity.ok(ResponseWrapper.success(items));
+        SpecialityClassifierDistResponse response = specialityService.getDistribution(educationType);
+        log.info("OTM speciality-classifier pull: educationType={}, items={}, version={}",
+                educationType, response.count(), response.version());
+        return ResponseEntity.ok(response);
     }
 }

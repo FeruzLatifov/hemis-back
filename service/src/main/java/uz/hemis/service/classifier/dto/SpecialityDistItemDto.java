@@ -16,6 +16,11 @@ import java.util.List;
  * 15 code-less, are excluded). {@code educationType} + {@code educationTypeName} carry the
  * bachelor/master ('11'/'12') discriminator so the OTM side keeps them distinguishable.</p>
  *
+ * <p>Field naming is {@code speciality}-prefixed and self-describing to match the OTM-facing
+ * envelope ({@link SpecialityClassifierDistResponse}). Each item also carries its own
+ * {@code version} (the row's optimistic-lock counter) so the OTM can do per-speciality delta
+ * sync — mirroring the old-hemis per-item {@code version}.</p>
+ *
  * @since 2.1.0
  */
 @Schema(
@@ -34,37 +39,37 @@ public record SpecialityDistItemDto(
         @Schema(
                 description = "Vazirlik \"Shifr\" kodi — OTM tomonida join/upsert KALITI. 2026 to'plamida 8-xonali. "
                         + "Global unikal EMAS (bir kod ikkala ta'lim turida yoki turli yillarda uchrashi mumkin), shuning uchun "
-                        + "barqaror birlashtirish uchun code + educationType juftligidan foydalaning. "
+                        + "barqaror birlashtirish uchun specialityCode + educationType juftligidan foydalaning. "
                         + "REQUIRED (distribution faqat code!=null qatorlarni beradi).",
                 example = "60710100",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        String code,
+        String specialityCode,
 
         @Schema(
                 description = "uz-UZ (lotin) — asosiy nom va identity anchor. REQUIRED.",
                 example = "Kimyo muhandisligi va texnologiyasi",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
-        String nameUz,
+        String specialityNameUz,
 
         @Schema(
                 description = "oz-UZ (o'zbek kirill) nomi. (NULL bo'lishi mumkin)",
                 example = "Кимё муҳандислиги ва технологияси"
         )
-        String nameOz,
+        String specialityNameOz,
 
         @Schema(
                 description = "Ruscha nom. (NULL bo'lishi mumkin)",
                 example = "Химическая инженерия и технология"
         )
-        String nameRu,
+        String specialityNameRu,
 
         @Schema(
                 description = "Inglizcha nom. (NULL bo'lishi mumkin)",
                 example = "Chemical Engineering and Technology"
         )
-        String nameEn,
+        String specialityNameEn,
 
         @Schema(
                 description = "Ta'lim turi kodi (FK hemishe_h_education_type.code): '11'=Bakalavr, '12'=Magistr. REQUIRED.",
@@ -110,6 +115,14 @@ public record SpecialityDistItemDto(
                 description = "Vazirlik ICHKI kuratsiya \"tekshirilgan\" belgisi (default false) — OTM sinxroni uchun SHART EMAS, faqat markaz ichki holati.",
                 example = "false"
         )
-        Boolean isChecked
+        Boolean isChecked,
+
+        @Schema(
+                description = "Shu mutaxassislikning versiyasi (optimistik-qulf hisoblagichi). Qator tahrirlanganda oshadi — "
+                        + "OTM per-mutaxassislik delta-sync uchun ishlatadi. Umumiy 'version' (envelope) = shu qiymatlar SUM'i.",
+                example = "2",
+                requiredMode = Schema.RequiredMode.REQUIRED
+        )
+        Integer version
 ) {
 }

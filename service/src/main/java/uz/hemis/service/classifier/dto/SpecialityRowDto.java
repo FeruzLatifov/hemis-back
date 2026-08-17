@@ -24,6 +24,7 @@ public record SpecialityRowDto(
         String parentId,
         Integer hierarchyLevel,
         Boolean active,
+        Integer version,
         List<Integer> years
 ) {
 }

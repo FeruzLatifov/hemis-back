@@ -11,6 +11,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.exception.BusinessRuleException;
 import uz.hemis.common.exception.ConflictException;
@@ -23,6 +26,7 @@ import uz.hemis.domain.repository.EducationTypeRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
 import uz.hemis.domain.repository.HSpecialityYearRepository;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
+import uz.hemis.service.classifier.dto.SpecialityClassifierDistResponse;
 import uz.hemis.service.classifier.dto.SpecialityDistItemDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateCheckDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateItemDto;
@@ -79,6 +83,9 @@ public class HSpecialityService {
     private final HSpecialityYearRepository yearRepository;
     private final EducationTypeRepository educationTypeRepository;
     private final OutboxEventPublisher outboxPublisher;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // =====================================================
     // READ (REPLICA)
@@ -183,7 +190,8 @@ public class HSpecialityService {
         if (rawLower != null) {
             boolean hit = (s.getNameUz() != null && s.getNameUz().toLowerCase(Locale.ROOT).contains(rawLower))
                     || (s.getCode() != null && s.getCode().toLowerCase(Locale.ROOT).contains(rawLower))
-                    || (s.getNameSearch() != null && s.getNameSearch().contains(rawLower));
+                    || (s.getNameSearch() != null && s.getNameSearch().contains(rawLower))
+                    || s.getId().toString().contains(rawLower); // UUID search (id is lower-case hex)
             if (!hit) {
                 return false;
             }
@@ -267,12 +275,25 @@ public class HSpecialityService {
      * (both bachelor + master). Uses the SAME predicate as the PUSH guard so both channels agree.
      */
     @Cacheable(value = "specialityDistribution", key = "#educationType != null ? #educationType : 'ALL'")
-    public List<SpecialityDistItemDto> getDistributionSnapshot(String educationType) {
+    public SpecialityClassifierDistResponse getDistribution(String educationType) {
         log.debug("Building speciality distribution snapshot: educationType={}", educationType);
         List<HSpeciality> rows = repository.findAllForDistribution(educationType);
         Map<UUID, List<Integer>> years = loadYears(rows);
         Map<String, String> eduNames = educationTypeNames();
-        return rows.stream().map(s -> toDistItem(s, years, eduNames)).toList();
+        List<SpecialityDistItemDto> data = rows.stream().map(s -> toDistItem(s, years, eduNames)).toList();
+        long version = repository.sumDistributionVersion(educationType);
+        return new SpecialityClassifierDistResponse(true, "OK", distTitle(educationType), version, data.size(), data);
+    }
+
+    /**
+     * OTM-facing classifier title — matches the old-hemis {@code ClassifiersServiceBean} registration
+     * (apostrophes normalized to the project-standard straight {@code '}). Univer stores it as the
+     * classifier's display name.
+     */
+    private static String distTitle(String educationType) {
+        if ("11".equals(educationType)) return "Bakalavriat ta'lim yo'nalishlari";
+        if ("12".equals(educationType)) return "Magistratura mutaxassisliklari";
+        return "Mutaxassisliklar klassifikatori";
     }
 
     // =====================================================
@@ -340,6 +361,11 @@ public class HSpecialityService {
 
         if (dto.years() != null) {
             replaceYears(id, dto.years());
+            // Years live in the child table h_speciality_year, so a years-ONLY edit leaves `s` clean
+            // → @Version wouldn't bump → SUM(version) (the OTM cache-bust) would miss the year change.
+            // Force a version increment so ANY distributed-data change (years included) is detectable
+            // by the OTM (no reliance on Univer's always-refresh). Robust regardless of field values.
+            entityManager.lock(s, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
         }
         log.info("Speciality updated: id={}", id);
 
@@ -486,7 +512,7 @@ public class HSpecialityService {
                     "speciality:" + s.getId(),
                     "updated",
                     Map.of("classifier_type", "speciality", "action", "DELETE",
-                            "item", Map.of("id", s.getId().toString(), "code", retractCode == null ? "" : retractCode)));
+                            "item", Map.of("id", s.getId().toString(), "specialityCode", retractCode == null ? "" : retractCode)));
             log.info("Speciality retracted (PUSH DELETE): id={}, code={}", s.getId(), retractCode);
         }
     }
@@ -706,6 +732,7 @@ public class HSpecialityService {
                 s.getHierarchyLevel(),
                 s.getActive(),
                 s.getIsChecked(),
+                s.getVersion(),
                 years.getOrDefault(s.getId(), List.of()),
                 children
         );
@@ -726,7 +753,8 @@ public class HSpecialityService {
                 s.getHierarchyLevel(),
                 years.getOrDefault(s.getId(), List.of()),
                 s.getActive(),
-                s.getIsChecked()
+                s.getIsChecked(),
+                s.getVersion()
         );
     }
 
@@ -744,6 +772,7 @@ public class HSpecialityService {
                 s.getParentId() != null ? s.getParentId().toString() : null,
                 s.getHierarchyLevel(),
                 s.getActive(),
+                s.getVersion(),
                 years.getOrDefault(s.getId(), List.of())
         );
     }

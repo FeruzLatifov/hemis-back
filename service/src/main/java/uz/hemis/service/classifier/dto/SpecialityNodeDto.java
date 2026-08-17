@@ -25,6 +25,7 @@ public record SpecialityNodeDto(
         Integer hierarchyLevel,
         Boolean active,
         Boolean isChecked,
+        Integer version,
         List<Integer> years,
         List<SpecialityNodeDto> children
 ) {

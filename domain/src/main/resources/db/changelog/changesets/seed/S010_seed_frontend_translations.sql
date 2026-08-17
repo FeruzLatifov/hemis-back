@@ -163,6 +163,8 @@ PERFORM _seed_msg('label',  'Column settings',                        'Ustun soz
 PERFORM _seed_msg('label',  'Message',                                'Xabar',                           'Хабар',                           'Сообщение');
 PERFORM _seed_msg('label',  'Text',                                   'Matn',                            'Матн',                            'Текст');
 PERFORM _seed_msg('label',  'Version',                                'Versiya',                         'Версия',                          'Версия');
+PERFORM _seed_msg('label',  'UUID',                                   'UUID',                            'UUID',                            'UUID');
+PERFORM _seed_msg('action', 'Copy failed', 'Nusxa olinmadi', 'Нусха олинмади', 'Не удалось скопировать');
 PERFORM _seed_msg('label',  'Security',                               'Xavfsizlik',                      'Хавфсизлик',                      'Безопасность');
 PERFORM _seed_msg('label',  'University',                             'Universitet',                     'Университет',                     'Университет');
 PERFORM _seed_msg('label',  'University Information',                 'Universitet ma''lumotlari',       'Университет маълумотлари',        'Информация об университете');
@@ -578,6 +580,7 @@ PERFORM _seed_msg('label', 'Level', 'Daraja', 'Даража', 'Уровень');
 PERFORM _seed_msg('label', 'List', 'Ro''yxat', 'Рўйхат', 'Список');
 PERFORM _seed_msg('label', 'Review status', 'Ko''rib chiqish holati', 'Кўриб чиқиш ҳолати', 'Статус проверки');
 PERFORM _seed_msg('label', 'Search by name or code', 'Nomi yoki kodi bo''yicha qidirish', 'Номи ёки коди бўйича қидириш', 'Поиск по названию или коду');
+PERFORM _seed_msg('label', 'Search by name, code or UUID', 'Nom, kod yoki UUID bo''yicha qidirish', 'Ном, код ёки UUID бўйича қидириш', 'Поиск по названию, коду или UUID');
 PERFORM _seed_msg('label', 'Speciality classifier', 'Mutaxassislik klassifikatori', 'Мутахассислик классификатори', 'Классификатор специальностей');
 PERFORM _seed_msg('label', 'Sub-specialities', 'Ichki mutaxassisliklar', 'Ички мутахассисликлар', 'Подспециальности');
 PERFORM _seed_msg('label', 'Sync events', 'Sinxronizatsiya hodisalari', 'Синхронизация ҳодисалари', 'События синхронизации');

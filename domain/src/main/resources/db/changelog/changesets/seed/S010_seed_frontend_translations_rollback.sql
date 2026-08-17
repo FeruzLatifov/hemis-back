@@ -25,7 +25,7 @@ DECLARE
         -- LABELS
         'Account lock','Account status','Activity','Activity details','All actions','All events',
         'All pages','Recent','Results','Quick search','Search pages...','Search pages (Ctrl+K)',
-        'Search by code...','Search by code or name','Search by PINFL...','Search permissions...','Search roles...',
+        'Search by code...','Search by code or name','Search by name, code or UUID','Search by PINFL...','Search permissions...','Search roles...',
         'Key or text...','Breadcrumb','Sidebar','Main header','Main navigation','User menu',
         'Notifications','Quick links','Need help?','Skip to main content','Light','Dark',
         'Other languages','Uzbek (latin)','Cyrillic text (oz-UZ)','Russian translation (ru-RU)',
@@ -39,7 +39,7 @@ DECLARE
         'Group','Groups','Group count','Group name','Group ID','No groups have been added yet','Per page','Shown','Gender','Education form','Education year',
         'Enrollment records','Living area','Object area','Utility area',
         'Cadastral cost','Share sum','Successor','Duplicate analysis','Column settings',
-        'Message','Text','Version','Security','University','University Information',
+        'Message','Text','UUID','Copy failed','Version','Security','University','University Information',
         'University directions','User information','Profile saved','Today, {{time}}',
         -- AUTH
         'Check your email','Enter your email and we will send you a reset link',

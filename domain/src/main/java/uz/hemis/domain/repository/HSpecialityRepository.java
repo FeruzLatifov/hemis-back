@@ -103,4 +103,16 @@ public interface HSpecialityRepository extends JpaRepository<HSpeciality, UUID> 
            "AND s.code IS NOT NULL AND s.active = true " +
            "AND s.educationType = COALESCE(:educationType, s.educationType) ORDER BY s.code ASC")
     List<HSpeciality> findAllForDistribution(@Param("educationType") String educationType);
+
+    /**
+     * SUM(version) over the distributable set — the SAME predicate as {@link #findAllForDistribution}
+     * (APPROVED + code-bearing + active). Backs {@code SpecialityClassifierDistResponse.version}: the OTM
+     * cache-bust scalar that changes on any curation edit (each edit bumps a row's {@code @Version}); Univer
+     * compares it ({@code !=}) to detect a stale classifier. {@code COALESCE(...,0)} keeps an empty set at 0.
+     */
+    @Query("SELECT COALESCE(SUM(s.version), 0) FROM HSpeciality s " +
+           "WHERE s.reviewStatus = uz.hemis.domain.entity.classifier.ReviewStatus.APPROVED " +
+           "AND s.code IS NOT NULL AND s.active = true " +
+           "AND s.educationType = COALESCE(:educationType, s.educationType)")
+    long sumDistributionVersion(@Param("educationType") String educationType);
 }
