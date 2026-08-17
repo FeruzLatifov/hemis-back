@@ -155,6 +155,13 @@ def load(fn, sheet, edu):
 rows=[]
 for fn,sheet,edu in XLSX: rows+=load(fn, sheet, edu)
 
+# Muammoli-L4 ANIQ XARITA (apply_muammoli_l4_fix.py yozadi): "edu|code|norm(reja_nomi)" -> speciality_id.
+# Reviewer izohi + ishonchli sibling-direction matcher natijasi. Imlo-variant (koreys/Kores) shu yerda
+# HAL QILINADI (fuzzy EMAS, aniq sid) -> pushtu->rus kabi xato bo'lmaydi. Fayl yo'q bo'lsa -> {} (eski xulq).
+import json as _json
+_mapf=os.path.join(HERE,"muammoli_l4_2026_map.json")
+MUAMMOLI_MAP=_json.load(open(_mapf,encoding='utf-8')) if os.path.exists(_mapf) else {}
+
 # ---------- resolve ----------
 attach=set()                 # (otmid, sid, form)
 prob=[]                      # problematic Kateg-2 rows
@@ -170,7 +177,10 @@ for edu,otmid,kateg,shifr,name,forms in rows:
         cnt['L3-ok']+=1
         for fc in forms: attach.add((otmid, sid, fc))
     elif kateg=='2':
-        sid = resolve_l4(edu, cur_l3, name) if (cur_l3 is not None and otmid==cur_otm) else None
+        # 1) aniq xarita (muammoli L4: yarat/ko'chir/biriktir hal qilingan); 2) aks holda resolve_l4
+        sid = MUAMMOLI_MAP.get(f"{edu}|{shifr}|{norm(name)}")
+        if sid is None:
+            sid = resolve_l4(edu, cur_l3, name) if (cur_l3 is not None and otmid==cur_otm) else None
         if sid is not None:
             cnt['L4-ok']+=1
             for fc in forms: attach.add((otmid, sid, fc))

@@ -1,5 +1,7 @@
 package uz.hemis.service.classifier.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -31,7 +33,11 @@ public record SpecialityAttachmentCreateDto(
         @Pattern(regexp = "11|12|16", message = "educationForm must be 11 (Kunduzgi), 12 (Kechki) or 16 (Masofaviy)")
         String educationForm,
 
-        /** Academic year of the assignment (2026 = 2026-2027). Defaults to the current intake year if omitted. */
+        /** Academic year of the assignment (2026 = 2026-2027). MANDATORY — the caller must pick a
+         *  concrete year (the FE year dropdown is sourced from the classifier's actual years). */
+        @NotNull(message = "eduYear is required")
+        @Min(value = 1991, message = "eduYear out of range")
+        @Max(value = 2100, message = "eduYear out of range")
         Integer eduYear
 ) {
 }

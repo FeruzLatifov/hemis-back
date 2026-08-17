@@ -221,3 +221,492 @@ DELETE FROM h_speciality_year WHERE speciality_id = 'c470f50d-4a5f-a925-3881-56a
 INSERT INTO h_speciality_year (speciality_id, year) VALUES
   ('c470f50d-4a5f-a925-3881-56ad2db91745', 2026)
 ON CONFLICT (speciality_id, year) DO NOTHING;
+
+-- >>> MUAMMOLI-L4-2026-FIX >>>
+-- Manba: muammoli_L4_2026_reviewed.xlsx (reviewer izohi) + ishonchli sibling-direction matcher.
+--   YARAT(yangi L4): 38  ·  KO'CHIR(re-parent): 132  ·  BIRIKTIR(2026 L3'da bor): 10  ·  umumiy=L3: 2
+--   RE-PARENT faqat parent_id (nom/kod SAQLANADI -> uq o'zgармайди). Reja-nomi -> mavjud sid
+--   moslashini generate_s018 aniq xarita (muammoli_l4_2026_map.json) orqali biladi (fuzzy EMAS).
+INSERT INTO h_speciality (id,code,name_uz,name_oz,name_ru,name_en,education_type,review_status,parent_id,hierarchy_level,active,is_checked,version) VALUES
+  ('36113123-c4b7-5df0-b414-29148fd9cb91','60110300','Maxsus pedagogika: olegofrenopedagogika',NULL,NULL,NULL,'11','APPROVED','5aa6bccb-50f2-c13a-f7a2-547c1051db86',4,true,false,1),
+  ('6b31fcd3-858a-505f-b5f6-1f213fb59f97','60110900','Xorijiy til va adabiyoti: xitoy tili',NULL,NULL,NULL,'11','APPROVED','0d116308-773c-bde1-6aef-0e3bb09fa5d6',4,true,false,1),
+  ('518c93d5-eb0b-51c5-b1af-8874b5c47b13','60210400','Dizayn: landshaft dizayni',NULL,NULL,NULL,'11','APPROVED','35019c3a-7fb4-eda7-3ed2-ad26225c3a7a',4,true,false,1),
+  ('92b26372-0fc4-56a7-96f7-9cbceee5ac5b','60211600','Xoreografiya: zamonaviy raqs',NULL,NULL,NULL,'11','APPROVED','b002fe31-d3f8-d449-7576-2ea54ff12ee2',4,true,false,1),
+  ('f48da2b3-a39f-5d71-acc1-df6999936abc','60230100','Filologiya va tillarni oʻqitish: pushtu tili',NULL,NULL,NULL,'11','APPROVED','a9c27063-122d-0067-5a0e-23890170f59a',4,true,false,1),
+  ('ecbf233d-49c3-5a1f-bc13-87c0831bb4aa','60230200','Tarjima nazariyasi va amaliyoti: hind tili',NULL,NULL,NULL,'11','APPROVED','651d5953-57b4-a7f3-49e1-e6d3c8bc8781',4,true,false,1),
+  ('257907fd-b810-563f-b6ac-2e35ef7c33f4','60230200','Tarjima nazariyasi va amaliyoti: urdu tili',NULL,NULL,NULL,'11','APPROVED','651d5953-57b4-a7f3-49e1-e6d3c8bc8781',4,true,false,1),
+  ('b81a4720-b739-5343-b271-d80c56c4dad2','61010200','Sport faoliyati: akademik va slalomda eshkak eshish',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('90d74c91-8d71-538b-a88e-beeb2fc11b20','61010200','Sport faoliyati: fijital basketbol',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('e74b677f-ae8e-57fe-9e89-532ac9e452ce','61010200','Sport faoliyati: fijital futbol',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('ee167c49-1c6b-5f7e-975b-fa76dde1bcd0','61010200','Sport faoliyati: para sport',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('6a3178d8-28b4-538e-94af-5f9ff5a4b8bf','61010200','Sport faoliyati: para velosport',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('c9e2f243-2a77-5829-890b-832c082959cc','61010200','Sport faoliyati: penchak silat',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('113de422-2fc6-56f9-b92c-bfc1294fb8e6','61010200','Sport faoliyati: sport akrobatikasi',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('5b442456-e2fc-5b1d-8c81-557643142f14','61010200','Sport faoliyati: trampolin',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('9af059d6-19b4-5710-b767-268a75298c61','61010200','Sport faoliyati: turon',NULL,NULL,NULL,'11','APPROVED','9eadb782-51f1-00af-65ba-65fa566747d1',4,true,false,1),
+  ('f23be88f-a418-5b89-aeef-6226291e370e','70110801','Ona tili va adabiyoti: qoraqalpoq tili',NULL,NULL,NULL,'12','APPROVED','a4363fb7-377a-b8b4-0382-c3dac34b3ffa',4,true,false,1),
+  ('00aee2ab-2931-5bb1-b7f4-1bf5429bca13','70110901','Xorijiy til va adabiyoti: fransuz tili',NULL,NULL,NULL,'12','APPROVED','20b9f1a3-5ee3-d31b-0674-c035b52d0fca',4,true,false,1),
+  ('98dd7e98-f757-5b42-89a2-5506c752c607','70110901','Xorijiy til va adabiyoti: xitoy tili',NULL,NULL,NULL,'12','APPROVED','20b9f1a3-5ee3-d31b-0674-c035b52d0fca',4,true,false,1),
+  ('d63021ee-2731-5a12-9142-88dfa0ca0124','70210401','Dizayn: sanoat dizayni',NULL,NULL,NULL,'12','APPROVED','dc886241-0d6d-7ba5-8267-3902f981d060',4,true,false,1),
+  ('61701d21-f964-555f-a47f-3776c174b71f','70210501','Rangtasvir: mahobatli rangtasvir',NULL,NULL,NULL,'12','APPROVED','6c99b397-54fb-06a8-75e3-4a14dbf4f2cf',4,true,false,1),
+  ('e4b6dcf9-4582-57a0-a0ee-567893e421f2','70211301','Dirijyorlik: akademik xor dirijyorligi',NULL,NULL,NULL,'12','APPROVED','6bea0f7f-2556-aa48-d4c4-3ad057a78f6b',4,true,false,1),
+  ('e57b52ed-b3f0-58be-a50c-9ce650f68078','70211301','Dirijyorlik: xalq cholgʻulari orkestri dirijyorligi',NULL,NULL,NULL,'12','APPROVED','6bea0f7f-2556-aa48-d4c4-3ad057a78f6b',4,true,false,1),
+  ('4974c873-0469-5a43-87bf-cb96c787d20d','70211701','Xalq ijodiyoti: folklor va etnografiya',NULL,NULL,NULL,'12','APPROVED','510b289a-b0f2-edc8-360c-15709e2784e4',4,true,false,1),
+  ('2a850047-0497-50ec-898f-81fd3deb2d61','70230101','Lingvistika: indonez tili',NULL,NULL,NULL,'12','APPROVED','17850367-6022-fd27-73e6-873dba9cf382',4,true,false,1),
+  ('92e9f16d-68af-579b-b69b-1b886dae2a7f','70230104','Adabiyotshunoslik: pushtu adabiyoti',NULL,NULL,NULL,'12','APPROVED','50efa18d-0f77-0638-134f-111a9144c853',4,true,false,1),
+  ('b954d7ab-ea66-5c16-af38-5620e00afd95','70230104','Adabiyotshunoslik: xitoy adabiyoti',NULL,NULL,NULL,'12','APPROVED','50efa18d-0f77-0638-134f-111a9144c853',4,true,false,1),
+  ('7efdf1b2-d9e1-59e1-adbe-28c109064f76','70230201','Qiyosiy tilshunoslik, lingvistik tarjimashunoslik: arab tili',NULL,NULL,NULL,'12','APPROVED','7b120512-42c9-435e-86d3-233a3ae65c32',4,true,false,1),
+  ('f23c7b96-3919-5518-8eb3-fd0726cd9a8e','70910215','Sogʻliqni saqlashni boshqarish va jamoat sogʻligini saqlash: epidemiologiya va maʼlumotlar tahlili',NULL,NULL,NULL,'12','APPROVED','c61d0e7c-b96a-3b4c-2d65-94a57739f267',4,true,false,1),
+  ('ab8ca32d-9280-5461-a9e5-6963cdc1aa2d','70910215','Sogʻliqni saqlashni boshqarish va jamoat sogʻligini saqlash: jismoniy faollik va reabilitatsiya',NULL,NULL,NULL,'12','APPROVED','c61d0e7c-b96a-3b4c-2d65-94a57739f267',4,true,false,1),
+  ('8928abb1-a7e4-5e6b-a7b3-06ae6b40affb','70910215','Sogʻliqni saqlashni boshqarish va jamoat sogʻligini saqlash: ovqatlanish',NULL,NULL,NULL,'12','APPROVED','c61d0e7c-b96a-3b4c-2d65-94a57739f267',4,true,false,1),
+  ('0e46c635-86b7-5837-9f99-114df2ebf0ec','70910215','Sogʻliqni saqlashni boshqarish va jamoat sogʻligini saqlash: profilaktik tibbiyot',NULL,NULL,NULL,'12','APPROVED','c61d0e7c-b96a-3b4c-2d65-94a57739f267',4,true,false,1),
+  ('6811f956-b7bb-55a5-b07b-929bd0efab6f','71010201','Sport faoliyati: badiiy gimnastika',NULL,NULL,NULL,'12','APPROVED','0ee15ef8-2f22-bac8-adff-1e116bc51313',4,true,false,1),
+  ('cb95c84f-813b-5de7-97eb-380f25401cbe','71010201','Sport faoliyati: basketbol',NULL,NULL,NULL,'12','APPROVED','0ee15ef8-2f22-bac8-adff-1e116bc51313',4,true,false,1),
+  ('cfea2d1a-5d22-54d8-b929-506762df6dac','71010201','Sport faoliyati: belbogʻli kurash',NULL,NULL,NULL,'12','APPROVED','0ee15ef8-2f22-bac8-adff-1e116bc51313',4,true,false,1),
+  ('a2f11d27-a0da-53b3-9041-1bc5b1ae78c3','71010201','Sport faoliyati: qoʻl toʻpi',NULL,NULL,NULL,'12','APPROVED','0ee15ef8-2f22-bac8-adff-1e116bc51313',4,true,false,1),
+  ('c624f305-0209-55bf-9ccc-1933fffc94d4','71010201','Sport faoliyati: sambo',NULL,NULL,NULL,'12','APPROVED','0ee15ef8-2f22-bac8-adff-1e116bc51313',4,true,false,1),
+  ('6f9d9e1a-25e6-509e-9b2a-9eaccdb2d217','71010201','Sport faoliyati: yunon-rum kurashi',NULL,NULL,NULL,'12','APPROVED','0ee15ef8-2f22-bac8-adff-1e116bc51313',4,true,false,1)
+ON CONFLICT (id) DO NOTHING;
+-- Re-parent: mavjud L4 -> 2026 L3 (faqat parent_id, nom o'zgармайди):
+UPDATE h_speciality SET parent_id='fd25c40f-e4fe-8f2e-c503-0834cf1bd237', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='0d57d968-d758-46c8-e703-31644fc1d656';
+UPDATE h_speciality SET parent_id='fd25c40f-e4fe-8f2e-c503-0834cf1bd237', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9b2469bc-9a84-bbe5-6b1e-ca6089845111';
+UPDATE h_speciality SET parent_id='27284625-d9b2-fb3e-14d0-b9d5e3a3d9dd', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9fbe2244-9159-0464-bc32-1b7372f18a93';
+UPDATE h_speciality SET parent_id='27284625-d9b2-fb3e-14d0-b9d5e3a3d9dd', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='b935ffed-ebdf-f796-9855-feff5b237d06';
+UPDATE h_speciality SET parent_id='27284625-d9b2-fb3e-14d0-b9d5e3a3d9dd', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='b10b1b3c-b5ab-1968-94a5-e57bc17053f0';
+UPDATE h_speciality SET parent_id='27284625-d9b2-fb3e-14d0-b9d5e3a3d9dd', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c18394d9-2bf4-207e-5d8a-04333280ab69';
+UPDATE h_speciality SET parent_id='27284625-d9b2-fb3e-14d0-b9d5e3a3d9dd', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='58c67396-5f2a-9789-3908-3d800a4ba17a';
+UPDATE h_speciality SET parent_id='90824e4d-15ed-5b65-5699-7d55b377dcd2', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='01844246-b3ed-a5b1-b042-fe880300a489';
+UPDATE h_speciality SET parent_id='90824e4d-15ed-5b65-5699-7d55b377dcd2', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='3e8ee146-f687-0834-3985-e91113bec034';
+UPDATE h_speciality SET parent_id='f0510d2a-9d13-c399-9bbb-912e5bba4689', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='01c7797c-5118-31aa-e12e-0e8f8a666f37';
+UPDATE h_speciality SET parent_id='c09a0a2c-6f9d-3785-7565-d8e0278e0f12', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='36061545-0b24-c688-2d26-ce122a6bfc94';
+UPDATE h_speciality SET parent_id='c09a0a2c-6f9d-3785-7565-d8e0278e0f12', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9777456c-b52b-d9a0-dfaf-7de2578267c7';
+UPDATE h_speciality SET parent_id='c09a0a2c-6f9d-3785-7565-d8e0278e0f12', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='05401578-17e4-4fec-131b-523b374b875e';
+UPDATE h_speciality SET parent_id='c09a0a2c-6f9d-3785-7565-d8e0278e0f12', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c8d36ea1-1847-86aa-40fb-a1cff84bd4d2';
+UPDATE h_speciality SET parent_id='c09a0a2c-6f9d-3785-7565-d8e0278e0f12', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e7076523-fe12-f932-76f1-6afa25f9f892';
+UPDATE h_speciality SET parent_id='c09a0a2c-6f9d-3785-7565-d8e0278e0f12', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='1acb4bb4-7699-8c86-4249-1022214ce808';
+UPDATE h_speciality SET parent_id='872decbf-23ab-7965-d00d-0bdb7a187965', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='00799f09-df9a-e763-3ec2-2c304056cdd8';
+UPDATE h_speciality SET parent_id='872decbf-23ab-7965-d00d-0bdb7a187965', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='7ab2145d-939d-2430-f52f-453754990860';
+UPDATE h_speciality SET parent_id='872decbf-23ab-7965-d00d-0bdb7a187965', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='3037d90f-f24c-5945-229f-a2f2a7c7123b';
+UPDATE h_speciality SET parent_id='872decbf-23ab-7965-d00d-0bdb7a187965', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='fe75a1c0-0868-3eeb-d35f-a6582dfde118';
+UPDATE h_speciality SET parent_id='872decbf-23ab-7965-d00d-0bdb7a187965', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='036c2194-71a6-753b-ee08-2bca72df9a36';
+UPDATE h_speciality SET parent_id='872decbf-23ab-7965-d00d-0bdb7a187965', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='6185175a-6bc9-eb0d-2d81-3263ad3c5513';
+UPDATE h_speciality SET parent_id='872decbf-23ab-7965-d00d-0bdb7a187965', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='8d97d61a-abd5-7b9b-4236-65e5f8b9480e';
+UPDATE h_speciality SET parent_id='f8926499-9fc1-d730-7151-f0c7a0a3264f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='a41e8ae4-8fad-50b7-6b44-e57621b33f19';
+UPDATE h_speciality SET parent_id='f8926499-9fc1-d730-7151-f0c7a0a3264f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c5ba9ad4-9b67-050c-470f-e600b610c726';
+UPDATE h_speciality SET parent_id='f8926499-9fc1-d730-7151-f0c7a0a3264f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='f859bc24-d033-fc5c-257a-2ce93bc33589';
+UPDATE h_speciality SET parent_id='f8926499-9fc1-d730-7151-f0c7a0a3264f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='533ff24a-be18-6d5a-0620-1509eefddb6c';
+UPDATE h_speciality SET parent_id='f8926499-9fc1-d730-7151-f0c7a0a3264f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='4ac05d1c-9c07-392e-6b55-2dc6207514c0';
+UPDATE h_speciality SET parent_id='7d1151c9-143e-bcec-6607-9bd962049a18', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='00ddd2c2-8ab8-4ae4-9333-c438c292176b';
+UPDATE h_speciality SET parent_id='7d1151c9-143e-bcec-6607-9bd962049a18', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='48a81789-eacf-dacd-c0fe-efc8b2d9b1ef';
+UPDATE h_speciality SET parent_id='7d1151c9-143e-bcec-6607-9bd962049a18', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='15637066-7481-1579-2c35-bc3da4d67a79';
+UPDATE h_speciality SET parent_id='7d1151c9-143e-bcec-6607-9bd962049a18', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='cea918ae-6a64-a1f3-40a0-752bd1fdab36';
+UPDATE h_speciality SET parent_id='7d1151c9-143e-bcec-6607-9bd962049a18', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='a818678d-d54b-05f5-3fe2-ec37ec8cf36a';
+UPDATE h_speciality SET parent_id='7d1151c9-143e-bcec-6607-9bd962049a18', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='26b60324-72c4-9d92-8be6-cbd0dded1a79';
+UPDATE h_speciality SET parent_id='73914f50-c1fb-ca54-a7cf-a5f03313eb9f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='060cbf21-35a4-98c9-c853-cc63a878aed4';
+UPDATE h_speciality SET parent_id='73914f50-c1fb-ca54-a7cf-a5f03313eb9f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9fe76382-83ff-694e-643f-eff4ea3f2eea';
+UPDATE h_speciality SET parent_id='73914f50-c1fb-ca54-a7cf-a5f03313eb9f', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e07fc0ca-b42b-cda7-9023-a50b77a138a1';
+UPDATE h_speciality SET parent_id='6853aca2-2167-51a8-3108-82813a61cc31', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='7e3ecffb-69e2-bc10-a6ad-ffe546d07401';
+UPDATE h_speciality SET parent_id='6853aca2-2167-51a8-3108-82813a61cc31', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='84aa0bdd-f484-f36a-2919-5ef3eca99ce5';
+UPDATE h_speciality SET parent_id='6853aca2-2167-51a8-3108-82813a61cc31', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='da61cd19-f440-cecd-6997-33b3a1068c37';
+UPDATE h_speciality SET parent_id='b002fe31-d3f8-d449-7576-2ea54ff12ee2', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='144fac88-f900-3dc8-e5d5-2f586b7f09ed';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='02bc4574-c77a-6d6c-7534-cb2d045f9fed';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='3b3f0a61-1c26-49dc-f857-bfa831de9731';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='814a029f-eee0-befc-9dbc-ad43fe9807c5';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='182c35c2-a926-375a-9ddd-d6e3a5abf7f8';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c5c58418-9d60-fd95-5c53-79acec772bf3';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e6638e7e-d8a4-8ab9-2672-c6271eda7e87';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='1898ffd1-8f45-f2f8-3318-76ff153611bd';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='861df4e8-9900-5024-12fd-816ac4081729';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='d9060313-a5a4-4382-fd6a-6e8d9c58132b';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='32239264-828c-0f8b-d3e2-473bee4c9d46';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='1ca8cb79-7508-4df6-571a-35b8702ae0dc';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='80d23cfb-51f7-9e0f-4d23-72ad1428ab16';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e73311bf-4383-4dfa-cca4-449e708c2dd4';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='74f61cf5-e393-46d4-159b-006b61c752cf';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='bace1b04-2e17-cccd-e073-79e383e05553';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9220e7ae-2cfa-0661-3374-3ca2c98d251d';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='6c75353c-04aa-dea0-a117-c70e4a90b598';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='bda47a45-712f-de9c-8131-b9715561bf85';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='f0d5c66e-eae3-56eb-1936-01c396f997db';
+UPDATE h_speciality SET parent_id='a9c27063-122d-0067-5a0e-23890170f59a', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='cc17b177-3695-ed29-788e-40a23c3e14f1';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='54228419-95a1-e7ea-50ec-049ff65c03da';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='275926cd-d58c-a99f-4f6b-6dd9ca197f13';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9887770c-b9c8-4008-3f9a-8600f61d7c54';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='963b7ae1-8209-eda2-ddfc-d21d16953527';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c3565692-9f28-7244-9ebe-2c830f5802e9';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='49d42bcf-f867-0767-cf7f-7589cfea2918';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='755a2c56-92ff-8072-b9d8-9df30a4d39a0';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='fe257c76-0fb2-fb0e-f582-d3db13ad3770';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='f281e314-3f00-481d-efa4-c488db02e3b1';
+UPDATE h_speciality SET parent_id='651d5953-57b4-a7f3-49e1-e6d3c8bc8781', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='47c47d03-d678-4d61-0199-deff7197ac49';
+UPDATE h_speciality SET parent_id='0f9c6bf9-5231-612b-ccc2-63527cc6f640', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9d64f570-6779-de4f-bc4a-26b1a7cb1a5d';
+UPDATE h_speciality SET parent_id='0f9c6bf9-5231-612b-ccc2-63527cc6f640', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='acff2db6-af6a-2435-85e6-b43fec8a25eb';
+UPDATE h_speciality SET parent_id='dc886241-0d6d-7ba5-8267-3902f981d060', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='d52af894-d7cf-9a16-11f8-760b69826285';
+UPDATE h_speciality SET parent_id='dc886241-0d6d-7ba5-8267-3902f981d060', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e0574cc5-1ede-37b1-50c7-4e7b610909ff';
+UPDATE h_speciality SET parent_id='dc886241-0d6d-7ba5-8267-3902f981d060', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e140e1af-29b1-c425-2fd7-e3a6e5dc49cc';
+UPDATE h_speciality SET parent_id='dc886241-0d6d-7ba5-8267-3902f981d060', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c0d8edc0-153d-29e7-933b-b85b2d18a1b3';
+UPDATE h_speciality SET parent_id='dc886241-0d6d-7ba5-8267-3902f981d060', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='64aa631d-0263-0f78-0eed-d9e08874f530';
+UPDATE h_speciality SET parent_id='dc886241-0d6d-7ba5-8267-3902f981d060', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='7bd7c34e-8b4b-9bb4-ccec-a4822ccc87e4';
+UPDATE h_speciality SET parent_id='dc886241-0d6d-7ba5-8267-3902f981d060', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='08cea636-55d5-116d-fded-4f6e70efb5d3';
+UPDATE h_speciality SET parent_id='6c99b397-54fb-06a8-75e3-4a14dbf4f2cf', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='1d92ece1-2e3f-49a4-542f-a845fc2b56cc';
+UPDATE h_speciality SET parent_id='6c99b397-54fb-06a8-75e3-4a14dbf4f2cf', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='68c08b3c-6906-e11b-7cea-a42b2c6d2723';
+UPDATE h_speciality SET parent_id='28b86e93-d54b-29c1-5fcd-1ce8a8ee06c3', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='a39d9f15-a304-9bdc-bd39-9e17bedb0242';
+UPDATE h_speciality SET parent_id='28b86e93-d54b-29c1-5fcd-1ce8a8ee06c3', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='b52faa39-bdb2-e7fd-209b-9aafc5dbd9a9';
+UPDATE h_speciality SET parent_id='28b86e93-d54b-29c1-5fcd-1ce8a8ee06c3', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='fd4b0e02-cb97-7b4a-6586-b6868ec04d09';
+UPDATE h_speciality SET parent_id='b6071ffb-276b-203e-060b-f0585cd10895', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='83a2ccbc-7888-5cb7-65bf-f1d15c0e9909';
+UPDATE h_speciality SET parent_id='b6071ffb-276b-203e-060b-f0585cd10895', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='8861d516-d017-03a1-93f3-6cd849366f46';
+UPDATE h_speciality SET parent_id='b6071ffb-276b-203e-060b-f0585cd10895', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='561afea9-ec6a-ab27-14d5-7f602f3deac5';
+UPDATE h_speciality SET parent_id='b6071ffb-276b-203e-060b-f0585cd10895', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='89d31c20-bee4-3b9d-8d8b-95a597629693';
+UPDATE h_speciality SET parent_id='4fe7e207-8f87-b203-250f-ece8881fa1a0', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='7c71cfc7-cda2-5bf2-4397-2a0811f6016a';
+UPDATE h_speciality SET parent_id='4fe7e207-8f87-b203-250f-ece8881fa1a0', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='790cfea6-c37e-a81f-88c0-020bf63be7de';
+UPDATE h_speciality SET parent_id='4fe7e207-8f87-b203-250f-ece8881fa1a0', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='0e314754-5045-1840-a959-c6a947acc5f6';
+UPDATE h_speciality SET parent_id='4fe7e207-8f87-b203-250f-ece8881fa1a0', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='cfee2ced-5599-ba94-b55a-4718a812f8de';
+UPDATE h_speciality SET parent_id='6bea0f7f-2556-aa48-d4c4-3ad057a78f6b', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='0614d5d1-1275-ff75-faa9-d0baacb62125';
+UPDATE h_speciality SET parent_id='6bea0f7f-2556-aa48-d4c4-3ad057a78f6b', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='8eadcd7d-f92a-3fb2-cad4-2d19688ea343';
+UPDATE h_speciality SET parent_id='6fa76f53-b3c3-c8ef-2ac0-305a3ee42e78', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='082d56fc-f587-3f61-57f8-f28d65c20925';
+UPDATE h_speciality SET parent_id='6fa76f53-b3c3-c8ef-2ac0-305a3ee42e78', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='3514092c-5b8b-d7ce-e260-9387b6a0f10b';
+UPDATE h_speciality SET parent_id='6fa76f53-b3c3-c8ef-2ac0-305a3ee42e78', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='352c9a0a-f198-a889-5304-a8419bf3eebd';
+UPDATE h_speciality SET parent_id='a69fd1f6-0101-5e68-2c72-e05d453452fc', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='8da50f6f-8068-f60d-717c-91f2c63d00c2';
+UPDATE h_speciality SET parent_id='a69fd1f6-0101-5e68-2c72-e05d453452fc', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='35d44ed1-e742-b614-8b7a-868806bedc79';
+UPDATE h_speciality SET parent_id='a69fd1f6-0101-5e68-2c72-e05d453452fc', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='52d19d3e-510c-3be6-b9f9-76b4e80bfa81';
+UPDATE h_speciality SET parent_id='a69fd1f6-0101-5e68-2c72-e05d453452fc', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='a0c19af4-bc56-b02e-980b-93779f575b03';
+UPDATE h_speciality SET parent_id='a69fd1f6-0101-5e68-2c72-e05d453452fc', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='9cbee601-1129-1ba0-fcc3-a115cb49dd6b';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='beb1f700-7a54-0572-a0d0-ad1c0b3b2832';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='8939e086-c7e8-4d12-65a7-2a457f50003d';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='3dfbf621-a7c8-7581-bb85-b0fff3e7386b';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='1aed36fa-346a-4e2d-d71b-e6bf81ad3503';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='0c06d98e-f6bc-a974-784a-681e3da48b30';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='927d4ccf-79b3-9739-0492-13f6c77ba5f6';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='d874b616-6105-efaa-f4d8-1961817a1d5f';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='d62a1582-c1e3-8681-3570-e721c13e618b';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='2cbe230f-820f-6d2c-89f9-27141b313039';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e3ed367a-167b-f679-58f1-ff72f639ebcb';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='26b8882c-e318-230f-f102-872995a7fae9';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='457ca0fe-81d9-bdf1-b27d-0feafb264c14';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='83d0e34b-36d9-adbc-11f2-7c4f05108311';
+UPDATE h_speciality SET parent_id='17850367-6022-fd27-73e6-873dba9cf382', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='64fb4f07-55fd-d2d5-8d49-091ea21052e4';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='72e9cf5e-7c80-1b11-0e21-142b30a1dbc3';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='252d7c2c-3954-4c86-1b34-6c9343709238';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c5a5bf2f-abdf-5ea7-df14-9d82be364bce';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='d919361d-e164-e210-73b2-9f601694e723';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='18204089-e5ff-7dfc-8b70-b3f3d217cf8a';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='630ae1f1-75df-e358-de82-a7bbe30334a1';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='ac8bf2fd-16ba-0aeb-6e05-2a47f88c24d8';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='d0b0afa4-062c-a5b8-2b0d-2d91056e10d8';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='54ff3003-88ce-4e78-f6be-77018db017c4';
+UPDATE h_speciality SET parent_id='50efa18d-0f77-0638-134f-111a9144c853', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='e99257fc-a324-9c57-d575-ddb47bb7b9db';
+UPDATE h_speciality SET parent_id='a84482fc-3fa9-12a1-285d-de2dd7426847', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='50bea0ad-713a-9360-7949-9f9b7a8f2d3b';
+UPDATE h_speciality SET parent_id='a84482fc-3fa9-12a1-285d-de2dd7426847', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='6f2ba905-99dd-f379-b1da-6507e8ff1b7f';
+UPDATE h_speciality SET parent_id='a84482fc-3fa9-12a1-285d-de2dd7426847', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='a2960797-d6f9-da25-082c-87dfc894c7da';
+UPDATE h_speciality SET parent_id='23c96ba5-0c6f-3690-bc55-8f4521811351', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='033d2fc6-1997-45eb-a807-18011e25a2d4';
+UPDATE h_speciality SET parent_id='23c96ba5-0c6f-3690-bc55-8f4521811351', updated_at=CURRENT_TIMESTAMP, updated_by='seed:S017-muammoli-l4' WHERE id='c6cd0cdd-d15b-a7c0-e303-7ba54a7c7d99';
+-- Yil (yaratilgan L4): 2026
+INSERT INTO h_speciality_year (speciality_id, year) VALUES
+  ('36113123-c4b7-5df0-b414-29148fd9cb91', 2026),
+  ('6b31fcd3-858a-505f-b5f6-1f213fb59f97', 2026),
+  ('518c93d5-eb0b-51c5-b1af-8874b5c47b13', 2026),
+  ('92b26372-0fc4-56a7-96f7-9cbceee5ac5b', 2026),
+  ('f48da2b3-a39f-5d71-acc1-df6999936abc', 2026),
+  ('ecbf233d-49c3-5a1f-bc13-87c0831bb4aa', 2026),
+  ('257907fd-b810-563f-b6ac-2e35ef7c33f4', 2026),
+  ('b81a4720-b739-5343-b271-d80c56c4dad2', 2026),
+  ('90d74c91-8d71-538b-a88e-beeb2fc11b20', 2026),
+  ('e74b677f-ae8e-57fe-9e89-532ac9e452ce', 2026),
+  ('ee167c49-1c6b-5f7e-975b-fa76dde1bcd0', 2026),
+  ('6a3178d8-28b4-538e-94af-5f9ff5a4b8bf', 2026),
+  ('c9e2f243-2a77-5829-890b-832c082959cc', 2026),
+  ('113de422-2fc6-56f9-b92c-bfc1294fb8e6', 2026),
+  ('5b442456-e2fc-5b1d-8c81-557643142f14', 2026),
+  ('9af059d6-19b4-5710-b767-268a75298c61', 2026),
+  ('f23be88f-a418-5b89-aeef-6226291e370e', 2026),
+  ('00aee2ab-2931-5bb1-b7f4-1bf5429bca13', 2026),
+  ('98dd7e98-f757-5b42-89a2-5506c752c607', 2026),
+  ('d63021ee-2731-5a12-9142-88dfa0ca0124', 2026),
+  ('61701d21-f964-555f-a47f-3776c174b71f', 2026),
+  ('e4b6dcf9-4582-57a0-a0ee-567893e421f2', 2026),
+  ('e57b52ed-b3f0-58be-a50c-9ce650f68078', 2026),
+  ('4974c873-0469-5a43-87bf-cb96c787d20d', 2026),
+  ('2a850047-0497-50ec-898f-81fd3deb2d61', 2026),
+  ('92e9f16d-68af-579b-b69b-1b886dae2a7f', 2026),
+  ('b954d7ab-ea66-5c16-af38-5620e00afd95', 2026),
+  ('7efdf1b2-d9e1-59e1-adbe-28c109064f76', 2026),
+  ('f23c7b96-3919-5518-8eb3-fd0726cd9a8e', 2026),
+  ('ab8ca32d-9280-5461-a9e5-6963cdc1aa2d', 2026),
+  ('8928abb1-a7e4-5e6b-a7b3-06ae6b40affb', 2026),
+  ('0e46c635-86b7-5837-9f99-114df2ebf0ec', 2026),
+  ('6811f956-b7bb-55a5-b07b-929bd0efab6f', 2026),
+  ('cb95c84f-813b-5de7-97eb-380f25401cbe', 2026),
+  ('cfea2d1a-5d22-54d8-b929-506762df6dac', 2026),
+  ('a2f11d27-a0da-53b3-9041-1bc5b1ae78c3', 2026),
+  ('c624f305-0209-55bf-9ccc-1933fffc94d4', 2026),
+  ('6f9d9e1a-25e6-509e-9b2a-9eaccdb2d217', 2026)
+ON CONFLICT (speciality_id, year) DO NOTHING;
+-- Yil (ko'chirilgan L4): eski yil o'chirilib, yangi 2026 L3 otasining yillari olinadi:
+DELETE FROM h_speciality_year WHERE speciality_id IN ('0d57d968-d758-46c8-e703-31644fc1d656','9b2469bc-9a84-bbe5-6b1e-ca6089845111','9fbe2244-9159-0464-bc32-1b7372f18a93','b935ffed-ebdf-f796-9855-feff5b237d06','b10b1b3c-b5ab-1968-94a5-e57bc17053f0','c18394d9-2bf4-207e-5d8a-04333280ab69','58c67396-5f2a-9789-3908-3d800a4ba17a','01844246-b3ed-a5b1-b042-fe880300a489','3e8ee146-f687-0834-3985-e91113bec034','01c7797c-5118-31aa-e12e-0e8f8a666f37','36061545-0b24-c688-2d26-ce122a6bfc94','9777456c-b52b-d9a0-dfaf-7de2578267c7','05401578-17e4-4fec-131b-523b374b875e','c8d36ea1-1847-86aa-40fb-a1cff84bd4d2','e7076523-fe12-f932-76f1-6afa25f9f892','1acb4bb4-7699-8c86-4249-1022214ce808','00799f09-df9a-e763-3ec2-2c304056cdd8','7ab2145d-939d-2430-f52f-453754990860','3037d90f-f24c-5945-229f-a2f2a7c7123b','fe75a1c0-0868-3eeb-d35f-a6582dfde118','036c2194-71a6-753b-ee08-2bca72df9a36','6185175a-6bc9-eb0d-2d81-3263ad3c5513','8d97d61a-abd5-7b9b-4236-65e5f8b9480e','a41e8ae4-8fad-50b7-6b44-e57621b33f19','c5ba9ad4-9b67-050c-470f-e600b610c726','f859bc24-d033-fc5c-257a-2ce93bc33589','533ff24a-be18-6d5a-0620-1509eefddb6c','4ac05d1c-9c07-392e-6b55-2dc6207514c0','00ddd2c2-8ab8-4ae4-9333-c438c292176b','48a81789-eacf-dacd-c0fe-efc8b2d9b1ef','15637066-7481-1579-2c35-bc3da4d67a79','cea918ae-6a64-a1f3-40a0-752bd1fdab36','a818678d-d54b-05f5-3fe2-ec37ec8cf36a','26b60324-72c4-9d92-8be6-cbd0dded1a79','060cbf21-35a4-98c9-c853-cc63a878aed4','9fe76382-83ff-694e-643f-eff4ea3f2eea','e07fc0ca-b42b-cda7-9023-a50b77a138a1','7e3ecffb-69e2-bc10-a6ad-ffe546d07401','84aa0bdd-f484-f36a-2919-5ef3eca99ce5','da61cd19-f440-cecd-6997-33b3a1068c37','144fac88-f900-3dc8-e5d5-2f586b7f09ed','02bc4574-c77a-6d6c-7534-cb2d045f9fed','3b3f0a61-1c26-49dc-f857-bfa831de9731','814a029f-eee0-befc-9dbc-ad43fe9807c5','182c35c2-a926-375a-9ddd-d6e3a5abf7f8','c5c58418-9d60-fd95-5c53-79acec772bf3','e6638e7e-d8a4-8ab9-2672-c6271eda7e87','1898ffd1-8f45-f2f8-3318-76ff153611bd','861df4e8-9900-5024-12fd-816ac4081729','d9060313-a5a4-4382-fd6a-6e8d9c58132b','32239264-828c-0f8b-d3e2-473bee4c9d46','1ca8cb79-7508-4df6-571a-35b8702ae0dc','80d23cfb-51f7-9e0f-4d23-72ad1428ab16','e73311bf-4383-4dfa-cca4-449e708c2dd4','74f61cf5-e393-46d4-159b-006b61c752cf','bace1b04-2e17-cccd-e073-79e383e05553','9220e7ae-2cfa-0661-3374-3ca2c98d251d','6c75353c-04aa-dea0-a117-c70e4a90b598','bda47a45-712f-de9c-8131-b9715561bf85','f0d5c66e-eae3-56eb-1936-01c396f997db','cc17b177-3695-ed29-788e-40a23c3e14f1','54228419-95a1-e7ea-50ec-049ff65c03da','275926cd-d58c-a99f-4f6b-6dd9ca197f13','9887770c-b9c8-4008-3f9a-8600f61d7c54','963b7ae1-8209-eda2-ddfc-d21d16953527','c3565692-9f28-7244-9ebe-2c830f5802e9','49d42bcf-f867-0767-cf7f-7589cfea2918','755a2c56-92ff-8072-b9d8-9df30a4d39a0','fe257c76-0fb2-fb0e-f582-d3db13ad3770','f281e314-3f00-481d-efa4-c488db02e3b1','47c47d03-d678-4d61-0199-deff7197ac49','9d64f570-6779-de4f-bc4a-26b1a7cb1a5d','acff2db6-af6a-2435-85e6-b43fec8a25eb','d52af894-d7cf-9a16-11f8-760b69826285','e0574cc5-1ede-37b1-50c7-4e7b610909ff','e140e1af-29b1-c425-2fd7-e3a6e5dc49cc','c0d8edc0-153d-29e7-933b-b85b2d18a1b3','64aa631d-0263-0f78-0eed-d9e08874f530','7bd7c34e-8b4b-9bb4-ccec-a4822ccc87e4','08cea636-55d5-116d-fded-4f6e70efb5d3','1d92ece1-2e3f-49a4-542f-a845fc2b56cc','68c08b3c-6906-e11b-7cea-a42b2c6d2723','a39d9f15-a304-9bdc-bd39-9e17bedb0242','b52faa39-bdb2-e7fd-209b-9aafc5dbd9a9','fd4b0e02-cb97-7b4a-6586-b6868ec04d09','83a2ccbc-7888-5cb7-65bf-f1d15c0e9909','8861d516-d017-03a1-93f3-6cd849366f46','561afea9-ec6a-ab27-14d5-7f602f3deac5','89d31c20-bee4-3b9d-8d8b-95a597629693','7c71cfc7-cda2-5bf2-4397-2a0811f6016a','790cfea6-c37e-a81f-88c0-020bf63be7de','0e314754-5045-1840-a959-c6a947acc5f6','cfee2ced-5599-ba94-b55a-4718a812f8de','0614d5d1-1275-ff75-faa9-d0baacb62125','8eadcd7d-f92a-3fb2-cad4-2d19688ea343','082d56fc-f587-3f61-57f8-f28d65c20925','3514092c-5b8b-d7ce-e260-9387b6a0f10b','352c9a0a-f198-a889-5304-a8419bf3eebd','8da50f6f-8068-f60d-717c-91f2c63d00c2','35d44ed1-e742-b614-8b7a-868806bedc79','52d19d3e-510c-3be6-b9f9-76b4e80bfa81','a0c19af4-bc56-b02e-980b-93779f575b03','9cbee601-1129-1ba0-fcc3-a115cb49dd6b','beb1f700-7a54-0572-a0d0-ad1c0b3b2832','8939e086-c7e8-4d12-65a7-2a457f50003d','3dfbf621-a7c8-7581-bb85-b0fff3e7386b','1aed36fa-346a-4e2d-d71b-e6bf81ad3503','0c06d98e-f6bc-a974-784a-681e3da48b30','927d4ccf-79b3-9739-0492-13f6c77ba5f6','d874b616-6105-efaa-f4d8-1961817a1d5f','d62a1582-c1e3-8681-3570-e721c13e618b','2cbe230f-820f-6d2c-89f9-27141b313039','e3ed367a-167b-f679-58f1-ff72f639ebcb','26b8882c-e318-230f-f102-872995a7fae9','457ca0fe-81d9-bdf1-b27d-0feafb264c14','83d0e34b-36d9-adbc-11f2-7c4f05108311','64fb4f07-55fd-d2d5-8d49-091ea21052e4','72e9cf5e-7c80-1b11-0e21-142b30a1dbc3','252d7c2c-3954-4c86-1b34-6c9343709238','c5a5bf2f-abdf-5ea7-df14-9d82be364bce','d919361d-e164-e210-73b2-9f601694e723','18204089-e5ff-7dfc-8b70-b3f3d217cf8a','630ae1f1-75df-e358-de82-a7bbe30334a1','ac8bf2fd-16ba-0aeb-6e05-2a47f88c24d8','d0b0afa4-062c-a5b8-2b0d-2d91056e10d8','54ff3003-88ce-4e78-f6be-77018db017c4','e99257fc-a324-9c57-d575-ddb47bb7b9db','50bea0ad-713a-9360-7949-9f9b7a8f2d3b','6f2ba905-99dd-f379-b1da-6507e8ff1b7f','a2960797-d6f9-da25-082c-87dfc894c7da','033d2fc6-1997-45eb-a807-18011e25a2d4','c6cd0cdd-d15b-a7c0-e303-7ba54a7c7d99');
+INSERT INTO h_speciality_year (speciality_id, year) VALUES
+  ('0d57d968-d758-46c8-e703-31644fc1d656', 2024),
+  ('0d57d968-d758-46c8-e703-31644fc1d656', 2026),
+  ('9b2469bc-9a84-bbe5-6b1e-ca6089845111', 2024),
+  ('9b2469bc-9a84-bbe5-6b1e-ca6089845111', 2026),
+  ('9fbe2244-9159-0464-bc32-1b7372f18a93', 2024),
+  ('9fbe2244-9159-0464-bc32-1b7372f18a93', 2026),
+  ('b935ffed-ebdf-f796-9855-feff5b237d06', 2024),
+  ('b935ffed-ebdf-f796-9855-feff5b237d06', 2026),
+  ('b10b1b3c-b5ab-1968-94a5-e57bc17053f0', 2024),
+  ('b10b1b3c-b5ab-1968-94a5-e57bc17053f0', 2026),
+  ('c18394d9-2bf4-207e-5d8a-04333280ab69', 2024),
+  ('c18394d9-2bf4-207e-5d8a-04333280ab69', 2026),
+  ('58c67396-5f2a-9789-3908-3d800a4ba17a', 2024),
+  ('58c67396-5f2a-9789-3908-3d800a4ba17a', 2026),
+  ('01844246-b3ed-a5b1-b042-fe880300a489', 2024),
+  ('01844246-b3ed-a5b1-b042-fe880300a489', 2026),
+  ('3e8ee146-f687-0834-3985-e91113bec034', 2024),
+  ('3e8ee146-f687-0834-3985-e91113bec034', 2026),
+  ('01c7797c-5118-31aa-e12e-0e8f8a666f37', 2024),
+  ('01c7797c-5118-31aa-e12e-0e8f8a666f37', 2026),
+  ('36061545-0b24-c688-2d26-ce122a6bfc94', 2024),
+  ('36061545-0b24-c688-2d26-ce122a6bfc94', 2026),
+  ('9777456c-b52b-d9a0-dfaf-7de2578267c7', 2024),
+  ('9777456c-b52b-d9a0-dfaf-7de2578267c7', 2026),
+  ('05401578-17e4-4fec-131b-523b374b875e', 2024),
+  ('05401578-17e4-4fec-131b-523b374b875e', 2026),
+  ('c8d36ea1-1847-86aa-40fb-a1cff84bd4d2', 2024),
+  ('c8d36ea1-1847-86aa-40fb-a1cff84bd4d2', 2026),
+  ('e7076523-fe12-f932-76f1-6afa25f9f892', 2024),
+  ('e7076523-fe12-f932-76f1-6afa25f9f892', 2026),
+  ('1acb4bb4-7699-8c86-4249-1022214ce808', 2024),
+  ('1acb4bb4-7699-8c86-4249-1022214ce808', 2026),
+  ('00799f09-df9a-e763-3ec2-2c304056cdd8', 2024),
+  ('00799f09-df9a-e763-3ec2-2c304056cdd8', 2026),
+  ('7ab2145d-939d-2430-f52f-453754990860', 2024),
+  ('7ab2145d-939d-2430-f52f-453754990860', 2026),
+  ('3037d90f-f24c-5945-229f-a2f2a7c7123b', 2024),
+  ('3037d90f-f24c-5945-229f-a2f2a7c7123b', 2026),
+  ('fe75a1c0-0868-3eeb-d35f-a6582dfde118', 2024),
+  ('fe75a1c0-0868-3eeb-d35f-a6582dfde118', 2026),
+  ('036c2194-71a6-753b-ee08-2bca72df9a36', 2024),
+  ('036c2194-71a6-753b-ee08-2bca72df9a36', 2026),
+  ('6185175a-6bc9-eb0d-2d81-3263ad3c5513', 2024),
+  ('6185175a-6bc9-eb0d-2d81-3263ad3c5513', 2026),
+  ('8d97d61a-abd5-7b9b-4236-65e5f8b9480e', 2024),
+  ('8d97d61a-abd5-7b9b-4236-65e5f8b9480e', 2026),
+  ('a41e8ae4-8fad-50b7-6b44-e57621b33f19', 2024),
+  ('a41e8ae4-8fad-50b7-6b44-e57621b33f19', 2026),
+  ('c5ba9ad4-9b67-050c-470f-e600b610c726', 2024),
+  ('c5ba9ad4-9b67-050c-470f-e600b610c726', 2026),
+  ('f859bc24-d033-fc5c-257a-2ce93bc33589', 2024),
+  ('f859bc24-d033-fc5c-257a-2ce93bc33589', 2026),
+  ('533ff24a-be18-6d5a-0620-1509eefddb6c', 2024),
+  ('533ff24a-be18-6d5a-0620-1509eefddb6c', 2026),
+  ('4ac05d1c-9c07-392e-6b55-2dc6207514c0', 2024),
+  ('4ac05d1c-9c07-392e-6b55-2dc6207514c0', 2026),
+  ('00ddd2c2-8ab8-4ae4-9333-c438c292176b', 2024),
+  ('00ddd2c2-8ab8-4ae4-9333-c438c292176b', 2026),
+  ('48a81789-eacf-dacd-c0fe-efc8b2d9b1ef', 2024),
+  ('48a81789-eacf-dacd-c0fe-efc8b2d9b1ef', 2026),
+  ('15637066-7481-1579-2c35-bc3da4d67a79', 2024),
+  ('15637066-7481-1579-2c35-bc3da4d67a79', 2026),
+  ('cea918ae-6a64-a1f3-40a0-752bd1fdab36', 2024),
+  ('cea918ae-6a64-a1f3-40a0-752bd1fdab36', 2026),
+  ('a818678d-d54b-05f5-3fe2-ec37ec8cf36a', 2024),
+  ('a818678d-d54b-05f5-3fe2-ec37ec8cf36a', 2026),
+  ('26b60324-72c4-9d92-8be6-cbd0dded1a79', 2024),
+  ('26b60324-72c4-9d92-8be6-cbd0dded1a79', 2026),
+  ('060cbf21-35a4-98c9-c853-cc63a878aed4', 2024),
+  ('060cbf21-35a4-98c9-c853-cc63a878aed4', 2026),
+  ('9fe76382-83ff-694e-643f-eff4ea3f2eea', 2024),
+  ('9fe76382-83ff-694e-643f-eff4ea3f2eea', 2026),
+  ('e07fc0ca-b42b-cda7-9023-a50b77a138a1', 2024),
+  ('e07fc0ca-b42b-cda7-9023-a50b77a138a1', 2026),
+  ('7e3ecffb-69e2-bc10-a6ad-ffe546d07401', 2024),
+  ('7e3ecffb-69e2-bc10-a6ad-ffe546d07401', 2026),
+  ('84aa0bdd-f484-f36a-2919-5ef3eca99ce5', 2024),
+  ('84aa0bdd-f484-f36a-2919-5ef3eca99ce5', 2026),
+  ('da61cd19-f440-cecd-6997-33b3a1068c37', 2024),
+  ('da61cd19-f440-cecd-6997-33b3a1068c37', 2026),
+  ('144fac88-f900-3dc8-e5d5-2f586b7f09ed', 2024),
+  ('144fac88-f900-3dc8-e5d5-2f586b7f09ed', 2026),
+  ('02bc4574-c77a-6d6c-7534-cb2d045f9fed', 2024),
+  ('02bc4574-c77a-6d6c-7534-cb2d045f9fed', 2026),
+  ('3b3f0a61-1c26-49dc-f857-bfa831de9731', 2024),
+  ('3b3f0a61-1c26-49dc-f857-bfa831de9731', 2026),
+  ('814a029f-eee0-befc-9dbc-ad43fe9807c5', 2024),
+  ('814a029f-eee0-befc-9dbc-ad43fe9807c5', 2026),
+  ('182c35c2-a926-375a-9ddd-d6e3a5abf7f8', 2024),
+  ('182c35c2-a926-375a-9ddd-d6e3a5abf7f8', 2026),
+  ('c5c58418-9d60-fd95-5c53-79acec772bf3', 2024),
+  ('c5c58418-9d60-fd95-5c53-79acec772bf3', 2026),
+  ('e6638e7e-d8a4-8ab9-2672-c6271eda7e87', 2024),
+  ('e6638e7e-d8a4-8ab9-2672-c6271eda7e87', 2026),
+  ('1898ffd1-8f45-f2f8-3318-76ff153611bd', 2024),
+  ('1898ffd1-8f45-f2f8-3318-76ff153611bd', 2026),
+  ('861df4e8-9900-5024-12fd-816ac4081729', 2024),
+  ('861df4e8-9900-5024-12fd-816ac4081729', 2026),
+  ('d9060313-a5a4-4382-fd6a-6e8d9c58132b', 2024),
+  ('d9060313-a5a4-4382-fd6a-6e8d9c58132b', 2026),
+  ('32239264-828c-0f8b-d3e2-473bee4c9d46', 2024),
+  ('32239264-828c-0f8b-d3e2-473bee4c9d46', 2026),
+  ('1ca8cb79-7508-4df6-571a-35b8702ae0dc', 2024),
+  ('1ca8cb79-7508-4df6-571a-35b8702ae0dc', 2026),
+  ('80d23cfb-51f7-9e0f-4d23-72ad1428ab16', 2024),
+  ('80d23cfb-51f7-9e0f-4d23-72ad1428ab16', 2026),
+  ('e73311bf-4383-4dfa-cca4-449e708c2dd4', 2024),
+  ('e73311bf-4383-4dfa-cca4-449e708c2dd4', 2026),
+  ('74f61cf5-e393-46d4-159b-006b61c752cf', 2024),
+  ('74f61cf5-e393-46d4-159b-006b61c752cf', 2026),
+  ('bace1b04-2e17-cccd-e073-79e383e05553', 2024),
+  ('bace1b04-2e17-cccd-e073-79e383e05553', 2026),
+  ('9220e7ae-2cfa-0661-3374-3ca2c98d251d', 2024),
+  ('9220e7ae-2cfa-0661-3374-3ca2c98d251d', 2026),
+  ('6c75353c-04aa-dea0-a117-c70e4a90b598', 2024),
+  ('6c75353c-04aa-dea0-a117-c70e4a90b598', 2026),
+  ('bda47a45-712f-de9c-8131-b9715561bf85', 2024),
+  ('bda47a45-712f-de9c-8131-b9715561bf85', 2026),
+  ('f0d5c66e-eae3-56eb-1936-01c396f997db', 2024),
+  ('f0d5c66e-eae3-56eb-1936-01c396f997db', 2026),
+  ('cc17b177-3695-ed29-788e-40a23c3e14f1', 2024),
+  ('cc17b177-3695-ed29-788e-40a23c3e14f1', 2026),
+  ('54228419-95a1-e7ea-50ec-049ff65c03da', 2024),
+  ('54228419-95a1-e7ea-50ec-049ff65c03da', 2026),
+  ('275926cd-d58c-a99f-4f6b-6dd9ca197f13', 2024),
+  ('275926cd-d58c-a99f-4f6b-6dd9ca197f13', 2026),
+  ('9887770c-b9c8-4008-3f9a-8600f61d7c54', 2024),
+  ('9887770c-b9c8-4008-3f9a-8600f61d7c54', 2026),
+  ('963b7ae1-8209-eda2-ddfc-d21d16953527', 2024),
+  ('963b7ae1-8209-eda2-ddfc-d21d16953527', 2026),
+  ('c3565692-9f28-7244-9ebe-2c830f5802e9', 2024),
+  ('c3565692-9f28-7244-9ebe-2c830f5802e9', 2026),
+  ('49d42bcf-f867-0767-cf7f-7589cfea2918', 2024),
+  ('49d42bcf-f867-0767-cf7f-7589cfea2918', 2026),
+  ('755a2c56-92ff-8072-b9d8-9df30a4d39a0', 2024),
+  ('755a2c56-92ff-8072-b9d8-9df30a4d39a0', 2026),
+  ('fe257c76-0fb2-fb0e-f582-d3db13ad3770', 2024),
+  ('fe257c76-0fb2-fb0e-f582-d3db13ad3770', 2026),
+  ('f281e314-3f00-481d-efa4-c488db02e3b1', 2024),
+  ('f281e314-3f00-481d-efa4-c488db02e3b1', 2026),
+  ('47c47d03-d678-4d61-0199-deff7197ac49', 2024),
+  ('47c47d03-d678-4d61-0199-deff7197ac49', 2026),
+  ('9d64f570-6779-de4f-bc4a-26b1a7cb1a5d', 2024),
+  ('9d64f570-6779-de4f-bc4a-26b1a7cb1a5d', 2026),
+  ('acff2db6-af6a-2435-85e6-b43fec8a25eb', 2024),
+  ('acff2db6-af6a-2435-85e6-b43fec8a25eb', 2026),
+  ('d52af894-d7cf-9a16-11f8-760b69826285', 2024),
+  ('d52af894-d7cf-9a16-11f8-760b69826285', 2026),
+  ('e0574cc5-1ede-37b1-50c7-4e7b610909ff', 2024),
+  ('e0574cc5-1ede-37b1-50c7-4e7b610909ff', 2026),
+  ('e140e1af-29b1-c425-2fd7-e3a6e5dc49cc', 2024),
+  ('e140e1af-29b1-c425-2fd7-e3a6e5dc49cc', 2026),
+  ('c0d8edc0-153d-29e7-933b-b85b2d18a1b3', 2024),
+  ('c0d8edc0-153d-29e7-933b-b85b2d18a1b3', 2026),
+  ('64aa631d-0263-0f78-0eed-d9e08874f530', 2024),
+  ('64aa631d-0263-0f78-0eed-d9e08874f530', 2026),
+  ('7bd7c34e-8b4b-9bb4-ccec-a4822ccc87e4', 2024),
+  ('7bd7c34e-8b4b-9bb4-ccec-a4822ccc87e4', 2026),
+  ('08cea636-55d5-116d-fded-4f6e70efb5d3', 2024),
+  ('08cea636-55d5-116d-fded-4f6e70efb5d3', 2026),
+  ('1d92ece1-2e3f-49a4-542f-a845fc2b56cc', 2024),
+  ('1d92ece1-2e3f-49a4-542f-a845fc2b56cc', 2026),
+  ('68c08b3c-6906-e11b-7cea-a42b2c6d2723', 2024),
+  ('68c08b3c-6906-e11b-7cea-a42b2c6d2723', 2026),
+  ('a39d9f15-a304-9bdc-bd39-9e17bedb0242', 2024),
+  ('a39d9f15-a304-9bdc-bd39-9e17bedb0242', 2026),
+  ('b52faa39-bdb2-e7fd-209b-9aafc5dbd9a9', 2024),
+  ('b52faa39-bdb2-e7fd-209b-9aafc5dbd9a9', 2026),
+  ('fd4b0e02-cb97-7b4a-6586-b6868ec04d09', 2024),
+  ('fd4b0e02-cb97-7b4a-6586-b6868ec04d09', 2026),
+  ('83a2ccbc-7888-5cb7-65bf-f1d15c0e9909', 2024),
+  ('83a2ccbc-7888-5cb7-65bf-f1d15c0e9909', 2026),
+  ('8861d516-d017-03a1-93f3-6cd849366f46', 2024),
+  ('8861d516-d017-03a1-93f3-6cd849366f46', 2026),
+  ('561afea9-ec6a-ab27-14d5-7f602f3deac5', 2024),
+  ('561afea9-ec6a-ab27-14d5-7f602f3deac5', 2026),
+  ('89d31c20-bee4-3b9d-8d8b-95a597629693', 2024),
+  ('89d31c20-bee4-3b9d-8d8b-95a597629693', 2026),
+  ('7c71cfc7-cda2-5bf2-4397-2a0811f6016a', 2024),
+  ('7c71cfc7-cda2-5bf2-4397-2a0811f6016a', 2026),
+  ('790cfea6-c37e-a81f-88c0-020bf63be7de', 2024),
+  ('790cfea6-c37e-a81f-88c0-020bf63be7de', 2026),
+  ('0e314754-5045-1840-a959-c6a947acc5f6', 2024),
+  ('0e314754-5045-1840-a959-c6a947acc5f6', 2026),
+  ('cfee2ced-5599-ba94-b55a-4718a812f8de', 2024),
+  ('cfee2ced-5599-ba94-b55a-4718a812f8de', 2026),
+  ('0614d5d1-1275-ff75-faa9-d0baacb62125', 2024),
+  ('0614d5d1-1275-ff75-faa9-d0baacb62125', 2026),
+  ('8eadcd7d-f92a-3fb2-cad4-2d19688ea343', 2024),
+  ('8eadcd7d-f92a-3fb2-cad4-2d19688ea343', 2026),
+  ('082d56fc-f587-3f61-57f8-f28d65c20925', 2024),
+  ('082d56fc-f587-3f61-57f8-f28d65c20925', 2026),
+  ('3514092c-5b8b-d7ce-e260-9387b6a0f10b', 2024),
+  ('3514092c-5b8b-d7ce-e260-9387b6a0f10b', 2026),
+  ('352c9a0a-f198-a889-5304-a8419bf3eebd', 2024),
+  ('352c9a0a-f198-a889-5304-a8419bf3eebd', 2026),
+  ('8da50f6f-8068-f60d-717c-91f2c63d00c2', 2024),
+  ('8da50f6f-8068-f60d-717c-91f2c63d00c2', 2026),
+  ('35d44ed1-e742-b614-8b7a-868806bedc79', 2024),
+  ('35d44ed1-e742-b614-8b7a-868806bedc79', 2026),
+  ('52d19d3e-510c-3be6-b9f9-76b4e80bfa81', 2024),
+  ('52d19d3e-510c-3be6-b9f9-76b4e80bfa81', 2026),
+  ('a0c19af4-bc56-b02e-980b-93779f575b03', 2024),
+  ('a0c19af4-bc56-b02e-980b-93779f575b03', 2026),
+  ('9cbee601-1129-1ba0-fcc3-a115cb49dd6b', 2024),
+  ('9cbee601-1129-1ba0-fcc3-a115cb49dd6b', 2026),
+  ('beb1f700-7a54-0572-a0d0-ad1c0b3b2832', 2024),
+  ('beb1f700-7a54-0572-a0d0-ad1c0b3b2832', 2026),
+  ('8939e086-c7e8-4d12-65a7-2a457f50003d', 2024),
+  ('8939e086-c7e8-4d12-65a7-2a457f50003d', 2026),
+  ('3dfbf621-a7c8-7581-bb85-b0fff3e7386b', 2024),
+  ('3dfbf621-a7c8-7581-bb85-b0fff3e7386b', 2026),
+  ('1aed36fa-346a-4e2d-d71b-e6bf81ad3503', 2024),
+  ('1aed36fa-346a-4e2d-d71b-e6bf81ad3503', 2026),
+  ('0c06d98e-f6bc-a974-784a-681e3da48b30', 2024),
+  ('0c06d98e-f6bc-a974-784a-681e3da48b30', 2026),
+  ('927d4ccf-79b3-9739-0492-13f6c77ba5f6', 2024),
+  ('927d4ccf-79b3-9739-0492-13f6c77ba5f6', 2026),
+  ('d874b616-6105-efaa-f4d8-1961817a1d5f', 2024),
+  ('d874b616-6105-efaa-f4d8-1961817a1d5f', 2026),
+  ('d62a1582-c1e3-8681-3570-e721c13e618b', 2024),
+  ('d62a1582-c1e3-8681-3570-e721c13e618b', 2026),
+  ('2cbe230f-820f-6d2c-89f9-27141b313039', 2024),
+  ('2cbe230f-820f-6d2c-89f9-27141b313039', 2026),
+  ('e3ed367a-167b-f679-58f1-ff72f639ebcb', 2024),
+  ('e3ed367a-167b-f679-58f1-ff72f639ebcb', 2026),
+  ('26b8882c-e318-230f-f102-872995a7fae9', 2024),
+  ('26b8882c-e318-230f-f102-872995a7fae9', 2026),
+  ('457ca0fe-81d9-bdf1-b27d-0feafb264c14', 2024),
+  ('457ca0fe-81d9-bdf1-b27d-0feafb264c14', 2026),
+  ('83d0e34b-36d9-adbc-11f2-7c4f05108311', 2024),
+  ('83d0e34b-36d9-adbc-11f2-7c4f05108311', 2026),
+  ('64fb4f07-55fd-d2d5-8d49-091ea21052e4', 2024),
+  ('64fb4f07-55fd-d2d5-8d49-091ea21052e4', 2026),
+  ('72e9cf5e-7c80-1b11-0e21-142b30a1dbc3', 2024),
+  ('72e9cf5e-7c80-1b11-0e21-142b30a1dbc3', 2026),
+  ('252d7c2c-3954-4c86-1b34-6c9343709238', 2024),
+  ('252d7c2c-3954-4c86-1b34-6c9343709238', 2026),
+  ('c5a5bf2f-abdf-5ea7-df14-9d82be364bce', 2024),
+  ('c5a5bf2f-abdf-5ea7-df14-9d82be364bce', 2026),
+  ('d919361d-e164-e210-73b2-9f601694e723', 2024),
+  ('d919361d-e164-e210-73b2-9f601694e723', 2026),
+  ('18204089-e5ff-7dfc-8b70-b3f3d217cf8a', 2024),
+  ('18204089-e5ff-7dfc-8b70-b3f3d217cf8a', 2026),
+  ('630ae1f1-75df-e358-de82-a7bbe30334a1', 2024),
+  ('630ae1f1-75df-e358-de82-a7bbe30334a1', 2026),
+  ('ac8bf2fd-16ba-0aeb-6e05-2a47f88c24d8', 2024),
+  ('ac8bf2fd-16ba-0aeb-6e05-2a47f88c24d8', 2026),
+  ('d0b0afa4-062c-a5b8-2b0d-2d91056e10d8', 2024),
+  ('d0b0afa4-062c-a5b8-2b0d-2d91056e10d8', 2026),
+  ('54ff3003-88ce-4e78-f6be-77018db017c4', 2024),
+  ('54ff3003-88ce-4e78-f6be-77018db017c4', 2026),
+  ('e99257fc-a324-9c57-d575-ddb47bb7b9db', 2024),
+  ('e99257fc-a324-9c57-d575-ddb47bb7b9db', 2026),
+  ('50bea0ad-713a-9360-7949-9f9b7a8f2d3b', 2024),
+  ('50bea0ad-713a-9360-7949-9f9b7a8f2d3b', 2026),
+  ('6f2ba905-99dd-f379-b1da-6507e8ff1b7f', 2024),
+  ('6f2ba905-99dd-f379-b1da-6507e8ff1b7f', 2026),
+  ('a2960797-d6f9-da25-082c-87dfc894c7da', 2024),
+  ('a2960797-d6f9-da25-082c-87dfc894c7da', 2026),
+  ('033d2fc6-1997-45eb-a807-18011e25a2d4', 2024),
+  ('033d2fc6-1997-45eb-a807-18011e25a2d4', 2026),
+  ('c6cd0cdd-d15b-a7c0-e303-7ba54a7c7d99', 2024),
+  ('c6cd0cdd-d15b-a7c0-e303-7ba54a7c7d99', 2026)
+ON CONFLICT (speciality_id, year) DO NOTHING;
+-- <<< MUAMMOLI-L4-2026-FIX <<<
