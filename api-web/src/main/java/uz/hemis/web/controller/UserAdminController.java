@@ -69,7 +69,10 @@ public class UserAdminController {
     // POST (not GET) — PINFL + passport are PII and must travel in the body, never the URL
     // query-string (which nginx/proxies write to access logs). Read-only despite the POST verb.
     @PostMapping("/person-lookup")
-    @PreAuthorize("hasAnyAuthority('users.create', 'users.edit', 'users.manage')")
+    // Narrowed to users.create (+ manage): the autofill fetch lives ONLY in the CREATE form
+    // (FE renders the person section under !isEdit). Dropping users.edit shrinks the
+    // national-PII lookup surface (a scope-limited editor can no longer harvest by PINFL).
+    @PreAuthorize("hasAnyAuthority('users.create', 'users.manage')")
     @Operation(summary = "Lookup person by PINFL + passport",
             description = "Resolve person data (name, birth date, passport, address, ...) from the "
                     + "GUVD/api_mspd gateway to autofill the person create form. Read-only — no DB side-effect. "

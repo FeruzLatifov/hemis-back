@@ -106,6 +106,10 @@ public class UserCreateRequest {
     @Size(max = 64) @Schema(nullable = true) private String nationality;
     @Size(max = 512) @Schema(nullable = true) private String address;
 
+    // Bound the base64 payload — the backing column is TEXT (unbounded); without a cap a
+    // caller could push multi-MB blobs (DB bloat / heap pressure). ~2M chars ≈ a ~1.5MB
+    // image; GUVD headshots are far smaller.
+    @Size(max = 2_000_000, message = "photo too large")
     @Schema(description = "Person photo base64 (GUVD)", nullable = true)
     private String photo;
 }
