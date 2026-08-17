@@ -81,6 +81,7 @@ PERFORM _seed_msg('label',  'Quick search',                           'Tezkor qi
 PERFORM _seed_msg('label',  'Search pages...',                        'Sahifalarni qidirish...',         'Саҳифаларни қидириш...',          'Поиск страниц...');
 PERFORM _seed_msg('label',  'Search pages (Ctrl+K)',                  'Sahifalarni qidirish (Ctrl+K)',   'Саҳифаларни қидириш (Ctrl+K)',    'Поиск страниц (Ctrl+K)');
 PERFORM _seed_msg('label',  'Search by code...',                      'Kod bo''yicha qidirish...',       'Код бўйича қидириш...',           'Поиск по коду...');
+PERFORM _seed_msg('label',  'Search by code or name',                 'Kod yoki nom bo''yicha qidirish', 'Код ёки ном бўйича қидириш',       'Поиск по коду или названию');
 PERFORM _seed_msg('label',  'Search by PINFL...',                     'JSHSHIR bo''yicha qidirish...',   'ЖШШИР бўйича қидириш...',         'Поиск по ПИНФЛ...');
 PERFORM _seed_msg('label',  'Search permissions...',                  'Ruxsatlarni qidirish...',         'Рухсатларни қидириш...',          'Поиск разрешений...');
 PERFORM _seed_msg('label',  'Search roles...',                        'Rollarni qidirish...',            'Ролларни қидириш...',             'Поиск ролей...');
@@ -389,6 +390,15 @@ PERFORM _seed_msg('message', 'Attached speciality created',                     
 PERFORM _seed_msg('message', 'Attached speciality updated',                              'Biriktirilgan mutaxassislik yangilandi','Бириктирилган мутахассислик янгиланди','Прикреплённая специальность обновлена');
 PERFORM _seed_msg('message', 'Attached speciality deleted',                              'Biriktirilgan mutaxassislik o''chirildi','Бириктирилган мутахассислик ўчирилди','Прикреплённая специальность удалена');
 PERFORM _seed_msg('confirm', 'Delete attached speciality?',                              'Biriktirilgan mutaxassislik o''chirilsinmi?','Бириктирилган мутахассислик ўчирилсинми?','Удалить прикреплённую специальность?');
+-- Speciality-attachment ASSIGN dialog + toolbar labels (front-sourced; aligned into S010 so sync:translations keeps them).
+-- 'Attach' is the shared key for the toolbar button + dialog; the value is the short "Biriktirish" label.
+PERFORM _seed_msg('action',  'Attach',                                                   'Biriktirish',                     'Бириктириш',                      'Прикрепить');
+PERFORM _seed_msg('action',  'Select speciality',                                        'Mutaxassislikni tanlang',         'Мутахассисликни танланг',         'Выберите специальность');
+-- Education-form option labels — key literal is the Uzbek word, so 6-arg form keeps a clean English translation
+PERFORM _seed_msg('label',   'Kunduzgi', 'Full-time',                                    'Kunduzgi',                        'Кундузги',                        'Дневная');
+PERFORM _seed_msg('label',   'Kechki',   'Evening',                                      'Kechki',                          'Кечки',                           'Вечерняя');
+PERFORM _seed_msg('label',   'Masofaviy','Distance',                                     'Masofaviy',                       'Масофавий',                       'Дистанционная');
+PERFORM _seed_msg('message', 'Data refreshed',                                           'Ma''lumotlar yangilandi',         'Маълумотлар янгиланди',           'Данные обновлены');
 
 -- Diploma blanks + Blank distribution registry cards (institutions module)
 -- NOTE: 'Number' already seeded below (student registry) — reused, not duplicated.
@@ -774,6 +784,31 @@ PERFORM _seed_msg('label',  'Change admission years?',                'Qabul yil
 PERFORM _seed_msg('label',  'The current years will be replaced with the selected ones.', 'Joriy yillar tanlangan yillar bilan almashtiriladi.', 'Жорий йиллар танланган йиллар билан алмаштирилади.', 'Текущие годы будут заменены выбранными.');
 PERFORM _seed_msg('label',  'Added',                                  'Qo''shiladi',                      'Қўшилади',                        'Добавляются');
 PERFORM _seed_msg('label',  'Removed',                                'O''chiriladi',                     'Ўчирилади',                       'Удаляются');
+
+-- ──────────────────────────────────────────────────────
+-- USER CREATE — person (PINFL + GUVD autofill) / university-login modes
+-- ──────────────────────────────────────────────────────
+PERFORM _seed_msg('label',  'Account type',                           'Akkaunt turi',                    'Аккаунт тури',                    'Тип аккаунта');
+PERFORM _seed_msg('label',  'Person (staff)',                         'Shaxs (xodim)',                   'Шахс (ходим)',                    'Физлицо (сотрудник)');
+PERFORM _seed_msg('label',  'University login',                       'Universitet logini',              'Университет логини',              'Логин вуза');
+PERFORM _seed_msg('label',  'Service login for the old-hemis connection method (manual username + password).', 'Eski hemis ulanish usuli uchun xizmat logini (qo''lda foydalanuvchi nomi + parol).', 'Эски hemis уланиш усули учун хизмат логини (қўлда фойдаланувчи номи + парол).', 'Служебный логин для старого способа подключения hemis (ручной логин + пароль).');
+PERFORM _seed_msg('label',  'Ministry/university staff. Login is the PINFL; details are fetched from the passport service.', 'Vazirlik/universitet xodimi. Login — PINFL; ma''lumotlar pasport xizmatidan olinadi.', 'Вазирлик/университет ходими. Логин — PINFL; маълумотлар паспорт хизматидан олинади.', 'Сотрудник министерства/вуза. Логин — ПИНФЛ; данные загружаются из паспортной службы.');
+PERFORM _seed_msg('label',  'Person',                                 'Shaxs',                           'Шахс',                            'Физлицо');
+PERFORM _seed_msg('label',  'Passport (series + number)',             'Pasport (seriya + raqam)',        'Паспорт (серия + рақам)',         'Паспорт (серия + номер)');
+PERFORM _seed_msg('action', 'Fetch',                                  'Olish',                           'Олиш',                            'Получить');
+PERFORM _seed_msg('label',  'The login is automatically set to the PINFL.', 'Login avtomatik ravishda PINFL qilib belgilanadi.', 'Логин автоматик равишда PINFL қилиб белгиланади.', 'Логин автоматически устанавливается равным ПИНФЛ.');
+PERFORM _seed_msg('label',  'Nationality',                            'Millati',                         'Миллати',                         'Национальность');
+PERFORM _seed_msg('label',  'Photo',                                  'Rasm',                            'Расм',                            'Фото');
+PERFORM _seed_msg('label',  'Display name',                           'Ko''rsatiladigan nom',            'Кўрсатиладиган ном',              'Отображаемое имя');
+PERFORM _seed_msg('label',  'Required for a university login.',       'Universitet logini uchun majburiy.', 'Университет логини учун мажбурий.', 'Обязательно для логина вуза.');
+PERFORM _seed_msg('label',  'The new account is enabled by default.', 'Yangi akkaunt sukut bo''yicha faol.', 'Янги аккаунт сукут бўйича фаол.', 'Новый аккаунт активен по умолчанию.');
+PERFORM _seed_msg('validation', 'PINFL must be 14 digits',            'PINFL 14 raqamdan iborat bo''lishi kerak', 'PINFL 14 рақамдан иборат бўлиши керак', 'ПИНФЛ должен состоять из 14 цифр');
+PERFORM _seed_msg('validation', 'University is required',             'Universitet majburiy',            'Университет мажбурий',            'Требуется вуз');
+PERFORM _seed_msg('toast',  'Enter passport or birth date to fetch person data', 'Ma''lumot olish uchun pasport yoki tug''ilgan sanani kiriting', 'Маълумот олиш учун паспорт ёки туғилган санани киритинг', 'Введите паспорт или дату рождения для получения данных');
+PERFORM _seed_msg('toast',  'Person not found',                       'Shaxs topilmadi',                 'Шахс топилмади',                  'Физлицо не найдено');
+PERFORM _seed_msg('toast',  'Person data loaded',                     'Shaxs ma''lumotlari yuklandi',    'Шахс маълумотлари юкланди',       'Данные физлица загружены');
+PERFORM _seed_msg('toast',  'Failed to fetch person data',            'Shaxs ma''lumotlarini olishda xatolik', 'Шахс маълумотларини олишда хатолик', 'Не удалось получить данные физлица');
+PERFORM _seed_msg('toast',  'A user with this PINFL already exists',  'Bu PINFL bilan foydalanuvchi allaqachon mavjud', 'Бу PINFL билан фойдаланувчи аллақачон мавжуд', 'Пользователь с таким ПИНФЛ уже существует');
 END $$;
 
 -- =====================================================

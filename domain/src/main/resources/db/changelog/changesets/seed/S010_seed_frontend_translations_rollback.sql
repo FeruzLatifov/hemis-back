@@ -25,7 +25,7 @@ DECLARE
         -- LABELS
         'Account lock','Account status','Activity','Activity details','All actions','All events',
         'All pages','Recent','Results','Quick search','Search pages...','Search pages (Ctrl+K)',
-        'Search by code...','Search by PINFL...','Search permissions...','Search roles...',
+        'Search by code...','Search by code or name','Search by PINFL...','Search permissions...','Search roles...',
         'Key or text...','Breadcrumb','Sidebar','Main header','Main navigation','User menu',
         'Notifications','Quick links','Need help?','Skip to main content','Light','Dark',
         'Other languages','Uzbek (latin)','Cyrillic text (oz-UZ)','Russian translation (ru-RU)',
@@ -60,6 +60,8 @@ DECLARE
         'Education type','Speciality level','Speciality','Bachelor','Master','Ordinatura','Doctoral',
         'No attached specialities have been added yet','Attached speciality created',
         'Attached speciality updated','Attached speciality deleted','Delete attached speciality?',
+        -- Speciality-attachment assign dialog + toolbar labels
+        'Attach','Select speciality','Kunduzgi','Kechki','Masofaviy','Data refreshed',
         -- Diploma blanks + Blank distribution registry cards ('Number' owned by student registry — excluded)
         'Diploma blanks','Blank distribution','Blank code','Series','Start number','End number',
         'Quantity','Blank category','Received date','Distribution date','Supplier',
@@ -176,7 +178,17 @@ DECLARE
         'Level','Education level','Hierarchy level',
         -- SPECIALITY CLASSIFIER (mandatory years + edit-change confirm)
         'At least one year is required','Change admission years?',
-        'The current years will be replaced with the selected ones.','Added','Removed'
+        'The current years will be replaced with the selected ones.','Added','Removed',
+        -- USER CREATE (person/university-login + GUVD autofill)
+        'Account type','Person (staff)','University login',
+        'Service login for the old-hemis connection method (manual username + password).',
+        'Ministry/university staff. Login is the PINFL; details are fetched from the passport service.',
+        'Person','Passport (series + number)','Fetch',
+        'The login is automatically set to the PINFL.','Nationality','Photo','Display name',
+        'Required for a university login.','The new account is enabled by default.',
+        'PINFL must be 14 digits','University is required',
+        'Enter passport or birth date to fetch person data','Person not found',
+        'Person data loaded','Failed to fetch person data','A user with this PINFL already exists'
     ];
 BEGIN
     SELECT EXISTS (

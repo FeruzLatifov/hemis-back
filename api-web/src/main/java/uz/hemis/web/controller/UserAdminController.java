@@ -26,6 +26,7 @@ import uz.hemis.common.dto.PageResponse;
 import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.admin.UserAdminService;
+import uz.hemis.service.admin.GovPersonLookupService;
 import uz.hemis.service.admin.dto.*;
 
 import java.util.List;
@@ -59,10 +60,32 @@ import java.util.UUID;
 public class UserAdminController {
 
     private final UserAdminService userAdminService;
+    private final GovPersonLookupService govPersonLookupService;
 
     // =====================================================
     // READ ENDPOINTS
     // =====================================================
+
+    // POST (not GET) — PINFL + passport are PII and must travel in the body, never the URL
+    // query-string (which nginx/proxies write to access logs). Read-only despite the POST verb.
+    @PostMapping("/person-lookup")
+    @PreAuthorize("hasAnyAuthority('users.create', 'users.edit', 'users.manage')")
+    @Operation(summary = "Lookup person by PINFL + passport",
+            description = "Resolve person data (name, birth date, passport, address, ...) from the "
+                    + "GUVD/api_mspd gateway to autofill the person create form. Read-only — no DB side-effect. "
+                    + "PINFL/passport travel in the POST body (never the URL) to keep them out of access logs.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Person data (data is null if not found)"),
+            @ApiResponse(responseCode = "400", description = "Invalid PINFL, or neither document nor birth date supplied"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions")
+    })
+    public ResponseEntity<ResponseWrapper<GovPersonDto>> personLookup(
+            @Valid @RequestBody PersonLookupRequest request
+    ) {
+        GovPersonDto person = govPersonLookupService.lookup(request.pinfl(), request.document(), request.birthDate());
+        return ResponseEntity.ok(ResponseWrapper.success(person));
+    }
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('users.view', 'users.manage')")

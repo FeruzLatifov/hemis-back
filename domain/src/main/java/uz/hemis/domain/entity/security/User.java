@@ -13,6 +13,7 @@ import org.hibernate.type.SqlTypes;
 import uz.hemis.common.enums.UserType;
 import uz.hemis.domain.entity.base.AuditableEntity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -285,6 +286,51 @@ public class User extends AuditableEntity {
      */
     @Column(name = "organization_id")
     private UUID organizationId;
+
+    // =====================================================
+    // Person data (GUVD/api_mspd passport-data autofill) — "Shaxs" akkaunt turi.
+    // Har bir tashqi-API maydoni o'z ustunida (V020). PII: passport ham read-gated.
+    // =====================================================
+
+    /** Tug'ilgan sana (GUVD: birth_date). Column: birth_date DATE */
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
+    /** Tug'ilgan joy (GUVD: birth_place). Column: birth_place VARCHAR(255) */
+    @Column(name = "birth_place", length = 255)
+    private String birthPlace;
+
+    /** Pasport seriya+raqam, masalan AB1234567 (GUVD: document). PII. Column: passport VARCHAR(16) */
+    @Column(name = "passport", length = 16)
+    private String passport;
+
+    /** Pasport berilgan joy (GUVD: doc_give_place). Column: passport_give_place VARCHAR(255) */
+    @Column(name = "passport_give_place", length = 255)
+    private String passportGivePlace;
+
+    /** Pasport berilgan sana (GUVD: issued_date). Column: passport_issued_date DATE */
+    @Column(name = "passport_issued_date")
+    private LocalDate passportIssuedDate;
+
+    /** Pasport amal qilish muddati (GUVD: expiry_date). Column: passport_expiry_date DATE */
+    @Column(name = "passport_expiry_date")
+    private LocalDate passportExpiryDate;
+
+    /** Jinsi (GUVD: sex). Column: gender VARCHAR(10) */
+    @Column(name = "gender", length = 10)
+    private String gender;
+
+    /** Millati (GUVD: nationality). Column: nationality VARCHAR(64) */
+    @Column(name = "nationality", length = 64)
+    private String nationality;
+
+    /** Ro'yxatdan o'tgan manzil (GUVD person-address). Column: address VARCHAR(512) */
+    @Column(name = "address", length = 512)
+    private String address;
+
+    /** Shaxs fotosurati base64 (GUVD: photo). Og'ir; nullable. Column: photo TEXT */
+    @Column(name = "photo", columnDefinition = "TEXT")
+    private String photo;
 
     // =====================================================
     // Security Hardening (rules.md #5 — Security by default)

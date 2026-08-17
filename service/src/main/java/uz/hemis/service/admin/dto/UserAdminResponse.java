@@ -38,6 +38,33 @@ public class UserAdminResponse {
             + "the 'pinfl.view' permission; null/omitted otherwise.")
     private String pinfl;
 
+    @Schema(description = "First name")
+    private String firstName;
+
+    @Schema(description = "Last name")
+    private String lastName;
+
+    @Schema(description = "Middle name")
+    private String middleName;
+
+    @Schema(description = "Passport series+number. PII — present ONLY with 'pinfl.view'.")
+    private String passport;
+
+    @Schema(description = "Birth date (yyyy-MM-dd)")
+    private java.time.LocalDate birthDate;
+
+    @Schema(description = "Birth place")
+    private String birthPlace;
+
+    @Schema(description = "Gender")
+    private String gender;
+
+    @Schema(description = "Nationality")
+    private String nationality;
+
+    @Schema(description = "Registered address")
+    private String address;
+
     @Schema(description = "University code", example = "TATU")
     private String universityCode;
 

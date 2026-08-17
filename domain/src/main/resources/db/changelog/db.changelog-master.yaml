@@ -289,6 +289,19 @@ databaseChangeLog:
       rollback:
         - sqlFile: { path: changesets/schema/V019_create_university_speciality_attachment_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
+  - changeSet:
+      id: V020_add_user_person_fields
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "users: shaxs (person) ustunlari — GUVD/api_mspd passport-data autofill (birth_date, birth_place, passport, passport_give_place, passport_issued_date, passport_expiry_date, gender, nationality, address, photo). ALTER-only over V006 (deployed). Idempotent ADD COLUMN IF NOT EXISTS."
+      preConditions:
+        - onFail: MARK_RAN
+        - not: { columnExists: { tableName: users, columnName: passport } }
+      changes:
+        - sqlFile: { path: changesets/schema/V020_add_user_person_fields.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/schema/V020_add_user_person_fields_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # PHASE 2: SEED — 19 files
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

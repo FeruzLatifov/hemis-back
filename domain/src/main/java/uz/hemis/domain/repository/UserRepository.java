@@ -137,6 +137,19 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByUsername(String username);
 
     /**
+     * Check if a (non-deleted) user with this PINFL already exists.
+     *
+     * <p>Enforces "one physical person = one account" (D2) at the service layer with a clean
+     * 409, complementing the partial-unique index {@code uq_users_pinfl}. Soft-deleted rows
+     * are excluded so a PINFL can be reused after deletion.</p>
+     *
+     * @param pinfl 14-digit national ID
+     * @return true if an active user already holds this PINFL
+     */
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM User u WHERE u.pinfl = :pinfl")
+    boolean existsByPinfl(@Param("pinfl") String pinfl);
+
+    /**
      * Find user by email (for password reset)
      *
      * @param email email address

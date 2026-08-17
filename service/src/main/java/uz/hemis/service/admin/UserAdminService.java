@@ -12,6 +12,7 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.common.enums.UserType;
 import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.security.Role;
 import uz.hemis.domain.entity.university.University;
@@ -22,6 +23,7 @@ import uz.hemis.domain.repository.UserRepository;
 import uz.hemis.common.port.cache.CacheEvictionPort;
 import uz.hemis.service.admin.dto.*;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -111,8 +113,29 @@ public class UserAdminService {
     public UserAdminResponse createUser(UserCreateRequest request, UUID callerUserId) {
         User caller = findCallerWithPermissions(callerUserId);
 
-        // Validate unique username
-        if (userRepository.existsByUsername(request.getUsername())) {
+        boolean isUniversityLogin = "UNIVERSITY_LOGIN".equalsIgnoreCase(request.getAccountType());
+
+        // Resolve login username per account type:
+        //  - UNIVERSITY_LOGIN: manual service login (old-hemis password-grant account)
+        //  - PERSON (default):  login = PINFL (authoritative), one-account-per-person (409 on dup)
+        final String username;
+        if (isUniversityLogin) {
+            if (request.getUsername() == null || request.getUsername().isBlank()) {
+                throw new BadRequestException("Username is required for a university login");
+            }
+            username = request.getUsername().trim();
+        } else {
+            String pinfl = request.getPinfl();
+            if (pinfl == null || !pinfl.matches("^\\d{14}$")) {
+                throw new BadRequestException("PINFL (14 digits) is required for a person account");
+            }
+            if (userRepository.existsByPinfl(pinfl)) {
+                throw new ConflictException("A user with this PINFL already exists");
+            }
+            username = pinfl;
+        }
+
+        if (userRepository.existsByUsername(username)) {
             throw new BadRequestException("Username already exists");
         }
 
@@ -130,14 +153,35 @@ public class UserAdminService {
 
         // Create user
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setUsername(username);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setEnabled(request.getEnabled() != null ? request.getEnabled() : true);
         user.setAccountNonLocked(true);
         user.setFailedAttempts(0);
+
+        if (isUniversityLogin) {
+            // Service/integration login — no person identity.
+            user.setFullName(request.getFullName());
+        } else {
+            // Person — PINFL + GUVD passport-data autofilled fields.
+            user.setPinfl(request.getPinfl());
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setMiddleName(request.getMiddleName());
+            user.setFullName(resolveFullName(request));
+            user.setBirthDate(parseDate(request.getBirthDate()));
+            user.setBirthPlace(request.getBirthPlace());
+            user.setPassport(request.getPassport());
+            user.setPassportGivePlace(request.getPassportGivePlace());
+            user.setPassportIssuedDate(parseDate(request.getPassportIssuedDate()));
+            user.setPassportExpiryDate(parseDate(request.getPassportExpiryDate()));
+            user.setGender(request.getGender());
+            user.setNationality(request.getNationality());
+            user.setAddress(request.getAddress());
+            user.setPhoto(request.getPhoto());
+        }
 
         // Set university FK and userType
         if (universityCode != null && !universityCode.isBlank()) {
@@ -156,12 +200,38 @@ public class UserAdminService {
 
         User saved = userRepository.save(user);
 
-        log.info("User created: username={}, universityCode={}, roles={}, by={}",
-                saved.getUsername(), saved.getUniversityCode(),
+        // PII-safe: username may equal the raw PINFL (PERSON accounts) — log the UUID id, never username.
+        log.info("User created: id={}, accountType={}, universityCode={}, roles={}, by={}",
+                saved.getId(), isUniversityLogin ? "UNIVERSITY_LOGIN" : "PERSON", saved.getUniversityCode(),
                 roles.stream().map(Role::getCode).collect(Collectors.joining(",")),
                 callerUserId);
 
         return toResponse(saved, caller.hasPermission("pinfl.view"));
+    }
+
+    /** Prefer an explicit full name; otherwise compose "Last First Middle". */
+    private static String resolveFullName(UserCreateRequest r) {
+        if (r.getFullName() != null && !r.getFullName().isBlank()) {
+            return r.getFullName().trim();
+        }
+        StringBuilder sb = new StringBuilder();
+        for (String part : new String[]{r.getLastName(), r.getFirstName(), r.getMiddleName()}) {
+            if (part != null && !part.isBlank()) {
+                if (!sb.isEmpty()) sb.append(' ');
+                sb.append(part.trim());
+            }
+        }
+        return sb.isEmpty() ? null : sb.toString();
+    }
+
+    /** Parse ISO {@code yyyy-MM-dd}; null/blank/invalid → null (autofill is best-effort). */
+    private static LocalDate parseDate(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return LocalDate.parse(s.trim());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -230,7 +300,7 @@ public class UserAdminService {
         }
 
         User saved = userRepository.save(target);
-        log.info("User updated: id={}, username={}, by={}", id, saved.getUsername(), callerUserId);
+        log.info("User updated: id={}, by={}", id, callerUserId);
 
         return toResponse(saved, caller.hasPermission("pinfl.view"));
     }
@@ -253,8 +323,8 @@ public class UserAdminService {
 
         // PII-safe: do NOT log password hash prefixes (even partial — they aid offline bruteforce
         // when correlated with leaked databases). Audit trail covers the actual change.
-        log.info("PASSWORD CHANGE: id={}, user={}, hadPriorPassword={}, by={}",
-                id, target.getUsername(), hadPassword, callerUserId);
+        log.info("PASSWORD CHANGE: id={}, hadPriorPassword={}, by={}",
+                id, hadPassword, callerUserId);
     }
 
     /**
@@ -305,7 +375,7 @@ public class UserAdminService {
         target.setLockedAt(null);
         User saved = userRepository.save(target);
 
-        log.info("Account unlocked: id={}, username={}, by={}", id, saved.getUsername(), callerUserId);
+        log.info("Account unlocked: id={}, by={}", id, callerUserId);
         return toResponse(saved, caller.hasPermission("pinfl.view"));
     }
 
@@ -335,7 +405,7 @@ public class UserAdminService {
         cacheEvictionPort.evictMenuForUser(id.toString());
         cacheEvictionPort.evictScopeForUser(id.toString());
 
-        log.info("User soft-deleted: id={}, username={}, by={}", id, target.getUsername(), callerUserId);
+        log.info("User soft-deleted: id={}, by={}", id, callerUserId);
     }
 
     // =====================================================
@@ -495,6 +565,15 @@ public class UserAdminService {
                 .email(user.getEmail())
                 .phone(user.getPhone())
                 .pinfl(canViewPinfl ? user.getPinfl() : null)
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .middleName(user.getMiddleName())
+                .passport(canViewPinfl ? user.getPassport() : null)
+                .birthDate(user.getBirthDate())
+                .birthPlace(user.getBirthPlace())
+                .gender(user.getGender())
+                .nationality(user.getNationality())
+                .address(user.getAddress())
                 .universityCode(user.getUniversityCode())
                 .universityName(universityName)
                 .userType(user.getUserType() != null ? user.getUserType().name() : null)
