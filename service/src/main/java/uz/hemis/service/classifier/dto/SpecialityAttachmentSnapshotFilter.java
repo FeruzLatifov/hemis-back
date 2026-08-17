@@ -8,19 +8,23 @@ package uz.hemis.service.classifier.dto;
  * attachment set — the tenant ({@code universityCode}) is always the signed JWT claim, never a
  * filter, so a parameter can never widen scope to another OTM (IDOR-safe by construction).</p>
  *
+ * <p><strong>Status is NOT a filter.</strong> The OTM pull is always ACTIVE-only (enforced in
+ * {@code SpecialityAttachmentService#getSnapshot}); a SUSPENDED / REVOKED attachment means the OTM
+ * is no longer permitted to run that speciality, so it is never distributed. The OTM therefore
+ * cannot ask for non-active rows.</p>
+ *
  * @since 2.1.0
  */
 public record SpecialityAttachmentSnapshotFilter(
         Integer eduYear,
         String educationType,
         String educationForm,
-        String status,
         String specialityCode
 ) {
 
-    /** An all-null filter — the previous "return the whole set" behavior. */
+    /** An all-null filter — no column narrowing (the snapshot is still ACTIVE-only). */
     public static SpecialityAttachmentSnapshotFilter none() {
-        return new SpecialityAttachmentSnapshotFilter(null, null, null, null, null);
+        return new SpecialityAttachmentSnapshotFilter(null, null, null, null);
     }
 
     /** {@code true} if at least one constraint is supplied (for logging / short-circuit). */
@@ -28,7 +32,6 @@ public record SpecialityAttachmentSnapshotFilter(
         return eduYear == null
                 && !isSet(educationType)
                 && !isSet(educationForm)
-                && !isSet(status)
                 && !isSet(specialityCode);
     }
 
@@ -41,9 +44,6 @@ public record SpecialityAttachmentSnapshotFilter(
             return false;
         }
         if (isSet(educationForm) && !educationForm.trim().equalsIgnoreCase(safe(row.educationForm()))) {
-            return false;
-        }
-        if (isSet(status) && !status.trim().equalsIgnoreCase(safe(row.status()))) {
             return false;
         }
         return !isSet(specialityCode) || specialityCode.trim().equalsIgnoreCase(safe(row.specialityCode()));

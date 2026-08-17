@@ -30,6 +30,7 @@ import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto.Opti
 import uz.hemis.service.classifier.dto.SpecialityAttachmentRowDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentSnapshotDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentSnapshotFilter;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentUpdateDto;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,6 +76,8 @@ public class SpecialityAttachmentService {
     private static final Sort DEFAULT_SORT = Sort.by("universityCode").ascending();
     /** Default assignment year for a manually-created attachment when the caller omits it. */
     private static final int DEFAULT_EDU_YEAR = 2026;
+    /** The only attachment status an OTM is permitted to run — the OTM pull is filtered to this. */
+    private static final String ACTIVE_STATUS = "ACTIVE";
 
     private final UniversitySpecialityAttachmentRepository repository;
     private final HSpecialityRepository specialityRepository;
@@ -222,11 +225,15 @@ public class SpecialityAttachmentService {
         // parameter can widen scope to another OTM. Applied in-memory over the tiny per-tenant read.
         SpecialityAttachmentSnapshotFilter criteria =
                 filter != null ? filter : SpecialityAttachmentSnapshotFilter.none();
+        // OTM pull is ACTIVE-only: a SUSPENDED / REVOKED attachment means the OTM is no longer
+        // permitted to run that speciality, so it must never appear in the OTM's snapshot. Non-active
+        // rows are still managed centrally via the admin web; the OTM only ever sees its live set.
         List<SpecialityAttachmentSnapshotDto> snapshot = rows.stream()
                 .map(a -> toSnapshot(a, specById.get(a.getSpecialityId()), eduNames))
+                .filter(row -> ACTIVE_STATUS.equalsIgnoreCase(row.status()))
                 .filter(criteria::matches)
                 .toList();
-        log.debug("Speciality-attachment snapshot for OTM {}: {} rows (filtered={})",
+        log.debug("Speciality-attachment snapshot for OTM {}: {} active rows (filtered={})",
                 code, snapshot.size(), !criteria.isEmpty());
         return snapshot;
     }
@@ -259,10 +266,46 @@ public class SpecialityAttachmentService {
         entity.setSpecialityId(dto.specialityId());
         entity.setEducationForm(educationForm);
         entity.setEduYear(eduYear);
-        entity.setStatus("ACTIVE");
+        // Faol/Nofaol chosen at creation; a freshly-attached speciality defaults to ACTIVE.
+        String status = blankToNull(dto.status());
+        entity.setStatus(status != null ? status : ACTIVE_STATUS);
 
         UniversitySpecialityAttachment saved = repository.save(entity);
         log.info("Speciality attachment created: id={}", saved.getId());
+        return toRow(saved, speciality, educationTypeNames(),
+                universityNames(List.of(saved.getUniversityCode())), educationFormNames(),
+                parentsById(List.of(speciality)));
+    }
+
+    /**
+     * Edit an existing attachment — the MUTABLE fields only: speciality (within the SAME education
+     * type), education form, academic year, and status (Faol/Nofaol). University + education type are
+     * fixed on an existing row (re-assigning them = a new attachment), so they are never touched here.
+     * 403 if outside the caller's write scope; 409 on a duplicate (OTM, speciality, form, year).
+     */
+    @Transactional
+    public SpecialityAttachmentRowDto update(UUID id, SpecialityAttachmentUpdateDto dto) {
+        UniversitySpecialityAttachment a = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("SpecialityAttachment", "id", id));
+        assertCanWrite(a.getUniversityCode());
+
+        HSpeciality speciality = specialityRepository.findById(dto.specialityId())
+                .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
+
+        String educationForm = blankToNull(dto.educationForm());
+        int eduYear = dto.eduYear();
+        // Duplicate guard — another LIVE row for the same (OTM, speciality, form, year), excluding THIS one.
+        if (repository.existsDuplicate(a.getUniversityCode(), dto.specialityId(), educationForm, eduYear, id)) {
+            throw new ConflictException("Speciality is already attached to this university for the given education form and year");
+        }
+
+        a.setSpecialityId(dto.specialityId());
+        a.setEducationForm(educationForm);
+        a.setEduYear(eduYear);
+        a.setStatus(dto.status());
+
+        UniversitySpecialityAttachment saved = repository.save(a);
+        log.info("Speciality attachment updated: id={}", saved.getId());
         return toRow(saved, speciality, educationTypeNames(),
                 universityNames(List.of(saved.getUniversityCode())), educationFormNames(),
                 parentsById(List.of(speciality)));

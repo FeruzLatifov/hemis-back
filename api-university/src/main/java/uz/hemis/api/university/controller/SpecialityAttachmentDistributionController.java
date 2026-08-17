@@ -83,7 +83,13 @@ public class SpecialityAttachmentDistributionController {
 
                     **Ta'lim turi (`educationType`):** 11=Bakalavr · 12=Magistr.
                     **Ta'lim shakli (`educationForm`):** 11=Kunduzgi · 12=Kechki · 16=Masofaviy.
-                    **O'quv yili (`eduYear`):** 2026 = 2026-2027. **Holat (`status`):** ACTIVE · SUSPENDED · REVOKED.
+                    **O'quv yili (`eduYear`):** 2026 = 2026-2027.
+
+                    **⚠️ Faqat FAOL biriktirishlar:** ro'yxat faqat `status = ACTIVE` (faol)
+                    biriktirishlarni qaytaradi. Vaqtincha to'xtatilgan (SUSPENDED) yoki bekor
+                    qilingan (REVOKED) biriktirishlar OTM uchun ruxsat bekor hisoblanadi va bu
+                    yerda **KO'RINMAYDI** — OTM faqat o'zining jonli, ruxsat etilgan to'plamini oladi.
+                    (Har bir qatordagi `status` maydoni shu sababdan doim `ACTIVE`.)
 
                     **Qamrov:** replikadan jonli o'qiladi (har doim yangi, app-cache YO'Q).
 
@@ -100,11 +106,10 @@ public class SpecialityAttachmentDistributionController {
                     | `eduYear` | integer | `2026` | O'quv yili (2026 = 2026-2027) |
                     | `educationType` | string | `11` | 11=Bakalavr, 12=Magistr |
                     | `educationForm` | string | `11` | 11=Kunduzgi, 12=Kechki, 16=Masofaviy |
-                    | `status` | string | `ACTIVE` | ACTIVE / SUSPENDED / REVOKED (katta-kichik harf farqsiz) |
                     | `specialityCode` | string | `60710100` | Mutaxassislik kodi (klassifikator `code`) |
 
-                    **Misol:** `?eduYear=2026&educationForm=11&status=ACTIVE` — 2026 o'quv yili, kunduzgi,
-                    faqat faol biriktirishlar.
+                    **Misol:** `?eduYear=2026&educationForm=11` — 2026 o'quv yili, kunduzgi biriktirishlar.
+                    `status` parametri YO'Q — ro'yxat doim faqat faol (ACTIVE) biriktirishlarni qaytaradi.
                     """
     )
     public ResponseEntity<ResponseWrapper<List<SpecialityAttachmentSnapshotDto>>> snapshot(
@@ -117,9 +122,6 @@ public class SpecialityAttachmentDistributionController {
             @Parameter(description = "Ta'lim shakli kodi bo'yicha filtr: 11=Kunduzgi, 12=Kechki, 16=Masofaviy. Bo'sh — barcha shakllar.",
                     example = "11", schema = @Schema(type = "string", allowableValues = {"11", "12", "16"}))
             @RequestParam(required = false) String educationForm,
-            @Parameter(description = "Holat bo'yicha filtr: ACTIVE / SUSPENDED / REVOKED. Bo'sh — barcha holatlar.",
-                    example = "ACTIVE", schema = @Schema(type = "string", allowableValues = {"ACTIVE", "SUSPENDED", "REVOKED"}))
-            @RequestParam(required = false) String status,
             @Parameter(description = "Mutaxassislik kodi bo'yicha filtr (klassifikator code'i). Bo'sh — barcha mutaxassisliklar.",
                     example = "60710100")
             @RequestParam(required = false) String specialityCode,
@@ -135,7 +137,7 @@ public class SpecialityAttachmentDistributionController {
         }
         // Filters only NARROW the caller's own set (tenant is always the JWT claim, never a param).
         SpecialityAttachmentSnapshotFilter filter =
-                new SpecialityAttachmentSnapshotFilter(eduYear, educationType, educationForm, status, specialityCode);
+                new SpecialityAttachmentSnapshotFilter(eduYear, educationType, educationForm, specialityCode);
         List<SpecialityAttachmentSnapshotDto> items = attachmentService.getSnapshot(universityCode, filter);
         log.info("OTM speciality-attachment pull: universityCode={}, items={}, filtered={}",
                 universityCode, items.size(), !filter.isEmpty());

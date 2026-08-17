@@ -27,6 +27,7 @@ import uz.hemis.service.classifier.SpecialityAttachmentService;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentRowDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentUpdateDto;
 import uz.hemis.service.util.PageResponses;
 import uz.hemis.web.export.XlsxStreamExporter;
 import uz.hemis.web.export.XlsxSupport;
@@ -272,6 +273,36 @@ public class SpecialityAttachmentController {
                 request.universityCode(), request.specialityId());
         SpecialityAttachmentRowDto created = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+    }
+
+    // =====================================================
+    // Update (edit)
+    // =====================================================
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('institutions.speciality-attachments.create')")
+    @Operation(
+            summary = "Edit a speciality attachment",
+            description = "Mutable: speciality (same education type), education form, academic year, status "
+                    + "(Faol/Nofaol). University + education type are fixed. 403 out of scope, 409 duplicate.",
+            tags = {"Registry - Speciality Attachments"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Updated"),
+            @ApiResponse(responseCode = "400", description = "Validation error"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope"),
+            @ApiResponse(responseCode = "404", description = "Attachment or speciality not found"),
+            @ApiResponse(responseCode = "409", description = "Duplicate attachment")
+    })
+    public ResponseEntity<ResponseWrapper<SpecialityAttachmentRowDto>> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody SpecialityAttachmentUpdateDto request
+    ) {
+        log.info("PUT /api/v1/web/registry/speciality-attachments/{} - specialityId={}, status={}",
+                id, request.specialityId(), request.status());
+        SpecialityAttachmentRowDto updated = service.update(id, request);
+        return ResponseEntity.ok(ResponseWrapper.success(updated));
     }
 
     // =====================================================

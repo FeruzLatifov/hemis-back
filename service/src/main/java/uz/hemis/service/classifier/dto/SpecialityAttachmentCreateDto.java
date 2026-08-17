@@ -38,6 +38,11 @@ public record SpecialityAttachmentCreateDto(
         @NotNull(message = "eduYear is required")
         @Min(value = 1991, message = "eduYear out of range")
         @Max(value = 2100, message = "eduYear out of range")
-        Integer eduYear
+        Integer eduYear,
+
+        /** Attachment status — ACTIVE (Faol) / SUSPENDED (Nofaol). Optional: defaults to ACTIVE when
+         *  omitted (a freshly-attached speciality is active unless the admin marks it otherwise). */
+        @Pattern(regexp = "ACTIVE|SUSPENDED|REVOKED", message = "status must be ACTIVE, SUSPENDED or REVOKED")
+        String status
 ) {
 }
