@@ -698,3 +698,14 @@ databaseChangeLog:
   # Sabab: edu_form endi V018/S014/S017'da umuman YARATILMAYDI (create-then-drop minasi bartaraf etildi —
   #   runOnChange seed qayta yaratilsa "column edu_form does not exist" bilan boot uzilardi).
   #   Ta'lim shakli OTM attachment / o'quv rejasiga tegishli, klassifikatorga emas.
+
+  - changeSet:
+      id: M008_speciality_version_resync
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Force Univer resync: h_speciality.version = -1 (barcha qatorlar, consuming OTM so'rovi). SUM(version) ataylab manfiy 'farqli' signal; Univer '!=' solishtiruvda to'liq qayta yuklaydi. SEED'dan keyin ishlaydi."
+      changes:
+        - sqlFile: { path: changesets/migration/M008_speciality_version_resync.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/migration/M008_speciality_version_resync_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
