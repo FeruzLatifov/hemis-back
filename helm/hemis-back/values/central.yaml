@@ -1,0 +1,18 @@
+# =====================================================
+# central-hemis namespace overlay — PROD muhiti (2-domen)
+# Backend: api-central.hemis.uz   Frontend: central.hemis.uz
+# DB: yangi PostgreSQL 18 HA klaster (VIP 172.18.8.136), central_hemis + central_hemis_audit
+# =====================================================
+# Deploy (Jenkins: Approve gate -> prod):
+#   helm upgrade --install hemis-back ./helm/hemis-back -n central-hemis \
+#     -f helm/hemis-back/values.yaml -f helm/hemis-back/values/central.yaml \
+#     --set image.tag=<staging-da-test-qilingan-tag> --create-namespace --atomic --timeout 15m
+#
+# Faqat base values.yaml'dan FARQ qiladiganlar shu yerda (qolgani meros).
+# CORS / cookie same-site / DB nomi/parol / swagger — Secret (central-hemis-back-env) ichida env orqali.
+
+ingress:
+  host: api-central.hemis.uz
+
+# prod namespace uchun alohida env Secret (test-hemis-back-env nusxasi + yangi klaster DB creds)
+existingSecret: central-hemis-back-env
