@@ -191,7 +191,10 @@ public class SpecialityExcelExporter {
             text(r, COL_NAME_OZ, st.data, n.nameOz());
             text(r, COL_NAME_RU, st.data, n.nameRu());
             text(r, COL_NAME_EN, st.data, n.nameEn());
-            text(r, COL_EDU_LEVEL, st.data, eduTypeLabel(L, n.educationType()));
+            text(r, COL_EDU_LEVEL, st.data,
+                    n.educationTypeName() != null && !n.educationTypeName().isBlank()
+                            ? n.educationTypeName()
+                            : (n.educationType() == null ? "" : n.educationType()));
             text(r, COL_STATUS, st.data, statusLabel(L, n.reviewStatus()));
             text(r, COL_YEARS, st.data, yearsLabel(n.years()));
 
@@ -231,13 +234,6 @@ public class SpecialityExcelExporter {
      */
     static String sanitizeCell(String v) {
         return XlsxSupport.sanitizeCell(v);
-    }
-
-    /** Localized label for the education-type code ('11'=Bakalavr, '12'=Magistr; unknown ⇒ raw code). */
-    private static String eduTypeLabel(Labels L, String educationType) {
-        if ("11".equals(educationType)) return L.bachelor();
-        if ("12".equals(educationType)) return L.master();
-        return educationType == null ? "" : educationType;
     }
 
     private static String statusLabel(Labels L, String reviewStatus) {

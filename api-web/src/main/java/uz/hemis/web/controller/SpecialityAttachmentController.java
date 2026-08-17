@@ -24,6 +24,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.classifier.SpecialityAttachmentService;
+import uz.hemis.service.classifier.dto.ClassifierOptionDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentRowDto;
@@ -150,6 +151,57 @@ public class SpecialityAttachmentController {
     public ResponseEntity<ResponseWrapper<SpecialityAttachmentFilterOptionsDto>> filterOptions() {
         log.info("GET /api/v1/web/registry/speciality-attachments/filter-options");
         return ResponseEntity.ok(ResponseWrapper.success(service.filterOptions()));
+    }
+
+    // =====================================================
+    // Education-form dictionary (ALL forms from the h_education_form classifier)
+    // =====================================================
+
+    @GetMapping("/education-forms")
+    @PreAuthorize("hasAuthority('institutions.speciality-attachments.view')")
+    @Operation(
+            summary = "Education-form classifier options (h_education_form)",
+            description = """
+                    All active education forms from the modern `h_education_form` classifier
+                    (Kunduzgi, Kechki, Sirtqi, Masofaviy, ... — NOT a hard-coded list), for the
+                    attach/edit picker. Multilingual (name/nameRu/nameEn).
+                    """,
+            tags = {"Registry - Speciality Attachments"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Forms retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission")
+    })
+    public ResponseEntity<ResponseWrapper<List<ClassifierOptionDto>>> educationForms() {
+        log.info("GET /api/v1/web/registry/speciality-attachments/education-forms");
+        return ResponseEntity.ok(ResponseWrapper.success(service.listEducationForms()));
+    }
+
+    // =====================================================
+    // Education-type dictionary (ALL types from the h_education_type classifier)
+    // =====================================================
+
+    @GetMapping("/education-types")
+    @PreAuthorize("hasAuthority('institutions.speciality-attachments.view')")
+    @Operation(
+            summary = "Education-type classifier options (h_education_type)",
+            description = """
+                    All active education types from the modern `h_education_type` classifier
+                    (Bakalavr, Magistr, Ordinatura, Doktorantura PhD/DSc — NOT a hard-coded list),
+                    for the attach picker. Multilingual (name/nameRu/nameEn). Note: the speciality
+                    classifier itself currently carries only Bakalavr/Magistr specialities.
+                    """,
+            tags = {"Registry - Speciality Attachments"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Types retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission")
+    })
+    public ResponseEntity<ResponseWrapper<List<ClassifierOptionDto>>> educationTypes() {
+        log.info("GET /api/v1/web/registry/speciality-attachments/education-types");
+        return ResponseEntity.ok(ResponseWrapper.success(service.listEducationTypes()));
     }
 
     // =====================================================

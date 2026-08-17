@@ -26,9 +26,8 @@ public record SpecialityAttachmentUpdateDto(
         @NotNull(message = "specialityId is required")
         UUID specialityId,
 
-        @Schema(description = "Ta'lim shakli: 11=Kunduzgi, 12=Kechki, 16=Masofaviy", example = "11",
-                allowableValues = {"11", "12", "16"})
-        @Pattern(regexp = "11|12|16", message = "educationForm must be 11 (Kunduzgi), 12 (Kechki) or 16 (Masofaviy)")
+        @Schema(description = "Ta'lim shakli kodi — h_education_form klassifikatoridan (11=Kunduzgi, 12=Kechki, 13=Sirtqi, 16=Masofaviy, ...)",
+                example = "11")
         String educationForm,
 
         @Schema(description = "O'quv yili (2026 = 2026-2027)", example = "2026",

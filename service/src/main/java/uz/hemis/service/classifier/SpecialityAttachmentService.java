@@ -12,18 +12,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.auth.AccessScope;
 import uz.hemis.common.auth.ScopeResolver;
+import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.academic.EducationForm;
-import uz.hemis.domain.entity.academic.EducationType;
+import uz.hemis.domain.entity.classifier.HEducationForm;
+import uz.hemis.domain.entity.classifier.HEducationType;
 import uz.hemis.domain.entity.classifier.HSpeciality;
 import uz.hemis.domain.entity.classifier.UniversitySpecialityAttachment;
 import uz.hemis.domain.entity.university.University;
-import uz.hemis.domain.repository.EducationFormRepository;
-import uz.hemis.domain.repository.EducationTypeRepository;
+import uz.hemis.domain.repository.HEducationFormRepository;
+import uz.hemis.domain.repository.HEducationTypeRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.domain.repository.UniversitySpecialityAttachmentRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
+import uz.hemis.service.classifier.dto.ClassifierOptionDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto.Option;
@@ -81,8 +83,8 @@ public class SpecialityAttachmentService {
 
     private final UniversitySpecialityAttachmentRepository repository;
     private final HSpecialityRepository specialityRepository;
-    private final EducationTypeRepository educationTypeRepository;
-    private final EducationFormRepository educationFormRepository;
+    private final HEducationTypeRepository educationTypeRepository;
+    private final HEducationFormRepository educationFormRepository;
     private final UniversityRepository universityRepository;
     private final ScopeResolver scopeResolver;
 
@@ -256,6 +258,7 @@ public class SpecialityAttachmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
 
         String educationForm = blankToNull(dto.educationForm());
+        assertEducationFormExists(educationForm);
         int eduYear = dto.eduYear() != null ? dto.eduYear() : DEFAULT_EDU_YEAR;
         if (repository.existsDuplicate(code, dto.specialityId(), educationForm, eduYear, null)) {
             throw new ConflictException("Speciality is already attached to this university for the given education form and year");
@@ -293,6 +296,7 @@ public class SpecialityAttachmentService {
                 .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
 
         String educationForm = blankToNull(dto.educationForm());
+        assertEducationFormExists(educationForm);
         int eduYear = dto.eduYear();
         // Duplicate guard — another LIVE row for the same (OTM, speciality, form, year), excluding THIS one.
         if (repository.existsDuplicate(a.getUniversityCode(), dto.specialityId(), educationForm, eduYear, id)) {
@@ -387,20 +391,41 @@ public class SpecialityAttachmentService {
         return new PageImpl<>(rows, pageable, page.getTotalElements());
     }
 
-    /** code → name from the {@code hemishe_h_education_type} classifier (5 static rows) — no per-row query. */
+    /** code → name from the modern {@code h_education_type} classifier (5 static rows) — no per-row query. */
     private Map<String, String> educationTypeNames() {
         return educationTypeRepository.findAll().stream()
                 .filter(e -> e.getCode() != null)
-                .collect(Collectors.toMap(EducationType::getCode,
+                .collect(Collectors.toMap(HEducationType::getCode,
                         e -> e.getName() != null ? e.getName() : e.getCode(), (x, y) -> x));
     }
 
-    /** code → name from the {@code hemishe_h_education_form} classifier (a few static rows). */
+    /** code → name from the modern {@code h_education_form} classifier (a few static rows). */
     private Map<String, String> educationFormNames() {
         return educationFormRepository.findAll().stream()
                 .filter(e -> e.getCode() != null)
-                .collect(Collectors.toMap(EducationForm::getCode,
+                .collect(Collectors.toMap(HEducationForm::getCode,
                         e -> e.getName() != null ? e.getName() : e.getCode(), (x, y) -> x));
+    }
+
+    /** All active education forms (dictionary for the attachment picker) — from h_education_form. */
+    public List<ClassifierOptionDto> listEducationForms() {
+        return educationFormRepository.findByIsActiveTrueOrderBySortOrderAscCodeAsc().stream()
+                .map(f -> new ClassifierOptionDto(f.getCode(), f.getName(), f.getNameRu(), f.getNameEn()))
+                .toList();
+    }
+
+    /** All active education types (dictionary for the attach picker) — from h_education_type (5 types). */
+    public List<ClassifierOptionDto> listEducationTypes() {
+        return educationTypeRepository.findByIsActiveTrueOrderBySortOrderAscCodeAsc().stream()
+                .map(t -> new ClassifierOptionDto(t.getCode(), t.getName(), t.getNameRu(), t.getNameEn()))
+                .toList();
+    }
+
+    /** Reject an unknown education-form code with a clean 400 (the FK is only the last-resort guard). */
+    private void assertEducationFormExists(String code) {
+        if (code != null && !educationFormRepository.existsById(code)) {
+            throw new BadRequestException("Unknown education form code: " + code);
+        }
     }
 
     /** code → name for the given university codes (batch by PK — no N+1). */

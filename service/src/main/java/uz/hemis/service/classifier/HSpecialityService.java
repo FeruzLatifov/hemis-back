@@ -18,11 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.exception.BusinessRuleException;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
-import uz.hemis.domain.entity.academic.EducationType;
+import uz.hemis.domain.entity.classifier.HEducationType;
 import uz.hemis.domain.entity.classifier.HSpeciality;
 import uz.hemis.domain.entity.classifier.HSpecialityYear;
 import uz.hemis.domain.entity.classifier.ReviewStatus;
-import uz.hemis.domain.repository.EducationTypeRepository;
+import uz.hemis.domain.repository.HEducationTypeRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
 import uz.hemis.domain.repository.HSpecialityYearRepository;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
@@ -81,7 +81,7 @@ public class HSpecialityService {
 
     private final HSpecialityRepository repository;
     private final HSpecialityYearRepository yearRepository;
-    private final EducationTypeRepository educationTypeRepository;
+    private final HEducationTypeRepository educationTypeRepository;
     private final OutboxEventPublisher outboxPublisher;
 
     @PersistenceContext
@@ -663,7 +663,7 @@ public class HSpecialityService {
     private Map<String, String> educationTypeNames() {
         return educationTypeRepository.findAll().stream()
                 .filter(e -> e.getCode() != null)
-                .collect(Collectors.toMap(EducationType::getCode,
+                .collect(Collectors.toMap(HEducationType::getCode,
                         e -> e.getName() != null ? e.getName() : e.getCode(),
                         (a, b) -> a));
     }

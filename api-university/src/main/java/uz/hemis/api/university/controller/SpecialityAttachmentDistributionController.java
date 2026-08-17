@@ -2,7 +2,6 @@ package uz.hemis.api.university.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -116,11 +115,11 @@ public class SpecialityAttachmentDistributionController {
             @Parameter(description = "O'quv yili bo'yicha filtr (2026 = 2026-2027 o'quv yili). Bo'sh — barcha yillar.",
                     example = "2026")
             @RequestParam(required = false) Integer eduYear,
-            @Parameter(description = "Ta'lim turi kodi bo'yicha filtr: 11=Bakalavr, 12=Magistr. Bo'sh — barcha turlar.",
-                    example = "11", schema = @Schema(type = "string", allowableValues = {"11", "12"}))
+            @Parameter(description = "Ta'lim turi kodi bo'yicha filtr (h_education_type klassifikatoridan: 11=Bakalavr, 12=Magistr, ...). Bo'sh — barcha turlar.",
+                    example = "11")
             @RequestParam(required = false) String educationType,
-            @Parameter(description = "Ta'lim shakli kodi bo'yicha filtr: 11=Kunduzgi, 12=Kechki, 16=Masofaviy. Bo'sh — barcha shakllar.",
-                    example = "11", schema = @Schema(type = "string", allowableValues = {"11", "12", "16"}))
+            @Parameter(description = "Ta'lim shakli kodi bo'yicha filtr (h_education_form klassifikatoridan: 11=Kunduzgi, 12=Kechki, 13=Sirtqi, 16=Masofaviy, ...). Bo'sh — barcha shakllar.",
+                    example = "11")
             @RequestParam(required = false) String educationForm,
             @Parameter(description = "Mutaxassislik kodi bo'yicha filtr (klassifikator code'i). Bo'sh — barcha mutaxassisliklar.",
                     example = "60710100")
