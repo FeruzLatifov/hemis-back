@@ -25,6 +25,7 @@ import uz.hemis.domain.entity.classifier.ReviewStatus;
 import uz.hemis.domain.repository.HEducationTypeRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
 import uz.hemis.domain.repository.HSpecialityYearRepository;
+import uz.hemis.service.classifier.dto.ClassifierOptionDto;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityClassifierDistResponse;
 import uz.hemis.service.classifier.dto.SpecialityDistItemDto;
@@ -77,6 +78,9 @@ public class HSpecialityService {
 
     /** Education types this classifier admits (mirrors the V018 CHECK): '11'=Bakalavr, '12'=Magistr. */
     private static final Set<String> ALLOWED_EDUCATION_TYPES = Set.of("11", "12");
+
+    /** Fixed taxonomy depth: Bilim sohasi → Ta'lim sohasi → Yo'nalish → Ichki yo'nalish. */
+    private static final int LEVELS_MAX = 4;
 
 
     private final HSpecialityRepository repository;
@@ -340,6 +344,10 @@ public class HSpecialityService {
         if (dto.educationType() != null) {
             s.setEducationType(validateEducationType(dto.educationType()));
         }
+        // Placement — mirror the create form (depth + parent). null level = leave placement untouched.
+        if (dto.hierarchyLevel() != null) {
+            applyPlacement(s, dto.hierarchyLevel(), dto.parentId());
+        }
         if (dto.reviewStatus() != null) {
             ReviewStatus newStatus = ReviewStatus.fromValue(dto.reviewStatus());
             // Segregation of duties: promoting NEEDS_REVIEW → APPROVED brings a hand-entered/
@@ -371,6 +379,98 @@ public class HSpecialityService {
 
         distribute(s, wasDistributable, priorCode);
         return getById(id);
+    }
+
+    /**
+     * Re-place a row to the chosen depth + parent, mirroring the create form. The parent must exist,
+     * share the row's education type, and sit exactly one level above the target depth. Guards:
+     * <ul>
+     *   <li><b>cycle</b> — the new parent may not be the row itself or one of its descendants;</li>
+     *   <li><b>overflow</b> — the row's subtree must still fit the fixed 4-level taxonomy after the
+     *       move ({@code targetLevel + subtreeDepth <= 4}).</li>
+     * </ul>
+     * A depth change is cascaded to every descendant (their display {@code hierarchy_level} shifts by
+     * the same delta; the authoritative {@code parent_id} links are untouched). Re-pointing to the
+     * current depth + parent is a harmless no-op.
+     */
+    private void applyPlacement(HSpeciality s, int targetLevel, UUID newParentId) {
+        HSpeciality newParent = null;
+        if (targetLevel == 1) {
+            if (newParentId != null) {
+                throw new BusinessRuleException("SPECIALITY_ROOT_HAS_NO_PARENT",
+                        "A top-level (level 1) speciality has no parent");
+            }
+        } else {
+            if (newParentId == null) {
+                throw new BusinessRuleException("SPECIALITY_PARENT_REQUIRED",
+                        "A level 2-4 speciality requires a parent");
+            }
+            if (newParentId.equals(s.getId())) {
+                throw new BusinessRuleException("SPECIALITY_PARENT_SELF",
+                        "A speciality cannot be its own parent");
+            }
+            newParent = repository.findById(newParentId)
+                    .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "parentId", newParentId));
+            if (!Objects.equals(newParent.getEducationType(), s.getEducationType())) {
+                throw new BusinessRuleException("SPECIALITY_PARENT_TYPE_MISMATCH",
+                        "The new parent's education type must match the speciality");
+            }
+            Integer pl = newParent.getHierarchyLevel();
+            if (pl == null || pl + 1 != targetLevel) {
+                throw new BusinessRuleException("SPECIALITY_PARENT_LEVEL_MISMATCH",
+                        "The new parent must sit exactly one level above the chosen level");
+            }
+            if (isDescendantOrSelf(newParent, s.getId())) {
+                throw new BusinessRuleException("SPECIALITY_PARENT_CYCLE",
+                        "A speciality cannot be moved under its own descendant");
+            }
+        }
+        if (targetLevel + subtreeDepth(s.getId()) > LEVELS_MAX) {
+            throw new BusinessRuleException("SPECIALITY_MAX_DEPTH",
+                    "The move would push this row's subtree past the fixed 4-level taxonomy");
+        }
+        int oldLevel = s.getHierarchyLevel() == null ? targetLevel : s.getHierarchyLevel();
+        s.setParent(newParent);
+        s.setHierarchyLevel(targetLevel);
+        int delta = targetLevel - oldLevel;
+        if (delta != 0) {
+            cascadeLevel(s.getId(), delta);
+        }
+    }
+
+    /** True when {@code ancestorId} is {@code node} itself or one of its ancestors (walks up parent_id). */
+    private boolean isDescendantOrSelf(HSpeciality node, UUID ancestorId) {
+        HSpeciality cur = node;
+        for (int guard = 0; cur != null && guard <= LEVELS_MAX; guard++) {
+            if (ancestorId.equals(cur.getId())) {
+                return true;
+            }
+            UUID pid = cur.getParentId();
+            if (pid == null) {
+                break;
+            }
+            cur = repository.findById(pid).orElse(null);
+        }
+        return false;
+    }
+
+    /** Depth of the deepest descendant below {@code parentId} (0 for a leaf). */
+    private int subtreeDepth(UUID parentId) {
+        int max = 0;
+        for (HSpeciality child : repository.findByParentId(parentId)) {
+            max = Math.max(max, 1 + subtreeDepth(child.getId()));
+        }
+        return max;
+    }
+
+    /** Shift every descendant's display level by {@code delta} (the parent_id links stay intact). */
+    private void cascadeLevel(UUID parentId, int delta) {
+        for (HSpeciality child : repository.findByParentId(parentId)) {
+            Integer cl = child.getHierarchyLevel();
+            child.setHierarchyLevel((cl == null ? 0 : cl) + delta);
+            repository.save(child);
+            cascadeLevel(child.getId(), delta);
+        }
     }
 
     /**
@@ -653,6 +753,20 @@ public class HSpecialityService {
             byId.computeIfAbsent(y.getSpecialityId(), k -> new ArrayList<>()).add(y.getYear());
         }
         return byId;
+    }
+
+    /**
+     * Education-type options for the classifier's own Create/Edit pickers (Bakalavr / Magistr),
+     * read from the {@code hemishe_h_education_type} classifier — NOT hard-coded. Scoped to the two
+     * types this classifier admits ({@link #ALLOWED_EDUCATION_TYPES}), sorted by sortOrder then code,
+     * multilingual (name / nameRu / nameEn). Mirrors the attachments dictionary but is served under
+     * {@code classifiers.speciality.view}, so the classifier page needs no cross-feature permission.
+     */
+    public List<ClassifierOptionDto> listEducationTypes() {
+        return educationTypeRepository.findByIsActiveTrueOrderBySortOrderAscCodeAsc().stream()
+                .filter(t -> t.getCode() != null && ALLOWED_EDUCATION_TYPES.contains(t.getCode()))
+                .map(t -> new ClassifierOptionDto(t.getCode(), t.getName(), t.getNameRu(), t.getNameEn()))
+                .toList();
     }
 
     /**

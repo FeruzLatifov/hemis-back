@@ -8,14 +8,18 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Edit + promote payload for a speciality classifier row ({@code h_speciality}).
  *
- * <p>Used by {@code PUT /{id}} to curate the 53 {@code NEEDS_REVIEW} rows: fix
- * the {@code code}/name/level/years and set {@code reviewStatus=APPROVED} to
- * promote. Only mutable curation fields are exposed — the {@code parent_id} tree
- * stays stable (Phase-2 concern).</p>
+ * <p>Used by {@code PUT /{id}} to curate the {@code NEEDS_REVIEW} rows: fix the
+ * {@code code}/name/years and set {@code reviewStatus=APPROVED} to promote. Placement
+ * mirrors the create form: send {@code hierarchyLevel} (1-4) plus, for a level 2-4 row,
+ * the {@code parentId} that sits exactly one level above. The backend re-derives the
+ * row's depth, cascades any depth change to descendants, and rejects a move that would
+ * cycle or overflow the fixed 4-level taxonomy. Omit {@code hierarchyLevel} to leave
+ * placement untouched.</p>
  *
  * @since 2.1.0
  */
@@ -43,6 +47,17 @@ public record SpecialityUpdateDto(
 
         @Pattern(regexp = "APPROVED|NEEDS_REVIEW", message = "reviewStatus must be APPROVED or NEEDS_REVIEW")
         String reviewStatus,
+
+        /** Target depth (1=Bilim sohasi … 4=Ichki yo'nalish). {@code null} = leave placement unchanged.
+         *  When set, {@link #parentId} must be null for level 1, else a same-education-type node one
+         *  level above (level {@code hierarchyLevel - 1}). */
+        @Min(value = 1, message = "hierarchyLevel must be >= 1")
+        @Max(value = 4, message = "hierarchyLevel must be <= 4")
+        Integer hierarchyLevel,
+
+        /** New parent for the row (paired with {@link #hierarchyLevel}). Null for a top-level (level 1)
+         *  row. Ignored when {@code hierarchyLevel} is null. */
+        UUID parentId,
 
         /** Admission years are mandatory: an edit must keep at least one edition year — saving an
          *  empty set is rejected (422) instead of silently wiping the row's years via replaceYears. */

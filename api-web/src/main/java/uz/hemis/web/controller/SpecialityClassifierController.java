@@ -27,6 +27,7 @@ import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.domain.entity.classifier.ReviewStatus;
 import uz.hemis.service.classifier.HSpecialityService;
+import uz.hemis.service.classifier.dto.ClassifierOptionDto;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateCheckDto;
 import uz.hemis.service.classifier.dto.SpecialityNodeDto;
@@ -147,6 +148,33 @@ public class SpecialityClassifierController {
     ) {
         log.info("GET /api/v1/web/classifiers/speciality/years - educationType={}", educationType);
         return ResponseEntity.ok(ResponseWrapper.success(service.availableYears(educationType)));
+    }
+
+    // =====================================================
+    // Education-type dictionary (Create/Edit picker source)
+    // =====================================================
+
+    @GetMapping("/education-types")
+    @PreAuthorize("hasAuthority('classifiers.speciality.view')")
+    @Operation(
+            summary = "Education-type options for the Create/Edit picker (h_education_type)",
+            description = """
+                    The education types this classifier admits — Bakalavr (11) and Magistr (12) — read
+                    from the modern `h_education_type` classifier (NOT a hard-coded list), multilingual
+                    (name/nameRu/nameEn). Feeds the Ta'lim turi dropdown in the add/edit dialogs. Served
+                    under `classifiers.speciality.view` so the classifier page needs no cross-feature
+                    permission.
+                    """,
+            tags = {"Classifiers - Speciality"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Types retrieved"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'")
+    })
+    public ResponseEntity<ResponseWrapper<List<ClassifierOptionDto>>> educationTypes() {
+        log.info("GET /api/v1/web/classifiers/speciality/education-types");
+        return ResponseEntity.ok(ResponseWrapper.success(service.listEducationTypes()));
     }
 
     // =====================================================
