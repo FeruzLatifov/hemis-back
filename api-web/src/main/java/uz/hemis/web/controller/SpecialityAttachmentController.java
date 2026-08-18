@@ -25,6 +25,8 @@ import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.classifier.SpecialityAttachmentService;
 import uz.hemis.service.classifier.dto.ClassifierOptionDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentBulkCreateDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentBulkResultDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentRowDto;
@@ -325,6 +327,36 @@ public class SpecialityAttachmentController {
                 request.universityCode(), request.specialityId());
         SpecialityAttachmentRowDto created = service.create(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(created));
+    }
+
+    // =====================================================
+    // Bulk create (attach one speciality in several education forms at once)
+    // =====================================================
+
+    @PostMapping("/bulk")
+    @PreAuthorize("hasAuthority('institutions.speciality-attachments.create')")
+    @Operation(
+            summary = "Attach a speciality to an OTM in several education forms at once",
+            description = "One live row per education form. Forms already attached (same speciality + year) "
+                    + "are skipped (never a 409 for the whole batch); the response reports both the created "
+                    + "rows and the skipped forms. 403 if the target OTM is outside the caller's scope.",
+            tags = {"Registry - Speciality Attachments"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Attached (see created / skipped)"),
+            @ApiResponse(responseCode = "400", description = "Validation error / unknown education form"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope"),
+            @ApiResponse(responseCode = "404", description = "Speciality not found")
+    })
+    public ResponseEntity<ResponseWrapper<SpecialityAttachmentBulkResultDto>> createBulk(
+            @Valid @RequestBody SpecialityAttachmentBulkCreateDto request
+    ) {
+        log.info("POST /api/v1/web/registry/speciality-attachments/bulk - university={}, specialityId={}, forms={}",
+                request.universityCode(), request.specialityId(),
+                request.educationForms() != null ? request.educationForms().size() : 0);
+        SpecialityAttachmentBulkResultDto result = service.createBulk(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(result));
     }
 
     // =====================================================

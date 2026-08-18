@@ -2,7 +2,6 @@ package uz.hemis.domain.adapter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.auth.UserScopeData;
@@ -30,10 +29,15 @@ public class UserScopeLoadingAdapter implements UserScopeLoadingPort {
 
     @Override
     @Transactional(readOnly = true)
-    // Spring unwraps the Optional return, so #result is the UserScopeData (null when empty);
-    // a bare "== null" is the correct "don't cache misses" guard. Calling .isEmpty() here would
-    // target UserScopeData (a record, no isEmpty()) → SpelEvaluationException on every hit.
-    @Cacheable(value = "userScope", key = "#userId", unless = "#result == null")
+    // Deliberately NOT @Cacheable. Two reasons:
+    //  1. Anti-pattern: this is a PK-indexed projection (~1ms). A Redis L2 hit (~50ms: serialize +
+    //     deserialize + network) is SLOWER than the DB read — cf. UniversityService.findByCode, which
+    //     dropped its cache for the same reason.
+    //  2. Correctness: UserScopeData is a *record* (implicitly final). The cache ObjectMapper uses
+    //     activateDefaultTyping(NON_FINAL), which writes no @class for final types, so a cached value
+    //     cannot be read back ("missing type id property '@class'") — every cache HIT threw. Serving
+    //     it live from the DB is both faster and correct. (The dormant "userScope" cache config/evict
+    //     can be re-enabled only with a serializer that emits @class for records.)
     public Optional<UserScopeData> loadScope(UUID userId) {
         if (userId == null) {
             return Optional.empty();

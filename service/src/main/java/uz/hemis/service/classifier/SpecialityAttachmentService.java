@@ -26,6 +26,8 @@ import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.domain.repository.UniversitySpecialityAttachmentRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
 import uz.hemis.service.classifier.dto.ClassifierOptionDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentBulkCreateDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachmentBulkResultDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentFilterOptionsDto.Option;
@@ -278,6 +280,67 @@ public class SpecialityAttachmentService {
         return toRow(saved, speciality, educationTypeNames(),
                 universityNames(List.of(saved.getUniversityCode())), educationFormNames(),
                 parentsById(List.of(speciality)));
+    }
+
+    /**
+     * Bulk-attach ONE speciality to ONE OTM across SEVERAL education forms — one live row per form.
+     * Forms already attached (same speciality + year) are skipped (not a 409); the rest are created in
+     * a single transaction. 403 if the OTM is outside the caller's write scope, 404 if the speciality is
+     * missing, 400 if any education-form code is unknown. Name maps are resolved once (no N+1).
+     */
+    @Transactional
+    public SpecialityAttachmentBulkResultDto createBulk(SpecialityAttachmentBulkCreateDto dto) {
+        String code = dto.universityCode().trim();
+        assertCanWrite(code);
+
+        HSpeciality speciality = specialityRepository.findById(dto.specialityId())
+                .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
+
+        // Distinct, non-blank forms (order preserved); validate every code up-front — fail fast, no partial insert.
+        List<String> forms = dto.educationForms().stream()
+                .map(SpecialityAttachmentService::blankToNull)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        if (forms.isEmpty()) {
+            throw new BadRequestException("at least one educationForm is required");
+        }
+        forms.forEach(this::assertEducationFormExists);
+
+        int eduYear = dto.eduYear() != null ? dto.eduYear() : DEFAULT_EDU_YEAR;
+        String status = blankToNull(dto.status());
+        String effectiveStatus = status != null ? status : ACTIVE_STATUS;
+
+        log.info("Bulk-attaching speciality {} to OTM {} across {} form(s), year {}",
+                dto.specialityId(), code, forms.size(), eduYear);
+
+        // Shared name maps resolved ONCE — reused for every created row (no N+1).
+        Map<String, String> eduNames = educationTypeNames();
+        Map<String, String> uniNames = universityNames(List.of(code));
+        Map<String, String> formNames = educationFormNames();
+        Map<UUID, HSpeciality> parents = parentsById(List.of(speciality));
+
+        List<SpecialityAttachmentRowDto> created = new ArrayList<>();
+        List<SpecialityAttachmentBulkResultDto.SkippedForm> skipped = new ArrayList<>();
+
+        for (String form : forms) {
+            if (repository.existsDuplicate(code, dto.specialityId(), form, eduYear, null)) {
+                skipped.add(new SpecialityAttachmentBulkResultDto.SkippedForm(
+                        form, formNames.getOrDefault(form, form)));
+                continue;
+            }
+            UniversitySpecialityAttachment entity = new UniversitySpecialityAttachment();
+            entity.setUniversityCode(code);
+            entity.setSpecialityId(dto.specialityId());
+            entity.setEducationForm(form);
+            entity.setEduYear(eduYear);
+            entity.setStatus(effectiveStatus);
+            UniversitySpecialityAttachment saved = repository.save(entity);
+            created.add(toRow(saved, speciality, eduNames, uniNames, formNames, parents));
+        }
+
+        log.info("Bulk attach done: created={}, skipped={}", created.size(), skipped.size());
+        return new SpecialityAttachmentBulkResultDto(created, skipped);
     }
 
     /**
