@@ -1,8 +1,11 @@
 -- =====================================================
 -- Rollback S021: remove bulk speciality-attach toast keys
 -- =====================================================
--- Deletes only the two keys S021 introduced (by explicit message_key list),
+-- Deletes only the two keys S021 INTRODUCED (by explicit message_key list),
 -- guarding for table existence (S006/S011 own the same categories).
+-- NOTE: the login-title key ('Higher Education Management Information System') is
+-- NOT removed here — it is owned by S006; S021 only corrected its translations. A
+-- rollback intentionally keeps the corrected text (reverting would restore a typo).
 -- =====================================================
 
 DO $$

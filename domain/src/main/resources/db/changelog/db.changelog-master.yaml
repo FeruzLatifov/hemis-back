@@ -550,7 +550,7 @@ databaseChangeLog:
       author: hemis-team
       logicalFilePath: ${changelog.path}
       runOnChange: true
-      comment: "Two NEW i18n keys for the bulk speciality->OTM attach result toast ('{{n}} attached' / '{{n}} already attached, skipped'). NEW seed — S010 is already applied in prod (central_hemis), so applied changesets are not edited. system_message is the source of truth (sync:translations regenerates the frontend JSON from here). Runs after S006 (_seed_msg helper)."
+      comment: "Two NEW i18n keys for the bulk speciality->OTM attach result toast ('{{n}} attached' / '{{n}} already attached, skipped') + correction of the login-page subtitle 'Higher Education Management Information System' (S006 value had wrong wording/Title Case in uz/oz/ru). NEW seed — S006/S010 are already applied in prod (central_hemis), so applied changesets are not edited; the login title is overridden via _seed_msg upsert. system_message is the source of truth (sync:translations regenerates the frontend JSON). Runs after S006 (_seed_msg helper)."
       changes:
         - sqlFile: { path: changesets/seed/S021_seed_bulk_attach_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
