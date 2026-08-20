@@ -54,7 +54,7 @@ import java.util.concurrent.TimeoutException;
  */
 @RestController
 @RequestMapping("/api/v1/university")
-@Tag(name = "University Employee Sync", description = "OTM xodimlarini markazga yuborish (async via Kafka)")
+@Tag(name = "Xodimlar sinxronizatsiyasi", description = "OTM xodimlarini markazga yuborish (async via Kafka)")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

@@ -25,6 +25,7 @@ import uz.hemis.domain.entity.classifier.ReviewStatus;
 import uz.hemis.domain.repository.HEducationTypeRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
 import uz.hemis.domain.repository.HSpecialityYearRepository;
+import uz.hemis.domain.repository.UniversitySpecialityAttachmentRepository;
 import uz.hemis.service.classifier.dto.ClassifierOptionDto;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityClassifierDistResponse;
@@ -86,6 +87,7 @@ public class HSpecialityService {
     private final HSpecialityRepository repository;
     private final HSpecialityYearRepository yearRepository;
     private final HEducationTypeRepository educationTypeRepository;
+    private final UniversitySpecialityAttachmentRepository attachmentRepository;
     private final OutboxEventPublisher outboxPublisher;
 
     @PersistenceContext
@@ -216,7 +218,10 @@ public class HSpecialityService {
     public SpecialityNodeDto getById(UUID id) {
         HSpeciality s = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", id));
-        List<HSpeciality> kids = repository.findByParentId(id);
+        // EVERY child, deactivated ones included: the detail view is what the delete/move guards are
+        // judged against (both use findAllChildren), so hiding an inactive child here would offer a
+        // Delete button the server then refuses with 422. Each child carries its own `active` flag.
+        List<HSpeciality> kids = repository.findAllChildren(id);
 
         List<HSpeciality> everything = new ArrayList<>(kids);
         everything.add(s);
@@ -345,10 +350,19 @@ public class HSpecialityService {
             s.setEducationType(validateEducationType(dto.educationType()));
         }
         // Placement — mirror the create form (depth + parent). null level = leave placement untouched.
+        boolean placementChanged = false;
         if (dto.hierarchyLevel() != null) {
-            applyPlacement(s, dto.hierarchyLevel(), dto.parentId());
+            placementChanged = applyPlacement(s, dto.hierarchyLevel(), dto.parentId());
         }
-        if (dto.reviewStatus() != null) {
+        if (placementChanged) {
+            // A structural move re-opens curation: the row drops to NEEDS_REVIEW and must be
+            // re-approved in its new place. This overrides any reviewStatus in the same request, so a
+            // moved row never silently stays APPROVED — and the demotion needs only .edit, never the
+            // .approve capability (moving is an editor action; re-approving the new placement is not).
+            // A row that WAS distributable is then retracted from the 224 OTMs by distribute() below,
+            // until it is promoted to APPROVED again in its new position.
+            s.setReviewStatus(ReviewStatus.NEEDS_REVIEW);
+        } else if (dto.reviewStatus() != null) {
             ReviewStatus newStatus = ReviewStatus.fromValue(dto.reviewStatus());
             // Segregation of duties: promoting NEEDS_REVIEW → APPROVED brings a hand-entered/
             // unverified row into OTM distribution, so it needs the dedicated .approve capability
@@ -382,18 +396,37 @@ public class HSpecialityService {
     }
 
     /**
-     * Re-place a row to the chosen depth + parent, mirroring the create form. The parent must exist,
-     * share the row's education type, and sit exactly one level above the target depth. Guards:
-     * <ul>
-     *   <li><b>cycle</b> — the new parent may not be the row itself or one of its descendants;</li>
-     *   <li><b>overflow</b> — the row's subtree must still fit the fixed 4-level taxonomy after the
-     *       move ({@code targetLevel + subtreeDepth <= 4}).</li>
-     * </ul>
-     * A depth change is cascaded to every descendant (their display {@code hierarchy_level} shifts by
-     * the same delta; the authoritative {@code parent_id} links are untouched). Re-pointing to the
-     * current depth + parent is a harmless no-op.
+     * Re-place a row to the chosen depth + parent, mirroring the create form, and report whether the
+     * placement actually changed. Re-pointing to the current depth + parent is a harmless no-op
+     * ({@code false}); any real move returns {@code true} so the caller can drop the row to
+     * {@code NEEDS_REVIEW}.
+     *
+     * <p><strong>A row that still has (active) children cannot change its own level.</strong> Shifting
+     * a parent's depth would silently drag its whole subtree across the fixed 4-level taxonomy, so the
+     * admin must first re-place each sub-direction and only then move the now-childless row
+     * ({@code SPECIALITY_HAS_CHILDREN_MOVE_FIRST}, 422). A <em>same-level</em> re-parent is still
+     * allowed for a row with children — every child stays exactly one level below it, so nothing
+     * cascades.</p>
+     *
+     * <p>For an allowed move the new parent must exist, share the row's education type, and sit exactly
+     * one level above the target depth; it may be neither the row itself nor one of its descendants
+     * (cycle guard). Because a level change requires a childless row, there is nothing left to cascade.</p>
      */
-    private void applyPlacement(HSpeciality s, int targetLevel, UUID newParentId) {
+    private boolean applyPlacement(HSpeciality s, int targetLevel, UUID newParentId) {
+        int oldLevel = s.getHierarchyLevel() == null ? targetLevel : s.getHierarchyLevel();
+        boolean levelChanged = targetLevel != oldLevel;
+        boolean parentChanged = !Objects.equals(newParentId, s.getParentId());
+        if (!levelChanged && !parentChanged) {
+            return false; // re-pointing to the same depth + parent — nothing to do
+        }
+        // A row that still has sub-directions keeps its own level: the children must be re-placed first
+        // (they would otherwise be dragged to an inconsistent depth). Checked before parent resolution
+        // so this user-facing rule wins over the generic parent validations below.
+        if (levelChanged && !repository.findAllChildren(s.getId()).isEmpty()) {
+            throw new BusinessRuleException("SPECIALITY_HAS_CHILDREN_MOVE_FIRST",
+                    "This speciality has sub-directions — move them to another level first, "
+                            + "then change its level");
+        }
         HSpeciality newParent = null;
         if (targetLevel == 1) {
             if (newParentId != null) {
@@ -425,17 +458,9 @@ public class HSpecialityService {
                         "A speciality cannot be moved under its own descendant");
             }
         }
-        if (targetLevel + subtreeDepth(s.getId()) > LEVELS_MAX) {
-            throw new BusinessRuleException("SPECIALITY_MAX_DEPTH",
-                    "The move would push this row's subtree past the fixed 4-level taxonomy");
-        }
-        int oldLevel = s.getHierarchyLevel() == null ? targetLevel : s.getHierarchyLevel();
         s.setParent(newParent);
         s.setHierarchyLevel(targetLevel);
-        int delta = targetLevel - oldLevel;
-        if (delta != 0) {
-            cascadeLevel(s.getId(), delta);
-        }
+        return true;
     }
 
     /** True when {@code ancestorId} is {@code node} itself or one of its ancestors (walks up parent_id). */
@@ -452,25 +477,6 @@ public class HSpecialityService {
             cur = repository.findById(pid).orElse(null);
         }
         return false;
-    }
-
-    /** Depth of the deepest descendant below {@code parentId} (0 for a leaf). */
-    private int subtreeDepth(UUID parentId) {
-        int max = 0;
-        for (HSpeciality child : repository.findByParentId(parentId)) {
-            max = Math.max(max, 1 + subtreeDepth(child.getId()));
-        }
-        return max;
-    }
-
-    /** Shift every descendant's display level by {@code delta} (the parent_id links stay intact). */
-    private void cascadeLevel(UUID parentId, int delta) {
-        for (HSpeciality child : repository.findByParentId(parentId)) {
-            Integer cl = child.getHierarchyLevel();
-            child.setHierarchyLevel((cl == null ? 0 : cl) + delta);
-            repository.save(child);
-            cascadeLevel(child.getId(), delta);
-        }
     }
 
     /**
@@ -578,6 +584,73 @@ public class HSpecialityService {
         // only after it is promoted to APPROVED via update() (which handles the fanout).
         log.info("Speciality created: id={}, hierarchyLevel={}", s.getId(), s.getHierarchyLevel());
         return getById(s.getId());
+    }
+
+    /**
+     * Delete a speciality row outright ({@code h_speciality}) — the curation backlog only.
+     *
+     * <p>A hard delete is deliberate and deliberately narrow: a row the OTMs have ever seen is
+     * retired by deactivation, never removed (they would keep an orphan). Three guards, ordered so
+     * the admin is told the thing they can act on first:</p>
+     * <ol>
+     *   <li><b>Status</b> — {@link ReviewStatus#NEEDS_REVIEW} only. An APPROVED row is part of the
+     *       distributed snapshot; it is retired via {@link #update} (demotion / {@code active=false}),
+     *       which RETRACTS it through the PUSH channel instead of orphaning it.</li>
+     *   <li><b>Children</b> — a parent keeps its subtree: each child must first be deleted or
+     *       re-placed under another parent ({@link #update} placement). Deactivated children count
+     *       too — {@code fk_h_speciality_parent} is {@code ON DELETE RESTRICT} and does not care
+     *       about {@code active}.</li>
+     *   <li><b>OTM attachments</b> — a speciality an OTM is (or was) allowed to run cannot vanish;
+     *       {@code fk_univ_spec_attach_spec} is {@code ON DELETE RESTRICT} and counts revoked
+     *       (soft-deleted) attachment rows too.</li>
+     * </ol>
+     *
+     * <p>Years ({@code h_speciality_year}) go with the row — the FK cascades in the DB, and the
+     * explicit delete keeps the persistence context consistent inside this transaction. No outbox
+     * event is published: guard #1 makes the row non-distributable by definition, so no OTM ever
+     * received it. The distribution cache is evicted anyway — zero-cost insurance should the guards
+     * ever be loosened.</p>
+     */
+    @Transactional
+    @CacheEvict(value = "specialityDistribution", allEntries = true)
+    public void delete(UUID id) {
+        HSpeciality s = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", id));
+
+        if (s.getReviewStatus() != ReviewStatus.NEEDS_REVIEW) {
+            throw new BusinessRuleException("SPECIALITY_DELETE_APPROVED_FORBIDDEN",
+                    "Only a speciality with the 'Needs review' status can be deleted; an approved one "
+                            + "is distributed to the OTMs — deactivate it instead");
+        }
+
+        List<HSpeciality> children = repository.findAllChildren(id);
+        if (!children.isEmpty()) {
+            throw new BusinessRuleException("SPECIALITY_HAS_CHILDREN_DELETE_FIRST",
+                    "This speciality has %d sub-direction(s) — delete them first, or move them under another parent: %s"
+                            .formatted(children.size(), describeChildren(children)));
+        }
+
+        long attachments = attachmentRepository.countAllBySpecialityId(id);
+        if (attachments > 0) {
+            throw new BusinessRuleException("SPECIALITY_ATTACHED_TO_UNIVERSITY",
+                    "This speciality is attached to %d university record(s) — detach it first"
+                            .formatted(attachments));
+        }
+
+        yearRepository.deleteBySpecialityId(id);
+        repository.delete(s);
+        // WARN, not INFO: an irreversible classifier mutation is worth finding in the logs later.
+        log.warn("Speciality DELETED: id={}, code={}, name={}, educationType={}",
+                id, s.getCode(), s.getNameUz(), s.getEducationType());
+    }
+
+    /** The blocking children as "code — name" (first 5), for the 422 message. */
+    private static String describeChildren(List<HSpeciality> children) {
+        String head = children.stream()
+                .limit(5)
+                .map(c -> (c.getCode() != null ? c.getCode() + " — " : "") + c.getNameUz())
+                .collect(Collectors.joining("; "));
+        return children.size() > 5 ? head + "; ..." : head;
     }
 
     /**

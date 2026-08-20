@@ -42,8 +42,8 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/v1/university")
-@Tag(name = "University Building Sync", description = "OTM tomondan binolarni markazga yuborish (sync)")
-@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Binolar va kadastr", description = "OTM binolari va kadastr obyektlari — markazga yuborish (sync) va markazdan olish (serve)")
+@SecurityRequirement(name = "oauth2")
 @RequiredArgsConstructor
 @Slf4j
 @Validated

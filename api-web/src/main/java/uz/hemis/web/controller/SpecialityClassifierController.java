@@ -72,6 +72,7 @@ import java.util.UUID;
                 - Hierarchical tree by education type (11=Bakalavr / 12=Magistr)
                 - Paginated flat list with education-type + review-status + text filters
                 - Curation edit (fix code/name/type/years, promote NEEDS_REVIEW → APPROVED)
+                - Delete a NEEDS_REVIEW row (childless + unattached only)
 
                 **Additive:** does NOT modify the frozen bachelor/master tables or the 175/175 contract.
                 """
@@ -508,5 +509,47 @@ public class SpecialityClassifierController {
     ) {
         log.info("PUT /api/v1/web/classifiers/speciality/{}", id);
         return ResponseEntity.ok(ResponseWrapper.success(service.update(id, request)));
+    }
+
+    // =====================================================
+    // Delete (curation backlog only)
+    // =====================================================
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('classifiers.speciality.delete')")
+    @Operation(
+            summary = "Delete a speciality (NEEDS_REVIEW only)",
+            description = """
+                    Physically removes a speciality row together with its edition years. Scoped to the
+                    curation backlog on purpose — a row the OTMs have ever seen is never removed.
+
+                    **Guards (each a 422 with a machine-readable rule code):**
+                    - `SPECIALITY_DELETE_APPROVED_FORBIDDEN` — the row is APPROVED (part of the
+                      distributed snapshot); retire it via `PUT /{id}` (demote / deactivate), which
+                      retracts it from the 224 OTMs instead of orphaning it.
+                    - `SPECIALITY_HAS_CHILDREN_DELETE_FIRST` — it still has sub-directions
+                      (deactivated ones included); delete them first, or move them under another
+                      parent via `PUT /{id}` (hierarchyLevel + parentId). The message names them.
+                    - `SPECIALITY_ATTACHED_TO_UNIVERSITY` — an OTM is (or was) allowed to run it;
+                      detach it in the speciality-attachments registry first.
+
+                    Irreversible — there is no soft delete on classifier rows.
+                    """,
+            tags = {"Classifiers - Speciality"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Deleted"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.delete'"),
+            @ApiResponse(responseCode = "404", description = "Not found"),
+            @ApiResponse(responseCode = "422", description = "Business rule violation (approved / has children / attached)")
+    })
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Speciality id (UUID)", required = true)
+            @PathVariable UUID id
+    ) {
+        log.info("DELETE /api/v1/web/classifiers/speciality/{}", id);
+        service.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

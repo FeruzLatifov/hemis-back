@@ -1,13 +1,9 @@
 package uz.hemis.service.infrastructure.mapper;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.Named;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 import uz.hemis.common.dto.building.BuildingCreateUpdateDto;
@@ -24,10 +20,6 @@ import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
  * deletedAt/By, version) DTO'da yo'q, shuning uchun @Mapping ignore kerak emas —
  * MapStruct avtomatik skip qiladi. FK entity field'lari esa DTO'dagi *Code'ga mos,
  * ularni ignore qilish kerak (insertable=false, updatable=false).</p>
- *
- * <p><b>Cadastre mapping:</b> DTO'da {@code JsonNode}, entity'da {@code String}
- * (JSONB). {@link #jsonNodeToString} va {@link #stringToJsonNode} default
- * method'lari orqali aylantiriladi.</p>
  */
 @Mapper(componentModel = "spring",
         nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE,
@@ -37,22 +29,22 @@ import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BuildingMapper {
 
-    ObjectMapper SHARED_OBJECT_MAPPER = new ObjectMapper();
-
     // Entity → Read DTO
     @Mapping(source = "category.name", target = "categoryName")
+    @Mapping(source = "buildingType.name", target = "buildingTypeName")
+    @Mapping(source = "ownership.name", target = "ownershipName")
     @Mapping(source = "constructionMaterial.name", target = "constructionMaterialName")
     @Mapping(source = "roofType.name", target = "roofTypeName")
-    @Mapping(source = "cadastre", target = "cadastre", qualifiedByName = "stringToJsonNode")
     BuildingDto toDto(UniversityBuilding entity);
 
     // Create DTO → new Entity
     @Mapping(target = "universityCode", ignore = true)
     @Mapping(target = "university", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)
-    @Mapping(source = "cadastre", target = "cadastre", qualifiedByName = "jsonNodeToString")
     @Mapping(target = "source", constant = "manual")
     @Mapping(target = "sourceUid", ignore = true)
     @Mapping(target = "syncedAt", ignore = true)
@@ -64,9 +56,10 @@ public interface BuildingMapper {
     @Mapping(target = "universityCode", ignore = true)
     @Mapping(target = "university", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)
-    @Mapping(source = "cadastre", target = "cadastre", qualifiedByName = "jsonNodeToString")
     @Mapping(target = "source", ignore = true)
     @Mapping(target = "sourceUid", ignore = true)
     @Mapping(target = "syncedAt", ignore = true)
@@ -77,9 +70,10 @@ public interface BuildingMapper {
     @Mapping(target = "universityCode", ignore = true)
     @Mapping(target = "university", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)
-    @Mapping(source = "cadastre", target = "cadastre", qualifiedByName = "jsonNodeToString")
     @Mapping(target = "source", constant = "univer_sync")
     @Mapping(target = "syncedAt", ignore = true)
     @Mapping(target = "contentHash", ignore = true)
@@ -90,9 +84,10 @@ public interface BuildingMapper {
     @Mapping(target = "universityCode", ignore = true)
     @Mapping(target = "university", ignore = true)
     @Mapping(target = "category", ignore = true)
+    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)
-    @Mapping(source = "cadastre", target = "cadastre", qualifiedByName = "jsonNodeToString")
     @Mapping(target = "source", ignore = true)
     @Mapping(target = "sourceUid", ignore = true)
     @Mapping(target = "syncedAt", ignore = true)
@@ -101,19 +96,4 @@ public interface BuildingMapper {
 
     // Lifecycle read
     BuildingLifecycleDto toLifecycleDto(BuildingLifecycle entity);
-
-    @Named("jsonNodeToString")
-    default String jsonNodeToString(JsonNode node) {
-        return node == null || node.isNull() ? null : node.toString();
-    }
-
-    @Named("stringToJsonNode")
-    default JsonNode stringToJsonNode(String json) {
-        if (json == null || json.isBlank()) return null;
-        try {
-            return SHARED_OBJECT_MAPPER.readTree(json);
-        } catch (JsonProcessingException e) {
-            return null;
-        }
-    }
 }

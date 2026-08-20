@@ -36,6 +36,7 @@ public class UniversityBuildingSyncService {
     private final BuildingMapper mapper;
     private final BuildingMetrics metrics;
     private final CacheManager cacheManager;
+    private final CadastreIngestService cadastreIngestService;
 
     @Transactional
     @io.micrometer.core.annotation.Timed(value = "buildings.sync.duration",
@@ -68,6 +69,9 @@ public class UniversityBuildingSyncService {
     }
 
     private void upsertOne(String universityCode, BuildingSyncDto dto) {
+        // FK: bino cad_number'iga university_cadastre qatorini ta'minlaymiz (bulk → strict=false: noto'g'ri raqam
+        // batch'ni buzmaydi, FAILED placeholder qoladi, OTM binosi baribir saqlanadi).
+        cadastreIngestService.ensureCadastreExists(dto.getCadNumber(), false);
         String incomingHash = computeHash(dto);
         Optional<UniversityBuilding> existing =
                 repo.findByUniversityCodeAndSourceUid(universityCode, dto.getSourceUid());
@@ -99,6 +103,9 @@ public class UniversityBuildingSyncService {
         String content = String.join("|",
                 str(d.getName()),
                 str(d.getCategoryCode()),
+                str(d.getBuildingTypeCode()),
+                codesStr(d.getBuildingTypeCodes()),
+                str(d.getOwnershipCode()),
                 str(d.getAddress()),
                 str(d.getYearBuilt()),
                 str(d.getFloorCount()),
@@ -112,7 +119,6 @@ public class UniversityBuildingSyncService {
                 str(d.getLongitude()),
                 str(d.getMapUrl()),
                 str(d.getCadNumber()),
-                str(d.getCadastre()),
                 str(d.getNote())
         );
         return sha256Hex(content);
@@ -130,5 +136,11 @@ public class UniversityBuildingSyncService {
 
     private static String str(Object o) {
         return o == null ? "" : o.toString();
+    }
+
+    /** Ko'p-tur kodlari — tartibдан qat'i nazar bir xil hash (sorted + join). */
+    private static String codesStr(List<String> codes) {
+        if (codes == null || codes.isEmpty()) return "";
+        return codes.stream().filter(Objects::nonNull).sorted().collect(java.util.stream.Collectors.joining(","));
     }
 }

@@ -151,10 +151,13 @@ class UniversityBuildingSyncServiceTest {
      * Production kod o'zgarsa, bu ham yangilanishi kerak.
      */
     private String computeSameHashAsService(BuildingSyncDto d) {
-        // 17 ta field — service.computeHash bilan AYNAN bir tartibda (cadastre noteoldidan).
+        // 20 ta field — service.computeHash bilan AYNAN bir tartibda (buildingTypeCode + buildingTypeCodes + ownershipCode).
         String content = String.join("|",
                 safe(d.getName()),
                 safe(d.getCategoryCode()),
+                safe(d.getBuildingTypeCode()),
+                codesStr(d.getBuildingTypeCodes()),
+                safe(d.getOwnershipCode()),
                 safe(d.getAddress()),
                 safe(d.getYearBuilt()),
                 safe(d.getFloorCount()),
@@ -168,7 +171,6 @@ class UniversityBuildingSyncServiceTest {
                 safe(d.getLongitude()),
                 safe(d.getMapUrl()),
                 safe(d.getCadNumber()),
-                safe(d.getCadastre()),
                 safe(d.getNote())
         );
         try {
@@ -182,5 +184,10 @@ class UniversityBuildingSyncServiceTest {
 
     private String safe(Object o) {
         return o == null ? "" : o.toString();
+    }
+
+    private String codesStr(java.util.List<String> codes) {
+        if (codes == null || codes.isEmpty()) return "";
+        return codes.stream().filter(java.util.Objects::nonNull).sorted().collect(java.util.stream.Collectors.joining(","));
     }
 }

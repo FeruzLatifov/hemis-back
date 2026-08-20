@@ -1,7 +1,6 @@
 package uz.hemis.common.dto.building;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -12,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Univer → hemis-back sync payload.
@@ -22,13 +22,13 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonPropertyOrder({
-    "sourceUid", "name", "categoryCode",
+    "sourceUid", "name", "categoryCode", "buildingTypeCode", "buildingTypeCodes", "ownershipCode",
     "address", "yearBuilt", "floorCount", "capacity",
     "totalArea", "usableArea",
     "constructionMaterialCode", "roofTypeCode",
     "lastRenovationDate",
     "latitude", "longitude", "mapUrl",
-    "cadNumber", "cadastre", "note"
+    "cadNumber", "note"
 })
 @Schema(name = "BuildingSync", description = "Univer tomondan sync qilinayotgan bino")
 public class BuildingSyncDto implements Serializable {
@@ -41,9 +41,20 @@ public class BuildingSyncDto implements Serializable {
     @Size(max = 500)
     private String name;
 
-    @NotBlank
+    // Eski coarse kategoriya (ixtiyoriy). Univer/kadastr push building turini yuboradi, kategoriyani emas.
     @Size(max = 20)
     private String categoryCode;
+
+    /** Bino turi kodi — markaziy h_building_type (11-45). ASOSIY tur (ro'yxat/filtr). */
+    @Size(max = 20)
+    private String buildingTypeCode;
+
+    /** Bino tegishli BARCHA turlar (ko'p-tur: ham o'quv, ham ma'muriy...). buildingTypeCode = asosiy. */
+    private List<String> buildingTypeCodes;
+
+    /** Egalik shakli: OWN/OPERATIVE/RENT (h_building_ownership). Default OWN. */
+    @Size(max = 20)
+    private String ownershipCode;
 
     private String address;
 
@@ -81,10 +92,6 @@ public class BuildingSyncDto implements Serializable {
 
     @Size(max = 50)
     private String cadNumber;
-
-    /** Kadastr API javobining xom JSON snapshot (univer tomondan yuboriladi). */
-    @Schema(description = "Kadastr ma'lumotining JSON nusxasi")
-    private JsonNode cadastre;
 
     private String note;
 }

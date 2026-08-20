@@ -65,9 +65,19 @@ public interface HSpecialityRepository extends JpaRepository<HSpeciality, UUID> 
            "AND s.educationType = COALESCE(:educationType, s.educationType) ORDER BY s.code ASC")
     List<HSpeciality> findRoots(@Param("educationType") String educationType);
 
-    /** Direct children of a parent node. */
-    @Query("SELECT s FROM HSpeciality s WHERE s.parent.id = :parentId AND s.active = true ORDER BY s.code ASC")
-    List<HSpeciality> findByParentId(@Param("parentId") UUID parentId);
+    /**
+     * EVERY direct child of a node — deactivated rows included — ordered by code.
+     *
+     * <p>The single definition of "has children" in this classifier: the delete guard, the
+     * level-change guard, and the detail view all read it, so the UI never offers an action the
+     * server then refuses. An {@code active = false} filter would be wrong for all three — the
+     * {@code fk_h_speciality_parent} FK ({@code ON DELETE RESTRICT}) does not care about
+     * {@code active}, so a deactivated child still turns a "no children" delete into a raw DB
+     * constraint error, and it would still be dragged along by a level change. The returned rows
+     * also name the blockers back to the admin ("re-place these first").</p>
+     */
+    @Query("SELECT s FROM HSpeciality s WHERE s.parent.id = :parentId ORDER BY s.code ASC")
+    List<HSpeciality> findAllChildren(@Param("parentId") UUID parentId);
 
     List<HSpeciality> findByEducationTypeAndActiveTrue(String educationType);
 

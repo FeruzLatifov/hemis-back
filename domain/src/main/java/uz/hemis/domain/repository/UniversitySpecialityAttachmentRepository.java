@@ -28,6 +28,19 @@ public interface UniversitySpecialityAttachmentRepository extends JpaRepository<
     List<UniversitySpecialityAttachment> findBySpecialityId(UUID specialityId);
 
     /**
+     * EVERY attachment row that points at a speciality — soft-deleted (revoked) ones included.
+     *
+     * <p>Native on purpose: the entity's {@code @SQLRestriction("deleted_at IS NULL")} hides
+     * revoked rows from JPA, but they physically remain and the
+     * {@code fk_univ_spec_attach_spec} FK ({@code ON DELETE RESTRICT}) still counts them.
+     * The classifier delete guard needs the physical truth so a blocked delete surfaces as a
+     * clean 422 instead of a raw constraint-violation 500.</p>
+     */
+    @Query(value = "SELECT COUNT(*) FROM university_speciality_attachment WHERE speciality_id = :specialityId",
+           nativeQuery = true)
+    long countAllBySpecialityId(@Param("specialityId") UUID specialityId);
+
+    /**
      * Tenant-scoped paginated search — {@code codes} is the caller's allowed OTM set
      * (always non-empty; a deny-all scope is rejected upstream). Optional
      * {@code specialityId}/{@code status}/{@code educationForm}/{@code educationType} filters.

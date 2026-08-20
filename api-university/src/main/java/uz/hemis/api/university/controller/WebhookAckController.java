@@ -25,7 +25,7 @@ import uz.hemis.service.webhook.WebhookAckService;
 @RequestMapping("/api/v1/university")
 @RequiredArgsConstructor
 @Slf4j
-@Tag(name = "University Webhook Ack", description = "Univer apply-status callback (HMAC-signed)")
+@Tag(name = "Webhook javobi (apply-status)", description = "Univer apply-status callback (HMAC-signed)")
 public class WebhookAckController {
 
     private final WebhookAckService ackService;

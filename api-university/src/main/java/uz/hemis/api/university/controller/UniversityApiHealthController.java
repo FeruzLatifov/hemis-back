@@ -15,7 +15,7 @@ import java.util.Map;
  * <p>Separate from Spring Boot Actuator health — this is a lightweight module-level probe
  * used by the ministry and partner systems for connectivity tests.</p>
  */
-@Tag(name = "00.Health", description = "api-university module health check")
+@Tag(name = "00.Tizim holati", description = "api-university module health check")
 @RestController
 @RequestMapping("/api/v1/university")
 public class UniversityApiHealthController {

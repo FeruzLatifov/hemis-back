@@ -31,4 +31,16 @@ public class GatewayService {
         }
         return apiMspdClient.post("/kadastr/by-cadnum", Map.of("cad_num", cadNumber));
     }
+
+    /**
+     * INN (TIN) bo'yicha kadastr obyektlari RO'YXATI (cad_number'lar).
+     * Javob {@code cadastr_list} + {@code cadastr_count} — to'liq detal emas;
+     * har cad_number bo'yicha {@link #getCadastreByCadnum} chaqiriladi (ingest).
+     */
+    public GatewayResult getCadastreByInn(String tin) {
+        if (tin == null || tin.isBlank()) {
+            throw new BadRequestException("tin must not be blank");
+        }
+        return apiMspdClient.post("/kadastr/by-inn", Map.of("tin", tin));
+    }
 }

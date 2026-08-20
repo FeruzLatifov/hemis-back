@@ -46,6 +46,7 @@ public class UniversityBuildingService {
     private final BuildingLifecycleRepository lifecycleRepo;
     private final BuildingMapper mapper;
     private final CacheManager cacheManager;
+    private final CadastreIngestService cadastreIngestService;
 
     @Transactional(readOnly = true)
     public BuildingDto findById(UUID id) {
@@ -59,11 +60,20 @@ public class UniversityBuildingService {
         return repo.findByUniversityCode(universityCode, pageable).map(mapper::toDto);
     }
 
+    /** OTM serve — universitetning o'z binolari (token-scoped, paginatsiyasiz). */
+    @Transactional(readOnly = true)
+    public java.util.List<BuildingDto> findAllByUniversity(String universityCode) {
+        return repo.findByUniversityCodeOrderByNameAsc(universityCode)
+                .stream().map(mapper::toDto).toList();
+    }
+
     @Transactional
     @Audited(action = AuditAction.CREATE, entity = "Building", entityClass = UniversityBuilding.class)
     public BuildingDto create(String universityCode, BuildingCreateUpdateDto dto) {
         UniversityBuilding building = mapper.toEntity(dto);
         building.setUniversityCode(universityCode);
+        // FK: cad_number bo'lsa university_cadastre qatorini ta'minlaymiz (yo'q → fetch/PENDING; noto'g'ri → 422)
+        cadastreIngestService.ensureCadastreExists(building.getCadNumber(), true);
         UniversityBuilding saved = repo.save(building);
         recordConstructionEvent(saved);
         evictDashboard(universityCode);
@@ -78,6 +88,8 @@ public class UniversityBuildingService {
                 .orElseThrow(() -> new ResourceNotFoundException("Building", "id", id));
         LocalDate oldRenovationDate = existing.getLastRenovationDate();
         mapper.updateEntity(dto, existing);
+        // FK: cad_number o'zgargan bo'lishi mumkin — yangi qiymatga kadastr qatorini ta'minlaymiz
+        cadastreIngestService.ensureCadastreExists(existing.getCadNumber(), true);
         recordRenovationIfChanged(existing, oldRenovationDate);
         evictDashboard(existing.getUniversityCode());
         log.info("Building updated: {}", id);

@@ -2,7 +2,7 @@
 
 > **Markaziy HEMIS-back** ichida **224 ta Univer Yii2 PHP backend** uchun integratsiya kanali (OTM → vazirlik markaz yo'nalishi).
 >
-> **Modul roli:** asosan **write/sync-oriented** integratsiya kanali. Univer'lar (per-OTM Yii2) markazga ma'lumot **PUSH** qiladi (employees, buildings sync), token oladi, webhook apply-status ack qaytaradi va kadastr gateway proxy orqali so'rov yuboradi. Bu modulda `/students`, `/faculties`, `/curriculum` kabi entity **CRUD endpoint YO'Q**.
+> **Modul roli:** asosan **write/sync-oriented** integratsiya kanali. Univer'lar (per-OTM Yii2) markazga ma'lumot **PUSH** qiladi (employees, buildings sync), token oladi, webhook apply-status ack qaytaradi va markazdan o'z binolari + kadastr obyektlarini (serve) oladi. Bu modulda `/students`, `/faculties`, `/curriculum` kabi entity **CRUD endpoint YO'Q**.
 >
 > **Istisno — klassifikator distribution (maqsad #2, 2026-07-18):** OTM'ga umumiy `h_*` klassifikatorni yetkazish uchun **READ (pull snapshot) endpoint ruxsat etiladi** — `SpecialityDistributionController` (`GET /api/v1/university/classifiers/speciality`). Bu global reference data (har OTM bir xil oladi, **tenant-scope YO'Q**), shuning uchun service qatlamida **`@Cacheable`** (masalan `specialityDistribution` 24h, curation edit'да evict) — write/sync taqiqi bu READ distribution surface'ига tegishli emas. Entity CRUD taqiqi kuchda qoladi.
 >
@@ -18,7 +18,7 @@
 
 ---
 
-## Real Endpoints (7 controller, 8 mapping)
+## Real Endpoints (8 controller, 11 mapping)
 
 Barchasi `/api/v1/university` prefix ostida.
 
@@ -29,8 +29,11 @@ Barchasi `/api/v1/university` prefix ostida.
 | `POST /employees/sync` | `EmployeeSyncController` | Univer xodim batch'i → Kafka `EmployeeSyncProducer.publish` (ADR-0010, idempotent `INSERT ... ON CONFLICT`) |
 | `POST /buildings/sync` | `BuildingSyncController` | Univer bino batch'i → `(universityCode, sourceUid)` bo'yicha upsert |
 | `POST /hemis-events/ack` | `WebhookAckController` | K2 apply-status feedback loop — Univer markaz webhook'ini apply qilib ack qaytaradi (ADR-0012) |
-| `GET /gateway/kadastr/by-cadnum` | `GatewayController` | `api-mspd` kadastr passthrough proxy, `@PreAuthorize("isAuthenticated()")` |
+| `GET /buildings` | `BuildingServeController` | OTM o'z binolarini markazdan oladi (token-scoped serve, P6b) |
+| `GET /cadastre/by-cadnum` | `BuildingServeController` | Kadastr obyekti — markazда bo'lsa DB'dan, yo'q bo'lsa `api-mspd`dan olib saqlaydi (P6) |
+| `POST /cadastre/sync` | `BuildingServeController` | OTM INN bo'yicha barcha kadastr obyektlarini markazда saqlaydi (P6) |
 | `GET /classifiers/speciality` | `SpecialityDistributionController` | **READ** — OTM bootstrap PULL: `h_speciality` APPROVED FLAT v1 snapshot (global reference, tenant-scope YO'Q; service `@Cacheable`). Modern PUSH fanout'ning hamrohi |
+| `GET /speciality-attachments` | `SpecialityAttachmentDistributionController` | **READ** — OTM↔mutaxassislik biriktirish snapshot (global reference) |
 | `GET /health` | `UniversityApiHealthController` | Liveness probe |
 
 ### OAuth token (ADR-0005)
@@ -52,9 +55,9 @@ Barchasi `/api/v1/university` prefix ostida.
 
 `WebhookAckService.processAck(universityCode, signature, timestamp, rawBody)` raw body ustidan imzoni tekshiradi.
 
-### Gateway proxy
+### Kadastr serve (P6)
 
-`GET /gateway/kadastr/by-cadnum` — `api-mspd` kadastr xizmatiga passthrough proxy (Univer foydalanuvchisi kadastr raqami bo'yicha so'rov yuboradi). `@PreAuthorize("isAuthenticated()")`.
+`GET /cadastre/by-cadnum` + `POST /cadastre/sync` (`BuildingServeController`) — markaz `api-mspd`dan (`GatewayService`) kadastrni **olib `university_cadastre`ga saqlaydi** va OTM'ga beradi (bizda bo'lsa DB'dan). Eski xom passthrough `GatewayController` (`/gateway/kadastr/by-cadnum`) — **olib tashlandi** (2026-08-20); saqlovchi serve uni to'liq bosdi. `GatewayService` (INN + cadNum metodlari) `CadastreIngestService`da ishlatilishda davom etadi.
 
 ---
 
@@ -105,7 +108,7 @@ Sync entity'lar markaziy DB'da `university_code` column bilan yoziladi; vazirlik
 - [ ] Sync yozuvi idempotent (`ON CONFLICT` / upsert key)
 - [ ] Kafka publish — future timeout/error handling (ADR-0007/0010)
 - [ ] Webhook ack — HMAC (`X-Hemis-Signature` + timestamp + university-code) tekshiriladi, JWT emas
-- [ ] Gateway endpoint — `@PreAuthorize("isAuthenticated()")`
+- [ ] Kadastr serve endpoint — `@PreAuthorize("isAuthenticated()")`, universityCode JWT claim'dan
 - [ ] Yangi OAuth client turi to'g'ri (`ClientType.UNIVERSITY_BACKEND`)
 - [ ] Entity CRUD qo'shilmadi (bu modul write/sync-oriented). **Istisno:** klassifikator distribution READ (pull snapshot) — global reference, tenant-scope YO'Q, service `@Cacheable`+evict (masalan `SpecialityDistributionController`)
 

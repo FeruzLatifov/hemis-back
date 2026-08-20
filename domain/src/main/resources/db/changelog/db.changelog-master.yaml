@@ -322,6 +322,36 @@ databaseChangeLog:
       rollback:
         - sqlFile: { path: changesets/schema/V022_create_h_education_type_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
 
+  - changeSet:
+      id: V023_create_h_building_type
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Modern h_building_type klassifikatori (ReferenceEntity, self-contained uz/ru/en, 35 tur, kod 11-45) + university_building.building_type_code FK + category_code NULLABLE. Univer lokal vaqtinchalik h_building_type (1-35) o'rniga markaziy manba; distribution keyingi bosqichda."
+      changes:
+        - sqlFile: { path: changesets/schema/V023_create_h_building_type.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/schema/V023_create_h_building_type_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+
+  - changeSet:
+      id: V024_building_ownership_and_cad_scope
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "Bino egalik klassifikatori h_building_ownership (OWN/OPERATIVE/RENT) + university_building.ownership_code FK (default OWN); cad_number uniqueness GLOBAL -> per-OTM (university_code, cad_number) — ijara/umumiy binoni bir nechta OTM ulasha oladi."
+      changes:
+        - sqlFile: { path: changesets/schema/V024_building_ownership_and_cad_scope.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/schema/V024_building_ownership_and_cad_scope_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+
+  - changeSet:
+      id: V025_create_university_cadastre
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "university_cadastre — kadastr huquqiy snapshot (172.18.9.171/kadastr/by-cadnum jonli javob shakli): egalar(subjects)/maydon/qiymat/huquqiy holat + xom raw JSONB. cad_number bo'yicha BIR MARTA (umumiy). university_building.cad_number yumshoq bog'lanadi. fetch_status COMPLETE/PENDING/FAILED (chidamlilik)."
+      changes:
+        - sqlFile: { path: changesets/schema/V025_create_university_cadastre.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/schema/V025_create_university_cadastre_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # PHASE 2: SEED — 19 files
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -557,6 +587,39 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S021_seed_bulk_attach_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: S022_seed_speciality_move_i18n
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Two NEW i18n keys for the speciality classifier edit dialog placement controls: the locked-level hint shown when a row still has sub-directions ('Has sub-directions — move them to another level first…', mirrors backend SPECIALITY_HAS_CHILDREN_MOVE_FIRST 422) and the re-placement demotion hint ('Moving to another place resets the status to Needs review'). NEW seed — S006/S010 are already applied in prod (central_hemis), so applied changesets are not edited; system_message is the source of truth (sync:translations regenerates the frontend JSON). Runs after S006 (_seed_msg helper)."
+      changes:
+        - sqlFile: { path: changesets/seed/S022_seed_speciality_move_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S022_seed_speciality_move_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S023_seed_speciality_delete_permission
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Permission classifiers.speciality.delete (resource classifiers.speciality, action delete) + grants to SUPER_ADMIN/MINISTRY_ADMIN/CLASSIFIER_MANAGER — exactly the S016 .create/.approve curation set, granted explicitly so machine roles (OTM_API) never inherit it. Gates DELETE /api/v1/web/classifiers/speciality/{id}, which only removes a NEEDS_REVIEW leaf with no OTM attachment (422 guards live in HSpecialityService). NEW seed — S016 is already applied in prod (central_hemis), so applied changesets are not edited. Runs after S001 (roles), S004 (OTM_API classifier-write revoke), S016 (sibling speciality permissions)."
+      changes:
+        - sqlFile: { path: changesets/seed/S023_seed_speciality_delete_permission.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S023_seed_speciality_delete_permission_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S024_seed_speciality_delete_i18n
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Five NEW i18n keys for the speciality classifier delete flow: confirm-dialog title ('Delete speciality'), the children guard ('This speciality has sub-directions…', mirrors backend SPECIALITY_HAS_CHILDREN_DELETE_FIRST 422), the status guard ('Only a speciality with the \"Needs review\" status can be deleted', mirrors SPECIALITY_DELETE_APPROVED_FORBIDDEN 422), the 'Move' action offered beside Delete, and the success toast ('Speciality deleted'). NEW seed — S006/S010 are already applied in prod (central_hemis), so applied changesets are not edited; system_message is the source of truth (sync:translations regenerates the frontend JSON). Runs after S006 (_seed_msg helper)."
+      changes:
+        - sqlFile: { path: changesets/seed/S024_seed_speciality_delete_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S024_seed_speciality_delete_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-seed-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}
@@ -740,3 +803,13 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M008_speciality_version_resync.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/migration/M008_speciality_version_resync_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M009_building_cadastre_fk
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "university_building.cadastre JSONB duplikatini DROP + cad_number -> university_cadastre(cad_number) FK (ON DELETE SET NULL). Kadastr fakti endi FAQAT university_cadastre'da; bino unga bog'lanadi (nusxa emas). Mavjud cad_number'larga PENDING placeholder backfill (FK darrov bajarilsin)."
+      changes:
+        - sqlFile: { path: changesets/migration/M009_building_cadastre_fk.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+      rollback:
+        - sqlFile: { path: changesets/migration/M009_building_cadastre_fk_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }

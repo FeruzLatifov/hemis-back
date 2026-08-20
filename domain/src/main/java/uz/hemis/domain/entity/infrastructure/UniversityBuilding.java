@@ -2,9 +2,7 @@ package uz.hemis.domain.entity.infrastructure;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.type.SqlTypes;
 import uz.hemis.domain.entity.base.AuditableEntity;
 import uz.hemis.domain.entity.university.University;
 
@@ -59,15 +57,49 @@ public class UniversityBuilding extends AuditableEntity {
     private String name;
 
     // =====================================================
-    // Kategoriya (classifier FK, dual-mapping)
+    // Kategoriya (eski coarse classifier FK, dual-mapping) — ixtiyoriy rollup.
+    // NULLABLE (V023): kadastr/Univer push building_type_code beradi, category EMAS.
     // =====================================================
-    @Column(name = "category_code", nullable = false, length = 20)
+    @Column(name = "category_code", length = 20)
     private String categoryCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_code", referencedColumnName = "code",
                 insertable = false, updatable = false)
     private HBuildingCategory category;
+
+    // =====================================================
+    // Bino turi (markaziy klassifikator FK, dual-mapping) — asosiy tur (h_building_type, V023).
+    // =====================================================
+    @Column(name = "building_type_code", length = 20)
+    private String buildingTypeCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "building_type_code", referencedColumnName = "code",
+                insertable = false, updatable = false)
+    private HBuildingType buildingType;
+
+    /**
+     * Ko'p-tur: bino tegishli BARCHA turlar (junction {@code university_building_type}).
+     * {@link #buildingTypeCode} = ASOSIY tur (ro'yxat/filtr); bu — to'liq ro'yxat (o'quv+ma'muriy+...).
+     */
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "university_building_type",
+                     joinColumns = @JoinColumn(name = "building_id"))
+    @Column(name = "building_type_code", length = 20)
+    @Builder.Default
+    private java.util.Set<String> buildingTypeCodes = new java.util.LinkedHashSet<>();
+
+    // =====================================================
+    // Egalik shakli (classifier FK, dual-mapping) — OWN/OPERATIVE/RENT (h_building_ownership, V024).
+    // =====================================================
+    @Column(name = "ownership_code", length = 20)
+    private String ownershipCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ownership_code", referencedColumnName = "code",
+                insertable = false, updatable = false)
+    private HBuildingOwnership ownership;
 
     // =====================================================
     // Excel col 3: Manzil (cadastre'dan auto-fill mumkin)
@@ -131,15 +163,11 @@ public class UniversityBuilding extends AuditableEntity {
     private String mapUrl;
 
     // =====================================================
-    // Excel col 13: Kadastr raqami (loose reference, FK yo'q)
+    // Excel col 13: Kadastr raqami — university_cadastre(cad_number)'ga FK (M009).
+    // Kadastr fakti (egalar/maydon/qiymat) university_cadastre'da; bu yerda faqat bog'lanish.
     // =====================================================
     @Column(name = "cad_number", length = 50)
     private String cadNumber;
-
-    /** Cadastre snapshot from kadastr API — JSONB stale-tolerant copy. */
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "cadastre", columnDefinition = "jsonb")
-    private String cadastre;
 
     // =====================================================
     // Excel col 14: Izoh
@@ -161,4 +189,17 @@ public class UniversityBuilding extends AuditableEntity {
 
     @Column(name = "content_hash", length = 64)
     private String contentHash;
+
+    /**
+     * Bo'sh cad_number → null (SEV-3): FK {@code fk_ub_cadastre} faqat NULL'ni istisno qiladi, "" ni EMAS —
+     * "" ni university_cadastre'da qidirib topolmay FK'ni buzardi. ensureCadastreExists ham bo'sh raqamni
+     * o'tkazib yuboradi (isBlank), shuning uchun bu yerda entity qiymatini ham normallashtiramiz.
+     */
+    @PrePersist
+    @PreUpdate
+    private void normalizeCadNumber() {
+        if (cadNumber != null && cadNumber.isBlank()) {
+            cadNumber = null;
+        }
+    }
 }

@@ -16,10 +16,12 @@ import java.util.UUID;
  * <p>Used by {@code PUT /{id}} to curate the {@code NEEDS_REVIEW} rows: fix the
  * {@code code}/name/years and set {@code reviewStatus=APPROVED} to promote. Placement
  * mirrors the create form: send {@code hierarchyLevel} (1-4) plus, for a level 2-4 row,
- * the {@code parentId} that sits exactly one level above. The backend re-derives the
- * row's depth, cascades any depth change to descendants, and rejects a move that would
- * cycle or overflow the fixed 4-level taxonomy. Omit {@code hierarchyLevel} to leave
- * placement untouched.</p>
+ * the {@code parentId} that sits exactly one level above. A row that still has
+ * sub-directions cannot change its own level — the children must be re-placed first
+ * ({@code SPECIALITY_HAS_CHILDREN_MOVE_FIRST}, 422). A successful move drops the row to
+ * {@code NEEDS_REVIEW} for re-approval in its new place; the backend also rejects a move
+ * that would cycle or mismatch the parent's level/type. Omit {@code hierarchyLevel} to
+ * leave placement untouched.</p>
  *
  * @since 2.1.0
  */

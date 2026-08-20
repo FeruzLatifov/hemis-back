@@ -1,7 +1,6 @@
 package uz.hemis.common.dto.building;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
@@ -12,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * Bino yaratish/yangilash uchun DTO — POST/PUT body.
@@ -21,13 +21,13 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonPropertyOrder({
-    "name", "categoryCode",
+    "name", "categoryCode", "buildingTypeCode", "buildingTypeCodes", "ownershipCode",
     "address", "yearBuilt", "floorCount", "capacity",
     "totalArea", "usableArea",
     "constructionMaterialCode", "roofTypeCode",
     "lastRenovationDate",
     "latitude", "longitude", "mapUrl",
-    "cadNumber", "cadastre", "note"
+    "cadNumber", "note"
 })
 @Schema(name = "BuildingCreateUpdate", description = "Bino yaratish/yangilash uchun ma'lumot")
 public class BuildingCreateUpdateDto implements Serializable {
@@ -36,9 +36,20 @@ public class BuildingCreateUpdateDto implements Serializable {
     @Size(max = 500)
     private String name;
 
-    @NotBlank
+    // Eski coarse kategoriya (ixtiyoriy rollup). Asosiy klassifikator — buildingTypeCode.
     @Size(max = 20)
     private String categoryCode;
+
+    /** Bino turi kodi — markaziy h_building_type (11-45). ASOSIY tur. */
+    @Size(max = 20)
+    private String buildingTypeCode;
+
+    /** Bino tegishli BARCHA turlar (ko'p-tur). buildingTypeCode = asosiy. */
+    private List<String> buildingTypeCodes;
+
+    /** Egalik shakli: OWN/OPERATIVE/RENT. Default OWN. */
+    @Size(max = 20)
+    private String ownershipCode;
 
     private String address;
 
@@ -78,10 +89,6 @@ public class BuildingCreateUpdateDto implements Serializable {
 
     @Size(max = 50)
     private String cadNumber;
-
-    /** Kadastr API javobining xom JSON snapshot (frontend tomondan yuboriladi). */
-    @Schema(description = "Kadastr ma'lumotining JSON nusxasi")
-    private JsonNode cadastre;
 
     private String note;
 

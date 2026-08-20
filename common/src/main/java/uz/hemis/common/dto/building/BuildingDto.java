@@ -2,7 +2,6 @@ package uz.hemis.common.dto.building;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +12,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -26,13 +26,14 @@ import java.util.UUID;
 // Field tartibi declaration order bilan deterministik (Lombok getter order'ga bog'liq emas)
 @JsonPropertyOrder({
     "id", "universityCode",
-    "name", "categoryCode", "categoryName",
+    "name", "categoryCode", "categoryName", "buildingTypeCode", "buildingTypeName",
+    "buildingTypeCodes", "ownershipCode", "ownershipName",
     "address", "yearBuilt", "capacity", "floorCount",
     "totalArea", "usableArea",
     "constructionMaterialCode", "constructionMaterialName", "roofTypeCode", "roofTypeName",
     "lastRenovationDate",
     "latitude", "longitude", "mapUrl",
-    "cadNumber", "cadastre", "note",
+    "cadNumber", "note",
     "source", "syncedAt",
     "version", "createdAt", "updatedAt"
 })
@@ -45,6 +46,11 @@ public class BuildingDto implements Serializable {
     private String name;
     private String categoryCode;
     private String categoryName;
+    private String buildingTypeCode;
+    private String buildingTypeName;
+    private List<String> buildingTypeCodes;
+    private String ownershipCode;
+    private String ownershipName;
 
     private String address;
     private Integer yearBuilt;
@@ -66,8 +72,6 @@ public class BuildingDto implements Serializable {
     private String mapUrl;
 
     private String cadNumber;
-    /** Kadastr API javobining xom JSON snapshot. */
-    private JsonNode cadastre;
     private String note;
 
     private String source;

@@ -51,7 +51,7 @@ import java.util.Map;
 @Slf4j
 @RequestMapping("/api/v1/university")
 @Tag(
-    name = "OTM B2B Auth",
+    name = "Avtorizatsiya (OAuth 2.0)",
     description = "224 universitet backend (univer.php) uchun mashina avtorizatsiya — OAuth 2.0 client_credentials grant"
 )
 public class UniversityOAuthTokenController {
