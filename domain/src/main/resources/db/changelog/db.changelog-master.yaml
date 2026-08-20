@@ -653,6 +653,17 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S027_seed_data_table_toolbar_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
 
   - changeSet:
+      id: S028_seed_speciality_years_label_i18n
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "One NEW i18n key for the attach dialog's speciality picker: 'Speciality years' (Mutaxassislik yillari). Each search result carries the speciality's own validity years (h_speciality_year) and used to label them with the SAME wording as the attachment's academic year (edu_year) chosen two controls above, so a row reading 2024, 2026 looked like it contradicted the form. The two are different facts: edu_year is WHEN the OTM runs the speciality, h_speciality_year is WHICH editions exist in the classifier. NEW seed — S006/S010/S024/S026/S027 are already applied in prod (central_hemis), so applied changesets are not edited; system_message is the source of truth (sync:translations regenerates the frontend JSON). Runs after S006 (_seed_msg helper)."
+      changes:
+        - sqlFile: { path: changesets/seed/S028_seed_speciality_years_label_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S028_seed_speciality_years_label_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
       id: tag-seed-complete
       author: hemis-team
       logicalFilePath: ${changelog.path}
