@@ -50,8 +50,8 @@ class SpecialityAttachmentServiceAttachedUniversitiesTest {
     @Test
     @DisplayName("two OTMs: names resolved, counters and repository order preserved")
     void attachedUniversities_shouldResolveNamesAndKeepOrder() {
-        when(repository.countAllBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
-                .thenReturn(List.<Object[]>of(blocker("301", 3, 2), blocker("337", 1, 1)));
+        when(repository.countLiveBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
+                .thenReturn(List.<Object[]>of(blocker("301", 3), blocker("337", 1)));
         when(universityRepository.findAllById(anyIterable()))
                 .thenReturn(List.of(university("301", "Andijon davlat universiteti"),
                         university("337", "Toshkent davlat texnika universiteti")));
@@ -59,26 +59,26 @@ class SpecialityAttachmentServiceAttachedUniversitiesTest {
         List<SpecialityAttachedUniversityDto> result = service.attachedUniversities(SPECIALITY_ID);
 
         assertThat(result).containsExactly(
-                new SpecialityAttachedUniversityDto("301", "Andijon davlat universiteti", 3, 2),
-                new SpecialityAttachedUniversityDto("337", "Toshkent davlat texnika universiteti", 1, 1));
+                new SpecialityAttachedUniversityDto("301", "Andijon davlat universiteti", 3),
+                new SpecialityAttachedUniversityDto("337", "Toshkent davlat texnika universiteti", 1));
     }
 
     @Test
     @DisplayName("code missing from the university registry: the code itself is the name (orphan still blocks)")
     void attachedUniversities_shouldFallBackToCode_whenUniversityIsUnknown() {
-        when(repository.countAllBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
-                .thenReturn(List.<Object[]>of(blocker("562", 2, 0)));
+        when(repository.countLiveBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
+                .thenReturn(List.<Object[]>of(blocker("562", 2)));
         when(universityRepository.findAllById(anyIterable())).thenReturn(List.of());
 
         List<SpecialityAttachedUniversityDto> result = service.attachedUniversities(SPECIALITY_ID);
 
-        assertThat(result).containsExactly(new SpecialityAttachedUniversityDto("562", "562", 2, 0));
+        assertThat(result).containsExactly(new SpecialityAttachedUniversityDto("562", "562", 2));
     }
 
     @Test
     @DisplayName("no attachments: empty list, no name lookup at all")
     void attachedUniversities_shouldReturnEmptyList_whenNothingIsAttached() {
-        when(repository.countAllBySpecialityIdGroupedByUniversity(SPECIALITY_ID)).thenReturn(List.of());
+        when(repository.countLiveBySpecialityIdGroupedByUniversity(SPECIALITY_ID)).thenReturn(List.of());
 
         List<SpecialityAttachedUniversityDto> result = service.attachedUniversities(SPECIALITY_ID);
 
@@ -88,9 +88,9 @@ class SpecialityAttachmentServiceAttachedUniversitiesTest {
         verifyNoInteractions(scopeResolver);
     }
 
-    /** One grouped-query row: positional {@code [university_code, total, live]}. */
-    private static Object[] blocker(String code, long total, long live) {
-        return new Object[]{code, total, live};
+    /** One grouped-query row: positional {@code [university_code, count]}. */
+    private static Object[] blocker(String code, long count) {
+        return new Object[]{code, count};
     }
 
     private static University university(String code, String name) {

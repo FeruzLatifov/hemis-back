@@ -214,9 +214,9 @@ public class SpecialityAttachmentService {
      * the code itself as its name instead of being dropped.</p>
      */
     public List<SpecialityAttachedUniversityDto> attachedUniversities(UUID specialityId) {
-        // Positional rows: [university_code, total, live] — see the repository javadoc for why this
-        // is not an interface projection.
-        List<Object[]> rows = repository.countAllBySpecialityIdGroupedByUniversity(specialityId);
+        // Positional rows: [university_code, count] — see the repository javadoc for why this is
+        // not an interface projection.
+        List<Object[]> rows = repository.countLiveBySpecialityIdGroupedByUniversity(specialityId);
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -230,8 +230,7 @@ public class SpecialityAttachmentService {
                     return new SpecialityAttachedUniversityDto(
                             code,
                             uniNames.getOrDefault(code, code),
-                            ((Number) r[1]).longValue(),
-                            ((Number) r[2]).longValue());
+                            ((Number) r[1]).longValue());
                 })
                 .toList();
     }

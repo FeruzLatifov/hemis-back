@@ -66,7 +66,7 @@ class HSpecialityServiceDeleteTest {
     void delete_shouldRemoveRowAndYears_whenNeedsReviewAndUnreferenced() {
         when(repository.findById(ID)).thenReturn(Optional.of(speciality));
         when(repository.findAllChildren(ID)).thenReturn(List.of());
-        when(attachmentRepository.countAllBySpecialityId(ID)).thenReturn(0L);
+        when(attachmentRepository.countLiveBySpecialityId(ID)).thenReturn(0L);
 
         service.delete(ID);
 
@@ -74,6 +74,37 @@ class HSpecialityServiceDeleteTest {
         verify(repository).delete(speciality);
         // A NEEDS_REVIEW row was never distributed — no PUSH on delete.
         verifyNoInteractions(outboxPublisher);
+    }
+
+    @Test
+    @DisplayName("faqat bekor qilingan biriktirmalar — bloklamaydi, ular tozalanadi va qator o'chadi")
+    void delete_shouldPurgeRevokedAttachments_andStillDelete() {
+        // Production dead end this pins: the registry showed nothing (revoked rows are hidden),
+        // yet the delete failed with "attached to 3 OTMs" because the FK still held those rows.
+        when(repository.findById(ID)).thenReturn(Optional.of(speciality));
+        when(repository.findAllChildren(ID)).thenReturn(List.of());
+        when(attachmentRepository.countLiveBySpecialityId(ID)).thenReturn(0L);
+        when(attachmentRepository.purgeRevokedBySpecialityId(ID)).thenReturn(3);
+
+        service.delete(ID);
+
+        verify(attachmentRepository).purgeRevokedBySpecialityId(ID);
+        verify(repository).delete(speciality);
+    }
+
+    @Test
+    @DisplayName("tirik biriktirma bloklaganda — hech narsa tozalanmaydi")
+    void delete_shouldNotPurge_whenLiveAttachmentBlocks() {
+        when(repository.findById(ID)).thenReturn(Optional.of(speciality));
+        when(repository.findAllChildren(ID)).thenReturn(List.of());
+        when(attachmentRepository.countLiveBySpecialityId(ID)).thenReturn(2L);
+        when(attachmentRepository.countLiveBySpecialityIdGroupedByUniversity(ID))
+                .thenReturn(List.<Object[]>of(blocker("301")));
+
+        assertThatThrownBy(() -> service.delete(ID)).isInstanceOf(BusinessRuleException.class);
+
+        verify(attachmentRepository, never()).purgeRevokedBySpecialityId(any());
+        verify(repository, never()).delete(any());
     }
 
     @Test
@@ -126,8 +157,8 @@ class HSpecialityServiceDeleteTest {
     void delete_shouldThrowBusinessRule_whenAttachedToUniversity() {
         when(repository.findById(ID)).thenReturn(Optional.of(speciality));
         when(repository.findAllChildren(ID)).thenReturn(List.of());
-        when(attachmentRepository.countAllBySpecialityId(ID)).thenReturn(3L);
-        when(attachmentRepository.countAllBySpecialityIdGroupedByUniversity(ID))
+        when(attachmentRepository.countLiveBySpecialityId(ID)).thenReturn(3L);
+        when(attachmentRepository.countLiveBySpecialityIdGroupedByUniversity(ID))
                 .thenReturn(List.<Object[]>of(blocker("301"), blocker("337")));
 
         assertThatThrownBy(() -> service.delete(ID))
@@ -157,9 +188,9 @@ class HSpecialityServiceDeleteTest {
         verifyNoInteractions(attachmentRepository);
     }
 
-    /** One blocking OTM row of the grouped attachment query: positional [code, total, live]. */
+    /** One blocking OTM row of the grouped attachment query: positional [code, count]. */
     private static Object[] blocker(String universityCode) {
-        return new Object[]{universityCode, 1L, 1L};
+        return new Object[]{universityCode, 1L};
     }
 
     private static HSpeciality row(UUID id, String code, String nameUz, ReviewStatus status) {

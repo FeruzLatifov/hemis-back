@@ -3,6 +3,7 @@ package uz.hemis.domain.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,41 +29,62 @@ public interface UniversitySpecialityAttachmentRepository extends JpaRepository<
     List<UniversitySpecialityAttachment> findBySpecialityId(UUID specialityId);
 
     /**
-     * EVERY attachment row that points at a speciality — soft-deleted (revoked) ones included.
+     * LIVE attachments of a speciality — the ones a user can actually see and act on.
      *
-     * <p>Native on purpose: the entity's {@code @SQLRestriction("deleted_at IS NULL")} hides
-     * revoked rows from JPA, but they physically remain and the
-     * {@code fk_univ_spec_attach_spec} FK ({@code ON DELETE RESTRICT}) still counts them.
-     * The classifier delete guard needs the physical truth so a blocked delete surfaces as a
-     * clean 422 instead of a raw constraint-violation 500.</p>
+     * <p>The classifier delete guard counts these, NOT every physical row. A revoked
+     * (soft-deleted) attachment is already gone as far as the admin is concerned: it is absent
+     * from the registry, cannot be opened, cannot be detached again. Blocking a delete on it
+     * produced a dead end in production — "attached to 3 OTMs" while the registry showed nothing.
+     * The physical rows are purged by {@link #purgeRevokedBySpecialityId} at delete time, which is
+     * what actually releases the {@code fk_univ_spec_attach_spec} FK.</p>
+     *
+     * <p>Still native: the entity's {@code @SQLRestriction} would express the same predicate, but
+     * keeping both queries in one language makes the pair auditable side by side.</p>
      */
-    @Query(value = "SELECT COUNT(*) FROM university_speciality_attachment WHERE speciality_id = :specialityId",
+    @Query(value = "SELECT COUNT(*) FROM university_speciality_attachment " +
+           "WHERE speciality_id = :specialityId AND deleted_at IS NULL",
            nativeQuery = true)
-    long countAllBySpecialityId(@Param("specialityId") UUID specialityId);
+    long countLiveBySpecialityId(@Param("specialityId") UUID specialityId);
+
+    /**
+     * Physically remove the already-revoked (soft-deleted) attachments of a speciality.
+     *
+     * <p>Called only from the classifier delete path, after the live-attachment guard passed. These
+     * rows carry no meaning any more — the attachment was revoked and the speciality itself is
+     * being removed — but {@code ON DELETE RESTRICT} would still block on them. Native because JPA
+     * cannot even see rows its {@code @SQLRestriction} filters out.</p>
+     *
+     * @return how many revoked rows were purged (0 in the normal case)
+     */
+    @Modifying
+    @Transactional
+    @Query(value = "DELETE FROM university_speciality_attachment " +
+           "WHERE speciality_id = :specialityId AND deleted_at IS NOT NULL",
+           nativeQuery = true)
+    int purgeRevokedBySpecialityId(@Param("specialityId") UUID specialityId);
 
     /**
      * The same physical truth as {@link #countAllBySpecialityId}, but GROUPED BY OTM — the list of
      * universities that block a classifier delete, one row each, ordered by OTM code.
      *
-     * <p>Native for the same reason: the entity's {@code @SQLRestriction("deleted_at IS NULL")}
-     * would hide revoked attachments, yet {@code fk_univ_spec_attach_spec}
-     * ({@code ON DELETE RESTRICT}) still blocks on them — so a JPA query would report "3
-     * attachments" and then list nothing. Grouped rather than row-per-attachment because the admin
-     * needs to know <em>where to go</em> (the OTM), not how many form/year rows are there:
-     * {@code total} is every row of that OTM, {@code live} only the still-active ones.</p>
+     * <p>LIVE rows only — the same predicate as {@link #countLiveBySpecialityId}, so the count in
+     * the 422 message and the list in the dialog can never disagree. Grouped rather than
+     * row-per-attachment because the admin needs to know <em>where to go</em> (the OTM), not how
+     * many form/year rows are there.</p>
      *
-     * <p>Returns positional rows — {@code [university_code, total, live]} — deliberately, NOT an
+     * <p>Returns positional rows — {@code [university_code, count]} — deliberately, NOT an
      * interface projection: a native alias must be double-quoted to keep its case, and an unquoted
      * one silently folds to lower case, leaving a {@code getUniversityCode()} projection returning
      * {@code null} at runtime with nothing failing at compile time. There is no integration test
      * that would catch that here (the domain test profile runs on H2, which does not even parse
      * {@code FILTER (WHERE ...)}), so the mapping is kept independent of alias casing.</p>
      */
-    @Query(value = "SELECT university_code, COUNT(*), COUNT(*) FILTER (WHERE deleted_at IS NULL) " +
-           "FROM university_speciality_attachment WHERE speciality_id = :specialityId " +
+    @Query(value = "SELECT university_code, COUNT(*) " +
+           "FROM university_speciality_attachment " +
+           "WHERE speciality_id = :specialityId AND deleted_at IS NULL " +
            "GROUP BY university_code ORDER BY university_code",
            nativeQuery = true)
-    List<Object[]> countAllBySpecialityIdGroupedByUniversity(@Param("specialityId") UUID specialityId);
+    List<Object[]> countLiveBySpecialityIdGroupedByUniversity(@Param("specialityId") UUID specialityId);
 
     /**
      * Tenant-scoped paginated search — {@code codes} is the caller's allowed OTM set
