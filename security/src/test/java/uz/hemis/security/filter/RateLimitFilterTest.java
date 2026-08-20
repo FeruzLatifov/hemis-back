@@ -12,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import uz.hemis.security.config.SecurityProperties;
+import uz.hemis.security.util.ClientIpResolver;
 
 import java.time.Instant;
 import java.util.List;
@@ -39,7 +40,12 @@ class RateLimitFilterTest {
         rl.setLoginRequestsPerMinutePerIp(3);
         rl.setGlobalRequestsPerMinute(10000);
 
-        filter = new RateLimitFilter(properties);
+        // Real resolver, not a mock: the filter's whole per-IP accounting hinges on which address
+        // the resolver picks, and the test requests set only a socket peer (no X-Forwarded-For), so
+        // the resolver returns that peer. Its trusted-proxy list is unset here (the @Value field is
+        // Spring-injected in production), which means the dev default — loopback + RFC-1918 trusted.
+        // The test addresses are public (TEST-NET-1), so they are never treated as proxies.
+        filter = new RateLimitFilter(properties, new ClientIpResolver());
         chain = mock(FilterChain.class);
     }
 

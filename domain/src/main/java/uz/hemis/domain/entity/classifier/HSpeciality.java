@@ -115,4 +115,19 @@ public class HSpeciality extends AuditableEntityNoSoftDelete {
     public boolean isRoot() {
         return parent == null;
     }
+
+    /**
+     * Whether this row is shipped to the 224 OTMs: {@code APPROVED}, code-bearing and active.
+     *
+     * <p>The single definition of "the OTMs know about this speciality". The distribution snapshot
+     * (pull), the modern PUSH fanout and the OTM-attachment guard all read it, so those three can
+     * never drift apart — an attachment to a row no OTM has received would hand out a speciality id
+     * no Univer can resolve. Mirrors the SQL predicate in
+     * {@code HSpecialityRepository.findAllForDistribution}.</p>
+     */
+    public boolean isDistributable() {
+        return reviewStatus == ReviewStatus.APPROVED
+                && code != null
+                && Boolean.TRUE.equals(active);
+    }
 }

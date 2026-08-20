@@ -327,7 +327,7 @@ public class HSpecialityService {
 
         // Capture pre-mutation distribution state so a demotion (APPROVED→NEEDS_REVIEW),
         // deactivation, or code-clear of an already-distributed row can be RETRACTED from OTMs.
-        boolean wasDistributable = isDistributable(s);
+        boolean wasDistributable = s.isDistributable();
         String priorCode = s.getCode();
 
         // Partial update: an omitted (null) optional field is LEFT UNCHANGED; only an explicitly
@@ -550,7 +550,7 @@ public class HSpecialityService {
             HSpeciality target = twins.stream()
                     .max(Comparator.comparingInt(t -> twinYears.getOrDefault(t.getId(), List.of()).size()))
                     .orElseGet(() -> twins.get(0));
-            boolean wasDistributable = isDistributable(target);
+            boolean wasDistributable = target.isDistributable();
             String priorCode = target.getCode();
             List<Integer> merged = new ArrayList<>(twinYears.getOrDefault(target.getId(), List.of()));
             merged.addAll(toAdd);
@@ -632,9 +632,12 @@ public class HSpecialityService {
 
         long attachments = attachmentRepository.countAllBySpecialityId(id);
         if (attachments > 0) {
+            // Second (grouped) query only on the blocked path — the happy path stays a single COUNT.
             throw new BusinessRuleException("SPECIALITY_ATTACHED_TO_UNIVERSITY",
-                    "This speciality is attached to %d university record(s) — detach it first"
-                            .formatted(attachments));
+                    "This speciality is attached to %d university record(s) — detach it first in these OTMs: %s"
+                            .formatted(attachments,
+                                    describeAttachedUniversities(
+                                            attachmentRepository.countAllBySpecialityIdGroupedByUniversity(id))));
         }
 
         yearRepository.deleteBySpecialityId(id);
@@ -642,6 +645,18 @@ public class HSpecialityService {
         // WARN, not INFO: an irreversible classifier mutation is worth finding in the logs later.
         log.warn("Speciality DELETED: id={}, code={}, name={}, educationType={}",
                 id, s.getCode(), s.getNameUz(), s.getEducationType());
+    }
+
+    /**
+     * The blocking OTM codes (first 5), for the 422 message — codes only: the full named list is
+     * served by {@code GET /classifiers/speciality/{id}/attachments} for the delete dialog.
+     */
+    private static String describeAttachedUniversities(List<Object[]> blockers) {
+        String head = blockers.stream()
+                .limit(5)
+                .map(row -> String.valueOf(row[0])) // positional: [university_code, total, live]
+                .collect(Collectors.joining(", "));
+        return blockers.size() > 5 ? head + ", ..." : head;
     }
 
     /** The blocking children as "code — name" (first 5), for the 422 message. */
@@ -669,7 +684,7 @@ public class HSpecialityService {
      * </ul>
      */
     private void distribute(HSpeciality s, boolean wasDistributable, String priorCode) {
-        if (isDistributable(s)) {
+        if (s.isDistributable()) {
             SpecialityDistItemDto item = toDistItem(s, loadYears(List.of(s)), educationTypeNames());
             outboxPublisher.publish(
                     "classifier",
@@ -690,12 +705,6 @@ public class HSpecialityService {
         }
     }
 
-    /** A row is distributable to OTMs iff APPROVED, code-bearing, and active (the PUSH/PULL predicate). */
-    private static boolean isDistributable(HSpeciality s) {
-        return s.getReviewStatus() == ReviewStatus.APPROVED
-                && s.getCode() != null
-                && Boolean.TRUE.equals(s.getActive());
-    }
 
     // =====================================================
     // Helpers
@@ -970,8 +979,12 @@ public class HSpecialityService {
      * apostrophe variants → space, lowercase, collapse whitespace. No NFKD unaccent — the DB fold that
      * backs the generated column cannot call a non-IMMUTABLE unaccent, so this must not either, or a
      * folded query key would stop matching the stored value.
+     *
+     * <p>Package-private, not private: {@link SpecialityAttachmentService} folds its free-text query
+     * against the same {@code name_search} column and must use THIS definition — a second copy of the
+     * fold is exactly the drift this javadoc warns about.</p>
      */
-    private static String foldSearch(String value) {
+    static String foldSearch(String value) {
         if (value == null) {
             return null;
         }

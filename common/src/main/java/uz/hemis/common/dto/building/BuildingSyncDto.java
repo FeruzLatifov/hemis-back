@@ -22,7 +22,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonPropertyOrder({
-    "sourceUid", "name", "categoryCode", "buildingTypeCode", "buildingTypeCodes", "ownershipCode",
+    "sourceUid", "name", "buildingTypeCode", "buildingTypeCodes", "ownershipCode",
     "address", "yearBuilt", "floorCount", "capacity",
     "totalArea", "usableArea",
     "constructionMaterialCode", "roofTypeCode",
@@ -41,9 +41,6 @@ public class BuildingSyncDto implements Serializable {
     @Size(max = 500)
     private String name;
 
-    // Eski coarse kategoriya (ixtiyoriy). Univer/kadastr push building turini yuboradi, kategoriyani emas.
-    @Size(max = 20)
-    private String categoryCode;
 
     /** Bino turi kodi — markaziy h_building_type (11-45). ASOSIY tur (ro'yxat/filtr). */
     @Size(max = 20)

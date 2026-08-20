@@ -116,7 +116,7 @@ class BuildingControllerTest {
     @DisplayName("POST — validation xatosi bilan 400")
     @WithMockUser(authorities = "buildings.edit")
     void create_withInvalidData_returns400() throws Exception {
-        // name bo'sh + categoryCode bo'sh → @NotBlank violation
+        // name bo'sh → @NotBlank violation
         BuildingCreateUpdateDto invalid = BuildingCreateUpdateDto.builder().build();
 
         mockMvc.perform(post("/api/v1/web/universities/401/buildings")
@@ -131,9 +131,7 @@ class BuildingControllerTest {
     @WithMockUser(authorities = "buildings.edit")
     void create_withUnpairedCoordinates_returns400() throws Exception {
         BuildingCreateUpdateDto dto = BuildingCreateUpdateDto.builder()
-                .name("Test")
-                .categoryCode("ACADEMIC")
-                .latitude(new BigDecimal("41.31"))
+                .name("Test")                .latitude(new BigDecimal("41.31"))
                 // longitude null — juft emas
                 .build();
 
@@ -149,9 +147,7 @@ class BuildingControllerTest {
     @WithMockUser(authorities = "buildings.view")  // only view, no edit
     void create_withoutEditPermission_returns403() throws Exception {
         BuildingCreateUpdateDto dto = BuildingCreateUpdateDto.builder()
-                .name("Test")
-                .categoryCode("ACADEMIC")
-                .build();
+                .name("Test")                .build();
 
         mockMvc.perform(post("/api/v1/web/universities/401/buildings")
                         .with(csrf())

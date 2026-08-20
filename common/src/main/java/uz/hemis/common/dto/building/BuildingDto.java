@@ -26,7 +26,7 @@ import java.util.UUID;
 // Field tartibi declaration order bilan deterministik (Lombok getter order'ga bog'liq emas)
 @JsonPropertyOrder({
     "id", "universityCode",
-    "name", "categoryCode", "categoryName", "buildingTypeCode", "buildingTypeName",
+    "name", "buildingTypeCode", "buildingTypeName",
     "buildingTypeCodes", "ownershipCode", "ownershipName",
     "address", "yearBuilt", "capacity", "floorCount",
     "totalArea", "usableArea",
@@ -44,8 +44,6 @@ public class BuildingDto implements Serializable {
     private String universityCode;
 
     private String name;
-    private String categoryCode;
-    private String categoryName;
     private String buildingTypeCode;
     private String buildingTypeName;
     private List<String> buildingTypeCodes;

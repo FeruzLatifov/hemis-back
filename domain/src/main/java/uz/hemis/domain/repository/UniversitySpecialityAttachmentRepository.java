@@ -41,18 +41,60 @@ public interface UniversitySpecialityAttachmentRepository extends JpaRepository<
     long countAllBySpecialityId(@Param("specialityId") UUID specialityId);
 
     /**
+     * The same physical truth as {@link #countAllBySpecialityId}, but GROUPED BY OTM — the list of
+     * universities that block a classifier delete, one row each, ordered by OTM code.
+     *
+     * <p>Native for the same reason: the entity's {@code @SQLRestriction("deleted_at IS NULL")}
+     * would hide revoked attachments, yet {@code fk_univ_spec_attach_spec}
+     * ({@code ON DELETE RESTRICT}) still blocks on them — so a JPA query would report "3
+     * attachments" and then list nothing. Grouped rather than row-per-attachment because the admin
+     * needs to know <em>where to go</em> (the OTM), not how many form/year rows are there:
+     * {@code total} is every row of that OTM, {@code live} only the still-active ones.</p>
+     *
+     * <p>Returns positional rows — {@code [university_code, total, live]} — deliberately, NOT an
+     * interface projection: a native alias must be double-quoted to keep its case, and an unquoted
+     * one silently folds to lower case, leaving a {@code getUniversityCode()} projection returning
+     * {@code null} at runtime with nothing failing at compile time. There is no integration test
+     * that would catch that here (the domain test profile runs on H2, which does not even parse
+     * {@code FILTER (WHERE ...)}), so the mapping is kept independent of alias casing.</p>
+     */
+    @Query(value = "SELECT university_code, COUNT(*), COUNT(*) FILTER (WHERE deleted_at IS NULL) " +
+           "FROM university_speciality_attachment WHERE speciality_id = :specialityId " +
+           "GROUP BY university_code ORDER BY university_code",
+           nativeQuery = true)
+    List<Object[]> countAllBySpecialityIdGroupedByUniversity(@Param("specialityId") UUID specialityId);
+
+    /**
      * Tenant-scoped paginated search — {@code codes} is the caller's allowed OTM set
      * (always non-empty; a deny-all scope is rejected upstream). Optional
-     * {@code specialityId}/{@code status}/{@code educationForm}/{@code educationType} filters.
+     * {@code specialityId}/{@code status}/{@code educationForm}/{@code educationType} filters
+     * plus the free-text speciality filter below.
      *
      * <p>Joined to {@code HSpeciality} (the FK guarantees a match, so the inner join drops nothing)
      * so rows can be ordered by the <strong>hierarchical speciality code</strong> — a direction and
      * its sub-directions share a code prefix, so they come out consecutively (like the classifier
      * tree), in the grid and the streaming export alike. A trailing {@code a.id} keeps a total order.</p>
+     *
+     * <p><strong>Free-text speciality filter</strong> — three binds prepared by the service, all
+     * {@code null} together when there is nothing to search for. {@code CAST(:qLike AS string) IS NULL}
+     * then short-circuits the whole OR, so an unfiltered list keeps exactly the plan it had before:</p>
+     * <ul>
+     *   <li>{@code qLike} — {@code %text%} (lower-cased) against the speciality CODE.</li>
+     *   <li>{@code qFolded} — {@code %fold(text)%} against {@code s.nameSearch}, the DB-generated
+     *       {@code h_speciality_fold(name_uz)} column (V018) — NOT the raw {@code name_uz}. The Uzbek
+     *       apostrophe has several live spellings ({@code '}, {@code ʻ}, {@code ’}), so "O'zbek" typed
+     *       one way would miss a name stored the other way; the fold maps every variant to a space,
+     *       so query and column normalise to the same key. The service folds with the very same
+     *       function that seeded the column.</li>
+     *   <li>{@code qId} — EXACT speciality id, never a substring: a pasted UUID is an identifier, and a
+     *       partial UUID match would be noise rather than a search result.</li>
+     * </ul>
      */
     @Query(value = "SELECT a FROM UniversitySpecialityAttachment a, HSpeciality s " +
            "WHERE s.id = a.specialityId AND a.universityCode IN :codes " +
            "AND (:specialityId IS NULL OR a.specialityId = :specialityId) " +
+           "AND (CAST(:qLike AS string) IS NULL OR LOWER(s.code) LIKE :qLike " +
+           "OR s.nameSearch LIKE :qFolded OR a.specialityId = :qId) " +
            "AND (CAST(:status AS string) IS NULL OR a.status = :status) " +
            "AND (CAST(:educationForm AS string) IS NULL OR a.educationForm = :educationForm) " +
            "AND (CAST(:educationType AS string) IS NULL OR s.educationType = :educationType) " +
@@ -61,12 +103,17 @@ public interface UniversitySpecialityAttachmentRepository extends JpaRepository<
            countQuery = "SELECT COUNT(a) FROM UniversitySpecialityAttachment a, HSpeciality s " +
            "WHERE s.id = a.specialityId AND a.universityCode IN :codes " +
            "AND (:specialityId IS NULL OR a.specialityId = :specialityId) " +
+           "AND (CAST(:qLike AS string) IS NULL OR LOWER(s.code) LIKE :qLike " +
+           "OR s.nameSearch LIKE :qFolded OR a.specialityId = :qId) " +
            "AND (CAST(:status AS string) IS NULL OR a.status = :status) " +
            "AND (CAST(:educationForm AS string) IS NULL OR a.educationForm = :educationForm) " +
            "AND (CAST(:educationType AS string) IS NULL OR s.educationType = :educationType) " +
            "AND (:eduYear IS NULL OR a.eduYear = :eduYear)")
     Page<UniversitySpecialityAttachment> searchScoped(@Param("codes") Collection<String> codes,
                                              @Param("specialityId") UUID specialityId,
+                                             @Param("qLike") String qLike,
+                                             @Param("qFolded") String qFolded,
+                                             @Param("qId") UUID qId,
                                              @Param("status") String status,
                                              @Param("educationForm") String educationForm,
                                              @Param("educationType") String educationType,
@@ -79,11 +126,14 @@ public interface UniversitySpecialityAttachmentRepository extends JpaRepository<
      * {@code specialityId}/{@code status}/{@code educationForm} (attachment columns) and
      * {@code educationType} (resolved via an {@code HSpeciality} subquery — it lives on the
      * classifier, not on the attachment). A trailing {@code a.id} keeps a total order so the
-     * streaming export pages cleanly.
+     * streaming export pages cleanly. The free-text {@code qLike}/{@code qFolded}/{@code qId}
+     * binds behave exactly as documented on {@link #searchScoped}.
      */
     @Query(value = "SELECT a FROM UniversitySpecialityAttachment a, HSpeciality s " +
            "WHERE s.id = a.specialityId " +
            "AND (:specialityId IS NULL OR a.specialityId = :specialityId) " +
+           "AND (CAST(:qLike AS string) IS NULL OR LOWER(s.code) LIKE :qLike " +
+           "OR s.nameSearch LIKE :qFolded OR a.specialityId = :qId) " +
            "AND (CAST(:status AS string) IS NULL OR a.status = :status) " +
            "AND (CAST(:educationForm AS string) IS NULL OR a.educationForm = :educationForm) " +
            "AND (CAST(:educationType AS string) IS NULL OR s.educationType = :educationType) " +
@@ -92,11 +142,16 @@ public interface UniversitySpecialityAttachmentRepository extends JpaRepository<
            countQuery = "SELECT COUNT(a) FROM UniversitySpecialityAttachment a, HSpeciality s " +
            "WHERE s.id = a.specialityId " +
            "AND (:specialityId IS NULL OR a.specialityId = :specialityId) " +
+           "AND (CAST(:qLike AS string) IS NULL OR LOWER(s.code) LIKE :qLike " +
+           "OR s.nameSearch LIKE :qFolded OR a.specialityId = :qId) " +
            "AND (CAST(:status AS string) IS NULL OR a.status = :status) " +
            "AND (CAST(:educationForm AS string) IS NULL OR a.educationForm = :educationForm) " +
            "AND (CAST(:educationType AS string) IS NULL OR s.educationType = :educationType) " +
            "AND (:eduYear IS NULL OR a.eduYear = :eduYear)")
     Page<UniversitySpecialityAttachment> searchAll(@Param("specialityId") UUID specialityId,
+                                          @Param("qLike") String qLike,
+                                          @Param("qFolded") String qFolded,
+                                          @Param("qId") UUID qId,
                                           @Param("status") String status,
                                           @Param("educationForm") String educationForm,
                                           @Param("educationType") String educationType,

@@ -26,7 +26,6 @@ class SqlTableValidatorTest {
         "hemishe_r_curriculum",
         "h_position",
         "h_position_type",
-        "h_building_category",
         "h_construction_material",
         "h_roof_type"
     })

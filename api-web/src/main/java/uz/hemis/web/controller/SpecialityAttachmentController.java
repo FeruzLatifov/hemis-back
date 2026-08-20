@@ -90,8 +90,13 @@ public class SpecialityAttachmentController {
                     **Query Parameters:**
                     - `universityCode` — filter by OTM code (validated against the caller's scope)
                     - `specialityId` — filter by speciality (UUID)
+                    - `q` — free-text speciality search: speciality CODE or uz NAME substring
+                      (case- and apostrophe-insensitive), or a pasted speciality UUID (exact match)
                     - `status` — filter by attachment status (e.g. ACTIVE)
                     - `page`, `size`, `sort` — standard paging (default: universityCode,asc)
+
+                    The `/export` endpoint takes the SAME filters (`q` included) and streams exactly
+                    the rows this list returns.
                     """,
             tags = {"Registry - Speciality Attachments"}
     )
@@ -107,6 +112,9 @@ public class SpecialityAttachmentController {
 
             @Parameter(description = "Speciality id (UUID)")
             @RequestParam(required = false) UUID specialityId,
+
+            @Parameter(description = "Mutaxassislik kodi, nomi yoki UUID bo'yicha qidiruv", example = "60110100")
+            @RequestParam(required = false) String q,
 
             @Parameter(description = "Attachment status", example = "ACTIVE")
             @RequestParam(required = false) String status,
@@ -124,9 +132,9 @@ public class SpecialityAttachmentController {
             @PageableDefault(size = 20, sort = "universityCode", direction = Sort.Direction.ASC)
             Pageable pageable
     ) {
-        log.info("GET /api/v1/web/registry/speciality-attachments - universityCode={}, specialityId={}, status={}, educationType={}, educationForm={}, eduYear={}, page={}",
-                universityCode, specialityId, status, educationType, educationForm, eduYear, pageable.getPageNumber());
-        Page<SpecialityAttachmentRowDto> page = service.list(universityCode, specialityId, status, educationType, educationForm, eduYear, pageable);
+        log.info("GET /api/v1/web/registry/speciality-attachments - universityCode={}, specialityId={}, q={}, status={}, educationType={}, educationForm={}, eduYear={}, page={}",
+                universityCode, specialityId, q, status, educationType, educationForm, eduYear, pageable.getPageNumber());
+        Page<SpecialityAttachmentRowDto> page = service.list(universityCode, specialityId, q, status, educationType, educationForm, eduYear, pageable);
         return ResponseEntity.ok(ResponseWrapper.success(PageResponses.from(page)));
     }
 
@@ -215,8 +223,10 @@ public class SpecialityAttachmentController {
     @Operation(
             summary = "Export speciality attachments to Excel (.xlsx)",
             description = "Streams ALL rows matching the current filters as a professional .xlsx "
-                    + "(no row cap; constant memory via SXSSF; formula-injection-safe). Omit all "
-                    + "filters to export everything in scope.",
+                    + "(no row cap; constant memory via SXSSF; formula-injection-safe). Takes the SAME "
+                    + "filters as the list endpoint - `q` included (speciality code / uz name substring, "
+                    + "or a pasted speciality UUID) - so the workbook holds exactly what the grid shows. "
+                    + "Omit all filters to export everything in scope.",
             tags = {"Registry - Speciality Attachments"}
     )
     @ApiResponses({
@@ -229,13 +239,15 @@ public class SpecialityAttachmentController {
     public ResponseEntity<StreamingResponseBody> export(
             @Parameter(description = "University code") @RequestParam(required = false) String universityCode,
             @Parameter(description = "Speciality id (UUID)") @RequestParam(required = false) UUID specialityId,
+            @Parameter(description = "Mutaxassislik kodi, nomi yoki UUID bo'yicha qidiruv", example = "60110100")
+            @RequestParam(required = false) String q,
             @Parameter(description = "Attachment status", example = "ACTIVE") @RequestParam(required = false) String status,
             @Parameter(description = "Education type code") @RequestParam(required = false) String educationType,
             @Parameter(description = "Education form code") @RequestParam(required = false) String educationForm,
             @Parameter(description = "Academic year (start year, e.g. 2026)") @RequestParam(required = false) Integer eduYear
     ) {
-        log.info("GET /api/v1/web/registry/speciality-attachments/export - universityCode={}, status={}, educationType={}, educationForm={}, eduYear={}",
-                universityCode, status, educationType, educationForm, eduYear);
+        log.info("GET /api/v1/web/registry/speciality-attachments/export - universityCode={}, q={}, status={}, educationType={}, educationForm={}, eduYear={}",
+                universityCode, q, status, educationType, educationForm, eduYear);
         // Classifier-style tree (mirrors the /classifiers/speciality export): "Ierarxiya darajasi | Kod |
         // Mutaxassislik". Rows already arrive parent-before-child (repo ORDER BY code), so no separate
         // "parent" column is needed — the L4 "Ichki yo'nalish" name is real-Excel-indented one level under
@@ -246,7 +258,7 @@ public class SpecialityAttachmentController {
                 List.of("OTM kodi", "OTM nomi", "O'quv yili", "Ierarxiya darajasi", "Kod", "Mutaxassislik",
                         "Ta'lim turi", "Ta'lim shakli", "Holati"),
                 new int[]{14, 44, 12, 18, 14, 60, 16, 16, 10},
-                pageable -> service.list(universityCode, specialityId, status, educationType, educationForm, eduYear, pageable),
+                pageable -> service.list(universityCode, specialityId, q, status, educationType, educationForm, eduYear, pageable),
                 r -> new String[]{
                         r.universityCode(),
                         r.universityName(),
@@ -309,7 +321,9 @@ public class SpecialityAttachmentController {
     @PreAuthorize("hasAuthority('institutions.speciality-attachments.create')")
     @Operation(
             summary = "Attach a speciality to an OTM",
-            description = "Rejected 403 if the target OTM is outside the caller's scope, 409 if a duplicate exists.",
+            description = "Rejected 403 if the target OTM is outside the caller's scope, 409 if a duplicate exists. "
+                    + "Only an APPROVED + active classifier speciality may be attached (an unapproved row has not "
+                    + "been distributed to the OTMs yet) - otherwise 422 `SPECIALITY_NOT_APPROVED`.",
             tags = {"Registry - Speciality Attachments"}
     )
     @ApiResponses({
@@ -318,7 +332,9 @@ public class SpecialityAttachmentController {
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope"),
             @ApiResponse(responseCode = "404", description = "Speciality not found"),
-            @ApiResponse(responseCode = "409", description = "Duplicate attachment")
+            @ApiResponse(responseCode = "409", description = "Duplicate attachment"),
+            @ApiResponse(responseCode = "422", description = "Business rule - SPECIALITY_NOT_APPROVED "
+                    + "(speciality is not APPROVED/active, so it is not distributed to the OTMs)")
     })
     public ResponseEntity<ResponseWrapper<SpecialityAttachmentRowDto>> create(
             @Valid @RequestBody SpecialityAttachmentCreateDto request
@@ -339,7 +355,9 @@ public class SpecialityAttachmentController {
             summary = "Attach a speciality to an OTM in several education forms at once",
             description = "One live row per education form. Forms already attached (same speciality + year) "
                     + "are skipped (never a 409 for the whole batch); the response reports both the created "
-                    + "rows and the skipped forms. 403 if the target OTM is outside the caller's scope.",
+                    + "rows and the skipped forms. 403 if the target OTM is outside the caller's scope. "
+                    + "Only an APPROVED + active classifier speciality may be attached (an unapproved row has not "
+                    + "been distributed to the OTMs yet) - otherwise 422 `SPECIALITY_NOT_APPROVED`.",
             tags = {"Registry - Speciality Attachments"}
     )
     @ApiResponses({
@@ -347,7 +365,9 @@ public class SpecialityAttachmentController {
             @ApiResponse(responseCode = "400", description = "Validation error / unknown education form"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope"),
-            @ApiResponse(responseCode = "404", description = "Speciality not found")
+            @ApiResponse(responseCode = "404", description = "Speciality not found"),
+            @ApiResponse(responseCode = "422", description = "Business rule - SPECIALITY_NOT_APPROVED "
+                    + "(speciality is not APPROVED/active, so it is not distributed to the OTMs)")
     })
     public ResponseEntity<ResponseWrapper<SpecialityAttachmentBulkResultDto>> createBulk(
             @Valid @RequestBody SpecialityAttachmentBulkCreateDto request
@@ -368,7 +388,8 @@ public class SpecialityAttachmentController {
     @Operation(
             summary = "Edit a speciality attachment",
             description = "Mutable: speciality (same education type), education form, academic year, status "
-                    + "(Faol/Nofaol). University + education type are fixed. 403 out of scope, 409 duplicate.",
+                    + "(Faol/Nofaol). University + education type are fixed. 403 out of scope, 409 duplicate. "
+                    + "The re-pointed speciality must be APPROVED + active - otherwise 422 `SPECIALITY_NOT_APPROVED`.",
             tags = {"Registry - Speciality Attachments"}
     )
     @ApiResponses({
@@ -377,7 +398,9 @@ public class SpecialityAttachmentController {
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope"),
             @ApiResponse(responseCode = "404", description = "Attachment or speciality not found"),
-            @ApiResponse(responseCode = "409", description = "Duplicate attachment")
+            @ApiResponse(responseCode = "409", description = "Duplicate attachment"),
+            @ApiResponse(responseCode = "422", description = "Business rule - SPECIALITY_NOT_APPROVED "
+                    + "(speciality is not APPROVED/active, so it is not distributed to the OTMs)")
     })
     public ResponseEntity<ResponseWrapper<SpecialityAttachmentRowDto>> update(
             @PathVariable UUID id,

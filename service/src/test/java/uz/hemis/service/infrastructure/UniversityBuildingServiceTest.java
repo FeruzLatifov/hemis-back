@@ -78,7 +78,6 @@ class UniversityBuildingServiceTest {
         building.setId(buildingId);
         building.setUniversityCode("401");
         building.setName("Bosh bino");
-        building.setCategoryCode("ACADEMIC");
         dto = BuildingDto.builder().id(buildingId).name("Bosh bino").build();
         // Cache eviction stub — only used by mutation paths, lenient to avoid strict-stubbing fail.
         lenient().when(cacheManager.getCache(anyString())).thenReturn(dashboardCache);
@@ -97,9 +96,7 @@ class UniversityBuildingServiceTest {
     @DisplayName("create — cadastre auto-fill chaqiriladi, yearBuilt bo'lsa CONSTRUCTED event")
     void create_withYearBuilt_recordsConstructionEvent() {
         BuildingCreateUpdateDto createDto = BuildingCreateUpdateDto.builder()
-                .name("Yangi bino")
-                .categoryCode("ACADEMIC")
-                .yearBuilt(2020)
+                .name("Yangi bino")                .yearBuilt(2020)
                 .build();
         UniversityBuilding entity = new UniversityBuilding();
         entity.setYearBuilt(2020);
@@ -125,9 +122,7 @@ class UniversityBuildingServiceTest {
     @DisplayName("create — yearBuilt NULL bo'lsa CONSTRUCTED event yaratilmaydi")
     void create_withoutYearBuilt_noLifecycleEvent() {
         BuildingCreateUpdateDto createDto = BuildingCreateUpdateDto.builder()
-                .name("Bino")
-                .categoryCode("ACADEMIC")
-                .build();
+                .name("Bino")                .build();
         UniversityBuilding entity = new UniversityBuilding();
         when(mapper.toEntity(createDto)).thenReturn(entity);
         when(repo.save(any())).thenReturn(entity);
@@ -146,9 +141,7 @@ class UniversityBuildingServiceTest {
         building.setLastRenovationDate(oldDate);
 
         BuildingCreateUpdateDto updateDto = BuildingCreateUpdateDto.builder()
-                .name(building.getName())
-                .categoryCode(building.getCategoryCode())
-                .lastRenovationDate(newDate)
+                .name(building.getName())                .lastRenovationDate(newDate)
                 .build();
 
         when(repo.findById(buildingId)).thenReturn(Optional.of(building));
@@ -173,9 +166,7 @@ class UniversityBuildingServiceTest {
         LocalDate date = LocalDate.of(2020, 1, 1);
         building.setLastRenovationDate(date);
         BuildingCreateUpdateDto updateDto = BuildingCreateUpdateDto.builder()
-                .name("Yangi nom")
-                .categoryCode(building.getCategoryCode())
-                .lastRenovationDate(date)
+                .name("Yangi nom")                .lastRenovationDate(date)
                 .build();
         when(repo.findById(buildingId)).thenReturn(Optional.of(building));
         when(mapper.toDto(building)).thenReturn(dto);

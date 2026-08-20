@@ -27,7 +27,9 @@ import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.domain.entity.classifier.ReviewStatus;
 import uz.hemis.service.classifier.HSpecialityService;
+import uz.hemis.service.classifier.SpecialityAttachmentService;
 import uz.hemis.service.classifier.dto.ClassifierOptionDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachedUniversityDto;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateCheckDto;
 import uz.hemis.service.classifier.dto.SpecialityNodeDto;
@@ -84,6 +86,9 @@ import java.util.UUID;
 public class SpecialityClassifierController {
 
     private final HSpecialityService service;
+    // The attachment registry owns the "which OTMs is it attached to" read — this card only
+    // consumes it (as delete blockers); it is NOT moved onto HSpecialityService.
+    private final SpecialityAttachmentService attachmentService;
     private final SpecialityExcelExporter exporter;
     private final I18nService i18nService;
 
@@ -407,6 +412,44 @@ public class SpecialityClassifierController {
     }
 
     // =====================================================
+    // Delete blockers — attached OTMs
+    // =====================================================
+
+    @GetMapping("/{id}/attachments")
+    @PreAuthorize("hasAuthority('classifiers.speciality.view')")
+    @Operation(
+            summary = "Universities this speciality is attached to (delete blockers)",
+            description = """
+                    The OTMs that block a delete of this speciality, grouped by university and
+                    ordered by OTM code — the named counterpart of the `SPECIALITY_ATTACHED_TO_UNIVERSITY`
+                    guard on `DELETE /{id}` (same source), so the delete dialog can list them the way it
+                    already lists blocking sub-directions instead of only saying "N attachment(s)".
+
+                    **Revoked (soft-deleted) attachments are included** — `fk_univ_spec_attach_spec` is
+                    `ON DELETE RESTRICT` and blocks on them too, so a live-only list would show nothing
+                    while the delete still fails. Each row therefore carries two counters:
+                    - `total` — every attachment row of that OTM (revoked included)
+                    - `live` — only the ones still active
+
+                    Empty array = nothing is attached and this guard will not fire.
+                    """,
+            tags = {"Classifiers - Speciality"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Attached universities retrieved (empty array if none)"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'"),
+            @ApiResponse(responseCode = "404", description = "Not found")
+    })
+    public ResponseEntity<ResponseWrapper<List<SpecialityAttachedUniversityDto>>> attachments(
+            @Parameter(description = "Speciality id (UUID)", required = true)
+            @PathVariable UUID id
+    ) {
+        log.info("GET /api/v1/web/classifiers/speciality/{}/attachments", id);
+        return ResponseEntity.ok(ResponseWrapper.success(attachmentService.attachedUniversities(id)));
+    }
+
+    // =====================================================
     // Duplicate check (advisory, for the add form)
     // =====================================================
 
@@ -531,7 +574,8 @@ public class SpecialityClassifierController {
                       (deactivated ones included); delete them first, or move them under another
                       parent via `PUT /{id}` (hierarchyLevel + parentId). The message names them.
                     - `SPECIALITY_ATTACHED_TO_UNIVERSITY` — an OTM is (or was) allowed to run it;
-                      detach it in the speciality-attachments registry first.
+                      detach it in the speciality-attachments registry first. The message names the
+                      first OTM codes; `GET /{id}/attachments` lists them all with their names.
 
                     Irreversible — there is no soft delete on classifier rows.
                     """,

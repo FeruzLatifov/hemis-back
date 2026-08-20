@@ -57,18 +57,6 @@ public class UniversityBuilding extends AuditableEntity {
     private String name;
 
     // =====================================================
-    // Kategoriya (eski coarse classifier FK, dual-mapping) — ixtiyoriy rollup.
-    // NULLABLE (V023): kadastr/Univer push building_type_code beradi, category EMAS.
-    // =====================================================
-    @Column(name = "category_code", length = 20)
-    private String categoryCode;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_code", referencedColumnName = "code",
-                insertable = false, updatable = false)
-    private HBuildingCategory category;
-
-    // =====================================================
     // Bino turi (markaziy klassifikator FK, dual-mapping) — asosiy tur (h_building_type, V023).
     // =====================================================
     @Column(name = "building_type_code", length = 20)

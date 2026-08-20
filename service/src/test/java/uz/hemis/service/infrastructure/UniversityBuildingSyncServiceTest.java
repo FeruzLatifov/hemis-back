@@ -69,9 +69,7 @@ class UniversityBuildingSyncServiceTest {
     void setUp() {
         syncDto = BuildingSyncDto.builder()
                 .sourceUid("univer-bld-123")
-                .name("Asosiy korpus")
-                .categoryCode("ACADEMIC")
-                .yearBuilt(2010)
+                .name("Asosiy korpus")                .yearBuilt(2010)
                 .build();
         when(cacheManager.getCache(anyString())).thenReturn(dashboardCache);
     }
@@ -127,9 +125,7 @@ class UniversityBuildingSyncServiceTest {
         BuildingSyncDto good = syncDto;
         BuildingSyncDto bad = BuildingSyncDto.builder()
                 .sourceUid("bad-1")
-                .name("Xatoli")
-                .categoryCode("ACADEMIC")
-                .build();
+                .name("Xatoli")                .build();
 
         when(repo.findByUniversityCodeAndSourceUid(anyString(), eq("univer-bld-123")))
                 .thenReturn(Optional.empty());
@@ -151,10 +147,9 @@ class UniversityBuildingSyncServiceTest {
      * Production kod o'zgarsa, bu ham yangilanishi kerak.
      */
     private String computeSameHashAsService(BuildingSyncDto d) {
-        // 20 ta field — service.computeHash bilan AYNAN bir tartibda (buildingTypeCode + buildingTypeCodes + ownershipCode).
+        // field'lar — service.computeHash bilan AYNAN bir tartibda (buildingTypeCode + buildingTypeCodes + ownershipCode).
         String content = String.join("|",
                 safe(d.getName()),
-                safe(d.getCategoryCode()),
                 safe(d.getBuildingTypeCode()),
                 codesStr(d.getBuildingTypeCodes()),
                 safe(d.getOwnershipCode()),

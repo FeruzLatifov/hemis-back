@@ -24,7 +24,6 @@ import java.util.UUID;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
     "id", "eventType", "eventDate",
-    "previousCategoryCode", "newCategoryCode",
     "cost", "decreeNumber", "decreeDate",
     "note", "createdAt", "createdBy"
 })
@@ -34,9 +33,6 @@ public class BuildingLifecycleDto implements Serializable {
     private UUID id;
     private String eventType;
     private LocalDate eventDate;
-
-    private String previousCategoryCode;
-    private String newCategoryCode;
 
     private BigDecimal cost;
     private String decreeNumber;

@@ -65,15 +65,6 @@ public class BuildingLifecycle implements Serializable {
     private LocalDate eventDate;
 
     // =====================================================
-    // REPURPOSED (maqsadga o'zgartirildi) uchun
-    // =====================================================
-    @Column(name = "previous_category_code", length = 20, updatable = false)
-    private String previousCategoryCode;
-
-    @Column(name = "new_category_code", length = 20, updatable = false)
-    private String newCategoryCode;
-
-    // =====================================================
     // Moliyaviy ma'lumot
     // =====================================================
     @Column(precision = 15, scale = 2, updatable = false)

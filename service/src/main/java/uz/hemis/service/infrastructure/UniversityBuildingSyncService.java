@@ -102,7 +102,6 @@ public class UniversityBuildingSyncService {
     private String computeHash(BuildingSyncDto d) {
         String content = String.join("|",
                 str(d.getName()),
-                str(d.getCategoryCode()),
                 str(d.getBuildingTypeCode()),
                 codesStr(d.getBuildingTypeCodes()),
                 str(d.getOwnershipCode()),

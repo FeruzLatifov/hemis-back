@@ -29,9 +29,7 @@ import uz.hemis.domain.entity.infrastructure.UniversityBuilding;
         unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface BuildingMapper {
 
-    // Entity → Read DTO
-    @Mapping(source = "category.name", target = "categoryName")
-    @Mapping(source = "buildingType.name", target = "buildingTypeName")
+    // Entity → Read DTO    @Mapping(source = "buildingType.name", target = "buildingTypeName")
     @Mapping(source = "ownership.name", target = "ownershipName")
     @Mapping(source = "constructionMaterial.name", target = "constructionMaterialName")
     @Mapping(source = "roofType.name", target = "roofTypeName")
@@ -39,9 +37,7 @@ public interface BuildingMapper {
 
     // Create DTO → new Entity
     @Mapping(target = "universityCode", ignore = true)
-    @Mapping(target = "university", ignore = true)
-    @Mapping(target = "category", ignore = true)
-    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "university", ignore = true)    @Mapping(target = "buildingType", ignore = true)
     @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)
@@ -54,9 +50,7 @@ public interface BuildingMapper {
     // Update DTO → existing Entity (partial — null skip)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "universityCode", ignore = true)
-    @Mapping(target = "university", ignore = true)
-    @Mapping(target = "category", ignore = true)
-    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "university", ignore = true)    @Mapping(target = "buildingType", ignore = true)
     @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)
@@ -68,9 +62,7 @@ public interface BuildingMapper {
 
     // Sync DTO → new Entity (univer push)
     @Mapping(target = "universityCode", ignore = true)
-    @Mapping(target = "university", ignore = true)
-    @Mapping(target = "category", ignore = true)
-    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "university", ignore = true)    @Mapping(target = "buildingType", ignore = true)
     @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)
@@ -82,9 +74,7 @@ public interface BuildingMapper {
     // Sync DTO → existing Entity (change detection'dan keyin qo'llaniladi)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "universityCode", ignore = true)
-    @Mapping(target = "university", ignore = true)
-    @Mapping(target = "category", ignore = true)
-    @Mapping(target = "buildingType", ignore = true)
+    @Mapping(target = "university", ignore = true)    @Mapping(target = "buildingType", ignore = true)
     @Mapping(target = "ownership", ignore = true)
     @Mapping(target = "constructionMaterial", ignore = true)
     @Mapping(target = "roofType", ignore = true)

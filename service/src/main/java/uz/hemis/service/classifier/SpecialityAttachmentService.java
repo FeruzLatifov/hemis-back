@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.auth.AccessScope;
 import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.common.exception.BusinessRuleException;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.classifier.HEducationForm;
@@ -26,6 +27,7 @@ import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.domain.repository.UniversitySpecialityAttachmentRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
 import uz.hemis.service.classifier.dto.ClassifierOptionDto;
+import uz.hemis.service.classifier.dto.SpecialityAttachedUniversityDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentBulkCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentBulkResultDto;
 import uz.hemis.service.classifier.dto.SpecialityAttachmentCreateDto;
@@ -40,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -98,12 +101,16 @@ public class SpecialityAttachmentService {
      * Paginated, tenant-scoped list of attachments with resolved speciality names.
      * The {@code universityCode} request param is only ever validated against — never
      * used to widen — the caller's server-derived scope.
+     *
+     * <p>{@code q} is the free-text speciality filter: a substring of the speciality CODE or of its
+     * folded uz name, or an EXACT speciality UUID (a pasted id). It narrows the very result set the
+     * export streams — what you see is what you export.</p>
      */
-    public Page<SpecialityAttachmentRowDto> list(String universityCode, UUID specialityId, String status,
+    public Page<SpecialityAttachmentRowDto> list(String universityCode, UUID specialityId, String q, String status,
                                                  String educationType, String educationForm, Integer eduYear,
                                                  Pageable pageable) {
-        log.debug("Listing speciality attachments: universityCode={}, specialityId={}, status={}, educationType={}, educationForm={}, eduYear={}",
-                universityCode, specialityId, status, educationType, educationForm, eduYear);
+        log.debug("Listing speciality attachments: universityCode={}, specialityId={}, q={}, status={}, educationType={}, educationForm={}, eduYear={}",
+                universityCode, specialityId, q, status, educationType, educationForm, eduYear);
         AccessScope scope = scopeResolver.currentScope();
         if (scope.isDenyAll()) {
             throw new AccessDeniedException("No university data scope for the current principal");
@@ -111,16 +118,23 @@ public class SpecialityAttachmentService {
         Pageable safePageable = sanitize(pageable);
         String eduType = blankToNull(educationType);
         String eduForm = blankToNull(educationForm);
+        // Free-text binds — all three are null together when there is nothing to search for, which is
+        // exactly what switches the whole OR off in the repository query.
+        String text = searchText(q);
+        String qLike = text == null ? null : "%" + text.toLowerCase(Locale.ROOT) + "%";
+        // Folded with the very function that seeded name_search (V018) — never a local copy of it.
+        String qFolded = text == null ? null : "%" + HSpecialityService.foldSearch(text) + "%";
+        UUID qId = parseUuid(text);
 
         Page<UniversitySpecialityAttachment> page;
         if (scope.unrestricted()) {
             if (hasText(universityCode)) {
-                page = repository.searchScoped(List.of(universityCode.trim()), specialityId, status, eduForm, eduType, eduYear, safePageable);
+                page = repository.searchScoped(List.of(universityCode.trim()), specialityId, qLike, qFolded, qId, status, eduForm, eduType, eduYear, safePageable);
             } else {
-                page = repository.searchAll(specialityId, status, eduForm, eduType, eduYear, safePageable);
+                page = repository.searchAll(specialityId, qLike, qFolded, qId, status, eduForm, eduType, eduYear, safePageable);
             }
         } else {
-            page = repository.searchScoped(scopedCodes(scope, universityCode), specialityId, status, eduForm, eduType, eduYear, safePageable);
+            page = repository.searchScoped(scopedCodes(scope, universityCode), specialityId, qLike, qFolded, qId, status, eduForm, eduType, eduYear, safePageable);
         }
         return withResolvedNames(page, safePageable);
     }
@@ -181,6 +195,45 @@ public class SpecialityAttachmentService {
         return toRow(a, s, educationTypeNames(),
                 universityNames(List.of(a.getUniversityCode())), educationFormNames(),
                 parentsById(s != null ? List.of(s) : List.of()));
+    }
+
+    /**
+     * Every OTM this speciality is (or was) attached to — the classifier DELETE BLOCKERS, grouped
+     * by university and ordered by OTM code (empty list when nothing blocks).
+     *
+     * <p>Same source as the {@code SPECIALITY_ATTACHED_TO_UNIVERSITY} delete guard: revoked
+     * (soft-deleted) attachments are included, because {@code fk_univ_spec_attach_spec} is
+     * {@code ON DELETE RESTRICT} and blocks on them too — a live-only list would report "3
+     * attachment(s)" and then show nothing. Hence the two counters per OTM ({@code total} /
+     * {@code live}).</p>
+     *
+     * <p><strong>Deliberately NOT scope-restricted</strong> — no {@code assertCanWrite}/scope check:
+     * the speciality classifier is global reference data, and this is the complete blocker list of
+     * ONE classifier row. Filtering out an out-of-scope OTM would hide the very reason the delete
+     * fails. For the same reason a code that no longer resolves in the university registry keeps
+     * the code itself as its name instead of being dropped.</p>
+     */
+    public List<SpecialityAttachedUniversityDto> attachedUniversities(UUID specialityId) {
+        // Positional rows: [university_code, total, live] — see the repository javadoc for why this
+        // is not an interface projection.
+        List<Object[]> rows = repository.countAllBySpecialityIdGroupedByUniversity(specialityId);
+        if (rows.isEmpty()) {
+            return List.of();
+        }
+        List<String> codes = rows.stream().map(r -> (String) r[0]).toList();
+        Map<String, String> uniNames = universityNames(codes);
+        return rows.stream()
+                .map(r -> {
+                    String code = (String) r[0];
+                    // An OTM code absent from the registry keeps the code as its name — an orphan
+                    // code still blocks the delete, so it must never be hidden from the list.
+                    return new SpecialityAttachedUniversityDto(
+                            code,
+                            uniNames.getOrDefault(code, code),
+                            ((Number) r[1]).longValue(),
+                            ((Number) r[2]).longValue());
+                })
+                .toList();
     }
 
     // =====================================================
@@ -258,6 +311,7 @@ public class SpecialityAttachmentService {
 
         HSpeciality speciality = specialityRepository.findById(dto.specialityId())
                 .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
+        assertAttachable(speciality);
 
         String educationForm = blankToNull(dto.educationForm());
         assertEducationFormExists(educationForm);
@@ -295,6 +349,7 @@ public class SpecialityAttachmentService {
 
         HSpeciality speciality = specialityRepository.findById(dto.specialityId())
                 .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
+        assertAttachable(speciality);
 
         // Distinct, non-blank forms (order preserved); validate every code up-front — fail fast, no partial insert.
         List<String> forms = dto.educationForms().stream()
@@ -357,6 +412,13 @@ public class SpecialityAttachmentService {
 
         HSpeciality speciality = specialityRepository.findById(dto.specialityId())
                 .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
+        // Re-pointing to ANOTHER speciality is a fresh attach, so the same rule applies. Keeping the
+        // current one is NOT: a row whose speciality was later demoted or deactivated must stay
+        // editable — otherwise the admin could not even set it to REVOKED, which is exactly the
+        // action that situation calls for.
+        if (!dto.specialityId().equals(a.getSpecialityId())) {
+            assertAttachable(speciality);
+        }
 
         String educationForm = blankToNull(dto.educationForm());
         assertEducationFormExists(educationForm);
@@ -421,6 +483,32 @@ public class SpecialityAttachmentService {
         if (!scope.allows(universityCode)) {
             throw new AccessDeniedException("University out of scope: " + universityCode);
         }
+    }
+
+    // =====================================================
+    // Distribution guard (only a distributed classifier row may be attached)
+    // =====================================================
+
+    /**
+     * Only an APPROVED + active classifier row may be attached to an OTM.
+     *
+     * <p><strong>Why:</strong> the central speciality distribution ships only APPROVED, active rows
+     * to the 224 OTMs. Attaching a NEEDS_REVIEW (or deactivated) row would point an OTM at a
+     * speciality it has never received — the OTM snapshot would hand out a speciality id no Univer
+     * can resolve. The rule is therefore enforced here, at the write boundary, not only in the admin
+     * UI: a direct API POST must be refused the same way (422).</p>
+     */
+    private static void assertAttachable(HSpeciality speciality) {
+        // Same predicate the distribution snapshot and the PUSH fanout use — one definition on the
+        // entity, so "attachable" can never drift from "the OTMs actually have this row".
+        if (speciality.isDistributable()) {
+            return;
+        }
+        throw new BusinessRuleException("SPECIALITY_NOT_APPROVED",
+                "Speciality is not distributed to universities yet and cannot be attached: "
+                        + (speciality.getCode() != null ? speciality.getCode() + " " : "")
+                        + speciality.getNameUz()
+                        + ". Approve and activate it in the speciality classifier first.");
     }
 
     // =====================================================
@@ -584,6 +672,31 @@ public class SpecialityAttachmentService {
 
     private static String blankToNull(String value) {
         return (value == null || value.isBlank()) ? null : value.trim();
+    }
+
+    /**
+     * Free-text query -> search term, or {@code null} when there is nothing to search for.
+     * Same rule as the classifier export: a value carrying no letter and no digit (dashes or
+     * apostrophes only) is NOT a filter - it folds to an empty pattern that would match every row.
+     */
+    private static String searchText(String q) {
+        if (q == null) {
+            return null;
+        }
+        String trimmed = q.trim();
+        return trimmed.chars().anyMatch(Character::isLetterOrDigit) ? trimmed : null;
+    }
+
+    /** The search term as a speciality id, or {@code null} when it is not a UUID (the usual case). */
+    private static UUID parseUuid(String text) {
+        if (text == null) {
+            return null;
+        }
+        try {
+            return UUID.fromString(text);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** Numeric ordering key for an OTM code ("396" → 396); non-numeric codes sort last. */

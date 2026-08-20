@@ -127,11 +127,16 @@ class HSpecialityServiceDeleteTest {
         when(repository.findById(ID)).thenReturn(Optional.of(speciality));
         when(repository.findAllChildren(ID)).thenReturn(List.of());
         when(attachmentRepository.countAllBySpecialityId(ID)).thenReturn(3L);
+        when(attachmentRepository.countAllBySpecialityIdGroupedByUniversity(ID))
+                .thenReturn(List.<Object[]>of(blocker("301"), blocker("337")));
 
         assertThatThrownBy(() -> service.delete(ID))
                 .isInstanceOfSatisfying(BusinessRuleException.class,
                         e -> assertThat(e.getRuleCode()).isEqualTo("SPECIALITY_ATTACHED_TO_UNIVERSITY"))
-                .hasMessageContaining("3");
+                .hasMessageContaining("3")
+                // The blocking OTM codes are named — the admin knows where to detach.
+                .hasMessageContaining("301")
+                .hasMessageContaining("337");
 
         verify(repository, never()).delete(any());
         verify(yearRepository, never()).deleteBySpecialityId(any());
@@ -150,6 +155,11 @@ class HSpecialityServiceDeleteTest {
         // Short-circuit proof: the guard order is status → children → attachments.
         verify(repository, never()).findAllChildren(any());
         verifyNoInteractions(attachmentRepository);
+    }
+
+    /** One blocking OTM row of the grouped attachment query: positional [code, total, live]. */
+    private static Object[] blocker(String universityCode) {
+        return new Object[]{universityCode, 1L, 1L};
     }
 
     private static HSpeciality row(UUID id, String code, String nameUz, ReviewStatus status) {

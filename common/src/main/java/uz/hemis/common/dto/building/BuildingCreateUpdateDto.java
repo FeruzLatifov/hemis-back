@@ -21,7 +21,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonPropertyOrder({
-    "name", "categoryCode", "buildingTypeCode", "buildingTypeCodes", "ownershipCode",
+    "name", "buildingTypeCode", "buildingTypeCodes", "ownershipCode",
     "address", "yearBuilt", "floorCount", "capacity",
     "totalArea", "usableArea",
     "constructionMaterialCode", "roofTypeCode",
@@ -36,9 +36,6 @@ public class BuildingCreateUpdateDto implements Serializable {
     @Size(max = 500)
     private String name;
 
-    // Eski coarse kategoriya (ixtiyoriy rollup). Asosiy klassifikator — buildingTypeCode.
-    @Size(max = 20)
-    private String categoryCode;
 
     /** Bino turi kodi — markaziy h_building_type (11-45). ASOSIY tur. */
     @Size(max = 20)
