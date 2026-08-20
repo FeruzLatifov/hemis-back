@@ -3,6 +3,7 @@ package uz.hemis.service.audit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,11 @@ import uz.hemis.common.audit.*;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+// Mirrors AuditDataSourceConfig, which is @Profile("!test") + the same property: the audit
+// JdbcTemplate simply does not exist under the test profile. Without this the two conditions
+// disagree — this bean loads, its datasource does not, and every @SpringBootTest dies on
+// "No qualifying bean of type JdbcTemplate" whenever AUDIT_ENABLED=true is in the environment.
+@Profile("!test")
 @ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditEventListener {
 

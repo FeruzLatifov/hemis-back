@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -37,6 +38,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 @Validated
+// Same gate as AuditService/AuditDataSourceConfig — no audit datasource under the test profile.
+@Profile("!test")
 @ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditLogController {
 

@@ -3,6 +3,7 @@ package uz.hemis.service.audit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import uz.hemis.common.dto.PageResponse;
@@ -19,6 +20,9 @@ import java.util.*;
  */
 @Slf4j
 @Service
+// Mirrors AuditDataSourceConfig (@Profile("!test") + the same property): under the test profile
+// the audit JdbcTemplate does not exist, so neither may its consumers.
+@Profile("!test")
 @ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditService {
 
