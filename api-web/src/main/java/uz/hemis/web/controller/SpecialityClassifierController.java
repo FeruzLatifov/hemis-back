@@ -425,13 +425,11 @@ public class SpecialityClassifierController {
                     guard on `DELETE /{id}` (same source), so the delete dialog can list them the way it
                     already lists blocking sub-directions instead of only saying "N attachment(s)".
 
-                    **LIVE attachments only.** A revoked (soft-deleted) attachment is absent from the
-                    registry and cannot be detached again, so listing it would point the admin at
-                    something they cannot act on. Its physical row does still hold
-                    `fk_univ_spec_attach_spec` (`ON DELETE RESTRICT`) — `DELETE /{id}` purges those rows
-                    itself rather than refusing over them.
+                    Attachments have no soft delete, so every row listed here is one the admin can
+                    see in the registry and actually detach — the list and the guard count can never
+                    disagree.
 
-                    `count` — live attachment rows at that OTM (one per education form / academic year).
+                    `count` — attachment rows at that OTM (one per education form / academic year).
 
                     Empty array = nothing is attached and this guard will not fire.
                     """,
@@ -578,8 +576,7 @@ public class SpecialityClassifierController {
                     - `SPECIALITY_ATTACHED_TO_UNIVERSITY` — an OTM is currently allowed to run it;
                       detach it in the speciality-attachments registry first. The message names the
                       first OTM codes; `GET /{id}/attachments` lists them all with their names.
-                      Only LIVE attachments block: already-revoked ones are purged by this endpoint,
-                      since they are invisible in the registry and could not be detached again.
+                      Every blocking attachment is visible there — the table has no soft delete.
 
                     Irreversible — there is no soft delete on classifier rows.
                     """,

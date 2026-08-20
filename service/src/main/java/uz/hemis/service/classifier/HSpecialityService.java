@@ -600,9 +600,9 @@ public class HSpecialityService {
      *       re-placed under another parent ({@link #update} placement). Deactivated children count
      *       too — {@code fk_h_speciality_parent} is {@code ON DELETE RESTRICT} and does not care
      *       about {@code active}.</li>
-     *   <li><b>OTM attachments</b> — a speciality an OTM is (or was) allowed to run cannot vanish;
-     *       {@code fk_univ_spec_attach_spec} is {@code ON DELETE RESTRICT} and counts revoked
-     *       (soft-deleted) attachment rows too.</li>
+     *   <li><b>OTM attachments</b> — a speciality an OTM is allowed to run cannot vanish;
+     *       {@code fk_univ_spec_attach_spec} is {@code ON DELETE RESTRICT}. Attachments have no
+     *       soft delete, so every blocking row is one the admin can see and detach.</li>
      * </ol>
      *
      * <p>Years ({@code h_speciality_year}) go with the row — the FK cascades in the DB, and the
@@ -630,24 +630,14 @@ public class HSpecialityService {
                             .formatted(children.size(), describeChildren(children)));
         }
 
-        long attachments = attachmentRepository.countLiveBySpecialityId(id);
+        long attachments = attachmentRepository.countBySpecialityId(id);
         if (attachments > 0) {
             // Second (grouped) query only on the blocked path — the happy path stays a single COUNT.
             throw new BusinessRuleException("SPECIALITY_ATTACHED_TO_UNIVERSITY",
                     "This speciality is attached to %d university record(s) — detach it first in these OTMs: %s"
                             .formatted(attachments,
                                     describeAttachedUniversities(
-                                            attachmentRepository.countLiveBySpecialityIdGroupedByUniversity(id))));
-        }
-
-        // Revoked (soft-deleted) attachments are already gone for the user — absent from the
-        // registry, impossible to open or detach again — yet ON DELETE RESTRICT still holds the
-        // row. Counting them as blockers produced a dead end in production ("attached to 3 OTMs"
-        // with an empty registry), so they are purged here instead: the attachment was revoked and
-        // the speciality itself is being removed, so nothing meaningful is lost.
-        int purged = attachmentRepository.purgeRevokedBySpecialityId(id);
-        if (purged > 0) {
-            log.warn("Purged {} revoked attachment(s) of speciality {} before deleting it", purged, id);
+                                            attachmentRepository.countBySpecialityIdGroupedByUniversity(id))));
         }
 
         yearRepository.deleteBySpecialityId(id);

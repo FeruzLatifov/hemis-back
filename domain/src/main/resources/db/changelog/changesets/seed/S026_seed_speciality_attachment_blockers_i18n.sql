@@ -10,7 +10,7 @@
 --   reporting a count, the way it already lists sub-directions:
 --     1. The list heading, which doubles as the link to the attachments registry.
 --     2. The guard message itself.
---     3. The footnote/tooltip for an OTM whose attachment count includes revoked rows:
+
 --        university_speciality_attachment is soft-deleted (deleted_at), but the FK
 --        fk_univ_spec_attach_spec is ON DELETE RESTRICT — a revoked row blocks the delete
 --        exactly like a live one, which is why the list counts both.
@@ -27,6 +27,5 @@ BEGIN
 --                category  key(en)                                                                        uz                                                                                        oz                                                                                     ru
 PERFORM _seed_msg('label', 'Attached to universities',                                                   'OTMlarga biriktirilgan',                                                                 'ОТМларга бириктирилган',                                                              'Закреплена за вузами');
 PERFORM _seed_msg('label', 'This speciality is attached to universities. Remove those attachments first.', 'Bu mutaxassislik OTMlarga biriktirilgan. Avval o''sha biriktirishlarni bekor qiling.',   'Бу мутахассислик ОТМларга бириктирилган. Аввал ўша бириктиришларни бекор қилинг.',     'Эта специальность закреплена за вузами. Сначала снимите эти закрепления.');
-PERFORM _seed_msg('label', 'Revoked attachments also block deletion',                                     'Bekor qilingan biriktirishlar ham o''chirishga to''sqinlik qiladi',                       'Бекор қилинган бириктиришлар ҳам ўчиришга тўсқинлик қилади',                           'Отменённые закрепления также препятствуют удалению');
 
 END $$;

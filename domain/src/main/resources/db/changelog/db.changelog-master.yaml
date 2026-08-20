@@ -856,3 +856,13 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M010_drop_h_building_category.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
       rollback:
         - sqlFile: { path: changesets/migration/M010_drop_h_building_category_rollback.sql, relativeToChangelogFile: true, splitStatements: true, endDelimiter: ";" }
+
+  - changeSet:
+      id: M011_attachment_drop_soft_delete
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "university_speciality_attachment: soft delete BUTUNLAY olib tashlanadi. Soft-deleted qatorlar TOZALANADI (qaytarib bo'lmaydi — soni DELETE'dan OLDIN deploy logiga RAISE NOTICE bilan yoziladi), deleted_at/deleted_by DROP, V019'ning 4 partial indeksi (uq_univ_spec_attach + univ/spec/year) AYNI NOM bilan partial'siz qayta yaratiladi (DROP COLUMN ularni jimgina tushirib yubormasin; unique full-table bo'lishdan oldin dublikat guard RAISE EXCEPTION beradi). Sabab: biriktirmaga hech narsa bog'lanmaydi (kerak bo'lsa qayta yaratiladi), soft delete faqat zarar keltirdi — prodda o'chirilgan qator mutaxassislik o'chirishni bloklab, registrda ko'rinmasdi. Biznes holati `status` (ACTIVE/SUSPENDED/REVOKED) ustunida qoladi, ya'ni tarix uchun soft delete kerak emas. Rollback faqat STRUKTURANI tiklaydi (qatorlar qaytmaydi)."
+      changes:
+        - sqlFile: { path: changesets/migration/M011_attachment_drop_soft_delete.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/migration/M011_attachment_drop_soft_delete_rollback.sql, relativeToChangelogFile: true, splitStatements: false }

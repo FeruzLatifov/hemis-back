@@ -198,14 +198,12 @@ public class SpecialityAttachmentService {
     }
 
     /**
-     * Every OTM this speciality is (or was) attached to — the classifier DELETE BLOCKERS, grouped
-     * by university and ordered by OTM code (empty list when nothing blocks).
+     * Every OTM this speciality is attached to — the classifier DELETE BLOCKERS, grouped by
+     * university and ordered by OTM code (empty list when nothing blocks).
      *
-     * <p>Same source as the {@code SPECIALITY_ATTACHED_TO_UNIVERSITY} delete guard: revoked
-     * (soft-deleted) attachments are included, because {@code fk_univ_spec_attach_spec} is
-     * {@code ON DELETE RESTRICT} and blocks on them too — a live-only list would report "3
-     * attachment(s)" and then show nothing. Hence the two counters per OTM ({@code total} /
-     * {@code live}).</p>
+     * <p>Same source as the {@code SPECIALITY_ATTACHED_TO_UNIVERSITY} delete guard, so the count in
+     * the 422 message and the list in the dialog can never disagree. Attachments have no soft
+     * delete: every row here is a row the admin can see in the registry and actually detach.</p>
      *
      * <p><strong>Deliberately NOT scope-restricted</strong> — no {@code assertCanWrite}/scope check:
      * the speciality classifier is global reference data, and this is the complete blocker list of
@@ -216,7 +214,7 @@ public class SpecialityAttachmentService {
     public List<SpecialityAttachedUniversityDto> attachedUniversities(UUID specialityId) {
         // Positional rows: [university_code, count] — see the repository javadoc for why this is
         // not an interface projection.
-        List<Object[]> rows = repository.countLiveBySpecialityIdGroupedByUniversity(specialityId);
+        List<Object[]> rows = repository.countBySpecialityIdGroupedByUniversity(specialityId);
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -439,15 +437,20 @@ public class SpecialityAttachmentService {
                 parentsById(List.of(speciality)));
     }
 
-    /** Detach (soft delete) — 403 if the row is outside the caller's scope, 404 if missing. */
+    /**
+     * Detach — a HARD delete; 403 if the row is outside the caller's scope, 404 if missing.
+     *
+     * <p>Nothing references an attachment, so the row goes for good and is simply re-created when
+     * the permission is granted again. Withdrawing the permission while keeping the record is a
+     * {@code status} change ({@code REVOKED}), not a delete.</p>
+     */
     @Transactional
     public void delete(UUID id) {
         UniversitySpecialityAttachment a = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("SpecialityAttachment", "id", id));
         assertInScope(a.getUniversityCode());
-        a.softDelete();
-        repository.save(a);
-        log.info("Speciality attachment detached (soft): id={}", id);
+        repository.delete(a);
+        log.info("Speciality attachment detached: id={}", id);
     }
 
     // =====================================================

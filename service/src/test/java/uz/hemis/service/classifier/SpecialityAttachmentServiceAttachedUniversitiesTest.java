@@ -50,7 +50,7 @@ class SpecialityAttachmentServiceAttachedUniversitiesTest {
     @Test
     @DisplayName("two OTMs: names resolved, counters and repository order preserved")
     void attachedUniversities_shouldResolveNamesAndKeepOrder() {
-        when(repository.countLiveBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
+        when(repository.countBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
                 .thenReturn(List.<Object[]>of(blocker("301", 3), blocker("337", 1)));
         when(universityRepository.findAllById(anyIterable()))
                 .thenReturn(List.of(university("301", "Andijon davlat universiteti"),
@@ -66,7 +66,7 @@ class SpecialityAttachmentServiceAttachedUniversitiesTest {
     @Test
     @DisplayName("code missing from the university registry: the code itself is the name (orphan still blocks)")
     void attachedUniversities_shouldFallBackToCode_whenUniversityIsUnknown() {
-        when(repository.countLiveBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
+        when(repository.countBySpecialityIdGroupedByUniversity(SPECIALITY_ID))
                 .thenReturn(List.<Object[]>of(blocker("562", 2)));
         when(universityRepository.findAllById(anyIterable())).thenReturn(List.of());
 
@@ -78,7 +78,7 @@ class SpecialityAttachmentServiceAttachedUniversitiesTest {
     @Test
     @DisplayName("no attachments: empty list, no name lookup at all")
     void attachedUniversities_shouldReturnEmptyList_whenNothingIsAttached() {
-        when(repository.countLiveBySpecialityIdGroupedByUniversity(SPECIALITY_ID)).thenReturn(List.of());
+        when(repository.countBySpecialityIdGroupedByUniversity(SPECIALITY_ID)).thenReturn(List.of());
 
         List<SpecialityAttachedUniversityDto> result = service.attachedUniversities(SPECIALITY_ID);
 

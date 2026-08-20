@@ -62,7 +62,7 @@ import java.util.UUID;
 
                 **Features:**
                 - Server-side pagination + filtering (universityCode / specialityId / status)
-                - Attach (create) / detach (soft delete)
+                - Attach (create) / detach (hard delete)
                 - Duplicate guard (409) on (OTM, speciality, education form)
                 - Scope guard: OTM caller confined to its own OTM; ministry sees all
                 """
@@ -413,18 +413,23 @@ public class SpecialityAttachmentController {
     }
 
     // =====================================================
-    // Delete (detach, soft)
+    // Delete (detach, hard)
     // =====================================================
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('institutions.speciality-attachments.delete')")
     @Operation(
-            summary = "Detach a speciality from an OTM (soft delete)",
-            description = "Sets deleted_at instead of physical deletion. 403 if out of scope.",
+            summary = "Detach a speciality from an OTM (hard delete)",
+            description = """
+                    Physically removes the attachment row — nothing references it, and it is simply
+                    re-created if the OTM is allowed to run the speciality again. To withdraw the
+                    permission while keeping the record, set `status` to `REVOKED` via `PUT /{id}`
+                    instead. 403 if out of scope.
+                    """,
             tags = {"Registry - Speciality Attachments"}
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Detached"),
+            @ApiResponse(responseCode = "204", description = "Detached - the attachment row is gone"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden - out of scope"),
             @ApiResponse(responseCode = "404", description = "Not found")
