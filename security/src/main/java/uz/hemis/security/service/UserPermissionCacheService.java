@@ -2,7 +2,9 @@ package uz.hemis.security.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -237,7 +239,7 @@ public class UserPermissionCacheService {
     public void clearAllCaches() {
         try {
             String pattern = KEY_PREFIX + "*";
-            Set<String> keys = redisTemplate.keys(pattern);
+            Set<String> keys = scanKeys(pattern);
 
             if (keys != null && !keys.isEmpty()) {
                 Long deleted = redisTemplate.delete(keys);
@@ -257,7 +259,7 @@ public class UserPermissionCacheService {
     public java.util.Map<String, Object> getCacheStats() {
         try {
             String pattern = KEY_PREFIX + "*";
-            Set<String> keys = redisTemplate.keys(pattern);
+            Set<String> keys = scanKeys(pattern);
 
             return java.util.Map.of(
                     "total_cached_users", keys != null ? keys.size() : 0,
@@ -269,5 +271,21 @@ public class UserPermissionCacheService {
             log.error("Failed to get cache stats: {}", e.getMessage());
             return java.util.Map.of("error", e.getMessage());
         }
+    }
+
+    /**
+     * Redis'дан pattern bo'yicha kalitlarni SCAN bilan yig'adi — bloklovchi {@code KEYS} o'rniga.
+     * {@code KEYS} katta keyspace'да butun Redis'ни to'xtatib qo'yadi; SCAN cursor bilan bo'lak-bo'lak
+     * (count=500) aylanadi va boshqa so'rovlarni bloklamaydi. Ko'p ming kalitда ham xavfsiz.
+     */
+    private Set<String> scanKeys(String pattern) {
+        Set<String> found = new java.util.HashSet<>();
+        ScanOptions options = ScanOptions.scanOptions().match(pattern).count(500).build();
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
+            while (cursor.hasNext()) {
+                found.add(cursor.next());
+            }
+        }
+        return found;
     }
 }
