@@ -75,6 +75,17 @@ public class DepartmentRegistryService {
             paramIdx += 2;
         }
 
+        // `status` OTM emas, bo'linma atributi — shuning uchun EXISTS orqali qo'llanadi:
+        // filtrga mos kafedrai yo'q OTM ro'yxatda ko'rinmasin (aks holda foydalanuvchi
+        // qatorni ochadi-yu ichi bo'sh chiqadi). Ichki ro'yxat getDepartmentsByUniversity'da allaqachon filtrlanadi.
+        if (status != null) {
+            where.append("AND EXISTS (SELECT 1 FROM hemishe_e_university_department d "
+                    + "WHERE d.university_code = u.code AND d._deparment_type = '12' "
+                    + "AND d.delete_ts IS NULL AND d.status = ?) ");
+            params.add(status);
+            paramIdx++;
+        }
+
         // Count query
         String countSql = "SELECT COUNT(*) FROM hemishe_e_university u " + where;
         Query countQuery = entityManager.createNativeQuery(countSql);

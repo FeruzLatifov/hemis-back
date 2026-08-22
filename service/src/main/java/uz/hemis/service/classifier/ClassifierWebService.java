@@ -108,7 +108,7 @@ public class ClassifierWebService {
 
         // Items (with aliasing so DTO field names remain stable)
         StringBuilder sql = new StringBuilder("SELECT code");
-        if (schema.hasName) sql.append(", name");
+        if (schema.nameCol != null) sql.append(", ").append(schema.nameCol).append(" as name");
         if (schema.hasNameRu) sql.append(", name_ru");
         if (schema.hasNameEn) sql.append(", name_en");
         if (schema.activeCol != null) sql.append(", ").append(schema.activeCol).append(" as active");
@@ -143,7 +143,7 @@ public class ClassifierWebService {
         SchemaInfo schema = detectSchema(tableName);
 
         StringBuilder sql = new StringBuilder("SELECT code");
-        if (schema.hasName) sql.append(", name");
+        if (schema.nameCol != null) sql.append(", ").append(schema.nameCol).append(" as name");
         if (schema.hasNameRu) sql.append(", name_ru");
         if (schema.hasNameEn) sql.append(", name_en");
         if (schema.activeCol != null) sql.append(", ").append(schema.activeCol).append(" as active");
@@ -195,8 +195,8 @@ public class ClassifierWebService {
         // Build INSERT
         List<String> columns = new ArrayList<>(List.of("code"));
         List<Object> values = new ArrayList<>(List.of(dto.getCode()));
-        if (schema.hasName && dto.getName() != null) {
-            columns.add("name");
+        if (schema.nameCol != null && dto.getName() != null) {
+            columns.add(schema.nameCol);
             values.add(dto.getName());
         }
         if (schema.hasNameRu && dto.getNameRu() != null) {
@@ -278,8 +278,8 @@ public class ClassifierWebService {
         List<String> setClauses = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
-        if (dto.getName() != null && schema.hasName) {
-            setClauses.add("name = ?");
+        if (dto.getName() != null && schema.nameCol != null) {
+            setClauses.add(schema.nameCol + " = ?");
             params.add(dto.getName());
         }
         if (dto.getNameRu() != null && schema.hasNameRu) {
@@ -424,8 +424,8 @@ public class ClassifierWebService {
             String searchPattern = "%" + search.trim().toLowerCase() + "%";
             StringBuilder searchCondition = new StringBuilder("(LOWER(code) LIKE ?");
             params.add(searchPattern);
-            if (schema.hasName) {
-                searchCondition.append(" OR LOWER(name) LIKE ?");
+            if (schema.nameCol != null) {
+                searchCondition.append(" OR LOWER(").append(schema.nameCol).append(") LIKE ?");
                 params.add(searchPattern);
             }
             if (schema.hasNameRu) {
@@ -449,7 +449,7 @@ public class ClassifierWebService {
     private ClassifierItemDto mapToDto(java.sql.ResultSet rs, SchemaInfo schema) throws java.sql.SQLException {
         ClassifierItemDto.ClassifierItemDtoBuilder builder = ClassifierItemDto.builder()
                 .code(rs.getString("code"));
-        if (schema.hasName) builder.name(rs.getString("name"));
+        if (schema.nameCol != null) builder.name(rs.getString("name"));
         if (schema.hasNameRu) builder.nameRu(rs.getString("name_ru"));
         if (schema.hasNameEn) builder.nameEn(rs.getString("name_en"));
         if (schema.activeCol != null) {
@@ -476,8 +476,8 @@ public class ClassifierWebService {
         List<String> setClauses = new ArrayList<>();
         List<Object> params = new ArrayList<>();
 
-        if (schema.hasName && dto.getName() != null) {
-            setClauses.add("name = ?");
+        if (schema.nameCol != null && dto.getName() != null) {
+            setClauses.add(schema.nameCol + " = ?");
             params.add(dto.getName());
         }
         if (schema.hasDeleteTs) {
@@ -550,7 +550,11 @@ public class ClassifierWebService {
      */
     private SchemaInfo detectSchema(String tableName) {
         SchemaInfo info = new SchemaInfo();
-        info.hasName = columnExists(tableName, "name");
+        // name vs name_uz — hemishe_h_soato da faqat name_uz/name_ru bor (name YO'Q).
+        // activeCol / createTsCol bilan bir xil naqsh: mavjudini tanlaymiz, "name" deb alias qilamiz.
+        if (columnExists(tableName, "name")) info.nameCol = "name";
+        else if (columnExists(tableName, "name_uz")) info.nameCol = "name_uz";
+        else info.nameCol = null;
         info.hasNameRu = columnExists(tableName, "name_ru");
         info.hasNameEn = columnExists(tableName, "name_en");
         info.hasVersion = columnExists(tableName, "version");
@@ -603,7 +607,7 @@ public class ClassifierWebService {
 
     /** Schema flag'lar — eski CUBA va yangi ReferenceEntity pattern'lar uchun. */
     private static final class SchemaInfo {
-        boolean hasName;
+        String nameCol;        // "name" | "name_uz" | null
         boolean hasNameRu;
         boolean hasNameEn;
         boolean hasVersion;

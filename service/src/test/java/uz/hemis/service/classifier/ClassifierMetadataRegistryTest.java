@@ -47,4 +47,37 @@ class ClassifierMetadataRegistryTest {
         assertThat(meta.isEditable()).isTrue();
         assertThat(meta.getCategory()).isEqualTo(Category.EMPLOYEE);
     }
+
+    @Test
+    @DisplayName("har bir jadval nomi 'hemishe_h_' yoki 'h_' prefiksi bilan boshlanadi")
+    void everyTableNameHasClassifierPrefix() {
+        // NEGA: 2026-08-22 da `reg("soato", ...)` va `reg("course", ...)` prefikssiz yozilgani
+        // aniqlandi. Bunday jadval bazada YO'Q (real nomlar hemishe_h_soato / hemishe_h_course),
+        // ClassifierWebService esa tableExists() false bo'lganda Page.empty() qaytaradi —
+        // ya'ni admin web'da "Viloyat va tumanlar (SOATO)" (225 qator) va "O'quv kurslari"
+        // (6 qator) sahifalari XATOSIZ, lekin BO'SH ko'rinardi. HTTP 200, Sentry'da iz yo'q.
+        var noaniq = ClassifierMetadataRegistry.getAll().stream()
+                .map(ClassifierMeta::getTableName)
+                .filter(n -> !n.startsWith("hemishe_h_") && !n.startsWith("h_"))
+                .toList();
+
+        assertThat(noaniq)
+                .as("klassifikator jadvali `hemishe_h_*` (legacy) yoki `h_*` (yangi) bo'lishi shart; "
+                        + "prefikssiz nom bazada mavjud emas -> sahifa jimgina bo'sh chiqadi")
+                .isEmpty();
+    }
+
+    @Test
+    @DisplayName("soato va course — haqiqiy jadval nomiga bog'langan, apiKey o'zgarmagan")
+    void soatoAndCourse_pointAtRealTables() {
+        ClassifierMeta soato = ClassifierMetadataRegistry.getByApiKey("soato");
+        assertThat(soato).isNotNull();
+        assertThat(soato.getTableName()).isEqualTo("hemishe_h_soato");
+        assertThat(soato.getApiKey()).as("API URL o'zgarmasligi kerak").isEqualTo("soato");
+
+        ClassifierMeta course = ClassifierMetadataRegistry.getByApiKey("course");
+        assertThat(course).isNotNull();
+        assertThat(course.getTableName()).isEqualTo("hemishe_h_course");
+        assertThat(course.getApiKey()).as("API URL o'zgarmasligi kerak").isEqualTo("course");
+    }
 }

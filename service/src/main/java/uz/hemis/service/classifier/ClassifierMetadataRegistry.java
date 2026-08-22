@@ -88,7 +88,7 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_nationality", Category.GENERAL, "Millatlar", "Национальности", "Nationalities", true, false);
         reg("hemishe_h_citizenship", Category.GENERAL, "Fuqarolik turlari", "Типы гражданства", "Citizenship types", true, false);
         reg("hemishe_h_country", Category.GENERAL, "Davlatlar", "Страны", "Countries", true, false);
-        reg("soato", Category.GENERAL, "Viloyat va tumanlar (SOATO)", "Области и районы (СОАТО)", "Regions and districts (SOATO)", false, true);
+        reg("hemishe_h_soato", Category.GENERAL, "Viloyat va tumanlar (SOATO)", "Области и районы (СОАТО)", "Regions and districts (SOATO)", false, true);
         reg("hemishe_h_locality_type", Category.GENERAL, "Joylashuv turlari", "Типы местности", "Locality types", true, false);
         reg("hemishe_h_terrain", Category.GENERAL, "Hudud turi", "Тип территории", "Terrain types", true, false);
         reg("hemishe_h_education_language", Category.GENERAL, "Ta'lim tillari", "Языки обучения", "Education languages", true, false);
@@ -151,7 +151,7 @@ public final class ClassifierMetadataRegistry {
         reg("hemishe_h_education_type", Category.EDUCATION, "Ta'lim turlari", "Типы образования", "Education types", true, false);
         reg("hemishe_h_education_form", Category.EDUCATION, "Ta'lim shakllari", "Формы образования", "Education forms", true, false);
         reg("hemishe_h_education_year", Category.EDUCATION, "O'quv yillari", "Учебные года", "Education years", true, false);
-        reg("course", Category.EDUCATION, "O'quv kurslari", "Учебные курсы", "Courses", true, false);
+        reg("hemishe_h_course", Category.EDUCATION, "O'quv kurslari", "Учебные курсы", "Courses", true, false);
         reg("hemishe_h_semester", Category.EDUCATION, "Semestrlar", "Семестры", "Semesters", true, false);
         reg("hemishe_h_semester_list", Category.EDUCATION, "Semestr turlari", "Типы семестров", "Semester types", true, false);
         reg("hemishe_h_education_week_type", Category.EDUCATION, "Ta'lim hafta turlari", "Типы учебных недель", "Education week types", true, false);
