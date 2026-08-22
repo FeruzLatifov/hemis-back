@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.util.JdbcTemporal;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.university.UniversityAttachedSpeciality;
@@ -365,6 +366,6 @@ public class AttachedSpecialityRegistryService {
     }
 
     private static LocalDateTime toLdt(Object value) {
-        return value == null ? null : ((java.sql.Timestamp) value).toLocalDateTime();
+        return JdbcTemporal.toLocalDateTime(value);
     }
 }

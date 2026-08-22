@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.util.JdbcTemporal;
 import uz.hemis.service.registry.dto.*;
 
 import jakarta.persistence.EntityManager;
@@ -259,9 +260,9 @@ public class FacultyRegistryService {
             .departmentTypeName((String) row[7])
             .parentCode((String) row[8])
             .path((String) row[9])
-            .createdAt(row[10] != null ? ((java.sql.Timestamp) row[10]).toLocalDateTime() : null)
+            .createdAt(JdbcTemporal.toLocalDateTime(row[10]))
             .createdBy((String) row[11])
-            .updatedAt(row[12] != null ? ((java.sql.Timestamp) row[12]).toLocalDateTime() : null)
+            .updatedAt(JdbcTemporal.toLocalDateTime(row[12]))
             .updatedBy((String) row[13])
             .version((Integer) row[14])
             .build();
