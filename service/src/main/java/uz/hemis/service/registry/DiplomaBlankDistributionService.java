@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.util.JdbcTemporal;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.finance.DiplomaBlankDistribution;
@@ -312,10 +313,6 @@ public class DiplomaBlankDistributionService {
     }
 
     private static LocalDate toLocalDate(Object o) {
-        if (o == null) return null;
-        if (o instanceof LocalDate ld) return ld;
-        if (o instanceof java.sql.Date d) return d.toLocalDate();
-        if (o instanceof java.sql.Timestamp ts) return ts.toLocalDateTime().toLocalDate();
-        return null;
+        return JdbcTemporal.toLocalDate(o);
     }
 }

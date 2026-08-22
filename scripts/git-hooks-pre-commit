@@ -208,6 +208,25 @@ if [ -n "$STAGED_JAVA" ] && command -v python3 &> /dev/null; then
     fi
 fi
 
+# ─────────────────────────────────────────────────────────────────
+# CHECK 7: native query natijasidagi vaqt kastlari xavfsizmi
+#
+# NEGA: createNativeQuery(...) Object[] qaytaradi va `timestamp` ustuni uchun
+# qaysi Java tipi kelishi Hibernate versiyasiga bog'liq (5 -> java.sql.Timestamp,
+# 6+ -> LocalDateTime). Kast runtime amali — kompilyator ham, testlar ham tutmaydi.
+# 2026-08-22: fakultet va kafedra tafsiloti prodda 500 berdi
+# (Sentry MINISTRY-HEMIS-BACK-12/13), UI'da drawer "Yuklanmoqda..." da qotib qoldi.
+# Ikkinchi, sokitroq zarar: toLocalDate() yordamchisi LocalDateTime holatini
+# qoplamasa, sana JIMGINA null bo'ladi — xato ham, Sentry izi ham bo'lmaydi.
+# ─────────────────────────────────────────────────────────────────
+if [ -n "$STAGED_JAVA" ] && command -v python3 &> /dev/null; then
+    if ! python3 "$REPO_ROOT/scripts/check_native_query_casts.py"; then
+        echo -e "${RED}🔴 BLOCKER — xavfli native-query vaqt kasti${NC}"
+        echo "  uz.hemis.common.util.JdbcTemporal ishlating (toLocalDateTime / toLocalDate)."
+        EXIT_CODE=1
+    fi
+fi
+
 if [ $EXIT_CODE -eq 0 ]; then
     echo -e "${GRN}✓ Pre-commit hook passed${NC}"
 fi

@@ -96,4 +96,37 @@ class JdbcTemporalTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("java.lang.String");
     }
+
+    @Nested
+    @DisplayName("toLocalDate — registry servislaridagi jimgina null bug'i")
+    class ToLocalDate {
+
+        @Test
+        @DisplayName("LocalDateTime -> sana qismi (avval JIMGINA null qaytarardi)")
+        void localDateTimeBecomesDate() {
+            assertThat(JdbcTemporal.toLocalDate(EXPECTED)).isEqualTo(EXPECTED.toLocalDate());
+        }
+
+        @Test
+        @DisplayName("LocalDate o'zgarmaydi")
+        void localDateStays() {
+            LocalDate day = LocalDate.of(2026, 8, 22);
+            assertThat(JdbcTemporal.toLocalDate(day)).isEqualTo(day);
+        }
+
+        @Test
+        @DisplayName("java.sql.Date va java.sql.Timestamp ham qo'llab-quvvatlanadi")
+        void sqlTypesSupported() {
+            LocalDate day = LocalDate.of(2026, 8, 22);
+            assertThat(JdbcTemporal.toLocalDate(java.sql.Date.valueOf(day))).isEqualTo(day);
+            assertThat(JdbcTemporal.toLocalDate(java.sql.Timestamp.valueOf(EXPECTED)))
+                    .isEqualTo(EXPECTED.toLocalDate());
+        }
+
+        @Test
+        @DisplayName("null xavfsiz")
+        void nullSafe() {
+            assertThat(JdbcTemporal.toLocalDate(null)).isNull();
+        }
+    }
 }

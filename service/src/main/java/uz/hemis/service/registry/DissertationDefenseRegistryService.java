@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.util.JdbcTemporal;
 import uz.hemis.service.registry.dto.DissertationDefenseDetailDto;
 import uz.hemis.service.registry.dto.DissertationDefenseDictionariesDto;
 import uz.hemis.service.registry.dto.DissertationDefenseRowDto;
@@ -171,10 +172,6 @@ public class DissertationDefenseRegistryService {
     }
 
     private static LocalDate toLocalDate(Object o) {
-        if (o == null) return null;
-        if (o instanceof LocalDate ld) return ld;
-        if (o instanceof java.sql.Date d) return d.toLocalDate();
-        if (o instanceof java.sql.Timestamp ts) return ts.toLocalDateTime().toLocalDate();
-        return null;
+        return JdbcTemporal.toLocalDate(o);
     }
 }

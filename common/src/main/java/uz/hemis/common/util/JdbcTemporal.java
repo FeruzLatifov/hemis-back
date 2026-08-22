@@ -55,4 +55,19 @@ public final class JdbcTemporal {
                     "Vaqt qiymati kutilgan edi, lekin keldi: " + value.getClass().getName() + " (" + value + ")");
         };
     }
+
+    /**
+     * Xuddi shunday, lekin {@link LocalDate} uchun.
+     *
+     * <p>Registry servislarida shu yordamchining nusxalari bor edi va ularda
+     * {@code LocalDateTime} holati YO'Q edi — ular {@code null} qaytarardi. Bu
+     * ClassCastException'dan ko'ra yomonroq: xato ham, Sentry izi ham bo'lmaydi,
+     * sana UI'dan shunchaki yo'qoladi. Bazada 944 ta {@code timestamp} ustunga
+     * qarshi atigi 115 ta {@code date} bor, ya'ni ustun turi o'zgarsa yoki query
+     * boshqa ustunga ko'chsa — sana jimgina g'oyib bo'lardi.
+     */
+    public static LocalDate toLocalDate(Object value) {
+        LocalDateTime ldt = toLocalDateTime(value);
+        return ldt == null ? null : ldt.toLocalDate();
+    }
 }
