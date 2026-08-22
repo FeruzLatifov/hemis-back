@@ -38,4 +38,16 @@ public class OAuthClientSecretService {
     public String hash(String plainSecret) {
         return bcrypt.encode(plainSecret);
     }
+
+    /**
+     * Ochiq maxfiy kalit saqlangan hashga mos keladimi.
+     *
+     * <p>Rotatsiyada ishlatiladi: admin bergan "yangi" maxfiy kalit aslida eskisi bo'lsa, bu rotatsiya EMAS —
+     * eski maxfiy kalit amalda qolaveradi va OTM hech narsa o'zgarmaganini bilmay qoladi. Runtime
+     * autentifikatsiya alohida yo'lda ({@code OAuthClientAuthenticationService}) — bu metod faqat
+     * admin oqimi uchun.</p>
+     */
+    public boolean matches(String plainSecret, String hash) {
+        return hash != null && bcrypt.matches(plainSecret, hash);
+    }
 }

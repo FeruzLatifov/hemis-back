@@ -6,7 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.auth.ClientType;
+import uz.hemis.common.validation.SecretStrengthPolicy;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.security.OAuthClient;
@@ -17,6 +20,10 @@ import uz.hemis.domain.repository.RoleRepository;
 import uz.hemis.domain.repository.UniversityRepository;
 import uz.hemis.service.admin.dto.OAuthClientCreateRequest;
 import uz.hemis.service.admin.dto.OAuthClientResponse;
+import uz.hemis.service.admin.dto.OAuthClientSecretResponse;
+import uz.hemis.service.admin.dto.OAuthClientSecretRotateRequest;
+
+import java.time.LocalDateTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +74,7 @@ public class OAuthClientAdminService {
     // WRITE
     // =====================================================
 
+    @Audited(action = AuditAction.CREATE, entity = "OAuthClient", entityClass = OAuthClient.class)
     @Transactional
     public OAuthClientResponse createClient(OAuthClientCreateRequest request) {
         if (oAuthClientRepository.existsByClientId(request.getClientId())) {
@@ -93,6 +101,7 @@ public class OAuthClientAdminService {
     }
 
     @Transactional
+    @Audited(action = AuditAction.UPDATE, entity = "OAuthClient", entityClass = OAuthClient.class, keyArg = "id")
     public OAuthClientResponse toggleStatus(UUID id) {
         OAuthClient client = oAuthClientRepository.findByIdWithRoles(id)
                 .orElseThrow(() -> new ResourceNotFoundException("OAuthClient", "id", id));
@@ -102,6 +111,71 @@ public class OAuthClientAdminService {
         return toResponse(saved, true);
     }
 
+    /**
+     * Maxfiy kalit almashtirish (rotatsiya).
+     *
+     * <p>So'rov tanasi bo'sh bo'lsa markaz kriptografik kuchli maxfiy kalit generatsiya qiladi va uni
+     * javobda BIR MARTA qaytaradi. Admin o'z qiymatini bersa — ochiq matn javobda qaytarilmaydi.</p>
+     *
+     * <p><strong>Kuchga kirishi — faqat YANGI tokenlarga.</strong>
+     * {@code OAuthClientAuthenticationService} keshlamaydi, har token so'rovida DB hashiga
+     * solishtiradi, ya'ni eski maxfiy kalit bilan yangi token OLINMAYDI. Lekin allaqachon berilgan JWT'lar
+     * <strong>24 soatgacha</strong> ishlashda davom etadi
+     * ({@code hemis.security.oauth.client-token-expiration}, default 86400s — bu vazirlik bo'ylab
+     * yagona siyosat; entity'dagi {@code access_token_ttl_seconds} ustuni token berishda
+     * ISHLATILMAYDI).</p>
+     *
+     * <p><strong>Diqqat:</strong> {@link #toggleStatus(UUID)} ham berilgan tokenlarni bekor
+     * QILMAYDI. {@code is_active} faqat token berish paytida tekshiriladi
+     * ({@code findOperationalByClientIdWithPermissions}); JWT filtri har so'rovda oauth_client'ni
+     * qayta o'qimaydi — faqat imzo va blacklist. Ya'ni hozircha mashina tokenini muddatidan oldin
+     * bekor qilishning yo'li YO'Q; bu alohida ish (jti blacklist yoki tokens_valid_from).</p>
+     *
+     * <p>Ochiq maxfiy kalit logga, auditga yoki keshga HECH QACHON yozilmaydi.</p>
+     */
+    @Audited(action = AuditAction.UPDATE, entity = "OAuthClient", entityClass = OAuthClient.class, keyArg = "id")
+    @Transactional
+    public OAuthClientSecretResponse rotateSecret(UUID id, OAuthClientSecretRotateRequest request) {
+        OAuthClient client = oAuthClientRepository.findByIdWithRoles(id)
+                .orElseThrow(() -> new ResourceNotFoundException("OAuthClient", "id", id));
+
+        String supplied = (request != null) ? request.getClientSecret() : null;
+        boolean generated = (supplied == null || supplied.isBlank());
+        String plainSecret = generated ? secretService.generatePlainSecret() : supplied.trim();
+
+        // Admin bergan qiymat uchun server-tomon tekshiruvlar. Frontend'dagi baho
+        // (secretStrength.ts) foydalanuvchiga yordam beradi, LEKIN xavfsizlik nazorati EMAS —
+        // endpoint to'g'ridan-to'g'ri ham chaqirilishi mumkin.
+        if (!generated) {
+            // Mustahkamlik siyosati — frontend bahosining server-tomon nusxasi
+            // (SecretStrengthPolicy javadoc'iga qarang: nega entropiya, tarkib qoidalari emas).
+            var violations = SecretStrengthPolicy.validate(plainSecret, client.getClientId());
+            if (!violations.isEmpty()) {
+                throw new BadRequestException(SecretStrengthPolicy.describe(violations));
+            }
+            // Eski maxfiy kalitni "yangi" deb qayta o'rnatish rotatsiya emas — OTM hech narsa
+            // o'zgarmaganini bilmay qoladi, eski maxfiy kalit esa amalda qolaveradi.
+            if (secretService.matches(plainSecret, client.getClientSecretHash())) {
+                throw new BadRequestException("Yangi maxfiy kalit eskisidan farq qilishi kerak");
+            }
+        }
+
+        client.setClientSecretHash(secretService.hash(plainSecret));
+        client.setSecretRotatedAt(LocalDateTime.now());
+        client.setSecretVersion(client.getSecretVersion() == null ? 2 : client.getSecretVersion() + 1);
+        OAuthClient saved = oAuthClientRepository.save(client);
+
+        log.warn("OTM oauth_client secret rotated: clientId={}, version={}, generated={} — OTM .env update required",
+                saved.getClientId(), saved.getSecretVersion(), generated);
+
+        return generated
+                ? OAuthClientSecretResponse.generated(saved.getId(), saved.getClientId(), plainSecret,
+                        saved.getSecretVersion(), saved.getSecretRotatedAt())
+                : OAuthClientSecretResponse.supplied(saved.getId(), saved.getClientId(),
+                        saved.getSecretVersion(), saved.getSecretRotatedAt());
+    }
+
+    @Audited(action = AuditAction.DELETE, entity = "OAuthClient", entityClass = OAuthClient.class, keyArg = "id")
     @Transactional
     public void softDelete(UUID id) {
         OAuthClient client = oAuthClientRepository.findByIdWithRoles(id)

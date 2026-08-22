@@ -473,6 +473,10 @@ hemis:
       - password
       - token
       - secret
+      - clientSecret
+      - client_secret
+      - plainSecret
+      - plain_secret
       - authorization
       - pinfl
       - firstName

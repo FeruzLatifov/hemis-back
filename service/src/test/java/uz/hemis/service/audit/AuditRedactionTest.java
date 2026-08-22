@@ -27,6 +27,41 @@ class AuditRedactionTest {
             List.of("password", "pinfl", "firstName", "lastName", "middleName",
                     "fullName", "phone", "email"));
 
+    /**
+     * OAuth client maxfiy kalit kalitlari uchun ALOHIDA instansiya — PROD ro'yxati bilan.
+     *
+     * <p>Yuqoridagi {@code repo} qisqartirilgan ro'yxat ishlatadi, shuning uchun u maxfiy kalit kalitlarini
+     * umuman tekshirmaydi. Bu ro'yxat {@code app/src/main/resources/application.yml}
+     * ({@code hemis.audit.redact-fields}) va {@code AuditRepository} dagi {@code @Value} sukut
+     * qiymati bilan bir xil bo'lishi kerak.</p>
+     */
+    private final AuditRepository prodRepo = new AuditRepository(
+            new JdbcTemplate(),
+            new ObjectMapper(),
+            List.of("password", "token", "secret", "clientSecret", "client_secret",
+                    "plainSecret", "plain_secret", "authorization", "pinfl"));
+
+    @Test
+    @DisplayName("OAuth client maxfiy kaliti activity_log snapshot'ida maskalanadi (clientSecret + plainSecret)")
+    void masksOAuthClientSecrets() {
+        // rotateSecret @Audited bilan belgilangan; AuditAspect qaytar qiymatni new_value'ga yozadi,
+        // javobda esa markaz generatsiya qilgan OCHIQ maxfiy kalit bor. Kalit moslashuvi ANIQ tenglik bo'yicha,
+        // ya'ni 'secret' kaliti 'plainSecret' ni QOPLAMAYDI — shuning uchun ikkalasi ham ro'yxatda.
+        String plain = "csec_SUPER_SECRET_VALUE_1234567890";
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("clientId", "otm301");
+        snapshot.put("plainSecret", plain);
+        snapshot.put("secretVersion", 3);
+        snapshot.put("nested", Map.of("clientSecret", plain));
+
+        Map<String, Object> out = prodRepo.redactSensitiveFields(snapshot);
+        String rendered = out.toString();
+
+        assertThat(rendered).doesNotContain(plain);
+        assertThat(out.get("clientId")).isEqualTo("otm301");   // maxfiy kalit bo'lmagan maydon tegilmaydi
+        assertThat(out.get("secretVersion")).isEqualTo(3);
+    }
+
     @Test
     @DisplayName("nested PINFL under an arbitrary key is masked (value-based safety net)")
     void masksNestedPinflUnderUnknownKey() {

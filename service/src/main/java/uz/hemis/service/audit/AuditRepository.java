@@ -56,7 +56,7 @@ public class AuditRepository {
 
     public AuditRepository(@Qualifier("auditJdbcTemplate") JdbcTemplate jdbcTemplate,
                            ObjectMapper objectMapper,
-                           @Value("${hemis.audit.redact-fields:password,token,secret,authorization,pinfl}")
+                           @Value("${hemis.audit.redact-fields:password,token,secret,clientSecret,client_secret,plainSecret,plain_secret,authorization,pinfl}")
                            List<String> redactFields) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;

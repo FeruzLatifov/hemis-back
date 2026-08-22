@@ -877,3 +877,35 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M011_attachment_drop_soft_delete.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/migration/M011_attachment_drop_soft_delete_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: M012_oauth_client_client_id_partial_unique
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      comment: "oauth_client.client_id: to'liq UNIQUE -> PARTIAL UNIQUE (WHERE deleted_at IS NULL). Sabab: o'chirish soft delete, entity'da @SQLRestriction(deleted_at IS NULL) — natijada o'chirilgan qator client_id'ni abadiy band qilib turardi va createClient() existsByClientId tekshiruvidan o'tib, INSERT'da unique violation bilan 500 berardi (prodda 'jidu(yopilgan)' nomi shuni chetlab o'tish uchun qo'yilgan). Konstreynt nomi qattiq yozilmagan — pg_constraint'dan topiladi. Tirik qatorlar orasida dublikat bo'lsa RAISE EXCEPTION bilan to'xtaydi. DIQQAT: M001:195 dagi `ON CONFLICT (client_id)` bu partial indeks bilan MOS EMAS — M001 runOnChange bo'lgani uchun kelajakda tahrirlansa deploy yiqiladi; tuzatish bir qator (SQL faylidagi izohga qarang). M001 ATAYLAB tegilmadi, chunki qayta ishga tushishi users.password/email/enabled ni sec_user'dan qayta yozadi. Rollback ATAYLAB yiqilishi mumkin: qayta ishlatilgan client_id bo'lsa ma'lumotni jimgina o'chirmasdan operatorga ro'yxatini ko'rsatib to'xtaydi."
+      changes:
+        - sqlFile: { path: changesets/migration/M012_oauth_client_client_id_partial_unique.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/migration/M012_oauth_client_client_id_partial_unique_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S029_seed_oauth_secret_rotation_i18n
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Eight NEW i18n keys for the OTM API-client secret rotation UI (/system/oauth-clients). Why the feature exists: oauth_client had create/toggle/soft-delete but NO way to change a secret, so the only workaround was delete + recreate under a DIFFERENT client_id (prod still shows a client renamed to 'jidu(yopilgan)' purely to free the name). Two keys carry operational meaning and must not be shortened: 'New secret - copy now' (plaintext returned ONCE, unrecoverable) and 'Tokens already issued...' (rotation does NOT revoke live JWTs; disable the account first to cut access). NEW seed - S006/S010/S024/S026/S027/S028 are already applied in prod (central_hemis), so applied changesets are not edited; system_message is the source of truth (sync:translations regenerates the frontend JSON). Runs after S006 (_seed_msg helper)."
+      changes:
+        - sqlFile: { path: changesets/seed/S029_seed_oauth_secret_rotation_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S029_seed_oauth_secret_rotation_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S030_seed_secret_terminology_uz
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "O'zbekcha atama birligi: client_secret uchun 'sir' -> 'maxfiy kalit' (10 ta kalit, uz/oz). Sabab: 'sir' o'zbekchada kundalik ma'noda 'yashirin gap' — 'Sirni almashtirish' g'aliz eshitiladi; 'maxfiy kalit' tabiiy va UI'dagi kalit belgisiga mos. 'Parol' ATAYLAB tanlanmadi: u adminni eslab qoladigan qiymat tanlashga undaydi, bu esa mashina kredensiali uchun noto'g'ri (qiymat bir marta OTM .env fayliga yoziladi). Diqqat: 'Client secret' yorlig'i frontend tarjimasida ALLAQACHON 'Maxfiy kalit (parol)' edi — ya'ni bu seed mavjud konvensiyaga qaytaradi, yangi atama kiritmaydi (S010'da bu kalit yo'q — front JSON bilan seed orasida drift bor). KATEGORIYA: 8 ta kalit S010'da 'message'/'action'/'confirm'/'error' bilan seed qilingan; _seed_msg category ustunini ham qayta yozadi, shuning uchun bu yerda S010 dagi AYNI kategoriya uzatiladi — aks holda I18nService.getCategoryKeys() (/i18n/messages/scopes) o'sha satrlarni topolmay qolardi. RUSCHA matn ham S010 dan bayt-baytga ko'chirilgan: ru uchun UPDATE no-op bo'lsin (2026-08-22 auditi S030 da buzuq U+FFFD belgili ruscha matnni topgan edi — tuzatildi). YANGI seed kerak, chunki kalitlar S010'da va u prodda qo'llangan (qo'llangan changeset tahrirlanmaydi); _seed_msg ichidagi ON CONFLICT DO UPDATE ularni xavfsiz qayta yozadi. Ruscha/inglizcha o'z tillarida to'g'ri, tegilmadi. Rollback DELETE emas — S010 matnlarini qaytaradi."
+      changes:
+        - sqlFile: { path: changesets/seed/S030_seed_secret_terminology_uz.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S030_seed_secret_terminology_uz_rollback.sql, relativeToChangelogFile: true, splitStatements: false }

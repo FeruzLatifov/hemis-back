@@ -2,6 +2,8 @@ package uz.hemis.web.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,8 @@ import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.admin.OAuthClientAdminService;
 import uz.hemis.service.admin.dto.OAuthClientCreateRequest;
 import uz.hemis.service.admin.dto.OAuthClientResponse;
+import uz.hemis.service.admin.dto.OAuthClientSecretResponse;
+import uz.hemis.service.admin.dto.OAuthClientSecretRotateRequest;
 import uz.hemis.service.util.PageResponses;
 
 import java.util.Set;
@@ -79,6 +83,31 @@ public class OAuthClientController {
     @Operation(summary = "Toggle OTM API client active status")
     public ResponseEntity<ResponseWrapper<OAuthClientResponse>> toggleStatus(@PathVariable UUID id) {
         return ResponseEntity.ok(ResponseWrapper.success(service.toggleStatus(id)));
+    }
+
+    @PostMapping("/{id}/secret")
+    @PreAuthorize("hasAuthority('oauth-clients.manage')")
+    @Operation(
+            summary = "Maxfiy kalitni almashtirish (rotatsiya)",
+            description = """
+                    Tana bo'sh bo'lsa markaz kuchli maxfiy kalit generatsiya qiladi va uni javobda BIR MARTA \
+                    qaytaradi (`plainSecret`). Admin `clientSecret` bersa — ochiq matn qaytarilmaydi. \
+                    Eski maxfiy kalit bilan YANGI token olinmaydi. Lekin allaqachon berilgan tokenlar \
+                    24 soatgacha (`hemis.security.oauth.client-token-expiration`, default 86400s) \
+                    ishlashda davom etadi — hisobni o'chirish ham ularni bekor QILMAYDI, chunki \
+                    `is_active` faqat token berishda tekshiriladi."""
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Maxfiy kalit almashtirildi"),
+            @ApiResponse(responseCode = "400", description = "Yangi maxfiy kalit eskisi bilan bir xil, client_id ni o'z ichiga oladi yoki 12 belgidan qisqa"),
+            @ApiResponse(responseCode = "404", description = "Client topilmadi")
+    })
+    public ResponseEntity<ResponseWrapper<OAuthClientSecretResponse>> rotateSecret(
+            @PathVariable UUID id,
+            @Valid @RequestBody(required = false) OAuthClientSecretRotateRequest request
+    ) {
+        OAuthClientSecretResponse response = service.rotateSecret(id, request);
+        return ResponseEntity.ok(ResponseWrapper.success(response, response.warning()));
     }
 
     @DeleteMapping("/{id}")
