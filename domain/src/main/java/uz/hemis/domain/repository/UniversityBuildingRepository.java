@@ -24,11 +24,11 @@ public interface UniversityBuildingRepository
                 JpaSpecificationExecutor<UniversityBuilding> {
 
     /** UniversityBuildingService.findByUniversity() chaqiradi. */
-    @EntityGraph(attributePaths = {"category"})
+    @EntityGraph(attributePaths = {"buildingType", "ownership"})
     Page<UniversityBuilding> findByUniversityCode(String universityCode, Pageable pageable);
 
     /** Dashboard aggregate — barcha binolar bitta OTM uchun (paginate'siz). */
-    @EntityGraph(attributePaths = {"category"})
+    @EntityGraph(attributePaths = {"buildingType", "ownership"})
     List<UniversityBuilding> findByUniversityCodeOrderByNameAsc(String universityCode);
 
     /** UniversityBuildingSyncService upsert uchun. */

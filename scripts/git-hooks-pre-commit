@@ -189,6 +189,25 @@ else
     echo -e "${YEL}  O'rnatish: apt install gitleaks  yoki  brew install gitleaks${NC}"
 fi
 
+# ─────────────────────────────────────────────────────────────────
+# CHECK 6: @EntityGraph(attributePaths) entity maydonlariga mos kelsinmi
+#
+# NEGA: @EntityGraph yo'llari startupda EMAS, so'rov bajarilganda tekshiriladi.
+# Eskirgan yo'l ilovani ko'tarilishiga xalaqit bermaydi, testlar ham tutmaydi —
+# faqat foydalanuvchi o'sha endpointni ochganda 500 beradi.
+# 2026-08-21: `category` assotsiatsiyasi olib tashlangan, lekin
+# UniversityBuildingRepository'da @EntityGraph({"category"}) qolib ketgan edi →
+# central.hemis.uz da OTM sahifasi 500 berdi (prodda, deploydan 1 kun keyin).
+# ─────────────────────────────────────────────────────────────────
+if [ -n "$STAGED_JAVA" ] && command -v python3 &> /dev/null; then
+    if ! python3 "$REPO_ROOT/scripts/check_entity_graph_paths.py"; then
+        echo -e "${RED}🔴 BLOCKER — @EntityGraph yo'li entity'da mavjud emas${NC}"
+        echo "  Bu xato runtime'da 500 beradi, kompilyatsiya va testlar tutmaydi."
+        echo "  Yo'lni to'g'irlang yoki eskirgan annotatsiyani o'chiring."
+        EXIT_CODE=1
+    fi
+fi
+
 if [ $EXIT_CODE -eq 0 ]; then
     echo -e "${GRN}✓ Pre-commit hook passed${NC}"
 fi
