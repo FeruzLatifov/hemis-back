@@ -36,7 +36,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  */
 @EnableCaching
 @EnableJpaAuditing
-@org.springframework.scheduling.annotation.EnableScheduling
+// @EnableScheduling -> SchedulingConfig (@Profile("!migrate")) — migratsiya pod'i job ishlatmasin
 @org.springframework.scheduling.annotation.EnableAsync
 @SpringBootApplication(scanBasePackages = {
         "uz.hemis.common",
