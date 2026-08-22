@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,8 +32,11 @@ import static org.mockito.Mockito.when;
  * {@link UniversityBuildingSyncService} idempotency unit testlar.
  *
  * <p>2026-05-20 refactor — TenantGuard service'dan olib tashlandi (auth boundary
- * controller'da), BuildingCadastreAutoFiller drop qilindi (cadastre table o'chirildi).
- * Cross-tenant testlar controller-level test'ga ko'chiriladi.</p>
+ * controller'da). Cross-tenant testlar controller-level test'ga ko'chiriladi.</p>
+ *
+ * <p>2026-08-20 (34f7429) — university_cadastre QAYTDI (V025 + M009 FK): endi eski
+ * BuildingCadastreAutoFiller o'rniga {@link CadastreIngestService#ensureCadastreExists}
+ * bino saqlashdan oldin FK qatorini ta'minlaydi.</p>
  *
  * <p>Hozirda testlar:
  * <ul>
@@ -39,6 +44,7 @@ import static org.mockito.Mockito.when;
  *   <li>Bir xil hash bilan mavjud → SKIP (no DB write)</li>
  *   <li>Farqli hash bilan mavjud → UPDATE (dirty check)</li>
  *   <li>Bir item fail bo'lsa qolgani davom etadi</li>
+ *   <li>M009 FK: kadastr qatori bino saqlashdan OLDIN, bulk uchun strict=false</li>
  * </ul></p>
  */
 @ExtendWith(MockitoExtension.class)
@@ -60,6 +66,10 @@ class UniversityBuildingSyncServiceTest {
     @Mock
     private Cache dashboardCache;
 
+    /** 34f7429 (M009) — bino saqlashdan oldin university_cadastre FK qatorini ta'minlaydi. */
+    @Mock
+    private CadastreIngestService cadastreIngestService;
+
     @InjectMocks
     private UniversityBuildingSyncService service;
 
@@ -70,6 +80,7 @@ class UniversityBuildingSyncServiceTest {
         syncDto = BuildingSyncDto.builder()
                 .sourceUid("univer-bld-123")
                 .name("Asosiy korpus")                .yearBuilt(2010)
+                .cadNumber("10:04:06:01:0123")
                 .build();
         when(cacheManager.getCache(anyString())).thenReturn(dashboardCache);
     }
@@ -85,7 +96,13 @@ class UniversityBuildingSyncServiceTest {
 
         assertThat(result.getSuccessCount()).isEqualTo(1);
         assertThat(result.getFailureCount()).isZero();
-        verify(repo).save(any(UniversityBuilding.class));
+
+        // M009 FK: kadastr qatori bino INSERT'idan OLDIN ta'minlanadi.
+        // strict=FALSE — bulk sync'da noto'g'ri kadastr raqami butun batch'ni yiqitmaydi
+        // (FAILED placeholder qoladi, OTM binosi baribir saqlanadi). true bo'lib qolsa — data-loss.
+        InOrder inOrder = inOrder(cadastreIngestService, repo);
+        inOrder.verify(cadastreIngestService).ensureCadastreExists("10:04:06:01:0123", false);
+        inOrder.verify(repo).save(any(UniversityBuilding.class));
     }
 
     @Test

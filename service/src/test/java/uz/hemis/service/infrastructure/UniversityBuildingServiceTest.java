@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,7 +41,9 @@ import static org.mockito.Mockito.when;
  * <p>Qamrab olingan business rules:
  * <ul>
  *   <li>findById — topilmasa ResourceNotFoundException</li>
- *   <li>create — cadastre auto-fill chaqiriladi, yearBuilt bo'lsa CONSTRUCTED event</li>
+ *   <li>create — M009 FK: kadastr qatori bino saqlashdan OLDIN ta'minlanadi (strict=true)</li>
+ *   <li>create — yearBuilt bo'lsa CONSTRUCTED event</li>
+ *   <li>update — kadastr tekshiruvi YANGI cad_number bo'yicha (strict=true)</li>
  *   <li>update — last_renovation_date o'zgarsa RENOVATED event avtomatik</li>
  *   <li>update — renovation o'zgarmasa lifecycle event YO'Q</li>
  *   <li>softDelete — deleted_at belgilanadi</li>
@@ -63,6 +67,10 @@ class UniversityBuildingServiceTest {
 
     @Mock
     private Cache dashboardCache;
+
+    /** 34f7429 (M009) — bino saqlashdan oldin university_cadastre FK qatorini ta'minlaydi. */
+    @Mock
+    private CadastreIngestService cadastreIngestService;
 
     @InjectMocks
     private UniversityBuildingService service;
@@ -100,6 +108,7 @@ class UniversityBuildingServiceTest {
                 .build();
         UniversityBuilding entity = new UniversityBuilding();
         entity.setYearBuilt(2020);
+        entity.setCadNumber("10:04:06:01:0123");
         when(mapper.toEntity(createDto)).thenReturn(entity);
         when(repo.save(any(UniversityBuilding.class))).thenAnswer(inv -> {
             UniversityBuilding b = inv.getArgument(0);
@@ -110,8 +119,12 @@ class UniversityBuildingServiceTest {
 
         service.create("401", createDto);
 
-        // 2026-05-06: BuildingCadastreAutoFiller olib tashlandi (university_cadastre drop).
-        // Endi faqat lifecycle event tekshiriladi.
+        // M009 FK: kadastr qatori bino INSERT'idan OLDIN commit bo'lishi shart (aks holda FK buziladi).
+        // strict=true — web'da noto'g'ri kadastr raqami 422 bilan rad etiladi (typo o'tib ketmasin).
+        InOrder inOrder = inOrder(cadastreIngestService, repo);
+        inOrder.verify(cadastreIngestService).ensureCadastreExists("10:04:06:01:0123", true);
+        inOrder.verify(repo).save(any(UniversityBuilding.class));
+
         ArgumentCaptor<BuildingLifecycle> captor = ArgumentCaptor.forClass(BuildingLifecycle.class);
         verify(lifecycleRepo).save(captor.capture());
         assertThat(captor.getValue().getEventType()).isEqualTo(EventType.CONSTRUCTED);
@@ -149,10 +162,15 @@ class UniversityBuildingServiceTest {
         // updateEntity simulates MapStruct behavior — update lastRenovationDate
         org.mockito.Mockito.doAnswer(inv -> {
             building.setLastRenovationDate(newDate);
+            building.setCadNumber("10:04:06:01:0999"); // MapStruct cad_number'ni ham yangilaydi
             return null;
         }).when(mapper).updateEntity(updateDto, building);
 
         service.update(buildingId, updateDto);
+
+        // M009 FK: tekshiruv YANGI cad_number bo'yicha bo'lishi shart (updateEntity'dan KEYIN chaqirilsin,
+        // aks holda eski qiymat tekshiriladi va yangi kadastr qatori yaratilmay FK buziladi).
+        verify(cadastreIngestService).ensureCadastreExists("10:04:06:01:0999", true);
 
         ArgumentCaptor<BuildingLifecycle> captor = ArgumentCaptor.forClass(BuildingLifecycle.class);
         verify(lifecycleRepo).save(captor.capture());

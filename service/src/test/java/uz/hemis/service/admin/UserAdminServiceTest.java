@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -35,6 +36,9 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserAdminService — RBAC scope + CRUD")
 class UserAdminServiceTest {
+
+    /** PERSON akkaunt uchun login manbai — 14 xonali PINFL (test fixture). */
+    private static final String PINFL = "31507976020031";
 
     @Mock private UserRepository userRepository;
     @Mock private RoleRepository roleRepository;
@@ -132,12 +136,14 @@ class UserAdminServiceTest {
     }
 
     @Test
-    @DisplayName("createUser — username already exists → BadRequest")
+    @DisplayName("createUser — UNIVERSITY_LOGIN: username band bo'lsa → BadRequest")
     void createUser_duplicateUsername() {
         when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(superAdminCaller));
         when(userRepository.existsByUsername("dup")).thenReturn(true);
 
+        // UNIVERSITY_LOGIN — login qo'lda kiritiladi (PINFL talab qilinmaydi)
         UserCreateRequest req = UserCreateRequest.builder()
+                .accountType("UNIVERSITY_LOGIN")
                 .username("dup").password("secret123").roleIds(Set.of(UUID.randomUUID())).build();
 
         assertThatThrownBy(() -> service.createUser(req, callerId))
@@ -146,11 +152,12 @@ class UserAdminServiceTest {
     }
 
     @Test
-    @DisplayName("createUser — happy path, BCrypt encode + save")
+    @DisplayName("createUser — PERSON happy path: login = PINFL, BCrypt encode + save")
     void createUser_happy() {
         Role minRole = role("MINISTRY_ADMIN", true);
         when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(superAdminCaller));
-        when(userRepository.existsByUsername("john")).thenReturn(false);
+        when(userRepository.existsByPinfl(PINFL)).thenReturn(false);
+        when(userRepository.existsByUsername(PINFL)).thenReturn(false);
         when(roleRepository.findById(minRole.getId())).thenReturn(Optional.of(minRole));
         when(universityRepository.findById("337")).thenReturn(Optional.of(uni337));
         when(passwordEncoder.encode("secret123")).thenReturn("BCRYPT$xxx");
@@ -160,15 +167,20 @@ class UserAdminServiceTest {
             return u;
         });
 
+        // PERSON — accountType default; login username'dan emas, PINFL'dan olinadi
         UserCreateRequest req = UserCreateRequest.builder()
-                .username("john").password("secret123").fullName("John Doe")
+                .pinfl(PINFL).password("secret123").fullName("John Doe")
                 .universityCode("337").roleIds(Set.of(minRole.getId())).build();
 
         var resp = service.createUser(req, callerId);
 
-        assertThat(resp.getUsername()).isEqualTo("john");
+        assertThat(resp.getUsername()).isEqualTo(PINFL);
         verify(passwordEncoder).encode("secret123");
-        verify(userRepository).save(any(User.class));
+
+        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(savedUser.capture());
+        assertThat(savedUser.getValue().getPinfl()).isEqualTo(PINFL);
+        assertThat(savedUser.getValue().getPassword()).isEqualTo("BCRYPT$xxx");  // xom parol saqlanmaydi
     }
 
     @Test

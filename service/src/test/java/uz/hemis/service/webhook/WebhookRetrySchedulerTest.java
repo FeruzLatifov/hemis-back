@@ -1,6 +1,5 @@
 package uz.hemis.service.webhook;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,7 +33,8 @@ import static org.mockito.Mockito.when;
  * Unit tests for {@link WebhookRetryScheduler}.
  *
  * <p><strong>Scope:</strong> due-retry polling, per-item exception isolation,
- * placeholder retryOne side effect, retention cleanup cutoff math, and
+ * {@link WebhookDispatcher#redispatch} ga delegatsiya (haqiqiy replay — 83d98de'dan
+ * keyin "to'g'ridan DLQ" placeholder yo'q), retention cleanup cutoff math va
  * {@code @Scheduled} top-level exception swallowing.</p>
  *
  * <p>Pure Mockito — no Spring context, no DB.</p>
@@ -44,7 +45,6 @@ class WebhookRetrySchedulerTest {
 
     @Mock private WebhookDeliveryLogRepository deliveryLogRepository;
     @Mock private WebhookDispatcher dispatcher;
-    @Mock private ObjectMapper objectMapper;
 
     @InjectMocks private WebhookRetryScheduler scheduler;
 
@@ -76,7 +76,7 @@ class WebhookRetrySchedulerTest {
     // =========================================================
 
     @Test
-    @DisplayName("doProcess() with 3 due retries → save() called 3 times (one per stale)")
+    @DisplayName("doProcess() with 3 due retries → redispatch() har biri uchun aynan 1 marta")
     void doProcess_threeDueRetries_processesEach() {
         WebhookDeliveryLog r1 = staleRetry();
         WebhookDeliveryLog r2 = staleRetry();
@@ -87,16 +87,21 @@ class WebhookRetrySchedulerTest {
 
         scheduler.doProcess();
 
-        verify(deliveryLogRepository, times(3)).save(any(WebhookDeliveryLog.class));
+        // Birorta due row tushib qolmasligi kerak — har biri alohida replay qilinadi.
+        verify(dispatcher, times(3)).redispatch(any(WebhookDeliveryLog.class));
+        verify(dispatcher).redispatch(r1);
+        verify(dispatcher).redispatch(r2);
+        verify(dispatcher).redispatch(r3);
     }
 
     // =========================================================
-    // Placeholder retryOne side effect — stale becomes DLQ
+    // retryOne — haqiqiy replay: dispatcher.redispatch()ga delegatsiya
+    // (83d98de: eski "to'g'ridan DLQ" placeholder olib tashlandi, ADR-0012)
     // =========================================================
 
     @Test
-    @DisplayName("retryOne placeholder marks stale as DLQ with placeholder error message")
-    void doProcess_retryOnePlaceholder_marksDlq() {
+    @DisplayName("retryOne() due row'ni redispatch()ga uzatadi — o'zi DLQ qilib tashlamaydi")
+    void doProcess_retryOne_delegatesToRedispatch() {
         WebhookDeliveryLog stale = staleRetry();
         when(deliveryLogRepository.findDueRetries(any(), any(), any()))
             .thenReturn(List.of(stale));
@@ -104,12 +109,17 @@ class WebhookRetrySchedulerTest {
         scheduler.doProcess();
 
         ArgumentCaptor<WebhookDeliveryLog> captor = ArgumentCaptor.forClass(WebhookDeliveryLog.class);
-        verify(deliveryLogRepository).save(captor.capture());
-        WebhookDeliveryLog saved = captor.getValue();
+        verify(dispatcher).redispatch(captor.capture());
+        WebhookDeliveryLog replayed = captor.getValue();
 
-        assertThat(saved.getStatus()).isEqualTo(WebhookDeliveryStatus.DLQ);
-        assertThat(saved.getErrorMessage()).contains("Sprint 4");
-        assertThat(saved.getCompletedAt()).isNotNull();
+        // Aynan o'sha due row uzatiladi — attempt_n/status'ni dispatcher hal qiladi.
+        assertThat(replayed).isSameAs(stale);
+        assertThat(replayed.getAttemptN()).isEqualTo(2);
+
+        // Regressiya qo'riqchisi: scheduler retry'ni o'zi terminal DLQ qilmasligi shart
+        // (aks holda ADR-0012 retry yana "birinchi due'da o'ladi" holatiga qaytadi).
+        assertThat(stale.getStatus()).isEqualTo(WebhookDeliveryStatus.RETRY);
+        verify(deliveryLogRepository, never()).save(any(WebhookDeliveryLog.class));
     }
 
     // =========================================================
@@ -117,22 +127,22 @@ class WebhookRetrySchedulerTest {
     // =========================================================
 
     @Test
-    @DisplayName("If save() throws for one stale, other retries still processed")
+    @DisplayName("Bitta stale'da redispatch() otsa ham, qolgan retry'lar ishlanadi")
     void doProcess_perItemFailure_isolated() {
         WebhookDeliveryLog ok1 = staleRetry();
         WebhookDeliveryLog bad = staleRetry();
         WebhookDeliveryLog ok3 = staleRetry();
         when(deliveryLogRepository.findDueRetries(any(), any(), any()))
             .thenReturn(List.of(ok1, bad, ok3));
-        when(deliveryLogRepository.save(bad))
-            .thenThrow(new RuntimeException("DB lock contention"));
+        doThrow(new RuntimeException("DB lock contention"))
+            .when(dispatcher).redispatch(bad);
 
         assertThatCode(() -> scheduler.doProcess()).doesNotThrowAnyException();
 
-        // ok1 and ok3 still saved; bad attempted but failed
-        verify(deliveryLogRepository).save(ok1);
-        verify(deliveryLogRepository).save(bad);
-        verify(deliveryLogRepository).save(ok3);
+        // bad urinildi-yu yiqildi; ok1 va ok3 baribir ishlandi (batch to'xtamaydi).
+        verify(dispatcher).redispatch(ok1);
+        verify(dispatcher).redispatch(bad);
+        verify(dispatcher).redispatch(ok3);
     }
 
     // =========================================================
