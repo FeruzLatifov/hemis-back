@@ -176,9 +176,9 @@ node /home/adm1n/projects/startup/hemis-tools/docs/univer_tool/compare_endpoints
 ### Smoke test (manual)
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8081/app/rest/v2/oauth/token \
-  -H 'Authorization: Basic Y2xpZW50OnNlY3JldA==' \
+  -H 'Authorization: Basic <base64(client_id:client_secret)>' \
   -H 'Content-Type: application/x-www-form-urlencoded' \
-  -d 'grant_type=password&username=otm401&password=XCZDAb7qvGTXxz' | jq -r '.access_token')
+  -d 'grant_type=password&username=otm401&password=<OTM_PASSWORD>' | jq -r '.access_token')
 
 curl -s -H "Authorization: Bearer $TOKEN" \
   "http://localhost:8081/app/rest/v2/entities/hemishe_ETeacher/{uid}?view=eTeacher-view&returnNulls=true" \

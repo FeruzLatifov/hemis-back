@@ -424,11 +424,11 @@ OLD_BASE="http://localhost:8082"
 NEW_BASE="http://localhost:8081"
 
 OLD_TOKEN=$(curl -s -X POST "$OLD_BASE/app/rest/v2/oauth/token" \
-  -u "client:secret" -d "grant_type=password&username=otm351&password=XCZDAb7qvGTXxz" \
+  -u "client:secret" -d "grant_type=password&username=otm351&password=<OTM_PASSWORD>" \
   | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
 
 NEW_TOKEN=$(curl -s -X POST "$NEW_BASE/app/rest/v2/oauth/token" \
-  -u "client:secret" -d "grant_type=password&username=otm401&password=XCZDAb7qvGTXxz" \
+  -u "client:secret" -d "grant_type=password&username=otm401&password=<OTM_PASSWORD>" \
   | grep -o '"access_token":"[^"]*"' | cut -d'"' -f4)
 
 ENDPOINT="$1"
