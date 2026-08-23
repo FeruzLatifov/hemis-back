@@ -364,7 +364,7 @@ public class DoctoralStudentEntityController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"_entityName\":\"hemishe_EDoctorateStudent\",\"_instanceName\":\"ALIYEV MARDONBEK\",\"id\":\"uuid\"}"))),
+                schema = @Schema())),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
     })

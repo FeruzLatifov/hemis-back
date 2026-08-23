@@ -21,30 +21,30 @@ import java.io.Serializable;
 @Schema(name = "ClassifierMetadata", description = "Klasifikator metadata")
 public class ClassifierMetadataDto implements Serializable {
 
-    @Schema(description = "API kalit (URL da ishlatiladigan)", example = "education-type")
+    @Schema(description = "API kalit (URL da ishlatiladigan)")
     private String apiKey;
 
-    @Schema(description = "DB jadval nomi", example = "hemishe_h_education_type")
+    @Schema(description = "DB jadval nomi")
     private String tableName;
 
-    @Schema(description = "Nomi (o'zbek)", example = "Ta'lim turlari")
+    @Schema(description = "Nomi (o'zbek)")
     private String titleUz;
 
-    @Schema(description = "Nomi (rus)", example = "Типы образования")
+    @Schema(description = "Nomi (rus)")
     private String titleRu;
 
-    @Schema(description = "Nomi (ingliz)", example = "Education types")
+    @Schema(description = "Nomi (ingliz)")
     private String titleEn;
 
-    @Schema(description = "Kategoriya", example = "EDUCATION")
+    @Schema(description = "Kategoriya")
     private String category;
 
-    @Schema(description = "Elementlar soni", example = "5")
+    @Schema(description = "Elementlar soni")
     private long itemCount;
 
-    @Schema(description = "Tahrirlanadigan yoki faqat o'qish uchun", example = "true")
+    @Schema(description = "Tahrirlanadigan yoki faqat o'qish uchun")
     private boolean editable;
 
-    @Schema(description = "Ierarxik (parent_code mavjud)", example = "false")
+    @Schema(description = "Ierarxik (parent_code mavjud)")
     private boolean hierarchical;
 }

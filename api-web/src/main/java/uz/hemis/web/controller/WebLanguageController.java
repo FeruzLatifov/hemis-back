@@ -83,40 +83,7 @@ public class WebLanguageController {
             responseCode = "200",
             description = "Successfully retrieved all languages",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "success": true,
-                          "data": [
-                            {
-                              "code": "uz-UZ",
-                              "name": "Uzbek (Latin)",
-                              "nativeName": "O'zbekcha",
-                              "position": 1,
-                              "isActive": true,
-                              "isDefault": true
-                            },
-                            {
-                              "code": "ru-RU",
-                              "name": "Russian",
-                              "nativeName": "Русский",
-                              "position": 3,
-                              "isActive": true,
-                              "isDefault": true
-                            },
-                            {
-                              "code": "en-US",
-                              "name": "English",
-                              "nativeName": "English",
-                              "position": 4,
-                              "isActive": true,
-                              "isDefault": false
-                            }
-                          ]
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })
@@ -184,33 +151,7 @@ public class WebLanguageController {
             responseCode = "200",
             description = "Successfully retrieved configuration",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "success": true,
-                          "data": {
-                            "languages": [
-                              {
-                                "code": "uz-UZ",
-                                "name": "Uzbek (Latin)",
-                                "nativeName": "O'zbekcha",
-                                "enabled": true,
-                                "canDisable": false
-                              },
-                              {
-                                "code": "en-US",
-                                "name": "English",
-                                "nativeName": "English",
-                                "enabled": true,
-                                "canDisable": true
-                              }
-                            ],
-                            "defaultLanguage": "uz-UZ"
-                          }
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })

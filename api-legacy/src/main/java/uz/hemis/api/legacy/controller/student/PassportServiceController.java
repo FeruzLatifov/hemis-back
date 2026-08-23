@@ -114,62 +114,14 @@ public class PassportServiceController {
                     description = "Muvaffaqiyatli - Passport ma'lumotlari topildi",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class),
-                            examples = @ExampleObject(
-                                    name = "Success Response",
-                                    value = """
-                                            {
-                                              "success": true,
-                                              "data": {
-                                                "status": 1,
-                                                "error": null,
-                                                "data": [
-                                                  {
-                                                    "current_pinpp": "12345678901234",
-                                                    "sur_name_latin": "ABDULLAYEV",
-                                                    "name_latin": "AKMAL",
-                                                    "patronym_name_latin": "AHMADOVICH",
-                                                    "birth_date": "1990-01-15",
-                                                    "birth_place": "TOSHKENT SHAHAR",
-                                                    "sex": "M",
-                                                    "doc_give_place": "TOSHKENT SHAHAR IIB",
-                                                    "issued_date": "2020-05-20",
-                                                    "expiry_date": "2030-05-20",
-                                                    "document": "AB1234567",
-                                                    "nationality": "O'ZBEKISTON",
-                                                    "photo": "base64_encoded_photo_string"
-                                                  }
-                                                ]
-                                              },
-                                              "address": {
-                                                "status": 1,
-                                                "data": {
-                                                  "permanent_registration": {
-                                                    "region": "TOSHKENT SHAHAR",
-                                                    "district": "YUNUSOBOD TUMANI",
-                                                    "address": "AMIR TEMUR SHOX KO'CHASI, 1-UY"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                            """
-                            )
+                            schema = @Schema(implementation = Map.class)
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Xato so'rov - Captcha noto'g'ri yoki parametrlar xato",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Invalid Captcha",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": "Invalid captcha!"
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(
@@ -184,26 +136,17 @@ public class PassportServiceController {
                     responseCode = "500",
                     description = "Server xatosi - GUVD API bilan bog'lanishda xatolik",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Service Error",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": "apimgw.egov.uz"
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             )
     })
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDataBySN")
     public ResponseEntity<Object> getDataBySN(
-            @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")
+            @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true)
             @RequestParam String pinfl,
 
-            @Parameter(description = "Passport seria va raqam (masalan: AB1234567)", required = false, example = "AB1234567")
+            @Parameter(description = "Passport seria va raqam (masalan: AB1234567)", required = false)
             @RequestParam(required = false) String seriaNumber,
 
             @Parameter(description = "Passport seriyasi (alias)", required = false)
@@ -286,63 +229,14 @@ public class PassportServiceController {
                     description = "Muvaffaqiyatli - Passport ma'lumotlari topildi",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class),
-                            examples = @ExampleObject(
-                                    name = "Success Response",
-                                    value = """
-                                            {
-                                              "success": true,
-                                              "data": {
-                                                "status": 1,
-                                                "error": null,
-                                                "data": [
-                                                  {
-                                                    "current_pinpp": "12345678901234",
-                                                    "sur_name_latin": "ABDULLAYEV",
-                                                    "name_latin": "AKMAL",
-                                                    "patronym_name_latin": "AHMADOVICH",
-                                                    "birth_date": "1997-07-15",
-                                                    "birth_place": "TOSHKENT SHAHAR",
-                                                    "sex": "M",
-                                                    "doc_give_place": "TOSHKENT SHAHAR IIB",
-                                                    "issued_date": "2020-05-20",
-                                                    "expiry_date": "2030-05-20",
-                                                    "document": "AA6970877",
-                                                    "nationality": "O'ZBEKISTON",
-                                                    "photo": "base64_encoded_photo_string"
-                                                  }
-                                                ]
-                                              },
-                                              "address": {
-                                                "status": 1,
-                                                "data": {
-                                                  "permanent_registration": {
-                                                    "region": "TOSHKENT SHAHAR",
-                                                    "district": "YUNUSOBOD TUMANI",
-                                                    "address": "AMIR TEMUR SHOX KO'CHASI, 1-UY"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                            """
-                            )
+                            schema = @Schema(implementation = Map.class)
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Xato so'rov - Captcha noto'g'ri yoki parametrlar xato",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Invalid Captcha",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": "Invalid captcha!",
-                                              "address": null
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(
@@ -357,33 +251,23 @@ public class PassportServiceController {
                     responseCode = "500",
                     description = "Server xatosi - GUVD API bilan bog'lanishda xatolik",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Service Error",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": "apimgw.egov.uz",
-                                              "address": null
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             )
     })
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDataBySNBirthdate")
     public ResponseEntity<Object> getDataBySNBirthdate(
-            @Parameter(description = "Passport seria va raqam (masalan: AA6970877)", required = true, example = "AA1234567")
+            @Parameter(description = "Passport seria va raqam (masalan: AA6970877)", required = true)
             @RequestParam String seriaNumber,
 
-            @Parameter(description = "Tug'ilgan sana (format: yyyy-MM-dd)", required = true, example = "1990-01-01")
+            @Parameter(description = "Tug'ilgan sana (format: yyyy-MM-dd)", required = true)
             @RequestParam String birthdate,
 
-            @Parameter(description = "Captcha identifikatori (GET /services/captcha/getNumericCaptcha)", required = true, example = "f441163e-8291-0498-730b-0b0d83b4800b")
+            @Parameter(description = "Captcha identifikatori (GET /services/captcha/getNumericCaptcha)", required = true)
             @RequestParam String captchaId,
 
-            @Parameter(description = "Foydalanuvchi tomonidan kiritilgan captcha qiymati", required = true, example = "12345")
+            @Parameter(description = "Foydalanuvchi tomonidan kiritilgan captcha qiymati", required = true)
             @RequestParam String captchaValue
     ) {
         log.info("🔍 GET /app/rest/v2/services/passport-data/getDataBySNBirthdate - seriaNumber={}, birthdate={}", seriaNumber, birthdate);
@@ -664,63 +548,14 @@ public class PassportServiceController {
                     description = "Muvaffaqiyatli - Passport ma'lumotlari topildi",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class),
-                            examples = @ExampleObject(
-                                    name = "Success Response",
-                                    value = """
-                                            {
-                                              "success": true,
-                                              "data": {
-                                                "status": 1,
-                                                "error": null,
-                                                "data": [
-                                                  {
-                                                    "current_pinpp": "31507976020031",
-                                                    "sur_name_latin": "ABDULLAYEV",
-                                                    "name_latin": "AKMAL",
-                                                    "patronym_name_latin": "AHMADOVICH",
-                                                    "birth_date": "1997-07-15",
-                                                    "birth_place": "TOSHKENT SHAHAR",
-                                                    "sex": "M",
-                                                    "doc_give_place": "TOSHKENT SHAHAR IIB",
-                                                    "issued_date": "2020-05-20",
-                                                    "expiry_date": "2030-05-20",
-                                                    "document": "AB1234567",
-                                                    "nationality": "O'ZBEKISTON",
-                                                    "photo": "base64_encoded_photo_string"
-                                                  }
-                                                ]
-                                              },
-                                              "address": {
-                                                "status": 1,
-                                                "data": {
-                                                  "permanent_registration": {
-                                                    "region": "TOSHKENT SHAHAR",
-                                                    "district": "YUNUSOBOD TUMANI",
-                                                    "address": "AMIR TEMUR SHOX KO'CHASI, 1-UY"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                            """
-                            )
+                            schema = @Schema(implementation = Map.class)
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Xato so'rov - Captcha noto'g'ri yoki parametrlar xato",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Invalid Captcha",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": "Invalid captcha!",
-                                              "address": null
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(
@@ -735,27 +570,17 @@ public class PassportServiceController {
                     responseCode = "500",
                     description = "Server xatosi - GUVD API bilan bog'lanishda xatolik",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Service Error",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": "apimgw.egov.uz",
-                                              "address": null
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             )
     })
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDataByPinflBirthdate")
     public ResponseEntity<Object> getDataByPinflBirthdate(
-            @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "31507976020031")
+            @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true)
             @RequestParam String pinfl,
 
-            @Parameter(description = "Tug'ilgan sana (format: yyyy-MM-dd)", required = false, example = "1997-07-15")
+            @Parameter(description = "Tug'ilgan sana (format: yyyy-MM-dd)", required = false)
             @RequestParam(required = false) String birthdate,
 
             @Parameter(description = "Tug'ilgan sana (alias: birth_date)", required = false)
@@ -827,25 +652,7 @@ public class PassportServiceController {
                     description = "Muvaffaqiyatli - Manzil ma'lumotlari topildi",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class),
-                            examples = @ExampleObject(
-                                    name = "Success Response",
-                                    value = """
-                                            {
-                                              "success": true,
-                                              "data": {
-                                                "status": 1,
-                                                "data": {
-                                                  "permanent_registration": {
-                                                    "region": "TOSHKENT SHAHAR",
-                                                    "district": "YUNUSOBOD TUMANI",
-                                                    "address": "AMIR TEMUR SHOX KO'CHASI, 1-UY"
-                                                  }
-                                                }
-                                              }
-                                            }
-                                            """
-                            )
+                            schema = @Schema(implementation = Map.class)
                     )
             ),
             @ApiResponse(
@@ -856,23 +663,14 @@ public class PassportServiceController {
                     responseCode = "500",
                     description = "Server xatosi - GUVD API bilan bog'lanishda xatolik",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Service Error",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": "apimgw.egov.uz"
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             )
     })
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/getAddress")
     public ResponseEntity<Object> getAddressPublic(
-            @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true, example = "12345678901234")
+            @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true)
             @RequestParam String pinfl
     ) {
         log.info("🔍 GET /app/rest/v2/services/passport-data/getAddress - pinfl={}", LogSafe.pinfl(pinfl));

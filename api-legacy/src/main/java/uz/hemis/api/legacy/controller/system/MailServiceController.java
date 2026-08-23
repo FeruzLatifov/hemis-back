@@ -91,18 +91,7 @@ public class MailServiceController {
             description = "Email muvaffaqiyatli yuborildi",
             content = @Content(
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = Map.class),
-                examples = @ExampleObject(
-                    name = "Muvaffaqiyatli javob",
-                    value = """
-                        {
-                            "success": true,
-                            "id": "999999",
-                            "reset_link": "https://hemis.uz/reset_url",
-                            "to": "no-reply@hemis.uz"
-                        }
-                        """
-                )
+                schema = @Schema(implementation = Map.class)
             )
         ),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
@@ -115,17 +104,7 @@ public class MailServiceController {
             description = "Email ma'lumotlari",
             required = true,
             content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(
-                    name = "Email so'rovi",
-                    value = """
-                        {
-                            "id": "999999",
-                            "resetLink": "https://hemis.uz/reset_url",
-                            "to": "no-reply@hemis.uz"
-                        }
-                        """
-                )
+                mediaType = MediaType.APPLICATION_JSON_VALUE
             )
         )
         @RequestBody Map<String, Object> request
@@ -189,19 +168,7 @@ public class MailServiceController {
             description = "Tasdiqlash kodi muvaffaqiyatli yuborildi",
             content = @Content(
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = Map.class),
-                examples = @ExampleObject(
-                    name = "Muvaffaqiyatli javob",
-                    value = """
-                        {
-                            "email": {
-                                "success": true,
-                                "verify_code": "123456",
-                                "email": "kanet4u@gmail.com"
-                            }
-                        }
-                        """
-                )
+                schema = @Schema(implementation = Map.class)
             )
         ),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
@@ -214,19 +181,7 @@ public class MailServiceController {
             description = "Tasdiqlash kodi ma'lumotlari",
             required = true,
             content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(
-                    name = "Tasdiqlash kodi so'rovi",
-                    value = """
-                        {
-                            "id": "999999",
-                            "phone": "+998901234567",
-                            "email": "kanet4u@gmail.com",
-                            "verify_code": "123456",
-                            "hash": ""
-                        }
-                        """
-                )
+                mediaType = MediaType.APPLICATION_JSON_VALUE
             )
         )
         @RequestBody Map<String, Object> request

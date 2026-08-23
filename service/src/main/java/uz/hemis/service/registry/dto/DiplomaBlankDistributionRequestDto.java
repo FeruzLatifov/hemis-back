@@ -17,37 +17,37 @@ import java.time.LocalDate;
 @Schema(name = "DiplomaBlankDistributionRequest", description = "Create/update payload for a diploma-blank distribution")
 public record DiplomaBlankDistributionRequestDto(
 
-    @Schema(description = "University code", example = "00001", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "University code", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "universityCode is required")
     @Size(max = 255)
     String universityCode,
 
-    @Schema(description = "Education-year classifier code", example = "2024")
+    @Schema(description = "Education-year classifier code")
     @Size(max = 32)
     String educationYear,
 
-    @Schema(description = "Education-type classifier code", example = "11")
+    @Schema(description = "Education-type classifier code")
     @Size(max = 32)
     String educationType,
 
-    @Schema(description = "Blank-category classifier code", example = "01")
+    @Schema(description = "Blank-category classifier code")
     @Size(max = 32)
     String blankCategory,
 
-    @Schema(description = "Blank series", example = "AB", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Blank series", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "blankSeria is required")
     @Size(max = 32)
     String blankSeria,
 
-    @Schema(description = "Range start (inclusive)", example = "1000", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Range start (inclusive)", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "blankStartNumber is required")
     Integer blankStartNumber,
 
-    @Schema(description = "Range end (inclusive, >= start)", example = "1099", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Range end (inclusive, >= start)", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "blankEndNumber is required")
     Integer blankEndNumber,
 
-    @Schema(description = "Generate-status classifier code", example = "NEW")
+    @Schema(description = "Generate-status classifier code")
     @Size(max = 32)
     String generateStatusCode,
 

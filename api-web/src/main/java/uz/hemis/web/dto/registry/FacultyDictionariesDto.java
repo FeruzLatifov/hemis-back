@@ -32,13 +32,13 @@ public class FacultyDictionariesDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class DictionaryItem {
-        @Schema(description = "Option code/value", example = "11")
+        @Schema(description = "Option code/value")
         private String code;
 
-        @Schema(description = "Option label (localized)", example = "Fakultet")
+        @Schema(description = "Option label (localized)")
         private String label;
 
-        @Schema(description = "Additional info", example = "Active faculty")
+        @Schema(description = "Additional info")
         private String description;
     }
 }

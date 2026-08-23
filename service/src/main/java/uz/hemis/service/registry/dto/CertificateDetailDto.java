@@ -58,7 +58,7 @@ public record CertificateDetailDto(
     @Schema(description = "Active status")
     Boolean active,
 
-    @Schema(description = "Certificate subject classifier code", example = "11")
+    @Schema(description = "Certificate subject classifier code")
     String certificateSubject,
 
     @Schema(description = "Certificate subject name (resolved label, falls back to code)")

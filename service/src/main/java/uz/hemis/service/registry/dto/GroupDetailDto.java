@@ -15,37 +15,37 @@ import io.swagger.v3.oas.annotations.media.Schema;
 )
 public record GroupDetailDto(
 
-    @Schema(description = "Group id (UUID primary key)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    @Schema(description = "Group id (UUID primary key)",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String id,
 
-    @Schema(description = "OTM-side external group id", example = "12345")
+    @Schema(description = "OTM-side external group id")
     String groupId,
 
-    @Schema(description = "Group name", example = "715-21 (KI)",
+    @Schema(description = "Group name",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String groupName,
 
-    @Schema(description = "Parent university code", example = "00001",
+    @Schema(description = "Parent university code",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String universityCode,
 
-    @Schema(description = "Parent university name", example = "TATU",
+    @Schema(description = "Parent university name",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String universityName,
 
-    @Schema(description = "Education type classifier code", example = "11")
+    @Schema(description = "Education type classifier code")
     String educationTypeCode,
 
-    @Schema(description = "Education type name (resolved label, falls back to code)", example = "Bakalavr")
+    @Schema(description = "Education type name (resolved label, falls back to code)")
     String educationTypeName,
 
-    @Schema(description = "Education year classifier code", example = "2024")
+    @Schema(description = "Education year classifier code")
     String educationYearCode,
 
-    @Schema(description = "Education year name (resolved label, falls back to code)", example = "2024-2025")
+    @Schema(description = "Education year name (resolved label, falls back to code)")
     String educationYearName,
 
-    @Schema(description = "Active status (true=active, false=inactive)", example = "true")
+    @Schema(description = "Active status (true=active, false=inactive)")
     Boolean active
 ) {}

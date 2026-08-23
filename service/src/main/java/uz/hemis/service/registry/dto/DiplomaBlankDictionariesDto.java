@@ -22,10 +22,10 @@ public record DiplomaBlankDictionariesDto(
     @Schema(name = "DiplomaBlankDictionaryItem", description = "Generic dictionary item {code,name}")
     public record DictionaryItem(
 
-        @Schema(description = "Code/value", example = "AVAILABLE", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Code/value", requiredMode = Schema.RequiredMode.REQUIRED)
         String code,
 
-        @Schema(description = "Display label", example = "AVAILABLE", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Display label", requiredMode = Schema.RequiredMode.REQUIRED)
         String name
     ) {}
 }

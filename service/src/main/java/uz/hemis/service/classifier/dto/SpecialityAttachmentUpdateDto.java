@@ -26,18 +26,17 @@ public record SpecialityAttachmentUpdateDto(
         @NotNull(message = "specialityId is required")
         UUID specialityId,
 
-        @Schema(description = "Ta'lim shakli kodi — h_education_form klassifikatoridan (11=Kunduzgi, 12=Kechki, 13=Sirtqi, 16=Masofaviy, ...)",
-                example = "11")
+        @Schema(description = "Ta'lim shakli kodi — h_education_form klassifikatoridan (11=Kunduzgi, 12=Kechki, 13=Sirtqi, 16=Masofaviy, ...)")
         String educationForm,
 
-        @Schema(description = "O'quv yili (2026 = 2026-2027)", example = "2026",
+        @Schema(description = "O'quv yili (2026 = 2026-2027)",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "eduYear is required")
         @Min(value = 1991, message = "eduYear out of range")
         @Max(value = 2100, message = "eduYear out of range")
         Integer eduYear,
 
-        @Schema(description = "Holat: ACTIVE (Faol) / SUSPENDED (Nofaol) / REVOKED", example = "ACTIVE",
+        @Schema(description = "Holat: ACTIVE (Faol) / SUSPENDED (Nofaol) / REVOKED",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank(message = "status is required")
         @Pattern(regexp = "ACTIVE|SUSPENDED|REVOKED", message = "status must be ACTIVE, SUSPENDED or REVOKED")

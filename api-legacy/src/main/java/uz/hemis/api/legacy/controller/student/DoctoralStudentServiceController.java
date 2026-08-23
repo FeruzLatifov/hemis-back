@@ -66,15 +66,7 @@ public class DoctoralStudentServiceController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                {
-                                  "success": true,
-                                  "is_new": false,
-                                  "unique_id": "4012411001",
-                                  "student": {"id": "uuid", "studentIdNumber": "4012411001"}
-                                }
-                                """))),
+                    content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
     })
     @SuppressWarnings("unchecked")

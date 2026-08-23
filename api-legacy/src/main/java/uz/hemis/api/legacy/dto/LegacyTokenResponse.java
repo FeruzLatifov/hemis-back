@@ -52,27 +52,27 @@ public class LegacyTokenResponse implements Serializable {
     /**
      * Access token (short base64 string)
      *
-     * <p>Example: "p1HdTK8kXL-rl6RSWIovXOxR7-w"</p>
+     * <p>Example: "&lt;access_token&gt;"</p>
      */
     @JsonProperty("access_token")
-    @Schema(description = "Access token", example = "p1HdTK8kXL-rl6RSWIovXOxR7-w")
+    @Schema(description = "Access token")
     private String accessToken;
 
     /**
      * Token type (always "bearer")
      */
     @JsonProperty("token_type")
-    @Schema(description = "Token type", example = "bearer")
+    @Schema(description = "Token type")
     @Builder.Default
     private String tokenType = "bearer";
 
     /**
      * Refresh token (short base64 string)
      *
-     * <p>Example: "10DjfbHHclwKoVfPJmPnyMLbgJw"</p>
+     * <p>Example: "&lt;refresh_token&gt;"</p>
      */
     @JsonProperty("refresh_token")
-    @Schema(description = "Refresh token", example = "10DjfbHHclwKoVfPJmPnyMLbgJw")
+    @Schema(description = "Refresh token")
     private String refreshToken;
 
     /**
@@ -82,7 +82,7 @@ public class LegacyTokenResponse implements Serializable {
      * <p>This matches the exact old-hemis response format.</p>
      */
     @JsonProperty("expires_in")
-    @Schema(description = "Token expiration in seconds (30 days)", example = "2591998")
+    @Schema(description = "Token expiration in seconds (30 days)")
     @Builder.Default
     private Integer expiresIn = 2591998;  // 30 days - 2 seconds (OLD-HEMIS exact value)
 
@@ -90,7 +90,7 @@ public class LegacyTokenResponse implements Serializable {
      * Token scope (always "rest-api")
      */
     @JsonProperty("scope")
-    @Schema(description = "Token scope", example = "rest-api")
+    @Schema(description = "Token scope")
     @Builder.Default
     private String scope = "rest-api";
 }

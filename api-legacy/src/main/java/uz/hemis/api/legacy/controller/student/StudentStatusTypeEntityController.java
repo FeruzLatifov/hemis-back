@@ -77,7 +77,7 @@ public class StudentStatusTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> getById(
-            @Parameter(description = "Holat kodi", example = "11")
+            @Parameter(description = "Holat kodi")
             @PathVariable String entityId,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
@@ -129,21 +129,13 @@ public class StudentStatusTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> update(
-            @Parameter(description = "Holat kodi", example = "11")
+            @Parameter(description = "Holat kodi")
             @PathVariable String entityId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Yangilanadigan maydonlar",
                 content = @io.swagger.v3.oas.annotations.media.Content(
                     mediaType = "application/json",
                     schema = @io.swagger.v3.oas.annotations.media.Schema(
-                        example = """
-                            {
-                                "name": "O'qimoqda",
-                                "nameEn": "Studying",
-                                "nameRu": "Учится",
-                                "active": true
-                            }
-                            """
                     )
                 )
             )
@@ -202,7 +194,7 @@ public class StudentStatusTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> delete(
-            @Parameter(description = "Holat kodi", example = "11")
+            @Parameter(description = "Holat kodi")
             @PathVariable String entityId) {
 
         log.info("DELETE StudentStatusType - entityId: {}", entityId);
@@ -264,15 +256,6 @@ public class StudentStatusTypeEntityController {
                 content = @io.swagger.v3.oas.annotations.media.Content(
                     mediaType = "application/json",
                     schema = @io.swagger.v3.oas.annotations.media.Schema(
-                        example = """
-                            {
-                                "code": "15",
-                                "name": "Yangi holat",
-                                "nameEn": "New status",
-                                "nameRu": "Новый статус",
-                                "active": true
-                            }
-                            """
                     )
                 )
             )

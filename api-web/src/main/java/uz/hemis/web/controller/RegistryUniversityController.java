@@ -118,67 +118,67 @@ public class RegistryUniversityController {
         @ApiResponse(responseCode = "403", description = "Forbidden - User lacks 'institutions.universities.view' permission")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<UniversityDto>>> getUniversities(
-            @Parameter(description = "Search query (code, name, or TIN)", example = "tatu")
+            @Parameter(description = "Search query (code, name, or TIN)")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Search field: code, name, tin, or all (default: all)", example = "all")
+            @Parameter(description = "Search field: code, name, tin, or all (default: all)")
             @RequestParam(required = false) String searchField,
 
-            @Parameter(description = "Region ID (SOATO code)", example = "26")
+            @Parameter(description = "Region ID (SOATO code)")
             @RequestParam(required = false) String regionId,
 
-            @Parameter(description = "Ownership type code", example = "11")
+            @Parameter(description = "Ownership type code")
             @RequestParam(required = false) String ownershipId,
 
-            @Parameter(description = "University type code", example = "11")
+            @Parameter(description = "University type code")
             @RequestParam(required = false) String typeId,
 
-            @Parameter(description = "Activity status code", example = "10")
+            @Parameter(description = "Activity status code")
             @RequestParam(required = false) String activityStatusId,
 
-            @Parameter(description = "Belongs to code", example = "10")
+            @Parameter(description = "Belongs to code")
             @RequestParam(required = false) String belongsToId,
 
-            @Parameter(description = "Contract category code", example = "10")
+            @Parameter(description = "Contract category code")
             @RequestParam(required = false) String contractCategoryId,
 
-            @Parameter(description = "HEMIS version type code", example = "11")
+            @Parameter(description = "HEMIS version type code")
             @RequestParam(required = false) String versionTypeId,
 
-            @Parameter(description = "District SOATO code (7-digit)", example = "1726269")
+            @Parameter(description = "District SOATO code (7-digit)")
             @RequestParam(required = false) String districtId,
 
-            @Parameter(description = "Active status filter", example = "true")
+            @Parameter(description = "Active status filter")
             @RequestParam(required = false) String active,
 
-            @Parameter(description = "GPA edit flag", example = "true")
+            @Parameter(description = "GPA edit flag")
             @RequestParam(required = false) String gpaEdit,
 
-            @Parameter(description = "Accreditation edit flag", example = "true")
+            @Parameter(description = "Accreditation edit flag")
             @RequestParam(required = false) String accreditationEdit,
 
-            @Parameter(description = "Add student flag", example = "true")
+            @Parameter(description = "Add student flag")
             @RequestParam(required = false) String addStudent,
 
-            @Parameter(description = "Allow grouping flag", example = "true")
+            @Parameter(description = "Allow grouping flag")
             @RequestParam(required = false) String allowGrouping,
 
-            @Parameter(description = "Allow transfer outside flag", example = "true")
+            @Parameter(description = "Allow transfer outside flag")
             @RequestParam(required = false) String allowTransferOutside,
 
-            @Parameter(description = "OneID login flag", example = "true")
+            @Parameter(description = "OneID login flag")
             @RequestParam(required = false) String oneId,
 
-            @Parameter(description = "Grading system flag", example = "true")
+            @Parameter(description = "Grading system flag")
             @RequestParam(required = false) String gradingSystem,
 
-            @Parameter(description = "Add foreign student flag", example = "true")
+            @Parameter(description = "Add foreign student flag")
             @RequestParam(required = false) String addForeignStudent,
 
-            @Parameter(description = "Add transfer student flag", example = "true")
+            @Parameter(description = "Add transfer student flag")
             @RequestParam(required = false) String addTransferStudent,
 
-            @Parameter(description = "Add academic mobile student flag", example = "true")
+            @Parameter(description = "Add academic mobile student flag")
             @RequestParam(required = false) String addAcademicMobileStudent,
 
             @Parameter(hidden = true)

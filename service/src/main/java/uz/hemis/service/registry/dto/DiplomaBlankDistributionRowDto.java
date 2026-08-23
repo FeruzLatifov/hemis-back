@@ -13,50 +13,50 @@ import java.time.LocalDate;
 @Schema(name = "DiplomaBlankDistributionRow", description = "Diploma-blank distribution row (serial-range allocation)")
 public record DiplomaBlankDistributionRowDto(
 
-    @Schema(description = "Row id (UUID)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    @Schema(description = "Row id (UUID)",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String id,
 
-    @Schema(description = "University code", example = "00001")
+    @Schema(description = "University code")
     String universityCode,
 
-    @Schema(description = "University name", example = "TATU")
+    @Schema(description = "University name")
     String universityName,
 
-    @Schema(description = "Education-year classifier code", example = "2024")
+    @Schema(description = "Education-year classifier code")
     String educationYear,
 
-    @Schema(description = "Education-year name", example = "2024-2025")
+    @Schema(description = "Education-year name")
     String educationYearName,
 
-    @Schema(description = "Education-type classifier code", example = "11")
+    @Schema(description = "Education-type classifier code")
     String educationType,
 
-    @Schema(description = "Education-type name", example = "Bakalavriat")
+    @Schema(description = "Education-type name")
     String educationTypeName,
 
-    @Schema(description = "Blank-category classifier code", example = "01")
+    @Schema(description = "Blank-category classifier code")
     String blankCategory,
 
-    @Schema(description = "Blank-category name", example = "Diplom")
+    @Schema(description = "Blank-category name")
     String blankCategoryName,
 
-    @Schema(description = "Blank series", example = "AB")
+    @Schema(description = "Blank series")
     String blankSeria,
 
-    @Schema(description = "Range start (inclusive)", example = "1000")
+    @Schema(description = "Range start (inclusive)")
     Integer blankStartNumber,
 
-    @Schema(description = "Range end (inclusive)", example = "1099")
+    @Schema(description = "Range end (inclusive)")
     Integer blankEndNumber,
 
-    @Schema(description = "Quantity (end - start + 1)", example = "100")
+    @Schema(description = "Quantity (end - start + 1)")
     Integer quantity,
 
-    @Schema(description = "Generate-status classifier code", example = "NEW")
+    @Schema(description = "Generate-status classifier code")
     String generateStatusCode,
 
-    @Schema(description = "Generate-status name", example = "Yangi")
+    @Schema(description = "Generate-status name")
     String generateStatusName,
 
     @Schema(description = "Distribution date")

@@ -35,9 +35,9 @@ public class DiplomBlankServiceController {
     @Operation(summary = "Get diploma blanks", description = "Returns diploma blanks for given university and year")
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> get(
-            @Parameter(description = "University code", required = true, example = "00001")
+            @Parameter(description = "University code", required = true)
             @RequestParam String university,
-            @Parameter(description = "Academic year", required = true, example = "2024")
+            @Parameter(description = "Academic year", required = true)
             @RequestParam Integer year) {
         log.info("[CUBA Service] diplom-blank/get: university={}, year={}", university, year);
 

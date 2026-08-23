@@ -11,9 +11,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
  */
 @Schema(description = "Klassifikator opsiyasi (kod + ko'p tilli nom)")
 public record ClassifierOptionDto(
-        @Schema(description = "Kod", example = "11") String code,
-        @Schema(description = "Nomi (uz)", example = "Kunduzgi") String name,
-        @Schema(description = "Nomi (ru)", example = "Дневная") String nameRu,
-        @Schema(description = "Nomi (en)", example = "Full-time") String nameEn
+        @Schema(description = "Kod") String code,
+        @Schema(description = "Nomi (uz)") String name,
+        @Schema(description = "Nomi (ru)") String nameRu,
+        @Schema(description = "Nomi (en)") String nameEn
 ) {
 }

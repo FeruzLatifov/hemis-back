@@ -19,17 +19,17 @@ import java.io.Serializable;
 public class ClassifierItemUpdateDto implements Serializable {
 
     @Size(max = 512, message = "Nom 512 belgidan oshmasligi kerak")
-    @Schema(description = "Nomi (o'zbek)", example = "Yangilangan nom")
+    @Schema(description = "Nomi (o'zbek)")
     private String name;
 
     @Size(max = 512, message = "Ruscha nom 512 belgidan oshmasligi kerak")
-    @Schema(description = "Nomi (rus)", example = "Обновленное название")
+    @Schema(description = "Nomi (rus)")
     private String nameRu;
 
     @Size(max = 512, message = "Inglizcha nom 512 belgidan oshmasligi kerak")
-    @Schema(description = "Nomi (ingliz)", example = "Updated name")
+    @Schema(description = "Nomi (ingliz)")
     private String nameEn;
 
-    @Schema(description = "Faolmi", example = "true")
+    @Schema(description = "Faolmi")
     private Boolean active;
 }

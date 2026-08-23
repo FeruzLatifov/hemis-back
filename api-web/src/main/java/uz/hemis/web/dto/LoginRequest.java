@@ -14,19 +14,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     name = "LoginRequest",
-    description = "Web login credentials",
-    example = """
-        {
-          "username": "admin",
-          "password": "admin"
-        }
-        """
+    description = "Web login credentials"
 )
 public class LoginRequest {
 
     @Schema(
         description = "Username for authentication",
-        example = "admin",
         minLength = 3,
         maxLength = 50
     )
@@ -36,7 +29,6 @@ public class LoginRequest {
 
     @Schema(
         description = "User password",
-        example = "admin",
         minLength = 3,
         maxLength = 100,
         format = "password"

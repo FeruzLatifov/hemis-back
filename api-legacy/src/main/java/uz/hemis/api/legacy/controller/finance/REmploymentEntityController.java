@@ -76,7 +76,7 @@ public class REmploymentEntityController {
             @ApiResponse(responseCode = "404", description = "Yozuv topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Entity UUID", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Entity UUID")
             @PathVariable("entityId") UUID entityId,
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(value = "returnNulls", required = false) Boolean returnNulls) {

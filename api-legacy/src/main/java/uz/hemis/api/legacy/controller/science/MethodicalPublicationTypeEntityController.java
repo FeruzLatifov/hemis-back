@@ -56,7 +56,7 @@ public class MethodicalPublicationTypeEntityController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "[{\"_entityName\":\"hemishe_HMethodicalPublicationType\",\"_instanceName\":\"11 Darslik\",\"id\":\"11\",\"code\":\"11\",\"name\":\"Darslik\",\"active\":true,\"version\":1}]")))
+                schema = @Schema()))
     })
     public ResponseEntity<List<Map<String, Object>>> getAll(
             @Parameter(description = "Jami sonni qaytarish") @RequestParam(required = false) Boolean returnCount,
@@ -106,7 +106,7 @@ public class MethodicalPublicationTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Uslubiy nashr turi kodi", example = "11") @PathVariable String entityId,
+            @Parameter(description = "Uslubiy nashr turi kodi") @PathVariable String entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
@@ -136,23 +136,13 @@ public class MethodicalPublicationTypeEntityController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"_entityName\":\"hemishe_HMethodicalPublicationType\",\"_instanceName\":\"99 Test\",\"id\":\"99\"}"))),
+                schema = @Schema())),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov")
     })
     public ResponseEntity<Map<String, Object>> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Uslubiy nashr turi ma'lumotlari",
-                content = @Content(
-                    examples = @ExampleObject(
-                        value = """
-                            {
-                              "code": "99",
-                              "name": "Yangi nashr turi",
-                              "active": true
-                            }
-                            """
-                    )
-                )
+                content = @Content()
             )
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
@@ -200,7 +190,7 @@ public class MethodicalPublicationTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<Map<String, Object>> update(
-            @Parameter(description = "Uslubiy nashr turi kodi", example = "11") @PathVariable String entityId,
+            @Parameter(description = "Uslubiy nashr turi kodi") @PathVariable String entityId,
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {
 
@@ -232,7 +222,7 @@ public class MethodicalPublicationTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<Map<String, Object>> delete(
-            @Parameter(description = "Uslubiy nashr turi kodi", example = "11") @PathVariable String entityId) {
+            @Parameter(description = "Uslubiy nashr turi kodi") @PathVariable String entityId) {
 
         log.debug("DELETE MethodicalPublicationType id: {}", entityId);
 
@@ -262,7 +252,7 @@ public class MethodicalPublicationTypeEntityController {
         @ApiResponse(responseCode = "500", description = "Server error - filter yo'q")
     })
     public ResponseEntity<?> searchGet(
-            @Parameter(description = "Filter JSON (majburiy)", example = "{\"conditions\":[]}")
+            @Parameter(description = "Filter JSON (majburiy)")
             @RequestParam(required = false) String filter,
             @Parameter(description = "Jami sonni qaytarish") @RequestParam(required = false) Boolean returnCount,
             @Parameter(description = "Boshlang'ich pozitsiya") @RequestParam(defaultValue = "0") Integer offset,

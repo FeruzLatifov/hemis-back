@@ -32,7 +32,7 @@ public class CathedraServiceController {
     @Operation(summary = "Get cathedras by university", description = "Returns list of cathedras (departments) for given university")
     @PreAuthorize("permitAll()")
     public ResponseEntity<?> getByUniversity(
-            @Parameter(description = "University code", required = true, example = "00001")
+            @Parameter(description = "University code", required = true)
             @RequestParam String university) {
         log.info("[CUBA Service] cathedra/get: university={}", university);
 

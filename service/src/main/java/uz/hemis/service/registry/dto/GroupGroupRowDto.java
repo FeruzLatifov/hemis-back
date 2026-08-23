@@ -14,28 +14,28 @@ import io.swagger.v3.oas.annotations.media.Schema;
 )
 public record GroupGroupRowDto(
 
-    @Schema(description = "University code (OTM code)", example = "00001",
+    @Schema(description = "University code (OTM code)",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String universityCode,
 
-    @Schema(description = "University name", example = "Toshkent Axborot Texnologiyalari Universiteti",
+    @Schema(description = "University name",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String universityName,
 
-    @Schema(description = "Total number of study groups (active + inactive)", example = "42",
+    @Schema(description = "Total number of study groups (active + inactive)",
         requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0")
     Long groupCount,
 
-    @Schema(description = "Number of active study groups", example = "40",
+    @Schema(description = "Number of active study groups",
         requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0")
     Long activeGroupCount,
 
-    @Schema(description = "Number of inactive study groups", example = "2",
+    @Schema(description = "Number of inactive study groups",
         requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0")
     Long inactiveGroupCount,
 
     @Schema(description = "Flag indicating this row has children (always true for groups)",
-        example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
+        requiredMode = Schema.RequiredMode.REQUIRED)
     Boolean hasChildren
 ) {
     /**

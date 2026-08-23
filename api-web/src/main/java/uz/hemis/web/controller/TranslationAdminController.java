@@ -167,35 +167,32 @@ public class TranslationAdminController {
     public ResponseEntity<ResponseWrapper<Map<String, Object>>> listTranslations(
         @Parameter(
             description = "Filter by category (menu, table, filters, actions, etc.)",
-            example = "menu",
             required = false
         )
         @RequestParam(required = false) String category,
         
         @Parameter(
             description = "Search in message_key or message text",
-            example = "fakultet",
             required = false
         )
         @RequestParam(required = false) String search,
         
         @Parameter(
             description = "Filter by active status",
-            example = "true",
             required = false
         )
         @RequestParam(required = false) Boolean active,
         
-        @Parameter(description = "Page number", example = "0")
+        @Parameter(description = "Page number")
         @RequestParam(defaultValue = "0") int page,
         
-        @Parameter(description = "Page size", example = "50")
+        @Parameter(description = "Page size")
         @RequestParam(defaultValue = "20") int size,
         
-        @Parameter(description = "Sort field", example = "category")
+        @Parameter(description = "Sort field")
         @RequestParam(defaultValue = "category") String sortBy,
         
-        @Parameter(description = "Sort direction", example = "ASC", schema = @Schema(allowableValues = {"ASC", "DESC"}))
+        @Parameter(description = "Sort direction", schema = @Schema(allowableValues = {"ASC", "DESC"}))
         @RequestParam(defaultValue = "ASC") String sortDir
     ) {
         log.info("GET /api/v1/admin/translations - category={}, search={}, active={}, page={}, size={}",
@@ -252,7 +249,6 @@ public class TranslationAdminController {
     public ResponseEntity<ResponseWrapper<TranslationDto>> getTranslation(
         @Parameter(
             description = "Translation UUID",
-            example = "550e8400-e29b-41d4-a716-446655440000",
             required = true
         )
         @PathVariable UUID id
@@ -312,28 +308,13 @@ public class TranslationAdminController {
     public ResponseEntity<ResponseWrapper<TranslationDto>> updateTranslation(
         @Parameter(
             description = "Translation UUID",
-            example = "550e8400-e29b-41d4-a716-446655440000",
             required = true
         )
         @PathVariable UUID id,
         
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Translation update data",
-            content = @Content(
-                examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
-                    value = """
-                        {
-                          "category": "menu",
-                          "messageKey": "Faculties",
-                          "message": "Fakultet",
-                          "translationOz": "Факультет",
-                          "translationRu": "Факультет",
-                          "translationEn": "Faculty",
-                          "isActive": true
-                        }
-                        """
-                )
-            )
+            content = @Content()
         )
         @RequestBody Map<String, Object> request
     ) {

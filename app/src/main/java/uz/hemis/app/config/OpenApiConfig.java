@@ -129,7 +129,7 @@ public class OpenApiConfig {
                 POST /api/v1/web/auth/login
                 Content-Type: application/json
 
-                {"username": "user", "password": "pass"}
+                {"username": "<username>", "password": "<password>"}
                 ```
 
                 Javob HTTPOnly cookie'da access/refresh token o'rnatadi.
@@ -138,7 +138,7 @@ public class OpenApiConfig {
 
                 ```bash
                 POST /app/rest/v2/oauth/token
-                Authorization: Basic Y2xpZW50OnNlY3JldA==
+                Authorization: Basic <base64(client_id:client_secret)>
                 Content-Type: application/x-www-form-urlencoded
 
                 grant_type=password&username=USER&password=PASS
@@ -523,7 +523,7 @@ public class OpenApiConfig {
             .addOpenApiCustomizer(fallbackSummaryCustomizer())
             .addOpenApiCustomizer(openApi -> {
                 // Best-practice: YAGONA professional auth yo'li — OAuth2 client_credentials flow.
-                // Swagger "Authorize"da client_id (login, masalan otm401) + client_secret (parol)
+                // Swagger "Authorize"da client_id (login, masalan <client_id>) + client_secret (parol)
                 // kiritilsa, token /oauth/token'dan AVTOMAT olinadi va barcha so'rovga Bearer bo'lib
                 // qo'shiladi — qo'lda Basic/base64 yoki token copy-paste KERAK EMAS. Token endpoint'i
                 // @Hidden (chalkash qo'lbola forma yo'q). Data endpointlar @SecurityRequirement(oauth2).
@@ -575,7 +575,7 @@ public class OpenApiConfig {
                         curl -X POST "https://api-test.hemis.uz/api/v1/university/oauth/token" \\
                           -H "Content-Type: application/x-www-form-urlencoded" \\
                           -d "grant_type=client_credentials&client_id=<Login>&client_secret=<Parol>"
-                        # → {"access_token":"eyJ...","token_type":"bearer","expires_in":86400}  # 24 soat
+                        # → {"access_token":"<access_token>","token_type":"bearer","expires_in":86400}  # 24 soat
                         ```
 
                         Keyingi so'rovlarda: `Authorization: Bearer <access_token>`.

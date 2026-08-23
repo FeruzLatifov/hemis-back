@@ -86,35 +86,7 @@ public class StudentExtraServiceController {
                     responseCode = "200",
                     description = "Muvaffaqiyatli - Statistika saqlandi",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Saqlangan statistika",
-                                    value = """
-                                        {
-                                          "success": true,
-                                          "message": "Successfully created!",
-                                          "data": {
-                                            "_entityName": "hemishe_RContractStatistics",
-                                            "id": "35458c9b-1534-1977-79f0-0cfd9289e3e8",
-                                            "date": "2021-09-08",
-                                            "educationType": {
-                                              "_entityName": "hemishe_HEducationType",
-                                              "id": "12",
-                                              "code": "12"
-                                            },
-                                            "university": {
-                                              "_entityName": "hemishe_EUniversity",
-                                              "id": "999",
-                                              "code": "999"
-                                            },
-                                            "version": 1,
-                                            "dailyCount": 5,
-                                            "total": 5,
-                                            "createdBy": "otm351"
-                                          }
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(responseCode = "400", description = "Noto'g'ri request format"),

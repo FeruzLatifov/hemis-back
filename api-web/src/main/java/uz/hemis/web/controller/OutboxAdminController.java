@@ -52,9 +52,9 @@ public class OutboxAdminController {
     @PreAuthorize("hasAuthority('outbox.view')")
     @Operation(summary = "Outbox event'lar ro'yxati (status filter + pagination)")
     public ResponseEntity<ResponseWrapper<Page<OutboxEventDto>>> list(
-            @Parameter(example = "PENDING", description = "PENDING | RETRYING | DLQ | PUBLISHED | all")
+            @Parameter(description = "PENDING | RETRYING | DLQ | PUBLISHED | all")
             @RequestParam(required = false) String status,
-            @Parameter(example = "employee")
+            @Parameter()
             @RequestParam(required = false) String aggregateType,
             @PageableDefault(size = 25, sort = "occurredAt") Pageable pageable
     ) {

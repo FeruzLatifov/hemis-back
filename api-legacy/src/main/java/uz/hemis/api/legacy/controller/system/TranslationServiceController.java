@@ -45,7 +45,7 @@ public class TranslationServiceController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"success\":true,\"translations\":[{\"_entityName\":\"hemishe_ETranslation\",\"id\":\"uuid\",\"message\":\"...\",\"uz_Uz\":\"...\"}]}")))
+                schema = @Schema()))
     })
     public ResponseEntity<Map<String, Object>> getAllTranslations() {
         log.info("GET /services/translate/get - barcha tarjimalar");

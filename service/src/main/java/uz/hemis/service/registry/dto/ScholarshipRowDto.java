@@ -26,28 +26,28 @@ public record ScholarshipRowDto(
     @Schema(description = "Student full name")
     String studentName,
 
-    @Schema(description = "University code", example = "00001")
+    @Schema(description = "University code")
     String universityCode,
 
-    @Schema(description = "University name", example = "TATU")
+    @Schema(description = "University name")
     String universityName,
 
-    @Schema(description = "Education year classifier code", example = "2024")
+    @Schema(description = "Education year classifier code")
     String educationYear,
 
-    @Schema(description = "Semester number", example = "3")
+    @Schema(description = "Semester number")
     String semesterNumber,
 
-    @Schema(description = "Stipend category classifier code", example = "11")
+    @Schema(description = "Stipend category classifier code")
     String stipendCategory,
 
-    @Schema(description = "Stipend type classifier code", example = "11")
+    @Schema(description = "Stipend type classifier code")
     String stipendType,
 
-    @Schema(description = "Payment form classifier code", example = "11")
+    @Schema(description = "Payment form classifier code")
     String paymentForm,
 
-    @Schema(description = "Decree", example = "12/2024")
+    @Schema(description = "Decree")
     String decree,
 
     @Schema(description = "Start date")
@@ -56,6 +56,6 @@ public record ScholarshipRowDto(
     @Schema(description = "End date")
     LocalDate endDate,
 
-    @Schema(description = "Active status (derived from end_date)", example = "true")
+    @Schema(description = "Active status (derived from end_date)")
     Boolean active
 ) {}

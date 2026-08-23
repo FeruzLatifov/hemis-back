@@ -80,38 +80,14 @@ public class TranscriptServiceController {
                     description = "Muvaffaqiyatli - Transkript ma'lumotlari qaytarildi",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class),
-                            examples = @ExampleObject(
-                                    name = "Success Response",
-                                    value = """
-                                            {
-                                              "success": true,
-                                              "data": {
-                                                "pinfl": "999211100039",
-                                                "message": "Transcript data"
-                                              }
-                                            }
-                                            """
-                            )
+                            schema = @Schema(implementation = Map.class)
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Xato so'rov - PINFL parametri yo'q yoki noto'g'ri",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Missing PINFL",
-                                    value = """
-                                            {
-                                              "success": false,
-                                              "data": {
-                                                "pinfl": null,
-                                                "message": "PINFL parameter is required"
-                                              }
-                                            }
-                                            """
-                            )
+                            mediaType = "application/json"
                     )
             )
     })
@@ -120,8 +96,7 @@ public class TranscriptServiceController {
     public ResponseEntity<Map<String, Object>> get(
             @Parameter(
                     description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)",
-                    required = true,
-                    example = "999211100039"
+                    required = true
             )
             @RequestParam String pinfl
     ) {

@@ -60,7 +60,7 @@ public class ExternalOAuthTokenController {
             **cURL misol:**
             ```bash
             curl -X POST "https://hemis.uz/api/v1/external/oauth/token" \\
-              -u "mygov_sync:<secret>" \\
+              -u "<client_id>:<client_secret>" \\
               -H "Content-Type: application/x-www-form-urlencoded" \\
               -d "grant_type=client_credentials"
             ```

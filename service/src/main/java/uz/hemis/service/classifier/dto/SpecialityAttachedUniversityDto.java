@@ -15,19 +15,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record SpecialityAttachedUniversityDto(
         @Schema(
                 description = "OTM kodi (hemishe_e_university.code).",
-                example = "301",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         String universityCode,
 
         @Schema(
                 description = "OTM nomi; registrda topilmasa (orfan kod) kodning O'ZI qaytadi — u ham bloklaydi.",
-                example = "Andijon davlat universiteti",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         String universityName,
 
         @Schema(
                 description = "Shu OTMdagi biriktirma qatorlari soni (ta'lim shakli/o'quv yili bo'yicha).",
-                example = "3",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         long count
 ) {

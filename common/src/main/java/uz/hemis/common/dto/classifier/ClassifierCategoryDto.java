@@ -19,18 +19,18 @@ import java.io.Serializable;
 @Schema(name = "ClassifierCategory", description = "Klasifikator kategoriyasi")
 public class ClassifierCategoryDto implements Serializable {
 
-    @Schema(description = "Kategoriya kaliti", example = "GENERAL")
+    @Schema(description = "Kategoriya kaliti")
     private String key;
 
-    @Schema(description = "Nomi (o'zbek)", example = "Umumiy")
+    @Schema(description = "Nomi (o'zbek)")
     private String titleUz;
 
-    @Schema(description = "Nomi (rus)", example = "Общие")
+    @Schema(description = "Nomi (rus)")
     private String titleRu;
 
-    @Schema(description = "Nomi (ingliz)", example = "General")
+    @Schema(description = "Nomi (ingliz)")
     private String titleEn;
 
-    @Schema(description = "Kategoriya ichidagi klasifikatorlar soni", example = "15")
+    @Schema(description = "Kategoriya ichidagi klasifikatorlar soni")
     private int classifierCount;
 }

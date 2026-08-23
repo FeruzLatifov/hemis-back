@@ -12,29 +12,29 @@ import java.time.LocalDate;
 @Schema(name = "DiplomaBlankRegistryRow", description = "Diploma-blank row in the flat paginated registry list")
 public record DiplomaBlankRowDto(
 
-    @Schema(description = "Blank id (UUID primary key)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    @Schema(description = "Blank id (UUID primary key)",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String id,
 
-    @Schema(description = "Blank code (serial on printed form)", example = "AB 1234567")
+    @Schema(description = "Blank code (serial on printed form)")
     String blankCode,
 
-    @Schema(description = "Series", example = "AB")
+    @Schema(description = "Series")
     String series,
 
-    @Schema(description = "Number", example = "1234567")
+    @Schema(description = "Number")
     String number,
 
-    @Schema(description = "University code", example = "00001")
+    @Schema(description = "University code")
     String universityCode,
 
-    @Schema(description = "University name", example = "TATU")
+    @Schema(description = "University name")
     String universityName,
 
-    @Schema(description = "Blank type", example = "BACHELOR")
+    @Schema(description = "Blank type")
     String blankType,
 
-    @Schema(description = "Status code", example = "AVAILABLE")
+    @Schema(description = "Status code")
     String statusCode,
 
     @Schema(description = "Date received by university")
@@ -43,9 +43,9 @@ public record DiplomaBlankRowDto(
     @Schema(description = "Date issued/assigned")
     LocalDate issuedDate,
 
-    @Schema(description = "Academic year", example = "2024")
+    @Schema(description = "Academic year")
     Integer academicYear,
 
-    @Schema(description = "Active status", example = "true")
+    @Schema(description = "Active status")
     Boolean active
 ) {}

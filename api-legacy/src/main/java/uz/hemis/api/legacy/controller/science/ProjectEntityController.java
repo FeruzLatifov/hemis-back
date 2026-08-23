@@ -319,7 +319,7 @@ public class ProjectEntityController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"_entityName\":\"hemishe_EProject\",\"_instanceName\":\"Innovatsion loyiha\",\"id\":\"uuid\"}"))),
+                schema = @Schema())),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
     })

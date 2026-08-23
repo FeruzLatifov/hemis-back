@@ -341,7 +341,7 @@ public class ResearchActivityEntityController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"_entityName\":\"hemishe_EResearchActivity\",\"_instanceName\":\"com.company.hemishe.entity.EResearchActivity-uuid [detached]\",\"id\":\"uuid\"}"))),
+                schema = @Schema())),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov"),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi")
     })

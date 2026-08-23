@@ -35,13 +35,13 @@ public class EmployeeSyncDto implements Serializable {
 
     /** Univer'ning ichki ID — idempotent upsert key (employee_job.source_uid). */
     @Size(max = 100)
-    @Schema(example = "univer-e_employee-12345")
+    @Schema()
     private String sourceUid;
 
     /** PINFL — natural unique key. Bo'sh bo'lsa row skip. */
     @NotBlank
     @Pattern(regexp = "^\\d{14}$", message = "PINFL must be 14 digits")
-    @Schema(example = "12345678901234")
+    @Schema()
     private String pinfl;
 
     @NotBlank @Size(max = 255)

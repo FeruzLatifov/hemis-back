@@ -70,7 +70,7 @@ public class UniversityOAuthTokenController {
             **cURL misol:**
             ```bash
             curl -X POST "https://hemis.uz/api/v1/university/oauth/token" \\
-              -u "univer_101:<your_client_secret>" \\
+              -u "<client_id>:<client_secret>" \\
               -H "Content-Type: application/x-www-form-urlencoded" \\
               -d "grant_type=client_credentials"
             ```
@@ -89,30 +89,18 @@ public class UniversityOAuthTokenController {
             description = "Token muvaffaqiyatli yaratildi",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = TokenResponse.class),
-                examples = @ExampleObject(value = """
-                    {
-                      "access_token": "eyJhbGciOiJIUzI1NiIs...",
-                      "token_type": "bearer",
-                      "expires_in": 86400,
-                      "scope": "machine"
-                    }
-                    """)
+                schema = @Schema(implementation = TokenResponse.class)
             )
         ),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid grant_type — faqat 'client_credentials' qabul qilinadi",
-            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                {"error":"unsupported_grant_type","error_description":"Only 'client_credentials' is supported on this endpoint"}
-                """))
+            content = @Content(mediaType = "application/json")
         ),
         @ApiResponse(
             responseCode = "401",
             description = "Invalid client_id, secret yoki IP whitelist'dan tashqari",
-            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = """
-                {"error":"invalid_client","error_description":"Invalid client credentials"}
-                """))
+            content = @Content(mediaType = "application/json")
         )
     })
     @PostMapping(

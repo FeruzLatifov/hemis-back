@@ -59,7 +59,7 @@ public class OtmServiceController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/studentInfoById")
     public ResponseEntity<Map<String, Object>> getStudentInfoById(
-        @Parameter(description = "Talaba ID (string format)", required = true, example = "999221100044")
+        @Parameter(description = "Talaba ID (string format)", required = true)
         @RequestParam String studentId
     ) {
         log.info("GET /services/otm/studentInfoById - studentId: {}", studentId);
@@ -85,7 +85,7 @@ public class OtmServiceController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/studentInfoByPinfl")
     public ResponseEntity<Map<String, Object>> getStudentInfoByPinfl(
-        @Parameter(description = "PINFL", required = true, example = "31503776560016")
+        @Parameter(description = "PINFL", required = true)
         @RequestParam String pinfl
     ) {
         log.info("GET /services/otm/studentInfoByPinfl - pinfl: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
@@ -115,9 +115,9 @@ public class OtmServiceController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/studentListByTutor")
     public ResponseEntity<Map<String, Object>> getStudentListByTutor(
-        @Parameter(description = "Universitet kodi", required = true, example = "999")
+        @Parameter(description = "Universitet kodi", required = true)
         @RequestParam String university,
-        @Parameter(description = "Tutor PINFL", required = true, example = "31503776560016")
+        @Parameter(description = "Tutor PINFL", required = true)
         @RequestParam String tutorPinfl
     ) {
         log.info("GET /services/otm/studentListByTutor - university: {}, tutorPinfl: {}", university, tutorPinfl);

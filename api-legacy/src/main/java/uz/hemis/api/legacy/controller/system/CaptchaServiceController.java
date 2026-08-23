@@ -104,22 +104,7 @@ public class CaptchaServiceController {
                     description = "✅ Captcha muvaffaqiyatli yaratildi",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = CaptchaResponse.class),
-                            examples = @ExampleObject(
-                                    name = "Captcha Response",
-                                    summary = "Numeric captcha javob namunasi",
-                                    description = "Old-hemis bilan 100% mos javob",
-                                    value = """
-                                            {
-                                              "id": "2fd3fd0f-9f39-4d6f-e239-5a646ce2a495",
-                                              "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8CAYAAAA...",
-                                              "captchaId": "9a3370b9-fca3-423f-8311-85ba90b5f4cb",
-                                              "captchaType": "numeric",
-                                              "captchaValue": null,
-                                              "expiresIn": 300
-                                            }
-                                            """
-                            )
+                            schema = @Schema(implementation = CaptchaResponse.class)
                     )
             ),
             @ApiResponse(
@@ -193,18 +178,7 @@ public class CaptchaServiceController {
                     description = "✅ Arithmetic captcha muvaffaqiyatli yaratildi",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = CaptchaResponse.class),
-                            examples = @ExampleObject(
-                                    name = "Arithmetic Captcha Response",
-                                    summary = "Arithmetic captcha javob namunasi",
-                                    description = "Old-hemis bilan 100% mos javob",
-                                    value = """
-                                            {
-                                              "id": "3bc8e7a2-4d1f-46e9-a823-9f6d4e5c2b7a",
-                                              "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAAA8CAYAAAA..."
-                                            }
-                                            """
-                            )
+                            schema = @Schema(implementation = CaptchaResponse.class)
                     )
             ),
             @ApiResponse(

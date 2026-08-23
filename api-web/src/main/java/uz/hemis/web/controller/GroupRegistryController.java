@@ -111,10 +111,10 @@ public class GroupRegistryController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<GroupGroupRowDto>>> getGroups(
-            @Parameter(description = "Search query (university name or code)", example = "tatu")
+            @Parameter(description = "Search query (university name or code)")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Filter by group status (true=active, false=inactive, null=all)", example = "true")
+            @Parameter(description = "Filter by group status (true=active, false=inactive, null=all)")
             @RequestParam(required = false) Boolean status,
 
             @Parameter(hidden = true)
@@ -165,19 +165,19 @@ public class GroupRegistryController {
         @ApiResponse(responseCode = "404", description = "University not found")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<GroupRegistryRowDto>>> getGroupsByUniversity(
-            @Parameter(description = "University code", example = "00001", required = true)
+            @Parameter(description = "University code", required = true)
             @PathVariable @NotBlank String universityCode,
 
-            @Parameter(description = "Search query (group name or external group id)", example = "715-21")
+            @Parameter(description = "Search query (group name or external group id)")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Filter by education-type classifier code", example = "11")
+            @Parameter(description = "Filter by education-type classifier code")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Filter by education-year classifier code", example = "2024")
+            @Parameter(description = "Filter by education-year classifier code")
             @RequestParam(required = false) String educationYear,
 
-            @Parameter(description = "Filter by status (true=active only, false=inactive only, null=all)", example = "true")
+            @Parameter(description = "Filter by status (true=active only, false=inactive only, null=all)")
             @RequestParam(required = false) Boolean status,
 
             @Parameter(hidden = true)
@@ -222,8 +222,7 @@ public class GroupRegistryController {
         @ApiResponse(responseCode = "404", description = "Study group not found - Invalid id")
     })
     public ResponseEntity<ResponseWrapper<GroupDetailDto>> getGroupDetail(
-            @Parameter(description = "Group id (UUID primary key)",
-                example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", required = true)
+            @Parameter(description = "Group id (UUID primary key)", required = true)
             @PathVariable @NotBlank String id
     ) {
         log.info("GET /api/v1/web/registry/groups/{}", id);
@@ -308,19 +307,19 @@ public class GroupRegistryController {
         @ApiResponse(responseCode = "500", description = "Internal Server Error - Failed to generate CSV")
     })
     public ResponseEntity<byte[]> exportGroups(
-            @Parameter(description = "Search query (group name or external group id)", example = "715-21")
+            @Parameter(description = "Search query (group name or external group id)")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Filter by education-type classifier code", example = "11")
+            @Parameter(description = "Filter by education-type classifier code")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Filter by education-year classifier code", example = "2024")
+            @Parameter(description = "Filter by education-year classifier code")
             @RequestParam(required = false) String educationYear,
 
-            @Parameter(description = "Filter by status (true=active, false=inactive, null=all)", example = "true")
+            @Parameter(description = "Filter by status (true=active, false=inactive, null=all)")
             @RequestParam(required = false) Boolean status,
 
-            @Parameter(description = "Export study groups for specific university only", example = "00001")
+            @Parameter(description = "Export study groups for specific university only")
             @RequestParam(required = false) String universityCode
     ) {
         log.info("POST /api/v1/web/registry/groups/export - q={}, educationType={}, educationYear={}, status={}, universityCode={}",

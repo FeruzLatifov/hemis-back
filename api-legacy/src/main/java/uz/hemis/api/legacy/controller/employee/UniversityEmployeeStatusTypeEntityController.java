@@ -76,7 +76,7 @@ public class UniversityEmployeeStatusTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan kod bilan holat topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Holat kodi", example = "11")
+            @Parameter(description = "Holat kodi")
             @PathVariable String entityId,
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,

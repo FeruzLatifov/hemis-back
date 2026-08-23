@@ -73,7 +73,7 @@ public class CitizenshipEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> getById(
-            @Parameter(description = "Fuqarolik kodi", example = "11")
+            @Parameter(description = "Fuqarolik kodi")
             @PathVariable String entityId,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
@@ -112,7 +112,7 @@ public class CitizenshipEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> update(
-            @Parameter(description = "Fuqarolik kodi", example = "11")
+            @Parameter(description = "Fuqarolik kodi")
             @PathVariable String entityId,
             @RequestBody Map<String, Object> entityData) {
 
@@ -151,7 +151,7 @@ public class CitizenshipEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> delete(
-            @Parameter(description = "Fuqarolik kodi", example = "11")
+            @Parameter(description = "Fuqarolik kodi")
             @PathVariable String entityId) {
 
         log.info("DELETE Citizenship - entityId: {}", entityId);

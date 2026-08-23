@@ -22,16 +22,16 @@ public class UserAdminResponse {
     @Schema(description = "User ID")
     private UUID id;
 
-    @Schema(description = "Username (login)", example = "john_doe")
+    @Schema(description = "Username (login)")
     private String username;
 
-    @Schema(description = "Full name", example = "John Doe")
+    @Schema(description = "Full name")
     private String fullName;
 
-    @Schema(description = "Email", example = "john@example.com")
+    @Schema(description = "Email")
     private String email;
 
-    @Schema(description = "Phone", example = "+998901234567")
+    @Schema(description = "Phone")
     private String phone;
 
     @Schema(description = "PINFL (JSHSHIR, 14 digits). PII — present ONLY when the caller holds "
@@ -65,13 +65,13 @@ public class UserAdminResponse {
     @Schema(description = "Registered address")
     private String address;
 
-    @Schema(description = "University code", example = "TATU")
+    @Schema(description = "University code")
     private String universityCode;
 
-    @Schema(description = "University name", example = "Toshkent axborot texnologiyalari universiteti")
+    @Schema(description = "University name")
     private String universityName;
 
-    @Schema(description = "User type", example = "UNIVERSITY")
+    @Schema(description = "User type")
     private String userType;
 
     @Schema(description = "Whether user is enabled")

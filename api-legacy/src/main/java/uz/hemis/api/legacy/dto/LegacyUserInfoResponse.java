@@ -60,22 +60,22 @@ public class LegacyUserInfoResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @JsonProperty("success")
-    @Schema(description = "Success flag", example = "true")
+    @Schema(description = "Success flag")
     @Builder.Default
     private Boolean success = true;
 
     @JsonProperty("status")
-    @Schema(description = "HTTP status code", example = "200")
+    @Schema(description = "HTTP status code")
     @Builder.Default
     private Integer status = 200;
 
     @JsonProperty("statusText")
-    @Schema(description = "Status text", example = "")
+    @Schema(description = "Status text")
     @Builder.Default
     private String statusText = "";
 
     @JsonProperty("responseTime")
-    @Schema(description = "Response time in milliseconds", example = "90")
+    @Schema(description = "Response time in milliseconds")
     private Long responseTime;
 
     @JsonProperty("data")
@@ -102,56 +102,56 @@ public class LegacyUserInfoResponse implements Serializable {
         private static final long serialVersionUID = 1L;
 
         @JsonProperty("id")
-        @Schema(description = "User ID (UUID)", example = "00000000-0000-0000-0000-000000000000")
+        @Schema(description = "User ID (UUID)")
         private String id;
 
         @JsonProperty("login")
-        @Schema(description = "User login", example = "username")
+        @Schema(description = "User login")
         private String login;
 
         @JsonProperty("name")
-        @Schema(description = "Full name", example = "User Full Name")
+        @Schema(description = "Full name")
         private String name;
 
         @JsonProperty("firstName")
-        @Schema(description = "First name", example = "User")
+        @Schema(description = "First name")
         private String firstName;
 
         @JsonProperty("middleName")
-        @Schema(description = "Middle name", example = "null")
+        @Schema(description = "Middle name")
         private String middleName;
 
         @JsonProperty("lastName")
-        @Schema(description = "Last name", example = "null")
+        @Schema(description = "Last name")
         private String lastName;
 
         @JsonProperty("position")
-        @Schema(description = "Position", example = "null")
+        @Schema(description = "Position")
         private String position;
 
         @JsonProperty("email")
-        @Schema(description = "Email", example = "null")
+        @Schema(description = "Email")
         private String email;
 
         @JsonProperty("timeZone")
-        @Schema(description = "Time zone", example = "null")
+        @Schema(description = "Time zone")
         private String timeZone;
 
         @JsonProperty("language")
-        @Schema(description = "Language code", example = "ru")
+        @Schema(description = "Language code")
         private String language;
 
         @JsonProperty("_instanceName")
-        @Schema(description = "Instance name (legacy field)", example = "feruz [feruz]")
+        @Schema(description = "Instance name (legacy field)")
         private String instanceName;
 
         @JsonProperty("locale")
-        @Schema(description = "Locale code", example = "ru")
+        @Schema(description = "Locale code")
         private String locale;
 
         @JsonProperty("university")
         @JsonInclude(JsonInclude.Include.NON_NULL)
-        @Schema(description = "University code", example = "401")
+        @Schema(description = "University code")
         private String university;
     }
 }

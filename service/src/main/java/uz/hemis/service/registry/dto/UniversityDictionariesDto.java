@@ -26,50 +26,42 @@ import java.util.List;
 public class UniversityDictionariesDto {
 
     @Schema(
-        description = "Ownership type options (Davlat, Xususiy, etc.)",
-        example = "[{\"code\":\"11\",\"name\":\"Davlat\"},{\"code\":\"12\",\"name\":\"Xususiy\"}]"
+        description = "Ownership type options (Davlat, Xususiy, etc.)"
     )
     private List<DictionaryItem> ownerships;
 
     @Schema(
-        description = "University type options (Universitet, Institut, Akademiya, etc.)",
-        example = "[{\"code\":\"11\",\"name\":\"Universitet\"},{\"code\":\"12\",\"name\":\"Institut\"}]"
+        description = "University type options (Universitet, Institut, Akademiya, etc.)"
     )
     private List<DictionaryItem> types;
 
     @Schema(
-        description = "SOATO region options (Toshkent shahri, Samarqand viloyati, etc.)",
-        example = "[{\"code\":\"26\",\"name\":\"Toshkent shahar\"}]"
+        description = "SOATO region options (Toshkent shahri, Samarqand viloyati, etc.)"
     )
     private List<DictionaryItem> regions;
 
     @Schema(
-        description = "Activity status options (Ishlamoqda, Yopilgan)",
-        example = "[{\"code\":\"10\",\"name\":\"Ishlamoqda\"},{\"code\":\"11\",\"name\":\"Yopilgan\"}]"
+        description = "Activity status options (Ishlamoqda, Yopilgan)"
     )
     private List<DictionaryItem> activityStatuses;
 
     @Schema(
-        description = "Belongs to options (Vazirlikka tegishli, etc.)",
-        example = "[{\"code\":\"10\",\"name\":\"Vazirlikka tegishli\"}]"
+        description = "Belongs to options (Vazirlikka tegishli, etc.)"
     )
     private List<DictionaryItem> belongsToOptions;
 
     @Schema(
-        description = "Contract category options (Kontrakt, Shartnoma)",
-        example = "[{\"code\":\"10\",\"name\":\"Kontrakt\"},{\"code\":\"11\",\"name\":\"Shartnoma\"}]"
+        description = "Contract category options (Kontrakt, Shartnoma)"
     )
     private List<DictionaryItem> contractCategories;
 
     @Schema(
-        description = "HEMIS version type options (To'liq, To'liq emas)",
-        example = "[{\"code\":\"11\",\"name\":\"To'liq\"},{\"code\":\"12\",\"name\":\"To'liq emas\"}]"
+        description = "HEMIS version type options (To'liq, To'liq emas)"
     )
     private List<DictionaryItem> versionTypes;
 
     @Schema(
-        description = "SOATO district options (tuman/shahar — 7 xonali kodlar)",
-        example = "[{\"code\":\"1726269\",\"name\":\"Shayxontohur tumani\"}]"
+        description = "SOATO district options (tuman/shahar — 7 xonali kodlar)"
     )
     private List<DictionaryItem> districts;
 
@@ -85,14 +77,12 @@ public class UniversityDictionariesDto {
 
         @Schema(
             description = "Unique code/value",
-            example = "26",
             requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String code;
 
         @Schema(
             description = "Display name (localized)",
-            example = "Toshkent shahar",
             requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String name;

@@ -25,13 +25,13 @@ public record OAuthClientSecretResponse(
         @Schema(description = "oauth_client.id")
         UUID id,
 
-        @Schema(example = "otm301", description = "OTM client_id — o'zgarmaydi")
+        @Schema(description = "OTM client_id — o'zgarmaydi")
         String clientId,
 
-        @Schema(example = "csec_9f3a...", description = "Ochiq maxfiy kalit — faqat markaz generatsiya qilganda qaytariladi")
+        @Schema(description = "Ochiq maxfiy kalit — faqat markaz generatsiya qilganda qaytariladi")
         String plainSecret,
 
-        @Schema(example = "3", description = "Rotatsiya hisoblagichi (secret_version)")
+        @Schema(description = "Rotatsiya hisoblagichi (secret_version)")
         Integer secretVersion,
 
         LocalDateTime rotatedAt,

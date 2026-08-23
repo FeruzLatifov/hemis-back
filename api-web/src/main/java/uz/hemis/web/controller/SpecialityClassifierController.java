@@ -116,10 +116,10 @@ public class SpecialityClassifierController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'")
     })
     public ResponseEntity<ResponseWrapper<List<SpecialityNodeDto>>> tree(
-            @Parameter(description = "Education type filter (hemishe_h_education_type code): 11=Bakalavr, 12=Magistr", example = "11")
+            @Parameter(description = "Education type filter (hemishe_h_education_type code): 11=Bakalavr, 12=Magistr")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Edition year filter", example = "2024")
+            @Parameter(description = "Edition year filter")
             @RequestParam(required = false) Integer year
     ) {
         log.info("GET /api/v1/web/classifiers/speciality/tree - educationType={}, year={}", educationType, year);
@@ -149,7 +149,7 @@ public class SpecialityClassifierController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'")
     })
     public ResponseEntity<ResponseWrapper<List<Integer>>> years(
-            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr)", example = "11")
+            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr)")
             @RequestParam(required = false) String educationType
     ) {
         log.info("GET /api/v1/web/classifiers/speciality/years - educationType={}", educationType);
@@ -217,19 +217,19 @@ public class SpecialityClassifierController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'")
     })
     public ResponseEntity<byte[]> export(
-            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr; omit = both, two sheets)", example = "11")
+            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr; omit = both, two sheets)")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Edition year filter", example = "2024")
+            @Parameter(description = "Edition year filter")
             @RequestParam(required = false) Integer year,
 
-            @Parameter(description = "Review-status filter (omit = all)", example = "APPROVED")
+            @Parameter(description = "Review-status filter (omit = all)")
             @RequestParam(required = false) ReviewStatus reviewStatus,
 
             @Parameter(description = "Free-text filter on name or code")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Label language", example = "uz-UZ")
+            @Parameter(description = "Label language")
             @RequestParam(defaultValue = "uz-UZ") String lang
     ) {
         long t0 = System.nanoTime();
@@ -361,16 +361,16 @@ public class SpecialityClassifierController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialityRowDto>>> list(
-            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr)", example = "12")
+            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr)")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Review status filter", example = "NEEDS_REVIEW")
+            @Parameter(description = "Review status filter")
             @RequestParam(required = false) ReviewStatus reviewStatus,
 
-            @Parameter(description = "Search query (name or code)", example = "informatika")
+            @Parameter(description = "Search query (name or code)")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Edition year filter", example = "2024")
+            @Parameter(description = "Edition year filter")
             @RequestParam(required = false) Integer year,
 
             @Parameter(hidden = true)
@@ -471,13 +471,13 @@ public class SpecialityClassifierController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'")
     })
     public ResponseEntity<ResponseWrapper<SpecialityDuplicateCheckDto>> duplicates(
-            @Parameter(description = "Code to check", example = "60110100")
+            @Parameter(description = "Code to check")
             @RequestParam(required = false) String code,
 
             @Parameter(description = "Name (uz) to check")
             @RequestParam(required = false) String name,
 
-            @Parameter(description = "Education type scope (11=Bakalavr, 12=Magistr)", example = "11")
+            @Parameter(description = "Education type scope (11=Bakalavr, 12=Magistr)")
             @RequestParam(required = false) String educationType,
 
             @Parameter(description = "Chosen parent id — matches under it are flagged as sibling collisions")

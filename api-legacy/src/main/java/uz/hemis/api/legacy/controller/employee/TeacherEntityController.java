@@ -367,27 +367,7 @@ public class TeacherEntityController {
             required = true,
             content = @io.swagger.v3.oas.annotations.media.Content(
                     mediaType = "application/json",
-                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = TeacherCreateRequest.class),
-                    examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
-                            name = "Yangi o'qituvchi",
-                            value = """
-                                {
-                                  "firstname": "Islom",
-                                  "lastname": "Karimov",
-                                  "fathername": "Abdug'aniyevich",
-                                  "pinfl": "32305967340015",
-                                  "birthday": "1985-03-15",
-                                  "serialNumber": "AA1234567",
-                                  "_gender": "11",
-                                  "_citizenship": "11",
-                                  "_university": "520",
-                                  "_academic_degree": "12",
-                                  "_academic_rank": "13",
-                                  "phone": "+998901234567",
-                                  "address": "Toshkent sh."
-                                }
-                                """
-                    )
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(implementation = TeacherCreateRequest.class)
             )
     )
     @io.swagger.v3.oas.annotations.responses.ApiResponses({
@@ -395,20 +375,7 @@ public class TeacherEntityController {
                     responseCode = "200",
                     description = "Muvaffaqiyatli - O'qituvchi yaratildi",
                     content = @io.swagger.v3.oas.annotations.media.Content(
-                            mediaType = "application/json",
-                            examples = @io.swagger.v3.oas.annotations.media.ExampleObject(
-                                    value = """
-                                        {
-                                          "_entityName": "hemishe_ETeacher",
-                                          "_instanceName": "Karimov Islom Abdug'aniyevich",
-                                          "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-                                          "firstname": "Islom",
-                                          "lastname": "Karimov",
-                                          "fathername": "Abdug'aniyevich",
-                                          "pinfl": "32305967340015"
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov parametrlari"),
@@ -533,46 +500,46 @@ public class TeacherEntityController {
      */
     @io.swagger.v3.oas.annotations.media.Schema(description = "O'qituvchi yaratish so'rovi")
     public static class TeacherCreateRequest {
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Ism", example = "Islom")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Ism")
         public String firstname;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Familiya", example = "Karimov")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Familiya")
         public String lastname;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Otasining ismi", example = "Abdug'aniyevich")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Otasining ismi")
         public String fathername;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "PINFL (14 raqam)", example = "32305967340015")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "PINFL (14 raqam)")
         public String pinfl;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Tug'ilgan sana (YYYY-MM-DD)", example = "1985-03-15")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Tug'ilgan sana (YYYY-MM-DD)")
         public String birthday;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Passport seriya raqami", example = "AA1234567")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Passport seriya raqami")
         public String serialNumber;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Jins kodi (11=erkak, 12=ayol)", example = "11")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Jins kodi (11=erkak, 12=ayol)")
         public String _gender;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Fuqarolik kodi (11=O'zbekiston)", example = "11")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Fuqarolik kodi (11=O'zbekiston)")
         public String _citizenship;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "OTM kodi", example = "520")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "OTM kodi")
         public String _university;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Ilmiy daraja kodi", example = "12")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Ilmiy daraja kodi")
         public String _academic_degree;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Ilmiy unvon kodi", example = "13")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Ilmiy unvon kodi")
         public String _academic_rank;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Telefon raqami", example = "+998901234567")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Telefon raqami")
         public String phone;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Manzil", example = "Toshkent sh.")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Manzil")
         public String address;
 
-        @io.swagger.v3.oas.annotations.media.Schema(description = "Ishga kirgan yili", example = "2015")
+        @io.swagger.v3.oas.annotations.media.Schema(description = "Ishga kirgan yili")
         public String employeeYear;
     }
 }

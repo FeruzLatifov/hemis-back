@@ -22,31 +22,31 @@ public record CertificateRowDto(
     @Schema(description = "Student full name")
     String studentName,
 
-    @Schema(description = "University code", example = "00001")
+    @Schema(description = "University code")
     String universityCode,
 
-    @Schema(description = "University name", example = "TATU")
+    @Schema(description = "University name")
     String universityName,
 
-    @Schema(description = "Certificate type classifier code", example = "11")
+    @Schema(description = "Certificate type classifier code")
     String certificateType,
 
     @Schema(description = "Certificate type name (resolved label, falls back to code)")
     String certificateTypeName,
 
-    @Schema(description = "Certificate name classifier code", example = "11")
+    @Schema(description = "Certificate name classifier code")
     String certificateName,
 
     @Schema(description = "Certificate name label (resolved label, falls back to code)")
     String certificateNameLabel,
 
-    @Schema(description = "Certificate grade classifier code", example = "11")
+    @Schema(description = "Certificate grade classifier code")
     String certificateGrade,
 
     @Schema(description = "Certificate grade name (resolved label, falls back to code)")
     String certificateGradeName,
 
-    @Schema(description = "Serial number", example = "AB1234567")
+    @Schema(description = "Serial number")
     String serialNumber,
 
     @Schema(description = "Issue date")
@@ -55,6 +55,6 @@ public record CertificateRowDto(
     @Schema(description = "Valid until date")
     LocalDate validDate,
 
-    @Schema(description = "Active status", example = "true")
+    @Schema(description = "Active status")
     Boolean active
 ) {}

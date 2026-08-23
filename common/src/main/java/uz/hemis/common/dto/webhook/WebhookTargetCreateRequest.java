@@ -21,21 +21,21 @@ public record WebhookTargetCreateRequest(
 
         @NotBlank
         @Pattern(regexp = "\\d{3,10}", message = "Faqat raqamlar (3-10 ta)")
-        @Schema(example = "337", description = "OTM identifikator (hemishe_e_university.code)")
+        @Schema(description = "OTM identifikator (hemishe_e_university.code)")
         String universityCode,
 
         @Size(max = 255)
-        @Schema(example = "Andijon davlat universiteti", description = "Inson o'qiy oladigan tavsif")
+        @Schema(description = "Inson o'qiy oladigan tavsif")
         String description,
 
         @Min(1000)
         @Max(60000)
-        @Schema(example = "30000", defaultValue = "30000", description = "HTTP timeout (ms)")
+        @Schema(defaultValue = "30000", description = "HTTP timeout (ms)")
         Integer timeoutMs,
 
         @Min(0)
         @Max(10)
-        @Schema(example = "3", defaultValue = "3", description = "Maksimal retry urinishlar")
+        @Schema(defaultValue = "3", description = "Maksimal retry urinishlar")
         Integer maxRetries
 ) {
 }

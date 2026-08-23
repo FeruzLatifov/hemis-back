@@ -81,23 +81,7 @@ public class LegacyUserInfoController {
             description = "Foydalanuvchi ma'lumotlari muvaffaqiyatli olindi",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = LegacyUserInfoResponse.UserData.class),
-                examples = @ExampleObject(value = """
-                    {
-                      "id": "00000000-0000-0000-0000-000000000000",
-                      "login": "username",
-                      "name": "User Full Name",
-                      "firstName": "User",
-                      "middleName": "Middle",
-                      "lastName": "Name",
-                      "position": "Position",
-                      "email": "user@example.com",
-                      "timeZone": "Asia/Tashkent",
-                      "language": "ru",
-                      "_instanceName": "User [username]",
-                      "locale": "ru"
-                    }
-                    """)
+                schema = @Schema(implementation = LegacyUserInfoResponse.UserData.class)
             )
         ),
         @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi - token noto'g'ri yoki muddati o'tgan")

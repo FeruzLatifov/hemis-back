@@ -68,7 +68,7 @@ public class ClassifierWebController {
             @ApiResponse(responseCode = "404", description = "Kategoriya topilmadi")
     })
     public ResponseEntity<ResponseWrapper<List<ClassifierMetadataDto>>> getClassifiersByCategory(
-            @Parameter(description = "Kategoriya kaliti", example = "general")
+            @Parameter(description = "Kategoriya kaliti")
             @PathVariable String category) {
         log.info("GET /api/v1/web/classifiers/categories/{}", category);
         List<ClassifierMetadataDto> classifiers = classifierWebService.getClassifiersByCategory(category);
@@ -90,9 +90,9 @@ public class ClassifierWebController {
             @ApiResponse(responseCode = "404", description = "Klasifikator topilmadi")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<ClassifierItemDto>>> getClassifierItems(
-            @Parameter(description = "Klasifikator API kaliti", example = "education-type")
+            @Parameter(description = "Klasifikator API kaliti")
             @PathVariable String apiKey,
-            @Parameter(description = "Qidiruv so'zi (kod, nom bo'yicha)", example = "bakalavr")
+            @Parameter(description = "Qidiruv so'zi (kod, nom bo'yicha)")
             @RequestParam(required = false) String search,
             @Parameter(hidden = true)
             @PageableDefault(size = 50, sort = "code", direction = Sort.Direction.ASC)
@@ -117,9 +117,9 @@ public class ClassifierWebController {
             @ApiResponse(responseCode = "404", description = "Element topilmadi")
     })
     public ResponseEntity<ResponseWrapper<ClassifierItemDto>> getClassifierItem(
-            @Parameter(description = "Klasifikator API kaliti", example = "gender")
+            @Parameter(description = "Klasifikator API kaliti")
             @PathVariable String apiKey,
-            @Parameter(description = "Element kodi", example = "11")
+            @Parameter(description = "Element kodi")
             @PathVariable String code) {
         log.info("GET /api/v1/web/classifiers/{}/{}", apiKey, code);
         try {
@@ -147,7 +147,7 @@ public class ClassifierWebController {
             @ApiResponse(responseCode = "409", description = "Bu kodli element allaqachon mavjud")
     })
     public ResponseEntity<ResponseWrapper<ClassifierItemDto>> createClassifierItem(
-            @Parameter(description = "Klasifikator API kaliti", example = "gender")
+            @Parameter(description = "Klasifikator API kaliti")
             @PathVariable String apiKey,
             @Valid @RequestBody ClassifierItemCreateDto dto) {
         log.info("POST /api/v1/web/classifiers/{} - code={}", apiKey, dto.getCode());
@@ -175,9 +175,9 @@ public class ClassifierWebController {
             @ApiResponse(responseCode = "404", description = "Element topilmadi")
     })
     public ResponseEntity<ResponseWrapper<ClassifierItemDto>> updateClassifierItem(
-            @Parameter(description = "Klasifikator API kaliti", example = "gender")
+            @Parameter(description = "Klasifikator API kaliti")
             @PathVariable String apiKey,
-            @Parameter(description = "Element kodi", example = "11")
+            @Parameter(description = "Element kodi")
             @PathVariable String code,
             @Valid @RequestBody ClassifierItemUpdateDto dto) {
         log.info("PUT /api/v1/web/classifiers/{}/{}", apiKey, code);
@@ -204,9 +204,9 @@ public class ClassifierWebController {
             @ApiResponse(responseCode = "404", description = "Element topilmadi")
     })
     public ResponseEntity<ResponseWrapper<Void>> deleteClassifierItem(
-            @Parameter(description = "Klasifikator API kaliti", example = "gender")
+            @Parameter(description = "Klasifikator API kaliti")
             @PathVariable String apiKey,
-            @Parameter(description = "Element kodi", example = "99")
+            @Parameter(description = "Element kodi")
             @PathVariable String code) {
         log.info("DELETE /api/v1/web/classifiers/{}/{}", apiKey, code);
         try {

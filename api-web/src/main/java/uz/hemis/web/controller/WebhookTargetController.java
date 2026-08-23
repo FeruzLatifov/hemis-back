@@ -83,7 +83,7 @@ public class WebhookTargetController {
     @PreAuthorize("hasAuthority('webhook.view')")
     @Operation(summary = "Webhook target OTM kod bo'yicha")
     public ResponseEntity<ResponseWrapper<WebhookTargetDto>> findByUniversity(
-            @Parameter(example = "337") @PathVariable String universityCode
+            @Parameter() @PathVariable String universityCode
     ) {
         return ResponseEntity.ok(ResponseWrapper.success(service.findByUniversityCode(universityCode)));
     }

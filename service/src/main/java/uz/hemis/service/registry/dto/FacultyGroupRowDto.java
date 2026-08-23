@@ -24,21 +24,18 @@ public class FacultyGroupRowDto {
 
     @Schema(
         description = "University code (Primary key)",
-        example = "00001",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String universityCode;
 
     @Schema(
         description = "University name (full name in Uzbek/Russian)",
-        example = "Toshkent Axborot Texnologiyalari Universiteti",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     private String universityName;
 
     @Schema(
         description = "Total number of faculties (active + inactive)",
-        example = "12",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minimum = "0"
     )
@@ -46,7 +43,6 @@ public class FacultyGroupRowDto {
 
     @Schema(
         description = "Number of active faculties",
-        example = "10",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minimum = "0"
     )
@@ -54,7 +50,6 @@ public class FacultyGroupRowDto {
 
     @Schema(
         description = "Number of inactive faculties",
-        example = "2",
         requiredMode = Schema.RequiredMode.REQUIRED,
         minimum = "0"
     )
@@ -62,7 +57,6 @@ public class FacultyGroupRowDto {
 
     @Schema(
         description = "Flag indicating this row has children (always true for groups)",
-        example = "true",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     private Boolean hasChildren;

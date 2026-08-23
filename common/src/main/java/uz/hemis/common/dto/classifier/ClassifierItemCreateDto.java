@@ -21,22 +21,22 @@ public class ClassifierItemCreateDto implements Serializable {
 
     @NotBlank(message = "Kod bo'sh bo'lishi mumkin emas")
     @Size(max = 64, message = "Kod 64 belgidan oshmasligi kerak")
-    @Schema(description = "Kod", example = "99", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Kod", requiredMode = Schema.RequiredMode.REQUIRED)
     private String code;
 
     @Size(max = 512, message = "Nom 512 belgidan oshmasligi kerak")
-    @Schema(description = "Nomi (o'zbek)", example = "Test klasifikator")
+    @Schema(description = "Nomi (o'zbek)")
     private String name;
 
     @Size(max = 512, message = "Ruscha nom 512 belgidan oshmasligi kerak")
-    @Schema(description = "Nomi (rus)", example = "Тест классификатор")
+    @Schema(description = "Nomi (rus)")
     private String nameRu;
 
     @Size(max = 512, message = "Inglizcha nom 512 belgidan oshmasligi kerak")
-    @Schema(description = "Nomi (ingliz)", example = "Test classifier")
+    @Schema(description = "Nomi (ingliz)")
     private String nameEn;
 
-    @Schema(description = "Faolmi", example = "true")
+    @Schema(description = "Faolmi")
     @Builder.Default
     private Boolean active = true;
 }

@@ -118,7 +118,7 @@ public class LegacyOAuthTokenController {
             **MUHIM:** Bu endpoint `application/x-www-form-urlencoded` formatida ishlaydi.
             Swagger UI dan test qilish uchun:
             1. "Try it out" tugmasini bosing
-            2. Authorization header: `Basic Y2xpZW50OnNlY3JldA==`
+            2. Authorization header: `Basic <base64(client_id:client_secret)>`
             3. Request body (form-urlencoded):
                - grant_type=password
                - username=your_username
@@ -127,15 +127,15 @@ public class LegacyOAuthTokenController {
             **cURL misol:**
             ```bash
             curl -X POST "http://localhost:8081/app/rest/v2/oauth/token" \\
-              -H "Authorization: Basic Y2xpZW50OnNlY3JldA==" \\
+              -H "Authorization: Basic <base64(client_id:client_secret)>" \\
               -H "Content-Type: application/x-www-form-urlencoded" \\
-              -d "grant_type=password&username=feruz&password=your_password"
+              -d "grant_type=password&username=<username>&password=<password>"
             ```
 
             **Postman da:**
             - Method: POST
             - URL: /app/rest/v2/oauth/token
-            - Headers: Authorization: Basic Y2xpZW50OnNlY3JldA==
+            - Headers: Authorization: Basic <base64(client_id:client_secret)>
             - Body: x-www-form-urlencoded
               - grant_type: password
               - username: your_username
@@ -148,49 +148,21 @@ public class LegacyOAuthTokenController {
             description = "Token muvaffaqiyatli yaratildi",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = TokenResponse.class),
-                examples = @ExampleObject(
-                    name = "Muvaffaqiyatli javob",
-                    value = """
-                        {
-                          "access_token": "f1041fac-58cd-491a-a37d-212393a838f3",
-                          "token_type": "bearer",
-                          "refresh_token": "34583dda-9410-4410-95ff-cc0824656766",
-                          "expires_in": 43199,
-                          "scope": "rest-api"
-                        }
-                        """
-                )
+                schema = @Schema(implementation = TokenResponse.class)
             )
         ),
         @ApiResponse(
             responseCode = "400",
             description = "Noto'g'ri so'rov - grant_type yoki parametrlar xato",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "error": "invalid_request",
-                          "error_description": "Username and password required"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "401",
             description = "Autentifikatsiya xatosi - login/parol yoki client noto'g'ri",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "error": "invalid_grant",
-                          "error_description": "Invalid username or password"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })

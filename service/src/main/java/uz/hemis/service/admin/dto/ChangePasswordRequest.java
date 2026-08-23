@@ -15,10 +15,10 @@ public class ChangePasswordRequest {
 
     @NotBlank(message = "New password is required")
     @Size(min = 6, max = 100, message = "Password must be 6-100 characters")
-    @Schema(description = "New password (will be BCrypt hashed)", example = "secret")
+    @Schema(description = "New password (will be BCrypt hashed)", format = "password")
     private String newPassword;
 
     @NotBlank(message = "Password confirmation is required")
-    @Schema(description = "Confirm new password", example = "P@ssw0rd!")
+    @Schema(description = "Confirm new password", format = "password")
     private String confirmPassword;
 }

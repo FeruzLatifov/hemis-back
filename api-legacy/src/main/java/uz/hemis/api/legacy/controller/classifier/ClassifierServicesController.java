@@ -60,7 +60,7 @@ public class ClassifierServicesController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"success\":true,\"classifiers\":[{\"h_gender\":{\"title\":\"Jinslar\",\"version\":4,\"count\":4,\"items\":[...]}}]}")))
+                schema = @Schema()))
     })
     public ResponseEntity<Map<String, Object>> allItems() {
         log.info("GET /services/classifiers/allItems - barcha klassifikatorlar (items bilan)");
@@ -81,7 +81,7 @@ public class ClassifierServicesController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"success\":true,\"classifiers\":[{\"h_gender\":{\"title\":\"Jinslar\",\"version\":4,\"count\":4}}]}")))
+                schema = @Schema()))
     })
     public ResponseEntity<Map<String, Object>> info() {
         log.info("GET /services/classifiers/info - barcha klassifikatorlar");
@@ -102,11 +102,11 @@ public class ClassifierServicesController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"success\":true,\"classifier\":{\"h_university\":{\"title\":\"...\",\"version\":1,\"count\":238,\"items\":[...]}}}"))),
+                schema = @Schema())),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri klassifikator nomi")
     })
     public ResponseEntity<Map<String, Object>> single(
-            @Parameter(description = "Klassifikator nomi", required = true, example = "h_university")
+            @Parameter(description = "Klassifikator nomi", required = true)
             @RequestParam String classifier
     ) {
         log.info("GET /services/classifiers/single - classifier: {}", classifier);

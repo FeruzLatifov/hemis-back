@@ -124,7 +124,6 @@ public class MenuController {
     public ResponseEntity<ResponseWrapper<MenuResponse>> getMenu(
         @Parameter(
             description = "Locale code (BCP-47 format)",
-            example = "uz-UZ",
             schema = @Schema(
                 allowableValues = {"uz-UZ", "oz-UZ", "ru-RU", "en-US"}
             )
@@ -175,10 +174,7 @@ public class MenuController {
             responseCode = "200",
             description = "Access check completed",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"accessible\": true}"
-                )
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
@@ -190,11 +186,7 @@ public class MenuController {
     public ResponseEntity<ResponseWrapper<Map<String, Boolean>>> checkAccess(
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Path to check",
-            content = @Content(
-                examples = @ExampleObject(
-                    value = "{\"path\": \"/registry/faculty\"}"
-                )
-            )
+            content = @Content()
         )
         @RequestBody Map<String, String> request,
         @AuthenticationPrincipal Jwt jwt

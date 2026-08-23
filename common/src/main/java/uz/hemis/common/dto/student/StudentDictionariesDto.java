@@ -31,38 +31,32 @@ import java.util.List;
 public class StudentDictionariesDto {
 
     @Schema(
-        description = "Course options (1-kurs, 2-kurs, etc.)",
-        example = "[{\"code\":\"1\",\"name\":\"1-kurs\"}]"
+        description = "Course options (1-kurs, 2-kurs, etc.)"
     )
     private List<DictionaryItem> courses;
 
     @Schema(
-        description = "Student status options (Aktiv, Chetlashtirilgan, etc.)",
-        example = "[{\"code\":\"11\",\"name\":\"Aktiv\"}]"
+        description = "Student status options (Aktiv, Chetlashtirilgan, etc.)"
     )
     private List<DictionaryItem> studentStatuses;
 
     @Schema(
-        description = "Payment form options (Grant, Kontrakt)",
-        example = "[{\"code\":\"11\",\"name\":\"Davlat granti\"},{\"code\":\"12\",\"name\":\"To'lov-kontrakt\"}]"
+        description = "Payment form options (Grant, Kontrakt)"
     )
     private List<DictionaryItem> paymentForms;
 
     @Schema(
-        description = "Education type options (Bakalavr, Magistr, etc.)",
-        example = "[{\"code\":\"11\",\"name\":\"Bakalavr\"},{\"code\":\"12\",\"name\":\"Magistr\"}]"
+        description = "Education type options (Bakalavr, Magistr, etc.)"
     )
     private List<DictionaryItem> educationTypes;
 
     @Schema(
-        description = "Education form options (Kunduzgi, Sirtqi, etc.)",
-        example = "[{\"code\":\"11\",\"name\":\"Kunduzgi\"},{\"code\":\"12\",\"name\":\"Sirtqi\"}]"
+        description = "Education form options (Kunduzgi, Sirtqi, etc.)"
     )
     private List<DictionaryItem> educationForms;
 
     @Schema(
-        description = "Gender options (Erkak, Ayol)",
-        example = "[{\"code\":\"1\",\"name\":\"Erkak\"},{\"code\":\"2\",\"name\":\"Ayol\"}]"
+        description = "Gender options (Erkak, Ayol)"
     )
     private List<DictionaryItem> genders;
 
@@ -79,14 +73,12 @@ public class StudentDictionariesDto {
 
         @Schema(
             description = "Unique code/value",
-            example = "11",
             requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String code;
 
         @Schema(
             description = "Display name (localized)",
-            example = "Bakalavr",
             requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String name;

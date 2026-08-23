@@ -202,19 +202,7 @@ public class PublicationCriteriaEntityController {
     public ResponseEntity<Map<String, Object>> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Baholash mezoni ma'lumotlari",
-                content = @Content(
-                    examples = @ExampleObject(
-                        value = """
-                            {
-                              "_university": "401",
-                              "_education_year": "2024",
-                              "_publication_type_table": "hemishe_EPublicationScientific",
-                              "markValue": 10,
-                              "active": true
-                            }
-                            """
-                    )
-                )
+                content = @Content()
             )
             @RequestBody Map<String, Object> body,
             @RequestParam(required = false) Boolean returnNulls) {

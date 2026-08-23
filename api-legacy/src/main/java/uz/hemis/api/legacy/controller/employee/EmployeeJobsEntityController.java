@@ -87,7 +87,7 @@ public class EmployeeJobsEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> getById(
-            @Parameter(description = "Xodim ish joyi UUID", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Xodim ish joyi UUID")
             @PathVariable UUID entityId,
             @RequestParam(required = false) Boolean dynamicAttributes,
             @RequestParam(required = false) Boolean returnNulls,
@@ -159,23 +159,13 @@ public class EmployeeJobsEntityController {
             @ApiResponse(responseCode = "404", description = "Lavozim topilmadi")
     })
     public ResponseEntity<Map<String, Object>> update(
-            @Parameter(description = "Lavozim UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Lavozim UUID identifikatori")
             @PathVariable UUID entityId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Yangilanadigan maydonlar (partial update)",
                     required = true,
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Lavozim yangilash",
-                                    value = """
-                                        {
-                                          "_employeeStatus": "11",
-                                          "jobEndDate": "2025-12-31",
-                                          "contractNumber": "123/2025"
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             )
             @RequestBody Map<String, Object> body,
@@ -238,7 +228,7 @@ public class EmployeeJobsEntityController {
             @ApiResponse(responseCode = "404", description = "Lavozim topilmadi")
     })
     public ResponseEntity<?> delete(
-            @Parameter(description = "Lavozim UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Lavozim UUID identifikatori")
             @PathVariable UUID entityId) {
 
         log.info("DELETE /app/rest/v2/entities/hemishe_EEmployeeJob/{}", entityId);
@@ -308,25 +298,7 @@ public class EmployeeJobsEntityController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "CUBA filter format (employee.code yoki employee ID)",
                 content = @Content(
-                    mediaType = "application/json",
-                    examples = {
-                        @ExampleObject(
-                            name = "Xodim kodi bo'yicha",
-                            value = """
-                                {
-                                  "filter": {
-                                    "conditions": [
-                                      {
-                                        "property": "employee.code",
-                                        "operator": "=",
-                                        "value": "3011911003"
-                                      }
-                                    ]
-                                  }
-                                }
-                                """
-                        )
-                    }
+                    mediaType = "application/json"
                 )
             )
             @RequestBody(required = false) Map<String, Object> body,

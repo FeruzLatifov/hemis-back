@@ -101,17 +101,17 @@ public class UserAdminController {
     public ResponseEntity<ResponseWrapper<PageResponse<UserAdminResponse>>> getUsers(
             @Parameter(description = "Search by username or full name")
             @RequestParam(required = false) String search,
-            @Parameter(description = "Filter by role code", example = "OTM_API")
+            @Parameter(description = "Filter by role code")
             @RequestParam(required = false) String role,
-            @Parameter(description = "Filter by university entity code", example = "TATU")
+            @Parameter(description = "Filter by university entity code")
             @RequestParam(required = false) String university,
             @Parameter(description = "Filter by enabled status")
             @RequestParam(required = false) Boolean enabled,
-            @Parameter(description = "Page number (0-based)", example = "0")
+            @Parameter(description = "Page number (0-based)")
             @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size", example = "20")
+            @Parameter(description = "Page size")
             @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Sort field and direction", example = "username,asc")
+            @Parameter(description = "Sort field and direction")
             @RequestParam(defaultValue = "username,asc") String sort,
             @AuthenticationPrincipal Jwt jwt
     ) {

@@ -105,19 +105,19 @@ public class AttachedSpecialityRegistryController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'institutions.attached-specialities.view'")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<AttachedSpecialityRowDto>>> list(
-            @Parameter(description = "Search query (university or speciality name)", example = "informatika")
+            @Parameter(description = "Search query (university or speciality name)")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "University code", example = "00001")
+            @Parameter(description = "University code")
             @RequestParam(required = false) String universityCode,
 
-            @Parameter(description = "Education type code", example = "11")
+            @Parameter(description = "Education type code")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Education form code", example = "11")
+            @Parameter(description = "Education form code")
             @RequestParam(required = false) String educationForm,
 
-            @Parameter(description = "Active flag filter", example = "true")
+            @Parameter(description = "Active flag filter")
             @RequestParam(required = false) Boolean active,
 
             @Parameter(hidden = true)

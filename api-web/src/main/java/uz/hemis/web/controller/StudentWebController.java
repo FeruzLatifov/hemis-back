@@ -109,37 +109,37 @@ public class StudentWebController {
         @ApiResponse(responseCode = "403", description = "Forbidden - User lacks 'students.view' permission")
     })
     public ResponseEntity<ResponseWrapper<Page<StudentListDto>>> getStudents(
-            @Parameter(description = "Search query (code or PINFL prefix)", example = "6023010")
+            @Parameter(description = "Search query (code or PINFL prefix)")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Search field: 'code' or 'pinfl'. If omitted, searches both.", example = "code")
+            @Parameter(description = "Search field: 'code' or 'pinfl'. If omitted, searches both.")
             @RequestParam(required = false) String searchField,
 
-            @Parameter(description = "University code", example = "401")
+            @Parameter(description = "University code")
             @RequestParam(required = false) String university,
 
-            @Parameter(description = "Education type code", example = "11")
+            @Parameter(description = "Education type code")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Payment form code", example = "11")
+            @Parameter(description = "Payment form code")
             @RequestParam(required = false) String paymentForm,
 
-            @Parameter(description = "Student status code", example = "11")
+            @Parameter(description = "Student status code")
             @RequestParam(required = false) String studentStatus,
 
-            @Parameter(description = "Course code", example = "1")
+            @Parameter(description = "Course code")
             @RequestParam(required = false) String course,
 
             @Parameter(description = "Faculty code")
             @RequestParam(required = false) String faculty,
 
-            @Parameter(description = "Education form code", example = "11")
+            @Parameter(description = "Education form code")
             @RequestParam(required = false) String educationForm,
 
-            @Parameter(description = "Education year code", example = "2024")
+            @Parameter(description = "Education year code")
             @RequestParam(required = false) String educationYear,
 
-            @Parameter(description = "Gender code", example = "1")
+            @Parameter(description = "Gender code")
             @RequestParam(required = false) String gender,
 
             @Parameter(hidden = true)
@@ -190,7 +190,7 @@ public class StudentWebController {
         @ApiResponse(responseCode = "403", description = "Forbidden - Insufficient permissions")
     })
     public ResponseEntity<ResponseWrapper<StudentDto>> getStudentByCode(
-            @Parameter(description = "Student code", example = "401242311234")
+            @Parameter(description = "Student code")
             @PathVariable String code
     ) {
         log.info("GET /api/v1/web/students/by-code/{}", code);

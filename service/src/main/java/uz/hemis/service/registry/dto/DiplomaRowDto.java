@@ -14,46 +14,46 @@ import java.time.LocalDate;
 @Schema(name = "DiplomaRegistryRow", description = "Diploma row in the flat paginated registry list")
 public record DiplomaRowDto(
 
-    @Schema(description = "Diploma id (UUID primary key)", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    @Schema(description = "Diploma id (UUID primary key)",
         requiredMode = Schema.RequiredMode.REQUIRED)
     String id,
 
-    @Schema(description = "Diploma number", example = "D-000123")
+    @Schema(description = "Diploma number")
     String diplomaNumber,
 
-    @Schema(description = "Register number", example = "R-556677")
+    @Schema(description = "Register number")
     String registerNumber,
 
     @Schema(description = "Register date")
     LocalDate registerDate,
 
-    @Schema(description = "Student id (UUID)", example = "1b2c3d4e-5717-4562-b3fc-2c963f66afa6")
+    @Schema(description = "Student id (UUID)")
     String studentId,
 
-    @Schema(description = "Student full name (lastname firstname fathername)", example = "Aliyev Ali Valiyevich")
+    @Schema(description = "Student full name (lastname firstname fathername)")
     String studentName,
 
-    @Schema(description = "University code", example = "00001")
+    @Schema(description = "University code")
     String universityCode,
 
-    @Schema(description = "University name", example = "TATU")
+    @Schema(description = "University name")
     String universityName,
 
-    @Schema(description = "Speciality name", example = "Kompyuter injiniringi")
+    @Schema(description = "Speciality name")
     String specialityName,
 
-    @Schema(description = "Education year classifier code", example = "2024")
+    @Schema(description = "Education year classifier code")
     String educationYear,
 
     @Schema(description = "Graduation date")
     LocalDate graduationDate,
 
-    @Schema(description = "Average grade", example = "4.5")
+    @Schema(description = "Average grade")
     String avgGrade,
 
-    @Schema(description = "Verify status/hash marker", example = "verified")
+    @Schema(description = "Verify status/hash marker")
     String verify,
 
-    @Schema(description = "Active status", example = "true")
+    @Schema(description = "Active status")
     Boolean active
 ) {}

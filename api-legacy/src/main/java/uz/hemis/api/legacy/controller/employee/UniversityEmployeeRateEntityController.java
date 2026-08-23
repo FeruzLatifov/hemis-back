@@ -80,7 +80,7 @@ public class UniversityEmployeeRateEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Stavka kodi", example = "11")
+            @Parameter(description = "Stavka kodi")
             @PathVariable String entityId,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {

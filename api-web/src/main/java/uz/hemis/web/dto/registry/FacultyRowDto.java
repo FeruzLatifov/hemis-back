@@ -19,25 +19,25 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Faculty Row - Individual faculty details")
 public class FacultyRowDto {
 
-    @Schema(description = "Faculty code (Primary Key)", example = "100001-11")
+    @Schema(description = "Faculty code (Primary Key)")
     private String code;
 
-    @Schema(description = "Faculty name (Uzbek)", example = "Iqtisodiyot fakulteti")
+    @Schema(description = "Faculty name (Uzbek)")
     private String nameUz;
 
-    @Schema(description = "Faculty name (Russian)", example = "Экономический факультет")
+    @Schema(description = "Faculty name (Russian)")
     private String nameRu;
 
-    @Schema(description = "Parent university code", example = "100001")
+    @Schema(description = "Parent university code")
     private String universityCode;
 
-    @Schema(description = "Parent university name", example = "O'zbekiston Milliy universiteti")
+    @Schema(description = "Parent university name")
     private String universityName;
 
-    @Schema(description = "Faculty status (active/inactive)", example = "true")
+    @Schema(description = "Faculty status (active/inactive)")
     private Boolean status;
 
-    @Schema(description = "Parent code (if nested structure)", example = "100001")
+    @Schema(description = "Parent code (if nested structure)")
     private String parentCode;
 
     public FacultyRowDto(String code, String nameUz, String nameRu, String universityCode, String universityName, Boolean status) {

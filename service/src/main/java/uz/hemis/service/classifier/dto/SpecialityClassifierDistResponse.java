@@ -24,17 +24,16 @@ import java.util.List;
  */
 @Schema(description = "OTM bootstrap PULL — mutaxassislik klassifikatori (title/version/count + FLAT elementlar)")
 public record SpecialityClassifierDistResponse(
-        @Schema(description = "So'rov muvaffaqiyati.", example = "true", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "So'rov muvaffaqiyati.", requiredMode = Schema.RequiredMode.REQUIRED)
         boolean success,
 
-        @Schema(description = "Xabar (odatda \"OK\").", example = "OK")
+        @Schema(description = "Xabar (odatda \"OK\").")
         String message,
 
         @Schema(
                 description = "Klassifikator sarlavhasi (old-hemis bilan mos): educationType=11 → "
                         + "\"Bakalavriat ta'lim yo'nalishlari\", 12 → \"Magistratura mutaxassisliklari\", "
                         + "filtrsiz → \"Mutaxassisliklar klassifikatori\".",
-                example = "Bakalavriat ta'lim yo'nalishlari",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         String title,
@@ -43,12 +42,11 @@ public record SpecialityClassifierDistResponse(
                 description = "Umumiy versiya = tarqatiladigan mutaxassisliklarning SUM(version)'i. Har qanday kuratsiya "
                         + "tahriridan keyin oshadi — OTM buni oldingi qiymat bilan solishtirib (!=) klassifikator "
                         + "yangilanganini aniqlaydi.",
-                example = "1240",
                 requiredMode = Schema.RequiredMode.REQUIRED
         )
         Long version,
 
-        @Schema(description = "Elementlar soni (data uzunligi).", example = "842", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Elementlar soni (data uzunligi).", requiredMode = Schema.RequiredMode.REQUIRED)
         int count,
 
         @Schema(description = "FLAT v1 elementlar (adjacency list, code ASC).", requiredMode = Schema.RequiredMode.REQUIRED)

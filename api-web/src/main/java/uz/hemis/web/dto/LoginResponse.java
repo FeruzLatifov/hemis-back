@@ -12,53 +12,39 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Schema(
     name = "LoginResponse",
-    description = "JWT authentication response",
-    example = """
-        {
-          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlzcyI6ImhlbWlzIiwiaWF0IjoxNzA1MDYyMDAwLCJleHAiOjE3MDUwNjI5MDB9.abc123",
-          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlzcyI6ImhlbWlzIiwiaWF0IjoxNzA1MDYyMDAwLCJleHAiOjE3MDU2NjY4MDB9.xyz789",
-          "tokenType": "Bearer",
-          "expiresIn": 900
-        }
-        """
+    description = "JWT authentication response"
 )
 public class LoginResponse {
 
     @Schema(
-        description = "JWT access token (expires in 15 minutes)",
-        example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlzcyI6ImhlbWlzIiwiaWF0IjoxNzA1MDYyMDAwLCJleHAiOjE3MDUwNjI5MDB9.abc123"
+        description = "JWT access token (expires in 15 minutes)"
     )
     private String accessToken;
 
     @Schema(
-        description = "JWT refresh token (expires in 7 days)",
-        example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImlzcyI6ImhlbWlzIiwiaWF0IjoxNzA1MDYyMDAwLCJleHAiOjE3MDU2NjY4MDB9.xyz789"
+        description = "JWT refresh token (expires in 7 days)"
     )
     private String refreshToken;
 
     @Schema(
-        description = "Token type (always 'Bearer')",
-        example = "Bearer"
+        description = "Token type (always 'Bearer')"
     )
     private String tokenType;
 
     @Schema(
         description = "Token expiration time in seconds (900 = 15 minutes)",
-        example = "900",
         minimum = "1"
     )
     private Long expiresIn;
 
     // ✅ Error fields (OAuth2 standard for error responses)
     @Schema(
-        description = "Error code (OAuth2 standard: invalid_grant, too_many_requests, etc.)",
-        example = "too_many_requests"
+        description = "Error code (OAuth2 standard: invalid_grant, too_many_requests, etc.)"
     )
     private String error;
 
     @Schema(
-        description = "Human-readable error description",
-        example = "Too many login attempts. Please try again in 10 minutes."
+        description = "Human-readable error description"
     )
     private String errorDescription;
 }

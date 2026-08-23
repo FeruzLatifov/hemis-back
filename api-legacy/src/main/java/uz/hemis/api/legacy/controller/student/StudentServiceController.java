@@ -123,7 +123,7 @@ public class StudentServiceController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
     public ResponseEntity<?> verify(
-            @Parameter(description = "Talaba PINFL raqami", example = "52503015440023")
+            @Parameter(description = "Talaba PINFL raqami")
             @RequestParam String pinfl) {
         log.info("[CUBA Service] student/verify: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(verificationService.verifyByPinfl(pinfl));
@@ -216,55 +216,21 @@ public class StudentServiceController {
                     responseCode = "200",
                     description = "Muvaffaqiyatli - Shartnoma ma'lumotlari qaytarildi",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Shartnoma ma'lumotlari",
-                                    value = """
-                                        {
-                                          "statusCode": 200,
-                                          "message": "Muvaffaqiyatli bajarildi",
-                                          "timeStamp": "2025-11-29T06:18:22.817959598",
-                                          "object": {
-                                            "institutionType": "Oliy ta'lim",
-                                            "pinfl": "61111065190052",
-                                            "fullName": "RAXIMJONOV DILSHODBEK DILMUROD O'G'LI",
-                                            "contractNumber": "300-12/12-22/Q-1207",
-                                            "contractDate": "2022-09-14",
-                                            "eduOrganizationId": 316,
-                                            "eduOrganization": "Toshkent axborot texnologiyalari universiteti...",
-                                            "eduSpeciality": "Dasturiy injiniring...",
-                                            "eduContractSum": 8623000,
-                                            "gpa": 3.86,
-                                            "debit": 2300000,
-                                            "credit": 6323000
-                                          }
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(
                     responseCode = "200",
                     description = "Token sozlanmagan",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Token xatosi",
-                                    value = """
-                                        {
-                                          "success": false,
-                                          "code": "token_not_configured",
-                                          "message": "HEMIS API token not configured. Set HEMIS_API_TOKEN in environment"
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
     public ResponseEntity<?> contractInfo(
-            @Parameter(description = "Talaba PINFL raqami", example = "61111065190052")
+            @Parameter(description = "Talaba PINFL raqami")
             @RequestParam String pinfl) {
         log.info("[CUBA Service] student/contractInfo: pinfl={}", LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(hemisApiService.getContractInfo(pinfl));
@@ -336,41 +302,14 @@ public class StudentServiceController {
                     responseCode = "200",
                     description = "Talaba ID muvaffaqiyatli qaytarildi",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Yangi talaba",
-                                    value = """
-                                        {
-                                          "success": true,
-                                          "is_new": true,
-                                          "unique_id": "0102241100001",
-                                          "university": "0102",
-                                          "student": {
-                                            "id": "...",
-                                            "code": "0102241100001",
-                                            "pinfl": "31507976020031"
-                                          }
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(
                     responseCode = "200",
                     description = "Talaba aktiv (xatolik)",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Aktiv talaba xatosi",
-                                    value = """
-                                        {
-                                          "success": false,
-                                          "message": "Student is active!",
-                                          "is_active": true,
-                                          "student": {...}
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             )
     })
@@ -537,7 +476,7 @@ public class StudentServiceController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
     public ResponseEntity<?> validate(
-            @Parameter(description = "PINFL yoki Passport seriya/raqami", example = "A0939758")
+            @Parameter(description = "PINFL yoki Passport seriya/raqami")
             @RequestParam String data) {
         // PII safety: input may be PINFL or passport — mask via Pinfl helper (graceful for non-PINFL).
         log.info("[CUBA Service] student/validate: data={}",
@@ -633,40 +572,7 @@ public class StudentServiceController {
                     responseCode = "200",
                     description = "Muvaffaqiyatli - GPA yozuvi saqlandi",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Saqlangan GPA",
-                                    value = """
-                                        {
-                                          "_entityName": "hemishe_EStudentGpa",
-                                          "id": "73a35e2a-a20b-69b6-9eb5-b11c493b59a7",
-                                          "debtSubjects": 0,
-                                          "method": "one_year",
-                                          "level": {
-                                            "_entityName": "hemishe_HCourse",
-                                            "id": "12",
-                                            "code": "12"
-                                          },
-                                          "creditSum": "50.0",
-                                          "subjects": 12,
-                                          "educationYear": {
-                                            "_entityName": "hemishe_HEducationYear",
-                                            "id": "2023",
-                                            "code": "2023"
-                                          },
-                                          "version": 1,
-                                          "studentId": {
-                                            "_entityName": "hemishe_EStudent",
-                                            "id": "001bf61e-cd66-499e-84f7-f42ae8646289",
-                                            "fullname": ""
-                                          },
-                                          "createdBy": "otm401",
-                                          "gpa": "3.90",
-                                          "createTs": "2025-11-28 21:46:40.863",
-                                          "updateTs": "2025-11-28 21:46:40.863"
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(responseCode = "400", description = "Noto'g'ri request format"),

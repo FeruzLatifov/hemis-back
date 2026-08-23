@@ -112,37 +112,18 @@ public class UniversityDepartmentEntityController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Bo'linma topildi",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = """
-                                    {
-                                        "_entityName": "hemishe_EUniversityDepartment",
-                                        "_instanceName": "Kompyuter injiniringi fakulteti",
-                                        "id": "305-10",
-                                        "code": "305-10",
-                                        "nameUz": "Kompyuter injiniringi fakulteti",
-                                        "nameRu": "Факультет компьютерной инженерии",
-                                        "university": {
-                                            "_entityName": "hemishe_EUniversity",
-                                            "code": "305"
-                                        },
-                                        "deparmentType": {
-                                            "_entityName": "hemishe_HUniversityDepartmentType",
-                                            "code": "10"
-                                        },
-                                        "status": true
-                                    }
-                                    """))),
+                    content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
             @ApiResponse(responseCode = "404", description = "Bo'linma topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Bo'linma kodi", example = "305-10")
+            @Parameter(description = "Bo'linma kodi")
             @PathVariable String entityId,
             @Parameter(description = "Dynamic attributes (CUBA legacy)", hidden = true)
             @RequestParam(required = false) String dynamicAttributes,
             @Parameter(description = "null qiymatlarni ham qaytarish")
             @RequestParam(required = false) String returnNulls,
-            @Parameter(description = "View nomi", example = "eUniversityDepartment-view")
+            @Parameter(description = "View nomi")
             @RequestParam(required = false) String view) {
 
         String universityCode = securityHelper.getUniversityCodeFromContext();
@@ -204,7 +185,7 @@ public class UniversityDepartmentEntityController {
             @ApiResponse(responseCode = "404", description = "Bo'linma topilmadi")
     })
     public ResponseEntity<Map<String, Object>> update(
-            @Parameter(description = "Bo'linma kodi", example = "305-10")
+            @Parameter(description = "Bo'linma kodi")
             @PathVariable String entityId,
             @RequestBody Map<String, Object> body,
             @Parameter(description = "null qiymatlarni ham qaytarish")
@@ -269,7 +250,7 @@ public class UniversityDepartmentEntityController {
             @ApiResponse(responseCode = "404", description = "Bo'linma topilmadi")
     })
     public ResponseEntity<Map<String, Object>> delete(
-            @Parameter(description = "Bo'linma kodi", example = "305-10")
+            @Parameter(description = "Bo'linma kodi")
             @PathVariable String entityId) {
 
         String universityCode = securityHelper.getUniversityCodeFromContext();
@@ -407,16 +388,7 @@ public class UniversityDepartmentEntityController {
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "CUBA filter",
             content = @Content(
-                    mediaType = "application/json",
-                    examples = @ExampleObject(value = """
-                            {
-                              "filter": {
-                                "conditions": [
-                                  {"property": "university.code", "operator": "=", "value": "305"}
-                                ]
-                              }
-                            }
-                            """)
+                    mediaType = "application/json"
             )
     )
     public ResponseEntity<List<Map<String, Object>>> searchPost(

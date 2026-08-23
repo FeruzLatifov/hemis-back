@@ -176,10 +176,7 @@ public class UserFavoriteController {
             responseCode = "400",
             description = "Bad Request - Menyu allaqachon favoritlarda yoki limit to'lgan",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"error\": \"Menu item already in favorites\"}"
-                )
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(

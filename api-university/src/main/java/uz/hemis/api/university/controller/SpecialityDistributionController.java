@@ -85,7 +85,7 @@ public class SpecialityDistributionController {
                     """
     )
     public ResponseEntity<SpecialityClassifierDistResponse> speciality(
-            @Parameter(description = "Ta'lim turi filtri (11=Bakalavr, 12=Magistr)", example = "11")
+            @Parameter(description = "Ta'lim turi filtri (11=Bakalavr, 12=Magistr)")
             @RequestParam(required = false) String educationType
     ) {
         SpecialityClassifierDistResponse response = specialityService.getDistribution(educationType);

@@ -128,71 +128,19 @@ public class WebI18nController {
             responseCode = "200",
             description = "✅ Successfully loaded translations from cache or database",
             content = @Content(
-                mediaType = "application/json",
-                examples = {
-                    @ExampleObject(
-                        name = "Login Translations (Russian)",
-                        description = "Example response with login page translations in Russian",
-                        value = """
-                            {
-                              "success": true,
-                              "data": {
-                                "HEMIS Admin Panel": "HEMIS Админ Панель",
-                                "Username": "Имя пользователя",
-                                "Password": "Пароль",
-                                "Sign in": "Войти",
-                                "Save": "Сохранить",
-                                "Cancel": "Отмена",
-                                "Access denied": "Доступ запрещён",
-                                "Network error": "Ошибка сети"
-                              }
-                            }
-                            """
-                    ),
-                    @ExampleObject(
-                        name = "Full Response (English)",
-                        description = "Complete translation set for English language",
-                        value = """
-                            {
-                              "success": true,
-                              "data": {
-                                "HEMIS Admin Panel": "HEMIS Admin Panel",
-                                "Higher Education Management Information System": "Higher Education Management Information System",
-                                "Username": "Username",
-                                "Password": "Password",
-                                "Sign in": "Sign In",
-                                "Save": "Save",
-                                "Cancel": "Cancel",
-                                "Search": "Search",
-                                "Students": "Students",
-                                "Teachers": "Teachers",
-                                "Not found": "Not Found"
-                              }
-                            }
-                            """
-                    )
-                }
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "500",
             description = "❌ Server error or database connection issue",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "success": false,
-                          "error": "Failed to load translations",
-                          "message": "Database connection timeout"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getAllMessages(
-        @Parameter(description = "Language code (e.g., uz-UZ, ru-RU, en-US)", example = "uz-UZ")
+        @Parameter(description = "Language code (e.g., uz-UZ, ru-RU, en-US)")
         @RequestParam(defaultValue = "uz-UZ") String lang
     ) {
         log.info("GET /api/v1/web/i18n/messages?lang={}", lang);
@@ -241,62 +189,21 @@ public class WebI18nController {
             responseCode = "200",
             description = "✅ Message found and returned",
             content = @Content(
-                mediaType = "application/json",
-                examples = {
-                    @ExampleObject(
-                        name = "Russian Translation",
-                        description = "Get 'Save' button label in Russian",
-                        value = """
-                            {
-                              "success": true,
-                              "message": "Сохранить"
-                            }
-                            """
-                    ),
-                    @ExampleObject(
-                        name = "English Translation",
-                        description = "Get error message in English",
-                        value = """
-                            {
-                              "success": true,
-                              "message": "Unauthorized access"
-                            }
-                            """
-                    ),
-                    @ExampleObject(
-                        name = "Uzbek (Cyrillic)",
-                        description = "Login button in Uzbek Cyrillic",
-                        value = """
-                            {
-                              "success": true,
-                              "message": "Кириш"
-                            }
-                            """
-                    )
-                }
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "404",
             description = "❌ Message key not found in any language",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "success": false,
-                          "error": "Message not found",
-                          "message": "Key 'invalid.key' does not exist"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })
     public ResponseEntity<ResponseWrapper<String>> getMessage(
-        @Parameter(description = "Message key (natural English text)", example = "Save")
+        @Parameter(description = "Message key (natural English text)")
         @PathVariable @NotBlank String key,
-        @Parameter(description = "Language code", example = "ru-RU")
+        @Parameter(description = "Language code")
         @RequestParam(defaultValue = "uz-UZ") String lang
     ) {
         log.debug("GET /api/v1/web/i18n/messages/{}?lang={}", key, lang);
@@ -325,17 +232,14 @@ public class WebI18nController {
             responseCode = "200",
             description = "Category messages loaded",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"success\":true,\"data\":{\"Save\":\"Saqlash\",\"Cancel\":\"Bekor qilish\",\"Delete\":\"O'chirish\"}}"
-                )
+                mediaType = "application/json"
             )
         )
     })
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getMessagesByCategory(
-        @Parameter(description = "Message category", example = "action")
+        @Parameter(description = "Message category")
         @PathVariable @NotBlank String category,
-        @Parameter(description = "Language code", example = "uz-UZ")
+        @Parameter(description = "Language code")
         @RequestParam(defaultValue = "uz-UZ") String lang
     ) {
         log.info("GET /api/v1/web/i18n/messages/category/{}?lang={}", category, lang);
@@ -417,70 +321,23 @@ public class WebI18nController {
             responseCode = "200",
             description = "✅ Successfully loaded scope-filtered translations",
             content = @Content(
-                mediaType = "application/json",
-                examples = {
-                    @ExampleObject(
-                        name = "Login Page (auth category)",
-                        description = "Minimal load for login page - ~50 messages (~10KB)",
-                        value = """
-                            {
-                              "success": true,
-                              "data": {
-                                "Sign in to system": "Tizimga kirish",
-                                "Username": "Foydalanuvchi nomi",
-                                "Password": "Parol",
-                                "Sign in": "Tizimga kirish",
-                                "Forgot password?": "Parolni unutdingizmi?",
-                                "Invalid username or password": "Foydalanuvchi nomi yoki parol noto'g'ri"
-                              }
-                            }
-                            """
-                    ),
-                    @ExampleObject(
-                        name = "Dashboard (auth,menu,action categories)",
-                        description = "Dashboard with menu - ~200 messages (~40KB)",
-                        value = """
-                            {
-                              "success": true,
-                              "data": {
-                                "Username": "Foydalanuvchi nomi",
-                                "Welcome back!": "Xush kelibsiz!",
-                                "Students": "Talabalar",
-                                "Teachers": "O'qituvchilar",
-                                "Registries": "Reestlar",
-                                "Save": "Saqlash",
-                                "Cancel": "Bekor qilish"
-                              }
-                            }
-                            """
-                    )
-                }
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "400",
             description = "❌ Invalid scopes parameter",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "success": false,
-                          "error": "Invalid scopes",
-                          "message": "Scopes parameter must be comma-separated list"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })
     public ResponseEntity<ResponseWrapper<Map<String, String>>> getMessagesByScopes(
         @Parameter(
-            description = "Comma-separated scope list (e.g., auth,dashboard,menu)",
-            example = "auth,dashboard,menu"
+            description = "Comma-separated scope list (e.g., auth,dashboard,menu)"
         )
         @RequestParam String scopes,
-        @Parameter(description = "Language code", example = "uz-UZ")
+        @Parameter(description = "Language code")
         @RequestParam(defaultValue = "uz-UZ") String lang
     ) {
         log.info("GET /api/v1/web/i18n/messages/scopes?scopes={}&lang={}", scopes, lang);
@@ -538,66 +395,26 @@ public class WebI18nController {
             responseCode = "200",
             description = "✅ Cache successfully invalidated",
             content = @Content(
-                mediaType = "application/json",
-                examples = {
-                    @ExampleObject(
-                        name = "Single Language",
-                        description = "Invalidate cache for specific language",
-                        value = """
-                            {
-                              "success": true,
-                              "data": "Cache invalidated for language: ru-RU"
-                            }
-                            """
-                    ),
-                    @ExampleObject(
-                        name = "All Languages",
-                        description = "Invalidate cache for all languages",
-                        value = """
-                            {
-                              "success": true,
-                              "data": "All language caches invalidated"
-                            }
-                            """
-                    )
-                }
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "401",
             description = "❌ Unauthorized - No JWT token provided",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "success": false,
-                          "error": "Unauthorized",
-                          "message": "Full authentication is required"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "403",
             description = "❌ Forbidden - User lacks system.translation.view permission",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "success": false,
-                          "error": "Access Denied",
-                          "message": "Requires 'system.translation.view' permission"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })
     public ResponseEntity<ResponseWrapper<String>> invalidateCache(
-        @Parameter(description = "Language code (if not provided, invalidates all)", example = "ru-RU")
+        @Parameter(description = "Language code (if not provided, invalidates all)")
         @RequestParam(required = false) String lang
     ) {
         log.info("POST /api/v1/web/i18n/cache/invalidate?lang={}", lang);
@@ -630,10 +447,7 @@ public class WebI18nController {
             responseCode = "200",
             description = "Cache stats retrieved",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = "{\"success\":true,\"data\":{\"cachedLanguages\":3,\"languages\":[\"uz-UZ\",\"ru-RU\",\"en-US\"],\"cacheTTL\":\"PT24H\"}}"
-                )
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(responseCode = "403", description = "Forbidden — admin permission required")

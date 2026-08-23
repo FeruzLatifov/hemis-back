@@ -130,21 +130,7 @@ public class CubaTeacherServiceController {
             required = true,
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = TeacherIdRequestWrapper.class),
-                    examples = @ExampleObject(
-                            name = "O'qituvchi ID olish",
-                            value = """
-                                {
-                                  "data": {
-                                    "citizenship": "11",
-                                    "pinfl": "32305967340015",
-                                    "serial": "XX1111117",
-                                    "year": "2019",
-                                    "gender": "11"
-                                  }
-                                }
-                                """
-                    )
+                    schema = @Schema(implementation = TeacherIdRequestWrapper.class)
             )
     )
     @ApiResponses({
@@ -308,26 +294,7 @@ public class CubaTeacherServiceController {
             required = true,
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = AddJobRequestWrapper.class),
-                    examples = @ExampleObject(
-                            name = "Xodim lavozimi qo'shish",
-                            value = """
-                                {
-                                  "job": {
-                                    "employee": {"id": "00000000-0000-0000-0000-000000000000"},
-                                    "university": {"code": "401"},
-                                    "department": {"code": "401-102"},
-                                    "employeeForm": {"code": "11"},
-                                    "employeeStatus": {"code": "11"},
-                                    "employeeType": {"code": "11"},
-                                    "employeeRate": {"code": "13"},
-                                    "employeePosition": {"code": "11"},
-                                    "jobStartDate": "2020-01-06",
-                                    "jobEndDate": "2023-08-01"
-                                  }
-                                }
-                                """
-                    )
+                    schema = @Schema(implementation = AddJobRequestWrapper.class)
             )
     )
     @ApiResponses({
@@ -500,34 +467,34 @@ public class CubaTeacherServiceController {
 
     @Schema(description = "Lavozim ma'lumotlari")
     public static class AddJobRequest {
-        @Schema(description = "Xodim ID si", example = "{\"id\": \"00000000-0000-0000-0000-000000000000\"}")
+        @Schema(description = "Xodim ID si")
         public Map<String, String> employee;
 
-        @Schema(description = "Universitet kodi", example = "{\"code\": \"401\"}")
+        @Schema(description = "Universitet kodi")
         public Map<String, String> university;
 
-        @Schema(description = "Bo'lim kodi", example = "{\"code\": \"401-102\"}")
+        @Schema(description = "Bo'lim kodi")
         public Map<String, String> department;
 
-        @Schema(description = "Shtat shakli kodi (11=asosiy, 12=ichki o'rindoshlik)", example = "{\"code\": \"11\"}")
+        @Schema(description = "Shtat shakli kodi (11=asosiy, 12=ichki o'rindoshlik)")
         public Map<String, String> employeeForm;
 
-        @Schema(description = "Ish holati kodi (11=ishlamoqda)", example = "{\"code\": \"11\"}")
+        @Schema(description = "Ish holati kodi (11=ishlamoqda)")
         public Map<String, String> employeeStatus;
 
-        @Schema(description = "Xodim turi kodi", example = "{\"code\": \"11\"}")
+        @Schema(description = "Xodim turi kodi")
         public Map<String, String> employeeType;
 
-        @Schema(description = "Stavka kodi", example = "{\"code\": \"13\"}")
+        @Schema(description = "Stavka kodi")
         public Map<String, String> employeeRate;
 
-        @Schema(description = "Lavozim kodi", example = "{\"code\": \"11\"}")
+        @Schema(description = "Lavozim kodi")
         public Map<String, String> employeePosition;
 
-        @Schema(description = "Ish boshlash sanasi", example = "2020-01-06")
+        @Schema(description = "Ish boshlash sanasi")
         public String jobStartDate;
 
-        @Schema(description = "Ish tugash sanasi", example = "2023-08-01")
+        @Schema(description = "Ish tugash sanasi")
         public String jobEndDate;
     }
 }

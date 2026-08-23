@@ -214,73 +214,28 @@ public class DashboardController {
             description = "✅ Statistics retrieved successfully",
             content = @Content(
                 mediaType = "application/json",
-                schema = @Schema(implementation = DashboardResponse.class),
-                examples = @ExampleObject(
-                    name = "Success Response",
-                    summary = "Complete dashboard statistics",
-                    value = """
-                        {
-                          "timestamp": "2025-11-13T04:04:52.302Z",
-                          "overview": {
-                            "totalStudents": 2957308,
-                            "totalTeachers": 6154,
-                            "totalUniversities": 253,
-                            "totalDiplomas": 861454
-                          }
-                        }
-                        """
-                )
+                schema = @Schema(implementation = DashboardResponse.class)
             )
         ),
         @ApiResponse(
             responseCode = "401",
             description = "🔒 Unauthorized - Invalid or missing JWT token",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "timestamp": "2025-11-13T04:04:52.302Z",
-                          "status": 401,
-                          "error": "Unauthorized",
-                          "message": "Full authentication is required"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "403",
             description = "🚫 Forbidden - User lacks 'dashboard.view' permission",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "timestamp": "2025-11-13T04:04:52.302Z",
-                          "status": 403,
-                          "error": "Forbidden",
-                          "message": "Access Denied"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         ),
         @ApiResponse(
             responseCode = "500",
             description = "❌ Internal Server Error - Database or Redis issue",
             content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    value = """
-                        {
-                          "timestamp": "2025-11-13T04:04:52.302Z",
-                          "status": 500,
-                          "error": "Internal Server Error",
-                          "message": "An unexpected error occurred"
-                        }
-                        """
-                )
+                mediaType = "application/json"
             )
         )
     })

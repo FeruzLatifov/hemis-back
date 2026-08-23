@@ -107,25 +107,25 @@ public class SpecialityAttachmentController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks permission or out of scope")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<SpecialityAttachmentRowDto>>> list(
-            @Parameter(description = "University code", example = "00001")
+            @Parameter(description = "University code")
             @RequestParam(required = false) String universityCode,
 
             @Parameter(description = "Speciality id (UUID)")
             @RequestParam(required = false) UUID specialityId,
 
-            @Parameter(description = "Mutaxassislik kodi, nomi yoki UUID bo'yicha qidiruv", example = "60110100")
+            @Parameter(description = "Mutaxassislik kodi, nomi yoki UUID bo'yicha qidiruv")
             @RequestParam(required = false) String q,
 
-            @Parameter(description = "Attachment status", example = "ACTIVE")
+            @Parameter(description = "Attachment status")
             @RequestParam(required = false) String status,
 
-            @Parameter(description = "Education type code (11=Bakalavr, 12=Magistr)", example = "11")
+            @Parameter(description = "Education type code (11=Bakalavr, 12=Magistr)")
             @RequestParam(required = false) String educationType,
 
-            @Parameter(description = "Education form code (11=Kunduzgi, 12=Kechki, 16=Masofaviy)", example = "11")
+            @Parameter(description = "Education form code (11=Kunduzgi, 12=Kechki, 16=Masofaviy)")
             @RequestParam(required = false) String educationForm,
 
-            @Parameter(description = "Academic year (start year, e.g. 2026 = 2026-2027)", example = "2026")
+            @Parameter(description = "Academic year (start year, e.g. 2026 = 2026-2027)")
             @RequestParam(required = false) Integer eduYear,
 
             @Parameter(hidden = true)
@@ -239,9 +239,9 @@ public class SpecialityAttachmentController {
     public ResponseEntity<StreamingResponseBody> export(
             @Parameter(description = "University code") @RequestParam(required = false) String universityCode,
             @Parameter(description = "Speciality id (UUID)") @RequestParam(required = false) UUID specialityId,
-            @Parameter(description = "Mutaxassislik kodi, nomi yoki UUID bo'yicha qidiruv", example = "60110100")
+            @Parameter(description = "Mutaxassislik kodi, nomi yoki UUID bo'yicha qidiruv")
             @RequestParam(required = false) String q,
-            @Parameter(description = "Attachment status", example = "ACTIVE") @RequestParam(required = false) String status,
+            @Parameter(description = "Attachment status") @RequestParam(required = false) String status,
             @Parameter(description = "Education type code") @RequestParam(required = false) String educationType,
             @Parameter(description = "Education form code") @RequestParam(required = false) String educationForm,
             @Parameter(description = "Academic year (start year, e.g. 2026)") @RequestParam(required = false) Integer eduYear

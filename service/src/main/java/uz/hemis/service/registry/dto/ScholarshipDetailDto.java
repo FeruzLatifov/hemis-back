@@ -56,13 +56,13 @@ public record ScholarshipDetailDto(
     @Schema(description = "Active status (derived from end_date)")
     Boolean active,
 
-    @Schema(description = "Education type classifier code", example = "11")
+    @Schema(description = "Education type classifier code")
     String educationType,
 
-    @Schema(description = "Education form classifier code", example = "11")
+    @Schema(description = "Education form classifier code")
     String educationForm,
 
-    @Schema(description = "Semester classifier code", example = "3")
+    @Schema(description = "Semester classifier code")
     String semester,
 
     @Schema(description = "Monthly scholarship amounts")
@@ -75,7 +75,7 @@ public record ScholarshipDetailDto(
         @Schema(description = "Payment month")
         LocalDate month,
 
-        @Schema(description = "Amount (UZS)", example = "689400.0")
+        @Schema(description = "Amount (UZS)")
         Double amount
     ) {}
 }

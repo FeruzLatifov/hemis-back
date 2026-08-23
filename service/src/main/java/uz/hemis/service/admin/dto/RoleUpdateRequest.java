@@ -18,7 +18,7 @@ import java.util.UUID;
 public class RoleUpdateRequest {
 
     @Size(max = 255, message = "Name must be at most 255 characters")
-    @Schema(description = "Role name (human-readable)", example = "Faculty Administrator")
+    @Schema(description = "Role name (human-readable)")
     private String name;
 
     @Size(max = 1000, message = "Description must be at most 1000 characters")

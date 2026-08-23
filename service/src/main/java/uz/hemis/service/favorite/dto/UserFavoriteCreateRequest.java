@@ -13,6 +13,6 @@ import jakarta.validation.constraints.Size;
 public record UserFavoriteCreateRequest(
         @NotBlank(message = "menuCode is required")
         @Size(max = 100, message = "menuCode must be at most 100 characters")
-        @Schema(description = "Menu item code", example = "dashboard")
+        @Schema(description = "Menu item code")
         String menuCode
 ) {}

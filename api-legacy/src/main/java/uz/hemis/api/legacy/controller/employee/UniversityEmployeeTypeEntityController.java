@@ -74,7 +74,7 @@ public class UniversityEmployeeTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> getById(
-            @Parameter(description = "Tur kodi", example = "12")
+            @Parameter(description = "Tur kodi")
             @PathVariable String entityId,
             @RequestParam(required = false) Boolean returnNulls,
             @RequestParam(required = false) String view) {
@@ -121,22 +121,13 @@ public class UniversityEmployeeTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> update(
-            @Parameter(description = "Tur kodi", example = "12")
+            @Parameter(description = "Tur kodi")
             @PathVariable String entityId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Yangilanadigan maydonlar",
                 content = @io.swagger.v3.oas.annotations.media.Content(
                     mediaType = "application/json",
-                    schema = @io.swagger.v3.oas.annotations.media.Schema(
-                        example = """
-                            {
-                                "name": "Professor-o'qituvchi xodim",
-                                "nameEn": "Teaching staff",
-                                "nameRu": "Профессорско-преподавательский состав",
-                                "active": true
-                            }
-                            """
-                    )
+                    schema = @io.swagger.v3.oas.annotations.media.Schema()
                 )
             )
             @RequestBody Map<String, Object> entityData) {
@@ -182,7 +173,7 @@ public class UniversityEmployeeTypeEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi")
     })
     public ResponseEntity<?> delete(
-            @Parameter(description = "Tur kodi", example = "12")
+            @Parameter(description = "Tur kodi")
             @PathVariable String entityId) {
 
         log.info("DELETE UniversityEmployeeType - entityId: {}", entityId);
@@ -235,17 +226,7 @@ public class UniversityEmployeeTypeEntityController {
                 description = "Yangi xodim turi ma'lumotlari",
                 content = @io.swagger.v3.oas.annotations.media.Content(
                     mediaType = "application/json",
-                    schema = @io.swagger.v3.oas.annotations.media.Schema(
-                        example = """
-                            {
-                                "code": "15",
-                                "name": "Yangi xodim turi",
-                                "nameEn": "New employee type",
-                                "nameRu": "Новый тип сотрудника",
-                                "active": true
-                            }
-                            """
-                    )
+                    schema = @io.swagger.v3.oas.annotations.media.Schema()
                 )
             )
             @RequestBody Map<String, Object> entityData) {

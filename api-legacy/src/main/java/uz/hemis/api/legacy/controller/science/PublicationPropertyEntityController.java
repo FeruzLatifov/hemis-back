@@ -283,20 +283,7 @@ public class PublicationPropertyEntityController {
                 description = "Ilmiy ishlanma ma'lumotlari",
                 required = true,
                 content = @Content(
-                    mediaType = "application/json",
-                    examples = @ExampleObject(
-                        name = "Yangi patent",
-                        value = """
-                            {
-                              "name": "Yangi innovatsion texnologiya",
-                              "numbers": "IAP 2024/001",
-                              "authors": "Karimov A.B., Sodiqov D.E.",
-                              "authorCounts": 2,
-                              "propertyDate": "2024-01-15",
-                              "active": true
-                            }
-                            """
-                    )
+                    mediaType = "application/json"
                 )
             )
             @RequestBody Map<String, Object> body,

@@ -27,7 +27,6 @@ public class OAuthClientSecretRotateRequest {
     @Size(min = 12, max = 255, message = "clientSecret kamida 12 belgi bo'lishi kerak")
     @Schema(
             description = "Admin tanlagan yangi maxfiy kalit. Bo'sh qoldiring — markaz kuchli maxfiy kalit generatsiya qiladi.",
-            example = "null",
             nullable = true
     )
     private String clientSecret;

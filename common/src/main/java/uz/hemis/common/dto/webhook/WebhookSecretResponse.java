@@ -23,7 +23,7 @@ import java.util.UUID;
 public record WebhookSecretResponse(
         UUID targetId,
         String universityCode,
-        @Schema(example = "whsec_a7b3c9...", description = "Plain HMAC secret — OTM .env'ga yoziladi")
+        @Schema(description = "Plain HMAC secret — OTM .env'ga yoziladi")
         String plainSecret,
         LocalDateTime createdAt,
         String warning

@@ -19,22 +19,22 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Faculty Group Row - University level aggregation")
 public class FacultyGroupRowDto {
 
-    @Schema(description = "University code (Primary Key)", example = "100001")
+    @Schema(description = "University code (Primary Key)")
     private String universityCode;
 
-    @Schema(description = "University name", example = "O'zbekiston Milliy universiteti")
+    @Schema(description = "University name")
     private String universityName;
 
-    @Schema(description = "Total faculty count in this university", example = "12")
+    @Schema(description = "Total faculty count in this university")
     private Long facultyCount;
 
-    @Schema(description = "Active faculty count", example = "10")
+    @Schema(description = "Active faculty count")
     private Long activeFacultyCount;
 
-    @Schema(description = "Inactive faculty count", example = "2")
+    @Schema(description = "Inactive faculty count")
     private Long inactiveFacultyCount;
 
-    @Schema(description = "Has children (always true for groups)", example = "true")
+    @Schema(description = "Has children (always true for groups)")
     private Boolean hasChildren;
 
     public FacultyGroupRowDto(String universityCode, String universityName, Long facultyCount, Long activeFacultyCount) {

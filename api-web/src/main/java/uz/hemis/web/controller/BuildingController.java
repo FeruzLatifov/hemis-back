@@ -58,7 +58,7 @@ public class BuildingController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
     public ResponseEntity<ResponseWrapper<PageResponse<BuildingDto>>> list(
-            @Parameter(description = "OTM kodi", example = "401")
+            @Parameter(description = "OTM kodi")
             @PathVariable String universityCode,
             @Parameter(hidden = true)
             @PageableDefault(size = 50, sort = "name", direction = Sort.Direction.ASC)
@@ -78,7 +78,7 @@ public class BuildingController {
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
     public ResponseEntity<ResponseWrapper<BuildingDto>> create(
-            @Parameter(description = "OTM kodi", example = "401")
+            @Parameter(description = "OTM kodi")
             @PathVariable String universityCode,
             @Valid @RequestBody BuildingCreateUpdateDto dto) {
         log.info("POST /universities/{}/buildings name={}", universityCode, dto.getName());

@@ -80,7 +80,7 @@ public class PublicationLocalityEntityController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(
-            @Parameter(description = "Hudud identifikatori (code)", required = true, example = "11")
+            @Parameter(description = "Hudud identifikatori (code)", required = true)
             @PathVariable String entityId,
             @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,

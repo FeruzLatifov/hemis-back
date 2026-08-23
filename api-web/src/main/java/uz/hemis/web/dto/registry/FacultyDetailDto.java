@@ -21,48 +21,48 @@ import java.time.LocalDateTime;
 @Schema(description = "Faculty Detail - Complete faculty information")
 public class FacultyDetailDto {
 
-    @Schema(description = "Faculty code (Primary Key)", example = "100001-11")
+    @Schema(description = "Faculty code (Primary Key)")
     private String code;
 
-    @Schema(description = "Faculty name (Uzbek)", example = "Iqtisodiyot fakulteti")
+    @Schema(description = "Faculty name (Uzbek)")
     private String nameUz;
 
-    @Schema(description = "Faculty name (Russian)", example = "Экономический факультет")
+    @Schema(description = "Faculty name (Russian)")
     private String nameRu;
 
-    @Schema(description = "Parent university code", example = "100001")
+    @Schema(description = "Parent university code")
     private String universityCode;
 
-    @Schema(description = "Parent university name", example = "O'zbekiston Milliy universiteti")
+    @Schema(description = "Parent university name")
     private String universityName;
 
-    @Schema(description = "Faculty status (active/inactive)", example = "true")
+    @Schema(description = "Faculty status (active/inactive)")
     private Boolean status;
 
-    @Schema(description = "Department type code", example = "11")
+    @Schema(description = "Department type code")
     private String departmentType;
 
-    @Schema(description = "Department type name", example = "Fakultet")
+    @Schema(description = "Department type name")
     private String departmentTypeName;
 
-    @Schema(description = "Parent code (if nested)", example = "100001")
+    @Schema(description = "Parent code (if nested)")
     private String parentCode;
 
-    @Schema(description = "Hierarchical path", example = "100001/100001-11")
+    @Schema(description = "Hierarchical path")
     private String path;
 
-    @Schema(description = "Created at", example = "2020-01-15T10:30:00")
+    @Schema(description = "Created at")
     private LocalDateTime createdAt;
 
-    @Schema(description = "Created by", example = "admin")
+    @Schema(description = "Created by")
     private String createdBy;
 
-    @Schema(description = "Updated at", example = "2023-05-20T14:45:00")
+    @Schema(description = "Updated at")
     private LocalDateTime updatedAt;
 
-    @Schema(description = "Updated by", example = "admin")
+    @Schema(description = "Updated by")
     private String updatedBy;
 
-    @Schema(description = "Version (optimistic locking)", example = "1")
+    @Schema(description = "Version (optimistic locking)")
     private Integer version;
 }

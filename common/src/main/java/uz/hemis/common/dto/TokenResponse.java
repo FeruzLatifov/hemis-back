@@ -24,9 +24,9 @@ import java.io.Serializable;
  * <p><strong>Example Response:</strong></p>
  * <pre>
  * {
- *   "access_token": "Qj4ndwMJ76yu6xxFPYwyxzdUN6c",
+ *   "access_token": "<access_token>",
  *   "token_type": "bearer",
- *   "refresh_token": "dAOjVT_EEsfr34RALHakaADX0k0",
+ *   "refresh_token": "<refresh_token>",
  *   "expires_in": 2591998,
  *   "scope": "rest-api"
  * }
@@ -49,7 +49,7 @@ public class TokenResponse implements Serializable {
      * Access token (UUID format)
      * JSON field: "access_token"
      *
-     * <p>Example: "f1041fac-58cd-491a-a37d-212393a838f3"</p>
+     * <p>Example: "<access_token>"</p>
      * <p>Stored in Redis with user details</p>
      */
     @JsonProperty("access_token")
@@ -67,7 +67,7 @@ public class TokenResponse implements Serializable {
      * Refresh token (UUID format)
      * JSON field: "refresh_token"
      *
-     * <p>Example: "34583dda-9410-4410-95ff-cc0824656766"</p>
+     * <p>Example: "<refresh_token>"</p>
      * <p>Used to get new access token when expired</p>
      */
     @JsonProperty("refresh_token")

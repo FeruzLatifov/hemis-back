@@ -29,11 +29,11 @@ public record GroupDictionariesDto(
     @Schema(name = "GroupDictionaryItem", description = "Generic dictionary item for dropdown options")
     public record DictionaryItem(
 
-        @Schema(description = "Unique code/value for this option", example = "11",
+        @Schema(description = "Unique code/value for this option",
             requiredMode = Schema.RequiredMode.REQUIRED)
         String code,
 
-        @Schema(description = "Display label", example = "Bakalavr",
+        @Schema(description = "Display label",
             requiredMode = Schema.RequiredMode.REQUIRED)
         String name
     ) {}

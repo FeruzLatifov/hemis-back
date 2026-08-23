@@ -306,7 +306,7 @@ public class ProjectMetaEntityController {
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli yaratildi",
             content = @Content(mediaType = "application/json",
-                schema = @Schema(example = "{\"_entityName\":\"hemishe_EProjectMeta\",\"_instanceName\":\"com.company.hemishe.entity.EProjectMeta-uuid [detached]\",\"id\":\"uuid\"}"))),
+                schema = @Schema())),
         @ApiResponse(responseCode = "400", description = "Noto'g'ri so'rov")
     })
     public ResponseEntity<Map<String, Object>> create(

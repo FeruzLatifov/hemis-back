@@ -80,7 +80,7 @@ public class UniversityDepartmentTypeController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/{entityId}")
     public ResponseEntity<?> getById(
-            @Parameter(description = "Bo'linma turi identifikatori (code)", required = true, example = "11")
+            @Parameter(description = "Bo'linma turi identifikatori (code)", required = true)
             @PathVariable String entityId,
             @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,

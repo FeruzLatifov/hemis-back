@@ -72,7 +72,7 @@ public class GradeEntityController {
         @ApiResponse(responseCode = "404", description = "Yozuv topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Entity UUID", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Entity UUID")
             @PathVariable UUID entityId,
             @Parameter(description = "null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
@@ -99,7 +99,7 @@ public class GradeEntityController {
         @ApiResponse(responseCode = "404", description = "Yozuv topilmadi")
     })
     public ResponseEntity<Map<String, Object>> update(
-            @Parameter(description = "Entity UUID", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Entity UUID")
             @PathVariable UUID entityId,
             @RequestBody Map<String, Object> body,
             @Parameter(description = "null qiymatlarni qaytarish")
@@ -128,7 +128,7 @@ public class GradeEntityController {
         @ApiResponse(responseCode = "404", description = "Yozuv topilmadi")
     })
     public ResponseEntity<Void> delete(
-            @Parameter(description = "Entity UUID", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Entity UUID")
             @PathVariable UUID entityId) {
         log.debug("DELETE academic score id: {} (SOFT DELETE via service)", entityId);
 
@@ -151,9 +151,9 @@ public class GradeEntityController {
     public ResponseEntity<List<Map<String, Object>>> searchGet(
             @Parameter(description = "JPQL filter")
             @RequestParam(required = false) String filter,
-            @Parameter(description = "Boshlang'ich indeks", example = "0")
+            @Parameter(description = "Boshlang'ich indeks")
             @RequestParam(defaultValue = "0") Integer offset,
-            @Parameter(description = "Maksimal yozuvlar soni", example = "50")
+            @Parameter(description = "Maksimal yozuvlar soni")
             @RequestParam(defaultValue = "50") Integer limit,
             @Parameter(description = "null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
@@ -175,9 +175,9 @@ public class GradeEntityController {
     @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli")
     public ResponseEntity<List<Map<String, Object>>> searchPost(
             @RequestBody(required = false) Map<String, Object> body,
-            @Parameter(description = "Boshlang'ich indeks", example = "0")
+            @Parameter(description = "Boshlang'ich indeks")
             @RequestParam(required = false) Integer offset,
-            @Parameter(description = "Maksimal yozuvlar soni", example = "50")
+            @Parameter(description = "Maksimal yozuvlar soni")
             @RequestParam(required = false) Integer limit,
             @Parameter(description = "null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls) {
@@ -221,9 +221,9 @@ public class GradeEntityController {
     )
     @ApiResponse(responseCode = "200", description = "Muvaffaqiyatli")
     public ResponseEntity<List<Map<String, Object>>> getAll(
-            @Parameter(description = "Boshlang'ich indeks", example = "0")
+            @Parameter(description = "Boshlang'ich indeks")
             @RequestParam(defaultValue = "0") Integer offset,
-            @Parameter(description = "Maksimal yozuvlar soni", example = "50")
+            @Parameter(description = "Maksimal yozuvlar soni")
             @RequestParam(defaultValue = "50") Integer limit,
             @Parameter(description = "Saralash (masalan: updateDate-desc)")
             @RequestParam(required = false) String sort,
@@ -299,29 +299,7 @@ public class GradeEntityController {
                 description = "Akademik o'zlashtirish ma'lumotlari (CUBA format)",
                 required = true,
                 content = @Content(
-                    mediaType = "application/json",
-                    examples = @ExampleObject(
-                        name = "Namuna",
-                        value = """
-                            {
-                                "_entityName": "hemishe_RAcademicScore",
-                                "universityCode": "401",
-                                "universityName": "TATU",
-                                "facultyCode": "401-01",
-                                "facultyName": "Dasturiy injiniring",
-                                "educationTypeCode": "11",
-                                "educationTypeName": "Bakalavr",
-                                "educationYearCode": "2024",
-                                "semesterTypeCode": "1",
-                                "courseCode": "1",
-                                "tableType": "o'zlashtirish ko'rsatkichlari",
-                                "scorePercent": 85.5,
-                                "scoreType": "yaxshi",
-                                "debitorCount": 5.0,
-                                "updateDate": "2024-01-15"
-                            }
-                            """
-                    )
+                    mediaType = "application/json"
                 )
             )
             @RequestBody Map<String, Object> body,

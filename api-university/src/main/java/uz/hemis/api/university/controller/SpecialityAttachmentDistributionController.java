@@ -112,17 +112,13 @@ public class SpecialityAttachmentDistributionController {
                     """
     )
     public ResponseEntity<ResponseWrapper<List<SpecialityAttachmentSnapshotDto>>> snapshot(
-            @Parameter(description = "O'quv yili bo'yicha filtr (2026 = 2026-2027 o'quv yili). Bo'sh — barcha yillar.",
-                    example = "2026")
+            @Parameter(description = "O'quv yili bo'yicha filtr (2026 = 2026-2027 o'quv yili). Bo'sh — barcha yillar.")
             @RequestParam(required = false) Integer eduYear,
-            @Parameter(description = "Ta'lim turi kodi bo'yicha filtr (h_education_type klassifikatoridan: 11=Bakalavr, 12=Magistr, ...). Bo'sh — barcha turlar.",
-                    example = "11")
+            @Parameter(description = "Ta'lim turi kodi bo'yicha filtr (h_education_type klassifikatoridan: 11=Bakalavr, 12=Magistr, ...). Bo'sh — barcha turlar.")
             @RequestParam(required = false) String educationType,
-            @Parameter(description = "Ta'lim shakli kodi bo'yicha filtr (h_education_form klassifikatoridan: 11=Kunduzgi, 12=Kechki, 13=Sirtqi, 16=Masofaviy, ...). Bo'sh — barcha shakllar.",
-                    example = "11")
+            @Parameter(description = "Ta'lim shakli kodi bo'yicha filtr (h_education_form klassifikatoridan: 11=Kunduzgi, 12=Kechki, 13=Sirtqi, 16=Masofaviy, ...). Bo'sh — barcha shakllar.")
             @RequestParam(required = false) String educationForm,
-            @Parameter(description = "Mutaxassislik kodi bo'yicha filtr (klassifikator code'i). Bo'sh — barcha mutaxassisliklar.",
-                    example = "60710100")
+            @Parameter(description = "Mutaxassislik kodi bo'yicha filtr (klassifikator code'i). Bo'sh — barcha mutaxassisliklar.")
             @RequestParam(required = false) String specialityCode,
             HttpServletRequest request) {
         String universityCode = resolveUniversityCode(request);

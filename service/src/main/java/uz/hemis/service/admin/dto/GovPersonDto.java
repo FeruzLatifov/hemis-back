@@ -24,34 +24,34 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Person data resolved from the GUVD/api_mspd passport-data gateway")
 public class GovPersonDto {
 
-    @Schema(description = "PINFL / JSHSHIR (14 digits)", example = "31507976020031")
+    @Schema(description = "PINFL / JSHSHIR (14 digits)")
     private String pinfl;
 
-    @Schema(description = "First name (GUVD: name_latin)", example = "AKMAL")
+    @Schema(description = "First name (GUVD: name_latin)")
     private String firstName;
 
-    @Schema(description = "Last name / surname (GUVD: sur_name_latin)", example = "ABDULLAYEV")
+    @Schema(description = "Last name / surname (GUVD: sur_name_latin)")
     private String lastName;
 
-    @Schema(description = "Middle name / patronymic (GUVD: patronym_name_latin)", example = "AHMADOVICH")
+    @Schema(description = "Middle name / patronymic (GUVD: patronym_name_latin)")
     private String middleName;
 
     @Schema(description = "Composed full name (last first middle)")
     private String fullName;
 
-    @Schema(description = "Birth date ISO yyyy-MM-dd (GUVD: birth_date)", example = "1990-01-15")
+    @Schema(description = "Birth date ISO yyyy-MM-dd (GUVD: birth_date)")
     private String birthDate;
 
-    @Schema(description = "Birth place (GUVD: birth_place)", example = "TOSHKENT SHAHAR")
+    @Schema(description = "Birth place (GUVD: birth_place)")
     private String birthPlace;
 
-    @Schema(description = "Gender (GUVD: sex)", example = "M")
+    @Schema(description = "Gender (GUVD: sex)")
     private String gender;
 
-    @Schema(description = "Nationality (GUVD: nationality)", example = "O'ZBEKISTON")
+    @Schema(description = "Nationality (GUVD: nationality)")
     private String nationality;
 
-    @Schema(description = "Passport series+number (GUVD: document)", example = "AB1234567")
+    @Schema(description = "Passport series+number (GUVD: document)")
     private String passport;
 
     @Schema(description = "Passport issuing place (GUVD: doc_give_place)")

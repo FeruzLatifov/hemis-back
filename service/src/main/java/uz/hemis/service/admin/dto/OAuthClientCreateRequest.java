@@ -17,7 +17,7 @@ public class OAuthClientCreateRequest {
 
     @NotBlank(message = "client_id is required")
     @Size(max = 100)
-    @Schema(description = "Client login / identifier — used as client_id (e.g. otm999)", example = "otm999")
+    @Schema(description = "Client login / identifier — used as client_id")
     private String clientId;
 
     @NotBlank(message = "client_secret is required")
@@ -27,13 +27,13 @@ public class OAuthClientCreateRequest {
 
     @NotBlank(message = "universityCode is required")
     @Size(max = 255)
-    @Schema(description = "University code this client belongs to", example = "999")
+    @Schema(description = "University code this client belongs to")
     private String universityCode;
 
     @Size(max = 255)
     @Schema(description = "Display name (optional; defaults to the university)")
     private String clientName;
 
-    @Schema(description = "Active on creation (default true)", example = "true")
+    @Schema(description = "Active on creation (default true)")
     private Boolean active;
 }

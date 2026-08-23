@@ -114,7 +114,7 @@ public class StudentMetaEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba meta topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Talaba meta UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Talaba meta UUID identifikatori")
             @PathVariable UUID entityId,
             @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,

@@ -34,7 +34,7 @@ public class ExternalIntegrationController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/tax/rent")
     public ResponseEntity<Map<String, Object>> getTaxRent(
-        @Parameter(description = "PINFL (14 xonali)", required = true, example = "51805035330018") @RequestParam String pinfl
+        @Parameter(description = "PINFL (14 xonali)", required = true) @RequestParam String pinfl
     ) {
         log.info("GET /services/tax/rent - pinfl: {}", uz.hemis.common.log.LogSafe.pinfl(pinfl));
         return ResponseEntity.ok(externalIntegrationService.getTaxRent(pinfl));
@@ -45,9 +45,9 @@ public class ExternalIntegrationController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/uzasbo/scholarship")
     public ResponseEntity<Map<String, Object>> getUzasboScholarship(
-        @Parameter(description = "INN (tashkilot identifikatori)", required = true, example = "201354108") @RequestParam String inn,
-        @Parameter(description = "Yil", required = true, example = "2023") @RequestParam Integer year,
-        @Parameter(description = "Oy (1-12)", required = true, example = "9") @RequestParam Integer month
+        @Parameter(description = "INN (tashkilot identifikatori)", required = true) @RequestParam String inn,
+        @Parameter(description = "Yil", required = true) @RequestParam Integer year,
+        @Parameter(description = "Oy (1-12)", required = true) @RequestParam Integer month
     ) {
         log.info("GET /services/uzasbo/scholarship - inn: {}, year: {}, month: {}", inn, year, month);
         return ResponseEntity.ok(externalIntegrationService.getUzasboScholarship(inn, year, month));

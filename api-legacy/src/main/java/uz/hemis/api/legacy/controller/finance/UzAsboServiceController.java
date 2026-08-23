@@ -122,40 +122,14 @@ public class UzAsboServiceController {
                     description = "Muvaffaqiyatli - Stipendiya tekshiruvi natijalari",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class),
-                            examples = @ExampleObject(
-                                    name = "Stipendiya natijalari",
-                                    value = """
-                                        {
-                                          "success": true,
-                                          "data": {
-                                            "tin": "207095330",
-                                            "docOn": "2024-02-05",
-                                            "results": [
-                                              {"pinfl": "60209047160010", "status": "OK"},
-                                              {"pinfl": "52712015360046", "status": "OK"},
-                                              {"pinfl": "527120153600461", "status": "INVALID_PINFL"}
-                                            ]
-                                          }
-                                        }
-                                        """
-                            )
+                            schema = @Schema(implementation = Map.class)
                     )
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Noto'g'ri request format",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Xatolik",
-                                    value = """
-                                        {
-                                          "success": false,
-                                          "message": "Missing required field: students"
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             )
     })
@@ -165,21 +139,7 @@ public class UzAsboServiceController {
                     description = "Stipendiya tekshirish so'rovi",
                     required = true,
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "So'rov namunasi",
-                                    value = """
-                                        {
-                                          "tin": "207095330",
-                                          "docOn": "2024-02-05",
-                                          "students": [
-                                            {"pinfl": "60209047160010", "sum": "103576"},
-                                            {"pinfl": "52712015360046"},
-                                            {"pinfl": "527120153600461", "sum": "103576"}
-                                          ]
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             )
             @RequestBody Map<String, Object> request) {
@@ -270,19 +230,7 @@ public class UzAsboServiceController {
                     description = "Muvaffaqiyatli - Test ma'lumotlari",
                     content = @Content(
                             mediaType = "application/json",
-                            schema = @Schema(implementation = Map.class),
-                            examples = @ExampleObject(
-                                    name = "Test natijalari",
-                                    value = """
-                                        {
-                                          "success": true,
-                                          "data": {
-                                            "type": "test",
-                                            "message": "Type test endpoint"
-                                          }
-                                        }
-                                        """
-                            )
+                            schema = @Schema(implementation = Map.class)
                     )
             )
     })

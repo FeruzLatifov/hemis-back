@@ -167,14 +167,12 @@ public class DepartmentRegistryController {
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentGroupRowDto>>> getGroups(
             @Parameter(
                 description = "Search query (university name or code)",
-                example = "tatu",
                 required = false
             )
             @RequestParam(required = false) String q,
 
             @Parameter(
                 description = "Filter by department status (true=active, false=inactive, null=all)",
-                example = "true",
                 required = false
             )
             @RequestParam(required = false) Boolean status,
@@ -282,21 +280,18 @@ public class DepartmentRegistryController {
     public ResponseEntity<ResponseWrapper<PageResponse<DepartmentRowDto>>> getDepartmentsByUniversity(
             @Parameter(
                 description = "University code (Primary key)",
-                example = "00001",
                 required = true
             )
             @PathVariable @NotBlank String universityCode,
 
             @Parameter(
                 description = "Search query (department name or code)",
-                example = "axborot",
                 required = false
             )
             @RequestParam(required = false) String q,
 
             @Parameter(
                 description = "Filter by status (true=active only, false=inactive only, null=all)",
-                example = "true",
                 required = false
             )
             @RequestParam(required = false) Boolean status,
@@ -392,7 +387,6 @@ public class DepartmentRegistryController {
     public ResponseEntity<ResponseWrapper<DepartmentDetailDto>> getDepartmentDetail(
             @Parameter(
                 description = "Department code (Primary key)",
-                example = "00001-01",
                 required = true
             )
             @PathVariable @NotBlank String code
@@ -471,21 +465,18 @@ public class DepartmentRegistryController {
     public ResponseEntity<byte[]> exportDepartments(
             @Parameter(
                 description = "Search query (department or university name/code)",
-                example = "axborot",
                 required = false
             )
             @RequestParam(required = false) String q,
 
             @Parameter(
                 description = "Filter by status (true=active, false=inactive, null=all)",
-                example = "true",
                 required = false
             )
             @RequestParam(required = false) Boolean status,
 
             @Parameter(
                 description = "Export departments for specific university only",
-                example = "00001",
                 required = false
             )
             @RequestParam(required = false) String universityCode

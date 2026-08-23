@@ -24,25 +24,25 @@ import java.time.LocalDateTime;
 @Schema(name = "ClassifierItem", description = "Klasifikator elementi")
 public class ClassifierItemDto implements Serializable {
 
-    @Schema(description = "Kod", example = "11")
+    @Schema(description = "Kod")
     private String code;
 
-    @Schema(description = "Nomi (o'zbek)", example = "Bakalavr")
+    @Schema(description = "Nomi (o'zbek)")
     private String name;
 
-    @Schema(description = "Nomi (rus)", example = "Бакалавр")
+    @Schema(description = "Nomi (rus)")
     private String nameRu;
 
-    @Schema(description = "Nomi (ingliz)", example = "Bachelor")
+    @Schema(description = "Nomi (ingliz)")
     private String nameEn;
 
-    @Schema(description = "Faolmi", example = "true")
+    @Schema(description = "Faolmi")
     private Boolean active;
 
-    @Schema(description = "Versiya", example = "1")
+    @Schema(description = "Versiya")
     private Integer version;
 
-    @Schema(description = "Ota element kodi (ierarxik klasifikatorlar uchun)", example = "1700")
+    @Schema(description = "Ota element kodi (ierarxik klasifikatorlar uchun)")
     private String parentCode;
 
     @Schema(description = "Yaratilgan vaqt")

@@ -137,7 +137,7 @@ public class StudentEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba topilmadi")
     })
     public ResponseEntity<Map<String, Object>> getById(
-            @Parameter(description = "Talaba UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Talaba UUID identifikatori")
             @PathVariable UUID entityId,
             @Parameter(description = "Dinamik atributlarni qaytarish")
             @RequestParam(required = false) Boolean dynamicAttributes,
@@ -485,19 +485,13 @@ public class StudentEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba topilmadi")
     })
     public ResponseEntity<Map<String, Object>> update(
-            @Parameter(description = "Talaba UUID identifikatori", example = "9dbdbe96-88e2-f6c7-453a-298c7187311c")
+            @Parameter(description = "Talaba UUID identifikatori")
             @PathVariable UUID entityId,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                 description = "Yangilanadigan fieldlar (faqat yuborilgan fieldlar o'zgaradi)",
                 required = true,
                 content = @Content(mediaType = "application/json",
-                    schema = @Schema(example = """
-                        {
-                            "phone": "+998901234567",
-                            "email": "student@example.com",
-                            "address": "Toshkent shahar"
-                        }
-                        """)))
+                    schema = @Schema()))
             @RequestBody Map<String, Object> body,
             @Parameter(description = "Null qiymatlarni qaytarish")
             @RequestParam(required = false) Boolean returnNulls,
@@ -573,7 +567,7 @@ public class StudentEntityController {
         @ApiResponse(responseCode = "404", description = "Topilmadi - Berilgan ID bilan talaba topilmadi")
     })
     public ResponseEntity<?> delete(
-            @Parameter(description = "Talaba UUID identifikatori", example = "00000000-0000-0000-0000-000000000000")
+            @Parameter(description = "Talaba UUID identifikatori")
             @PathVariable UUID entityId) {
         log.debug("DELETE student id: {} (SOFT DELETE via service)", entityId);
 

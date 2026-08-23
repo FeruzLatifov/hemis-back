@@ -71,36 +71,14 @@ public class BillingServiceController {
             description = "Hisob-faktura muvaffaqiyatli yaratildi",
             content = @Content(
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = Map.class),
-                examples = @ExampleObject(
-                    name = "Success Response",
-                    value = """
-                        {
-                            "success": true,
-                            "data": {
-                                "invoices": [],
-                                "message": "Invoice query processed"
-                            }
-                        }
-                        """
-                )
+                schema = @Schema(implementation = Map.class)
             )
         ),
         @ApiResponse(
             responseCode = "400",
             description = "Noto'g'ri so'rov formati",
             content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(
-                    value = """
-                        {
-                            "success": false,
-                            "data": {
-                                "error": "params object is required"
-                            }
-                        }
-                        """
-                )
+                mediaType = MediaType.APPLICATION_JSON_VALUE
             )
         )
     })
@@ -111,20 +89,7 @@ public class BillingServiceController {
             description = "Hisob-faktura so'rovi params obyekti bilan",
             required = true,
             content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(
-                    name = "Invoice Request",
-                    value = """
-                        {
-                            "params": {
-                                "OrganizationId": 303,
-                                "EduFacultyId": "",
-                                "EduYearId": 3,
-                                "EduTypeId": "11"
-                            }
-                        }
-                        """
-                )
+                mediaType = MediaType.APPLICATION_JSON_VALUE
             )
         )
         @org.springframework.web.bind.annotation.RequestBody Map<String, Object> request
@@ -205,37 +170,14 @@ public class BillingServiceController {
             description = "Stipendiya so'rovi muvaffaqiyatli qayta ishlandi",
             content = @Content(
                 mediaType = MediaType.APPLICATION_JSON_VALUE,
-                schema = @Schema(implementation = Map.class),
-                examples = @ExampleObject(
-                    name = "Success Response",
-                    value = """
-                        {
-                            "success": true,
-                            "data": {
-                                "processedCount": 3,
-                                "students": [],
-                                "message": "Scholarship query processed"
-                            }
-                        }
-                        """
-                )
+                schema = @Schema(implementation = Map.class)
             )
         ),
         @ApiResponse(
             responseCode = "400",
             description = "Noto'g'ri so'rov formati",
             content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(
-                    value = """
-                        {
-                            "success": false,
-                            "data": {
-                                "error": "tin is required"
-                            }
-                        }
-                        """
-                )
+                mediaType = MediaType.APPLICATION_JSON_VALUE
             )
         )
     })
@@ -246,20 +188,7 @@ public class BillingServiceController {
             description = "Stipendiya so'rovi tin va pinfl ro'yxati bilan",
             required = true,
             content = @Content(
-                mediaType = MediaType.APPLICATION_JSON_VALUE,
-                examples = @ExampleObject(
-                    name = "Scholarship Request",
-                    value = """
-                        {
-                            "tin": "205771544",
-                            "pinfl": [
-                                "62708005690041",
-                                "62708005690043",
-                                "40211905590019"
-                            ]
-                        }
-                        """
-                )
+                mediaType = MediaType.APPLICATION_JSON_VALUE
             )
         )
         @org.springframework.web.bind.annotation.RequestBody Map<String, Object> request

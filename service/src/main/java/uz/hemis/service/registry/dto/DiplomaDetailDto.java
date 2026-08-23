@@ -56,16 +56,16 @@ public record DiplomaDetailDto(
     @Schema(description = "Active status")
     Boolean active,
 
-    @Schema(description = "Education type classifier code", example = "11")
+    @Schema(description = "Education type classifier code")
     String educationType,
 
-    @Schema(description = "Admission year classifier code", example = "2020")
+    @Schema(description = "Admission year classifier code")
     String admissionYear,
 
-    @Schema(description = "Speciality code", example = "60610100")
+    @Schema(description = "Speciality code")
     String specialityCode,
 
-    @Schema(description = "Total credit", example = "240")
+    @Schema(description = "Total credit")
     String totalCredit,
 
     @Schema(description = "Diploma content hash")

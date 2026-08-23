@@ -115,56 +115,18 @@ public class StudentGpaEntityController {
                     responseCode = "200",
                     description = "Muvaffaqiyatli - GPA ro'yxati qaytarildi",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "GPA ro'yxati",
-                                    value = """
-                                        [
-                                          {
-                                            "_entityName": "hemishe_EStudentGpa",
-                                            "_instanceName": "com.company.hemishe.entity.EStudentGpa-... [detached]",
-                                            "id": "ccb27f69-5258-0ae3-9e97-f068d65fadf9",
-                                            "debtSubjects": 0,
-                                            "method": "one_year",
-                                            "level": {
-                                              "_entityName": "hemishe_HCourse",
-                                              "_instanceName": "12 2-kurs",
-                                              "id": "12",
-                                              "code": "12",
-                                              "name": "2-kurs"
-                                            },
-                                            "creditSum": "47.0",
-                                            "subjects": 11,
-                                            "educationYear": {
-                                              "_entityName": "hemishe_HEducationYear",
-                                              "_instanceName": "2023-2024",
-                                              "id": "2023",
-                                              "name": "2023-2024"
-                                            },
-                                            "studentId": {
-                                              "_entityName": "hemishe_EStudent",
-                                              "_instanceName": "YULCHIYEVA GAVXAR ISLAMOVNA",
-                                              "id": "ee2f9738-5992-2b63-a85f-9fa3d98862e5",
-                                              "lastname": "YULCHIYEVA",
-                                              "firstname": "GAVXAR",
-                                              "fathername": "ISLAMOVNA"
-                                            },
-                                            "gpa": "4.0"
-                                          }
-                                        ]
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(responseCode = "401", description = "Autentifikatsiya xatosi"),
             @ApiResponse(responseCode = "403", description = "Ruxsat yo'q")
     })
     public ResponseEntity<List<Map<String, Object>>> getAll(
-            @Parameter(description = "View nomi", example = "eStudentGpa-view")
+            @Parameter(description = "View nomi")
             @RequestParam(value = "view", required = false) String view,
-            @Parameter(description = "Maksimum natijalar soni", example = "100")
+            @Parameter(description = "Maksimum natijalar soni")
             @RequestParam(value = "limit", required = false, defaultValue = "100") Integer limit,
-            @Parameter(description = "Boshlang'ich pozitsiya", example = "0")
+            @Parameter(description = "Boshlang'ich pozitsiya")
             @RequestParam(value = "offset", required = false, defaultValue = "0") Integer offset) {
 
         log.info("[CUBA Entity] hemishe_EStudentGpa: view={}, limit={}, offset={}", view, limit, offset);
@@ -234,43 +196,7 @@ public class StudentGpaEntityController {
                     responseCode = "201",
                     description = "Muvaffaqiyatli - GPA yozuvi yaratildi",
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "Yaratilgan GPA",
-                                    value = """
-                                        {
-                                          "_entityName": "hemishe_EStudentGpa",
-                                          "_instanceName": "com.company.hemishe.entity.EStudentGpa-... [detached]",
-                                          "id": "generated-uuid",
-                                          "debtSubjects": 0,
-                                          "method": "one_year",
-                                          "level": {
-                                            "_entityName": "hemishe_HCourse",
-                                            "_instanceName": "12 2-kurs",
-                                            "id": "12",
-                                            "code": "12",
-                                            "name": "2-kurs"
-                                          },
-                                          "creditSum": "47.0",
-                                          "subjects": 11,
-                                          "educationYear": {
-                                            "_entityName": "hemishe_HEducationYear",
-                                            "_instanceName": "2023-2024",
-                                            "id": "2023",
-                                            "name": "2023-2024"
-                                          },
-                                          "studentId": {
-                                            "_entityName": "hemishe_EStudent",
-                                            "_instanceName": "YULCHIYEVA GAVXAR ISLAMOVNA",
-                                            "id": "student-uuid",
-                                            "lastname": "YULCHIYEVA",
-                                            "firstname": "GAVXAR",
-                                            "fathername": "ISLAMOVNA"
-                                          },
-                                          "gpa": "4.0"
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             ),
             @ApiResponse(responseCode = "400", description = "Noto'g'ri ma'lumotlar"),
@@ -282,22 +208,7 @@ public class StudentGpaEntityController {
                     description = "GPA ma'lumotlari (CUBA entity format)",
                     required = true,
                     content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    name = "GPA yaratish",
-                                    value = """
-                                        {
-                                          "studentId": {"id": "ee2f9738-5992-2b63-a85f-9fa3d98862e5"},
-                                          "educationYear": {"code": "2023"},
-                                          "level": {"code": "12"},
-                                          "gpa": "4.0",
-                                          "method": "one_year",
-                                          "creditSum": "47.0",
-                                          "subjects": 11,
-                                          "debtSubjects": 0
-                                        }
-                                        """
-                            )
+                            mediaType = "application/json"
                     )
             )
             @RequestBody Map<String, Object> requestBody) {

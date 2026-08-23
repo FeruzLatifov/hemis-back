@@ -25,14 +25,12 @@ import java.util.List;
 public class FacultyDictionariesDto {
 
     @Schema(
-        description = "Status options for filter dropdown",
-        example = "[{\"code\":\"true\",\"label\":\"Active\"},{\"code\":\"false\",\"label\":\"Inactive\"}]"
+        description = "Status options for filter dropdown"
     )
     private List<DictionaryItem> statuses;
 
     @Schema(
-        description = "Department types from database (all types, not just faculties)",
-        example = "[{\"code\":\"11\",\"label\":\"Fakultet\"},{\"code\":\"12\",\"label\":\"Kafedra\"}]"
+        description = "Department types from database (all types, not just faculties)"
     )
     private List<DictionaryItem> departmentTypes;
 
@@ -48,21 +46,18 @@ public class FacultyDictionariesDto {
         
         @Schema(
             description = "Unique code/value for this option",
-            example = "true",
             requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String code;
 
         @Schema(
             description = "Display label (localized)",
-            example = "Active",
             requiredMode = Schema.RequiredMode.REQUIRED
         )
         private String label;
 
         @Schema(
-            description = "Additional description (optional)",
-            example = "Active faculties only"
+            description = "Additional description (optional)"
         )
         private String description;
     }

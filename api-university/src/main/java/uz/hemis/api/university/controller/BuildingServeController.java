@@ -65,8 +65,7 @@ public class BuildingServeController {
                     + "markazda saqlanadi va qaytariladi. Kadastr raqami noto'g'ri yoki topilmasa → 422 CADASTRE_NOT_FOUND.")
     public ResponseEntity<ResponseWrapper<CadastreDto>> cadastreByCadNum(
             @Parameter(description = "Kadastr raqami. Format: hudud:tuman:zona:kvartal:uchastka:bino "
-                    + "— 6 ta son guruhi ':' bilan (NN:NN:NN:NN:NN:NNNN). Pastdagi qiymat namuna (haqiqiy raqam emas).",
-                    example = "00:00:00:00:00:0000")
+                    + "— 6 ta son guruhi ':' bilan (NN:NN:NN:NN:NN:NNNN). Pastdagi qiymat namuna (haqiqiy raqam emas).")
             @RequestParam @NotBlank String cadNumber) {
         log.info("GET /university/cadastre/by-cadnum cadNumber={}", cadNumber);
         return ResponseEntity.ok(ResponseWrapper.success(cadastreIngestService.getByCadNumberOrFetch(cadNumber)));
