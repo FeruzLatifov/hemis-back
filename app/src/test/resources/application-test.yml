@@ -76,6 +76,12 @@ hemis:
       expiration: 3600  # 1 hour
       refresh-expiration: 7200  # 2 hours
       issuer: hemis-test
+  webhook:
+    # Integration testlar to'liq Spring context ko'taradi -> WebhookSecretCipher bean quriladi.
+    # Base application.yml'da default olib tashlangani uchun (fail-fast) test qiymati shu yerda.
+    secret-encryption:
+      key: test-webhook-encryption-key
+      salt: 5c0744940b5c369b  # hex-encoded (Encryptors.delux talabi)
 
 # =====================================================
 # IMPORTANT NOTES

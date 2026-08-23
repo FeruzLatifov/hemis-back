@@ -195,6 +195,11 @@ hemis:
       protocol: ${WEBHOOK_CALLBACK_PROTOCOL:http}
     dev-seed:
       enabled: true  # DevWebhookBootstrap startupda webhook_target + vault yaratadi
+    # Dev-only default — base application.yml'da default YO'Q (prod fail-fast). Bu qiymat
+    # faqat lokal dev profilida; hech qachon prod'ga yetmaydi. Prod ENV/KMS'dan oladi.
+    secret-encryption:
+      key: ${HEMIS_WEBHOOK_SECRET_ENCRYPTION_KEY:dev-only-webhook-key-change-in-prod}
+      salt: ${HEMIS_WEBHOOK_SECRET_ENCRYPTION_SALT:5c0744940b5c369b}
 
 # =====================================================
 # SpringDoc OpenAPI (Swagger) Configuration
