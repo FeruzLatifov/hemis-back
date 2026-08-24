@@ -54,6 +54,12 @@ pipeline {
         stage('Deploy -> Staging (api-test.hemis.uz)') {
             steps {
                 sh '''
+                    # Secret sync: har deploy'da K8s secret'ni manba fayldan (backend.env) yangilaydi, shunda
+                    # yangi ENV qo'shilsa qo'lda apply shart emas. existingSecret nomi = <ns>-back-env; helm
+                    # uni envFrom bilan o'qiydi. --from-env-file idempotent apply (faqat qo'shadi/yangilaydi).
+                    kubectl -n ${STAGING_NS} create secret generic ${STAGING_NS}-back-env \
+                        --from-env-file=/home/jenkins/k8s_secret/${STAGING_NS}/backend.env \
+                        --dry-run=client -o yaml | kubectl -n ${STAGING_NS} apply -f -
                     helm upgrade --install ${RELEASE_NAME} ${CHART_DIR} \
                         --namespace ${STAGING_NS} --create-namespace \
                         -f ${CHART_DIR}/values.yaml -f ${CHART_DIR}/values/test-hemis.yaml \
@@ -78,6 +84,10 @@ pipeline {
                 // Ayni IMAGE_TAG — qayta build YO'Q. Birinchi prod deploy: migration-job restore qilingan
                 // CUBA base ustiga hemis-back migratsiyalarini (h_*, users, seed) qo'llaydi (bir necha daqiqa).
                 sh '''
+                    # Secret sync: prod K8s secret'ni manba fayldan (backend.env) yangilaydi (staging bilan bir xil oqim).
+                    kubectl -n ${PROD_NS} create secret generic ${PROD_NS}-back-env \
+                        --from-env-file=/home/jenkins/k8s_secret/${PROD_NS}/backend.env \
+                        --dry-run=client -o yaml | kubectl -n ${PROD_NS} apply -f -
                     helm upgrade --install ${RELEASE_NAME} ${CHART_DIR} \
                         --namespace ${PROD_NS} --create-namespace \
                         -f ${CHART_DIR}/values.yaml -f ${CHART_DIR}/values/central.yaml \
