@@ -27,8 +27,10 @@ import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.domain.entity.classifier.ReviewStatus;
 import uz.hemis.service.classifier.HSpecialityService;
+import uz.hemis.service.classifier.LegacySpecialitySyncService;
 import uz.hemis.service.classifier.SpecialityAttachmentService;
 import uz.hemis.service.classifier.dto.ClassifierOptionDto;
+import uz.hemis.service.classifier.dto.LegacySpecialitySyncResult;
 import uz.hemis.service.classifier.dto.SpecialityAttachedUniversityDto;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateCheckDto;
@@ -91,6 +93,9 @@ public class SpecialityClassifierController {
     private final SpecialityAttachmentService attachmentService;
     private final SpecialityExcelExporter exporter;
     private final I18nService i18nService;
+    // Compatibility projection: copies the APPROVED set down into the frozen legacy bachelor/master
+    // tables so the old-hemis + Univer student-save path finds a newly-curated speciality.
+    private final LegacySpecialitySyncService legacySyncService;
 
     // =====================================================
     // Tree
@@ -552,6 +557,52 @@ public class SpecialityClassifierController {
     ) {
         log.info("PUT /api/v1/web/classifiers/speciality/{}", id);
         return ResponseEntity.ok(ResponseWrapper.success(service.update(id, request)));
+    }
+
+    // =====================================================
+    // Sync to legacy (compatibility projection for student-save)
+    // =====================================================
+
+    @PostMapping("/sync-legacy")
+    @PreAuthorize("hasAuthority('classifiers.speciality.edit')")
+    @Operation(
+            summary = "Sync approved specialities to the legacy bachelor/master tables",
+            description = """
+                    Projects the APPROVED set of this unified classifier down into the frozen legacy
+                    `hemishe_h_speciality_bachelor` / `hemishe_h_speciality_master` tables, so the
+                    old-hemis + Univer student-save path — which still resolves a student's speciality
+                    against those legacy tables — can find a newly-curated speciality.
+
+                    **Idempotent:** one legacy row per (speciality × edition year), inserted only when
+                    absent (matched on code + year). A re-run adds nothing already present and never
+                    duplicates or overwrites an existing legacy row. Only APPROVED + active +
+                    code-bearing rows are projected; a NEEDS_REVIEW or code-less row is reported as
+                    skipped (promote/fix it, then re-sync).
+
+                    Returns the comparison result: rows inserted per table, already-present count, and
+                    skipped counts.
+                    """,
+            tags = {"Classifiers - Speciality"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Synced — comparison result returned"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.edit'")
+    })
+    public ResponseEntity<ResponseWrapper<LegacySpecialitySyncResult>> syncLegacy() {
+        log.info("POST /api/v1/web/classifiers/speciality/sync-legacy");
+        LegacySpecialitySyncResult result = legacySyncService.syncToLegacy();
+        StringBuilder message = new StringBuilder(
+                "Sinxronlash yakunlandi: %d ta yangi qo'shildi (%d bakalavr, %d magistr), %d ta avval mavjud edi"
+                        .formatted(result.totalInserted(), result.bachelorInserted(),
+                                result.masterInserted(), result.alreadyExisted()));
+        if (result.skippedNotApproved() > 0) {
+            message.append(", %d ta tasdiqlanmagan (avval tasdiqlang)".formatted(result.skippedNotApproved()));
+        }
+        if (result.skippedNoCode() > 0) {
+            message.append(", %d ta kodsiz o'tkazildi".formatted(result.skippedNoCode()));
+        }
+        return ResponseEntity.ok(ResponseWrapper.success(result, message.toString()));
     }
 
     // =====================================================
