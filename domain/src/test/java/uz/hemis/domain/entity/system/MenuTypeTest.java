@@ -89,10 +89,28 @@ class MenuTypeTest {
             assertThat(converter.convertToDatabaseColumn(MenuType.SYSTEM)).isEqualTo("system");
         }
 
+        /**
+         * null → null, "main" EMAS — ataylab (MenuType.Converter izohiga qarang).
+         *
+         * <p>null'ni 'main' ga map qilish kelajakdagi
+         * {@code COALESCE(:menuType, m.menuType)} ixtiyoriy-filtr so'rovini jimgina
+         * {@code menu_type='main'} ga qulflab qo'yardi — aynan shu xato sinfi
+         * {@code ReviewStatus.Converter} da NEEDS_REVIEW mutaxassisliklarni yashirgan edi.</p>
+         *
+         * <p>{@code NOT NULL} kafolati konverterda emas: {@code Menu} entity maydoni
+         * {@code MenuType.MAIN} bilan initsializatsiya qilingan va V013 ustunga
+         * {@code DEFAULT 'main'} qo'ygan.</p>
+         */
         @Test
-        @DisplayName("null → 'main' default (DB CHECK constraint complies)")
-        void nullDefaultsToMain() {
-            assertThat(converter.convertToDatabaseColumn(null)).isEqualTo("main");
+        @DisplayName("null → null (COALESCE-xavfsiz; NOT NULL entity default'i bilan ta'minlanadi)")
+        void nullStaysNull() {
+            assertThat(converter.convertToDatabaseColumn(null)).isNull();
+        }
+
+        @Test
+        @DisplayName("DB'dan null o'qilsa → MAIN (legacy qatorlar FE'ni buzmasin)")
+        void nullFromDbReadsAsMain() {
+            assertThat(converter.convertToEntityAttribute(null)).isEqualTo(MenuType.MAIN);
         }
 
         @Test

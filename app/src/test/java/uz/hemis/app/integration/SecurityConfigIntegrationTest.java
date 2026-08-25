@@ -1,266 +1,283 @@
 package uz.hemis.app.integration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.hamcrest.Matchers.containsString;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Security Configuration Tests
+ * {@code SecurityConfig} filter chain KONTRAKTI — kim o'tadi, kim to'xtatiladi.
  *
- * <p><strong>Test Coverage:</strong></p>
- * <ul>
- *   <li>Public endpoints (no authentication required)</li>
- *   <li>Protected endpoints (JWT required)</li>
- *   <li>Role-based access control (@PreAuthorize)</li>
- *   <li>CORS configuration</li>
- *   <li>CSRF disabled</li>
- * </ul>
+ * <p><b>Bu sinf nimani sinaydi:</b> faqat xavfsizlik qatlamini (autentifikatsiya,
+ * avtorizatsiya, CSRF, CORS). Kontroller javobining mazmuni (200 vs 404 vs 500) —
+ * bu sinfning ishi EMAS, shuning uchun "o'tdi" holatlari {@link #securityPassed()}
+ * bilan tekshiriladi: 401 ham, 403 ham emas. Aks holda security testi baza holatiga
+ * bog'lanib qoladi va begona sabablardan yiqiladi.</p>
  *
- * @since 1.0.0
+ * <p><b>Tarixiy eslatma (2026-08-22 tuzatildi).</b> Bu sinfning oldingi tahriri
+ * 9/18 yiqilib turardi va sababi security regressiyasi EMAS edi:</p>
+ * <ol>
+ *   <li><b>Fantom endpointlar.</b> {@code /app/rest/v2/students} va {@code /admin/dashboard}
+ *       kodda hech qachon bo'lmagan — har so'rovda {@code Handler: Type = null}. Haqiqiy
+ *       talaba entity endpointi — {@link #STUDENTS}
+ *       ({@code StudentEntityController} {@code @RequestMapping}).</li>
+ *   <li><b>CSRF ataylab YOQILGAN</b> ({@code SecurityConfig} — "SECURITY FIX #7",
+ *       {@code CookieCsrfTokenRepository.withHttpOnlyFalse()}), eski test esa uni
+ *       "disabled" deb hisoblardi. Endi kutilma teskari: tokensiz yozuv = 403 TO'G'RI xulq.</li>
+ *   <li><b>{@code @WithMockUser} filter zanjiriga yetib bormaydi.</b> Spring Boot 4 da
+ *       Boot 3 dagi {@code MockMvcSecurityConfiguration} olib tashlangan, ya'ni
+ *       {@code @AutoConfigureMockMvc} endi {@code springSecurity()} ni AVTOMATIK
+ *       qo'llamaydi. {@code spring-security-test} faqat {@code SecurityContextHolder}
+ *       thread-local'ini to'ldiradi, {@code SecurityContextHolderFilter} esa uni bo'sh
+ *       kontekst bilan qayta yozadi → mock user yo'qoladi, hamma so'rov anonymous.
+ *       Yechim — {@link #setUp()} dagi qo'lda {@code .apply(springSecurity())}.</li>
+ * </ol>
+ *
+ * <p><b>{@code @ActiveProfiles("test")} MAJBURIY.</b> Busiz sinf {@code dev} profilida
+ * ko'tariladi ({@code application.yml} {@code spring.profiles.active: ${SPRING_PROFILES_ACTIVE:dev}}),
+ * u holda {@code DataSourceConfig} ({@code @Profile("!test")}) yuklanadi va uning
+ * {@code liquibase} bean'i ({@code application-dev.yml} {@code spring.liquibase.enabled: true})
+ * BUTUN changelog'ni dasturchining REAL ish bazasiga yuritadi. {@code runOnChange: true}
+ * changeset'lar (masalan {@code M001_migrate_old_hemis_users} — u {@code users} jadvalidagi
+ * {@code password}/{@code email}/{@code enabled} ustunlarini {@code sec_user} dan qayta
+ * yozadi) o'zgargan bo'lsa har test yugurishida QAYTA ISHLAYDI. Ya'ni bu bitta annotatsiya
+ * test tuzatishi emas — ma'lumot himoyasi.</p>
  */
 @SpringBootTest
-@AutoConfigureMockMvc
+@ActiveProfiles("test")
 @TestPropertySource(properties = {
-        // Disable JWT validation for testing
+        // JWT validatsiyasini testda o'chirish
         "spring.security.oauth2.resourceserver.jwt.jwk-set-uri=",
-        "spring.security.oauth2.resourceserver.jwt.issuer-uri="
+        "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
+        // CORS origin'ini testda QATTIQ belgilaymiz. SecurityConfig uni
+        // @Value("${CORS_ALLOWED_ORIGINS:}") dan oladi, Gradle esa .env ning barcha
+        // kalitlarini test JVM'iga uzatadi — pin qilmasak CORS assertion'lari
+        // dasturchining .env qiymatiga bog'liq bo'lib qoladi.
+        "CORS_ALLOWED_ORIGINS=http://localhost:3000"
 })
-@DisplayName("SecurityConfig Tests")
-@EnabledIf("uz.hemis.app.integration.AbstractIntegrationTest#isDockerAvailable")
-class SecurityConfigTest extends AbstractIntegrationTest {
+@DisplayName("SecurityConfig — filter chain kontrakti")
+class SecurityConfigIntegrationTest extends AbstractIntegrationTest {
+
+    /** Haqiqiy CUBA talaba entity endpointi (StudentEntityController @RequestMapping). */
+    private static final String STUDENTS = "/app/rest/v2/entities/hemishe_EStudent";
+    private static final String STUDENT_ID = "12345678-1234-1234-1234-123456789012";
+
+    /** SecurityConfig CORS uchun shu origin'ni ruxsat etilgan deb biladi (yuqoridagi pin). */
+    private static final String ALLOWED_ORIGIN = "http://localhost:3000";
+    private static final String FOREIGN_ORIGIN = "https://evil.example.com";
 
     @Autowired
+    private WebApplicationContext context;
+
     private MockMvc mockMvc;
 
-    // =====================================================
-    // Public Endpoints Tests
-    // =====================================================
-
-    @Test
-    @DisplayName("Public endpoint /actuator/health should be accessible without authentication")
-    void publicEndpoint_Health_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(get("/actuator/health"))
-                .andDo(print())
-                .andExpect(status().isOk());
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .apply(SecurityMockMvcConfigurers.springSecurity())
+                .build();
     }
 
-    @Test
-    @DisplayName("Public endpoint /actuator/info should be accessible without authentication")
-    void publicEndpoint_Info_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(get("/actuator/info"))
-                .andDo(print())
-                .andExpect(status().isOk());
+    /**
+     * "Xavfsizlik qatlami so'rovni o'tkazdi" — 401 ham, 403 ham emas.
+     *
+     * <p>Ataylab aniq statusni (200) talab qilmaydi: bu sinf security kontraktini
+     * sinaydi, kontroller/baza xulqini emas. Aniq status kutilsa, test begona
+     * sabablardan (bo'sh jadval, validatsiya, 404) yiqiladi va signal yo'qoladi.</p>
+     */
+    private static ResultMatcher securityPassed() {
+        return result -> assertThat(result.getResponse().getStatus())
+                .as("xavfsizlik qatlami so'rovni o'tkazishi kerak edi (401/403 emas)")
+                .isNotIn(HttpStatus.UNAUTHORIZED.value(), HttpStatus.FORBIDDEN.value());
     }
 
-    // =====================================================
-    // Protected Endpoints Tests
-    // =====================================================
+    @Nested
+    @DisplayName("Ochiq endpointlar")
+    class PublicEndpoints {
 
-    @Test
-    @DisplayName("Protected endpoint should return 401 without authentication")
-    void protectedEndpoint_WithoutAuth_ShouldReturn401() throws Exception {
-        mockMvc.perform(get("/app/rest/v2/students"))
-                .andDo(print())
-                .andExpect(status().isUnauthorized());
+        @Test
+        @DisplayName("/actuator/health — autentifikatsiyasiz ochiq")
+        void health() throws Exception {
+            mockMvc.perform(get("/actuator/health"))
+                    .andExpect(status().isOk());
+        }
+
+        @Test
+        @DisplayName("/actuator/info — autentifikatsiyasiz ochiq")
+        void info() throws Exception {
+            mockMvc.perform(get("/actuator/info"))
+                    .andExpect(status().isOk());
+        }
     }
 
-    @Test
-    @WithMockUser
-    @DisplayName("Protected endpoint should be accessible with authentication")
-    void protectedEndpoint_WithAuth_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(get("/app/rest/v2/students"))
-                .andDo(print())
-                .andExpect(status().isOk());
+    @Nested
+    @DisplayName("Autentifikatsiya (/app/rest/v2/** → authenticated)")
+    class Authentication {
+
+        @Test
+        @DisplayName("Anonim so'rov → 401")
+        void anonymous() throws Exception {
+            mockMvc.perform(get(STUDENTS))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Autentifikatsiyalangan so'rov xavfsizlik qatlamidan o'tadi")
+        void authenticated() throws Exception {
+            mockMvc.perform(get(STUDENTS))
+                    .andExpect(securityPassed());
+        }
     }
 
-    // =====================================================
-    // Role-Based Access Control Tests
-    // =====================================================
+    @Nested
+    @DisplayName("Avtorizatsiya (/admin/** → hasRole('ADMIN'))")
+    class Authorization {
 
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("POST /students should return 403 for USER role")
-    void postStudent_WithUserRole_ShouldReturn403() throws Exception {
-        mockMvc.perform(post("/app/rest/v2/students")
-                        .contentType("application/json")
-                        .content("{}"))
-                .andDo(print())
-                .andExpect(status().isForbidden());
+        @Test
+        @DisplayName("Anonim → 401")
+        void anonymous() throws Exception {
+            mockMvc.perform(get("/admin/dashboard"))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        @WithMockUser(roles = "USER")
+        @DisplayName("ROLE_USER → 403")
+        void wrongRole() throws Exception {
+            mockMvc.perform(get("/admin/dashboard"))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("ROLE_ADMIN → xavfsizlikdan o'tadi (kontroller yo'q, 404 kutiladi)")
+        void correctRole() throws Exception {
+            mockMvc.perform(get("/admin/dashboard"))
+                    .andExpect(securityPassed());
+        }
     }
 
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("POST /students should be accessible for ADMIN role")
-    void postStudent_WithAdminRole_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(post("/app/rest/v2/students")
-                        .contentType("application/json")
-                        .content("{\"code\":\"STU001\"}"))
-                .andDo(print())
-                .andExpect(status().isOk()); // May fail validation, but passed security
+    /**
+     * CSRF YOQILGAN — SecurityConfig "SECURITY FIX #7".
+     *
+     * <p>{@code ignoringRequestMatchers} ro'yxatida faqat token/captcha/actuator kabi
+     * mashina-mashina yo'llari bor; {@link #STUDENTS} unda YO'Q. Demak bu endpointga
+     * tokensiz yozuv 403 olishi TO'G'RI xulq — bu regressiya emas.</p>
+     */
+    @Nested
+    @DisplayName("CSRF himoyasi (yoqilgan)")
+    class Csrf {
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("POST tokensiz → 403")
+        void postWithoutToken() throws Exception {
+            mockMvc.perform(post(STUDENTS)
+                            .contentType("application/json")
+                            .content("{\"code\":\"STU001\"}"))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("POST token bilan → CSRF to'sig'idan o'tadi")
+        void postWithToken() throws Exception {
+            mockMvc.perform(post(STUDENTS)
+                            .with(csrf())
+                            .contentType("application/json")
+                            .content("{\"code\":\"STU001\"}"))
+                    .andExpect(securityPassed());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("DELETE tokensiz → 403")
+        void deleteWithoutToken() throws Exception {
+            mockMvc.perform(delete(STUDENTS + "/{id}", STUDENT_ID))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        @DisplayName("DELETE token bilan → CSRF to'sig'idan o'tadi")
+        void deleteWithToken() throws Exception {
+            mockMvc.perform(delete(STUDENTS + "/{id}", STUDENT_ID).with(csrf()))
+                    .andExpect(securityPassed());
+        }
     }
 
-    @Test
-    @WithMockUser(roles = "OTM_API")
-    @DisplayName("POST /students should be accessible for OTM_API role")
-    void postStudent_WithUniversityAdminRole_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(post("/app/rest/v2/students")
-                        .contentType("application/json")
-                        .content("{\"code\":\"STU001\"}"))
-                .andDo(print())
-                .andExpect(status().isOk()); // May fail validation, but passed security
+    @Nested
+    @DisplayName("CORS")
+    class Cors {
+
+        @Test
+        @DisplayName("Preflight GET — ruxsat etilgan origin uchun ochiq")
+        void preflightGet() throws Exception {
+            mockMvc.perform(options(STUDENTS)
+                            .header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN)
+                            .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.GET.name()))
+                    .andExpect(status().isOk())
+                    .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
+                    .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS));
+        }
+
+        /**
+         * DELETE CORS'da ATAYLAB ochiq — soft-delete endpointlari uchun
+         * ({@code SecurityConfig#corsConfigurationSource}, "DELETE enabled for
+         * soft-delete endpoints"). Eski test buni "ruxsat etilmasin" deb kutardi va
+         * shu sababli yiqilardi; manba kod bilan izohi o'sha paytda ham zid edi.
+         */
+        @Test
+        @DisplayName("Preflight DELETE — ataylab ruxsat etilgan (soft-delete)")
+        void preflightDelete() throws Exception {
+            mockMvc.perform(options(STUDENTS)
+                            .header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN)
+                            .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.DELETE.name()))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS,
+                            containsString(HttpMethod.DELETE.name())));
+        }
+
+        @Test
+        @DisplayName("Notanish origin → rad etiladi")
+        void foreignOrigin() throws Exception {
+            mockMvc.perform(options(STUDENTS)
+                            .header(HttpHeaders.ORIGIN, FOREIGN_ORIGIN)
+                            .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.GET.name()))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @WithMockUser
+        @DisplayName("Oddiy so'rov Access-Control-Allow-Origin sarlavhasini oladi")
+        void simpleRequest() throws Exception {
+            mockMvc.perform(get(STUDENTS).header(HttpHeaders.ORIGIN, ALLOWED_ORIGIN))
+                    .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
+        }
     }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("PUT /students/{id} should return 403 for USER role")
-    void putStudent_WithUserRole_ShouldReturn403() throws Exception {
-        mockMvc.perform(put("/app/rest/v2/students/{id}", "12345678-1234-1234-1234-123456789012")
-                        .contentType("application/json")
-                        .content("{}"))
-                .andDo(print())
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("PUT /students/{id} should be accessible for ADMIN role")
-    void putStudent_WithAdminRole_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(put("/app/rest/v2/students/{id}", "12345678-1234-1234-1234-123456789012")
-                        .contentType("application/json")
-                        .content("{\"code\":\"STU001\"}"))
-                .andDo(print())
-                .andExpect(status().isOk()); // May fail (student not found), but passed security
-    }
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("PATCH /students/{id} should return 403 for USER role")
-    void patchStudent_WithUserRole_ShouldReturn403() throws Exception {
-        mockMvc.perform(patch("/app/rest/v2/students/{id}", "12345678-1234-1234-1234-123456789012")
-                        .contentType("application/json")
-                        .content("{}"))
-                .andDo(print())
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "OTM_API")
-    @DisplayName("PATCH /students/{id} should be accessible for OTM_API role")
-    void patchStudent_WithUniversityAdminRole_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(patch("/app/rest/v2/students/{id}", "12345678-1234-1234-1234-123456789012")
-                        .contentType("application/json")
-                        .content("{\"firstname\":\"John\"}"))
-                .andDo(print())
-                .andExpect(status().isOk()); // May fail (student not found), but passed security
-    }
-
-    // =====================================================
-    // Admin Endpoints Tests
-    // =====================================================
-
-    @Test
-    @WithMockUser(roles = "USER")
-    @DisplayName("Admin endpoint should return 403 for USER role")
-    void adminEndpoint_WithUserRole_ShouldReturn403() throws Exception {
-        mockMvc.perform(get("/admin/dashboard"))
-                .andDo(print())
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("Admin endpoint should be accessible for ADMIN role")
-    void adminEndpoint_WithAdminRole_ShouldBeAccessible() throws Exception {
-        mockMvc.perform(get("/admin/dashboard"))
-                .andDo(print())
-                // Endpoint may not exist (404), but security passed (not 403)
-                .andExpect(status().is4xxClientError());
-    }
-
-    // =====================================================
-    // CORS Tests
-    // =====================================================
-
-    @Test
-    @DisplayName("CORS preflight request should be allowed")
-    void corsPreflight_ShouldBeAllowed() throws Exception {
-        mockMvc.perform(options("/app/rest/v2/students")
-                        .header(HttpHeaders.ORIGIN, "http://localhost:3000")
-                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.GET.name()))
-                .andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
-                .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS));
-    }
-
-    @Test
-    @WithMockUser
-    @DisplayName("CORS request should include Access-Control-Allow-Origin header")
-    void corsRequest_ShouldIncludeAccessControlHeader() throws Exception {
-        mockMvc.perform(get("/app/rest/v2/students")
-                        .header(HttpHeaders.ORIGIN, "http://localhost:3000"))
-                .andDo(print())
-                .andExpect(header().exists(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN));
-    }
-
-    // =====================================================
-    // NO DELETE METHOD ALLOWED
-    // =====================================================
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("DELETE method should return 405 Method Not Allowed (NDG enforcement)")
-    void deleteStudent_ShouldReturn405() throws Exception {
-        mockMvc.perform(delete("/app/rest/v2/students/{id}", "12345678-1234-1234-1234-123456789012"))
-                .andDo(print())
-                .andExpect(status().isMethodNotAllowed());
-    }
-
-    @Test
-    @DisplayName("DELETE method in CORS preflight should not be allowed")
-    void corsPreflightDelete_ShouldNotBeAllowed() throws Exception {
-        mockMvc.perform(options("/app/rest/v2/students")
-                        .header(HttpHeaders.ORIGIN, "http://localhost:3000")
-                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, HttpMethod.DELETE.name()))
-                .andDo(print())
-                // Should either fail CORS check or return 405
-                .andExpect(status().is4xxClientError());
-    }
-
-    // =====================================================
-    // CSRF Tests
-    // =====================================================
-
-    @Test
-    @WithMockUser(roles = "ADMIN")
-    @DisplayName("POST request should work without CSRF token (CSRF disabled)")
-    void postRequest_WithoutCsrfToken_ShouldWork() throws Exception {
-        mockMvc.perform(post("/app/rest/v2/students")
-                        .contentType("application/json")
-                        .content("{\"code\":\"STU001\"}"))
-                .andDo(print())
-                // Should pass security (not 403 Forbidden from CSRF)
-                // Expecting 200 OK (created) or 400 (validation error)
-                .andExpect(status().isOk());
-    }
-
-    // =====================================================
-    // NOTE: JWT Validation Tests
-    // =====================================================
-    // JWT validation tests require real JWT tokens or mocked JwtDecoder
-    // These are covered by integration tests with actual auth server
-    // =====================================================
 }

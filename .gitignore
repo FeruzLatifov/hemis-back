@@ -77,3 +77,7 @@ target/
 .serena/
 .claude/settings.local.json
 ONBOARDING.md
+
+# Python (scripts/)
+__pycache__/
+*.pyc

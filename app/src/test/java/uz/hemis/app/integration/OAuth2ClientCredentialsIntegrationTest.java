@@ -2,24 +2,27 @@ package uz.hemis.app.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.condition.EnabledIf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.auth.ClientType;
 import uz.hemis.common.auth.SubjectType;
+import uz.hemis.security.service.RateLimitService;
 import uz.hemis.domain.entity.security.OAuthClient;
+import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.security.Permission;
 import uz.hemis.domain.entity.security.Role;
 import uz.hemis.domain.repository.OAuthClientRepository;
 import uz.hemis.domain.repository.PermissionRepository;
 import uz.hemis.domain.repository.RoleRepository;
+import uz.hemis.domain.repository.UniversityRepository;
 
 import java.util.ArrayList;
 import java.util.Base64;
@@ -28,6 +31,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,24 +57,48 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("OAuth2 client_credentials grant (Phase 2)")
-@EnabledIf("uz.hemis.app.integration.AbstractIntegrationTest#isDockerAvailable")
 class OAuth2ClientCredentialsIntegrationTest extends AbstractIntegrationTest {
 
     private static final String TOKEN_ENDPOINT = "/api/v1/university/oauth/token";
     private static final String TEST_CLIENT_ID = "integration_univer_101";
     private static final String TEST_CLIENT_SECRET = "s3cret-for-int-test";
 
+    /**
+     * Tenancy uchun OTM kodi — {@code chk_oauth_client_tenancy} CHECK'i
+     * {@code UNIVERSITY_BACKEND} klient uchun {@code university_code} ni MAJBURIY qiladi
+     * (V006_create_users), ustiga FK {@code hemishe_e_university(code)} ga boradi.
+     * Kod test fixture'ida mavjud ({@code db/testfixture/legacy-cuba-stub.sql}).
+     */
+    private static final String TEST_UNIVERSITY_CODE = "301";
+
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private OAuthClientRepository clientRepository;
     @Autowired private RoleRepository roleRepository;
+    @Autowired private UniversityRepository universityRepository;
     @Autowired private PermissionRepository permissionRepository;
     @Autowired private PasswordEncoder passwordEncoder;
+
+    /**
+     * Rate-limiter mock — {@code OAuthClientTokenIssuer} klient autentifikatsiyasidan
+     * OLDIN {@code isAllowed(keyPrefix, ip, max, window)} (4 argumentli overload) ni
+     * chaqiradi va {@code RateLimitService} FAIL-CLOSED: Redis yo'q/xato bo'lsa
+     * {@code false} qaytaradi → 9/9 test {@code 429} bilan yiqiladi. Redis bor bo'lganda
+     * ham hisoblagich yugurishlar orasida saqlanib, oyna ichida flake beradi.
+     *
+     * <p>DIQQAT: 1 argumentli {@code isAllowed(String)} overload'ini stub qilish bu yo'lni
+     * QOPLAMAYDI — u legacy password-grant yo'li uchun.</p>
+     */
+    @MockitoBean
+    private RateLimitService rateLimitService;
 
     private OAuthClient testClient;
 
     @BeforeEach
     void setUp() {
+        when(rateLimitService.isAllowed(anyString(), anyString(), anyInt(), anyLong()))
+                .thenReturn(true);
+
         clientRepository.findByClientId(TEST_CLIENT_ID).ifPresent(clientRepository::delete);
 
         Permission studentsView = permission("students.view");
@@ -94,6 +125,9 @@ class OAuth2ClientCredentialsIntegrationTest extends AbstractIntegrationTest {
         // Machine token TTL is a ministry-wide policy (hemis.security.oauth.client-token-expiration,
         // default 24h) — the per-client access_token_ttl_seconds column is no longer consulted.
         testClient.setSecretVersion(1);
+        // UNIVERSITY_BACKEND uchun tenancy MAJBURIY (chk_oauth_client_tenancy) — busiz
+        // INSERT check-constraint bilan rad etiladi.
+        testClient.setUniversity(university());
         testClient.getRoles().add(otmApi);
         testClient = clientRepository.save(testClient);
     }
@@ -177,7 +211,12 @@ class OAuth2ClientCredentialsIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", basic(TEST_CLIENT_ID, TEST_CLIENT_SECRET))
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                         .param("grant_type", "client_credentials")
-                        .param("scope", "students.delete"))
+                        // ATAYLAB mavjud bo'lmagan scope. Ilgari bu yerda "students.delete"
+                        // turardi — lekin S004 seed'i OTM_API roliga `students.%` ni TO'LIQ
+                        // (delete bilan) beradi, ya'ni u GRANT QILINGAN va 200 to'g'ri javob
+                        // edi. Test hech qachon ishlamagani uchun bu ko'rinmagan. Endi kutilma
+                        // seed mazmuniga bog'liq emas.
+                        .param("scope", "no.such.scope"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("invalid_scope"));
     }
@@ -270,6 +309,13 @@ class OAuth2ClientCredentialsIntegrationTest extends AbstractIntegrationTest {
 
     private static String basic(String id, String secret) {
         return "Basic " + Base64.getEncoder().encodeToString((id + ":" + secret).getBytes());
+    }
+
+    private University university() {
+        return universityRepository.findById(TEST_UNIVERSITY_CODE)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Test fixture'da OTM kodi topilmadi: " + TEST_UNIVERSITY_CODE
+                                + " — db/testfixture/legacy-cuba-stub.sql ni tekshiring"));
     }
 
     private Permission permission(String code) {
