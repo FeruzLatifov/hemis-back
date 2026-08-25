@@ -95,9 +95,21 @@ public class GovPersonLookupService {
             @SuppressWarnings("unchecked")
             Map<String, Object> p = (Map<String, Object>) person;
 
-            String lastName = str(p.get("sur_name_latin"));
-            String firstName = str(p.get("name_latin"));
-            String middleName = str(p.get("patronym_name_latin"));
+            // api-mspd gateway key names: Latin = surnamelat/namelat/patronymlat, Cyrillic = *cyr.
+            // Latin first, Cyrillic fallback (absent keys yield null → harmless). The earlier code
+            // read sur_name_latin/birth_place/document/issued_date, which THIS gateway never
+            // returns, so F.I.Sh and most passport fields came back empty.
+            String lastName = firstNonBlank(str(p.get("surnamelat")), str(p.get("surnamecyr")));
+            String firstName = firstNonBlank(str(p.get("namelat")), str(p.get("namecyr")));
+            String middleName = firstNonBlank(str(p.get("patronymlat")), str(p.get("patronymcyr")));
+
+            // Passport: current_document is the active series+number; documents[] carries the
+            // give-place and begin/end dates for that document.
+            String currentDoc = str(p.get("current_document"));
+            Map<String, Object> doc = activeDocument(p.get("documents"), currentDoc);
+            String docNumber = (doc != null) ? str(doc.get("document")) : null;
+            String passport = firstNonBlank(currentDoc,
+                    firstNonBlank(docNumber, hasDoc ? document.trim() : null));
 
             return GovPersonDto.builder()
                     .pinfl(firstNonBlank(str(p.get("current_pinpp")), pinfl))
@@ -106,13 +118,13 @@ public class GovPersonLookupService {
                     .middleName(middleName)
                     .fullName(composeFullName(lastName, firstName, middleName))
                     .birthDate(str(p.get("birth_date")))
-                    .birthPlace(str(p.get("birth_place")))
+                    .birthPlace(str(p.get("birthplace")))
                     .gender(str(p.get("sex")))
                     .nationality(str(p.get("nationality")))
-                    .passport(firstNonBlank(str(p.get("document")), hasDoc ? document.trim() : null))
-                    .passportGivePlace(str(p.get("doc_give_place")))
-                    .passportIssuedDate(str(p.get("issued_date")))
-                    .passportExpiryDate(str(p.get("expiry_date")))
+                    .passport(passport)
+                    .passportGivePlace(doc != null ? str(doc.get("docgiveplace")) : null)
+                    .passportIssuedDate(doc != null ? str(doc.get("datebegin")) : null)
+                    .passportExpiryDate(doc != null ? str(doc.get("dateend")) : null)
                     .photo(str(p.get("photo")))
                     .address(fetchAddress(baseUrl, pinfl, token))
                     .build();
@@ -164,6 +176,22 @@ public class GovPersonLookupService {
 
     private static String firstNonBlank(String a, String b) {
         return (a != null && !a.isBlank()) ? a : b;
+    }
+
+    /** Active document from the gateway's {@code documents[]}: the entry whose {@code document}
+     *  equals {@code current_document}, else the first. Null when the array is absent/empty. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> activeDocument(Object documentsObj, String currentDoc) {
+        if (!(documentsObj instanceof java.util.List<?> docs) || docs.isEmpty()) return null;
+        Map<String, Object> first = null;
+        for (Object o : docs) {
+            if (o instanceof Map<?, ?> dm) {
+                Map<String, Object> m = (Map<String, Object>) dm;
+                if (first == null) first = m;
+                if (currentDoc != null && currentDoc.equals(str(m.get("document")))) return m;
+            }
+        }
+        return first;
     }
 
     private static String composeFullName(String last, String first, String middle) {
