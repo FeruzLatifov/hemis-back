@@ -920,3 +920,25 @@ databaseChangeLog:
         - sqlFile: { path: changesets/seed/S031_seed_speciality_sync_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/seed/S031_seed_speciality_sync_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S032_seed_permission_editor_i18n
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "25 NEW i18n keys for the redesigned role -> permissions editor (RoleFormPage 'Permissions' tab): action verbs Access/Approve/Sync/Manage, domain label Buildings, 10 grant-microcopy lines (one per action), 3 capability-summary tiers (Full access / Can edit / View only), and UI chrome (expand/collapse/clear, empty states, select-count). Keys already in S006/S010 (View/Create/Edit/Delete/Export/Import, other domains, Select all, Clear, Actions, Permissions) are NOT re-seeded. NEW seed — S006/S010 are already applied in prod (central_hemis), so applied changesets are not edited; system_message is the source of truth (sync:translations regenerates the frontend JSON). Runs after S006 (_seed_msg helper)."
+      changes:
+        - sqlFile: { path: changesets/seed/S032_seed_permission_editor_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S032_seed_permission_editor_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S033_seed_role_template_i18n
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "9 NEW i18n keys for the role -> permissions editor v2. (a) One-click role templates (Salesforce Profiles / AWS managed-policy style): labels Operator + Approver + 'Role template', grant tooltips 'View, create & edit records' + 'View, edit & approve records' ('View only'/'Full access' reuse S032). (b) View-density toggle Compact/Detailed — chips vs GitLab-style checkbox+description leaf. (c) Role-first layout (Google/GCP style): 'Custom selection' + 'Advanced: fine-tune permissions' — templates become the primary cards, the granular list collapses behind an Advanced disclosure. Applying a template REPLACES the role's selection with a ready profile the admin then fine-tunes. NEW seed — S006/S010/S032 are already applied in prod (central_hemis), so applied changesets are not edited; system_message is the source of truth (sync:translations regenerates the frontend JSON). Runs after S006 (_seed_msg helper)."
+      changes:
+        - sqlFile: { path: changesets/seed/S033_seed_role_template_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S033_seed_role_template_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
