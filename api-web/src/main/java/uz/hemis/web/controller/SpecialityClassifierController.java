@@ -25,6 +25,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import uz.hemis.common.dto.PageResponse;
 import uz.hemis.common.dto.ResponseWrapper;
+import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.domain.entity.classifier.ReviewStatus;
 import uz.hemis.service.classifier.HSpecialityService;
 import uz.hemis.service.classifier.LegacySpecialitySyncService;
@@ -33,6 +34,7 @@ import uz.hemis.service.classifier.dto.ClassifierOptionDto;
 import uz.hemis.service.classifier.dto.LegacySpecialitySyncResult;
 import uz.hemis.service.classifier.dto.SpecialityAttachedUniversityDto;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
+import uz.hemis.service.classifier.dto.SpecialityDeletedRowDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateCheckDto;
 import uz.hemis.service.classifier.dto.SpecialityNodeDto;
 import uz.hemis.service.classifier.dto.SpecialityRowDto;
@@ -222,7 +224,7 @@ public class SpecialityClassifierController {
             @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.view'")
     })
     public ResponseEntity<byte[]> export(
-            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr; omit = both, two sheets)")
+            @Parameter(description = "Education type filter (11=Bakalavr, 12=Magistr, 13=Ordinatura; omit = all, one sheet each)")
             @RequestParam(required = false) String educationType,
 
             @Parameter(description = "Edition year filter")
@@ -244,15 +246,20 @@ public class SpecialityClassifierController {
         // gets advertised in the provenance band as an applied filter.
         String effectiveQ = (q != null && q.chars().anyMatch(Character::isLetterOrDigit)) ? q : null;
 
-        // One worksheet per education type. Omitting educationType ⇒ both (Bakalavr + Magistr) in one file.
+        // One worksheet per education type, in classifier order. Omitting educationType ⇒ every
+        // admitted type in one file. Driven off SHEET_TITLES rather than an if-chain so admitting a
+        // further type stays a one-line change here instead of three branches that can disagree —
+        // the previous chain silently fell through to "bachelor + master" for any unknown code,
+        // which would have exported the wrong classifier the moment Ordinatura reached the UI.
+        SequencedMap<String, String> sheetTitles = sheetTitles(labels);
         SequencedMap<String, List<SpecialityNodeDto>> sheets = new LinkedHashMap<>();
-        if ("12".equals(educationType)) {
-            sheets.put(labels.master(), service.getTreeFiltered("12", reviewStatus, effectiveQ, year));
-        } else if ("11".equals(educationType)) {
-            sheets.put(labels.bachelor(), service.getTreeFiltered("11", reviewStatus, effectiveQ, year));
-        } else {
-            sheets.put(labels.bachelor(), service.getTreeFiltered("11", reviewStatus, effectiveQ, year));
-            sheets.put(labels.master(), service.getTreeFiltered("12", reviewStatus, effectiveQ, year));
+        sheetTitles.forEach((code, title) -> {
+            if (educationType == null || code.equals(educationType)) {
+                sheets.put(title, service.getTreeFiltered(code, reviewStatus, effectiveQ, year));
+            }
+        });
+        if (sheets.isEmpty()) {   // an education type this classifier does not admit
+            throw new BadRequestException("Unknown education type: " + educationType);
         }
 
         String generatedAt = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
@@ -264,8 +271,7 @@ public class SpecialityClassifierController {
                 educationType, year, reviewStatus, effectiveQ, lang, sheets.size(), rows, xlsx.length,
                 (System.nanoTime() - t0) / 1_000_000);
 
-        String suffix = "11".equals(educationType) ? "_bakalavr"
-                : "12".equals(educationType) ? "_magistr" : "";
+        String suffix = FILE_SUFFIXES.getOrDefault(educationType, "");
         String filename = "mutaxassislik_klassifikatori" + suffix + ".xlsx";
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
@@ -274,6 +280,22 @@ public class SpecialityClassifierController {
                 .cacheControl(CacheControl.noStore()) // download must reflect the latest curated state
                 .body(xlsx);
     }
+
+    /**
+     * Education-type code → worksheet title, in the order the sheets appear in a whole-classifier
+     * export. Keys mirror {@code HSpecialityService.ALLOWED_EDUCATION_TYPES}: widen both together.
+     */
+    private static SequencedMap<String, String> sheetTitles(SpecialityExcelExporter.Labels labels) {
+        SequencedMap<String, String> titles = new LinkedHashMap<>();
+        titles.put("11", labels.bachelor());
+        titles.put("12", labels.master());
+        titles.put("13", labels.residency());
+        return titles;
+    }
+
+    /** Education-type code → download-filename suffix (absent ⇒ whole classifier, no suffix). */
+    private static final Map<String, String> FILE_SUFFIXES =
+            Map.of("11", "_bakalavr", "12", "_magistr", "13", "_ordinatura");
 
     /** Localized label bundle for the export, resolved from {@code lang} via the i18n message store. */
     private SpecialityExcelExporter.Labels buildLabels(String lang) {
@@ -299,6 +321,7 @@ public class SpecialityClassifierController {
                 ),
                 i18nService.getMessage("Bachelor", lang),
                 i18nService.getMessage("Master", lang),
+                i18nService.getMessage("Residency", lang),
                 i18nService.getMessage("Approved", lang),
                 i18nService.getMessage("Needs review", lang),
                 i18nService.getMessage("Speciality classifier", lang),
@@ -612,24 +635,29 @@ public class SpecialityClassifierController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('classifiers.speciality.delete')")
     @Operation(
-            summary = "Delete a speciality (NEEDS_REVIEW only)",
+            summary = "Delete a speciality (soft, NEEDS_REVIEW only)",
             description = """
-                    Physically removes a speciality row together with its edition years. Scoped to the
-                    curation backlog on purpose — a row the OTMs have ever seen is never removed.
+                    SOFT delete (M013): the row keeps its place in `h_speciality` with `deleted_at`
+                    /`deleted_by` stamped, and disappears from every list, tree, lookup, export and
+                    OTM distribution as if removed. A subsequent `GET`/`PUT`/`DELETE` on the same id
+                    returns 404. Its edition years are KEPT, so `POST /{id}/restore` brings the row
+                    back intact. Scoped to the curation backlog on purpose — a row the OTMs have ever
+                    seen is retired by demotion, never deleted.
 
                     **Guards (each a 422 with a machine-readable rule code):**
                     - `SPECIALITY_DELETE_APPROVED_FORBIDDEN` — the row is APPROVED (part of the
-                      distributed snapshot); retire it via `PUT /{id}` (demote / deactivate), which
+                      distributed snapshot); demote it back to 'Needs review' via `PUT /{id}`, which
                       retracts it from the 224 OTMs instead of orphaning it.
-                    - `SPECIALITY_HAS_CHILDREN_DELETE_FIRST` — it still has sub-directions
-                      (deactivated ones included); delete them first, or move them under another
-                      parent via `PUT /{id}` (hierarchyLevel + parentId). The message names them.
+                    - `SPECIALITY_HAS_CHILDREN_DELETE_FIRST` — it still has LIVE sub-directions
+                      (deactivated ones included; already-deleted ones do not block); delete them
+                      first, or move them under another parent via `PUT /{id}` (hierarchyLevel +
+                      parentId). The message names them.
                     - `SPECIALITY_ATTACHED_TO_UNIVERSITY` — an OTM is currently allowed to run it;
                       detach it in the speciality-attachments registry first. The message names the
                       first OTM codes; `GET /{id}/attachments` lists them all with their names.
                       Every blocking attachment is visible there — the table has no soft delete.
 
-                    Irreversible — there is no soft delete on classifier rows.
+                    Recoverable: `GET /deleted` lists what was removed, `POST /{id}/restore` undoes it.
                     """,
             tags = {"Classifiers - Speciality"}
     )
@@ -647,5 +675,64 @@ public class SpecialityClassifierController {
         log.info("DELETE /api/v1/web/classifiers/speciality/{}", id);
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // =====================================================
+    // Deleted bin + restore (M013 — soft delete)
+    // =====================================================
+
+    @GetMapping("/deleted")
+    @PreAuthorize("hasAuthority('classifiers.speciality.delete')")
+    @Operation(
+            summary = "List soft-deleted specialities",
+            description = """
+                    Everything `DELETE /{id}` has removed, newest first — the only place a deleted row
+                    is visible. Gated on the SAME authority as delete: whoever may delete may undelete.
+
+                    Thin by design (identity + who deleted it, when); years are not loaded because they
+                    were never removed and come back untouched on restore.
+                    """,
+            tags = {"Classifiers - Speciality"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Deleted specialities"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.delete'")
+    })
+    public ResponseEntity<ResponseWrapper<List<SpecialityDeletedRowDto>>> listDeleted() {
+        log.info("GET /api/v1/web/classifiers/speciality/deleted");
+        return ResponseEntity.ok(ResponseWrapper.success(service.listDeleted()));
+    }
+
+    @PostMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('classifiers.speciality.delete')")
+    @Operation(
+            summary = "Restore a soft-deleted speciality",
+            description = """
+                    Clears `deleted_at`/`deleted_by`, so the row returns to every list, tree and lookup
+                    with its edition years intact.
+
+                    **Guards (each a 422 with a machine-readable rule code):**
+                    - `SPECIALITY_RESTORE_IDENTITY_TAKEN` — a LIVE speciality has since taken this
+                      (education type, code, name); the identity unique index is partial on live rows,
+                      so re-creating it was allowed. Rename or remove that row first.
+                    - `SPECIALITY_RESTORE_PARENT_DELETED` — the parent of this row is itself deleted;
+                      restore the parent first, otherwise the child would surface as a top-level root.
+                    """,
+            tags = {"Classifiers - Speciality"}
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Restored"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - lacks 'classifiers.speciality.delete'"),
+            @ApiResponse(responseCode = "404", description = "No deleted speciality under this id"),
+            @ApiResponse(responseCode = "422", description = "Business rule violation (identity taken / parent deleted)")
+    })
+    public ResponseEntity<ResponseWrapper<SpecialityNodeDto>> restore(
+            @Parameter(description = "Speciality id (UUID)", required = true)
+            @PathVariable UUID id
+    ) {
+        log.info("POST /api/v1/web/classifiers/speciality/{}/restore", id);
+        return ResponseEntity.ok(ResponseWrapper.success(service.restore(id)));
     }
 }

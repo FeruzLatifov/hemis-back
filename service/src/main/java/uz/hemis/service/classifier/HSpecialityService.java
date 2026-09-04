@@ -15,6 +15,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.exception.BusinessRuleException;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -26,10 +28,13 @@ import uz.hemis.domain.repository.HEducationTypeRepository;
 import uz.hemis.domain.repository.HSpecialityRepository;
 import uz.hemis.domain.repository.HSpecialityYearRepository;
 import uz.hemis.domain.repository.UniversitySpecialityAttachmentRepository;
+import uz.hemis.service.audit.ActorNameResolver;
+import uz.hemis.service.audit.AuditContextHolder;
 import uz.hemis.service.classifier.dto.ClassifierOptionDto;
 import uz.hemis.service.classifier.dto.SpecialityCreateDto;
 import uz.hemis.service.classifier.dto.SpecialityClassifierDistResponse;
 import uz.hemis.service.classifier.dto.SpecialityDistItemDto;
+import uz.hemis.service.classifier.dto.SpecialityDeletedRowDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateCheckDto;
 import uz.hemis.service.classifier.dto.SpecialityDuplicateItemDto;
 import uz.hemis.service.classifier.dto.SpecialityNodeDto;
@@ -77,8 +82,15 @@ public class HSpecialityService {
     /** Apostrophe variants folded to a space in the search key (mirrors the ETL {@code fold()}). */
     private static final String APOSTROPHES = "'’ʻʼ‘`";
 
-    /** Education types this classifier admits (mirrors the V018 CHECK): '11'=Bakalavr, '12'=Magistr. */
-    private static final Set<String> ALLOWED_EDUCATION_TYPES = Set.of("11", "12");
+    /**
+     * Education types this classifier admits: '11'=Bakalavr, '12'=Magistr, '13'=Ordinatura.
+     * Mirrors {@code chk_h_speciality_edu_type} (V018, widened by M017) — the CHECK and this set must
+     * move together, or a row the database accepts is rejected by the API and vice versa. Doctoral
+     * ('14'/'15') is seeded in {@code h_education_type} but deliberately not admitted here: no
+     * doctoral speciality data exists yet, and an option that resolves to an empty classifier is a
+     * dead end in the UI rather than a feature.
+     */
+    private static final Set<String> ALLOWED_EDUCATION_TYPES = Set.of("11", "12", "13");
 
     /** Fixed taxonomy depth: Bilim sohasi → Ta'lim sohasi → Yo'nalish → Ichki yo'nalish. */
     private static final int LEVELS_MAX = 4;
@@ -89,6 +101,8 @@ public class HSpecialityService {
     private final HEducationTypeRepository educationTypeRepository;
     private final UniversitySpecialityAttachmentRepository attachmentRepository;
     private final OutboxEventPublisher outboxPublisher;
+    /** Turns the deleted_by UUID stamp into a readable name (shared with the university bin). */
+    private final ActorNameResolver actorNames;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -281,7 +295,7 @@ public class HSpecialityService {
     /**
      * Full APPROVED distributable snapshot (FLAT v1) for the {@code api-university} OTM bootstrap
      * pull. Cached as global reference data (evicted on {@link #update}). {@code educationType} nullable
-     * (both bachelor + master). Uses the SAME predicate as the PUSH guard so both channels agree.
+     * (every admitted type at once). Uses the SAME predicate as the PUSH guard so both channels agree.
      */
     @Cacheable(value = "specialityDistribution", key = "#educationType != null ? #educationType : 'ALL'")
     public SpecialityClassifierDistResponse getDistribution(String educationType) {
@@ -302,6 +316,7 @@ public class HSpecialityService {
     private static String distTitle(String educationType) {
         if ("11".equals(educationType)) return "Bakalavriat ta'lim yo'nalishlari";
         if ("12".equals(educationType)) return "Magistratura mutaxassisliklari";
+        if ("13".equals(educationType)) return "Ordinatura mutaxassisliklari";
         return "Mutaxassisliklar klassifikatori";
     }
 
@@ -318,6 +333,10 @@ public class HSpecialityService {
      * distributable rows (APPROVED + code-bearing + active), the same predicate the
      * {@code api-university} bootstrap pull uses. The frozen legacy classifier pull is untouched.</p>
      */
+    // Audited: approval has no endpoint of its own — promoting a row to APPROVED (and retracting it)
+    // happens here, so without this annotation "who approved this speciality" is answerable from
+    // nowhere. The aspect loads the pre-image, so the record carries the status it changed FROM.
+    @Audited(action = AuditAction.UPDATE, entity = "HSpeciality", entityClass = HSpeciality.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "specialityDistribution", allEntries = true)
     public SpecialityNodeDto update(UUID id, SpecialityUpdateDto dto) {
@@ -329,6 +348,10 @@ public class HSpecialityService {
         // deactivation, or code-clear of an already-distributed row can be RETRACTED from OTMs.
         boolean wasDistributable = s.isDistributable();
         String priorCode = s.getCode();
+        // The content an approval actually signed off. Compared field by field after the setters so
+        // that re-saving an untouched form is not mistaken for a change (see contentRevoked below).
+        List<Integer> storedYears = loadYears(List.of(s)).get(id);
+        List<Object> approvedContent = contentFingerprint(s, storedYears);
 
         // Partial update: an omitted (null) optional field is LEFT UNCHANGED; only an explicitly
         // supplied value (including "" → cleared) overwrites. nameUz is required, so it always applies.
@@ -346,6 +369,7 @@ public class HSpecialityService {
         if (dto.nameEn() != null) {
             s.setNameEn(blankToNull(dto.nameEn()));
         }
+        String priorEducationType = s.getEducationType();
         if (dto.educationType() != null) {
             s.setEducationType(validateEducationType(dto.educationType()));
         }
@@ -354,31 +378,86 @@ public class HSpecialityService {
         if (dto.hierarchyLevel() != null) {
             placementChanged = applyPlacement(s, dto.hierarchyLevel(), dto.parentId());
         }
+        // Re-typing a row is a structural move even when its depth and parent do not change, because
+        // the tree is assembled PER education type: getTree() filters by it and surfaces a node whose
+        // parent fell outside the filter as a root. So a row moved to another type while still
+        // pointing at a parent of the old one disappears from its old tree and lands flat at the top
+        // of its new one, and its own children — still on the old type — do the same one level down.
+        //
+        // applyPlacement() already refuses a cross-type parent, but it is not always reached: it runs
+        // only when hierarchyLevel is supplied AND the placement actually differs, and it returns
+        // early when neither level nor parent moved. The edit form clears parentId whenever the type
+        // changes, so the UI always goes through it — a raw PUT carrying educationType alone does not.
+        // These two checks close that path wherever the request came from.
+        if (!Objects.equals(priorEducationType, s.getEducationType())) {
+            if (s.getParentId() != null) {
+                HSpeciality currentParent = repository.findById(s.getParentId())
+                        .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "parentId", s.getParentId()));
+                if (!Objects.equals(currentParent.getEducationType(), s.getEducationType())) {
+                    throw new BusinessRuleException("SPECIALITY_PARENT_TYPE_MISMATCH",
+                            "Changing the education type also needs a parent of the new type — "
+                                    + "pick one, or move the row to level 1 first");
+                }
+            }
+            // Mirror image, one level down: the children would be stranded under a parent that is no
+            // longer their type. Same wording as the level-change rule (SPECIALITY_HAS_CHILDREN_MOVE_FIRST)
+            // and the same reason soft-deleted children count — a restore must never land a row in a
+            // tree it does not belong to.
+            long childCount = repository.countChildrenIncludingDeleted(s.getId());
+            if (childCount > 0) {
+                throw new BusinessRuleException("SPECIALITY_HAS_CHILDREN_MOVE_FIRST",
+                        ("This speciality has %d sub-direction(s) — move them to the new education type "
+                                + "first, then change its type. Deleted sub-directions count too: restore "
+                                + "them from 'Deleted specialities' and re-place them.").formatted(childCount));
+            }
+        }
         if (placementChanged) {
-            // A structural move re-opens curation: the row drops to NEEDS_REVIEW and must be
-            // re-approved in its new place. This overrides any reviewStatus in the same request, so a
-            // moved row never silently stays APPROVED — and the demotion needs only .edit, never the
-            // .approve capability (moving is an editor action; re-approving the new placement is not).
-            // A row that WAS distributable is then retracted from the 224 OTMs by distribute() below,
-            // until it is promoted to APPROVED again in its new position.
+            // A structural move re-opens curation exactly like any other change to distributed
+            // content (see contentRevoked below): the row drops to NEEDS_REVIEW, distribute()
+            // retracts it from the 224 OTMs, and it must be re-approved in its new place. Moving is
+            // an EDITING action and needs only .edit — an editor who may rename an approved row may
+            // also move it, and either way what the OTMs hold is withdrawn until someone re-approves
+            // it. The demotion overrides any reviewStatus in the same request, so a moved row never
+            // silently stays APPROVED.
             s.setReviewStatus(ReviewStatus.NEEDS_REVIEW);
         } else if (dto.reviewStatus() != null) {
             ReviewStatus newStatus = ReviewStatus.fromValue(dto.reviewStatus());
-            // Segregation of duties: promoting NEEDS_REVIEW → APPROVED brings a hand-entered/
-            // unverified row into OTM distribution, so it needs the dedicated .approve capability
-            // on top of .edit. Both are ministry curation roles only — machine roles like OTM_API
-            // are read-only on classifiers (S004 grants view only + revokes writes; S016), so no
-            // OTM token can edit or promote. Plain edits and demotions (APPROVED → NEEDS_REVIEW)
-            // stay on .edit.
-            if (newStatus == ReviewStatus.APPROVED
-                    && s.getReviewStatus() != ReviewStatus.APPROVED
+            // Segregation of duties: the review status IS the distribution switch, in BOTH
+            // directions. Promoting brings a hand-entered, unverified row in front of 230 OTMs;
+            // demoting retracts an approved one from them (distribute() sends the withdrawal
+            // below). An editor prepares the row; whether the OTMs see it is someone else's
+            // decision, so either move needs the dedicated .approve capability on top of .edit.
+            // Machine roles never reach here at all — OTM_API is read-only on classifiers (S004
+            // grants view and revokes writes; S016).
+            //
+            // Re-sending the SAME status is not a change and stays allowed: an editor's form posts
+            // the row's current status back untouched (the field is frozen for them in the UI), and
+            // that must not 403.
+            if (newStatus != s.getReviewStatus()
                     && !currentUserHasAuthority("classifiers.speciality.approve")) {
                 throw new AccessDeniedException(
-                        "Promoting a speciality to APPROVED requires 'classifiers.speciality.approve'");
+                        "Changing the review status requires 'classifiers.speciality.approve'");
             }
             s.setReviewStatus(newStatus);
         }
         validateYears(dto.years());
+
+        // An approval is an approval OF CONTENT, not of a row id. Renaming, re-coding, changing the
+        // education type or the years of an APPROVED speciality would otherwise ship the new text to
+        // 230 OTMs under a sign-off nobody gave it — the reason the .approve capability exists at
+        // all. So any real change to distributed content returns the row to NEEDS_REVIEW and
+        // distribute() withdraws it below, until someone re-approves what it now says.
+        //
+        // Unconditional, whoever is editing: an administrator who holds .approve is re-approving
+        // deliberately in a second step rather than implicitly by typing. Re-saving an unchanged
+        // form changes nothing, so an editor opening and closing a row never demotes it.
+        boolean contentRevoked = !placementChanged
+                && !approvedContent.equals(contentFingerprint(s, dto.years() != null
+                        ? dto.years().stream().filter(java.util.Objects::nonNull).distinct().sorted().toList()
+                        : storedYears));
+        if (contentRevoked) {
+            s.setReviewStatus(ReviewStatus.NEEDS_REVIEW);
+        }
         repository.save(s);
 
         if (dto.years() != null) {
@@ -422,10 +501,19 @@ public class HSpecialityService {
         // A row that still has sub-directions keeps its own level: the children must be re-placed first
         // (they would otherwise be dragged to an inconsistent depth). Checked before parent resolution
         // so this user-facing rule wins over the generic parent validations below.
-        if (levelChanged && !repository.findAllChildren(s.getId()).isEmpty()) {
-            throw new BusinessRuleException("SPECIALITY_HAS_CHILDREN_MOVE_FIRST",
-                    "This speciality has sub-directions — move them to another level first, "
-                            + "then change its level");
+        // M013: soft-deleted children count HERE (unlike the delete guard, which reads findAllChildren).
+        // A deleted child is restorable and keeps its stored hierarchy_level, so letting its parent move
+        // would resurrect it at a depth that violates parent.level + 1 — and that broken depth ships to
+        // the 224 OTMs inside SpecialityDistItemDto once the row is promoted. Blocking here keeps
+        // restore() always safe, rather than adding a restore-side guard that can dead-end a row.
+        if (levelChanged) {
+            long childCount = repository.countChildrenIncludingDeleted(s.getId());
+            if (childCount > 0) {
+                throw new BusinessRuleException("SPECIALITY_HAS_CHILDREN_MOVE_FIRST",
+                        ("This speciality has %d sub-direction(s) — move them to another level first, then "
+                                + "change its level. Deleted sub-directions count too: restore them from "
+                                + "'Deleted specialities' and re-place them.").formatted(childCount));
+            }
         }
         HSpeciality newParent = null;
         if (targetLevel == 1) {
@@ -474,7 +562,11 @@ public class HSpecialityService {
             if (pid == null) {
                 break;
             }
-            cur = repository.findById(pid).orElse(null);
+            // Fail loud, not silent (M013): a soft-deleted ancestor is invisible to findById, and
+            // .orElse(null) would end the walk early — quietly disabling the cycle guard below.
+            cur = repository.findById(pid).orElseThrow(() -> new BusinessRuleException(
+                    "SPECIALITY_PARENT_UNAVAILABLE",
+                    "The parent chain of this speciality contains a row that is deleted or missing"));
         }
         return false;
     }
@@ -490,6 +582,10 @@ public class HSpecialityService {
      * child must share its parent's education type (a MASTER row cannot sit under a BACHELOR
      * parent) — a mismatch is a 422 business-rule violation.</p>
      */
+    // Audited: "who added this speciality" is a question the classifier registry has to answer, and
+    // the row itself only carries created_by. No keyArg — the id does not exist yet, so the aspect
+    // takes it from the returned node.
+    @Audited(action = AuditAction.CREATE, entity = "HSpeciality", entityClass = HSpeciality.class)
     @Transactional
     @CacheEvict(value = "specialityDistribution", allEntries = true)
     public SpecialityNodeDto create(SpecialityCreateDto dto) {
@@ -587,30 +683,48 @@ public class HSpecialityService {
     }
 
     /**
-     * Delete a speciality row outright ({@code h_speciality}) — the curation backlog only.
+     * SOFT delete a speciality row ({@code h_speciality}) — the curation backlog only (M013).
      *
-     * <p>A hard delete is deliberate and deliberately narrow: a row the OTMs have ever seen is
-     * retired by deactivation, never removed (they would keep an orphan). Three guards, ordered so
-     * the admin is told the thing they can act on first:</p>
+     * <p>The row is NEVER removed physically: 224 OTMs and the legacy student tables reference a
+     * speciality by UUID, so a vanished row is unrecoverable damage. Delete stamps
+     * {@code deleted_at}/{@code deleted_by}; {@code @SQLRestriction("deleted_at IS NULL")} on
+     * {@link HSpeciality} then hides it from every JPQL read — grid, tree, year dropdown, duplicate
+     * check, twin lookup, children guard, distribution pull — and from the inherited
+     * {@code findById}, so a later GET/PUT/DELETE on the same id is a 404. {@link #restore} brings
+     * it back. Native SQL is NOT rewritten by the restriction (see
+     * {@code LegacySpecialitySyncService}).</p>
+     *
+     * <p>Three guards, ordered so the admin is told the thing they can act on first:</p>
      * <ol>
      *   <li><b>Status</b> — {@link ReviewStatus#NEEDS_REVIEW} only. An APPROVED row is part of the
-     *       distributed snapshot; it is retired via {@link #update} (demotion / {@code active=false}),
-     *       which RETRACTS it through the PUSH channel instead of orphaning it.</li>
-     *   <li><b>Children</b> — a parent keeps its subtree: each child must first be deleted or
-     *       re-placed under another parent ({@link #update} placement). Deactivated children count
-     *       too — {@code fk_h_speciality_parent} is {@code ON DELETE RESTRICT} and does not care
-     *       about {@code active}.</li>
-     *   <li><b>OTM attachments</b> — a speciality an OTM is allowed to run cannot vanish;
-     *       {@code fk_univ_spec_attach_spec} is {@code ON DELETE RESTRICT}. Attachments have no
-     *       soft delete, so every blocking row is one the admin can see and detach.</li>
+     *       distributed snapshot; demote it via {@link #update} first, which RETRACTS it through the
+     *       PUSH channel instead of orphaning it in 224 OTMs.</li>
+     *   <li><b>Children</b> — a parent keeps its subtree: each LIVE child must first be deleted or
+     *       re-placed under another parent ({@link #update} placement). Deactivated children count;
+     *       soft-deleted ones do not (the admin cannot see them either).</li>
+     *   <li><b>OTM attachments</b> — a speciality an OTM is allowed to run cannot disappear.
+     *       Attachments have no soft delete (M011), so every blocking row is one the admin can see
+     *       and detach.</li>
      * </ol>
      *
-     * <p>Years ({@code h_speciality_year}) go with the row — the FK cascades in the DB, and the
-     * explicit delete keeps the persistence context consistent inside this transaction. No outbox
-     * event is published: guard #1 makes the row non-distributable by definition, so no OTM ever
-     * received it. The distribution cache is evicted anyway — zero-cost insurance should the guards
-     * ever be loosened.</p>
+     * <p><b>Years are KEPT.</b> {@code fk_h_speciality_year_spec ON DELETE CASCADE} can never fire
+     * again, so a restored speciality comes back with its editions intact.</p>
+     *
+     * <p><b>Why no retraction event fires here</b> — and the invariant that would be wrong: guard #1
+     * does NOT prove the row was never distributed. Demotion APPROVED&rarr;NEEDS_REVIEW is a plain
+     * {@code .edit} and a structural move demotes automatically, so "edit &rarr; demote &rarr;
+     * delete" is reachable. What guard #1 guarantees is that by the time delete runs the row is
+     * already out of {@code findAllForDistribution} and its PUSH DELETE was emitted by that earlier
+     * demotion. {@link #distribute} is still called (with the pre-stamp distributable state) so the
+     * retraction would fire should the guard ever be loosened.</p>
+     *
+     * <p><b>Residual, deliberately accepted:</b> guards #2/#3 no longer have a DB backstop —
+     * {@code ON DELETE RESTRICT} does not fire against the UPDATE a soft delete performs, and a
+     * non-key UPDATE does not conflict with the {@code FOR KEY SHARE} a concurrent child/attachment
+     * INSERT takes. The race-free sequential path (delete child, delete parent, restore child) is
+     * closed by {@code SPECIALITY_RESTORE_PARENT_DELETED}.</p>
      */
+    @Audited(action = AuditAction.DELETE, entity = "HSpeciality", entityClass = HSpeciality.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "specialityDistribution", allEntries = true)
     public void delete(UUID id) {
@@ -620,7 +734,7 @@ public class HSpecialityService {
         if (s.getReviewStatus() != ReviewStatus.NEEDS_REVIEW) {
             throw new BusinessRuleException("SPECIALITY_DELETE_APPROVED_FORBIDDEN",
                     "Only a speciality with the 'Needs review' status can be deleted; an approved one "
-                            + "is distributed to the OTMs — deactivate it instead");
+                            + "is distributed to the OTMs — demote it back to 'Needs review' first");
         }
 
         List<HSpeciality> children = repository.findAllChildren(id);
@@ -640,11 +754,113 @@ public class HSpecialityService {
                                             attachmentRepository.countBySpecialityIdGroupedByUniversity(id))));
         }
 
-        yearRepository.deleteBySpecialityId(id);
-        repository.delete(s);
-        // WARN, not INFO: an irreversible classifier mutation is worth finding in the logs later.
-        log.warn("Speciality DELETED: id={}, code={}, name={}, educationType={}",
+        // Captured BEFORE the stamp: isDistributable() reads !isDeleted(), so after softDelete()
+        // the "was it distributed" question can no longer be asked of the entity.
+        boolean wasDistributable = s.isDistributable();
+        String priorCode = s.getCode();
+
+        s.softDelete();
+        s.setDeletedBy(currentUsername());
+        // No repository.save(): the instance is managed inside @Transactional, dirty checking flushes
+        // the UPDATE. Years are deliberately left in place (see javadoc).
+        distribute(s, wasDistributable, priorCode);
+
+        // WARN, not INFO: a classifier row leaving every list is worth finding in the logs later.
+        log.warn("Speciality SOFT DELETED: id={}, code={}, name={}, educationType={}, by={}",
+                id, s.getCode(), s.getNameUz(), s.getEducationType(), s.getDeletedBy());
+    }
+
+    /**
+     * Restore a soft-deleted speciality (M013) — the other half of {@link #delete}.
+     *
+     * <p>Loads through the native escape hatch, since {@code @SQLRestriction} makes the ordinary
+     * {@code findById} blind to exactly these rows. Two guards, both 422:</p>
+     * <ol>
+     *   <li>{@code SPECIALITY_RESTORE_IDENTITY_TAKEN} — a LIVE row has since taken the
+     *       {@code (education_type, code, name_search)} slot. That is legal (the unique index is
+     *       partial on {@code deleted_at IS NULL}), so restore must refuse with a readable rule code
+     *       instead of a raw 23505/500.</li>
+     *   <li>{@code SPECIALITY_RESTORE_PARENT_DELETED} — the parent is itself deleted (or gone).
+     *       Reachable with no race at all: delete child C, delete the now-childless parent P, restore
+     *       C. Without this guard {@code buildTree} promotes the orphan to a top-level root.</li>
+     * </ol>
+     */
+    @Audited(action = AuditAction.RESTORE, entity = "HSpeciality", entityClass = HSpeciality.class, keyArg = "id")
+    @Transactional
+    @CacheEvict(value = "specialityDistribution", allEntries = true)
+    public SpecialityNodeDto restore(UUID id) {
+        HSpeciality s = repository.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", id));
+
+        // Not deleted = there is no deleted speciality under this id. 404, same as an unknown id.
+        if (!s.isDeleted()) {
+            throw new ResourceNotFoundException("HSpeciality (deleted)", "id", id);
+        }
+
+        long liveTwins = repository.countLiveIdentity(s.getEducationType(), s.getCode(), s.getNameSearch());
+        if (liveTwins > 0) {
+            throw new BusinessRuleException("SPECIALITY_RESTORE_IDENTITY_TAKEN",
+                    "A live speciality already uses this code and name (%s — %s); rename or remove it first"
+                            .formatted(s.getCode() == null ? "—" : s.getCode(), s.getNameUz()));
+        }
+
+        UUID parentId = s.getParentId();
+        if (parentId != null && repository.findById(parentId).isEmpty()) {
+            throw new BusinessRuleException("SPECIALITY_RESTORE_PARENT_DELETED",
+                    "The parent speciality of this row is deleted — restore the parent first");
+        }
+
+        // The @Audited pre-image the aspect loads with entityManager.find() comes back NULL here —
+        // @SQLRestriction hides exactly the row restore is about — so the audit row would record the
+        // after-state only, losing the one transition it exists to prove. Hand the aspect the snapshot
+        // through its documented ThreadLocal fallback (it clears the holder in its own finally).
+        // Raw values, not String.valueOf: the after-image is the entity itself, so a stringified
+        // before-image made every number look changed (a level of 4 became "4" on one side and 4 on
+        // the other — that is how a restore reported "changed: hierarchyLevel").
+        Map<String, Object> auditPreImage = new LinkedHashMap<>();
+        auditPreImage.put("code", s.getCode());
+        auditPreImage.put("nameUz", s.getNameUz());
+        auditPreImage.put("deletedAt", s.getDeletedAt());
+        auditPreImage.put("deletedBy", s.getDeletedBy());
+        auditPreImage.put("reviewStatus", s.getReviewStatus());
+        auditPreImage.put("hierarchyLevel", s.getHierarchyLevel());
+        AuditContextHolder.setOldValue(auditPreImage);
+
+        s.restore();
+        // Symmetry with delete(): a NEEDS_REVIEW row is not distributable, so this is a no-op today.
+        distribute(s, false, s.getCode());
+
+        log.warn("Speciality RESTORED: id={}, code={}, name={}, educationType={}",
                 id, s.getCode(), s.getNameUz(), s.getEducationType());
+        return getById(id);
+    }
+
+    /**
+     * Soft-deleted rows, newest first — the "Deleted specialities" list behind the delete permission.
+     *
+     * <p>Plain {@code @Transactional}, not {@code readOnly}: this is a read-after-write path. The bin
+     * is opened right after a delete, and a restore commits on master; a replica read would lag those
+     * writes and show a row that is already back (or hide one just removed). Same reasoning, same
+     * annotation as {@code UniversityRegistryService.listDeletedUniversities()} — the two bins are
+     * twins and must not drift.</p>
+     */
+    @Transactional
+    public List<SpecialityDeletedRowDto> listDeleted() {
+        Map<String, String> typeNames = educationTypeNames();
+        List<HSpeciality> deleted = repository.findAllDeleted();
+        Map<String, String> actors = actorNames.resolve(
+                deleted.stream().map(HSpeciality::getDeletedBy).filter(Objects::nonNull).toList());
+        return deleted.stream()
+                .map(s -> new SpecialityDeletedRowDto(
+                        s.getId().toString(),
+                        s.getCode(),
+                        s.getNameUz(),
+                        s.getEducationType(),
+                        typeNames.get(s.getEducationType()),
+                        s.getReviewStatus() == null ? null : s.getReviewStatus().name(),
+                        s.getDeletedAt(),
+                        ActorNameResolver.label(s.getDeletedBy(), actors)))
+                .toList();
     }
 
     /**
@@ -719,7 +935,7 @@ public class HSpecialityService {
         String code = blankToNull(educationType);
         if (code == null || !ALLOWED_EDUCATION_TYPES.contains(code)) {
             throw new BusinessRuleException("SPECIALITY_EDUCATION_TYPE_INVALID",
-                    "Education type must be '11' (Bakalavr) or '12' (Magistr)");
+                    "Education type must be '11' (Bakalavr), '12' (Magistr) or '13' (Ordinatura)");
         }
         return code;
     }
@@ -729,6 +945,18 @@ public class HSpecialityService {
      * with a clean 422 — otherwise the insert fails at flush with an opaque 400 that
      * rolls the whole create/update back. Null/empty is a no-op (years left unchanged).
      */
+    /**
+     * The fields whose values reach the 224 OTMs — the thing an approval is about. Years are passed
+     * in rather than read here so the caller can compare the incoming set against the stored one
+     * without a second query. Order is normalised so an identical set never reads as a change.
+     */
+    private static List<Object> contentFingerprint(HSpeciality s, List<Integer> years) {
+        return java.util.Arrays.asList(
+                s.getCode(), s.getNameUz(), s.getNameOz(), s.getNameRu(), s.getNameEn(),
+                s.getEducationType(), s.getActive(),
+                years == null ? List.of() : years.stream().sorted().toList());
+    }
+
     private void validateYears(List<Integer> years) {
         if (years == null || years.isEmpty()) {
             return;
@@ -838,8 +1066,8 @@ public class HSpecialityService {
     }
 
     /**
-     * Education-type options for the classifier's own Create/Edit pickers (Bakalavr / Magistr),
-     * read from the {@code hemishe_h_education_type} classifier — NOT hard-coded. Scoped to the two
+     * Education-type options for the classifier's own Create/Edit pickers (Bakalavr / Magistr /
+     * Ordinatura), read from the {@code h_education_type} classifier — NOT hard-coded. Scoped to the
      * types this classifier admits ({@link #ALLOWED_EDUCATION_TYPES}), sorted by sortOrder then code,
      * multilingual (name / nameRu / nameEn). Mirrors the attachments dictionary but is served under
      * {@code classifiers.speciality.view}, so the classifier page needs no cross-feature permission.
@@ -997,6 +1225,15 @@ public class HSpecialityService {
 
     private static String blankToNull(String value) {
         return (value == null || value.isBlank()) ? null : value.trim();
+    }
+
+    /**
+     * Username of the current caller for {@code deleted_by} (M013). {@code softDelete()} only stamps
+     * the timestamp; "system" mirrors what {@code SecurityAuditorAware} writes for a jobless context.
+     */
+    private static String currentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth == null || auth.getName() == null || auth.getName().isBlank()) ? "system" : auth.getName();
     }
 
     /** True if the current authenticated user holds {@code authority} (for the promote guard). */

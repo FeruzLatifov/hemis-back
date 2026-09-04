@@ -87,8 +87,9 @@ public class SpecialityExcelExporter {
      *
      * @param headers     the {@value #COL_COUNT} column headers, in column order
      * @param taxonomy    hierarchy-level number → its taxonomy label (1=Bilim sohasi … 4=Ichki yo'nalish)
-     * @param bachelor    label for {@code BACHELOR}
-     * @param master      label for {@code MASTER}
+     * @param bachelor    worksheet title for education type '11'
+     * @param master      worksheet title for education type '12'
+     * @param residency   worksheet title for education type '13' (Ordinatura)
      * @param approved    label for {@code APPROVED}
      * @param needsReview label for {@code NEEDS_REVIEW}
      * @param titlePrefix band title prefix (e.g. "Mutaxassislik klassifikatori")
@@ -100,7 +101,7 @@ public class SpecialityExcelExporter {
     public record Labels(
             List<String> headers,
             Map<Integer, String> taxonomy,
-            String bachelor, String master,
+            String bachelor, String master, String residency,
             String approved, String needsReview,
             String titlePrefix, String generated, String total,
             String filters, String noFilter

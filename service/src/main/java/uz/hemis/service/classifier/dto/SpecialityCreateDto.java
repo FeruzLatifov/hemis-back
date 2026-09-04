@@ -44,7 +44,12 @@ public record SpecialityCreateDto(
 
         /** Education type code — FK into {@code hemishe_h_education_type}: '11'=Bakalavr, '12'=Magistr. */
         @NotBlank(message = "educationType is required")
-        @Pattern(regexp = "11|12", message = "educationType must be '11' (Bakalavr) or '12' (Magistr)")
+        // Must stay in step with HSpecialityService.ALLOWED_EDUCATION_TYPES and the
+        // chk_h_speciality_edu_type CHECK (V018, widened by M017). Bean Validation runs BEFORE the
+        // service, so a code missing here is a 400 the service never sees — which is exactly how
+        // Ordinatura rows became uncreatable and uneditable while every other layer already
+        // accepted them.
+        @Pattern(regexp = "11|12|13", message = "educationType must be '11' (Bakalavr), '12' (Magistr) or '13' (Ordinatura)")
         String educationType,
 
         /** Parent speciality id; {@code null} creates a top-level (level 1) node. */

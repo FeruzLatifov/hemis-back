@@ -72,6 +72,7 @@ public class LegacySpecialitySyncService {
                    true, true
             FROM h_speciality s
             WHERE s.education_type = :eduType
+              AND s.deleted_at IS NULL
               AND s.review_status = 'APPROVED'
               AND s.active = true
               AND s.code IS NOT NULL
@@ -82,6 +83,7 @@ public class LegacySpecialitySyncService {
     private static final String SCANNED_SQL = """
             SELECT count(*) FROM h_speciality s
             WHERE s.education_type IN ('11', '12')
+              AND s.deleted_at IS NULL
               AND s.review_status = 'APPROVED'
               AND s.active = true
               AND s.code IS NOT NULL
@@ -91,6 +93,7 @@ public class LegacySpecialitySyncService {
     private static final String SKIPPED_NO_CODE_SQL = """
             SELECT count(*) FROM h_speciality s
             WHERE s.education_type IN ('11', '12')
+              AND s.deleted_at IS NULL
               AND s.review_status = 'APPROVED'
               AND s.active = true
               AND s.code IS NULL
@@ -100,6 +103,7 @@ public class LegacySpecialitySyncService {
     private static final String SKIPPED_NOT_APPROVED_SQL = """
             SELECT count(*) FROM h_speciality s
             WHERE s.education_type IN ('11', '12')
+              AND s.deleted_at IS NULL
               AND s.active = true
               AND s.code IS NOT NULL
               AND s.review_status <> 'APPROVED'
@@ -108,6 +112,17 @@ public class LegacySpecialitySyncService {
     /**
      * Copy every distributable speciality that is missing (by UUID) from the legacy bachelor/master
      * tables and report what happened. Idempotent — safe to press repeatedly.
+     *
+     * <p>Bachelor and master only, deliberately. Ordinatura ('13', added by M017/S042) is not a gap:
+     * its 69 leaves were imported FROM {@code hemishe_h_speciality_ordinatura} under the legacy
+     * UUIDs, so that table is already the mirror this method would try to build — there is nothing
+     * to copy back, and every counter below correctly reports zero for it.
+     *
+     * <p>If ordinatura specialities ever start being CREATED here rather than imported, this method
+     * needs a third target table AND a parent translation: S042 gives the '13' rows their own
+     * cloned {@code 910000} category (so the classifier tree is not flat), while the legacy table's
+     * {@code _parent} has an FK onto {@code hemishe_h_speciality_bachelor(id)} and only accepts
+     * {@code 960be177-4e20-4a3c-b381-a1d816370e3f}. Copying the cloned id across would fail 23503.</p>
      */
     @Transactional
     public LegacySpecialitySyncResult syncToLegacy() {

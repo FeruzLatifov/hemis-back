@@ -80,7 +80,11 @@ public class SpecialityAttachmentDistributionController {
                     **Join kaliti:** `specialityCode` — klassifikator (`/classifiers/speciality`) `code`'si
                     bilan AYNI qiymat; shu orqali biriktirishni umumiy klassifikator daraxtiga bog'laysiz.
 
-                    **Ta'lim turi (`educationType`):** 11=Bakalavr · 12=Magistr.
+                    **Ta'lim turi (`educationType`):** 11=Bakalavr · 12=Magistr · 13=Ordinatura.
+                    Qiymat `h_education_type` klassifikatoridan keladi va kengayishi mumkin — qattiq
+                    ro'yxat bilan tekshirmang. Ordinatura mutaxassisliklari klassifikatorda mavjud,
+                    ammo hozircha birorta OTMga BIRIKTIRILMAGAN, shuning uchun bu endpoint ular
+                    bo'yicha bo'sh qaytaradi — bu nuqson emas, biriktirish hali qilinmagan.
                     **Ta'lim shakli (`educationForm`):** 11=Kunduzgi · 12=Kechki · 16=Masofaviy.
                     **O'quv yili (`eduYear`):** 2026 = 2026-2027.
 
@@ -103,7 +107,7 @@ public class SpecialityAttachmentDistributionController {
                     | Parametr | Tur | Misol | Izoh |
                     |----------|-----|-------|------|
                     | `eduYear` | integer | `2026` | O'quv yili (2026 = 2026-2027) |
-                    | `educationType` | string | `11` | 11=Bakalavr, 12=Magistr |
+                    | `educationType` | string | `11` | 11=Bakalavr, 12=Magistr, 13=Ordinatura |
                     | `educationForm` | string | `11` | 11=Kunduzgi, 12=Kechki, 16=Masofaviy |
                     | `specialityCode` | string | `60710100` | Mutaxassislik kodi (klassifikator `code`) |
 
@@ -114,7 +118,7 @@ public class SpecialityAttachmentDistributionController {
     public ResponseEntity<ResponseWrapper<List<SpecialityAttachmentSnapshotDto>>> snapshot(
             @Parameter(description = "O'quv yili bo'yicha filtr (2026 = 2026-2027 o'quv yili). Bo'sh — barcha yillar.")
             @RequestParam(required = false) Integer eduYear,
-            @Parameter(description = "Ta'lim turi kodi bo'yicha filtr (h_education_type klassifikatoridan: 11=Bakalavr, 12=Magistr, ...). Bo'sh — barcha turlar.")
+            @Parameter(description = "Ta'lim turi kodi bo'yicha filtr (h_education_type klassifikatoridan: 11=Bakalavr, 12=Magistr, 13=Ordinatura, ...). Bo'sh — barcha turlar.")
             @RequestParam(required = false) String educationType,
             @Parameter(description = "Ta'lim shakli kodi bo'yicha filtr (h_education_form klassifikatoridan: 11=Kunduzgi, 12=Kechki, 13=Sirtqi, 16=Masofaviy, ...). Bo'sh — barcha shakllar.")
             @RequestParam(required = false) String educationForm,

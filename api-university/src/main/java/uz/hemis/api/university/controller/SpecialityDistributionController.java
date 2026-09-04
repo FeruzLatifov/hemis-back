@@ -68,8 +68,15 @@ public class SpecialityDistributionController {
                     (NEEDS_REVIEW yoki kodsiz qatorlar tushmaydi).
 
                     **Join/upsert kaliti:** `code` + `educationType` (id vaqt o'tib o'zgarishi mumkin, code
-                    barqaror). `educationType` (11=Bakalavr, 12=Magistr) filtri ixtiyoriy — bo'sh qoldirsangiz
-                    ikkalasi keladi. Global ma'lumot — har OTM aynan bir xil to'plamni oladi.
+                    barqaror). `educationType` filtri ixtiyoriy — bo'sh qoldirsangiz **barcha turlar** keladi.
+                    Global ma'lumot — har OTM aynan bir xil to'plamni oladi.
+
+                    **Ta'lim turlari:** `11` = Bakalavr · `12` = Magistr · `13` = Ordinatura.
+                    Ordinatura 2026-09-04 dan qo'shildi (69 ta yo'nalish + 2 ta ota-kategoriya, `code`
+                    `8091*`, `2023` yil). **Diqqat:** ro'yxat kelajakda yana kengayishi mumkin, shuning
+                    uchun OTM tomonida `educationType` ni qattiq ro'yxat bilan tekshirmang — bilinmagan
+                    turni tashlab yuboring yoki `educationTypeName` bilan ko'rsating, aks holda yangi tur
+                    qo'shilgan kuni ingest to'xtaydi.
 
                     **Daraxtni parentId'dan qurish (JS misol):**
                     ```js
@@ -85,7 +92,7 @@ public class SpecialityDistributionController {
                     """
     )
     public ResponseEntity<SpecialityClassifierDistResponse> speciality(
-            @Parameter(description = "Ta'lim turi filtri (11=Bakalavr, 12=Magistr)")
+            @Parameter(description = "Ta'lim turi filtri (11=Bakalavr, 12=Magistr, 13=Ordinatura). Bo'sh — barcha turlar.")
             @RequestParam(required = false) String educationType
     ) {
         SpecialityClassifierDistResponse response = specialityService.getDistribution(educationType);
