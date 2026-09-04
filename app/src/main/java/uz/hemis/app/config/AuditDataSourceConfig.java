@@ -11,8 +11,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import javax.sql.DataSource;
+import java.sql.Connection;
 
 /**
  * Audit DataSource Configuration — Master/Replica
@@ -39,6 +41,10 @@ public class AuditDataSourceConfig {
 
     /** Advisory-lock key: only one pod applies audit DDL at a time during a rolling deploy. */
     private static final long AUDIT_DDL_LOCK = 82026_0830L;
+
+    /** How long to keep trying for the DDL lock before giving up and letting another pod do it. */
+    private static final int LOCK_ATTEMPTS = 10;
+    private static final long LOCK_RETRY_MS = 1_000L;
 
     /** Applied in order, once each, recorded in schema_version. */
     private static final java.util.List<String> AUDIT_SCRIPTS = java.util.List.of(
@@ -149,16 +155,40 @@ public class AuditDataSourceConfig {
      * says so, rather than taking the ministry API down with it.</p>
      */
     private void initSchema(DataSource dataSource) {
-        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
-        try {
+        // ONE connection for the whole routine, and that is not a detail — it is the correctness
+        // condition. A PostgreSQL advisory lock is owned by the SESSION, and a JdbcTemplate over a
+        // pooled DataSource takes a fresh connection per statement: the lock would be acquired on
+        // one pooled connection and "released" on another, where pg_advisory_unlock simply returns
+        // false. The locking connection then goes back into the pool STILL HOLDING the lock, with
+        // nothing left that can release it — and every pod that starts afterwards blocks on it
+        // forever. SingleConnectionDataSource(con, true) pins every statement below to one session;
+        // the try-with-resources hands that connection back to Hikari at the end.
+        try (Connection con = dataSource.getConnection()) {
+            JdbcTemplate jdbc = new JdbcTemplate(new SingleConnectionDataSource(con, true));
+
+            // Bound every wait on this session. Without these, the DDL below queues behind whatever
+            // holds the table: V005 replaces triggers on activity_log, which needs ACCESS EXCLUSIVE,
+            // and during a rolling deploy the PREVIOUS pods are still INSERTing into exactly that
+            // table — so the wait is not hypothetical, it is the normal case.
+            jdbc.execute("SET lock_timeout = '5s'");
+            jdbc.execute("SET statement_timeout = '30s'");
+
             jdbc.execute("""
                 CREATE TABLE IF NOT EXISTS schema_version (
                     script_name VARCHAR(200) PRIMARY KEY,
                     applied_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )""");
 
-            // 8_2026_0830 — an arbitrary but stable key; any pod applying audit DDL takes this lock.
-            jdbc.queryForObject("SELECT pg_advisory_lock(?)", Object.class, AUDIT_DDL_LOCK);
+            // pg_TRY_advisory_lock, never the blocking form: pg_advisory_lock has no timeout and is
+            // not covered by lock_timeout, so a single stuck holder turns every subsequent pod start
+            // into an indefinite hang — inside a @Bean method, i.e. the whole application context.
+            // Losing the race is not an error: another pod is applying the same scripts, and this
+            // one has nothing to do. 8_2026_0830 is an arbitrary but stable key.
+            if (!acquireDdlLock(jdbc)) {
+                log.warn("Audit DDL lock busy after {}s — another pod is applying the scripts; skipping",
+                        LOCK_ATTEMPTS * LOCK_RETRY_MS / 1000);
+                return;
+            }
             try {
                 for (String script : AUDIT_SCRIPTS) {
                     applyOnce(jdbc, script);
@@ -173,6 +203,25 @@ public class AuditDataSourceConfig {
             log.error("AUDIT SCHEMA NOT APPLIED — activity/login/error logging will not work: {}",
                     e.getMessage(), e);
         }
+    }
+
+    /** Bounded attempt at the DDL lock. Returns false when someone else holds it — never blocks. */
+    private boolean acquireDdlLock(JdbcTemplate jdbc) {
+        for (int attempt = 1; attempt <= LOCK_ATTEMPTS; attempt++) {
+            if (Boolean.TRUE.equals(
+                    jdbc.queryForObject("SELECT pg_try_advisory_lock(?)", Boolean.class, AUDIT_DDL_LOCK))) {
+                return true;
+            }
+            try {
+                Thread.sleep(LOCK_RETRY_MS);
+            } catch (InterruptedException e) {
+                // Shutdown while waiting: restore the flag and give up quietly. Auditing being
+                // unconfigured is the documented degraded mode; swallowing the interrupt is not.
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return false;
     }
 
     /** Runs a script unless the ledger already records it; records it only when it succeeded. */

@@ -33,8 +33,20 @@ spec:
               value: "{{ .Values.springProfiles }},migrate"
             - name: JAVA_OPTS
               value: "-Xms256m -Xmx512m -XX:+UseG1GC"
+            # The audit schema is applied HERE, for the same reason Liquibase is: this Job is a
+            # pre-upgrade hook, so it runs alone and to completion before a single app pod starts.
+            # It used to be "false", which left AuditDataSourceConfig to apply the DDL from inside
+            # every pod at startup — three of them concurrently during a rolling deploy, racing for
+            # one advisory lock while the OUTGOING pods were still INSERTing into activity_log, so
+            # the ACCESS EXCLUSIVE that V005's trigger swap needs could not be granted. All three
+            # hung, the startup probe killed them, and Helm rolled the release back.
+            # With this "true" the scripts are already recorded in schema_version by the time the
+            # pods boot, so their own init finds nothing to do and takes no table lock at all.
             - name: AUDIT_ENABLED
-              value: "false"
+              # NOT `| default true`: Helm's default treats false as empty, so an operator
+              # setting this to false would silently get true back. values.yaml always
+              # defines the key, so referencing it directly is both correct and honest.
+              value: {{ .Values.auditSchemaInMigrationJob | quote }}
           envFrom:
             - secretRef:
                 name: {{ .Values.existingSecret }}

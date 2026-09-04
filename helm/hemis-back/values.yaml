@@ -98,3 +98,9 @@ strategy:
   rollingUpdate:
     maxSurge: 1
     maxUnavailable: 0
+
+# Apply the audit-DB schema from the pre-upgrade migration Job instead of from every app pod.
+# Keep this true: it is what makes audit DDL behave like the main database's Liquibase — one
+# writer, before any pod, no rolling-deploy race. Set it to false only to deploy against an audit
+# database the Job cannot reach; the pods still self-heal, they just do it under contention.
+auditSchemaInMigrationJob: true
