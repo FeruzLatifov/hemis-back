@@ -264,8 +264,20 @@ public class User extends AuditableEntity {
      * NOT OTM employees. <strong>PII</strong> — never log, never persist into audit JSONB
      * (recursive redaction handles nested cases). Uniqueness: partial-unique
      * {@code uq_users_pinfl}. {@code NULL} for machine-migrated/legacy rows until onboarding.</p>
+     *
+     * <p><strong>WRITE-ONCE.</strong> {@code updatable = false} is the enforcement, not a hint:
+     * Hibernate leaves this column out of every UPDATE it generates, so no code path — a new field
+     * on {@code UserUpdateRequest}, a stray setter, a mapper that copies whole entities — can change
+     * a PINFL once the row exists. It is set on INSERT only ({@code UserAdminService.createUser}).
+     *
+     * <p>Why it must be immutable: the PINFL IS the person this login belongs to. Editing it does
+     * not correct a typo, it silently re-points an account — with its roles, its audit history and
+     * everything it has already signed off — at a different human being. A wrong PINFL is fixed by
+     * deleting the account and creating the right one, which leaves a trail; an UPDATE leaves none.
+     * The partial-unique {@code uq_users_pinfl} would not catch it either: moving a PINFL onto an
+     * account that has none violates nothing.</p>
      */
-    @Column(name = "pinfl", length = 14)
+    @Column(name = "pinfl", length = 14, updatable = false)
     private String pinfl;
 
     /**

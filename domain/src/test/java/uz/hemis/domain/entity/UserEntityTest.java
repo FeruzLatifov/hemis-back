@@ -1,5 +1,6 @@
 package uz.hemis.domain.entity;
 
+import jakarta.persistence.Column;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import uz.hemis.domain.entity.security.Role;
@@ -127,4 +128,28 @@ class UserEntityTest {
         assertThat(user.isUniversityAdmin()).isTrue();
         assertThat(user.isSystemAdmin()).isFalse();
     }
+
+    @Test
+    @DisplayName("PINFL is write-once — the column must never be UPDATE-able")
+    void pinflMustBeImmutable() throws NoSuchFieldException {
+        // Enforcement, not documentation. The PINFL IS the person a login belongs to: editing it
+        // does not correct a typo, it silently re-points an account — with its roles, its audit
+        // history and everything it has already signed off — at a different human being. Today the
+        // only setPinfl() call for `users` sits in UserAdminService.createUser and
+        // UserUpdateRequest has no pinfl field, but both of those are conventions a future edit can
+        // undo without anyone noticing. updatable = false is structural: Hibernate leaves the column
+        // out of every UPDATE it generates, so no mapper, setter or new request field can reach it.
+        Column column = User.class.getDeclaredField("pinfl").getAnnotation(Column.class);
+
+        assertThat(column).as("users.pinfl must carry an explicit @Column").isNotNull();
+        assertThat(column.updatable())
+                .as("users.pinfl must be updatable = false — a PINFL is never edited, it is "
+                        + "set once at creation. Fix a wrong one by deleting the account and "
+                        + "creating the right one, which leaves a trail; an UPDATE leaves none.")
+                .isFalse();
+        assertThat(column.insertable())
+                .as("users.pinfl must still be insertable — createUser sets it on INSERT")
+                .isTrue();
+    }
+
 }

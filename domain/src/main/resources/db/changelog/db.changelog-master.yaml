@@ -1120,3 +1120,14 @@ databaseChangeLog:
         - sqlFile: { path: changesets/migration/M018_sync_h_education_form_from_legacy.sql, relativeToChangelogFile: true, splitStatements: false }
       rollback:
         - sqlFile: { path: changesets/migration/M018_sync_h_education_form_from_legacy_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
+
+  - changeSet:
+      id: S045_seed_user_identity_i18n
+      author: hemis-team
+      logicalFilePath: ${changelog.path}
+      runOnChange: true
+      comment: "Two translation keys for a section of the user edit page that had no UI at all until now. Creating a user resolves the person from the GUVD passport gateway and stores PINFL, passport, birth date and birth place on the users row; EDITING one rendered none of them, because UserFormPage put the whole person section behind !isEdit - so an administrator could not see WHICH person an existing account belongs to. The data was already travelling all the way to the browser (UserAdminResponse carries it, the UserAdmin type declares it); only the markup was missing. 'Identity' is the section heading - deliberately not 'Passport data', since the block also carries PINFL and birth place and what it actually answers is 'who is this account'. 'Identity data is set when the account is created and cannot be changed' is the note under the fields, and it states a real guarantee rather than a UI convention: users.pinfl is now mapped updatable = false, so Hibernate omits the column from every UPDATE it generates and no request field, setter or mapper can change it - a wrong PINFL is corrected by deleting the account and creating the right one, which leaves a trail, whereas an UPDATE would silently re-point an existing account, with its roles and its audit history, at a different person. The block is conditional on the data actually arriving: PINFL is gated server-side by pinfl.view (SUPER_ADMIN only), so for everyone else the backend omits it and the field must not appear as an empty box. The other four labels the block renders - PINFL, 'Passport (series + number)', 'Birth date', 'Birth place' - are already seeded by S006/S037 and reused verbatim from the create form. NEW seed; S006/S009/S010/S032..S044 are applied in prod and applied changesets are never edited. system_message is the single source of truth for the frontend JSONs (sync:translations rewrites all four from it), so a key that is not seeded here vanishes at the next sync - run that sync after applying. Runs after S006 (_seed_msg helper)."
+      changes:
+        - sqlFile: { path: changesets/seed/S045_seed_user_identity_i18n.sql, relativeToChangelogFile: true, splitStatements: false }
+      rollback:
+        - sqlFile: { path: changesets/seed/S045_seed_user_identity_i18n_rollback.sql, relativeToChangelogFile: true, splitStatements: false }
