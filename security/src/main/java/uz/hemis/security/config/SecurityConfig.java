@@ -189,8 +189,13 @@ public class SecurityConfig {
                             .requestMatchers("/api/v1/university/employees/sync").authenticated()
                             .requestMatchers("/api/v1/university/buildings/sync").authenticated()
 
-                            // Protected actuator endpoints (admin only)
-                            .requestMatchers("/actuator/**").hasRole("ADMIN");
+                            // Protected actuator endpoints (metrics/mappings/liquibase — health and
+                            // info are permitAll above). Gated by a PERMISSION, not a role: a USER
+                            // token carries only permission codes (JwtGrantedAuthoritiesConverter
+                            // grants no ROLE_*), so any hasRole() here would be a gate nobody can
+                            // pass — which is exactly what it was. audit.view is the operational
+                            // read capability, held by SUPER_ADMIN and ADMIN only (seed S038).
+                            .requestMatchers("/actuator/**").hasAuthority("audit.view");
 
                         // Swagger/OpenAPI endpoints — faqat swagger yoqilgan paytda permitAll
                         // Production'da springdoc.swagger-ui.enabled=false bo'lsa, bu path'lar
@@ -244,8 +249,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/web/languages/**").authenticated()
                         .requestMatchers("/api/v1/web/system/configuration").authenticated()
 
-                        // Admin endpoints (requires ROLE_ADMIN)
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        // Admin endpoints. Permission, not role, for the same reason as /actuator/**:
+                        // USER tokens carry permission codes only, so a hasRole() gate here would
+                        // deny everyone. (The admin API actually lives under /api/v1/web/admin/**,
+                        // each endpoint gated by its own @PreAuthorize; this matcher covers the bare
+                        // /admin/** prefix.)
+                        .requestMatchers("/admin/**").hasAuthority("users.manage")
 
                         // Test healthcheck (anonymous - old-hemis: anonymousAllowed)
                         .requestMatchers("/app/rest/v2/services/test/healthcheck").permitAll()

@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import org.springframework.mock.env.MockEnvironment;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +41,28 @@ class AuditRedactionTest {
             new ObjectMapper(),
             List.of("password", "token", "secret", "clientSecret", "client_secret",
                     "plainSecret", "plain_secret", "authorization", "pinfl"));
+
+    @Test
+    @DisplayName("YAML ro'yxati haqiqatan bog'lanadi — application.yml'dagi kalitlar maskalanadi")
+    void yamlSequenceIsActuallyBound() {
+        // The regression this pins: the key list used to be read with @Value, which cannot bind a
+        // YAML sequence, so every key beyond the annotation's own default was ignored and passport
+        // numbers / FIO / addresses went into old_value in clear text.
+        MockEnvironment env = new MockEnvironment();
+        env.setProperty("hemis.audit.redact-fields[0]", "passport");
+        env.setProperty("hemis.audit.redact-fields[1]", "address");
+
+        AuditRepository fromYaml = new AuditRepository(new JdbcTemplate(), new ObjectMapper(), env);
+
+        Map<String, Object> out = fromYaml.redactSensitiveFields(
+                new LinkedHashMap<>(Map.of("passport", "AA0000000", "address", "Toshkent", "code", "301")));
+
+        // The mask SHAPE is the redactor's business (it masks by inferred type); what this test
+        // pins is that the YAML-configured keys are honoured at all.
+        assertThat(String.valueOf(out.get("passport"))).isNotEqualTo("AA0000000").contains("*");
+        assertThat(String.valueOf(out.get("address"))).isNotEqualTo("Toshkent").contains("*");
+        assertThat(out.get("code")).isEqualTo("301");
+    }
 
     @Test
     @DisplayName("OAuth client maxfiy kaliti activity_log snapshot'ida maskalanadi (clientSecret + plainSecret)")

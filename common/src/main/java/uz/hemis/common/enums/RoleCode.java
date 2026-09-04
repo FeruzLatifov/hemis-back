@@ -39,11 +39,14 @@ public enum RoleCode {
     SUPER_ADMIN("SUPER_ADMIN", "Super Administrator", RoleType.SYSTEM),
 
     /**
-     * Ministry Administrator - Ministry-level administrator
+     * Administrator - the ministry's day-to-day administrator (tier 2 of 3).
+     * <p>Code renamed from MINISTRY_ADMIN in seed S038 (the ministry runs one admin tier).</p>
      * <p>Type: SYSTEM</p>
-     * <p>Scope: Ministry operations</p>
+     * <p>Scope: everything except the platform/security-critical actions reserved for
+     * {@link #SUPER_ADMIN} — role/permission editing, integration secrets, platform settings,
+     * raw PINFL and registry deletions. See seed S038.</p>
      */
-    MINISTRY_ADMIN("MINISTRY_ADMIN", "Ministry Administrator", RoleType.SYSTEM),
+    ADMIN("ADMIN", "Administrator", RoleType.SYSTEM),
 
     /**
      * Viewer - Read-only access
@@ -89,11 +92,22 @@ public enum RoleCode {
     REPORT_VIEWER("REPORT_VIEWER", "Report Viewer", RoleType.CUSTOM),
 
     /**
-     * Classifier Manager - Central staff who view + assign classifiers (h_*) to OTMs (fanout)
+     * Classifier Manager - central staff who view + assign classifiers (h_*) to OTMs (fanout)
      * <p>Type: CUSTOM</p>
-     * <p>Scope: Classifier management (view + edit)</p>
+     * <p>Scope: Classifier management (view + edit) — unchanged by S038, which gave technical
+     * staff their own role ({@link #TECH_STAFF}) rather than re-purposing this one.</p>
      */
-    CLASSIFIER_MANAGER("CLASSIFIER_MANAGER", "Classifier Manager", RoleType.CUSTOM);
+    CLASSIFIER_MANAGER("CLASSIFIER_MANAGER", "Classifier Manager", RoleType.CUSTOM),
+
+    /**
+     * Technical staff — the "sub-admin" tier (tier 3 of 3), shown to staff as "Texnik xodim".
+     * <p>Type: CUSTOM</p>
+     * <p>Scope: classifier operator — views, adds and corrects classifier rows and attaches them
+     * to OTMs, but cannot approve (approval is what distributes a row to 230 OTMs), delete or
+     * restore. The maker in a maker/checker split with {@link #ADMIN} as the checker. Duties widen
+     * one permission at a time as work is assigned. Created by seed S038.</p>
+     */
+    TECH_STAFF("TECH_STAFF", "Texnik xodim", RoleType.CUSTOM);
 
     // =====================================================
     // Fields

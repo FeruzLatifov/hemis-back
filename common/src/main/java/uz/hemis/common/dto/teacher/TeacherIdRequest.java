@@ -16,8 +16,8 @@ import lombok.Data;
  * {
  *   "data": {
  *     "citizenship": "11",
- *     "pinfl": "32305967340015",
- *     "serial": "XX1111117",
+ *     "pinfl": "00000000000000",
+ *     "serial": "AA0000000",
  *     "year": "2019",
  *     "gender": "11",
  *     "main_university": "380"

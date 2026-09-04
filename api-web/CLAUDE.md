@@ -1,6 +1,6 @@
 # api-web module — Modern REST API
 
-> **Markaziy vazirlik web frontend** (yagona React app) uchun. **Mijozlari:** MINISTRY_ADMIN va UNIVERSITY_ADMIN roles — markaziy HEMIS-back orqali ishlaydi.
+> **Markaziy vazirlik web frontend** (yagona React app) uchun. **Mijozlari:** ADMIN (S038'gacha MINISTRY_ADMIN) va OTM_API roles — markaziy HEMIS-back orqali ishlaydi.
 >
 > Per-OTM frontend deploy YO'Q — bitta vazirlik web app, OTM admin'lar `university_code` filter bilan o'z scope'ini ko'radi.
 >

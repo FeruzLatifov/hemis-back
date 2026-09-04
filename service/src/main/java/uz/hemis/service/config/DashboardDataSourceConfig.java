@@ -61,6 +61,10 @@ public class DashboardDataSourceConfig {
         dataSource.setConnectionTimeout(10000);   // 10 seconds
         dataSource.setIdleTimeout(300000);        // 5 minutes
         dataSource.setMaxLifetime(900000);        // 15 minutes
+        // Bo'sh ulanishga "SELECT 1" yuboradi, HAProxy/PgBouncer uni uzishidan oldin.
+        // pgjdbc tcpKeepAlive yetarli emas: u TCP darajasida ishlaydi va proksining
+        // harakatsizlik hisoblagichini tiklamaydi — bu yerda haqiqiy so'rov kerak.
+        dataSource.setKeepaliveTime(120000);      // 2 minutes
         dataSource.setReadOnly(true);             // ✅ ENFORCE READ-ONLY
         
         // Validation

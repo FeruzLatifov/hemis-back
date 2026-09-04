@@ -9,6 +9,7 @@ import uz.hemis.domain.entity.classifier.HSpeciality;
 import uz.hemis.domain.entity.classifier.ReviewStatus;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -66,15 +67,20 @@ public interface HSpecialityRepository extends JpaRepository<HSpeciality, UUID> 
     List<HSpeciality> findRoots(@Param("educationType") String educationType);
 
     /**
-     * EVERY direct child of a node — deactivated rows included — ordered by code.
+     * EVERY LIVE direct child of a node — deactivated rows included — ordered by code.
      *
      * <p>The single definition of "has children" in this classifier: the delete guard, the
      * level-change guard, and the detail view all read it, so the UI never offers an action the
-     * server then refuses. An {@code active = false} filter would be wrong for all three — the
-     * {@code fk_h_speciality_parent} FK ({@code ON DELETE RESTRICT}) does not care about
-     * {@code active}, so a deactivated child still turns a "no children" delete into a raw DB
-     * constraint error, and it would still be dragged along by a level change. The returned rows
-     * also name the blockers back to the admin ("re-place these first").</p>
+     * server then refuses. An {@code active = false} filter would be wrong for all three: a
+     * deactivated child is still visible to the admin and is still dragged along by a level change.
+     * The returned rows also name the blockers back to the admin ("re-place these first").</p>
+     *
+     * <p><strong>M013 — soft-deleted children do NOT block.</strong> {@code @SQLRestriction} hides
+     * them here, which is deliberate: the admin sees a childless node, so the server must agree.
+     * Note this guard now has NO database backstop — {@code fk_h_speciality_parent}
+     * ({@code ON DELETE RESTRICT}) never fires against the UPDATE a soft delete performs, so it can
+     * no longer turn a missed check into a constraint error. The reverse direction (restoring a
+     * child under a deleted parent) is closed by {@code SPECIALITY_RESTORE_PARENT_DELETED}.</p>
      */
     @Query("SELECT s FROM HSpeciality s WHERE s.parent.id = :parentId ORDER BY s.code ASC")
     List<HSpeciality> findAllChildren(@Param("parentId") UUID parentId);
@@ -125,4 +131,56 @@ public interface HSpecialityRepository extends JpaRepository<HSpeciality, UUID> 
            "AND s.code IS NOT NULL AND s.active = true " +
            "AND s.educationType = COALESCE(:educationType, s.educationType)")
     long sumDistributionVersion(@Param("educationType") String educationType);
+
+    // ─── M013 soft delete ────────────────────────────────────────────────────────────────
+    // @SQLRestriction("deleted_at IS NULL") filters every JPQL read above (and the inherited
+    // findById/findAllById). The two natives below are the deliberate escape hatch: native SQL is
+    // NOT rewritten by the restriction, which is exactly why restore/listDeleted can see the rows
+    // nothing else may. Same pattern as UniversityDepartmentRepository.findByIdIncludingDeleted.
+
+    /**
+     * Find by id INCLUDING soft-deleted rows. {@code restore()} needs it: the class-level
+     * restriction makes the inherited {@code findById} blind to precisely the rows restore is about.
+     * Every other caller must keep using {@code findById} — a deleted row must 404.
+     */
+    @Query(value = "SELECT * FROM h_speciality WHERE id = :id", nativeQuery = true)
+    Optional<HSpeciality> findByIdIncludingDeleted(@Param("id") UUID id);
+
+    /**
+     * Direct children INCLUDING soft-deleted ones — the level-change guard ONLY.
+     *
+     * <p>A deleted child is restorable and keeps its stored {@code hierarchy_level}, so it must still
+     * pin its parent's depth: without this, "delete leaf &rarr; move its parent to another level &rarr;
+     * restore the leaf" resurrects the child at a depth that breaks {@code parent.level + 1}, and that
+     * broken depth ships to the 224 OTMs inside {@code SpecialityDistItemDto} once the row is
+     * promoted. Counting deleted children here keeps {@code restore()} always safe, instead of adding
+     * a restore-side guard that could dead-end a row nobody can place any more.</p>
+     *
+     * <p>The DELETE guard deliberately keeps using {@link #findAllChildren} (live only): deleting a
+     * parent whose only children are already deleted creates no inconsistency — restoring the parent
+     * first re-establishes a consistent tree, which
+     * {@code SPECIALITY_RESTORE_PARENT_DELETED} enforces.</p>
+     */
+    @Query(value = "SELECT count(*) FROM h_speciality WHERE parent_id = :parentId", nativeQuery = true)
+    long countChildrenIncludingDeleted(@Param("parentId") UUID parentId);
+
+    /** Soft-deleted rows, newest first — the "Deleted specialities" list. Scans idx_h_speciality_deleted. */
+    @Query(value = "SELECT * FROM h_speciality WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC",
+           nativeQuery = true)
+    List<HSpeciality> findAllDeleted();
+
+    /**
+     * Live holders of the identity key backing {@code uq_h_speciality_identity_live} (M013).
+     *
+     * <p>JPQL, so {@code @SQLRestriction} supplies {@code deleted_at IS NULL} — it counts exactly
+     * what the partial unique index counts. Deliberately NOT filtered on {@code active} (unlike
+     * {@link #findExactTwins}): a live-but-inactive twin still owns the slot, and restore must fail
+     * with a 422 instead of a raw 23505.</p>
+     */
+    @Query("SELECT COUNT(s) FROM HSpeciality s WHERE s.educationType = :educationType " +
+           "AND s.nameSearch = :nameSearch " +
+           "AND ((CAST(:code AS string) IS NULL AND s.code IS NULL) OR s.code = :code)")
+    long countLiveIdentity(@Param("educationType") String educationType,
+                           @Param("code") String code,
+                           @Param("nameSearch") String nameSearch);
 }

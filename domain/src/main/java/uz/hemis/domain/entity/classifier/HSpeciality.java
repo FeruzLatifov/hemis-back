@@ -1,9 +1,11 @@
 package uz.hemis.domain.entity.classifier;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import uz.hemis.domain.entity.base.AuditableEntityNoSoftDelete;
+import org.hibernate.annotations.SQLRestriction;
+import uz.hemis.domain.entity.base.AuditableEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +20,16 @@ import java.util.UUID;
  * self-referencing parent tree (copied from {@code Menu}), normalized years
  * ({@link HSpecialityYear}, 1:N), and a {@link ReviewStatus} workflow.</p>
  *
- * <p><strong>No soft delete</strong> ({@link AuditableEntityNoSoftDelete}): a
- * classifier row is deactivated via {@code active=false}, never soft-deleted —
- * so there is no {@code @SQLRestriction}.</p>
+ * <p><strong>Soft delete</strong> ({@link AuditableEntity} + {@code @SQLRestriction},
+ * M013): a classifier row is NEVER removed physically — 224 OTMs and the legacy
+ * student rows reference it by UUID, so a lost row is unrecoverable damage. Delete
+ * stamps {@code deleted_at}/{@code deleted_by} and the restriction hides the row from
+ * every JPQL read (grid, tree, years, duplicates, twins, children guard, distribution
+ * pull) including the inherited {@code findById}, so a deleted row 404s on GET/PUT/DELETE.
+ * <strong>Native SQL is NOT filtered</strong> — a hand-written predicate is required there
+ * (see {@code LegacySpecialitySyncService}). This is distinct from {@code active=false},
+ * which is a VISIBLE "retired" state that stays in the lists and pushes a retraction to
+ * the OTMs.</p>
  *
  * <p><strong>{@code name}</strong> is a DB-generated column
  * ({@code GENERATED ALWAYS AS (name_uz) STORED}) kept for display parity (mirrors
@@ -28,14 +37,15 @@ import java.util.UUID;
  * ({@code aggregate_type="classifier"} → webhook fanout) + the {@code api-university}
  * bootstrap pull — the frozen legacy pull / {@code OLD_CLASSIFIER_MAP} is NOT extended.</p>
  *
- * @see AuditableEntityNoSoftDelete
+ * @see AuditableEntity
  * @since 2.1.0
  */
 @Entity
 @Table(name = "h_speciality")
+@SQLRestriction("deleted_at IS NULL")
 @Getter
 @Setter
-public class HSpeciality extends AuditableEntityNoSoftDelete {
+public class HSpeciality extends AuditableEntity {
 
     private static final long serialVersionUID = 1L;
 
@@ -82,12 +92,21 @@ public class HSpeciality extends AuditableEntityNoSoftDelete {
     // Hierarchical structure (self-reference; copied from Menu)
     // =====================================================
 
-    /** Parent speciality. NULL = root node. */
+    /**
+     * Parent speciality. NULL = root node.
+     *
+     * <p>{@code @JsonIgnore}: the audit aspect snapshots a row by serializing the entity, and a LAZY
+     * association turns that into a LazyInitializationException the aspect swallows — the before/after
+     * images then come back empty and "what did this row look like" is unanswerable. The tree is
+     * carried by DTOs (parentId), never by serializing the entity, so nothing else loses anything.</p>
+     */
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_h_speciality_parent"))
     private HSpeciality parent;
 
     /** Child specialities. No cascade REMOVE / orphanRemoval — classifier rows are deactivated, not deleted. */
+    @JsonIgnore   // same reason as `parent`: an audit snapshot must not walk the subtree
     @OneToMany(mappedBy = "parent",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE},
             orphanRemoval = false)
@@ -128,6 +147,10 @@ public class HSpeciality extends AuditableEntityNoSoftDelete {
     public boolean isDistributable() {
         return reviewStatus == ReviewStatus.APPROVED
                 && code != null
-                && Boolean.TRUE.equals(active);
+                && Boolean.TRUE.equals(active)
+                // M013: a soft-deleted row must never be pushed as an UPDATE. The PULL side is
+                // already covered by @SQLRestriction; this closes the PUSH side, which reads a
+                // still-managed instance inside the deleting transaction.
+                && !isDeleted();
     }
 }

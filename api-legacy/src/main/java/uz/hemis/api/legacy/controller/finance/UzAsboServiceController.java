@@ -56,12 +56,12 @@ public class UzAsboServiceController {
      * <p><strong>Request format:</strong></p>
      * <pre>
      * {
-     *   "tin": "207095330",
+     *   "tin": "000000000",
      *   "docOn": "2024-02-05",
      *   "students": [
-     *     {"pinfl": "60209047160010", "sum": "103576"},
-     *     {"pinfl": "52712015360046"},
-     *     {"pinfl": "527120153600461", "sum": "103576"}
+     *     {"pinfl": "00000000000001", "sum": "103576"},
+     *     {"pinfl": "00000000000002"},
+     *     {"pinfl": "999999999999999", "sum": "103576"}
      *   ]
      * }
      * </pre>
@@ -71,12 +71,12 @@ public class UzAsboServiceController {
      * {
      *   "success": true,
      *   "data": {
-     *     "tin": "207095330",
+     *     "tin": "000000000",
      *     "docOn": "2024-02-05",
      *     "results": [
-     *       {"pinfl": "60209047160010", "status": "OK"},
-     *       {"pinfl": "52712015360046", "status": "OK"},
-     *       {"pinfl": "527120153600461", "status": "INVALID_PINFL"}
+     *       {"pinfl": "00000000000001", "status": "OK"},
+     *       {"pinfl": "00000000000002", "status": "OK"},
+     *       {"pinfl": "999999999999999", "status": "INVALID_PINFL"}
      *     ]
      *   }
      * }

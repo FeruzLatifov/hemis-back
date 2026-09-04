@@ -158,23 +158,50 @@ class RoleAdminServiceTest {
     }
 
     @Test
-    @DisplayName("update — system role o'zgartirib bo'lmaydi")
-    void update_systemRole_throws() {
-        Role systemRole = new Role();
-        systemRole.setId(roleId);
-        systemRole.setCode("SUPER_ADMIN");
-        systemRole.setRoleType(RoleType.SYSTEM);
+    @DisplayName("update — SUPER_ADMIN roli tahrirlanmaydi (tiklanish yo'li)")
+    void update_superAdminRole_throws() {
+        // The one role this endpoint may not touch: the access model rests on SUPER_ADMIN holding
+        // every permission, so editing it from inside the app is how a platform locks itself out of
+        // its own recovery path. The UI opens it read-only.
+        Role superAdmin = new Role();
+        superAdmin.setId(roleId);
+        superAdmin.setCode("SUPER_ADMIN");
+        superAdmin.setRoleType(RoleType.SYSTEM);
 
-        when(roleRepository.findByIdWithPermissions(roleId)).thenReturn(Optional.of(systemRole));
+        when(roleRepository.findByIdWithPermissions(roleId)).thenReturn(Optional.of(superAdmin));
 
         RoleUpdateRequest req = new RoleUpdateRequest();
         req.setName("Hacked");
 
         assertThatThrownBy(() -> service.update(roleId, req))
                 .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("system role");
+                .hasMessageContaining("SUPER_ADMIN");
 
         verify(roleRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("update — boshqa SYSTEM rollar tahrirlanadi (ADMIN, VIEWER, ...)")
+    void update_otherSystemRole_isAllowed() {
+        // Everything except SUPER_ADMIN is editable by whoever holds roles.manage: an administrator
+        // who cannot adjust ADMIN or VIEWER would have to reach for a migration to change who sees
+        // what. Deletion of a SYSTEM role stays blocked — that is a separate guard.
+        Role adminRole = new Role();
+        adminRole.setId(roleId);
+        adminRole.setCode("ADMIN");
+        adminRole.setRoleType(RoleType.SYSTEM);
+        adminRole.setName("Administrator");
+
+        when(roleRepository.findByIdWithPermissions(roleId)).thenReturn(Optional.of(adminRole));
+        when(roleRepository.save(any(Role.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        RoleUpdateRequest req = new RoleUpdateRequest();
+        req.setName("Vazirlik administratori");
+
+        service.update(roleId, req);
+
+        verify(roleRepository).save(adminRole);
+        assertThat(adminRole.getName()).isEqualTo("Vazirlik administratori");
     }
 
     @Test

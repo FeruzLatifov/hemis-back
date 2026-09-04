@@ -10,6 +10,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.service.audit.AuditContextHolder;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.auth.AccessScope;
 import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.exception.BadRequestException;
@@ -300,6 +303,10 @@ public class SpecialityAttachmentService {
      * Attach a speciality to an OTM. The requested {@code universityCode} must be in the caller's
      * scope (403 otherwise); a duplicate live attachment for (OTM, speciality, form) is a 409.
      */
+    // Attaching a speciality to an OTM decides what that OTM may enrol students into, so it is a
+    // decision worth a name and a timestamp. The id comes from the returned row (no keyArg).
+    @Audited(action = AuditAction.CREATE, entity = "UniversitySpecialityAttachment",
+             entityClass = UniversitySpecialityAttachment.class)
     @Transactional
     public SpecialityAttachmentRowDto create(SpecialityAttachmentCreateDto dto) {
         String code = dto.universityCode().trim();
@@ -327,6 +334,7 @@ public class SpecialityAttachmentService {
         entity.setStatus(status != null ? status : ACTIVE_STATUS);
 
         UniversitySpecialityAttachment saved = repository.save(entity);
+        stampAuditName(code, speciality);
         log.info("Speciality attachment created: id={}", saved.getId());
         return toRow(saved, speciality, educationTypeNames(),
                 universityNames(List.of(saved.getUniversityCode())), educationFormNames(),
@@ -339,6 +347,9 @@ public class SpecialityAttachmentService {
      * a single transaction. 403 if the OTM is outside the caller's write scope, 404 if the speciality is
      * missing, 400 if any education-form code is unknown. Name maps are resolved once (no N+1).
      */
+    // One record for the whole batch: entity_id stays null (a batch has no single id), while who,
+    // when and the endpoint are what an auditor needs to find the bulk attach that changed 300 rows.
+    @Audited(action = AuditAction.CREATE, entity = "UniversitySpecialityAttachment")
     @Transactional
     public SpecialityAttachmentBulkResultDto createBulk(SpecialityAttachmentBulkCreateDto dto) {
         String code = dto.universityCode().trim();
@@ -347,6 +358,7 @@ public class SpecialityAttachmentService {
         HSpeciality speciality = specialityRepository.findById(dto.specialityId())
                 .orElseThrow(() -> new ResourceNotFoundException("HSpeciality", "id", dto.specialityId()));
         assertAttachable(speciality);
+        stampAuditName(code, speciality);
 
         // Distinct, non-blank forms (order preserved); validate every code up-front — fail fast, no partial insert.
         List<String> forms = dto.educationForms().stream()
@@ -401,6 +413,8 @@ public class SpecialityAttachmentService {
      * fixed on an existing row (re-assigning them = a new attachment), so they are never touched here.
      * 403 if outside the caller's write scope; 409 on a duplicate (OTM, speciality, form, year).
      */
+    @Audited(action = AuditAction.UPDATE, entity = "UniversitySpecialityAttachment",
+             entityClass = UniversitySpecialityAttachment.class, keyArg = "id")
     @Transactional
     public SpecialityAttachmentRowDto update(UUID id, SpecialityAttachmentUpdateDto dto) {
         UniversitySpecialityAttachment a = repository.findById(id)
@@ -431,6 +445,7 @@ public class SpecialityAttachmentService {
         a.setStatus(dto.status());
 
         UniversitySpecialityAttachment saved = repository.save(a);
+        stampAuditName(saved.getUniversityCode(), speciality);
         log.info("Speciality attachment updated: id={}", saved.getId());
         return toRow(saved, speciality, educationTypeNames(),
                 universityNames(List.of(saved.getUniversityCode())), educationFormNames(),
@@ -444,13 +459,41 @@ public class SpecialityAttachmentService {
      * the permission is granted again. Withdrawing the permission while keeping the record is a
      * {@code status} change ({@code REVOKED}), not a delete.</p>
      */
+    // Detaching removes an OTM's right to that speciality — the pre-image is loaded so the record
+    // says WHAT was detached, not only that something was.
+    @Audited(action = AuditAction.DELETE, entity = "UniversitySpecialityAttachment",
+             entityClass = UniversitySpecialityAttachment.class, keyArg = "id")
     @Transactional
     public void delete(UUID id) {
         UniversitySpecialityAttachment a = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("SpecialityAttachment", "id", id));
         assertInScope(a.getUniversityCode());
+        stampAuditName(a);
         repository.delete(a);
         log.info("Speciality attachment detached: id={}", id);
+    }
+
+
+    /**
+     * Label this write so its audit record can be read without the row it is about.
+     *
+     * <p>An attachment is hard-deleted: after a detach there is no row left to open a history on, so
+     * the audit record has to carry its own identity. {@code entity_name} therefore holds
+     * {@code "301 · 60210300 · Muzeyshunoslik"} — the OTM code first, which is what a
+     * university-scoped history filters on (prefix match, index-backed).</p>
+     */
+    private void stampAuditName(String universityCode, HSpeciality speciality) {
+        String code = speciality != null && speciality.getCode() != null ? speciality.getCode() : "—";
+        String name = speciality != null && speciality.getNameUz() != null ? speciality.getNameUz() : "—";
+        AuditContextHolder.setEntityName(universityCode + " · " + code + " · " + name);
+        // The scope the history is asked in — an indexed column, not a slice of the label.
+        AuditContextHolder.setScopeKey(universityCode);
+    }
+
+    /** Same label for a row we only have by id (delete): the speciality is looked up for the name. */
+    private void stampAuditName(UniversitySpecialityAttachment row) {
+        stampAuditName(row.getUniversityCode(),
+                specialityRepository.findById(row.getSpecialityId()).orElse(null));
     }
 
     // =====================================================

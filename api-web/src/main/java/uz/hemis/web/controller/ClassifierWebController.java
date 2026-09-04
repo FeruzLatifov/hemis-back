@@ -194,8 +194,11 @@ public class ClassifierWebController {
         }
     }
 
+    // Delete is its own permission, not part of classifiers.edit: a classifier operator adds and
+    // corrects rows all day, but removing one withdraws a value 230 OTMs may already reference.
+    // Separating them is what lets a role edit without being able to delete (segregation of duties).
     @DeleteMapping("/{apiKey}/{code}")
-    @PreAuthorize("hasAuthority('classifiers.edit')")
+    @PreAuthorize("hasAuthority('classifiers.delete')")
     @Operation(summary = "Elementni o'chirish", description = "Klasifikator elementini o'chiradi (soft delete)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Element o'chirildi"),

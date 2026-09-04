@@ -311,10 +311,10 @@ public class TeacherEntityController {
      * <p><strong>Request format:</strong></p>
      * <pre>
      * {
-     *   "firstname": "Islom",
-     *   "lastname": "Karimov",
-     *   "fathername": "Abdug'aniyevich",
-     *   "pinfl": "12345678901234",
+     *   "firstname": "Ism",
+     *   "lastname": "Familiya",
+     *   "fathername": "Otasining ismi",
+     *   "pinfl": "00000000000000",
      *   "birthday": "1985-03-15",
      *   "_gender": "11",
      *   "_citizenship": "11",

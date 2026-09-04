@@ -1,5 +1,6 @@
 package uz.hemis.domain.entity.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uz.hemis.domain.entity.university.University;
 
 import jakarta.persistence.*;
@@ -17,7 +18,7 @@ import java.util.Set;
  *
  * <p><strong>Purpose:</strong></p>
  * <ul>
- *   <li>Define roles for users (e.g., MINISTRY_ADMIN, OTM_API, VIEWER)</li>
+ *   <li>Define roles for users (e.g., ADMIN, OTM_API, VIEWER)</li>
  *   <li>Clean, modern permission system for hemis-back</li>
  *   <li>Independent from CUBA Platform's sec_role</li>
  * </ul>
@@ -27,7 +28,7 @@ import java.util.Set;
  * <p><strong>Default Roles:</strong></p>
  * <ul>
  *   <li>SUPER_ADMIN - Full system access (Ministry level)</li>
- *   <li>MINISTRY_ADMIN - Ministry-level administrator</li>
+ *   <li>ADMIN - Ministry-level administrator</li>
  *   <li>OTM_API - University-level administrator</li>
  *   <li>VIEWER - Read-only access</li>
  *   <li>REPORT_VIEWER - Can view and generate reports</li>
@@ -51,7 +52,7 @@ public class Role extends AuditableEntity {
 
     /**
      * Role code (machine-readable)
-     * <p>Examples: MINISTRY_ADMIN, OTM_API, VIEWER</p>
+     * <p>Examples: ADMIN, OTM_API, VIEWER</p>
      */
     @Column(name = "code", nullable = false, unique = true, length = 100)
     private String code;
@@ -106,6 +107,7 @@ public class Role extends AuditableEntity {
      */
     @ManyToMany(mappedBy = "roles")
     @Builder.Default
+    @JsonIgnore   // audit snapshot: breaks the User <-> Role cycle: without this every User and Role audit snapshot serialises to null and the record says WHO changed something but never WHAT
     private Set<User> users = new HashSet<>();
 
     // =====================================================

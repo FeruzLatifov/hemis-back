@@ -75,6 +75,7 @@ CREATE TABLE activity_log_v2 (
     request_id      VARCHAR(64),
     endpoint        VARCHAR(500),
     description     TEXT,
+    scope_key       VARCHAR(64),   -- V004: egasi (OTM kodi) bo'yicha tarix — o'chirilgan qatorlar uchun
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id, created_at)
 ) PARTITION BY RANGE (created_at);
@@ -94,6 +95,9 @@ CREATE INDEX idx_activity_v2_user_ts ON activity_log_v2 (user_id, created_at DES
 CREATE INDEX idx_activity_v2_entity ON activity_log_v2 (entity_type, entity_id);
 CREATE INDEX idx_activity_v2_action_ts ON activity_log_v2 (action, created_at DESC);
 CREATE INDEX idx_activity_v2_request ON activity_log_v2 (request_id);
+-- V004 ning ekvivalenti: egasi bo'yicha tarix (tenglik + created_at DESC tartibi indeksda)
+CREATE INDEX idx_activity_v2_scope ON activity_log_v2 (entity_type, scope_key, created_at DESC)
+    WHERE scope_key IS NOT NULL;
 
 -- Immutability
 REVOKE UPDATE, DELETE ON activity_log_v2 FROM PUBLIC;
@@ -103,7 +107,18 @@ REVOKE UPDATE, DELETE ON activity_log_v2 FROM PUBLIC;
 
 ```sql
 -- Agar mavjud data bo'lsa (ehtimol yo'q, AUDIT_ENABLED=false):
-INSERT INTO activity_log_v2 SELECT * FROM activity_log;
+-- Ustunlar ANIQ sanaladi: `SELECT *` kelajakda ustun qo'shilsa jimgina joyini almashtiradi
+-- (V004 `scope_key` aynan shunday yo'qolishi mumkin edi).
+INSERT INTO activity_log_v2 (id, user_id, username, full_name, user_ip, user_agent, action,
+                             entity_type, entity_id, entity_name, old_value, new_value,
+                             changed_fields, request_id, endpoint, description, scope_key, created_at)
+SELECT id, user_id, username, full_name, user_ip, user_agent, action,
+       entity_type, entity_id, entity_name, old_value, new_value,
+       changed_fields, request_id, endpoint, description, scope_key, created_at
+FROM activity_log;
+
+-- Eslatma: V005 immutability trigger'i UPDATE/DELETE ni bloklaydi. Migratsiya/retention sessiyasida:
+--   SET LOCAL audit.purge = 'on';
 
 -- Atomik switch
 BEGIN;

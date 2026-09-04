@@ -5,12 +5,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import uz.hemis.common.exception.BadRequestException;
+import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.common.port.cache.CacheEvictionPort;
 import uz.hemis.domain.entity.security.Role;
@@ -30,6 +30,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,8 +38,13 @@ import static org.mockito.Mockito.when;
 @DisplayName("UserAdminService — RBAC scope + CRUD")
 class UserAdminServiceTest {
 
-    /** PERSON akkaunt uchun login manbai — 14 xonali PINFL (test fixture). */
-    private static final String PINFL = "31507976020031";
+    /** PERSON akkaunt PINFL'i — endi LOGIN EMAS, faqat users.pinfl ustuni + dublikat tekshiruvi. */
+    private static final String PINFL = "00000000000000";
+
+    /** PERSON login manbai — ism + familiya; kutilgan slug LOGIN_SLUG. */
+    private static final String FIRST_NAME = "Utkir";
+    private static final String LAST_NAME = "Xamdamov";
+    private static final String LOGIN_SLUG = "utkir_xamdamov";
 
     @Mock private UserRepository userRepository;
     @Mock private RoleRepository roleRepository;
@@ -46,7 +52,11 @@ class UserAdminServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private CacheEvictionPort cacheEvictionPort;
 
-    @InjectMocks
+    /**
+     * Qo'lda quriladi (@InjectMocks emas): LoginNameGenerator — HAQIQIY, mock qilingan
+     * UserRepository ustida. Shunda createUser testi login slug'ining o'zini tekshiradi,
+     * "generator nima qaytarsa shu" degan tavtologiyani emas.
+     */
     private UserAdminService service;
 
     private UUID callerId;
@@ -67,11 +77,14 @@ class UserAdminServiceTest {
 
         Role superRole = role("SUPER_ADMIN", false);
         Role otmRole = role("OTM_API", false);
-        Role minRole = role("MINISTRY_ADMIN", true);
+        Role minRole = role("ADMIN", true);
 
         superAdminCaller = makeUser(callerId, "super", Set.of(superRole), null);
         otmCaller = makeUser(callerId, "otm-admin", Set.of(otmRole), uni337);
         ministryCaller = makeUser(callerId, "min-admin", Set.of(minRole), null);
+
+        service = new UserAdminService(userRepository, roleRepository, universityRepository,
+                passwordEncoder, cacheEvictionPort, new LoginNameGenerator(userRepository));
     }
 
     private Role role(String code, boolean systemRole) {
@@ -136,28 +149,29 @@ class UserAdminServiceTest {
     }
 
     @Test
-    @DisplayName("createUser — UNIVERSITY_LOGIN: username band bo'lsa → BadRequest")
+    @DisplayName("createUser — UNIVERSITY_LOGIN: username band bo'lsa → Conflict (409)")
     void createUser_duplicateUsername() {
         when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(superAdminCaller));
-        when(userRepository.existsByUsername("dup")).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase("dup")).thenReturn(true);
 
         // UNIVERSITY_LOGIN — login qo'lda kiritiladi (PINFL talab qilinmaydi)
         UserCreateRequest req = UserCreateRequest.builder()
                 .accountType("UNIVERSITY_LOGIN")
                 .username("dup").password("secret123").roleIds(Set.of(UUID.randomUUID())).build();
 
+        // 400 emas 409 — dublikat PINFL bilan bir xil semantika
         assertThatThrownBy(() -> service.createUser(req, callerId))
-                .isInstanceOf(BadRequestException.class)
-                .hasMessageContaining("exists");
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Username already exists");
     }
 
     @Test
-    @DisplayName("createUser — PERSON happy path: login = PINFL, BCrypt encode + save")
+    @DisplayName("createUser — PERSON happy path: login = ism_familiya slug (PINFL EMAS), BCrypt encode + save")
     void createUser_happy() {
-        Role minRole = role("MINISTRY_ADMIN", true);
+        Role minRole = role("ADMIN", true);
         when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(superAdminCaller));
         when(userRepository.existsByPinfl(PINFL)).thenReturn(false);
-        when(userRepository.existsByUsername(PINFL)).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase(LOGIN_SLUG)).thenReturn(false);
         when(roleRepository.findById(minRole.getId())).thenReturn(Optional.of(minRole));
         when(universityRepository.findById("337")).thenReturn(Optional.of(uni337));
         when(passwordEncoder.encode("secret123")).thenReturn("BCRYPT$xxx");
@@ -167,20 +181,110 @@ class UserAdminServiceTest {
             return u;
         });
 
-        // PERSON — accountType default; login username'dan emas, PINFL'dan olinadi
+        // PERSON — accountType default; username YUBORILMAYDI, login ism+familiyadan hosil bo'ladi
         UserCreateRequest req = UserCreateRequest.builder()
-                .pinfl(PINFL).password("secret123").fullName("John Doe")
+                .pinfl(PINFL).password("secret123").confirmPassword("secret123")
+                .firstName(FIRST_NAME).lastName(LAST_NAME)
                 .universityCode("337").roleIds(Set.of(minRole.getId())).build();
 
         var resp = service.createUser(req, callerId);
 
-        assertThat(resp.getUsername()).isEqualTo(PINFL);
+        assertThat(resp.getUsername()).isEqualTo(LOGIN_SLUG);
         verify(passwordEncoder).encode("secret123");
 
         ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(savedUser.capture());
+        assertThat(savedUser.getValue().getUsername()).isEqualTo(LOGIN_SLUG);
+        // PINFL o'z ustunida saqlanadi, lekin login sifatida ISHLATILMAYDI
         assertThat(savedUser.getValue().getPinfl()).isEqualTo(PINFL);
+        assertThat(savedUser.getValue().getUsername()).isNotEqualTo(PINFL);
         assertThat(savedUser.getValue().getPassword()).isEqualTo("BCRYPT$xxx");  // xom parol saqlanmaydi
+    }
+
+    @Test
+    @DisplayName("createUser — PERSON: operator loginni qo'lda bergan → o'sha login ishlatiladi")
+    void createUser_personWithOperatorSuppliedLogin() {
+        Role minRole = role("ADMIN", true);
+        when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(superAdminCaller));
+        when(userRepository.existsByPinfl(PINFL)).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase("u.xamdamov")).thenReturn(false);
+        when(roleRepository.findById(minRole.getId())).thenReturn(Optional.of(minRole));
+        when(passwordEncoder.encode("secret123")).thenReturn("BCRYPT$xxx");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(UUID.randomUUID());
+            return u;
+        });
+
+        // Operator taklif qilingan loginni tahrirlab yuborgan — generator chetlab o'tiladi
+        UserCreateRequest req = UserCreateRequest.builder()
+                .pinfl(PINFL).username("  u.xamdamov  ").password("secret123")
+                .firstName(FIRST_NAME).lastName(LAST_NAME)
+                .roleIds(Set.of(minRole.getId())).build();
+
+        var resp = service.createUser(req, callerId);
+
+        assertThat(resp.getUsername()).isEqualTo("u.xamdamov");   // trim qilinadi
+        // Generator ishga tushmagan: avtomatik slug hech qachon tekshirilmagan
+        verify(userRepository, never()).existsByUsernameIgnoreCase(LOGIN_SLUG);
+    }
+
+    @Test
+    @DisplayName("createUser — PERSON: operator bergan login band → Conflict (409)")
+    void createUser_personLoginTaken_throwsConflict() {
+        when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(superAdminCaller));
+        when(userRepository.existsByPinfl(PINFL)).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase("u.xamdamov")).thenReturn(true);
+
+        UserCreateRequest req = UserCreateRequest.builder()
+                .pinfl(PINFL).username("u.xamdamov").password("secret123")
+                .firstName(FIRST_NAME).lastName(LAST_NAME)
+                .roleIds(Set.of(UUID.randomUUID())).build();
+
+        // Jimgina suffiks QO'SHILMAYDI — operator boshqa login tanlashi uchun 409
+        assertThatThrownBy(() -> service.createUser(req, callerId))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Username already exists");
+    }
+
+    @Test
+    @DisplayName("createUser — PERSON: avtomatik login band bo'lsa suffiks qo'shiladi (utkir_xamdamov2)")
+    void createUser_generatedLoginCollision_suffixed() {
+        Role minRole = role("ADMIN", true);
+        when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(superAdminCaller));
+        when(userRepository.existsByPinfl(PINFL)).thenReturn(false);
+        when(userRepository.existsByUsernameIgnoreCase(LOGIN_SLUG)).thenReturn(true);
+        when(userRepository.existsByUsernameIgnoreCase(LOGIN_SLUG + "2")).thenReturn(false);
+        when(roleRepository.findById(minRole.getId())).thenReturn(Optional.of(minRole));
+        when(passwordEncoder.encode("secret123")).thenReturn("BCRYPT$xxx");
+        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
+            User u = inv.getArgument(0);
+            u.setId(UUID.randomUUID());
+            return u;
+        });
+
+        UserCreateRequest req = UserCreateRequest.builder()
+                .pinfl(PINFL).password("secret123")
+                .firstName(FIRST_NAME).lastName(LAST_NAME)
+                .roleIds(Set.of(minRole.getId())).build();
+
+        assertThat(service.createUser(req, callerId).getUsername()).isEqualTo(LOGIN_SLUG + "2");
+    }
+
+    @Test
+    @DisplayName("createUser — confirmPassword mos kelmasa → BadRequest 'Passwords do not match'")
+    void createUser_confirmPasswordMismatch() {
+        // Hech narsadan OLDIN tekshiriladi: caller ham yuklanmaydi
+        UserCreateRequest req = UserCreateRequest.builder()
+                .pinfl(PINFL).password("secret123").confirmPassword("secret124")
+                .firstName(FIRST_NAME).lastName(LAST_NAME)
+                .roleIds(Set.of(UUID.randomUUID())).build();
+
+        assertThatThrownBy(() -> service.createUser(req, callerId))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Passwords do not match");
+
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -252,7 +356,7 @@ class UserAdminServiceTest {
     }
 
     @Test
-    @DisplayName("validateWriteScope — MINISTRY_ADMIN SUPER_ADMIN'ni o'zgartira olmaydi")
+    @DisplayName("validateWriteScope — ADMIN SUPER_ADMIN'ni o'zgartira olmaydi")
     void writeScope_ministryCannotEditSuperAdmin() {
         User target = makeUser(targetId, "super2",
                 Set.of(role("SUPER_ADMIN", false)), null);
@@ -269,7 +373,7 @@ class UserAdminServiceTest {
     @DisplayName("getActiveRoles — OTM_API system role'larni ko'rmaydi")
     void getActiveRoles_otmFiltersSystemRoles() {
         Role userRole = role("USER", false);
-        Role sysRole = role("MINISTRY_ADMIN", true);
+        Role sysRole = role("ADMIN", true);
 
         when(userRepository.findByIdWithRolesAndUniversity(callerId)).thenReturn(Optional.of(otmCaller));
         when(roleRepository.findAllActive()).thenReturn(java.util.List.of(userRole, sysRole));

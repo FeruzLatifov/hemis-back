@@ -13,6 +13,7 @@ public final class AuditContextHolder {
 
     private static final ThreadLocal<String> ENTITY_NAME = new ThreadLocal<>();
     private static final ThreadLocal<Object> OLD_VALUE = new ThreadLocal<>();
+    private static final ThreadLocal<String> SCOPE_KEY = new ThreadLocal<>();
 
     private AuditContextHolder() {}
 
@@ -22,6 +23,15 @@ public final class AuditContextHolder {
 
     public static String getEntityName() {
         return ENTITY_NAME.get();
+    }
+
+    /** Owner of the record (OTM code) — what an owner-scoped history query filters on. */
+    public static void setScopeKey(String scopeKey) {
+        SCOPE_KEY.set(scopeKey);
+    }
+
+    public static String getScopeKey() {
+        return SCOPE_KEY.get();
     }
 
     /** Pass a snapshot of the entity before the change (DTO/Map/entity). */
@@ -36,5 +46,6 @@ public final class AuditContextHolder {
     public static void clear() {
         ENTITY_NAME.remove();
         OLD_VALUE.remove();
+        SCOPE_KEY.remove();
     }
 }

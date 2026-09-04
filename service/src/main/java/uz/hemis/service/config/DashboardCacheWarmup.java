@@ -42,20 +42,34 @@ public class DashboardCacheWarmup {
         }, "dashboard-cache-warmup").start();
     }
 
-    // Refresh cache every 30 minutes proactively
-    @Scheduled(fixedRate = 30 * 60 * 1000L, initialDelay = 5 * 60 * 1000L)
+    /**
+     * Keshni jadval bo'yicha oldindan yangilash.
+     *
+     * <p><strong>{@code refresh*} metodlari ataylab ishlatilgan.</strong> Bu yerda avval
+     * {@code getDashboardStats()} chaqirilardi — u {@code @Cacheable}, ya'ni kesh to'la
+     * bo'lsa proksi eski qiymatni qaytarib, DB'ga umuman bormasdi va Redis TTL'ni ham
+     * uzaytirmasdi. Natijada "har 30 daqiqada yangilash" jadvali AMALDA hech narsa qilmasdi:
+     * TTL (30 daqiqa) va jadval (30 daqiqa) bir xil bo'lgani uchun kesh muntazam ravishda
+     * tugab turar, va o'sha oynada kirgan birinchi foydalanuvchi dashboard uchun to'liq
+     * 30-40 soniya kutardi. {@code @CachePut} esa har doim hisoblab, natijani yozadi.</p>
+     *
+     * <p>Interval (20 daqiqa) TTL'dan (stats = 90 daqiqa) sezilarli kichik: yangilash ketma-ket
+     * bir necha marta yiqilsa ham (replika o'chgan, tarmoq uzilgan) foydalanuvchi hali ham
+     * eski, lekin tayyor qiymatni oladi.</p>
+     */
+    @Scheduled(fixedRate = 20 * 60 * 1000L, initialDelay = 20 * 60 * 1000L)
     public void refreshCachePeriodically() {
         try {
             log.info("Refreshing dashboard cache (scheduled)...");
-            dashboardService.getDashboardStats();
+            dashboardService.refreshDashboardStats();
             log.info("Dashboard cache refresh done");
         } catch (Exception e) {
             log.warn("Dashboard cache refresh failed: {}", e.toString());
         }
 
         try {
-            studentWebService.getSpecialitySummary();
-            studentWebService.getSpecialityStats(null, null, null, PageRequest.of(0, 20));
+            studentWebService.refreshSpecialitySummary();
+            studentWebService.refreshSpecialityStats(null, null, null, PageRequest.of(0, 20));
         } catch (Exception e) {
             log.warn("Directions cache refresh failed: {}", e.toString());
         }

@@ -464,7 +464,7 @@ public interface StudentRepository extends JpaRepository<Student, UUID>, JpaSpec
      *
      * Used for validate endpoint - search by passport seria/number
      *
-     * @param serialNumber passport serial number (e.g., "AA6970877")
+     * @param serialNumber passport serial number (e.g., "AA0000000")
      * @return student if found
      */
     @Query("SELECT s FROM Student s WHERE s.serialNumber = :serialNumber ORDER BY s.createTs DESC")

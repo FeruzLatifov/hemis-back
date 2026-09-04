@@ -3,6 +3,7 @@ package uz.hemis.service.dashboard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,28 @@ public class DashboardService {
         // Uses @Primary CacheManager (TwoLevelCacheManager)
     )
     public DashboardResponse getDashboardStats() {
+        return computeDashboardStats();
+    }
+
+    /**
+     * Rejalashtirilgan yangilash uchun: keshni O'QIMAYDI, qayta hisoblab ustidan yozadi.
+     *
+     * <p><strong>Nega alohida metod kerak.</strong> {@code @Cacheable} metodni fon oqimidan
+     * chaqirish keshni YANGILAMAYDI: kesh to'la bo'lsa proksi darhol eski qiymatni qaytaradi
+     * va DB'ga umuman bormaydi, Redis TTL ham o'qishda uzaymaydi. Shu sababli eski
+     * "har 30 daqiqada yangilash" jadvali aslida hech narsa qilmasdi — TTL tugagach
+     * birinchi kirgan foydalanuvchi to'liq 30-40 soniya kutardi.</p>
+     *
+     * <p>{@code @CachePut} tanani HAR DOIM bajaradi va natijani yozadi. Evict qilib keyin
+     * qayta hisoblash bunga alternativ emas: u yangi qiymat tayyor bo'lguncha 30-40 soniyalik
+     * "kesh bo'sh" teshigini ochib qo'yardi — aynan biz yopmoqchi bo'lgan holat.</p>
+     */
+    @CachePut(value = "stats", key = "'all'")
+    public DashboardResponse refreshDashboardStats() {
+        return computeDashboardStats();
+    }
+
+    private DashboardResponse computeDashboardStats() {
         log.info("📊 Fetching dashboard statistics from REPLICA database (cache miss)");
         long startTime = System.currentTimeMillis();
 

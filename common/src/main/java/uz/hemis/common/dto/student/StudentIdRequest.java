@@ -17,8 +17,8 @@ import uz.hemis.common.validation.ValidPinfl;
  * {
  *   "data": {
  *     "citizenship": "11",
- *     "pinfl": "31507976020031",
- *     "serial": "AA6970877",
+ *     "pinfl": "00000000000000",
+ *     "serial": "AA0000000",
  *     "year": "2024",
  *     "education_type": "11",
  *     "education_form": "11"

@@ -28,7 +28,7 @@ HEMIS-back **per-OTM EMAS** — bu vazirlik darajasidagi yagona markaziy backend
 - **~5,000 admin foydalanuvchi** (markaziy DB da, 230 OTM bo'ylab — taxminiy 20-30 admin/OTM)
 - **~1.15M talaba metadata** (markaziy aggregation taxminiy: 230 OTM × ~5K talaba/OTM o'rtacha; real son `hemishe_e_student.count(*)` orqali olinadi)
 - **~50,000 o'qituvchi metadata** (markaziy aggregation taxminiy: 230 × ~200/OTM)
-- **5 ta asosiy rol** (SUPER_ADMIN, MINISTRY_ADMIN, UNIVERSITY_ADMIN, VIEWER, REPORT_VIEWER)
+- **Inson rollari 3 pog'ona** (SUPER_ADMIN > ADMIN > TECH_STAFF="Texnik xodim") + CLASSIFIER_MANAGER, VIEWER, INSPECTOR, REPORT_VIEWER; mashina: OTM_API, EXTERNAL_API
 - **Peak concurrent:** ~500-1000 markaziy server'da (sessiya boshlanishi, hisobotlar davrida 2x)
 - **224 Univer client** parallel — har OTM Yii2 PHP backend api-legacy/api-university orqali
 - **Migrated baseline (M001):** sec_user → users (~340 legacy CUBA users, V3.0 snapshot)
@@ -90,7 +90,7 @@ User → Roles → Permissions
 | Role | Type | Description |
 |------|------|-------------|
 | `SUPER_ADMIN` | SYSTEM | Full system access (Ministry) |
-| `MINISTRY_ADMIN` | SYSTEM | Ministry administrator |
+| `ADMIN` | SYSTEM | Administrator — kundalik boshqaruv (S038'gacha kod `MINISTRY_ADMIN` edi) |
 | `UNIVERSITY_ADMIN` | UNIVERSITY | Per-university administrator |
 | `VIEWER` | SYSTEM | Read-only access |
 | `REPORT_VIEWER` | CUSTOM | Read-only reports |

@@ -185,7 +185,11 @@ public class WebLanguageController {
      * Update system configuration (admin only)
      */
     @PostMapping("/system/configuration")
-    @PreAuthorize("hasRole('ADMIN')")
+    // Permission, not role: enabling/disabling a language is platform configuration, so it belongs
+    // to whoever holds settings.edit (SUPER_ADMIN — S038), and it stays correct when role codes move.
+    // As a role check it was unreachable until S038 renamed MINISTRY_ADMIN to ADMIN, at which point
+    // a rename alone would have handed the capability to the new tier.
+    @PreAuthorize("hasAuthority('settings.edit')")
     @SecurityRequirement(name = "Bearer Authentication")
     @Operation(
         summary = "Update system configuration",

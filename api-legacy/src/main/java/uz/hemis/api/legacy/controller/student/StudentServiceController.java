@@ -159,9 +159,9 @@ public class StudentServiceController {
      *   "timeStamp": "2025-11-29T06:18:22.817959598",
      *   "object": {
      *     "institutionType": "Oliy ta'lim",
-     *     "pinfl": "61111065190052",
-     *     "fullName": "RAXIMJONOV DILSHODBEK DILMUROD O'G'LI",
-     *     "contractNumber": "300-12/12-22/Q-1207",
+     *     "pinfl": "00000000000000",
+     *     "fullName": "...",
+     *     "contractNumber": "...",
      *     "contractDate": "2022-09-14",
      *     "eduOrganizationId": 316,
      *     "eduOrganization": "Toshkent axborot texnologiyalari universiteti...",
@@ -251,8 +251,8 @@ public class StudentServiceController {
      * {
      *   "data": {
      *     "citizenship": "11",
-     *     "pinfl": "31507976020031",
-     *     "serial": "AA6970877",
+     *     "pinfl": "00000000000000",
+     *     "serial": "AA0000000",
      *     "year": "2024",
      *     "education_type": "11",
      *     "education_form": "11"

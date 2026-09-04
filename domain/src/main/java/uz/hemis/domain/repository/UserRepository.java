@@ -12,6 +12,7 @@ import uz.hemis.domain.entity.security.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,6 +63,24 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @param username login username
      * @return user with roles if found
      */
+    /**
+     * Just enough of a user to put a name next to an audit stamp.
+     *
+     * <p>Audit stamps ({@code created_by} / {@code updated_by} / {@code deleted_by}) hold the actor's
+     * UUID, not a name, and the screens that show them need only a label. A projection keeps that
+     * lookup to the three columns it uses instead of hydrating the 42-column {@code users} row —
+     * which would drag raw PINFL through a service that has no business reading it (IAM P1).</p>
+     */
+    interface DisplayName {
+        UUID getId();
+        String getUsername();
+        String getFullName();
+    }
+
+    /** Batch-resolve actor ids to labels: one query, PK lookup, no entity hydration. */
+    @Query("SELECT u.id AS id, u.username AS username, u.fullName AS fullName FROM User u WHERE u.id IN :ids")
+    List<DisplayName> findDisplayNamesByIds(@Param("ids") Collection<UUID> ids);
+
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.roles WHERE u.username = :username")
     Optional<User> findByUsernameWithRoles(@Param("username") String username);
 
@@ -135,6 +154,25 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return true if username exists (even if disabled)
      */
     boolean existsByUsername(String username);
+
+    /**
+     * Check if a username is taken, IGNORING CASE.
+     *
+     * <p>The {@code users} table carries the functional unique index
+     * {@code uq_users_username_lower} on {@code LOWER(username) WHERE deleted_at IS NULL},
+     * so {@code Ism_Familiya} and {@code ism_familiya} collide at the DB level. A
+     * case-sensitive pre-check would pass and then blow up as a constraint violation on save,
+     * so login generation and the operator-supplied login both go through this one.</p>
+     *
+     * <p>Soft-deleted rows are excluded by the entity's {@code @SQLRestriction}, matching the
+     * index predicate — a login frees up once its account is deleted.</p>
+     *
+     * @param username candidate login
+     * @return true if an active user already holds this login in any letter case
+     */
+    @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END " +
+           "FROM User u WHERE LOWER(u.username) = LOWER(:username)")
+    boolean existsByUsernameIgnoreCase(@Param("username") String username);
 
     /**
      * Check if a (non-deleted) user with this PINFL already exists.

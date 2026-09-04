@@ -101,16 +101,16 @@ public class OtmServiceController {
      * Get student list by tutor
      *
      * <p><strong>Endpoint:</strong> GET /services/otm/studentListByTutor</p>
-     * <p><strong>OLD-HEMIS format:</strong> university=999&tutorPinfl=31503776560016</p>
+     * <p><strong>OLD-HEMIS format:</strong> university=999&tutorPinfl=00000000000000</p>
      *
      * @param university University code (e.g., "999")
-     * @param tutorPinfl Tutor PINFL (e.g., "31503776560016")
+     * @param tutorPinfl Tutor PINFL (e.g., "00000000000000")
      * @return List of students assigned to this tutor wrapped in {success, data}
      */
     @Operation(
         summary = "Tutor talabalarini olish",
         description = "Universitet kodi va tutor PINFL raqami bo'yicha talabalar ro'yxatini olish. " +
-                      "OLD-HEMIS format: university=999&tutorPinfl=31503776560016"
+                      "OLD-HEMIS format: university=999&tutorPinfl=00000000000000"
     )
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/studentListByTutor")

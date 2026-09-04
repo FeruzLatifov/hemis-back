@@ -20,7 +20,7 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 
 ### 1. Target yaratish (admin API — afzal yo'l)
 
-`POST /api/v1/web/admin/webhooks` (permission `webhook.create` → SUPER_ADMIN/MINISTRY_ADMIN):
+`POST /api/v1/web/admin/webhooks` (permission `webhook.create` → S038'dan keyin faqat SUPER_ADMIN; ADMIN webhook'ni ko'radi, sirini o'zgartira olmaydi):
 
 ```jsonc
 {

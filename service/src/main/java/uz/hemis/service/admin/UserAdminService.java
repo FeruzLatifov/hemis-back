@@ -14,6 +14,7 @@ import uz.hemis.common.enums.UserType;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
+import uz.hemis.domain.entity.security.Permission;
 import uz.hemis.domain.entity.security.Role;
 import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.entity.security.User;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
  * <p><strong>Scope Hierarchy:</strong></p>
  * <ul>
  *   <li>SUPER_ADMIN — can manage all users</li>
- *   <li>MINISTRY_ADMIN — can manage all users except SUPER_ADMIN</li>
+ *   <li>ADMIN — can manage all users except SUPER_ADMIN</li>
  *   <li>OTM_API — can only manage users within own university</li>
  * </ul>
  *
@@ -51,6 +52,7 @@ public class UserAdminService {
     private final UniversityRepository universityRepository;
     private final PasswordEncoder passwordEncoder;
     private final CacheEvictionPort cacheEvictionPort;
+    private final LoginNameGenerator loginNameGenerator;
 
     // =====================================================
     // READ OPERATIONS
@@ -69,7 +71,7 @@ public class UserAdminService {
         // OTM_API: force filter to own university
         String effectiveUniversity = university;
         if (caller.hasRoleByCode("OTM_API") && !caller.isSuperAdmin()
-                && !caller.hasRoleByCode("MINISTRY_ADMIN")) {
+                && !caller.hasRoleByCode("ADMIN")) {
             if (caller.getUniversityCode() == null || caller.getUniversityCode().isBlank()) {
                 throw new AccessDeniedException("University admin has no university assigned");
             }
@@ -111,19 +113,33 @@ public class UserAdminService {
     @Transactional
     @Audited(action = AuditAction.CREATE, entity = "User", entityClass = User.class)
     public UserAdminResponse createUser(UserCreateRequest request, UUID callerUserId) {
+        // Takroriy parol — hech narsa qilishdan OLDIN. Maydon ixtiyoriy (eski API mijozlari uni
+        // yubormaydi), lekin yuborilgan bo'lsa mos kelishi shart — changePassword bilan bir xil
+        // semantika va bir xil xabar.
+        String confirmPassword = request.getConfirmPassword();
+        if (confirmPassword != null && !confirmPassword.isBlank()
+                && !confirmPassword.equals(request.getPassword())) {
+            throw new BadRequestException("Passwords do not match");
+        }
+
         User caller = findCallerWithPermissions(callerUserId);
 
         boolean isUniversityLogin = "UNIVERSITY_LOGIN".equalsIgnoreCase(request.getAccountType());
 
         // Resolve login username per account type:
         //  - UNIVERSITY_LOGIN: manual service login (old-hemis password-grant account)
-        //  - PERSON (default):  login = PINFL (authoritative), one-account-per-person (409 on dup)
+        //  - PERSON (default):  login = ism_familiya slug (PINFL EMAS); PINFL o'z ustunida qoladi
+        //    va bitta-shaxs-bitta-akkaunt tekshiruvini bajaradi (dublikatda 409).
+        // Band login ikkala tarmoqda ham 409 (400 emas) — dublikat PINFL bilan bir xil semantika.
         final String username;
         if (isUniversityLogin) {
             if (request.getUsername() == null || request.getUsername().isBlank()) {
                 throw new BadRequestException("Username is required for a university login");
             }
             username = request.getUsername().trim();
+            if (userRepository.existsByUsernameIgnoreCase(username)) {
+                throw new ConflictException("Username already exists");
+            }
         } else {
             String pinfl = request.getPinfl();
             if (pinfl == null || !pinfl.matches("^\\d{14}$")) {
@@ -132,17 +148,23 @@ public class UserAdminService {
             if (userRepository.existsByPinfl(pinfl)) {
                 throw new ConflictException("A user with this PINFL already exists");
             }
-            username = pinfl;
-        }
-
-        if (userRepository.existsByUsername(username)) {
-            throw new BadRequestException("Username already exists");
+            if (request.getUsername() != null && !request.getUsername().isBlank()) {
+                // Operator taklif qilingan loginni qo'lda tahrirlagan — uni hurmat qilamiz.
+                // Band bo'lsa 409: FE boshqasini tanlashi uchun (jimgina suffiks qo'shmaymiz —
+                // operator kutgan login boshqa loginga aylanib qolmasin).
+                username = request.getUsername().trim();
+                if (userRepository.existsByUsernameIgnoreCase(username)) {
+                    throw new ConflictException("Username already exists");
+                }
+            } else {
+                username = loginNameGenerator.generate(request.getFirstName(), request.getLastName());
+            }
         }
 
         // OTM_API: force universityCode to own university
         final String universityCode;
         if (caller.hasRoleByCode("OTM_API") && !caller.isSuperAdmin()
-                && !caller.hasRoleByCode("MINISTRY_ADMIN")) {
+                && !caller.hasRoleByCode("ADMIN")) {
             universityCode = caller.getUniversityCode();
         } else {
             universityCode = request.getUniversityCode();
@@ -200,7 +222,7 @@ public class UserAdminService {
 
         User saved = userRepository.save(user);
 
-        // PII-safe: username may equal the raw PINFL (PERSON accounts) — log the UUID id, never username.
+        // PII-safe: log the UUID id, never the username/PINFL (login is a name slug — still PII).
         log.info("User created: id={}, accountType={}, universityCode={}, roles={}, by={}",
                 saved.getId(), isUniversityLogin ? "UNIVERSITY_LOGIN" : "PERSON", saved.getUniversityCode(),
                 roles.stream().map(Role::getCode).collect(Collectors.joining(",")),
@@ -265,9 +287,9 @@ public class UserAdminService {
             target.setPhone(request.getPhone());
         }
 
-        // Update university FK (only SUPER_ADMIN and MINISTRY_ADMIN can change)
+        // Update university FK (only SUPER_ADMIN and ADMIN can change)
         if (request.getUniversityCode() != null) {
-            if (caller.isSuperAdmin() || caller.hasRoleByCode("MINISTRY_ADMIN")) {
+            if (caller.isSuperAdmin() || caller.hasRoleByCode("ADMIN")) {
                 if (request.getUniversityCode().isBlank()) {
                     target.setUniversity(null);
                     target.setUserType(UserType.SYSTEM);
@@ -421,7 +443,7 @@ public class UserAdminService {
         List<Role> roles = roleRepository.findAllActive();
 
         // OTM_API: filter out SYSTEM roles they can't assign
-        if (!caller.isSuperAdmin() && !caller.hasRoleByCode("MINISTRY_ADMIN")
+        if (!caller.isSuperAdmin() && !caller.hasRoleByCode("ADMIN")
                 && caller.hasRoleByCode("OTM_API")) {
             roles = roles.stream()
                     .filter(r -> !r.isSystemRole())
@@ -456,8 +478,8 @@ public class UserAdminService {
         // SUPER_ADMIN — no restrictions
         if (caller.isSuperAdmin()) return;
 
-        // MINISTRY_ADMIN — can see all users
-        if (caller.hasRoleByCode("MINISTRY_ADMIN")) return;
+        // ADMIN — can see all users
+        if (caller.hasRoleByCode("ADMIN")) return;
 
         // OTM_API — only own university
         if (caller.hasRoleByCode("OTM_API")) {
@@ -474,8 +496,8 @@ public class UserAdminService {
         // SUPER_ADMIN — no restrictions
         if (caller.isSuperAdmin()) return;
 
-        // MINISTRY_ADMIN — all users except SUPER_ADMIN
-        if (caller.hasRoleByCode("MINISTRY_ADMIN")) {
+        // ADMIN — all users except SUPER_ADMIN
+        if (caller.hasRoleByCode("ADMIN")) {
             if (target.isSuperAdmin()) {
                 throw new AccessDeniedException("Cannot modify SUPER_ADMIN");
             }
@@ -499,6 +521,38 @@ public class UserAdminService {
     /**
      * Resolve role IDs to entities and validate caller can assign them
      */
+    /**
+     * Refuse to assign a role that carries a permission the caller does not have.
+     *
+     * <p>SUPER_ADMIN is exempt — it holds everything by definition, and the check would be a no-op.
+     * The role is loaded with its permissions (the caller's own set is already resolved for the
+     * request), and the first extra permission names itself in the refusal so the operator can see
+     * what to ask for rather than guessing.</p>
+     */
+    private void assertCallerCanGrant(User caller, Role role) {
+        if (caller.isSuperAdmin()) {
+            return;
+        }
+        Set<String> callerPermissions = caller.getAllPermissions().stream()
+                .map(Permission::getCode)
+                .collect(java.util.stream.Collectors.toSet());
+        if (callerPermissions.contains("*")) {
+            return;
+        }
+        Role withPermissions = roleRepository.findByIdWithPermissions(role.getId()).orElse(role);
+        String beyondCaller = withPermissions.getPermissions().stream()
+                .map(Permission::getCode)
+                .filter(code -> !callerPermissions.contains(code))
+                .sorted()
+                .findFirst()
+                .orElse(null);
+        if (beyondCaller != null) {
+            throw new AccessDeniedException(
+                    "Cannot assign role " + role.getCode() + ": it grants '" + beyondCaller
+                            + "', which you do not hold");
+        }
+    }
+
     private Set<Role> resolveAndValidateRoles(Set<UUID> roleIds, User caller) {
         if (roleIds == null || roleIds.isEmpty()) {
             throw new BadRequestException("At least one role is required");
@@ -513,8 +567,8 @@ public class UserAdminService {
                 throw new BadRequestException("Role is not active: " + role.getCode());
             }
 
-            // MINISTRY_ADMIN cannot assign SUPER_ADMIN role
-            if (caller.hasRoleByCode("MINISTRY_ADMIN") && !caller.isSuperAdmin()) {
+            // ADMIN cannot assign SUPER_ADMIN role
+            if (caller.hasRoleByCode("ADMIN") && !caller.isSuperAdmin()) {
                 if ("SUPER_ADMIN".equals(role.getCode())) {
                     throw new AccessDeniedException("Cannot assign SUPER_ADMIN role");
                 }
@@ -522,11 +576,20 @@ public class UserAdminService {
 
             // OTM_API cannot assign SYSTEM roles
             if (caller.hasRoleByCode("OTM_API") && !caller.isSuperAdmin()
-                    && !caller.hasRoleByCode("MINISTRY_ADMIN")) {
+                    && !caller.hasRoleByCode("ADMIN")) {
                 if (role.isSystemRole()) {
                     throw new AccessDeniedException("Cannot assign system role: " + role.getCode());
                 }
             }
+
+            // Privilege ceiling: you cannot hand out what you do not hold.
+            //
+            // Naming SUPER_ADMIN above is not enough — the boundary S038 draws (an administrator has
+            // no roles.manage, no webhook secrets, no registry deletes) is worth nothing if the same
+            // administrator can create a user, give them OTM_API (which does hold students.delete),
+            // and log in as them. Comparing permission SETS closes every such route at once, and it
+            // needs no list to maintain: whatever a role holds, the assigner must hold too.
+            assertCallerCanGrant(caller, role);
 
             roles.add(role);
         }

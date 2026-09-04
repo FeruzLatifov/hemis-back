@@ -26,7 +26,29 @@ ON CONFLICT (code) WHERE deleted_at IS NULL DO UPDATE SET
 -- create/edit/delete uchun ham xuddi shu blok (action almashadi).
 ```
 
-Convention: `<resource>.<action>` (lower dot). Action `chk_permission_action`: `view/create/edit/delete/export/import/manage/access/sync` (`update` EMAS — `edit`). Category `chk_permission_category`: `CORE/ADMIN/MENU/CUSTOM/REPORTS`. UNIQUE indeks partial — `ON CONFLICT (code) WHERE deleted_at IS NULL`.
+### Ruxsat nomlash qoidasi (BITTA qoida — har safar shu)
+
+**`code` = `resource` + `.` + `action`.** Boshqa variant yo'q. Uchta natija shu qoidadan kelib chiqadi,
+shuning uchun `resource`ni tanlashda ikkalasini ham o'ylab tanlang:
+
+| Rol editorida nima ko'rinadi | Qayerdan olinadi |
+|---|---|
+| **Guruh** (Klassifikatorlar / Muassasalar / Tizim …) | `resource`ning **birinchi** segmenti (`permissions.meta.ts` → `DOMAIN_OF`; ro'yxatda yo'q bo'lsa → Tizim) |
+| **Kartochka nomi** | `resource`ning **oxirgi** segmenti → `humanize()` → `t()` |
+| **Chip** (Ko'rish / Yaratish / …) | `action` (`ACTION_META`) |
+
+Amaliy qoidalar:
+1. `resource`ning oxirgi segmenti — **ma'noli, tarjima qilinadigan ot** bo'lsin. `audit.history` → "Tarix" ✅,
+   `audit.entity` → "Ob'ekt" ❌. Kalit `uz/oz/ru/en` da bo'lmasa — S### i18n seed bilan qo'shing.
+2. **Bitta `(resource, action)` juftligi ikki marta bo'lmasin.** Aks holda bitta kartochkada ikkita bir xil
+   chip chiqadi (`audit.view` + `audit.entity.view` aynan shunday bo'lgan edi). Yangi imkoniyat —
+   yangi `resource`, ya'ni `classifiers.speciality` `classifiers`dan alohida bo'lgani kabi.
+3. Yangi `action` qiymati **uch joyga** qo'shiladi: DB `chk_permission_action`, Java `PermissionAction`
+   enum, `isWritePermission()`. Enumda bo'lmasa — o'sha ruxsat egasi login'da 500 oladi.
+4. Chiqarilmagan (prodga ketmagan) ruxsat nomini o'zgartirsangiz — eskisini seed'da `DELETE` qiling,
+   alias qoldirmang.
+
+Action `chk_permission_action`: `view/create/edit/delete/export/import/manage/access/sync/approve` (`update` EMAS — `edit`). Category `chk_permission_category`: `CORE/ADMIN/MENU/CUSTOM/REPORTS`. UNIQUE indeks partial — `ON CONFLICT (code) WHERE deleted_at IS NULL`.
 
 ### 2. Role'ga bog'lash
 
@@ -40,7 +62,7 @@ WHERE r.code = 'SUPER_ADMIN'
 ON CONFLICT DO NOTHING;
 ```
 
-> Real system role'lar (S001): `SUPER_ADMIN`, `MINISTRY_ADMIN`, `OTM_API`, `INSPECTOR`, `REPORT_VIEWER`, … — `'ADMIN'` mavjud emas. To'liq mapping: `S004_seed_role_permissions.sql`.
+> Real system role'lar: `SUPER_ADMIN`, `ADMIN` (S001'da `MINISTRY_ADMIN` yaratiladi, S038 uni `ADMIN`ga o'zgartiradi), `OTM_API`, `INSPECTOR`, `VIEWER`, `REPORT_VIEWER`, `CLASSIFIER_MANAGER`, `TECH_STAFF`. To'liq mapping: `S004_seed_role_permissions.sql` + pog'onalar: `S038_seed_access_control.sql`.
 
 ### 3. Menu item
 

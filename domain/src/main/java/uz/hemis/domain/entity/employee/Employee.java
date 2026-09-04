@@ -88,7 +88,7 @@ public class Employee extends AuditableEntity {
      * Passport identifier — single column for consistency with legacy
      * {@code hemishe_e_employee} and per-OTM university databases.
      *
-     * <p>Format: {@code "AA1234567"} (2 letters + 7 digits).
+     * <p>Format: {@code "AA0000000"} (2 letters + 7 digits).
      * OneID / MyGov SSO callbacks that deliver series and number separately must
      * concatenate them at the service layer before persisting.</p>
      *

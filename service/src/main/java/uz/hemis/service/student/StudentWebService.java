@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -1024,6 +1025,27 @@ public class StudentWebService {
     )
     public Page<SpecialityStatsDto> getSpecialityStats(
             String search, String educationType, Boolean hasStudents, Pageable pageable) {
+        return computeSpecialityStats(search, educationType, hasStudents, pageable);
+    }
+
+    /**
+     * Fon (scheduled) yangilashi uchun — keshni O'QIMAYDI, qayta hisoblab ustidan yozadi.
+     * Sabab {@code DashboardService.refreshDashboardStats()} dagi bilan bir xil:
+     * {@code @Cacheable} metodni jadval bo'yicha chaqirish keshni yangilamaydi va TTL'ni
+     * uzaytirmaydi, shuning uchun TTL tugagach birinchi foydalanuvchi to'liq narxni to'laydi.
+     */
+    @CachePut(
+            value = "specialityStats",
+            key = "#search + ':' + #educationType + ':' + #hasStudents + ':' + #pageable.pageNumber + ':' + #pageable.pageSize",
+            unless = "#result == null || #pageable.pageNumber > 10"
+    )
+    public Page<SpecialityStatsDto> refreshSpecialityStats(
+            String search, String educationType, Boolean hasStudents, Pageable pageable) {
+        return computeSpecialityStats(search, educationType, hasStudents, pageable);
+    }
+
+    private Page<SpecialityStatsDto> computeSpecialityStats(
+            String search, String educationType, Boolean hasStudents, Pageable pageable) {
         log.debug("Getting speciality stats - search={}, educationType={}, hasStudents={}, page={}",
                 search, educationType, hasStudents, pageable.getPageNumber());
 
@@ -1136,6 +1158,21 @@ public class StudentWebService {
      */
     @Cacheable(value = "specialitySummary", key = "'all'", unless = "#result == null")
     public SpecialitySummaryDto getSpecialitySummary() {
+        return computeSpecialitySummary();
+    }
+
+    /**
+     * Fon (scheduled) yangilashi uchun — keshni O'QIMAYDI, qayta hisoblab ustidan yozadi.
+     * Sabab {@code DashboardService.refreshDashboardStats()} dagi bilan bir xil:
+     * {@code @Cacheable} metodni jadval bo'yicha chaqirish keshni yangilamaydi va TTL'ni
+     * uzaytirmaydi, shuning uchun TTL tugagach birinchi foydalanuvchi to'liq narxni to'laydi.
+     */
+    @CachePut(value = "specialitySummary", key = "'all'", unless = "#result == null")
+    public SpecialitySummaryDto refreshSpecialitySummary() {
+        return computeSpecialitySummary();
+    }
+
+    private SpecialitySummaryDto computeSpecialitySummary() {
         log.debug("Getting speciality summary");
 
         String sql = """

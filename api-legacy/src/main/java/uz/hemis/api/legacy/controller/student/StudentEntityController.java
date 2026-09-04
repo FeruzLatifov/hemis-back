@@ -717,8 +717,8 @@ public class StudentEntityController {
             ```json
             {
                 "code": "520241100001",
-                "pinfl": "12345678901234",
-                "serialNumber": "AB1234567",
+                "pinfl": "00000000000000",
+                "serialNumber": "AA0000000",
                 "firstname": "Ism",
                 "lastname": "Familiya",
                 "fathername": "Otasining ismi",

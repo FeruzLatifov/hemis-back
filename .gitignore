@@ -81,3 +81,6 @@ ONBOARDING.md
 # Python (scripts/)
 __pycache__/
 *.pyc
+
+# Playwright MCP debug artefaktlari (sessiya chiqindisi, manba emas)
+.playwright-mcp/

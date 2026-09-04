@@ -4,9 +4,9 @@ This directory is the **versioned source of truth** for the unified speciality c
 (`h_speciality` + `h_speciality_year`, V018). The generated Liquibase seeds are **machine-written — never
 hand-edit them**; edit the source here and re-run the ETL.
 
-> Previously this pipeline lived only under `startup/docs/mutaxasisliklar/` (outside any git repo) — a
+> Previously this pipeline lived only under `startup/docs/klassifikator/mutaxassislik-etl/` (outside any git repo) — a
 > single-disk durability risk (audit HIGH). It now lives in the repo alongside the seeds it produces.
-> This `domain/etl/speciality/` copy is **canonical**; the `docs/mutaxasisliklar/` copies are superseded.
+> This `domain/etl/speciality/` copy is **canonical**; the `docs/klassifikator/mutaxassislik-etl/` copies are superseded.
 
 ## Files
 

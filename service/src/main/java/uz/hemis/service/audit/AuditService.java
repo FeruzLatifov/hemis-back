@@ -26,6 +26,15 @@ import java.util.*;
 @ConditionalOnProperty(name = "hemis.audit.enabled", havingValue = "true", matchIfMissing = false)
 public class AuditService {
 
+    /** Upper bound for a comma-separated filter list (entityType); keeps the IN clause sane. */
+    private static final int MAX_IN_VALUES = 20;
+
+    /** JSONB columns whose text must reach the client as an object, not as a driver wrapper. */
+    private static final Set<String> JSON_COLUMNS = Set.of("old_value", "new_value");
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON =
+            new com.fasterxml.jackson.databind.ObjectMapper();
+
     private final JdbcTemplate jdbcTemplate;
 
     public AuditService(@Qualifier("auditReadJdbcTemplate") JdbcTemplate jdbcTemplate) {
@@ -41,7 +50,16 @@ public class AuditService {
         List<Object> params = new ArrayList<>();
         applyCommonFilters(where, params, filters);
         applyFilter(where, params, filters, "action", "action");
-        applyFilter(where, params, filters, "entityType", "entity_type");
+        // entityType takes a comma-separated list: a UI group rarely maps to one type — "Classifiers"
+        // covers HSpeciality and ClassifierItem — and one query beats one round-trip per type.
+        applyInFilter(where, params, filters, "entityType", "entity_type");
+        // entityId answers "what happened to THIS row" from the activities list, so an admin can
+        // reach a single speciality's history without hand-crafting the /entities/... URL.
+        applyFilter(where, params, filters, "entityId", "entity_id");
+        // scopeKey answers the question a hard-deleted row cannot: "everything that happened to OTM
+        // 301's attachments", detached ones included. Equality on the indexed (entity_type,
+        // scope_key, created_at DESC) triple — no LIKE, no scan that grows with the log.
+        applyFilter(where, params, filters, "scopeKey", "scope_key");
         applyLikeFilter(where, params, filters, "search", "entity_name", "description");
 
         return queryPage("activity_log", where.toString(), params, page, size,
@@ -52,7 +70,7 @@ public class AuditService {
     public Map<String, Object> getActivityDetail(String id) {
         return queryById("activity_log", id,
                 "id, user_id, username, full_name, user_ip, user_agent, action, entity_type, " +
-                "entity_id, entity_name, old_value, new_value, changed_fields, request_id, " +
+                "entity_id, entity_name, scope_key, old_value, new_value, changed_fields, request_id, " +
                 "endpoint, description, created_at");
     }
 
@@ -61,8 +79,8 @@ public class AuditService {
         String where = "WHERE entity_type = ? AND entity_id = ?";
         List<Object> params = new ArrayList<>(List.of(entityType, entityId));
         return queryPage("activity_log", where, params, page, size,
-                "id, user_id, username, user_ip, action, entity_type, entity_id, entity_name, " +
-                "old_value, new_value, changed_fields, request_id, description, created_at");
+                "id, user_id, username, full_name, user_ip, action, entity_type, entity_id, entity_name, " +
+                "scope_key, old_value, new_value, changed_fields, request_id, description, created_at");
     }
 
     // =====================================================
@@ -219,6 +237,39 @@ public class AuditService {
         }
     }
 
+    /**
+     * Equality for one value, {@code IN (...)} for a comma-separated list.
+     *
+     * <p>Only the number of placeholders comes from the input — every value is still bound as a
+     * parameter, so a list cannot carry SQL. The list is capped: a filter is a filter, and an
+     * unbounded IN from a query string is a free planner-blowup for whoever can call this.</p>
+     */
+    private void applyInFilter(StringBuilder where, List<Object> params, Map<String, String> filters,
+                               String filterKey, String column) {
+        String raw = filters.get(filterKey);
+        if (raw == null || raw.isBlank()) {
+            return;
+        }
+        List<String> values = Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(v -> !v.isBlank())
+                .distinct()
+                .limit(MAX_IN_VALUES)
+                .toList();
+        if (values.isEmpty()) {
+            return;
+        }
+        if (values.size() == 1) {
+            where.append(" AND ").append(column).append(" = ?");
+            params.add(values.get(0));
+            return;
+        }
+        where.append(" AND ").append(column).append(" IN (")
+                .append(String.join(", ", Collections.nCopies(values.size(), "?")))
+                .append(")");
+        params.addAll(values);
+    }
+
     private void applyLikeFilter(StringBuilder where, List<Object> params, Map<String, String> filters,
                                    String filterKey, String... columns) {
         if (filters.containsKey(filterKey) && !filters.get(filterKey).isBlank()) {
@@ -242,9 +293,41 @@ public class AuditService {
     private Map<String, Object> toCamelCaseKeys(Map<String, Object> map) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : map.entrySet()) {
-            result.put(snakeToCamel(entry.getKey()), unwrapJdbcValue(entry.getValue()));
+            Object value = unwrapJdbcValue(entry.getValue());
+            // old_value / new_value are JSONB. The driver hands them over as a PGobject, which Jackson
+            // renders as {"type":"jsonb","value":"{...}"} — so the client received a wrapper (or a
+            // bare string) instead of the snapshot and every field read came back empty. Parse them
+            // here, where the column names are still known.
+            if (JSON_COLUMNS.contains(entry.getKey())) {
+                value = parseJsonObject(value);
+            }
+            result.put(snakeToCamel(entry.getKey()), value);
         }
         return result;
+    }
+
+    /**
+     * A JSONB column value as a Map the client can read field by field.
+     *
+     * <p>Accepts what any driver may hand over: an already-parsed Map, a JSON string, or a wrapper
+     * whose {@code toString()} is the JSON text (PostgreSQL's PGobject). Unparseable input is
+     * returned untouched rather than dropped — an audit record should never lose data to a
+     * formatting assumption.</p>
+     */
+    private Object parseJsonObject(Object value) {
+        if (value == null || value instanceof Map) {
+            return value;
+        }
+        String json = value.toString().trim();
+        if (!json.startsWith("{")) {
+            return value;
+        }
+        try {
+            return JSON.readValue(json, Map.class);
+        } catch (Exception e) {
+            log.debug("Audit JSON column left as text ({} chars): {}", json.length(), e.getMessage());
+            return value;
+        }
     }
 
     /**

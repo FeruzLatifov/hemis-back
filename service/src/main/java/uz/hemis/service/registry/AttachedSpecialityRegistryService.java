@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hemis.common.audit.AuditAction;
+import uz.hemis.common.audit.Audited;
 import uz.hemis.common.util.JdbcTemporal;
 import uz.hemis.common.exception.ConflictException;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -185,6 +187,10 @@ public class AttachedSpecialityRegistryService {
     // WRITE (MASTER)
     // =====================================================
 
+    // The central registry of what each OTM actually offers: an added row is a decision about an
+    // institution's catalogue, so it carries a name and a timestamp like the attachment card does.
+    @Audited(action = AuditAction.CREATE, entity = "UniversityAttachedSpeciality",
+             entityClass = UniversityAttachedSpeciality.class)
     @Transactional
     @CacheEvict(value = "attachedSpecialityDictionaries", allEntries = true)
     public AttachedSpecialityDetailDto create(AttachedSpecialityCreateDto dto) {
@@ -206,6 +212,8 @@ public class AttachedSpecialityRegistryService {
         return getDetail(saved.getId());
     }
 
+    @Audited(action = AuditAction.UPDATE, entity = "UniversityAttachedSpeciality",
+             entityClass = UniversityAttachedSpeciality.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "attachedSpecialityDictionaries", allEntries = true)
     public AttachedSpecialityDetailDto update(UUID id, AttachedSpecialityUpdateDto dto) {
@@ -230,6 +238,8 @@ public class AttachedSpecialityRegistryService {
         return getDetail(id);
     }
 
+    @Audited(action = AuditAction.DELETE, entity = "UniversityAttachedSpeciality",
+             entityClass = UniversityAttachedSpeciality.class, keyArg = "id")
     @Transactional
     @CacheEvict(value = "attachedSpecialityDictionaries", allEntries = true)
     public void delete(UUID id) {

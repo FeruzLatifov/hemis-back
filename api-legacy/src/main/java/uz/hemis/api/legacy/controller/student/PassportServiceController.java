@@ -80,7 +80,7 @@ public class PassportServiceController {
      * </p>
      *
      * @param pinfl        PINFL (14 raqamli)
-     * @param seriaNumber  Passport seria va raqam (masalan: AB1234567)
+     * @param seriaNumber  Passport seria va raqam (masalan: AA0000000)
      * @param captchaId    Captcha identifikatori
      * @param captchaValue Foydalanuvchi tomonidan kiritilgan captcha qiymati
      * @return Passport ma'lumotlari va manzil
@@ -92,7 +92,7 @@ public class PassportServiceController {
 
                     **Talab:**
                     - PINFL: 14 raqamli shaxsiy identifikatsiya raqami
-                    - seriaNumber: Passport seria va raqam (masalan: AB1234567)
+                    - seriaNumber: Passport seria va raqam (masalan: AA0000000)
                     - captchaId: Captcha identifikatori (GET /services/captcha/getNumericCaptcha)
                     - captchaValue: Foydalanuvchi tomonidan kiritilgan captcha qiymati
 
@@ -146,7 +146,7 @@ public class PassportServiceController {
             @Parameter(description = "PINFL (14 raqamli shaxsiy identifikatsiya raqami)", required = true)
             @RequestParam String pinfl,
 
-            @Parameter(description = "Passport seria va raqam (masalan: AB1234567)", required = false)
+            @Parameter(description = "Passport seria va raqam (masalan: AA0000000)", required = false)
             @RequestParam(required = false) String seriaNumber,
 
             @Parameter(description = "Passport seriyasi (alias)", required = false)
@@ -194,7 +194,7 @@ public class PassportServiceController {
      * Old-hemis endpoint: GET /app/rest/v2/services/passport-data/getDataBySNBirthdate
      * </p>
      *
-     * @param seriaNumber  Passport seria va raqam (masalan: AA6970877)
+     * @param seriaNumber  Passport seria va raqam (masalan: AA0000000)
      * @param birthdate    Tug'ilgan sana (format: yyyy-MM-dd)
      * @param captchaId    Captcha identifikatori
      * @param captchaValue Foydalanuvchi tomonidan kiritilgan captcha qiymati
@@ -206,7 +206,7 @@ public class PassportServiceController {
                     Passport seria-raqam va tug'ilgan sana orqali GUVD bazasidan passport ma'lumotlarini olish.
 
                     **Talab:**
-                    - seriaNumber: Passport seria va raqam (masalan: AA6970877)
+                    - seriaNumber: Passport seria va raqam (masalan: AA0000000)
                     - birthdate: Tug'ilgan sana (format: yyyy-MM-dd, masalan: 1997-07-15)
                     - captchaId: Captcha identifikatori (GET /services/captcha/getNumericCaptcha)
                     - captchaValue: Foydalanuvchi tomonidan kiritilgan captcha qiymati
@@ -258,7 +258,7 @@ public class PassportServiceController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/getDataBySNBirthdate")
     public ResponseEntity<Object> getDataBySNBirthdate(
-            @Parameter(description = "Passport seria va raqam (masalan: AA6970877)", required = true)
+            @Parameter(description = "Passport seria va raqam (masalan: AA0000000)", required = true)
             @RequestParam String seriaNumber,
 
             @Parameter(description = "Tug'ilgan sana (format: yyyy-MM-dd)", required = true)

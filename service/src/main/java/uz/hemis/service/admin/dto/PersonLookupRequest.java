@@ -15,7 +15,7 @@ public record PersonLookupRequest(
         @Pattern(regexp = "\\d{14}", message = "PINFL must be 14 digits")
         String pinfl,
 
-        /** Passport series+number, e.g. AB1234567 (preferred over birthDate). */
+        /** Passport series+number, e.g. AA0000000 (preferred over birthDate). */
         String document,
 
         /** Birth date {@code yyyy-MM-dd}, used when document is absent. */

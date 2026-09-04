@@ -72,16 +72,21 @@ class AuditLogControllerTest {
     }
 
     @Test
-    @DisplayName("GET /activities — permission bor lekin role yo'q → 403")
-    void activities_permButNoRole_forbidden() throws Exception {
+    @DisplayName("GET /activities — audit.view yetarli (rol tekshiruvi yo'q)")
+    void activities_permissionIsEnough() throws Exception {
+        // The gate is the permission alone. It used to also demand hasRole('SUPER_ADMIN'|'ADMIN'),
+        // which no real caller could satisfy: a USER token's authorities are permission codes and
+        // JwtGrantedAuthoritiesConverter grants no ROLE_*, so the whole audit API answered 403 to
+        // everyone. The audience now lives in the role→permission mapping: audit.view is granted to
+        // SUPER_ADMIN and ADMIN only (seed S038, pinned by RoleModelIntegrationTest).
         authAs("audit.view");
 
         mockMvc.perform(get(BASE + "/activities"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk());
     }
 
     @Test
-    @DisplayName("GET /activities — permission yo'q → 403")
+    @DisplayName("GET /activities — audit.view yo'q → 403 (rol nomi yordam bermaydi)")
     void activities_noPermission_forbidden() throws Exception {
         authAs("ROLE_SUPER_ADMIN");
 
@@ -108,7 +113,7 @@ class AuditLogControllerTest {
     @Test
     @DisplayName("GET /activities/{id} — topilmadi → 404")
     void activityDetail_notFound() throws Exception {
-        authAs("audit.view", "ROLE_MINISTRY_ADMIN");
+        authAs("audit.view", "ROLE_ADMIN");
         when(auditService.getActivityDetail("abc")).thenReturn(null);
 
         mockMvc.perform(get(BASE + "/activities/abc"))
@@ -119,13 +124,39 @@ class AuditLogControllerTest {
     @Test
     @DisplayName("GET /activities/{id} — topilgan 200")
     void activityDetail_found_200() throws Exception {
-        authAs("audit.view", "ROLE_MINISTRY_ADMIN");
+        authAs("audit.view", "ROLE_ADMIN");
         when(auditService.getActivityDetail("abc"))
                 .thenReturn(Map.of("id", "abc", "action", "UPDATE"));
 
         mockMvc.perform(get(BASE + "/activities/abc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.action").value("UPDATE"));
+    }
+
+    @Test
+    @DisplayName("audit.history.view — klassifikator yozuvining tafsiloti ochiladi")
+    void activityDetail_narrowPermission_allowedForCuratedRegistries() throws Exception {
+        // The owner-scoped history lists entries WITHOUT their before/after images and fetches them
+        // one at a time. If this endpoint stayed audit.view-only, an operator's scoped dialog would
+        // expand to an empty diff — which reads as "every field was cleared to nothing".
+        authAs("audit.history.view");
+        when(auditService.getActivityDetail("abc")).thenReturn(Map.of(
+                "id", "abc", "action", "UPDATE", "entityType", "UniversitySpecialityAttachment"));
+
+        mockMvc.perform(get(BASE + "/activities/abc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.action").value("UPDATE"));
+    }
+
+    @Test
+    @DisplayName("audit.history.view — User yozuvining tafsiloti yopiq qoladi")
+    void activityDetail_narrowPermission_deniedForSensitiveTypes() throws Exception {
+        authAs("audit.history.view");
+        when(auditService.getActivityDetail("abc")).thenReturn(Map.of(
+                "id", "abc", "action", "UPDATE", "entityType", "User"));
+
+        mockMvc.perform(get(BASE + "/activities/abc"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -142,6 +173,39 @@ class AuditLogControllerTest {
         mockMvc.perform(get(BASE + "/entities/User/uuid-x/history"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].rev").value(1));
+    }
+
+    @Test
+    @DisplayName("audit.history.view — bitta yozuv tarixi ochiladi (klassifikator reyestrlari uchun)")
+    void entityHistory_narrowPermission_allowedForCuratedRegistries() throws Exception {
+        // An operator curates specialities; asking who changed one is not the same capability as
+        // reading the ministry-wide journal, so it has its own permission.
+        authAs("audit.history.view");
+        when(auditService.getEntityHistory(eq("HSpeciality"), eq("uuid-x"), anyInt(), anyInt()))
+                .thenReturn(PageResponse.<Map<String, Object>>builder()
+                        .content(List.of(Map.of("action", "UPDATE")))
+                        .number(0).size(50).totalElements(1L).totalPages(1).build());
+
+        mockMvc.perform(get(BASE + "/entities/HSpeciality/uuid-x/history"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("audit.history.view — User tarixiga yetmaydi (PII snapshot'lari audit.view'da qoladi)")
+    void entityHistory_narrowPermission_deniedForSensitiveTypes() throws Exception {
+        authAs("audit.history.view");
+
+        mockMvc.perform(get(BASE + "/entities/User/uuid-x/history"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("audit.history.view — jurnalning o'zi (activities) yopiq qoladi")
+    void activities_narrowPermission_forbidden() throws Exception {
+        authAs("audit.history.view");
+
+        mockMvc.perform(get(BASE + "/activities"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -170,7 +234,7 @@ class AuditLogControllerTest {
     @Test
     @DisplayName("GET /logins — login event logs")
     void logins_200() throws Exception {
-        authAs("audit.view", "ROLE_MINISTRY_ADMIN");
+        authAs("audit.view", "ROLE_ADMIN");
 
         when(auditService.getLogins(any(), anyInt(), anyInt()))
                 .thenReturn(PageResponse.<Map<String, Object>>builder()

@@ -25,6 +25,7 @@ spring:
         connection-timeout: 30000
         idle-timeout: 300000
         max-lifetime: 1200000
+        keepalive-time: 120000  # 2 daqiqa — bo'sh ulanishga "SELECT 1" yuboradi, HAProxy/PgBouncer uni uzishidan oldin
         connection-test-query: SELECT 1
         pool-name: HikariPool-Master-Prod
         data-source-properties:
@@ -46,6 +47,7 @@ spring:
         connection-timeout: 30000
         idle-timeout: 300000
         max-lifetime: 1200000
+        keepalive-time: 120000  # 2 daqiqa — bo'sh ulanishga "SELECT 1" yuboradi, HAProxy/PgBouncer uni uzishidan oldin
         connection-test-query: SELECT 1
         read-only: true
         pool-name: HikariPool-Replica-Prod

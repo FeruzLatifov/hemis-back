@@ -1,5 +1,6 @@
 package uz.hemis.domain.entity.security;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLRestriction;
@@ -114,6 +115,7 @@ public class Permission extends AuditableEntity {
      */
     @ManyToMany(mappedBy = "permissions")
     @Builder.Default
+    @JsonIgnore   // audit snapshot: breaks the Role <-> Permission cycle: same reason as Role.users
     private Set<Role> roles = new HashSet<>();
 
     // =====================================================
@@ -134,13 +136,16 @@ public class Permission extends AuditableEntity {
         return PermissionAction.VIEW == action;
     }
 
-    /** @return true if action is a write operation (CREATE, EDIT, DELETE, MANAGE, APPROVE) */
+    /** @return true if action is a write operation (CREATE, EDIT, DELETE, MANAGE, APPROVE, RESTORE) */
     public boolean isWritePermission() {
         return action == PermissionAction.CREATE
             || action == PermissionAction.EDIT
             || action == PermissionAction.DELETE
             || action == PermissionAction.MANAGE
-            || action == PermissionAction.APPROVE;
+            || action == PermissionAction.APPROVE
+            // A restore changes state (delete_ts NULL again) and puts the row back in every list —
+            // it is a write, not a read of the recycle bin.
+            || action == PermissionAction.RESTORE;
     }
 
     /** @return true if category is {@link PermissionCategory#ADMIN} */

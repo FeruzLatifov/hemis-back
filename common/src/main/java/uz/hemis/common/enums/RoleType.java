@@ -24,9 +24,9 @@ public enum RoleType {
      * <p><strong>Characteristics:</strong></p>
      * <ul>
      *   <li>Built-in roles defined at system level</li>
-     *   <li>Cannot be deleted or modified</li>
+     *   <li>Cannot be deleted; only SUPER_ADMIN is also unmodifiable (RoleAdminService)</li>
      *   <li>Common across all institutions</li>
-     *   <li>Examples: SUPER_ADMIN, MINISTRY_ADMIN, VIEWER</li>
+     *   <li>Examples: SUPER_ADMIN, ADMIN, VIEWER</li>
      * </ul>
      */
     SYSTEM("System", "Built-in system roles"),

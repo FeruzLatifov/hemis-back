@@ -26,7 +26,7 @@ The classifier (`h_speciality`) is read from the checked-in seeds **S014 + S017*
 ## education_form fan-out
 
 Each set education_form column becomes one attachment row. Codes are the ministry
-classifier `hemishe_h_education_form` (source: `docs/old-klasifikatorlar/HEMIS_Klassifikator_Dump.json`):
+classifier `hemishe_h_education_form` (source: `docs/arxiv/old-klassifikatorlar/hisobotlar/HEMIS_Klassifikator_Dump.json`):
 
 | xlsx column | code | name |
 |-------------|------|------|

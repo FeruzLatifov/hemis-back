@@ -3,7 +3,11 @@ package uz.hemis.service.audit;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
@@ -54,16 +58,42 @@ public class AuditRepository {
      */
     private final Set<String> redactKeys;
 
+    /** Fallback when the property is absent — the same set the @Value default used to carry. */
+    private static final List<String> DEFAULT_REDACT_FIELDS = List.of(
+            "password", "confirmPassword", "newPassword", "oldPassword", "currentPassword",
+            "token", "secret", "clientSecret", "client_secret", "plainSecret", "plain_secret",
+            "authorization", "pinfl");
+
+    @Autowired
     public AuditRepository(@Qualifier("auditJdbcTemplate") JdbcTemplate jdbcTemplate,
                            ObjectMapper objectMapper,
-                           @Value("${hemis.audit.redact-fields:password,token,secret,clientSecret,client_secret,plainSecret,plain_secret,authorization,pinfl}")
-                           List<String> redactFields) {
+                           Environment environment) {
+        this(jdbcTemplate, objectMapper, bindRedactFields(environment));
+    }
+
+    /** Explicit key list — used by tests, which have no Environment to bind from. */
+    AuditRepository(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, List<String> redactFields) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.redactKeys = redactFields.stream()
                 .map(AuditRepository::normalizeKey)
                 .filter(k -> !k.isBlank())
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    /**
+     * The configured key list, read the way {@code @ConfigurationProperties} would.
+     *
+     * <p>Not {@code @Value}: a YAML sequence is not a comma-separated string, so
+     * {@code @Value("${hemis.audit.redact-fields:…}") List<String>} silently fell back to its own
+     * default and every key the operator had added in application.yml (passport, FIO, phone, email,
+     * address …) was written into old_value/new_value in clear text — readable by anyone holding
+     * audit.view. Binder reads the sequence, and still accepts a comma-separated env override.</p>
+     */
+    private static List<String> bindRedactFields(Environment environment) {
+        return Binder.get(environment)
+                .bind("hemis.audit.redact-fields", Bindable.listOf(String.class))
+                .orElse(DEFAULT_REDACT_FIELDS);
     }
 
     public void saveActivity(ActivityEvent event) {
@@ -77,9 +107,9 @@ public class AuditRepository {
             jdbcTemplate.update(con -> {
                 PreparedStatement ps = con.prepareStatement("""
                     INSERT INTO activity_log (user_id, username, full_name, user_ip, user_agent,
-                        action, entity_type, entity_id, entity_name, old_value, new_value,
+                        action, entity_type, entity_id, entity_name, scope_key, old_value, new_value,
                         changed_fields, request_id, endpoint, description, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?, ?, ?, ?)
                     """);
                 setObjectOrNull(ps, 1, ctx != null ? ctx.getUserId() : null, Types.OTHER);
                 ps.setString(2, ctx != null ? ctx.getUsername() : null);
@@ -90,18 +120,21 @@ public class AuditRepository {
                 ps.setString(7, event.getEntityType());
                 ps.setString(8, event.getEntityId());
                 ps.setString(9, event.getEntityName());
-                ps.setString(10, oldJson);
-                ps.setString(11, newJson);
+                // The owner scope (OTM code) — an indexed column, so "this OTM's history" is an
+                // equality lookup and stays cheap when the row it describes is long gone.
+                ps.setString(10, event.getScopeKey());
+                ps.setString(11, oldJson);
+                ps.setString(12, newJson);
                 if (changedFields == null || changedFields.isEmpty()) {
-                    ps.setNull(12, Types.ARRAY);
+                    ps.setNull(13, Types.ARRAY);
                 } else {
                     Array array = con.createArrayOf("text", changedFields.toArray(new String[0]));
-                    ps.setArray(12, array);
+                    ps.setArray(13, array);
                 }
-                ps.setString(13, ctx != null ? ctx.getRequestId() : null);
-                ps.setString(14, ctx != null ? ctx.getEndpoint() : null);
-                ps.setString(15, event.getDescription());
-                ps.setTimestamp(16, createdAt);
+                ps.setString(14, ctx != null ? ctx.getRequestId() : null);
+                ps.setString(15, ctx != null ? ctx.getEndpoint() : null);
+                ps.setString(16, event.getDescription());
+                ps.setTimestamp(17, createdAt);
                 return ps;
             });
         } catch (Exception e) {
@@ -126,8 +159,11 @@ public class AuditRepository {
                     ctx != null ? ctx.getUsername() : null,
                     ctx != null ? ctx.getIp() : null,
                     event.getErrorType(),
-                    event.getErrorMessage(),
-                    event.getStackTrace(),
+                    // Same masking as the JSONB snapshots: an exception message and a stack trace
+                    // routinely quote the offending value (a PINFL in a constraint violation, a
+                    // passport number in a validation error), and /audit/errors/{id} serves them.
+                    maskEmbeddedPinfl(event.getErrorMessage()),
+                    maskEmbeddedPinfl(event.getStackTrace()),
                     event.getEndpoint(),
                     ctx != null ? ctx.getRequestId() : null,
                     toJson(event.getRequestBody()),

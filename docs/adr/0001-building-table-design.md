@@ -37,7 +37,7 @@ Accepted (2026-04-21)
 
 ## Kontekst
 
-`/home/adm1n/projects/startup/docs/Бино ва иншоотлар жадвали.xlsx` Excel template 224 OTM uchun yuborilgan — 14 ustun bino ma'lumoti (kategoriya, qurilish yili, maydon, material, tom, rekonstruksiya, koordinatalar, kadastr raqami).
+`/home/adm1n/projects/startup/docs/bino-kadastr/Бино ва иншоотлар жадвали.xlsx` Excel template 224 OTM uchun yuborilgan — 14 ustun bino ma'lumoti (kategoriya, qurilish yili, maydon, material, tom, rekonstruksiya, koordinatalar, kadastr raqami).
 
 Loyihada allaqachon `university_cadastre` jadvali (V012) mavjud — Kadastr API (172.18.9.171/kadastr/) dan sync qilinadigan **huquqiy** ma'lumot (kadastr raqami, yer maydoni, narx, huquqiy hujjatlar).
 

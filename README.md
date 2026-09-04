@@ -421,7 +421,8 @@ SPRING_PROFILES_ACTIVE=prod ./gradlew :app:bootRun
 | Role | Tavsif |
 |------|--------|
 | `SUPER_ADMIN` | Tizim administratori |
-| `MINISTRY_ADMIN` | Vazirlik administratori |
+| `ADMIN` | Administrator — kundalik boshqaruv (S038'gacha `MINISTRY_ADMIN`) |
+| `TECH_STAFF` | Texnik xodim — klassifikator operatori |
 | `UNIVERSITY_ADMIN` | OTM administratori |
 | `TEACHERS` | O'qituvchilar |
 | `EMPLOYEES` | Xodimlar |

@@ -230,7 +230,7 @@ public class UniversityOfficialService {
                 emp.setGenderCode(str(row, "_gender"));
                 emp.setCitizenshipCode(str(row, "_citizenship"));
                 emp.setNationalityCode(str(row, "_nationality"));
-                // serial_number = "AD1234567" → passport (single column, matches legacy hemishe_e_employee)
+                // serial_number = "AA0000000" → passport (single column, matches legacy hemishe_e_employee)
                 String serial = str(row, "serial_number");
                 if (serial != null && !serial.isBlank()) {
                     emp.setPassport(serial);

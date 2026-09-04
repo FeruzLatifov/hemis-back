@@ -20,6 +20,14 @@ public class ActivityEvent {
     private String entityType;
     private String entityId;
     private String entityName;
+    /**
+     * Owner of the record (e.g. the OTM code) — the scope a history question is asked in.
+     *
+     * <p>A link row is hard-deleted, so "everything that happened to OTM 301's attachments" cannot be
+     * answered from the row. An indexed column, not a naming convention: the query is an equality on
+     * (entity_type, scope_key), which stays cheap as the log grows.</p>
+     */
+    private String scopeKey;
     private Map<String, Object> oldValue;
     private Map<String, Object> newValue;
     private List<String> changedFields;

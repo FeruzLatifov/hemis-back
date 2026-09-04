@@ -49,7 +49,7 @@ public class GovPersonLookupService {
      * Resolve a person by PINFL + (passport document OR birth date) from the gateway.
      *
      * @param pinfl    14-digit PINFL (required)
-     * @param document passport series+number, e.g. AB1234567 (preferred)
+     * @param document passport series+number, e.g. AA0000000 (preferred)
      * @param birthDate ISO yyyy-MM-dd (used when document is absent)
      * @return the resolved person, or {@code null} if not found / gateway unavailable
      */

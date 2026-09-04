@@ -76,7 +76,7 @@ public class HemisApiService {
      *   "timeStamp": "2025-11-29T06:18:22.817959598",
      *   "object": {
      *     "institutionType": "Oliy ta'lim",
-     *     "pinfl": "61111065190052",
+     *     "pinfl": "00000000000000",
      *     "fullName": "...",
      *     "contractNumber": "...",
      *     "contractDate": "...",

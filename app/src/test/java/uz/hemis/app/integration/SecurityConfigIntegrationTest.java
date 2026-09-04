@@ -155,7 +155,7 @@ class SecurityConfigIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Nested
-    @DisplayName("Avtorizatsiya (/admin/** → hasRole('ADMIN'))")
+    @DisplayName("Avtorizatsiya (/admin/** → hasAuthority('users.manage'))")
     class Authorization {
 
         @Test
@@ -166,16 +166,18 @@ class SecurityConfigIntegrationTest extends AbstractIntegrationTest {
         }
 
         @Test
-        @WithMockUser(roles = "USER")
-        @DisplayName("ROLE_USER → 403")
+        @WithMockUser(authorities = "students.view")
+        @DisplayName("boshqa ruxsat egasi → 403")
         void wrongRole() throws Exception {
             mockMvc.perform(get("/admin/dashboard"))
                     .andExpect(status().isForbidden());
         }
 
         @Test
-        @WithMockUser(roles = "ADMIN")
-        @DisplayName("ROLE_ADMIN → xavfsizlikdan o'tadi (kontroller yo'q, 404 kutiladi)")
+        // A USER token's authorities are permission codes — no ROLE_* is ever granted
+        // (JwtGrantedAuthoritiesConverter), so the gate names the permission, not the role.
+        @WithMockUser(authorities = "users.manage")
+        @DisplayName("users.manage → xavfsizlikdan o'tadi (kontroller yo'q, 404 kutiladi)")
         void correctRole() throws Exception {
             mockMvc.perform(get("/admin/dashboard"))
                     .andExpect(securityPassed());

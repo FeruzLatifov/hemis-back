@@ -130,9 +130,11 @@ class WebLanguageControllerTest {
     }
 
     @Test
-    @DisplayName("POST /system/configuration — ADMIN, language toggle + default set")
+    @DisplayName("POST /system/configuration — settings.edit, language toggle + default set")
     void updateConfig_adminToggles() throws Exception {
-        authenticate("ROLE_ADMIN");
+        // Permission, not role: the endpoint moved off hasRole('ADMIN') when S038 renamed
+        // MINISTRY_ADMIN to ADMIN and a dead role gate would have come alive as a new capability.
+        authenticate("settings.edit");
 
         String body = """
                 {

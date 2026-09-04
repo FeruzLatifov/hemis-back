@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
+import uz.hemis.common.enums.RoleCode;
 import uz.hemis.common.enums.RoleType;
 import uz.hemis.common.exception.BadRequestException;
 import uz.hemis.common.exception.ResourceNotFoundException;
@@ -140,9 +141,13 @@ public class RoleAdminService {
         Role role = roleRepository.findByIdWithPermissions(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Role", "id", id));
 
-        // Cannot modify SYSTEM roles
-        if (role.isSystemRole()) {
-            throw new BadRequestException("Cannot modify system role: " + role.getCode());
+        // Every role is editable by whoever holds roles.manage — SYSTEM ones included: an
+        // administrator who cannot adjust ADMIN or VIEWER has to reach for a migration to change
+        // who sees what. The one exception is the break-glass role itself: the access model (seed
+        // S038) rests on SUPER_ADMIN holding every permission, and editing it from inside the app
+        // is how a platform locks itself out of its own recovery path. It stays readable.
+        if (RoleCode.SUPER_ADMIN.getCode().equals(role.getCode())) {
+            throw new BadRequestException("Cannot modify the SUPER_ADMIN role — it is the recovery path for every other role");
         }
 
         if (request.getName() != null) {

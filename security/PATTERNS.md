@@ -174,7 +174,7 @@ hemis:
     per-role:
       VIEWER: 60                # req/min
       UNIVERSITY_ADMIN: 300
-      MINISTRY_ADMIN: 600
+      ADMIN: 600
       SUPER_ADMIN: 1000
     per-client:
       UNIVER_CLIENT: 600        # 224 Univer Yii2 OAuth client_credentials

@@ -76,7 +76,7 @@ class UserLegacyServiceTest {
     @DisplayName("toUserMeResponse — CUBA field tartibi (LinkedHashMap order)")
     void toUserMeResponse_orderedFields() {
         Role role = new Role();
-        role.setCode("MINISTRY_ADMIN");
+        role.setCode("ADMIN");
         Set<Role> roles = new HashSet<>();
         roles.add(role);
         user.setRoles(roles);
@@ -92,7 +92,7 @@ class UserLegacyServiceTest {
 
         // roles serialized as String array
         String[] rolesArr = (String[]) response.get("roles");
-        assertThat(rolesArr).containsExactly("MINISTRY_ADMIN");
+        assertThat(rolesArr).containsExactly("ADMIN");
     }
 
     @Test

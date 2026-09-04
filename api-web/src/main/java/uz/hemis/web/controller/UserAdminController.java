@@ -27,6 +27,7 @@ import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.service.admin.UserAdminService;
 import uz.hemis.service.admin.GovPersonLookupService;
+import uz.hemis.service.admin.LoginNameGenerator;
 import uz.hemis.service.admin.dto.*;
 
 import java.util.List;
@@ -45,7 +46,7 @@ import java.util.UUID;
  *   <li>All endpoints require authentication (JWT Bearer token)</li>
  *   <li>GET endpoints require {@code users.view} or {@code users.manage} permission</li>
  *   <li>CUD endpoints require {@code users.manage} permission</li>
- *   <li>Scope validation at service layer (SUPER_ADMIN > MINISTRY_ADMIN > OTM_API)</li>
+ *   <li>Scope validation at service layer (SUPER_ADMIN > ADMIN > OTM_API)</li>
  * </ul>
  *
  * @since 2.0.0
@@ -61,6 +62,7 @@ public class UserAdminController {
 
     private final UserAdminService userAdminService;
     private final GovPersonLookupService govPersonLookupService;
+    private final LoginNameGenerator loginNameGenerator;
 
     // =====================================================
     // READ ENDPOINTS
@@ -88,6 +90,34 @@ public class UserAdminController {
     ) {
         GovPersonDto person = govPersonLookupService.lookup(request.pinfl(), request.document(), request.birthDate());
         return ResponseEntity.ok(ResponseWrapper.success(person));
+    }
+
+    // POST (not GET) — the first/last name are personal data and must travel in the body, never
+    // the URL query-string (which nginx/proxies write to access logs). Same reasoning as
+    // /person-lookup above. Read-only despite the POST verb: nothing is written or reserved.
+    @PostMapping("/login-suggestion")
+    // Same narrow scope as /person-lookup — the suggestion is only ever rendered inside the
+    // CREATE form, so users.edit is deliberately not accepted here.
+    @PreAuthorize("hasAnyAuthority('users.create', 'users.manage')")
+    @Operation(summary = "Suggest a login from the first and last name",
+            description = "Build the login for a PERSON account from the name "
+                    + "(ISM FAMILIYA -> ism_familiya), transliterating Cyrillic and "
+                    + "auto-suffixing on collision (ism_familiya2, ism_familiya3, ...). "
+                    + "The backend owns the slug rule so the suggestion and the login actually "
+                    + "stored on create can never diverge. Read-only — the login is NOT reserved, "
+                    + "so create re-checks it.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Login suggestion built"),
+            @ApiResponse(responseCode = "400", description = "Both names blank, or the slug is shorter than 3 characters"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions"),
+            @ApiResponse(responseCode = "409", description = "All 99 suffixed variants are taken")
+    })
+    public ResponseEntity<ResponseWrapper<LoginSuggestionResponse>> loginSuggestion(
+            @Valid @RequestBody LoginSuggestionRequest request
+    ) {
+        String login = loginNameGenerator.generate(request.firstName(), request.lastName());
+        return ResponseEntity.ok(ResponseWrapper.success(new LoginSuggestionResponse(login)));
     }
 
     @GetMapping
@@ -152,9 +182,10 @@ public class UserAdminController {
     @Operation(summary = "Create user", description = "Create a new user with roles")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "User created"),
-            @ApiResponse(responseCode = "400", description = "Invalid input or username already exists"),
+            @ApiResponse(responseCode = "400", description = "Invalid input, or confirmPassword does not match password"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions or scope")
+            @ApiResponse(responseCode = "403", description = "Forbidden - insufficient permissions or scope"),
+            @ApiResponse(responseCode = "409", description = "Username or PINFL already exists")
     })
     public ResponseEntity<ResponseWrapper<UserAdminResponse>> createUser(
             @Valid @RequestBody UserCreateRequest request,

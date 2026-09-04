@@ -60,6 +60,7 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
+        keepalive-time: 120000  # 2 daqiqa — bo'sh ulanishga "SELECT 1" yuboradi, HAProxy/PgBouncer uni uzishidan oldin
         # Connection leak detection — agar 60s'dan ortiq connection qaytarilmasa,
         # Hikari WARN log yozadi va stack trace beradi (debugging uchun).
         # Production'da connection leak tez-tez sodir bo'lib turadi (try-with-resources unutsa).
@@ -81,6 +82,7 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
+        keepalive-time: 120000  # 2 daqiqa — bo'sh ulanishga "SELECT 1" yuboradi, HAProxy/PgBouncer uni uzishidan oldin
         leak-detection-threshold: 60000
         pool-name: HikariPool-Replica
         read-only: true
@@ -332,6 +334,11 @@ management:
 
   health:
     db:
+      # Audit ma'lumotlar bazasi yon kanal: uning tebranishi butun vazirlik API'sini
+      # load balancer'dan chiqarib yubormasligi kerak. Spring Boot `db` indikatori HAR BIR
+      # DataSource bean'ini tekshiradi (auditMaster/auditReplica ham) — shuning uchun readiness
+      # guruhiga faqat asosiy baza kiritiladi (yuqoridagi `include: readinessState,db,redis`
+      # bilan birga `DbHealthConfig` audit datasource'larini chiqarib tashlaydi).
       enabled: true
     diskspace:
       enabled: true
@@ -473,6 +480,13 @@ hemis:
     # rekursiv value-scan orqali ham (14-raqamli qiymat) har joyda maskalanadi.
     redact-fields:
       - password
+      # Parol variantlari: moslik NORMALLASHTIRILGAN kalit bo'yicha ANIQ tenglik
+      # (AuditRepository.isSensitiveKey), shuning uchun har bir nom alohida sanaladi —
+      # aks holda kutilmagan 500 da xom parol error_log.request_body ga yozilib qolardi.
+      - confirmPassword
+      - newPassword
+      - oldPassword
+      - currentPassword
       - token
       - secret
       - clientSecret
@@ -492,6 +506,16 @@ hemis:
       - birthday
       - serialNumber
       - passport
+      # Added after the pre-prod review: these reach old_value/new_value through User (passport data
+      # from the GUVD lookup), OAuthClient and WebhookTarget snapshots, and the audit API is readable
+      # by every audit.view holder.
+      - passportGivePlace
+      - passportGiveDate
+      - clientSecretHash
+      - secretEnc
+      - secretHash
+      - address
+      - homeAddress
       - address
       - tin
 
@@ -685,7 +709,7 @@ cache:
       # Critical roles for synchronous warmup (VIP users)
       critical-roles:
         - SUPER_ADMIN
-        - MINISTRY_ADMIN
+        - ADMIN
         - UNIVERSITY_ADMIN
 
       # Maximum users per role to warmup (minimize startup time)

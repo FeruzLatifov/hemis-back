@@ -155,7 +155,12 @@ public class DashboardCacheConfig implements CachingConfigurer {
         java.util.Map<String, RedisCacheConfiguration> redisCacheConfigurations = new java.util.HashMap<>();
 
         // Dashboard cache: 30 minutes
-        redisCacheConfigurations.put("stats", defaultConfig.entryTtl(DASHBOARD_TTL));
+        // TTL jadval bo'yicha yangilashdan (DashboardCacheWarmup, 20 daq) ANCHA katta: bu yerda
+        // TTL "yangilik chegarasi" emas, "himoya tarmog'i" — qiymatni har 20 daqiqada @CachePut
+        // ustidan yozadi, TTL esa faqat yangilash ketma-ket yiqilganda ishga tushadi. Ilgari
+        // ikkalasi ham 30 daqiqa edi va poyga natijasida kesh muntazam bo'shab qolardi
+        // (bitta hisoblash 30-40 soniya — o'sha oynadagi foydalanuvchi shuni to'liq kutardi).
+        redisCacheConfigurations.put("stats", defaultConfig.entryTtl(Duration.ofMinutes(90)));
 
         // Ministry analytics reports (students/institutions/scientific/teachers) — heavy replica
         // GROUP BY aggregation, keyed per-report + params. Same 30 min tier as "stats".
@@ -323,13 +328,31 @@ public class DashboardCacheConfig implements CachingConfigurer {
                 .transactionAware()
                 .build();
 
+        // MAJBURIY. Bu chaqiruvsiz yuqoridagi butun per-cache TTL jadvali (~60 ta yozuv)
+        // O'LIK KOD bo'lib qoladi va HAR BIR kesh cacheDefaults() ni (30 daqiqa) oladi.
+        //
+        // Sabab: RedisCacheManager `InitializingBean` — `withInitialCacheConfigurations(...)`
+        // xaritasi faqat `afterPropertiesSet()` -> `initializeCaches()` -> `loadCaches()`
+        // ichida o'qiladi. Bu yerda u @Bean metodi ICHIDA `new` bilan yaratilgan va bean
+        // sifatida QAYTARILMAYDI (qaytariladigan bean — TwoLevelCacheManager), shuning uchun
+        // Spring hayot-tsikl chaqiruvini bajarmaydi. Keyin TwoLevelCacheManager keshni
+        // birinchi murojaatda `redisCacheManager.getCache(name)` bilan oladi; cacheMap bo'sh
+        // bo'lgani uchun `getMissingCache(name)` ishlaydi — u esa ataylab `defaultCacheConfiguration`
+        // ni ishlatadi, boshlang'ich xaritani EMAS.
+        //
+        // Alomat (2026-08-27 lokalda o'lchandi): `TTL cache:v2:stats::all` = 1800s, holbuki
+        // konfiguratsiyada 90 daqiqa yozilgan; `specialityStats`/`specialitySummary` (1 soat)
+        // ham 1800s. Eng xavflisi — `studentCountEstimate` 1 daqiqaga mo'ljallangan, lekin
+        // 30 daqiqa yashaydi (bu tezlik emas, TO'G'RILIK muammosi).
+        redisCacheManager.afterPropertiesSet();
+
         // Create 2-level cache manager (L1 + L2)
         uz.hemis.service.cache.TwoLevelCacheManager cacheManager =
                 new uz.hemis.service.cache.TwoLevelCacheManager(redisCacheManager);
 
         log.info("✅ ENTERPRISE 2-Level Cache configured:");
         log.info("   L1 (Caffeine): per-cache size, 30 min TTL, per-pod");
-        log.info("   L2 (Redis): 30 min TTL (unified), distributed");
+        log.info("   L2 (Redis): per-cache TTL ({} ta yozuv), distributed", redisCacheConfigurations.size());
         log.info("   Prefix: {} (CACHE_VERSION={})", CACHE_PREFIX, CACHE_VERSION);
         log.info("   Serialization: JSON");
 

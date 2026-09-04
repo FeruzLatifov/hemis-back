@@ -31,6 +31,7 @@ spring:
         connection-timeout: 30000  # 30 seconds
         idle-timeout: 600000  # 10 minutes
         max-lifetime: 1800000  # 30 minutes
+        keepalive-time: 120000  # 2 daqiqa — bo'sh ulanishga "SELECT 1" yuboradi, HAProxy/PgBouncer uni uzishidan oldin
         auto-commit: true  # PgBouncer transaction mode requires auto-commit=true; Spring @Transactional handles BEGIN/COMMIT
         read-only: false  # Master is read-write
 
@@ -59,6 +60,7 @@ spring:
         connection-timeout: 30000
         idle-timeout: 600000
         max-lifetime: 1800000
+        keepalive-time: 120000  # 2 daqiqa — bo'sh ulanishga "SELECT 1" yuboradi, HAProxy/PgBouncer uni uzishidan oldin
         auto-commit: true  # Auto-commit for read-only
         read-only: true  # Enforce read-only at connection level
 

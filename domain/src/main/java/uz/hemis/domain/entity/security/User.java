@@ -91,7 +91,7 @@ public class User extends AuditableEntity {
      * Join Table: user_role
      *
      * <p>Modern role management using proper entity relationships</p>
-     * <p>Each user can have multiple roles (e.g., SUPER_ADMIN, MINISTRY_ADMIN)</p>
+     * <p>Each user can have multiple roles (e.g., SUPER_ADMIN, ADMIN)</p>
      */
     @ManyToMany
     @JoinTable(
@@ -300,7 +300,7 @@ public class User extends AuditableEntity {
     @Column(name = "birth_place", length = 255)
     private String birthPlace;
 
-    /** Pasport seriya+raqam, masalan AB1234567 (GUVD: document). PII. Column: passport VARCHAR(16) */
+    /** Pasport seriya+raqam, masalan AA0000000 (GUVD: document). PII. Column: passport VARCHAR(16) */
     @Column(name = "passport", length = 16)
     private String passport;
 
@@ -379,9 +379,9 @@ public class User extends AuditableEntity {
                 .anyMatch(r -> target.equals(r.getCode()));
     }
 
-    /** @return {@code true} if user has {@code SUPER_ADMIN} or {@code MINISTRY_ADMIN} role */
+    /** @return {@code true} if user has {@code SUPER_ADMIN} or {@code ADMIN} role */
     public boolean isSystemAdmin() {
-        return hasRole("SUPER_ADMIN") || hasRole("MINISTRY_ADMIN");
+        return hasRole("SUPER_ADMIN") || hasRole("ADMIN");
     }
 
     /** @return {@code true} if user has {@code UNIVERSITY_ADMIN} or {@code OTM_API} role */
@@ -421,7 +421,7 @@ public class User extends AuditableEntity {
     /**
      * Check if user has specific role (by code)
      *
-     * @param roleCode Role code (e.g., "SUPER_ADMIN", "MINISTRY_ADMIN")
+     * @param roleCode Role code (e.g., "SUPER_ADMIN", "ADMIN")
      * @return true if user has the role
      */
     public boolean hasRoleByCode(String roleCode) {

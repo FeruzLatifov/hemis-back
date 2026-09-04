@@ -21,8 +21,9 @@ public class UserCreateRequest {
     /**
      * Account type — drives the create flow:
      * <ul>
-     *   <li>{@code PERSON} (default) — ministry/university human staff. Login = PINFL,
-     *       person fields autofilled from the GUVD passport-data gateway.</li>
+     *   <li>{@code PERSON} (default) — ministry/university human staff. The login is generated
+     *       from the first + last name ({@code ISM FAMILIYA → ism_familiya}); person fields
+     *       autofilled from the GUVD passport-data gateway. PINFL is stored, never used as login.</li>
      *   <li>{@code UNIVERSITY_LOGIN} — OTM service/integration login for the old-hemis
      *       backward-compatible password grant. Manual username + password + university,
      *       NO PINFL / person data.</li>
@@ -33,17 +34,35 @@ public class UserCreateRequest {
             nullable = true)
     private String accountType;
 
-    @NotBlank(message = "Username is required")
+    /**
+     * Login username.
+     *
+     * <p><strong>PERSON:</strong> OPTIONAL. When omitted (or blank) the server generates it from
+     * {@link #firstName} + {@link #lastName} via {@code LoginNameGenerator}, auto-suffixing on
+     * collision. Send a value only to override the suggestion the operator edited by hand.</p>
+     *
+     * <p><strong>UNIVERSITY_LOGIN:</strong> MANDATORY — a service login has no person name to
+     * derive from. Enforced in the service layer (per account type), not by {@code @NotBlank},
+     * which cannot see {@code accountType}.</p>
+     *
+     * <p>{@code @Size} / {@code @Pattern} skip nulls, so they still guard any supplied value.</p>
+     */
     @Size(min = 3, max = 50, message = "Username must be 3-50 characters")
     @Pattern(regexp = "^[a-zA-Z0-9_.-]+$", message = "Username can only contain letters, digits, underscores, dots, and hyphens")
-    @Schema(description = "Login username. For PERSON accounts this is the PINFL (set on the client); "
-            + "for UNIVERSITY_LOGIN it is the manual service login.")
+    @Schema(description = "Login username. Optional for PERSON — generated from the first and last "
+            + "name when omitted; mandatory for UNIVERSITY_LOGIN (manual service login).",
+            nullable = true)
     private String username;
 
     @NotBlank(message = "Password is required")
     @Size(min = 6, max = 100, message = "Password must be 6-100 characters")
     @Schema(description = "Password (will be BCrypt hashed)", format = "password")
     private String password;
+
+    // Ataylab @NotBlank YO'Q: maydon ixtiyoriy, shunda mavjud API mijozlari (uni yubormaydiganlar)
+    // ishlayveradi. Yuborilgan bo'lsa — service qatlamida password bilan tengligi tekshiriladi.
+    @Schema(description = "Password repeated; when present it must equal password", format = "password")
+    private String confirmPassword;
 
     @Size(max = 255, message = "Full name must be at most 255 characters")
     @Schema(description = "Full name", nullable = true)
@@ -77,7 +96,8 @@ public class UserCreateRequest {
     // =====================================================
 
     @Pattern(regexp = "^\\d{14}$", message = "PINFL must be 14 digits")
-    @Schema(description = "PINFL (14 digits) — required for PERSON accounts; login is set to this value",
+    @Schema(description = "PINFL (14 digits) — required for PERSON accounts; stored in its own "
+            + "column and used for the one-account-per-person check. It is NOT the login.",
             nullable = true)
     private String pinfl;
 

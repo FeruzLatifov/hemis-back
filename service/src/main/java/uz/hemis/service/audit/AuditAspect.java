@@ -47,8 +47,14 @@ public class AuditAspect {
      * Audit/meta maydonlar — changed_fields'dan olib tashlanadi (canonical camelCase).
      * Snapshot'larda (old_value/new_value) qoladi, faqat diff summary'dan chiqariladi.
      */
+    // The bookkeeping columns every entity carries. These are noise in a diff: "updatedAt changed"
+    // is true of every update and tells a reader nothing. The list holds the names the snapshots
+    // ACTUALLY use (createdAt/updatedAt, from AuditableEntity) — the CUBA-era createTs/updateTs
+    // matched nothing, so `updatedAt` was reported as a changed field on every single UPDATE.
     private static final Set<String> META_FIELDS = Set.of(
-            "version", "createTs", "createdBy", "updateTs", "updatedBy"
+            "version",
+            "createdAt", "createdBy", "createTs",
+            "updatedAt", "updatedBy", "updateTs"
     );
 
     @Around("@annotation(audited)")
@@ -61,7 +67,7 @@ public class AuditAspect {
         // UPDATE/DELETE uchun — oldingi holatni DB dan yuklash
         if (entityId != null && audited.entityClass() != void.class
                 && (audited.action() == AuditAction.UPDATE || audited.action() == AuditAction.DELETE)) {
-            oldValue = loadOldValue(audited.entityClass(), entityId);
+            oldValue = loadEntitySnapshot(audited.entityClass(), entityId);
         }
 
         try {
@@ -78,9 +84,21 @@ public class AuditAspect {
 
             // Natijadan new value olish.
             // DELETE da new_value har doim null — record o'chirildi, after-state yo'q.
-            Map<String, Object> newValue = audited.action() == AuditAction.DELETE
-                    ? null
-                    : toMap(result);
+            //
+            // For everything else the after-image is re-read from the entity when one is declared, so
+            // both sides of the record describe the SAME shape. The response DTO is a different shape
+            // (enriched names, children, no delete stamps), and diffing an entity against a DTO is how
+            // "changed: hierarchyLevel" appeared on a restore that changed no such thing. The re-read
+            // is one PK lookup on a write path; the DTO stays the fallback when there is no entity.
+            Map<String, Object> newValue = null;
+            if (audited.action() != AuditAction.DELETE) {
+                if (entityId != null && audited.entityClass() != void.class) {
+                    newValue = loadEntitySnapshot(audited.entityClass(), entityId);
+                }
+                if (newValue == null) {
+                    newValue = toMap(result);
+                }
+            }
 
             // Entity nomi — ustuvorlik:
             // 1. Service runtime'da o'rnatgan qiymat (AuditContextHolder) — dynamic table nomlari uchun.
@@ -120,6 +138,7 @@ public class AuditAspect {
                     .entityType(audited.entity())
                     .entityId(entityId)
                     .entityName(entityName)
+                    .scopeKey(AuditContextHolder.getScopeKey())
                     .oldValue(oldValue)
                     .newValue(newValue)
                     .changedFields(changedFields)
@@ -133,10 +152,10 @@ public class AuditAspect {
     }
 
     /**
-     * Entity ni DB dan yuklash va Map ga aylantirish.
+     * Entity ni DB dan yuklash va Map ga aylantirish (before- va after-image uchun bir xil yo'l).
      * entityManager.detach() bilan persistence context dan chiqariladi.
      */
-    private Map<String, Object> loadOldValue(Class<?> entityClass, String entityId) {
+    private Map<String, Object> loadEntitySnapshot(Class<?> entityClass, String entityId) {
         try {
             Object entity;
             try {
@@ -291,11 +310,67 @@ public class AuditAspect {
         for (String canonical : common) {
             String oldKey = oldByCanonical.get(canonical);
             String newKey = newByCanonical.get(canonical);
-            if (!Objects.equals(oldVal.get(oldKey), newVal.get(newKey))) {
+            if (differs(oldVal.get(oldKey), newVal.get(newKey))) {
                 changed.add(newKey);
             }
         }
         return changed.isEmpty() ? null : changed;
+    }
+
+    /**
+     * Two snapshots of the same field, compared by VALUE rather than by Java type.
+     *
+     * <p>The before-image comes from the entity and the after-image from the response DTO, and the
+     * two do not always agree on representation: a level of {@code 4} arrived as {@code "4"} on one
+     * side and {@code 4} on the other, so {@code Objects.equals} called it a change. That is how a
+     * restore ended up reported as "changed: hierarchyLevel" — a field nobody touched, in a record
+     * whose real change (the delete stamp) the DTO does not even carry.</p>
+     *
+     * <p>Numbers are compared numerically ({@code 4} = {@code 4.0} = {@code "4"}); everything else
+     * scalar is compared by its text form; collections and maps fall back to {@code equals}.</p>
+     */
+    static boolean differs(Object oldValue, Object newValue) {
+        if (Objects.equals(oldValue, newValue)) {
+            return false;
+        }
+        if (oldValue == null || newValue == null) {
+            return true;
+        }
+        // Numeric leniency exists for ONE case: the two snapshots typed the same value differently
+        // (entity Integer 4 vs a stringified "4"). Two strings are compared as text — a speciality
+        // code corrected from "05310100" to "5310100" is a real change, not a rounding of the same
+        // number, and treating identifiers as numbers would hide it.
+        if (oldValue instanceof Number || newValue instanceof Number) {
+            java.math.BigDecimal oldNumber = asNumber(oldValue);
+            java.math.BigDecimal newNumber = asNumber(newValue);
+            if (oldNumber != null && newNumber != null) {
+                return oldNumber.compareTo(newNumber) != 0;
+            }
+        }
+        if (isScalar(oldValue) && isScalar(newValue)) {
+            return !oldValue.toString().equals(newValue.toString());
+        }
+        return true;
+    }
+
+    /** The value as a number, or null when it is not one (a plain string that is not numeric included). */
+    private static java.math.BigDecimal asNumber(Object value) {
+        if (value instanceof Number n) {
+            return new java.math.BigDecimal(n.toString());
+        }
+        if (value instanceof CharSequence cs) {
+            try {
+                return new java.math.BigDecimal(cs.toString().trim());
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /** Scalars compare by text; a list or a map does not (element order and shape carry meaning). */
+    private static boolean isScalar(Object value) {
+        return !(value instanceof Map) && !(value instanceof Iterable) && !value.getClass().isArray();
     }
 
     private Map<String, String> canonicalKeyIndex(Map<String, Object> map) {

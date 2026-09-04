@@ -158,9 +158,18 @@ tasks.register<JavaExec>("liquibaseRollbackCount") {
 
 tasks.register<JavaExec>("liquibaseRollbackToTag") {
     description = "Rollback to specific tag (usage: -Ptag=v3-users-migrated)"
+    // The missing -Ptag fails at EXECUTION time, not while the task is being configured: an IDE
+    // (Buildship/JDTLS, IntelliJ) builds its project model by realizing every registered task, so a
+    // throw in the configuration action failed the whole model query — the import then fell back to
+    // the root project alone and no Java model was built for the 9 modules. Same idiom as the
+    // TESTS_ENABLED guard in the root build.
     val tag = project.findProperty("tag")?.toString()
-        ?: throw GradleException("Tag required! Use: -Ptag=v3-users-migrated")
-    configureLiquibase("rollback", listOf(tag))
+    configureLiquibase("rollback", listOfNotNull(tag))
+    doFirst {
+        if (tag.isNullOrBlank()) {
+            throw GradleException("Tag required! Use: -Ptag=v3-users-migrated")
+        }
+    }
 }
 
 tasks.register<JavaExec>("liquibaseRollbackSQL") {

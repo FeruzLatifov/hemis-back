@@ -17,7 +17,7 @@ public final class LogSafe {
 
     /**
      * PINFL ni maskalash: dastlabki 4 raqam + {@code "****"}. Null xavfsiz.
-     * Misol: {@code "30801997650011"} → {@code "3080****"}.
+     * Misol: {@code "00000000000000"} → {@code "0000****"}.
      */
     public static String pinfl(String pinfl) {
         if (pinfl == null) return "null";
@@ -26,7 +26,7 @@ public final class LogSafe {
     }
 
     /**
-     * Passport seriya + raqamni maskalash: {@code "AB1234567"} → {@code "AB*****"}. Null xavfsiz.
+     * Passport seriya + raqamni maskalash: {@code "AA0000000"} → {@code "AA*****"}. Null xavfsiz.
      */
     public static String passport(String passport) {
         if (passport == null) return "null";

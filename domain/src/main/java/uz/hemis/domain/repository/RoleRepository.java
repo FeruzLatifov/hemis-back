@@ -18,7 +18,7 @@ import java.util.UUID;
  *
  * <p><strong>Purpose:</strong></p>
  * <ul>
- *   <li>CRUD operations for roles (SUPER_ADMIN, MINISTRY_ADMIN, etc.)</li>
+ *   <li>CRUD operations for roles (SUPER_ADMIN, ADMIN, etc.)</li>
  *   <li>Query active roles (delete_ts IS NULL)</li>
  *   <li>Role-permission relationship management</li>
  * </ul>
@@ -26,7 +26,7 @@ import java.util.UUID;
  * <p><strong>Security:</strong></p>
  * <ul>
  *   <li>All queries filter deleted records (delete_ts IS NULL)</li>
- *   <li>System roles (SUPER_ADMIN, MINISTRY_ADMIN) should not be deleted</li>
+ *   <li>System roles (SUPER_ADMIN, ADMIN) should not be deleted</li>
  *   <li>Soft delete only (NDG - Non-Deletion Guarantee)</li>
  * </ul>
  *
@@ -43,7 +43,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     /**
      * Find role by code
      *
-     * <p>Code is unique (e.g., SUPER_ADMIN, MINISTRY_ADMIN, VIEWER)</p>
+     * <p>Code is unique (e.g., SUPER_ADMIN, ADMIN, VIEWER)</p>
      *
      * @param code Role code
      * @return Role if found

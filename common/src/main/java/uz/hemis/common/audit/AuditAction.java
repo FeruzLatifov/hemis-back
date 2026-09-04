@@ -9,5 +9,7 @@ public enum AuditAction {
     DELETE,
     VIEW,
     EXPORT,
-    IMPORT
+    IMPORT,
+    /** Soft-delete undo — its own action so a restore is not read as an ordinary edit. */
+    RESTORE
 }
