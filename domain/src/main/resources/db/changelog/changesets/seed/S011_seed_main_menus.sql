@@ -6,7 +6,11 @@
 -- ROOT MENUS (9 items)
 -- =====================================================
 
-SELECT upsert_menu('10000000-0000-0000-0000-000000000001'::uuid, 'dashboard',    'Dashboard',    '/dashboard',  'home',         NULL,                  1, NULL);
+-- 'dashboard.view', not NULL: M014 makes menu.permission NOT NULL, and upsert_menu's ON CONFLICT
+-- does SET permission = EXCLUDED.permission — so a NULL here turns the next re-run of this
+-- runOnChange seed into a failed deploy, aborting long before S038 (which writes the same value)
+-- could repair it. Editing S011 is the sanctioned fix precisely because it is runOnChange.
+SELECT upsert_menu('10000000-0000-0000-0000-000000000001'::uuid, 'dashboard',    'Dashboard',    '/dashboard',  'home',         'dashboard.view',      1, NULL);
 SELECT upsert_menu('10000000-0000-0000-0000-000000000002'::uuid, 'institutions', 'Institutions', NULL,          'building',     'institutions.view',   2, NULL);
 SELECT upsert_menu('10000000-0000-0000-0000-000000000003'::uuid, 'students',     'Students',     NULL,          'graduation-cap','students.view',      3, NULL);
 SELECT upsert_menu('10000000-0000-0000-0000-000000000004'::uuid, 'teachers',     'Teachers',     NULL,          'user-check',   'teachers.view',       4, NULL);

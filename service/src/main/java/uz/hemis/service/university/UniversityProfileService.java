@@ -13,7 +13,9 @@ import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
 import uz.hemis.domain.entity.university.UniversityProfile;
 import uz.hemis.domain.repository.UniversityProfileRepository;
-import uz.hemis.service.security.TenantGuard;
+import org.springframework.security.access.AccessDeniedException;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.service.university.dto.DocumentMetaDto;
 import uz.hemis.service.university.dto.SocialLinksDto;
 import uz.hemis.service.university.dto.UniversityProfileDto;
@@ -38,7 +40,7 @@ public class UniversityProfileService {
 
     private final UniversityProfileRepository profileRepository;
     private final ObjectMapper objectMapper;
-    private final TenantGuard tenantGuard;
+    private final ScopeResolver scopeResolver;
 
     private static final TypeReference<List<DocumentMetaDto>> DOCS_TYPE = new TypeReference<>() {};
 
@@ -58,7 +60,7 @@ public class UniversityProfileService {
     @Audited(action = AuditAction.UPDATE, entity = "UniversityProfile", keyArg = "universityCode")
     @CacheEvict(value = "universityProfile", key = "#universityCode")
     public UniversityProfileDto upsert(String universityCode, UniversityProfileRequest request) {
-        tenantGuard.verifyOwnershipOrAdmin(universityCode);
+        requireScope(universityCode);
         UniversityProfile entity = profileRepository.findByUniversityCode(universityCode)
                 .orElseGet(() -> UniversityProfile.builder()
                         .universityCode(universityCode)
@@ -126,6 +128,30 @@ public class UniversityProfileService {
         } catch (JsonProcessingException ex) {
             log.error("Failed to serialize profile JSONB value", ex);
             return null;
+        }
+    }
+
+    /**
+     * Defence-in-depth OTM chegarasi. Kontroller allaqachon
+     * {@code @PreAuthorize("... and @scopeResolver.currentScope().allows(#code)")} bilan yopgan
+     * ({@code UniversityInfoController}); bu servis-darajadagi ikkinchi qatlam.
+     *
+     * <p>Ilgari bu yerda {@code TenantGuard.verifyOwnershipOrAdmin} turardi — u odam foydalanuvchi
+     * uchun <strong>hech qachon</strong> o'tmasdi va shu sababli {@code PUT /{code}/profile} har
+     * qanday vazirlik admini uchun buzuq edi: guard {@code university_code} JWT claim'ini o'qiydi
+     * (odam tokenida u <em>ataylab</em> yo'q — {@code DefaultScopeResolver} javadoc'iga qarang) va
+     * {@code admin.full} authority'sini talab qiladi (u {@code permission} jadvalida umuman mavjud
+     * emas; {@code JwtGrantedAuthoritiesConverter} uni soxtalashtirish vektori sifatida bloklagan).
+     * Mashina (CLIENT) tokenlari uchun {@code TenantGuard} hamon to'g'ri — shuning uchun klassning
+     * o'ziga tegilmadi, faqat odamga qaraydigan bu chaqiruv ko'chirildi.</p>
+     */
+    private void requireScope(String universityCode) {
+        AccessScope scope = scopeResolver.currentScope();
+        if (!scope.allows(universityCode)) {
+            log.warn("Cross-tenant profile write blocked: scope={}, requested={}",
+                    scope.cacheKey(), universityCode);
+            throw new AccessDeniedException(
+                    "Caller does not own university " + universityCode + " (cross-tenant forbidden)");
         }
     }
 }

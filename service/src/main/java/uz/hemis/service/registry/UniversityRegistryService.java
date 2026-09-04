@@ -4,7 +4,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import jakarta.persistence.criteria.Predicate;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,17 +18,25 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hemis.common.audit.AuditAction;
 import uz.hemis.common.audit.Audited;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.common.dto.university.UniversityDto;
+import uz.hemis.common.exception.ResourceNotFoundException;
 import uz.hemis.domain.entity.university.University;
 import uz.hemis.domain.repository.UniversityRepository;
+import uz.hemis.service.audit.ActorNameResolver;
+import uz.hemis.service.audit.AuditContextHolder;
+import uz.hemis.service.registry.dto.UniversityDeletedRowDto;
 import uz.hemis.service.registry.dto.UniversityDictionariesDto;
 import uz.hemis.service.registry.dto.UniversityDictionariesDto.DictionaryItem;
 import uz.hemis.service.registry.dto.UniversityRequestDto;
-import uz.hemis.service.security.TenantGuard;
 import uz.hemis.service.shared.mapper.UniversityDtoConverter;
 
 import java.time.LocalDateTime;
@@ -67,7 +77,8 @@ public class UniversityRegistryService {
     private final UniversityDtoConverter universityMapper;
     private final EntityManager entityManager;
     private final ClassifierLookupService classifiers;
-    private final TenantGuard tenantGuard;
+    private final ScopeResolver scopeResolver;
+    private final ActorNameResolver actorNames;
 
     /** Populate human-readable `*Name` fields from cached classifier maps (in-memory, O(1)). */
     private UniversityDto enrich(UniversityDto dto) {
@@ -312,7 +323,21 @@ public class UniversityRegistryService {
         // Cross-service desync prevention — UniversityService cache'lar ham yangilanishi kerak
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
-        @CacheEvict(value = "universityChildren", allEntries = true)
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        // Every registry dictionary that carries the OTM dropdown
+        // (SELECT code, name FROM hemishe_e_university WHERE delete_ts IS NULL) — TTL 6h. Without
+        // this a deleted OTM stays offerable, a restored one stays missing, a renamed one keeps its
+        // old name and a NEW one is unusable — for hours, on ~15 screens the universities page
+        // cannot otherwise reach. All four writes evict the same list: one annotation with an array,
+        // because fifteen repeated lines in four places is four chances to drift.
+        @CacheEvict(value = {
+            "attachedSpecialityDictionaries", "diplomaBlankDistributionDictionaries",
+            "certificatesDictionaries", "diplomaBlanksDictionaries", "diplomasDictionaries",
+            "dissertationDefenseDictionaries", "employeeJobsDictionaries", "intellectualDictionaries",
+            "methodicalDictionaries", "publicationsDictionaries", "researchActivityDictionaries",
+            "researchersDictionaries", "scholarshipsDictionaries", "scientificProjectsDictionaries",
+            "universitySpecialitiesDictionaries"
+        }, allEntries = true)
     })
     public UniversityDto createUniversity(UniversityRequestDto request) {
         log.info("Creating university: code={}, name={}", request.getCode(), request.getName());
@@ -346,11 +371,25 @@ public class UniversityRegistryService {
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
-        @CacheEvict(value = "universityDashboard", key = "#code")
+        @CacheEvict(value = "universityDashboard", key = "#code"),
+        // Every registry dictionary that carries the OTM dropdown
+        // (SELECT code, name FROM hemishe_e_university WHERE delete_ts IS NULL) — TTL 6h. Without
+        // this a deleted OTM stays offerable, a restored one stays missing, a renamed one keeps its
+        // old name and a NEW one is unusable — for hours, on ~15 screens the universities page
+        // cannot otherwise reach. All four writes evict the same list: one annotation with an array,
+        // because fifteen repeated lines in four places is four chances to drift.
+        @CacheEvict(value = {
+            "attachedSpecialityDictionaries", "diplomaBlankDistributionDictionaries",
+            "certificatesDictionaries", "diplomaBlanksDictionaries", "diplomasDictionaries",
+            "dissertationDefenseDictionaries", "employeeJobsDictionaries", "intellectualDictionaries",
+            "methodicalDictionaries", "publicationsDictionaries", "researchActivityDictionaries",
+            "researchersDictionaries", "scholarshipsDictionaries", "scientificProjectsDictionaries",
+            "universitySpecialitiesDictionaries"
+        }, allEntries = true)
     })
     public UniversityDto updateUniversity(String code, UniversityRequestDto request) {
         log.info("Updating university: {}", code);
-        tenantGuard.verifyOwnershipOrAdmin(code);
+        requireScope(code);
 
         University university = universityRepository.findById(code)
                 .orElseThrow(() -> new IllegalArgumentException("University not found: " + code));
@@ -378,25 +417,188 @@ public class UniversityRegistryService {
         @CacheEvict(value = "universityList", allEntries = true),
         @CacheEvict(value = "universityActive", allEntries = true),
         @CacheEvict(value = "universityChildren", allEntries = true),
-        @CacheEvict(value = "universityDashboard", key = "#code")
+        @CacheEvict(value = "universityDashboard", key = "#code"),
+        // Every registry dictionary that carries the OTM dropdown
+        // (SELECT code, name FROM hemishe_e_university WHERE delete_ts IS NULL) — TTL 6h. Without
+        // this a deleted OTM stays offerable, a restored one stays missing, a renamed one keeps its
+        // old name and a NEW one is unusable — for hours, on ~15 screens the universities page
+        // cannot otherwise reach. All four writes evict the same list: one annotation with an array,
+        // because fifteen repeated lines in four places is four chances to drift.
+        @CacheEvict(value = {
+            "attachedSpecialityDictionaries", "diplomaBlankDistributionDictionaries",
+            "certificatesDictionaries", "diplomaBlanksDictionaries", "diplomasDictionaries",
+            "dissertationDefenseDictionaries", "employeeJobsDictionaries", "intellectualDictionaries",
+            "methodicalDictionaries", "publicationsDictionaries", "researchActivityDictionaries",
+            "researchersDictionaries", "scholarshipsDictionaries", "scientificProjectsDictionaries",
+            "universitySpecialitiesDictionaries"
+        }, allEntries = true)
     })
     public void deleteUniversity(String code) {
         log.info("Deleting university: {}", code);
-        tenantGuard.verifyOwnershipOrAdmin(code);
+        requireScope(code);
 
         University university = universityRepository.findById(code)
                 .orElseThrow(() -> new IllegalArgumentException("University not found: " + code));
 
         university.setDeleteTs(LocalDateTime.now());
+        // Without this the "Kim o'chirdi" column of the Deleted bin is permanently empty: the
+        // @LastModifiedBy auditing only fills update_ts/updated_by, never deleted_by.
+        university.setDeletedBy(currentUsername());
         // version is incremented by @PreUpdate
         universityRepository.save(university);
 
-        log.info("University deleted (soft): {}", code);
+        log.info("University deleted (soft): code={}, by={}", code, university.getDeletedBy());
+    }
+
+    /**
+     * Soft-deleted universities, newest first — the "Deleted" bin behind {@code universities.delete}.
+     *
+     * <p>Not cached on purpose: the bin is opened right after a delete or a restore, so a stale list
+     * would show the row the user just acted on. It is also a small, rarely-opened list.</p>
+     *
+     * <p>Plain {@code @Transactional} (NOT the class-level {@code readOnly = true}) on purpose: a
+     * read-only transaction is routed to the read replica by {@code DataSourceConfig.RoutingDataSource},
+     * and this is a read-after-write path — the bin is refetched milliseconds after a delete or a
+     * restore commits on master, so replication lag would show the user the state they just left.</p>
+     *
+     * <p>Scoped like its two write siblings: a restricted caller sees only its own OTM's rows. The
+     * repository query cannot filter (native, {@code @SQLRestriction} escape hatch), and the list is
+     * ~10 rows, so the boundary is applied here — one mechanism, three operations.</p>
+     */
+    @Transactional
+    public List<UniversityDeletedRowDto> listDeletedUniversities() {
+        AccessScope scope = scopeResolver.currentScope();
+        // Ordering comes from the query itself (delete_ts DESC) — no re-sorting here.
+        List<University> deleted = universityRepository.findAllDeleted().stream()
+                .filter(u -> scope.allows(u.getCode()))
+                .toList();
+        // deleted_by holds the actor's UUID (JWT sub) — resolve to a name in one batch query.
+        Map<String, String> actors = actorNames.resolve(
+                deleted.stream().map(University::getDeletedBy).filter(Objects::nonNull).toList());
+        return deleted.stream()
+                .map(u -> new UniversityDeletedRowDto(
+                        u.getCode(),
+                        u.getName(),
+                        u.getTin(),
+                        u.getDeleteTs(),
+                        ActorNameResolver.label(u.getDeletedBy(), actors)))
+                .toList();
+    }
+
+    /**
+     * Restore a soft-deleted university — the other half of {@link #deleteUniversity(String)}.
+     *
+     * <p>Loads through the native escape hatch {@code findByIdIncludingDeleted}: the entity carries
+     * {@code @SQLRestriction("delete_ts IS NULL")}, so the ordinary {@code findById} is blind to
+     * exactly the rows this method is about. A row that is missing, or that is not deleted, is a 404
+     * — there is no deleted university under that code.</p>
+     *
+     * <p>Evicts exactly the same namespaces as delete, for the mirrored reason: those caches were
+     * populated while the row was hidden, so a restored university would stay invisible in the
+     * search list, the dictionaries, the detail view, the dashboard and every registry's OTM
+     * dropdown until the TTL expired.</p>
+     */
+    @Audited(action = AuditAction.RESTORE, entity = "University", entityClass = University.class, keyArg = "code")
+    @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "universitiesSearch", allEntries = true),
+        @CacheEvict(value = "universityDictionaries", allEntries = true),
+        @CacheEvict(value = "universitiesSearch", key = "'detail:' + #code"),
+        @CacheEvict(value = "university", key = "#code"),
+        @CacheEvict(value = "universityList", allEntries = true),
+        @CacheEvict(value = "universityActive", allEntries = true),
+        @CacheEvict(value = "universityChildren", allEntries = true),
+        @CacheEvict(value = "universityDashboard", key = "#code"),
+        // Every registry dictionary that carries the OTM dropdown
+        // (SELECT code, name FROM hemishe_e_university WHERE delete_ts IS NULL) — TTL 6h. Without
+        // this a deleted OTM stays offerable, a restored one stays missing, a renamed one keeps its
+        // old name and a NEW one is unusable — for hours, on ~15 screens the universities page
+        // cannot otherwise reach. All four writes evict the same list: one annotation with an array,
+        // because fifteen repeated lines in four places is four chances to drift.
+        @CacheEvict(value = {
+            "attachedSpecialityDictionaries", "diplomaBlankDistributionDictionaries",
+            "certificatesDictionaries", "diplomaBlanksDictionaries", "diplomasDictionaries",
+            "dissertationDefenseDictionaries", "employeeJobsDictionaries", "intellectualDictionaries",
+            "methodicalDictionaries", "publicationsDictionaries", "researchActivityDictionaries",
+            "researchersDictionaries", "scholarshipsDictionaries", "scientificProjectsDictionaries",
+            "universitySpecialitiesDictionaries"
+        }, allEntries = true)
+    })
+    public UniversityDto restoreUniversity(String code) {
+        log.info("Restoring university: {}", code);
+        requireScope(code);
+
+        University university = universityRepository.findByIdIncludingDeleted(code)
+                .orElseThrow(() -> new ResourceNotFoundException("University (deleted)", "code", code));
+
+        if (university.getDeleteTs() == null) {
+            throw new ResourceNotFoundException("University (deleted)", "code", code);
+        }
+
+        // The @Audited pre-image the aspect loads with entityManager.find() comes back NULL here —
+        // @SQLRestriction hides exactly the row restore is about — so the audit row would record the
+        // after-state only, losing the one transition it exists to prove. Hand the aspect the snapshot
+        // through its documented ThreadLocal fallback (it clears the holder in its own finally).
+        // Raw values, not stringified: the after-image is the entity itself, so a stringified
+        // before-image would make every non-String field look changed.
+        Map<String, Object> auditPreImage = new LinkedHashMap<>();
+        auditPreImage.put("code", university.getCode());
+        auditPreImage.put("name", university.getName());
+        auditPreImage.put("deleteTs", university.getDeleteTs());
+        auditPreImage.put("deletedBy", university.getDeletedBy());
+        AuditContextHolder.setOldValue(auditPreImage);
+
+        university.setDeleteTs(null);
+        university.setDeletedBy(null);
+        // version is incremented by @PreUpdate
+        University saved = universityRepository.save(university);
+
+        log.warn("University RESTORED: {}", code);
+        return universityMapper.toDto(saved);
     }
 
     // =====================================================
     // Private Helper Methods
     // =====================================================
+
+    /**
+     * OTM data-boundary check for every write on this registry, and the row filter for the bin.
+     *
+     * <p>Deliberately NOT {@code TenantGuard.verifyOwnershipOrAdmin}: that guard reads the caller's
+     * OTM from a {@code university_code} JWT claim, and the human web token carries none (see
+     * {@code DefaultScopeResolver} — a human's scope is resolved server-side from
+     * {@code users.university_id} + {@code user_type}). Its {@code admin.full} bypass is dead too —
+     * that authority exists in no seed and {@code JwtGrantedAuthoritiesConverter} refuses to mint it
+     * from the token — so on this ministry-facing registry the guard threw {@link SecurityException}
+     * for every human admin, i.e. for its only audience. {@link ScopeResolver} answers the same
+     * question for humans and machines alike (MINISTRY/SYSTEM → global, OTM user → its own code,
+     * unresolvable → deny-all).</p>
+     *
+     * @throws SecurityException when the caller's scope does not cover this university
+     */
+    private void requireScope(String universityCode) {
+        AccessScope scope = scopeResolver.currentScope();
+        if (!scope.allows(universityCode)) {
+            log.warn("Cross-tenant access blocked: scope={}, requested={}", scope.cacheKey(), universityCode);
+            // AccessDeniedException, xom SecurityException emas: GlobalExceptionHandler:226 buni
+            // 403 ga aylantiradi, SecurityException uchun esa handler YO'Q — ya'ni cross-tenant rad
+            // etish 500 bo'lib chiqardi va Sentry'da ilova qulashi sifatida ko'rinardi.
+            throw new AccessDeniedException(
+                    "Caller does not own university " + universityCode + " (cross-tenant forbidden)");
+        }
+    }
+
+    /**
+     * Username of the current caller for {@code deleted_by}. The stamp is
+     * {@code Authentication#getName()} — the JWT principal claim is {@code sub}, so what is actually
+     * stored is the user's UUID; {@link ActorNameResolver} turns it back into a name for display.
+     * "system" mirrors what {@code SecurityAuditorAware} writes for a context with no authenticated
+     * user.
+     */
+    private static String currentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth == null || auth.getName() == null || auth.getName().isBlank()) ? "system" : auth.getName();
+    }
 
     /**
      * Build JPA Specification for university filtering

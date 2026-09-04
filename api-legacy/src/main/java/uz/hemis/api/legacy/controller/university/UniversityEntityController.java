@@ -97,7 +97,19 @@ public class UniversityEntityController {
         return ResponseEntity.ok(universityService.toUniversityMap(saved, returnNulls));
     }
 
-    @PreAuthorize("isAuthenticated()")
+    /**
+     * OTM o'chirish — <strong>{@code universities.delete} talab qiladi</strong>, {@code isAuthenticated()} emas.
+     *
+     * <p>Bu yo'l ilgari har qanday autentifikatsiyalangan tokenga ochiq edi, ya'ni 224 OTM ning
+     * ixtiyoriy machine kaliti markaziy registrdan universitetni o'chira olardi — va u
+     * {@code RegistryUniversityController} dagi barcha qorovullarni chetlab o'tardi: ruxsat,
+     * {@code ScopeResolver} chegarasi, {@code deleted_by} shtampi, audit izi va 23 ta kesh evict'i.</p>
+     *
+     * <p>Univer kontraktiga ta'sir qilmaydi: Univer bu endpointni chaqirmaydi
+     * ({@code UniversityUpdater.php} faqat {@code ->post}, hemis klientida {@code DELETE} metodi
+     * umuman yo'q), va {@code docs/UNIVER_CONTRACT.md} buni "Univer DELETE qilmaydi" deb yozadi.</p>
+     */
+    @PreAuthorize("hasAuthority('universities.delete')")
     @DeleteMapping("/{entityId}")
     @Operation(summary = "OTM o'chirish")
     public ResponseEntity<?> delete(@PathVariable String entityId) {

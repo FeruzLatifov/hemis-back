@@ -29,6 +29,7 @@ import uz.hemis.service.util.PageResponses;
 import uz.hemis.common.dto.ResponseWrapper;
 import uz.hemis.common.dto.university.UniversityDto;
 import uz.hemis.service.registry.UniversityRegistryService;
+import uz.hemis.service.registry.dto.UniversityDeletedRowDto;
 import uz.hemis.service.registry.dto.UniversityDictionariesDto;
 import uz.hemis.service.registry.dto.UniversityRequestDto;
 
@@ -439,6 +440,83 @@ public class RegistryUniversityController {
 
         universityRegistryService.deleteUniversity(code);
         return ResponseEntity.noContent().build();
+    }
+
+    // =====================================================
+    // Deleted bin + restore (soft delete)
+    // =====================================================
+
+    @GetMapping("/deleted")
+    @PreAuthorize("hasAuthority('universities.restore')")
+    @Operation(
+        summary = "List soft-deleted universities",
+        description = """
+            Everything `DELETE /{code}` has removed, newest first — the only place a deleted
+            university is visible.
+
+            The `University` entity carries `@SQLRestriction("delete_ts IS NULL")`, so every other
+            list, search, dictionary and detail lookup silently hides these rows; this endpoint
+            reads them through a native query, which the restriction does not rewrite.
+
+            Thin by design (code, name, TIN + when it was deleted and by whom): the list answers
+            "what did we remove, and do I want it back". Nothing was physically deleted — the full
+            record comes back untouched via `POST /{code}/restore`.
+
+            Scoped like `DELETE` and `restore`: a caller restricted to one OTM sees only that OTM's
+            deleted row, never the whole country's bin.
+
+            **Data Source:** MASTER Database — read-after-write. The bin is opened right after a
+            delete or a restore, both of which commit on master; a replica read would lag behind
+            those writes and show the row the user just restored (or hide the one just deleted), so
+            the service overrides its class-level read-only transaction for this query.
+
+            **Permissions:** universities.restore — the bin exists to undo a delete, so it is gated
+            by the restore right, not the delete right
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Successfully retrieved deleted universities"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - User lacks 'universities.restore' permission")
+    })
+    public ResponseEntity<ResponseWrapper<List<UniversityDeletedRowDto>>> listDeleted() {
+        log.info("GET /api/v1/web/registry/universities/deleted");
+
+        List<UniversityDeletedRowDto> deleted = universityRegistryService.listDeletedUniversities();
+        return ResponseEntity.ok(ResponseWrapper.success(deleted));
+    }
+
+    @PostMapping("/{code}/restore")
+    @PreAuthorize("hasAuthority('universities.restore')")
+    @Operation(
+        summary = "Restore a soft-deleted university",
+        description = """
+            Clears `delete_ts`/`deleted_by`, so the university returns to every list, search,
+            dictionary and detail lookup with its data intact — a soft delete only stamped the row,
+            it never removed anything.
+
+            **Data Target:** MASTER Database (write operation)
+
+            **Permissions:** universities.restore
+
+            404 means there is no deleted university under this code: either the code is unknown,
+            or the university is live already.
+            """
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "University restored successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized"),
+        @ApiResponse(responseCode = "403", description = "Forbidden - User lacks 'universities.restore' permission"),
+        @ApiResponse(responseCode = "404", description = "No deleted university under this code (unknown code, or not deleted)")
+    })
+    public ResponseEntity<ResponseWrapper<UniversityDto>> restoreUniversity(
+            @Parameter(description = "University code", required = true)
+            @PathVariable @NotBlank String code
+    ) {
+        log.info("POST /api/v1/web/registry/universities/{}/restore", code);
+
+        UniversityDto restored = universityRegistryService.restoreUniversity(code);
+        return ResponseEntity.ok(ResponseWrapper.success(restored));
     }
 
     // =====================================================

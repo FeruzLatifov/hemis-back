@@ -9,7 +9,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uz.hemis.domain.entity.university.UniversityProfile;
 import uz.hemis.domain.repository.UniversityProfileRepository;
-import uz.hemis.service.security.TenantGuard;
+import uz.hemis.common.auth.AccessScope;
+import uz.hemis.common.auth.ScopeResolver;
 import uz.hemis.service.university.dto.DocumentMetaDto;
 import uz.hemis.service.university.dto.SocialLinksDto;
 import uz.hemis.service.university.dto.UniversityProfileDto;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.when;
 class UniversityProfileServiceTest {
 
     @Mock private UniversityProfileRepository repository;
-    @Mock private TenantGuard tenantGuard;
+    @Mock private ScopeResolver scopeResolver;
 
     private UniversityProfileService service;
     private ObjectMapper realObjectMapper;
@@ -36,7 +37,7 @@ class UniversityProfileServiceTest {
     @BeforeEach
     void setUp() {
         realObjectMapper = new ObjectMapper();
-        service = new UniversityProfileService(repository, realObjectMapper, tenantGuard);
+        service = new UniversityProfileService(repository, realObjectMapper, scopeResolver);
     }
 
     @Test
@@ -92,8 +93,9 @@ class UniversityProfileServiceTest {
     }
 
     @Test
-    @DisplayName("upsert — tenant guard + new entity + JSONB serialization")
+    @DisplayName("upsert — scope guard + new entity + JSONB serialization")
     void upsert_newEntity_createsAndSaves() throws Exception {
+        when(scopeResolver.currentScope()).thenReturn(AccessScope.global());
         UniversityProfileRequest req = new UniversityProfileRequest();
         req.setPhone("+998901111111");
         req.setEmail("test@337.uz");
@@ -104,7 +106,7 @@ class UniversityProfileServiceTest {
 
         UniversityProfileDto result = service.upsert("337", req);
 
-        verify(tenantGuard).verifyOwnershipOrAdmin("337");
+        verify(scopeResolver).currentScope();
         assertThat(result.getPhone()).isEqualTo("+998901111111");
         // social_links serialized as JSON string in entity, parsed back to DTO
         assertThat(result.getSocialLinks()).isNotNull();
@@ -114,6 +116,7 @@ class UniversityProfileServiceTest {
     @Test
     @DisplayName("upsert — existing entity update")
     void upsert_existingEntity_updatesFields() {
+        when(scopeResolver.currentScope()).thenReturn(AccessScope.global());
         UniversityProfile existing = UniversityProfile.builder()
                 .universityCode("337")
                 .phone("OLD-PHONE")
@@ -133,6 +136,7 @@ class UniversityProfileServiceTest {
     @Test
     @DisplayName("upsert — documents list serialized to JSONB")
     void upsert_documentsList() {
+        when(scopeResolver.currentScope()).thenReturn(AccessScope.global());
         UniversityProfileRequest req = new UniversityProfileRequest();
         req.setDocuments(List.of(
                 DocumentMetaDto.builder().type("CHARTER").name("Charter").fileKey("docs/charter.pdf").build(),
@@ -151,6 +155,7 @@ class UniversityProfileServiceTest {
     @Test
     @DisplayName("upsert — empty documents list serializes to null (column NULL, not '[]')")
     void upsert_emptyDocumentsList_nullSerialized() {
+        when(scopeResolver.currentScope()).thenReturn(AccessScope.global());
         UniversityProfileRequest req = new UniversityProfileRequest();
         req.setDocuments(List.of());  // empty list
 
